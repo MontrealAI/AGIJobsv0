@@ -103,7 +103,7 @@ For a standalone diagram, see [docs/architecture.md](docs/architecture.md).
 - **Node.js & npm** – Node.js ≥ 22.x LTS (tested with v22.18.0; check with `node --version`).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
 - **Solidity Compiler** – version 0.8.24.
-- **OpenZeppelin Contracts** – version 5.4.0.
+- **OpenZeppelin Contracts** – version 5.4.0 with `SafeERC20` for secure token transfers.
 
 Confirm toolchain versions:
 
