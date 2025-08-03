@@ -1,6 +1,13 @@
 # AGIJob Manager v0
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
+## Quick Links
+
+- [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
+- [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs)
+
+> Verify every address independently before sending transactions.
+
 > **Audit Status:** _Unaudited – use at your own risk._
 
 ## Versions
@@ -16,6 +23,7 @@ For version details, see the [changelog](CHANGELOG.md).
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
 ## Table of Contents
+- [Quick Links](#quick-links)
 - [Versions](#versions)
 - [Project Purpose](#project-purpose)
 - [Prerequisites](#prerequisites)
@@ -164,8 +172,12 @@ Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHE
 
 ### Deployed Contracts
 
-- **v0** – Deployed on Ethereum mainnet at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
-- **v1** – _TBA_.
+| Version | Network | Address | Status |
+|---------|---------|---------|--------|
+| v0 | Ethereum mainnet | [0x0178…ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477) | Immutable |
+| v1 | _TBA_ | _TBA_ | In development |
+
+> Cross-check the address on an official block explorer before interacting.
 
 ### Example interactions
 
