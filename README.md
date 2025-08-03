@@ -4,6 +4,7 @@
 ## Quick Links
 
 - [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
+- [AGIJobManager v0 on Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
 - [AGIJobManager v0 Source](AGIJobManagerv0.sol)
 - [AGIJobManager v1 Source](AGIJobManagerv1.sol) – experimental upgrade pinned to Solidity 0.8.30; not deployed.
@@ -93,7 +94,15 @@ npm view @openzeppelin/contracts version
 ```
 
 ## Installation
-1. **Install Node.js 22.x LTS and npm**
+1. **Clone the repository and install pinned dependencies**
+
+   ```bash
+   git clone https://github.com/MontrealAI/AGIJobsv0.git
+   cd AGIJobsv0
+   npm ci
+   ```
+
+2. **Install Node.js 22.x LTS and npm**
    Using [`nvm`](https://github.com/nvm-sh/nvm):
 
    ```bash
@@ -103,36 +112,20 @@ npm view @openzeppelin/contracts version
    ```
 
    > For platform-specific installation details, see the [official Node.js documentation](https://nodejs.org/en/download/package-manager).
-2. **Set up a development framework**
+3. **Set up a development framework**
    - Hardhat
      ```bash
      npm install --save-dev hardhat@2.26.1
      npm install --save-dev @nomicfoundation/hardhat-toolbox@6.1.0
      npx hardhat init
      ```
-     *`@nomicfoundation/hardhat-toolbox` bundles the `hardhat-ethers` plugin required by [`scripts/deploy.ts`](scripts/deploy.ts).* 
+     *`@nomicfoundation/hardhat-toolbox` bundles the `hardhat-ethers` plugin required by [`scripts/deploy.ts`](scripts/deploy.ts).*
    - Foundry
      ```bash
      curl -L https://foundry.paradigm.xyz | bash
      foundryup
      forge init
      ```
-3. **Initialize your project**
-   ```bash
-   npm init -y
-   ```
-   This creates a `package.json` file.
-
-   > If you plan to use the TypeScript examples, install `typescript` and `ts-node`:
-   > ```bash
-   > npm install --save-dev typescript ts-node
-   > ```
-4. **Install dependencies**
-   ```bash
-   npm install solc@0.8.30 @openzeppelin/contracts@5.4.0
-   npm ci
-   ```
-   `npm install` adds the required packages while `npm ci` performs a clean, reproducible install using `package-lock.json`.
 
 ## Configuration
 Set the following environment variables in a local `.env` file so deployment tools can access your RPC endpoint and signer:
