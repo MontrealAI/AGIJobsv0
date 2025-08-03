@@ -137,13 +137,13 @@ private_key = "${PRIVATE_KEY}"
    ```
 2. **Deploy**
    ```bash
-   # Hardhat
+   # Hardhat (deploys AGIJobManagerV1)
    npx hardhat run scripts/deploy.ts --network sepolia
 
    # Foundry
-   forge create AGIJobManagerv0.sol:AGIJobManagerv0 --rpc-url $API_URL --private-key $PRIVATE_KEY
+   forge create AGIJobManagerv1.sol:AGIJobManagerV1 --rpc-url $API_URL --private-key $PRIVATE_KEY
    ```
-   Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) or [Base Sepolia](https://sepolia.basescan.org) in your Hardhat or Foundry configuration files.
+   Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) (chain ID 11155111) or [Base Sepolia](https://sepolia.basescan.org) (chain ID 84532) in your Hardhat or Foundry configuration files.
 
 3. **Verify on Etherscan**
    ```bash
@@ -154,7 +154,7 @@ private_key = "${PRIVATE_KEY}"
 #### Foundry
 
 ```bash
-forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerv0 --chain sepolia --etherscan-api-key $ETHERSCAN_API_KEY
+forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerV1 --chain sepolia --etherscan-api-key $ETHERSCAN_API_KEY
 ```
 
 Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
