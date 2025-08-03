@@ -3,16 +3,24 @@
 
 > **Audit Status:** _Unaudited – use at your own risk._
 
+## Versions
+
+- **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
+- **v1 – Development:** Current target; deployment address: _TBA_.
+
+> **Caution:** v0 is frozen and must not be modified. All new work should target v1.
+
 ## Project Purpose
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
 ## Table of Contents
+- [Versions](#versions)
 - [Project Purpose](#project-purpose)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Quick Start](#quick-start)
-- [Deployed Contract](#deployed-contract)
+- [Deployed Contracts](#deployed-contracts)
 - [Example interactions](#example-interactions)
 - [Testing](#testing)
 - [Linting](#linting)
@@ -151,9 +159,10 @@ forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerv0 --chain sepoli
 
 Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
 
-### Deployed Contract
+### Deployed Contracts
 
-The contract is currently deployed on Ethereum mainnet at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477). This address may change with future releases.
+- **v0** – Deployed on Ethereum mainnet at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
+- **v1** – _TBA_.
 
 ### Example interactions
 
