@@ -45,8 +45,10 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
    - Hardhat
      ```bash
      npm install --save-dev hardhat@2.26.1
+     npm install --save-dev @nomicfoundation/hardhat-toolbox@6.1.0
      npx hardhat init
      ```
+     *`@nomicfoundation/hardhat-toolbox` bundles the `hardhat-ethers` plugin required by [`scripts/deploy.ts`](scripts/deploy.ts).*
    - Foundry
      ```bash
      curl -L https://foundry.paradigm.xyz | bash
@@ -80,6 +82,7 @@ Load these variables in `hardhat.config.ts`:
 ```ts
 import { config as dotenvConfig } from "dotenv";
 import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
 
 dotenvConfig();
 
