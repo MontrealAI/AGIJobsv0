@@ -24,6 +24,12 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [References](#references)
 - [License](#license)
 
+## Directory Overview
+
+- `contracts/` – Solidity smart contracts such as the core `AGIJobManagerv0.sol`.
+- `scripts/` – Deployment and maintenance scripts, like `scripts/deploy.ts`.
+- `tests/` – Placeholder for unit and integration tests (to be added).
+
 ## Prerequisites
 - **Node.js & npm** – Node.js ≥ 20.x LTS (bundled with a matching npm version).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
