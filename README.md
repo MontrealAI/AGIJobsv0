@@ -1,4 +1,4 @@
-# AGIJob Manager v0
+# AGIJob Manager
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
 ## Quick Links
@@ -9,6 +9,17 @@
 > Verify every address independently before sending transactions.
 
 > **Audit Status:** _Unaudited – use at your own risk._
+
+## Overview
+
+AGIJob Manager orchestrates trustless labor markets for autonomous agents.  The project
+contains two smart‑contract generations:
+
+- **v0** – the immutable mainnet release, permanently deployed at
+  [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
+- **v1** – an in‑development upgrade tracking best practices and modern tooling.
+
+All addresses should be independently verified before use.
 
 ## Versions
 
@@ -27,7 +38,7 @@ For version details, see the [changelog](CHANGELOG.md).
 - Project metadata: configuration, changelog, and documentation.
 
 ## Project Purpose
-AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
+AGIJob Manager is a foundational smart-contract component for the emerging Economy of AGI. The v0 contract coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
 ## Features
 
@@ -39,6 +50,7 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 
 ## Table of Contents
 - [Quick Links](#quick-links)
+- [Overview](#overview)
 - [Versions](#versions)
 - [Repository Structure](#repository-structure)
 - [Project Purpose](#project-purpose)
@@ -49,7 +61,7 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [Quick Start](#quick-start)
 - [Deployed Contracts](#deployed-contracts)
 - [Contract Verification](#contract-verification)
-- [Example interactions](#example-interactions)
+- [Example Interactions](#example-interactions)
 - [Testing](#testing)
 - [Linting](#linting)
 - [AGIJobManagerv0.sol Capabilities](#agijobmanagerv0sol-capabilities)
@@ -207,7 +219,7 @@ npx hardhat verify --network mainnet 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477
 
 Compare the compiler settings and bytecode against the deployed address before interacting with any contract instance.
 
-### Example interactions
+### Example Interactions
 
 - **List a job**
   ```ts
