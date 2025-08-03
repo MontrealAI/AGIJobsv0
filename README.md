@@ -32,10 +32,15 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 
 ## Installation
 1. **Install Node.js 20.x LTS and npm**
+   Using [`nvm`](https://github.com/nvm-sh/nvm):
+
    ```bash
-   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-   sudo apt-get install -y nodejs
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+   source ~/.nvm/nvm.sh
+   nvm install 20
    ```
+
+   > For platform-specific installation details, see the [official Node.js documentation](https://nodejs.org/en/download/package-manager).
 2. **Set up a development framework**
    - Hardhat
      ```bash
