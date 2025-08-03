@@ -10,6 +10,8 @@
 
 > **Caution:** v0 is frozen and must not be modified. All new work should target v1.
 
+For version details, see the [changelog](CHANGELOG.md).
+
 ## Project Purpose
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
@@ -31,6 +33,7 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [Contributing](#contributing)
 - [Security](#security)
 - [References](#references)
+- [Changelog](#changelog)
 - [License](#license)
 
 ## Prerequisites
@@ -246,6 +249,7 @@ To contribute:
 4. Commit your changes: `git commit -am 'Add new feature'`.
 5. Push to your fork: `git push origin feature/your-feature`.
 6. Open a pull request.
+7. For each version bump, record changes in [CHANGELOG.md](CHANGELOG.md).
 
 ## Security
 
@@ -264,6 +268,10 @@ Please report security issues responsibly. Contact **security@agi.network** or o
 - [ERC-20 Token Standard](https://eips.ethereum.org/EIPS/eip-20) – fungible token specification.
 - [ERC-721 Non-Fungible Token Standard](https://eips.ethereum.org/EIPS/eip-721) – NFT specification used for job artifacts.
 - [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/) – audited building blocks for Ethereum development.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a summary of major changes across releases.
 
 ## License
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
