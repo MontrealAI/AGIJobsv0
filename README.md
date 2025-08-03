@@ -1,6 +1,8 @@
 # AGIJob Manager v0
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
+> **Audit Status:** _Unaudited – use at your own risk._
+
 ## Project Purpose
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
@@ -110,6 +112,12 @@ private_key = "${PRIVATE_KEY}"
    ```
    Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) or [Base Sepolia](https://sepolia.basescan.org) in your Hardhat or Foundry configuration files.
 
+3. **Verify on Etherscan**
+   ```bash
+   npx hardhat verify --network sepolia <DEPLOYED_CONTRACT_ADDRESS>
+   ```
+   Replace `<DEPLOYED_CONTRACT_ADDRESS>` with the address returned from deployment and ensure `ETHERSCAN_API_KEY` is set in your environment.
+
 ### Example interactions
 
 - **List a job**
@@ -185,6 +193,11 @@ Contributions are welcome! To contribute:
 5. Open a pull request.
 
 ## Security
+
+**Audit Status:** Unaudited – use at your own risk.
+
+This project has not undergone a formal security audit. Before any production deployment, commission an independent third-party security review.
+
 Please report security issues responsibly. Contact **security@agi.network** or open a private issue so we can address vulnerabilities quickly.
 
 ## References
