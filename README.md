@@ -9,7 +9,7 @@
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity ^0.8.24; not deployed.
+- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity ^0.8.30; not deployed.
 
 > Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
 
@@ -31,7 +31,7 @@ All addresses should be independently verified before use.
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
-- **v1 – Development:** Current target pinned to Solidity ^0.8.24; deployment address: _TBA_.
+- **v1 – Development:** Current target pinned to Solidity ^0.8.30; deployment address: _TBA_.
 
 > **Caution:** v0 is frozen and must not be modified. All new work should target v1.
 
@@ -103,7 +103,7 @@ For a standalone diagram, see [docs/architecture.md](docs/architecture.md).
 ## Prerequisites
 - **Node.js & npm** – Node.js ≥ 22.x LTS (tested with v22.18.0; check with `node --version`).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
-- **Solidity Compiler** – version 0.8.24.
+- **Solidity Compiler** – version 0.8.30.
 - **OpenZeppelin Contracts** – version 5.4.0 with `SafeERC20` for secure token transfers.
 
 Confirm toolchain versions:
@@ -179,7 +179,7 @@ module.exports = {
     },
   },
   solidity: {
-    version: "0.8.24",
+    version: "0.8.30",
     settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
   },
   paths: { sources: "./contracts" },
