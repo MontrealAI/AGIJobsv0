@@ -25,19 +25,19 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [License](#license)
 
 ## Prerequisites
-- **Node.js & npm** – Node.js ≥ 20.x LTS (bundled with a matching npm version).
+- **Node.js & npm** – Node.js ≥ 22.x LTS (bundled with a matching npm version).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
 - **Solidity Compiler** – version 0.8.30.
 - **OpenZeppelin Contracts** – version 5.4.0.
 
 ## Installation
-1. **Install Node.js 20.x LTS and npm**
+1. **Install Node.js 22.x LTS and npm**
    Using [`nvm`](https://github.com/nvm-sh/nvm):
 
    ```bash
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
    source ~/.nvm/nvm.sh
-   nvm install 20
+   nvm install 22
    ```
 
    > For platform-specific installation details, see the [official Node.js documentation](https://nodejs.org/en/download/package-manager).
