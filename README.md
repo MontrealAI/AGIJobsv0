@@ -21,21 +21,21 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [License](#license)
 
 ## Prerequisites
-- **Node.js & npm** – install the latest LTS release of Node.js (which bundles the matching npm version).
-- **Hardhat or Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
-- **Solidity Compiler** – version ^0.8.23.
-- **OpenZeppelin Contracts** – install the most recent `@openzeppelin/contracts` package.
+- **Node.js & npm** – Node.js ≥ 20.x LTS (bundled with a matching npm version).
+- **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
+- **Solidity Compiler** – version 0.8.30.
+- **OpenZeppelin Contracts** – version 5.4.0.
 
 ## Installation
-1. **Install Node.js LTS and npm**
+1. **Install Node.js 20.x LTS and npm**
    ```bash
-   curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
    sudo apt-get install -y nodejs
    ```
 2. **Set up a development framework**
    - Hardhat
      ```bash
-     npm install --save-dev hardhat
+     npm install --save-dev hardhat@2.26.1
      npx hardhat init
      ```
    - Foundry
@@ -46,7 +46,7 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
      ```
 3. **Install dependencies**
    ```bash
-   npm install solc@^0.8.23 @openzeppelin/contracts@latest
+   npm install solc@0.8.30 @openzeppelin/contracts@5.4.0
    ```
 
 ## Configuration
