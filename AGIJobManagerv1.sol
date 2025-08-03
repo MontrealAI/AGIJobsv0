@@ -103,7 +103,7 @@ OVERRIDING AUTHORITY: AGI.ETH
    
 */
 
-pragma solidity ^0.8.30;
+pragma solidity 0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -126,6 +126,9 @@ interface NameWrapper {
     function ownerOf(uint256 id) external view returns (address);
 }
 
+/// @title AGIJobManagerV1
+/// @notice Experimental upgrade of the immutable AGIJobManager v0. This contract
+///         is a work in progress and has not been deployed on any network.
 contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage {
     using ECDSA for bytes32;
     using MerkleProof for bytes32[];

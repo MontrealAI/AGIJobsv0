@@ -6,7 +6,7 @@
 - [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
 - [AGIJobManager v0 Source](AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](AGIJobManagerv1.sol)
+- [AGIJobManager v1 Source](AGIJobManagerv1.sol) – experimental upgrade pinned to Solidity 0.8.30; not deployed.
 
 > Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
 
@@ -28,7 +28,7 @@ All addresses should be independently verified before use.
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
-- **v1 – Development:** Current target; deployment address: _TBA_.
+- **v1 – Development:** Current target pinned to Solidity 0.8.30; deployment address: _TBA_.
 
 > **Caution:** v0 is frozen and must not be modified. All new work should target v1.
 
