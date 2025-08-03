@@ -19,18 +19,27 @@
 
 For version details, see the [changelog](CHANGELOG.md).
 
+## Repository Structure
+
+- **AGIJobManagerv0.sol** – immutable contract deployed on Ethereum mainnet.
+- **AGIJobManagerv1.sol** – forward-looking upgrade under active development.
+- **scripts/** – helper utilities like [deploy.ts](scripts/deploy.ts) for network deployment.
+- Project metadata: configuration, changelog, and documentation.
+
 ## Project Purpose
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
 - [Versions](#versions)
+- [Repository Structure](#repository-structure)
 - [Project Purpose](#project-purpose)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Quick Start](#quick-start)
 - [Deployed Contracts](#deployed-contracts)
+- [Contract Verification](#contract-verification)
 - [Example interactions](#example-interactions)
 - [Testing](#testing)
 - [Linting](#linting)
@@ -178,6 +187,16 @@ Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHE
 | v1 | _TBA_ | _TBA_ | In development |
 
 > Cross-check the address on an official block explorer before interacting.
+
+## Contract Verification
+
+The **v0** contract is verified on [Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) for transparency.  To reproduce the verification yourself:
+
+```bash
+npx hardhat verify --network mainnet 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477
+```
+
+Compare the compiler settings and bytecode against the deployed address before interacting with any contract instance.
 
 ### Example interactions
 
