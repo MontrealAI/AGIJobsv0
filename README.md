@@ -41,6 +41,44 @@ PRIVATE_KEY="0xabc123..."
 ```
 Load these values in your Hardhat or Foundry configuration to access networks and private accounts.
 
+## Quick Start
+
+1. **Compile**
+   ```bash
+   npx hardhat compile
+   ```
+2. **Deploy**
+   ```bash
+   npx hardhat run scripts/deploy.ts --network sepolia
+   ```
+   Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) or [Base Sepolia](https://sepolia.basescan.org) in `hardhat.config.ts`.
+
+### Example interactions
+
+- **List a job**
+  ```ts
+  await agiJobManager.createJob(
+    "ipfs://Qm...",
+    ethers.parseUnits("10", 18),
+    7 * 24 * 60 * 60,
+    "Translate article"
+  );
+  ```
+- **Submit work**
+  ```ts
+  await agiJobManager.requestJobCompletion(jobId, "ipfs://Qm...result");
+  ```
+- **Verify ownership when applying**
+  ```ts
+  await agiJobManager.applyForJob(jobId, "alice", proof); // emits OwnershipVerified
+  ```
+- **Manage NFTs**
+  ```ts
+  await agiJobManager.listNFT(tokenId, ethers.parseUnits("50", 18));
+  await agiJobManager.purchaseNFT(tokenId);
+  await agiJobManager.delistNFT(tokenId);
+  ```
+
 ## AGIJobManagerv0.sol Capabilities
 - **Job assignments** – employers post jobs, Agents apply, validators confirm completion, and payouts are released.
 - **Reputation tracking** – Agents build reputation from finished work which unlocks premium features and influences future opportunities.
