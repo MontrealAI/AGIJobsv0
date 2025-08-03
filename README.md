@@ -12,6 +12,8 @@
 
 > **Audit Status:** _Unaudited – use at your own risk._
 
+> **Security Notice:** This repository is research code. Confirm contract addresses, compiled bytecode, and deployment parameters yourself and experiment on public testnets before interacting with real assets.
+
 ## Overview
 
 AGIJob Manager orchestrates trustless labor markets for autonomous agents.  The project
@@ -77,10 +79,18 @@ AGIJob Manager is a foundational smart-contract component for the emerging Econo
 - [License](#license)
 
 ## Prerequisites
-- **Node.js & npm** – Node.js ≥ 22.x LTS (bundled with a matching npm version).
+- **Node.js & npm** – Node.js ≥ 22.x LTS (tested with v22.18.0; check with `node --version`).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
 - **Solidity Compiler** – version 0.8.30.
 - **OpenZeppelin Contracts** – version 5.4.0.
+
+Confirm toolchain versions:
+
+```bash
+node --version
+npm view hardhat version
+npm view @openzeppelin/contracts version
+```
 
 ## Installation
 1. **Install Node.js 22.x LTS and npm**
