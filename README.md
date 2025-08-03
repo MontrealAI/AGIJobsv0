@@ -45,24 +45,7 @@ For version details, see the [changelog](CHANGELOG.md).
 - Project metadata: configuration, changelog, and documentation.
 
 ## Project Purpose
-AGIJob Manager is a foundational smart-contract component for the emerging Economy of AGI. The v0 contract coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
-
-```mermaid
-sequenceDiagram
-    participant Employer
-    participant Agent
-    participant Validator
-    participant AGI as "AGI Token"
-
-    Employer->>Agent: Post job & escrow AGI
-    Agent->>Validator: Submit work
-    Validator->>Employer: Approve work
-    Employer->>AGI: Release payment
-    AGI-->>Agent: Payout
-    AGI-->>Validator: Validation reward
-```
-
-For a standalone diagram, see [docs/architecture.md](docs/architecture.md).
+Aims to coordinate trustless labor markets for autonomous agents using the $AGI token. See the full narrative and diagram in [docs/project-purpose.md](docs/project-purpose.md).
 
 ## Features
 
@@ -357,17 +340,13 @@ npx eslint .
 - **Reward pool contributions** – participants can contribute $AGI to a communal pool; custom AGI types and payout percentages enable flexible reward schemes.
 
 ## The Economy of AGI
-This contract sketches how jobs, reputation and value circulate in the broader "Economy of AGI." Nodes mint $AGI by supplying compute, Agents expend that token to access resources, and completed work emerges as NFTs or other digital goods. As these elements interact, they illustrate a self-sustaining marketplace where decentralized intelligence and tokenized incentives reinforce one another.
+How jobs, reputation, and value circulate within the AGI ecosystem. Read the expanded discussion in [docs/economy-of-agi.md](docs/economy-of-agi.md).
 
-### Legal & Regulatory
-$AGI is strictly a utility token. It is minted only when AGI Nodes contribute computational resources and is used to acquire products and services within the network. Holding $AGI tokens does not constitute an investment, and they confer no ownership, voting rights, or entitlement to profits. For full disclosures, see [AGIJobManagerv0.sol](legacy/AGIJobManagerv0.sol).
+## Legal & Regulatory
+Explains the utility-token nature of $AGI and related considerations. See [docs/legal-regulatory.md](docs/legal-regulatory.md) for full details.
 
 ## Roadmap
-
-- **Additional contracts** – introduce job escrow, dispute resolution, and staking mechanisms.
-- **Integration tools** – provide SDKs, CLI utilities, and ENS-powered discovery helpers.
-- **Cross-chain interoperability** – explore bridges and messaging layers for multi-network deployments.
-- **Governance** – enable token‑holder proposals and voting for protocol upgrades.
+A snapshot of planned enhancements and future directions is available in [docs/roadmap.md](docs/roadmap.md).
 
 ## Contributing
 Contributions are welcome! Before submitting a pull request, ensure the project compiles, lints, and tests successfully:
