@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const agiJobManager = await ethers.deployContract("AGIJobManagerv0");
+  const agiJobManager = await ethers.deployContract("AGIJobManagerV1");
   await agiJobManager.waitForDeployment();
 
-  console.log(`AGIJobManagerv0 deployed to: ${agiJobManager.target}`);
+  console.log(`AGIJobManagerV1 deployed to: ${agiJobManager.target}`);
 }
 
 main().catch((error) => {
