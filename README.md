@@ -4,10 +4,11 @@
 ## Quick Links
 
 - [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
-- [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs)
+- [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
+- [AGIJobManager v0 Source](AGIJobManagerv0.sol)
 - [AGIJobManager v1 Source](AGIJobManagerv1.sol)
 
-> Verify every address independently before sending transactions. Cross-check on multiple block explorers and official channels.
+> Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
 
 > **Audit Status:** _Unaudited – use at your own risk._
 
@@ -230,6 +231,19 @@ The **v0** contract is verified on [Etherscan](https://etherscan.io/address/0x01
 ```bash
 export ETHERSCAN_API_KEY="your-etherscan-api-key"
 npx hardhat verify --network mainnet 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477
+```
+
+Using Foundry:
+
+```bash
+export ETHERSCAN_API_KEY="your-etherscan-api-key"
+forge verify-contract 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477 AGIJobManagerv0 ./AGIJobManagerv0.sol --chain mainnet
+```
+
+Double-check the bytecode from more than one RPC endpoint:
+
+```bash
+cast code --rpc-url https://rpc.ankr.com/eth 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477
 ```
 
 Compare the compiler settings and bytecode against the deployed address on multiple explorers before interacting with any contract instance.
