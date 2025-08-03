@@ -52,13 +52,47 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
    ```
 
 ## Configuration
-Store sensitive values in a local `.env` file, for example:
+Set the following environment variables in a local `.env` file so deployment tools can access your RPC endpoint and signer:
 
 ```bash
-API_URL="https://your.rpc.provider"
-PRIVATE_KEY="0xabc123..."
+API_URL="https://your.rpc.provider"      # RPC endpoint for the target chain
+PRIVATE_KEY="0xabc123..."                # Private key of the deploying wallet
+# optional: only needed for contract verification
+ETHERSCAN_API_KEY="your-etherscan-api-key"
 ```
-Load these values in your Hardhat or Foundry configuration to access networks and private accounts.
+
+### Hardhat
+Load these variables in `hardhat.config.ts`:
+
+```ts
+import { config as dotenvConfig } from "dotenv";
+import { HardhatUserConfig } from "hardhat/config";
+
+dotenvConfig();
+
+const config: HardhatUserConfig = {
+  networks: {
+    sepolia: {
+      url: process.env.API_URL,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    },
+  },
+};
+
+export default config;
+```
+
+### Foundry
+Example `foundry.toml` network configuration:
+
+```toml
+[rpc_endpoints]
+sepolia = "${API_URL}"
+
+[profile.default]
+private_key = "${PRIVATE_KEY}"
+```
+
 
 ## Quick Start
 
@@ -68,9 +102,13 @@ Load these values in your Hardhat or Foundry configuration to access networks an
    ```
 2. **Deploy**
    ```bash
+   # Hardhat
    npx hardhat run scripts/deploy.ts --network sepolia
+
+   # Foundry
+   forge create AGIJobManagerv0.sol:AGIJobManagerv0 --rpc-url $API_URL --private-key $PRIVATE_KEY
    ```
-   Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) or [Base Sepolia](https://sepolia.basescan.org) in `hardhat.config.ts`.
+   Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) or [Base Sepolia](https://sepolia.basescan.org) in your Hardhat or Foundry configuration files.
 
 ### Example interactions
 
