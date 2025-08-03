@@ -220,6 +220,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
+    event AgentBlacklisted(address indexed agent, bool status);
+    event ValidatorBlacklisted(address indexed validator, bool status);
+    event ModeratorAdded(address indexed moderator);
+    event ModeratorRemoved(address indexed moderator);
 
     constructor(
         address _agiTokenAddress,
@@ -335,10 +339,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function blacklistAgent(address _agent, bool _status) external onlyOwner {
         blacklistedAgents[_agent] = _status;
+        emit AgentBlacklisted(_agent, _status);
     }
 
     function blacklistValidator(address _validator, bool _status) external onlyOwner {
         blacklistedValidators[_validator] = _status;
+        emit ValidatorBlacklisted(_validator, _status);
     }
 
     function delistJob(uint256 _jobId) external onlyOwner {
@@ -351,10 +357,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function addModerator(address _moderator) external onlyOwner {
         moderators[_moderator] = true;
+        emit ModeratorAdded(_moderator);
     }
 
     function removeModerator(address _moderator) external onlyOwner {
         moderators[_moderator] = false;
+        emit ModeratorRemoved(_moderator);
     }
 
     function updateAGITokenAddress(address _newTokenAddress) external onlyOwner {
