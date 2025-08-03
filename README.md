@@ -248,6 +248,8 @@ Please report security issues responsibly. Contact **security@agi.network** or o
 
 ## References
 
+- Explore the [AGIJobs NFT collection](https://opensea.io/collection/agijobs), showcasing job NFTs minted from completed tasks in this ecosystem. Each token represents delivered work and illustrates how job outputs become tradable assets.
+
 - [AGI.eth](https://agi.eth.limo) – official resources and updates from the AGI ecosystem.
 - [Ethereum Name Service (ENS)](https://ens.domains/) – decentralized naming for wallets and contracts.
 - [ERC-20 Token Standard](https://eips.ethereum.org/EIPS/eip-20) – fungible token specification.
