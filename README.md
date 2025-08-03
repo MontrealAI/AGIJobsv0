@@ -6,6 +6,7 @@
 - [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
 - [AGIJobManager v0 on Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
+- [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity ^0.8.24; not deployed.
