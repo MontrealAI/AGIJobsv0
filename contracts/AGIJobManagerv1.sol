@@ -106,6 +106,7 @@ OVERRIDING AUTHORITY: AGI.ETH
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -133,6 +134,7 @@ interface NameWrapper {
 contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage {
     using ECDSA for bytes32;
     using MerkleProof for bytes32[];
+    using SafeERC20 for IERC20;
 
     IERC20 public agiToken;
     string private baseIpfsUrl;
@@ -268,7 +270,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.payout = _payout;
         job.duration = _duration;
         job.details = _details;
-        require(agiToken.transferFrom(msg.sender, address(this), _payout), "Escrow payment failed");
+        agiToken.safeTransferFrom(msg.sender, address(this), _payout);
         emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details);
     }
 
@@ -331,7 +333,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("agent win"))) {
             _completeJob(_jobId);
         } else if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("employer win"))) {
-            agiToken.transfer(job.employer, job.payout);
+            agiToken.safeTransfer(job.employer, job.payout);
         }
         job.disputed = false;
         emit DisputeResolved(_jobId, msg.sender, resolution);
@@ -350,7 +352,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function delistJob(uint256 _jobId) external onlyOwner {
         Job storage job = jobs[_jobId];
         require(!job.completed && job.assignedAgent == address(0), "Job already completed or assigned");
-        agiToken.transfer(job.employer, job.payout);
+        agiToken.safeTransfer(job.employer, job.payout);
         delete jobs[_jobId];
         emit JobCancelled(_jobId);
     }
@@ -476,7 +478,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function cancelJob(uint256 _jobId) external nonReentrant {
         Job storage job = jobs[_jobId];
         require(msg.sender == job.employer && !job.completed && job.assignedAgent == address(0), "Not authorized or already completed/assigned");
-        agiToken.transfer(job.employer, job.payout);
+        agiToken.safeTransfer(job.employer, job.payout);
         delete jobs[_jobId];
         emit JobCancelled(_jobId);
     }
@@ -491,7 +493,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 agentPayoutPercentage = getHighestPayoutPercentage(job.assignedAgent);
         uint256 agentPayout = (job.payout * agentPayoutPercentage) / 100;
 
-        require(agiToken.transfer(job.assignedAgent, agentPayout), "Payment to agent failed");
+        agiToken.safeTransfer(job.assignedAgent, agentPayout);
 
         uint256 totalValidatorPayout = (job.payout * validationRewardPercentage) / 100;
         uint256 validatorPayout = totalValidatorPayout / job.validators.length;
@@ -499,7 +501,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
         for (uint256 i = 0; i < job.validators.length; i++) {
             address validator = job.validators[i];
-            require(agiToken.transfer(validator, validatorPayout), "Payment to validator failed");
+            agiToken.safeTransfer(validator, validatorPayout);
             enforceReputationGrowth(validator, validatorReputationGain);
         }
 
@@ -519,10 +521,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit NFTListed(tokenId, msg.sender, price);
     }
 
-    function purchaseNFT(uint256 tokenId) external {
+    function purchaseNFT(uint256 tokenId) external nonReentrant {
         Listing storage listing = listings[tokenId];
         require(listing.isActive, "Listing not active");
-        require(agiToken.transferFrom(msg.sender, listing.seller, listing.price), "Payment failed");
+        agiToken.safeTransferFrom(msg.sender, listing.seller, listing.price);
         _transfer(listing.seller, msg.sender, tokenId);
         listing.isActive = false;
         emit NFTPurchased(tokenId, msg.sender, listing.price);
@@ -590,7 +592,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function withdrawAGI(uint256 amount) external onlyOwner nonReentrant {
         require(amount > 0 && amount <= agiToken.balanceOf(address(this)), "Invalid amount");
-        agiToken.transfer(msg.sender, amount);
+        agiToken.safeTransfer(msg.sender, amount);
     }
 
     function canAccessPremiumFeature(address user) public view returns (bool) {
@@ -599,7 +601,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function contributeToRewardPool(uint256 amount) external whenNotPaused nonReentrant {
         require(amount > 0, "Invalid amount");
-        agiToken.transferFrom(msg.sender, address(this), amount);
+        agiToken.safeTransferFrom(msg.sender, address(this), amount);
         emit RewardPoolContribution(msg.sender, amount);
     }
 
