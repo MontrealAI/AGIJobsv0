@@ -64,6 +64,7 @@ AGIJob Manager is a foundational smart-contract component for the emerging Econo
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Quick Start](#quick-start)
+- [Deployment](#deployment)
 - [Deployed Contracts](#deployed-contracts)
 - [Contract Verification](#contract-verification)
 - [Example Interactions](#example-interactions)
@@ -217,6 +218,37 @@ forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerV1 --chain sepoli
 ```
 
 Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
+
+## Deployment
+
+The `scripts/deploy.ts` helper reads its configuration from environment variables. Define them before running the script:
+
+| Variable | Description |
+|----------|-------------|
+| `AGI_TOKEN_ADDRESS` | Address of the $AGI ERC‑20 token used for payments |
+| `BASE_IPFS_URL` | Base URI for job metadata stored on IPFS |
+| `ENS_ADDRESS` | ENS registry contract |
+| `NAME_WRAPPER_ADDRESS` | ENS NameWrapper contract address |
+| `CLUB_ROOT_NODE` | `bytes32` ENS node for AGI club names |
+| `AGENT_ROOT_NODE` | `bytes32` ENS node for agent subdomains |
+| `VALIDATOR_MERKLE_ROOT` | Merkle root governing validator allowlists |
+| `AGENT_MERKLE_ROOT` | Merkle root governing agent allowlists |
+
+Example (Sepolia):
+
+```bash
+export AGI_TOKEN_ADDRESS=0xYourAGIToken
+export BASE_IPFS_URL="ipfs://"
+export ENS_ADDRESS=0xYourENSRegistry
+export NAME_WRAPPER_ADDRESS=0xYourNameWrapper
+export CLUB_ROOT_NODE=0xYourClubRoot
+export AGENT_ROOT_NODE=0xYourAgentRoot
+export VALIDATOR_MERKLE_ROOT=0xValidatorRoot
+export AGENT_MERKLE_ROOT=0xAgentRoot
+npx hardhat run scripts/deploy.ts --network sepolia
+```
+
+Always deploy to a public test network first and independently verify the resulting address on at least one block explorer before handling real assets.
 
 ### Deployed Contracts
 
