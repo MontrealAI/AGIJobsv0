@@ -129,6 +129,7 @@ interface NameWrapper {
 /// @title AGIJobManagerV1
 /// @notice Experimental upgrade of the immutable AGIJobManager v0. This contract
 ///         is a work in progress and has not been deployed on any network.
+/// @custom:security-contact security@agi.network
 contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage {
     using ECDSA for bytes32;
     using MerkleProof for bytes32[];
