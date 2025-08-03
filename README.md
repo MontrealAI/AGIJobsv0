@@ -91,6 +91,13 @@ This contract sketches how jobs, reputation and value circulate in the broader "
 ### Legal & Regulatory
 $AGI is strictly a utility token. It is minted only when AGI Nodes contribute computational resources and is used to acquire products and services within the network. Holding $AGI tokens does not constitute an investment, and they confer no ownership, voting rights, or entitlement to profits. For full disclosures, see [AGIJobManagerv0.sol](AGIJobManagerv0.sol).
 
+## Roadmap
+
+- **Additional contracts** – introduce job escrow, dispute resolution, and staking mechanisms.
+- **Integration tools** – provide SDKs, CLI utilities, and ENS-powered discovery helpers.
+- **Cross-chain interoperability** – explore bridges and messaging layers for multi-network deployments.
+- **Governance** – enable token‑holder proposals and voting for protocol upgrades.
+
 ## Contributing
 Contributions are welcome! To contribute:
 1. Fork the repository.
@@ -101,6 +108,14 @@ Contributions are welcome! To contribute:
 
 ## Security
 Please report security issues responsibly. Contact **security@agi.network** or open a private issue so we can address vulnerabilities quickly.
+
+## References
+
+- [AGI.eth](https://agi.eth.limo) – official resources and updates from the AGI ecosystem.
+- [Ethereum Name Service (ENS)](https://ens.domains/) – decentralized naming for wallets and contracts.
+- [ERC-20 Token Standard](https://eips.ethereum.org/EIPS/eip-20) – fungible token specification.
+- [ERC-721 Non-Fungible Token Standard](https://eips.ethereum.org/EIPS/eip-721) – NFT specification used for job artifacts.
+- [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/) – audited building blocks for Ethereum development.
 
 ## License
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
