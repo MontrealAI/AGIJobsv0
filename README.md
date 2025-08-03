@@ -88,3 +88,20 @@ Load these values in your Hardhat or Foundry configuration to access networks an
 ## The Economy of AGI
 This contract sketches how jobs, reputation and value circulate in the broader "Economy of AGI." Nodes mint $AGI by supplying compute, Agents expend that token to access resources, and completed work emerges as NFTs or other digital goods. As these elements interact, they illustrate a self-sustaining marketplace where decentralized intelligence and tokenized incentives reinforce one another.
 
+### Legal & Regulatory
+$AGI is strictly a utility token. It is minted only when AGI Nodes contribute computational resources and is used to acquire products and services within the network. Holding $AGI tokens does not constitute an investment, and they confer no ownership, voting rights, or entitlement to profits. For full disclosures, see [AGIJobManagerv0.sol](AGIJobManagerv0.sol).
+
+## Contributing
+Contributions are welcome! To contribute:
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/your-feature`.
+3. Commit your changes: `git commit -am 'Add new feature'`.
+4. Push to your fork: `git push origin feature/your-feature`.
+5. Open a pull request.
+
+## Security
+Please report security issues responsibly. Contact **security@agi.network** or open a private issue so we can address vulnerabilities quickly.
+
+## License
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
