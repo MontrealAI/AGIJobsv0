@@ -49,14 +49,24 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
      npm install --save-dev @nomicfoundation/hardhat-toolbox@6.1.0
      npx hardhat init
      ```
-     *`@nomicfoundation/hardhat-toolbox` bundles the `hardhat-ethers` plugin required by [`scripts/deploy.ts`](scripts/deploy.ts).*
+     *`@nomicfoundation/hardhat-toolbox` bundles the `hardhat-ethers` plugin required by [`scripts/deploy.ts`](scripts/deploy.ts).* 
    - Foundry
      ```bash
      curl -L https://foundry.paradigm.xyz | bash
      foundryup
      forge init
      ```
-3. **Install dependencies**
+3. **Initialize your project**
+   ```bash
+   npm init -y
+   ```
+   This creates a `package.json` file.
+
+   > If you plan to use the TypeScript examples, install `typescript` and `ts-node`:
+   > ```bash
+   > npm install --save-dev typescript ts-node
+   > ```
+4. **Install dependencies**
    ```bash
    npm install solc@0.8.30 @openzeppelin/contracts@5.4.0
    ```
