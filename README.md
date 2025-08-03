@@ -1,7 +1,24 @@
 # AGIJob Manager v0
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
 ## Project Purpose
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
+
+## Table of Contents
+- [Project Purpose](#project-purpose)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Quick Start](#quick-start)
+- [Example interactions](#example-interactions)
+- [AGIJobManagerv0.sol Capabilities](#agijobmanagerv0sol-capabilities)
+- [The Economy of AGI](#the-economy-of-agi)
+- [Legal & Regulatory](#legal--regulatory)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Security](#security)
+- [References](#references)
+- [License](#license)
 
 ## Prerequisites
 - **Node.js & npm** – install the latest LTS release of Node.js (which bundles the matching npm version).
