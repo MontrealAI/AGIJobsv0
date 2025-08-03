@@ -4,7 +4,9 @@
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "lint": "npx solhint 'contracts/**/*.sol' && npx eslint .",
+    "test": "npx hardhat test"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +15,7 @@
   "devDependencies": {
     "eslint": "^9.32.0",
     "hardhat": "^2.26.1",
+    "@nomicfoundation/hardhat-toolbox": "6.1.0",
     "solhint": "^6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
