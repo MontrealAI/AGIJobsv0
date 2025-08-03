@@ -68,6 +68,12 @@ PRIVATE_KEY="0xabc123..."                # Private key of the deploying wallet
 ETHERSCAN_API_KEY="your-etherscan-api-key"
 ```
 
+Remember to add `.env` to your `.gitignore` and never commit private keys.
+
+```gitignore
+.env
+```
+
 ### Hardhat
 Load these variables in `hardhat.config.ts`:
 
