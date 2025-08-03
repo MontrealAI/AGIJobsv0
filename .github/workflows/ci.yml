@@ -11,5 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile
+      - name: Lint Solidity
+        run: npx solhint '**/*.sol'
+      - name: Lint JavaScript
+        run: npx eslint . --ext .js
       - name: Run tests
-        run: echo "No tests specified"
+        run: npx hardhat test
