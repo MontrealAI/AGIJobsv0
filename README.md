@@ -6,8 +6,8 @@
 - [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
 - [AGIJobManager v0 on Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
-- [AGIJobManager v0 Source](AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](AGIJobManagerv1.sol) – experimental upgrade pinned to Solidity 0.8.30; not deployed.
+- [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
+- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity ^0.8.24; not deployed.
 
 > Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
 
@@ -29,7 +29,7 @@ All addresses should be independently verified before use.
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
-- **v1 – Development:** Current target pinned to Solidity 0.8.30; deployment address: _TBA_.
+- **v1 – Development:** Current target pinned to Solidity ^0.8.24; deployment address: _TBA_.
 
 > **Caution:** v0 is frozen and must not be modified. All new work should target v1.
 
@@ -37,8 +37,8 @@ For version details, see the [changelog](CHANGELOG.md).
 
 ## Repository Structure
 
-- **AGIJobManagerv0.sol** – immutable contract deployed on Ethereum mainnet.
-- **AGIJobManagerv1.sol** – forward-looking upgrade under active development.
+- **legacy/AGIJobManagerv0.sol** – immutable contract deployed on Ethereum mainnet.
+- **contracts/AGIJobManagerv1.sol** – forward-looking upgrade under active development.
 - **scripts/** – helper utilities like [deploy.ts](scripts/deploy.ts) for network deployment.
 - Project metadata: configuration, changelog, and documentation.
 
@@ -82,7 +82,7 @@ AGIJob Manager is a foundational smart-contract component for the emerging Econo
 ## Prerequisites
 - **Node.js & npm** – Node.js ≥ 22.x LTS (tested with v22.18.0; check with `node --version`).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
-- **Solidity Compiler** – version 0.8.30.
+- **Solidity Compiler** – version 0.8.24.
 - **OpenZeppelin Contracts** – version 5.4.0.
 
 Confirm toolchain versions:
@@ -144,25 +144,25 @@ Remember to add `.env` to your `.gitignore` and never commit private keys.
 ```
 
 ### Hardhat
-Load these variables in `hardhat.config.ts`:
+Load these variables in `hardhat.config.js`:
 
-```ts
-import { config as dotenvConfig } from "dotenv";
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+```js
+require("dotenv").config();
+require("@nomicfoundation/hardhat-toolbox");
 
-dotenvConfig();
-
-const config: HardhatUserConfig = {
+module.exports = {
   networks: {
     sepolia: {
       url: process.env.API_URL,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
     },
   },
+  solidity: {
+    version: "0.8.24",
+    settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
+  },
+  paths: { sources: "./contracts" },
 };
-
-export default config;
 ```
 
 ### Foundry
@@ -200,7 +200,7 @@ private_key = "${PRIVATE_KEY}"
    npx hardhat run scripts/deploy.ts --network sepolia
 
    # Foundry
-   forge create AGIJobManagerv1.sol:AGIJobManagerV1 --rpc-url $API_URL --private-key $PRIVATE_KEY
+   forge create contracts/AGIJobManagerv1.sol:AGIJobManagerV1 --rpc-url $API_URL --private-key $PRIVATE_KEY
    ```
    Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) (chain ID 11155111) or [Base Sepolia](https://sepolia.basescan.org) (chain ID 84532) in your Hardhat or Foundry configuration files.
 
@@ -240,7 +240,7 @@ Using Foundry:
 
 ```bash
 export ETHERSCAN_API_KEY="your-etherscan-api-key"
-forge verify-contract 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477 AGIJobManagerv0 ./AGIJobManagerv0.sol --chain mainnet
+forge verify-contract 0x0178b6bad606aaf908f72135b8ec32fc1d5ba477 AGIJobManagerv0 ./legacy/AGIJobManagerv0.sol --chain mainnet
 ```
 
 Double-check the bytecode from more than one RPC endpoint:
@@ -308,7 +308,7 @@ npx eslint .
 This contract sketches how jobs, reputation and value circulate in the broader "Economy of AGI." Nodes mint $AGI by supplying compute, Agents expend that token to access resources, and completed work emerges as NFTs or other digital goods. As these elements interact, they illustrate a self-sustaining marketplace where decentralized intelligence and tokenized incentives reinforce one another.
 
 ### Legal & Regulatory
-$AGI is strictly a utility token. It is minted only when AGI Nodes contribute computational resources and is used to acquire products and services within the network. Holding $AGI tokens does not constitute an investment, and they confer no ownership, voting rights, or entitlement to profits. For full disclosures, see [AGIJobManagerv0.sol](AGIJobManagerv0.sol).
+$AGI is strictly a utility token. It is minted only when AGI Nodes contribute computational resources and is used to acquire products and services within the network. Holding $AGI tokens does not constitute an investment, and they confer no ownership, voting rights, or entitlement to profits. For full disclosures, see [AGIJobManagerv0.sol](legacy/AGIJobManagerv0.sol).
 
 ## Roadmap
 

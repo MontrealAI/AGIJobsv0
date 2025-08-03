@@ -103,7 +103,7 @@ OVERRIDING AUTHORITY: AGI.ETH
    
 */
 
-pragma solidity 0.8.30;
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
