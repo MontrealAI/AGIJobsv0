@@ -17,6 +17,15 @@
 
 > **Security Notice:** This repository is research code. Confirm contract addresses, compiled bytecode, and deployment parameters yourself and experiment on public testnets before interacting with real assets.
 
+## Safety Checklist
+
+Follow these steps before trusting any address or artifact:
+
+- Verify contract and token addresses on at least two explorers (e.g., Etherscan and Blockscout).
+- Ensure the verified source code matches the compiled bytecode.
+- Exercise new code on public testnets prior to mainnet usage.
+- Avoid links or addresses from untrusted third parties.
+
 ## Overview
 
 AGIJob Manager orchestrates trustless labor markets for autonomous agents.  The project
@@ -31,7 +40,7 @@ All addresses should be independently verified before use.
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
-- **v1 – Development:** Current target pinned to Solidity ^0.8.30; deployment address: _TBA_.
+- **v1 – Development:** Uses Solidity ^0.8.30 with custom errors and gas‑optimized loops; deployment address: _TBA_.
 
 > **Caution:** v0 is frozen and must not be modified. All new work should target v1.
 
@@ -55,9 +64,11 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
+- **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
+- [Safety Checklist](#safety-checklist)
 - [Overview](#overview)
 - [Versions](#versions)
 - [Repository Structure](#repository-structure)

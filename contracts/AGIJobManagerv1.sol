@@ -227,6 +227,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
 
+    /// @dev Thrown when an AGI type is added with invalid parameters.
+    error InvalidAGITypeParameters();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -605,11 +608,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit RewardPoolContribution(msg.sender, amount);
     }
 
+    /// @notice Register or update an AGI NFT type that grants bonus payouts.
+    /// @param nftAddress Address of the qualifying NFT collection.
+    /// @param payoutPercentage Bonus percentage applied to job payouts for holders of the NFT.
     function addAGIType(address nftAddress, uint256 payoutPercentage) external onlyOwner {
-        require(nftAddress != address(0) && payoutPercentage > 0 && payoutPercentage <= 100, "Invalid parameters");
+        if (nftAddress == address(0) || payoutPercentage == 0 || payoutPercentage > 100) {
+            revert InvalidAGITypeParameters();
+        }
 
         bool exists = false;
-        for (uint256 i = 0; i < agiTypes.length; i++) {
+        for (uint256 i = 0; i < agiTypes.length; ++i) {
             if (agiTypes[i].nftAddress == nftAddress) {
                 agiTypes[i].payoutPercentage = payoutPercentage;
                 exists = true;
@@ -623,14 +631,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit AGITypeUpdated(nftAddress, payoutPercentage);
     }
 
-    function getHighestPayoutPercentage(address agent) public view returns (uint256) {
-        uint256 highestPercentage = 0;
-        for (uint256 i = 0; i < agiTypes.length; i++) {
+    /// @notice Determine the highest AGI payout bonus available to an agent.
+    /// @param agent Address being queried.
+    /// @return highestPercentage Maximum bonus percentage among held AGI types.
+    function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {
+        for (uint256 i = 0; i < agiTypes.length; ++i) {
             if (IERC721(agiTypes[i].nftAddress).balanceOf(agent) > 0 && agiTypes[i].payoutPercentage > highestPercentage) {
                 highestPercentage = agiTypes[i].payoutPercentage;
             }
         }
-        return highestPercentage;
     }
 }
 
