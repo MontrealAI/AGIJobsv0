@@ -129,6 +129,14 @@ private_key = "${PRIVATE_KEY}"
    ```
    Replace `<DEPLOYED_CONTRACT_ADDRESS>` with the address returned from deployment and ensure `ETHERSCAN_API_KEY` is set in your environment.
 
+#### Foundry
+
+```bash
+forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerv0 --chain sepolia --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
+
 ### Example interactions
 
 - **List a job**
