@@ -70,6 +70,7 @@ For a standalone diagram, see [docs/architecture.md](docs/architecture.md).
 - **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted.
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
+- **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
