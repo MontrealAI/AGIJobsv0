@@ -11,6 +11,8 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [Configuration](#configuration)
 - [Quick Start](#quick-start)
 - [Example interactions](#example-interactions)
+- [Testing](#testing)
+- [Linting](#linting)
 - [AGIJobManagerv0.sol Capabilities](#agijobmanagerv0sol-capabilities)
 - [The Economy of AGI](#the-economy-of-agi)
 - [Legal & Regulatory](#legal--regulatory)
@@ -95,6 +97,27 @@ Load these values in your Hardhat or Foundry configuration to access networks an
   await agiJobManager.purchaseNFT(tokenId);
   await agiJobManager.delistNFT(tokenId);
   ```
+ 
+## Testing
+
+Run the test suite with either Hardhat or Foundry:
+
+```bash
+npx hardhat test
+forge test
+```
+
+## Linting
+
+Ensure code quality with linting tools:
+
+- `solhint` for Solidity contracts
+- `eslint` for TypeScript or JavaScript
+
+```bash
+npx solhint 'contracts/**/*.sol'
+npx eslint .
+```
 
 ## AGIJobManagerv0.sol Capabilities
 - **Job assignments** – employers post jobs, Agents apply, validators confirm completion, and payouts are released.
