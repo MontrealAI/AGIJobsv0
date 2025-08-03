@@ -29,11 +29,20 @@ For version details, see the [changelog](CHANGELOG.md).
 ## Project Purpose
 AGIJob Manager v0 is a foundational smart-contract component for the emerging Economy of AGI. It coordinates work between **AGI Agents** and **AGI Nodes**, using the $AGI utility token as the medium of exchange. Agents perform computational jobs, Nodes supply the processing power, and $AGI rewards flow through the system to fuel a decentralized network of autonomous services.
 
+## Features
+
+- **On-chain job board** – employers escrow $AGI and assign tasks to approved agents.
+- **Reputation system** – agents and validators earn points that unlock premium capabilities.
+- **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted.
+- **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
+- **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
+
 ## Table of Contents
 - [Quick Links](#quick-links)
 - [Versions](#versions)
 - [Repository Structure](#repository-structure)
 - [Project Purpose](#project-purpose)
+- [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)

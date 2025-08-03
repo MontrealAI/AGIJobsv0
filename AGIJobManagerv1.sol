@@ -105,13 +105,14 @@ OVERRIDING AUTHORITY: AGI.ETH
 
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts@5.4.0/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts@5.4.0/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts@5.4.0/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts@5.4.0/utils/Pausable.sol";
-import "@openzeppelin/contracts@5.4.0/access/Ownable.sol";
-import "@openzeppelin/contracts@5.4.0/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts@5.4.0/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 interface ENS {
     function resolver(bytes32 node) external view returns (address);
@@ -225,7 +226,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         bytes32 _agentRootNode,
         bytes32 _validatorMerkleRoot,
         bytes32 _agentMerkleRoot
-    ) ERC721("AGIJobs", "Job") {
+    ) ERC721("AGIJobs", "Job") Ownable(msg.sender) {
         agiToken = IERC20(_agiTokenAddress);
         baseIpfsUrl = _baseIpfsUrl;
         ens = ENS(_ensAddress);
