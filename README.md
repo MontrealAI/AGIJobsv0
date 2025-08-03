@@ -231,12 +231,21 @@ $AGI is strictly a utility token. It is minted only when AGI Nodes contribute co
 - **Governance** – enable token‑holder proposals and voting for protocol upgrades.
 
 ## Contributing
-Contributions are welcome! To contribute:
+Contributions are welcome! Before submitting a pull request, ensure the project compiles, lints, and tests successfully:
+
+```bash
+npm run compile
+npm run lint
+npm run test
+```
+
+To contribute:
 1. Fork the repository.
 2. Create a feature branch: `git checkout -b feature/your-feature`.
-3. Commit your changes: `git commit -am 'Add new feature'`.
-4. Push to your fork: `git push origin feature/your-feature`.
-5. Open a pull request.
+3. Run the above scripts and fix any issues.
+4. Commit your changes: `git commit -am 'Add new feature'`.
+5. Push to your fork: `git push origin feature/your-feature`.
+6. Open a pull request.
 
 ## Security
 
