@@ -12,6 +12,7 @@ AGIJob Manager v0 is a foundational smart-contract component for the emerging Ec
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Quick Start](#quick-start)
+- [Deployed Contract](#deployed-contract)
 - [Example interactions](#example-interactions)
 - [Testing](#testing)
 - [Linting](#linting)
@@ -139,6 +140,10 @@ forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerv0 --chain sepoli
 ```
 
 Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
+
+### Deployed Contract
+
+The contract is currently deployed on Ethereum mainnet at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477). This address may change with future releases.
 
 ### Example interactions
 
