@@ -5,6 +5,7 @@
 
 - [AGIJobManager v0 on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs)
+- [AGIJobManager v1 Source](AGIJobManagerv1.sol)
 
 > Verify every address independently before sending transactions.
 
@@ -119,6 +120,7 @@ AGIJob Manager is a foundational smart-contract component for the emerging Econo
    ```bash
    npm install solc@0.8.30 @openzeppelin/contracts@5.4.0
    ```
+   > For reproducible builds, `npm ci` installs the exact versions pinned in `package-lock.json`.
 
 ## Configuration
 Set the following environment variables in a local `.env` file so deployment tools can access your RPC endpoint and signer:
@@ -308,6 +310,13 @@ To contribute:
 **Audit Status:** Unaudited – use at your own risk.
 
 This project has not undergone a formal security audit. Before any production deployment, commission an independent third-party security review.
+
+### Operational Best Practices
+
+- Confirm contract addresses and bytecode on multiple block explorers before transacting.
+- Prefer hardware wallets and offline signing when deploying or managing privileged roles.
+- Pin dependencies and build artifacts (`npm ci`, fixed compiler versions) to avoid supply-chain surprises.
+- Use multisig or time-locked accounts for owner or moderator keys.
 
 Please report security issues responsibly. Contact **security@agi.network** or open a private issue so we can address vulnerabilities quickly.
 
