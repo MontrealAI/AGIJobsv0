@@ -174,11 +174,22 @@ private_key = "${PRIVATE_KEY}"
 
 ## Quick Start
 
-1. **Compile**
+1. **Clone & install**
    ```bash
-   npx hardhat compile
+   git clone https://github.com/MontrealAI/AGIJobsv0.git
+   cd AGIJobsv0
+   npm ci
    ```
-2. **Deploy**
+2. **Compile**
+   ```bash
+   npm run compile
+   ```
+3. **Lint & test**
+   ```bash
+   npm run lint
+   npm test
+   ```
+4. **Deploy**
    ```bash
    # Hardhat (deploys AGIJobManagerV1)
    npx hardhat run scripts/deploy.ts --network sepolia
@@ -188,7 +199,7 @@ private_key = "${PRIVATE_KEY}"
    ```
    Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) (chain ID 11155111) or [Base Sepolia](https://sepolia.basescan.org) (chain ID 84532) in your Hardhat or Foundry configuration files.
 
-3. **Verify on Etherscan**
+5. **Verify on a block explorer**
    ```bash
    npx hardhat verify --network sepolia <DEPLOYED_CONTRACT_ADDRESS>
    ```
