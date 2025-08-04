@@ -129,6 +129,23 @@ describe("AGIJobManagerV1 payouts", function () {
       .withArgs(newPercentage);
   });
 
+  it("allows owner to update burn config atomically", async function () {
+    const { manager } = await deployFixture();
+    const newAddress = ethers.getAddress(
+      "0x000000000000000000000000000000000000BEEF"
+    );
+    const newPercentage = 750;
+
+    await expect(manager.setBurnConfig(newAddress, newPercentage))
+      .to.emit(manager, "BurnAddressUpdated")
+      .withArgs(newAddress)
+      .and.to.emit(manager, "BurnPercentageUpdated")
+      .withArgs(newPercentage);
+
+    expect(await manager.burnAddress()).to.equal(newAddress);
+    expect(await manager.burnPercentage()).to.equal(newPercentage);
+  });
+
   it("emits JobFinalizedAndBurned with correct payouts", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture();
     const payout = ethers.parseEther("1000");

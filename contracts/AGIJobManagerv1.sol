@@ -475,6 +475,21 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit BurnAddressUpdated(newBurnAddress);
     }
 
+    /// @notice Atomically update burn address and percentage.
+    /// @param newBurnAddress Destination for burned tokens.
+    /// @param newPercentage Portion of payout (in basis points) to burn.
+    function setBurnConfig(
+        address newBurnAddress,
+        uint256 newPercentage
+    ) external onlyOwner {
+        require(newBurnAddress != address(0), "invalid address");
+        require(newPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        burnAddress = newBurnAddress;
+        burnPercentage = newPercentage;
+        emit BurnAddressUpdated(newBurnAddress);
+        emit BurnPercentageUpdated(newPercentage);
+    }
+
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {
         uint256 scaledPayout = _payout / 1e18;
         uint256 payoutPoints = scaledPayout ** 3 / 1e5;
@@ -551,6 +566,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 remainingEscrow = job.payout - burnAmount;
 
         if (burnAmount > 0) {
+            require(burnAddress != address(0), "Burn address not set");
             agiToken.safeTransfer(burnAddress, burnAmount);
         }
 
