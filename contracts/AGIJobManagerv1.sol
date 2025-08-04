@@ -157,15 +157,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     ENS public ens;
     NameWrapper public nameWrapper;
 
-    /// @notice Default address used to irretrievably burn tokens.
-    address public constant DEFAULT_BURN_ADDRESS =
+    /// @notice Canonical address used to irretrievably burn tokens.
+    address public constant BURN_ADDRESS =
         0x000000000000000000000000000000000000dEaD;
     /// @notice Default portion of a job's payout to burn (5% = 500 basis points).
-    uint256 public constant DEFAULT_BURN_PERCENTAGE = 500;
+    uint256 public constant BURN_PERCENTAGE = 500;
     /// @notice Destination for burned tokens. Owner may update if needed.
-    address public burnAddress = DEFAULT_BURN_ADDRESS;
+    address public burnAddress = BURN_ADDRESS;
     /// @notice Portion of a job's payout (in basis points) to destroy on completion.
-    uint256 public burnPercentage = DEFAULT_BURN_PERCENTAGE;
+    uint256 public burnPercentage = BURN_PERCENTAGE;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
 

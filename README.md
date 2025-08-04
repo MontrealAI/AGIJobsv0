@@ -80,8 +80,8 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 The v1 prototype destroys a slice of each finalized job's escrow, permanently reducing total supply. Burning occurs automatically when the last validator approval triggers `_finalizeJob` to mint the NFT, release payment and burn tokens—no separate call is required.
 
-- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `5%` (500 basis points) and can be updated only by the contract owner via `setBurnPercentage(newBps)`. This call emits `BurnPercentageUpdated(newBps)`.
-- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`; the owner may redirect burns with `setBurnAddress(newAddress)`, emitting `BurnAddressUpdated(newAddress)`.
+- **BURN_ADDRESS / burnAddress** – `BURN_ADDRESS` is the canonical dead wallet (`0x000000000000000000000000000000000000dEaD`). The mutable `burnAddress` variable starts at this value but the owner may redirect burns via `setBurnAddress(newAddress)`, emitting `BurnAddressUpdated(newAddress)`.
+- **BURN_PERCENTAGE / burnPercentage** – `BURN_PERCENTAGE` (500 basis points) seeds the mutable `burnPercentage` variable. The owner may change or disable burning with `setBurnPercentage(newBps)`; setting `0` halts burning. Each update emits `BurnPercentageUpdated(newBps)`.
 - **setBurnConfig(newAddress, newBps)** – convenience method for owners to update both settings atomically. Emits `BurnAddressUpdated(newAddress)` and `BurnPercentageUpdated(newBps)` in a single transaction.
 - **Automatic finalization** – the final validator approval executes `_finalizeJob`, minting the completion NFT, releasing payment and burning `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned(jobId, agent, employer, payoutToAgent, tokensBurned)` records the transfer.
 - **Caution:** Tokens sent to the burn address are irrecoverable; monitor `BurnPercentageUpdated` and `BurnAddressUpdated` events when changing parameters.
