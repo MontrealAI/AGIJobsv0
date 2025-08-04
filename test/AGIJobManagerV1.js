@@ -120,6 +120,62 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWith("Completion not requested");
   });
 
+  it("enforces review window before validation", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("1000");
+
+    await manager.setReviewWindow(5000);
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    const salt = ethers.id("rw1");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, true, salt]
+    );
+    await manager.connect(validator).commitValidation(jobId, commitment, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, true, salt);
+    await expect(
+      manager.connect(validator).validateJob(jobId, "", [])
+    ).to.be.revertedWith("Review window active");
+
+    await time.increase(5000);
+    await manager.connect(validator).validateJob(jobId, "", []);
+  });
+
+  it("enforces review window before disapproval", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("1000");
+
+    await manager.setReviewWindow(5000);
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    const salt = ethers.id("rw2");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, false, salt]
+    );
+    await manager.connect(validator).commitValidation(jobId, commitment, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, false, salt);
+    await expect(
+      manager.connect(validator).disapproveJob(jobId, "", [])
+    ).to.be.revertedWith("Review window active");
+
+    await time.increase(5000);
+    await manager.connect(validator).disapproveJob(jobId, "", []);
+  });
+
   it("restricts burn address updates to owner and emits event", async function () {
     const { manager, employer } = await deployFixture();
     const newAddress = ethers.getAddress(
