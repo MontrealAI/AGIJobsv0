@@ -675,14 +675,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit SlashedStakeRecipientUpdated(newRecipient);
     }
 
+    /// @notice Update the minimum stake validators must maintain.
+    /// @dev Setting `amount` to 0 removes the staking requirement entirely.
     function setStakeRequirement(uint256 amount) external onlyOwner {
-        require(amount > 0, "Invalid amount");
         stakeRequirement = amount;
         emit StakeRequirementUpdated(amount);
     }
 
     /// @notice Update the slashing rate applied to incorrect validator stakes.
     /// @param percentage Portion of staked tokens to slash in basis points.
+    /// @dev Setting `percentage` to 0 disables slashing.
     function setSlashingPercentage(uint256 percentage) external onlyOwner {
         require(percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         slashingPercentage = percentage;
@@ -694,6 +696,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit MinValidatorReputationUpdated(minimum);
     }
 
+    /// @notice Atomically update validator incentive parameters.
+    /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
+    /// @param stakeReq Minimum stake required to validate (0 disables staking).
+    /// @param slashPercentage Portion of incorrect stake to slash (basis points; 0 disables).
+    /// @param minRep Minimum reputation required to validate.
+    /// @param approvals Validator approvals needed to finalize a job.
+    /// @param disapprovals Validator disapprovals needed to dispute a job.
     function setValidatorConfig(
         uint256 rewardPercentage,
         uint256 stakeReq,
@@ -704,7 +713,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     ) external onlyOwner {
         require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
-        require(stakeReq > 0, "Invalid stake");
         require(approvals > 0, "Invalid approvals");
         require(disapprovals > 0, "Invalid disapprovals");
         validationRewardPercentage = rewardPercentage;
