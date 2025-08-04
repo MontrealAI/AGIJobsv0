@@ -38,7 +38,7 @@ Follow these steps before trusting any address or artifact:
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
 - Confirm the current `stakeRequirement` before staking and plan for withdrawals; `withdrawStake` only succeeds once all of your jobs are finalized without disputes.
 - Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, or the slashed‑stake recipient.
-- Validators that fall below `minValidatorReputation` are automatically blacklisted until their reputation is restored.
+- Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
 - If no validator votes correctly, only slashed stake goes to `slashedStakeRecipient` while the reserved validator reward portion returns to the job's agent or employer; verify this recipient and watch for updates before staking.
 
 ## Overview
@@ -177,7 +177,7 @@ Disputes between agents and employers are settled by moderators using a strongly
 
 ### Reputation Threshold Gating and Automatic Suspension
 
-Validators must maintain reputation above `minValidatorReputation`. When slashing or penalties drop a validator below this threshold, the contract automatically blacklists them, preventing further validations until reputation is restored.
+Validators must maintain reputation above `minValidatorReputation`. When slashing or penalties drop a validator below this threshold, the contract automatically blacklists them and prevents further validations until their reputation climbs back above the threshold.
 
 ### Basis-Point Standardization
 
@@ -502,7 +502,7 @@ Compare the compiler settings and bytecode against the deployed address on multi
 #### Validator Staking & Flow
 
 Validators stake tokens before voting. Correct votes share rewards, while incorrect votes are slashed and lose reputation. The final approval releases payment, burns tokens, and mints the completion NFT.
-Validators whose reputation falls below the owner-set `minValidatorReputation` threshold are prevented from validating and may be automatically blacklisted.
+Validators whose reputation falls below the owner-set `minValidatorReputation` threshold are prevented from validating and may be automatically blacklisted, but they regain validation privileges automatically once their reputation exceeds the threshold again.
 
 ```ts
 await agiJobManager.connect(v1).stake(ethers.parseUnits("100", 18));

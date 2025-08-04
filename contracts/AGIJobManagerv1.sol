@@ -790,6 +790,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             reputation[_user] = diminishedReputation;
         }
         emit ReputationUpdated(_user, reputation[_user]);
+        if (
+            blacklistedValidators[_user] &&
+            reputation[_user] >= minValidatorReputation
+        ) {
+            blacklistedValidators[_user] = false;
+            emit ValidatorBlacklisted(_user, false);
+        }
     }
 
     function enforceReputationPenalty(address _user, uint256 _points) internal {
