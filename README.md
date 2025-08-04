@@ -149,15 +149,15 @@ Several operational parameters are adjustable by the owner. Each setter emits an
 ### Validator Incentives
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and must maintain at least `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
-- **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow along with any slashed stake. If no votes are correct, the slashed tokens are sent to `slashedStakeRecipient`.
-- **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` of staked tokens and incur a reputation deduction.
-- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage`, `validationRewardPercentage`, and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
+- **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` basis points of the remaining escrow along with any slashed stake. If no votes are correct, the slashed tokens are sent to `slashedStakeRecipient`.
+- **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` basis points of staked tokens and incur a reputation deduction.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
 
 #### Employer-Win Dispute Path
 
 When validators disapprove a job and the employer prevails:
 
-- Disapproving validators split `validationRewardPercentage` of the escrow along with any slashed stake. If none disapprove correctly, slashed tokens go to `slashedStakeRecipient`.
+- Disapproving validators split `validationRewardPercentage` basis points of the escrow along with any slashed stake. If none disapprove correctly, slashed tokens go to `slashedStakeRecipient`.
 - Approving validators are slashed and receive no reward.
 - The remaining escrow returns to the employer.
 
