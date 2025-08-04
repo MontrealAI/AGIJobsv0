@@ -169,6 +169,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     address public burnAddress = BURN_ADDRESS;
     /// @notice Portion of a job's payout (in basis points) to destroy on completion.
     uint256 public burnPercentage = BURN_PERCENTAGE;
+    /// @notice Recipient of slashed validator stakes when no correct votes exist.
+    address public slashedStakeRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
 
@@ -271,6 +273,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event AdditionalText2Updated(string newText);
     event AdditionalText3Updated(string newText);
     event BurnAddressUpdated(address indexed newBurnAddress);
+    /// @notice Emitted when the slashed stake recipient is updated.
+    event SlashedStakeRecipientUpdated(address indexed newRecipient);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validation reward percentage is updated.
@@ -310,6 +314,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         agentRootNode = _agentRootNode;
         validatorMerkleRoot = _validatorMerkleRoot;
         agentMerkleRoot = _agentMerkleRoot;
+        slashedStakeRecipient = msg.sender;
     }
 
     modifier onlyModerator() {
@@ -439,6 +444,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             uint256 slashedReward = correctValidatorCount > 0
                 ? totalSlashed / correctValidatorCount
                 : 0;
+
+            if (correctValidatorCount == 0 && totalSlashed > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+            }
 
             for (uint256 i = 0; i < job.validators.length; i++) {
                 address validator = job.validators[i];
@@ -621,6 +630,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit BurnPercentageUpdated(newPercentage);
     }
 
+    function setSlashedStakeRecipient(address newRecipient) external onlyOwner {
+        require(newRecipient != address(0), "invalid address");
+        slashedStakeRecipient = newRecipient;
+        emit SlashedStakeRecipientUpdated(newRecipient);
+    }
+
     function setStakeRequirement(uint256 amount) external onlyOwner {
         stakeRequirement = amount;
         emit StakeRequirementUpdated(amount);
@@ -763,6 +778,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 slashedReward = correctValidatorCount > 0
             ? totalSlashed / correctValidatorCount
             : 0;
+
+        if (correctValidatorCount == 0 && totalSlashed > 0) {
+            agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+        }
 
         for (uint256 i = 0; i < job.validators.length; i++) {
             address validator = job.validators[i];
