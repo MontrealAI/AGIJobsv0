@@ -33,7 +33,7 @@ Follow these steps before trusting any address or artifact:
 - Reproduce builds locally with pinned compiler and dependency versions to confirm bytecode.
 - Avoid links or addresses from untrusted third parties.
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
-- Understand that job payouts may be partially and irreversibly burned to `0x000000000000000000000000000000000000dEaD`; the owner controls the `burnPercentage` parameter.
+- Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
 
 ## Overview
 
@@ -74,15 +74,15 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
-- **Configurable token burn** – `JobFinalizedAndBurned` destroys a portion of job escrow upon validation and NFT minting, reducing supply and recording agent payouts and burn amounts.
+- **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJob`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
 
 ### Burn Mechanism
 
-The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply. Burning occurs only after the final validator approval triggers NFT minting and payout release.
+The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply. Burning occurs automatically when the last validator approval triggers `_finalizeJob` to mint the NFT, release payment, and burn tokens—no separate `finalizeJobAndBurn` call is required.
 
 - **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated only by the contract owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(newBps)`.
 - **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but only the contract owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(newAddress)`.
-- **Automatic finalization** – the final validator approval mints the completion NFT, releases payment, and burns `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned` records the agent payout and amount destroyed.
+- **Automatic finalization** – the final validator approval executes `_finalizeJob`, minting the completion NFT, releasing payment, and burning `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned` records the agent payout and amount destroyed; `finalizeJobAndBurn` is not called separately.
 - **Caution:** Tokens sent to the burn address are irrecoverable.
 
 ## Table of Contents
