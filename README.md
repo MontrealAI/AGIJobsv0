@@ -190,6 +190,36 @@ All tunable percentages—such as `burnPercentage`, `validationRewardPercentage`
 Incorrect validator votes lose stake according to `slashingPercentage`. Slashed tokens are pooled and distributed to validators whose votes matched the outcome. If none were correct, slashed tokens go to `slashedStakeRecipient` and the escrowed validator reward returns to the agent or employer, depending on the final outcome.
 
 ### Validator Incentives
+- **Quick-start:**
+  1. **Stake tokens** – deposit the required $AGI before voting.
+
+     ```ts
+     await agiJobManager.connect(validator).stake(ethers.parseUnits("100", 18));
+     ```
+
+  2. **Approve or disapprove** – cast a single vote per job with `validateJob` or `disapproveJob`.
+
+     ```ts
+     await agiJobManager.connect(validator).validateJob(jobId, "", []);
+     // or
+     await agiJobManager.connect(validator).disapproveJob(jobId, "", []);
+     ```
+
+  3. **Rewards & slashing** – when required approvals/disapprovals are met, correct validators split `validationRewardPercentage` of escrow plus any slashed stake. Incorrect votes lose `slashingPercentage` of their bonded tokens.
+
+     ```ts
+     await agiJobManager.connect(v1).validateJob(jobId, "", []);
+     await agiJobManager.connect(v2).disapproveJob(jobId, "", []);
+     // finalization distributes rewards and applies slashing
+     ```
+
+  4. **Withdraw stake** – succeeds only after every job you've voted on is finalized without disputes.
+
+     ```ts
+     await agiJobManager.connect(validator).withdrawStake(ethers.parseUnits("100", 18));
+     ```
+
+- **Owner‑configurable parameters:** [setValidatorConfig](contracts/AGIJobManagerv1.sol#L718-L738), [setStakeRequirement](contracts/AGIJobManagerv1.sol#L691-L694), [setSlashingPercentage](contracts/AGIJobManagerv1.sol#L699-L703), [setValidationRewardPercentage](contracts/AGIJobManagerv1.sol#L645-L652), [setMinValidatorReputation](contracts/AGIJobManagerv1.sol#L705-L708), and [setSlashedStakeRecipient](contracts/AGIJobManagerv1.sol#L683-L686).
 - Validators must maintain an on-chain stake and reputation before voting. `stakeRequirement` defines the minimum bonded $AGI, while `slashingPercentage` dictates how much of that stake is forfeited on an incorrect vote. When a job concludes, validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow plus any slashed stake; others lose the slashed amount. The owner may set `validationRewardPercentage` to `0` to disable rewards entirely.
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and may top up incrementally. Validation is only permitted once their total stake meets `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
