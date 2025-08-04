@@ -163,6 +163,7 @@ Several operational parameters are adjustable by the owner. Every update emits a
 
 Validator staking economics are owner‑configurable as well:
 
+- `setValidatorConfig(uint256 rewardPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals)` → `ValidatorConfigUpdated`
 - `setStakeRequirement(uint256 amount)` → `StakeRequirementUpdated`
 - `setSlashingPercentage(uint256 percentage)` → `SlashingPercentageUpdated`
 - `setValidationRewardPercentage(uint256 percentage)` → `ValidationRewardPercentageUpdated` (set to `0` to disable rewards)
@@ -191,7 +192,7 @@ Incorrect validator votes lose stake according to `slashingPercentage`. Slashed 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and may top up incrementally. Validation is only permitted once their total stake meets `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
 - **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` basis points of the remaining escrow along with any slashed stake. If no votes are correct, the slashed tokens are sent to `slashedStakeRecipient`.
 - **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` basis points of staked tokens and incur a reputation deduction.
-- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, and `slashedStakeRecipient` individually, or update them and the approval thresholds in a single call via `setValidatorConfig`; each `onlyOwner` update emits a dedicated event.
 - **Dispute lock** – once a job is disputed, no additional validator votes are accepted until a moderator resolves the dispute.
 - **Single-shot voting** – validators cannot change their vote once cast; a validator address may approve *or* disapprove a job, but never both. Attempts to vote twice revert.
 

@@ -290,6 +290,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
     event ValidatorPayout(address indexed validator, uint256 amount);
+    event ValidatorConfigUpdated(
+        uint256 rewardPercentage,
+        uint256 stakeRequirement,
+        uint256 slashingPercentage,
+        uint256 minValidatorReputation,
+        uint256 requiredApprovals,
+        uint256 requiredDisapprovals
+    );
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
@@ -667,6 +675,32 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function setMinValidatorReputation(uint256 minimum) external onlyOwner {
         minValidatorReputation = minimum;
         emit MinValidatorReputationUpdated(minimum);
+    }
+
+    function setValidatorConfig(
+        uint256 rewardPercentage,
+        uint256 stakeReq,
+        uint256 slashPercentage,
+        uint256 minRep,
+        uint256 approvals,
+        uint256 disapprovals
+    ) external onlyOwner {
+        require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        validationRewardPercentage = rewardPercentage;
+        stakeRequirement = stakeReq;
+        slashingPercentage = slashPercentage;
+        minValidatorReputation = minRep;
+        requiredValidatorApprovals = approvals;
+        requiredValidatorDisapprovals = disapprovals;
+        emit ValidatorConfigUpdated(
+            rewardPercentage,
+            stakeReq,
+            slashPercentage,
+            minRep,
+            approvals,
+            disapprovals
+        );
     }
 
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {
