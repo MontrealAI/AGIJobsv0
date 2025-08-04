@@ -17,4 +17,20 @@ sequenceDiagram
     AGI-->>Validator: Validation reward
 ```
 
+## Employer-Win Dispute Flow
+
+```mermaid
+sequenceDiagram
+    participant Employer
+    participant Agent
+    participant Validator
+    participant AGI as "AGI Token"
+
+    Employer->>Agent: Post job & escrow AGI
+    Agent->>Validator: Submit work
+    Validator-->>Employer: Reject work
+    AGI-->>Validator: Split reward & slashed stake
+    AGI-->>Employer: Return remaining escrow
+```
+
 For a standalone diagram, see [architecture.md](architecture.md).
