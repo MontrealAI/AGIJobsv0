@@ -51,7 +51,6 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
     await manager.connect(validator).validateJob(jobId, "", []);
-    await manager.connect(validator).finalizeJobAndBurn(jobId);
 
     const burnAmount = (payout * 1000n) / 10000n;
     const remaining = payout - burnAmount;
@@ -76,7 +75,6 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
     await manager.connect(validator).validateJob(jobId, "", []);
-    await manager.connect(validator).finalizeJobAndBurn(jobId);
 
     const validatorPayoutTotal = (payout * 8n) / 100n;
     const agentExpected = payout - validatorPayoutTotal;
@@ -100,7 +98,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("restricts burn address updates to owner and emits event", async function () {
-    const { manager, owner, employer } = await deployFixture();
+    const { manager, employer } = await deployFixture();
     const newAddress = ethers.getAddress(
       "0x000000000000000000000000000000000000BEEF"
     );
@@ -141,15 +139,13 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
-    await manager.connect(validator).validateJob(jobId, "", []);
-
     const burnAmount = (payout * 1000n) / 10000n;
     const remaining = payout - burnAmount;
     const validatorPayoutTotal = (remaining * 8n) / 100n;
     const agentExpected = remaining - validatorPayoutTotal;
 
     await expect(
-      manager.connect(validator).finalizeJobAndBurn(jobId)
+      manager.connect(validator).validateJob(jobId, "", [])
     )
       .to.emit(manager, "JobFinalizedAndBurned")
       .withArgs(jobId, agent.address, employer.address, agentExpected, burnAmount);

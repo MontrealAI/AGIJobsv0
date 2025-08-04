@@ -277,11 +277,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         _;
     }
 
-    modifier onlyValidator(uint256 _jobId) {
-        require(jobs[_jobId].approvals[msg.sender], "Not authorized validator");
-        _;
-    }
-
     function pause() external onlyOwner {
         _pause();
     }
@@ -332,6 +327,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.validators.push(msg.sender);
         validatorApprovedJobs[msg.sender].push(_jobId);
         emit JobValidated(_jobId, msg.sender);
+        if (job.validatorApprovals >= requiredValidatorApprovals) {
+            _finalizeJob(_jobId);
+        }
     }
 
     function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
@@ -349,22 +347,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             job.disputed = true;
             emit JobDisputed(_jobId, msg.sender);
         }
-    }
-
-    function finalizeJobAndBurn(uint256 _jobId)
-        external
-        onlyValidator(_jobId)
-        whenNotPaused
-        nonReentrant
-    {
-        Job storage job = jobs[_jobId];
-        require(job.completionRequested, "Completion not requested");
-        require(
-            job.validatorApprovals >= requiredValidatorApprovals,
-            "Insufficient approvals"
-        );
-        require(!job.completed, "Job already completed");
-        _finalizeJob(_jobId);
     }
 
     function disputeJob(uint256 _jobId) external whenNotPaused nonReentrant {
