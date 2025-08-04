@@ -9,7 +9,7 @@
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; not deployed.
+- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; not deployed. No contract address currently exists; treat any address claiming to be v1 as unverified until announced through official channels.
 
 ## Disclaimer
 
@@ -42,7 +42,7 @@ All addresses should be independently verified before use.
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
-- **v1 – Development:** Uses Solidity 0.8.30 (pinned) with custom errors and gas‑optimized loops; deployment address: _TBA_.
+- **v1 – Development:** Uses Solidity 0.8.30 (pinned) with custom errors and gas‑optimized loops; deployment address: _TBA_. Any contract advertised as v1 prior to an official release should be regarded as untrusted.
 
 > **Caution:** v0 is frozen and must not be modified. All new work should target v1.
 
@@ -276,7 +276,7 @@ Always deploy to a public test network first and independently verify the result
 | v0 | Ethereum mainnet | [0x0178…ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477) | Immutable |
 | v1 | _TBA_ | _TBA_ | In development |
 
-> Cross-check the address on an official block explorer before interacting.
+> Cross-check the address on an official block explorer before interacting. No mainnet address exists for v1 at this time.
 
 ## Contract Verification
 
