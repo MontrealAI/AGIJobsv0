@@ -474,21 +474,21 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             delete job.validators;
 
             if (correctValidatorCount == 0) {
-                validatorPayoutTotal = 0;
-            }
-
-            uint256 validatorPayout =
-                correctValidatorCount > 0
-                    ? validatorPayoutTotal / correctValidatorCount
-                    : 0;
-            uint256 slashedReward =
-                correctValidatorCount > 0
-                    ? totalSlashed / correctValidatorCount
-                    : 0;
-
-            if (correctValidatorCount == 0 && totalSlashed > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+                if (totalSlashed > 0) {
+                    agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+                }
+                agiToken.safeTransfer(job.employer, job.payout);
             } else {
+                uint256 validatorPayout =
+                    validatorPayoutTotal / correctValidatorCount;
+                uint256 slashedReward = totalSlashed / correctValidatorCount;
+                uint256 distributedValidator =
+                    validatorPayout * correctValidatorCount;
+                uint256 distributedSlashed =
+                    slashedReward * correctValidatorCount;
+                uint256 leftover =
+                    (validatorPayoutTotal - distributedValidator) +
+                    (totalSlashed - distributedSlashed);
                 for (uint256 i = 0; i < correctValidators.length; i++) {
                     uint256 reward = validatorPayout + slashedReward;
                     if (reward > 0) {
@@ -496,10 +496,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                         emit ValidatorPayout(correctValidators[i], reward);
                     }
                 }
+                if (leftover > 0) {
+                    agiToken.safeTransfer(correctValidators[0], leftover);
+                    emit ValidatorPayout(correctValidators[0], leftover);
+                }
+                uint256 employerRefund = job.payout - validatorPayoutTotal;
+                agiToken.safeTransfer(job.employer, employerRefund);
             }
-
-            uint256 employerRefund = job.payout - validatorPayoutTotal;
-            agiToken.safeTransfer(job.employer, employerRefund);
         }
         job.disputed = false;
         emit DisputeResolved(_jobId, msg.sender, outcome);
@@ -923,9 +926,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             correctValidatorCount > 0
                 ? totalSlashed / correctValidatorCount
                 : 0;
+        uint256 distributedValidator =
+            validatorPayout * correctValidatorCount;
+        uint256 distributedSlashed =
+            slashedReward * correctValidatorCount;
+        uint256 leftover =
+            (validatorPayoutTotal - distributedValidator) +
+            (totalSlashed - distributedSlashed);
 
-        if (correctValidatorCount == 0 && totalSlashed > 0) {
-            agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+        if (correctValidatorCount == 0) {
+            if (totalSlashed > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+            }
         } else {
             for (uint256 i = 0; i < approvedValidators.length; i++) {
                 uint256 reward = validatorPayout + slashedReward;
@@ -933,6 +945,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                     agiToken.safeTransfer(approvedValidators[i], reward);
                     emit ValidatorPayout(approvedValidators[i], reward);
                 }
+            }
+            if (leftover > 0) {
+                agiToken.safeTransfer(approvedValidators[0], leftover);
+                emit ValidatorPayout(approvedValidators[0], leftover);
             }
         }
 
