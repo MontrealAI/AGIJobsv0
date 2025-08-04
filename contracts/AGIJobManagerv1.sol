@@ -436,8 +436,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 (job.payout * validationRewardPercentage) /
                 PERCENTAGE_DENOMINATOR;
             uint256 completionTime = block.timestamp - job.assignedAt;
-            uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
-            uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
+            uint256 reputationPoints =
+                calculateReputationPoints(job.payout, completionTime);
+            uint256 validatorReputationChange =
+                calculateValidatorReputationPoints(reputationPoints);
             uint256 correctValidatorCount = 0;
             uint256 totalSlashed = 0;
 
@@ -460,12 +462,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
             }
 
-            uint256 validatorPayout = correctValidatorCount > 0
-                ? validatorPayoutTotal / correctValidatorCount
-                : 0;
-            uint256 slashedReward = correctValidatorCount > 0
-                ? totalSlashed / correctValidatorCount
-                : 0;
+            if (correctValidatorCount == 0) {
+                validatorPayoutTotal = 0;
+            }
+
+            uint256 validatorPayout =
+                correctValidatorCount > 0
+                    ? validatorPayoutTotal / correctValidatorCount
+                    : 0;
+            uint256 slashedReward =
+                correctValidatorCount > 0
+                    ? totalSlashed / correctValidatorCount
+                    : 0;
 
             if (correctValidatorCount == 0 && totalSlashed > 0) {
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
@@ -846,7 +854,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 validatorPayoutTotal =
             (job.payout * validationRewardPercentage) /
             PERCENTAGE_DENOMINATOR;
-        uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
+        uint256 validatorReputationChange =
+            calculateValidatorReputationPoints(reputationPoints);
         uint256 correctValidatorCount = 0;
         uint256 totalSlashed = 0;
 
@@ -869,12 +878,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             }
         }
 
-        uint256 validatorPayout = correctValidatorCount > 0
-            ? validatorPayoutTotal / correctValidatorCount
-            : 0;
-        uint256 slashedReward = correctValidatorCount > 0
-            ? totalSlashed / correctValidatorCount
-            : 0;
+        if (correctValidatorCount == 0) {
+            validatorPayoutTotal = 0;
+        }
+
+        uint256 validatorPayout =
+            correctValidatorCount > 0
+                ? validatorPayoutTotal / correctValidatorCount
+                : 0;
+        uint256 slashedReward =
+            correctValidatorCount > 0
+                ? totalSlashed / correctValidatorCount
+                : 0;
 
         if (correctValidatorCount == 0 && totalSlashed > 0) {
             agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
