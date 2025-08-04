@@ -82,6 +82,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 
 - **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `5%` (500 basis points) and can be updated only by the contract owner via `setBurnPercentage(newBps)`. This call emits `BurnPercentageUpdated(newBps)`.
 - **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`; the owner may redirect burns with `setBurnAddress(newAddress)`, emitting `BurnAddressUpdated(newAddress)`.
+- **setBurnConfig(newAddress, newBps)** – convenience method for owners to update both settings atomically. Emits `BurnAddressUpdated(newAddress)` and `BurnPercentageUpdated(newBps)` in a single transaction.
 - **Automatic finalization** – the final validator approval executes `_finalizeJob`, minting the completion NFT, releasing payment and burning `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned(jobId, agent, employer, payoutToAgent, tokensBurned)` records the transfer.
 - **Caution:** Tokens sent to the burn address are irrecoverable; monitor `BurnPercentageUpdated` and `BurnAddressUpdated` events when changing parameters.
 
@@ -95,9 +96,8 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 
 **Setup checklist**
 
-1. `setBurnPercentage(newBps)` – define the portion of escrow to destroy.
-2. `setBurnAddress(newAddress)` – choose where burned tokens go.
-3. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
+1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
+2. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**
 
