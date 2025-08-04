@@ -442,14 +442,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 calculateReputationPoints(job.payout, completionTime);
             uint256 validatorReputationChange =
                 calculateValidatorReputationPoints(reputationPoints);
-            uint256 correctValidatorCount = 0;
+            uint256 correctValidatorCount = job.validatorDisapprovals;
+            address[] memory correctValidators =
+                new address[](correctValidatorCount);
+            uint256 correctIndex = 0;
             uint256 totalSlashed = 0;
 
             for (uint256 i = 0; i < job.validators.length; i++) {
                 address validator = job.validators[i];
                 if (job.disapprovals[validator]) {
                     _removeValidatorDisapprovedJob(validator, _jobId);
-                    correctValidatorCount++;
+                    correctValidators[correctIndex++] = validator;
+                    enforceReputationGrowth(validator, validatorReputationChange);
                 } else if (job.approvals[validator]) {
                     _removeValidatorApprovedJob(validator, _jobId);
                     uint256 slashAmount =
@@ -462,7 +466,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                     }
                     enforceReputationPenalty(validator, validatorReputationChange);
                 }
+                delete job.approvals[validator];
+                delete job.disapprovals[validator];
             }
+
+            delete job.validators;
 
             if (correctValidatorCount == 0) {
                 validatorPayoutTotal = 0;
@@ -479,23 +487,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
             if (correctValidatorCount == 0 && totalSlashed > 0) {
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
-            }
-
-            for (uint256 i = 0; i < job.validators.length; i++) {
-                address validator = job.validators[i];
-                if (job.disapprovals[validator]) {
+            } else {
+                for (uint256 i = 0; i < correctValidators.length; i++) {
                     uint256 reward = validatorPayout + slashedReward;
                     if (reward > 0) {
-                        agiToken.safeTransfer(validator, reward);
-                        emit ValidatorPayout(validator, reward);
+                        agiToken.safeTransfer(correctValidators[i], reward);
+                        emit ValidatorPayout(correctValidators[i], reward);
                     }
-                    enforceReputationGrowth(validator, validatorReputationChange);
                 }
-                delete job.approvals[validator];
-                delete job.disapprovals[validator];
             }
-
-            delete job.validators;
 
             uint256 employerRefund = job.payout - validatorPayoutTotal;
             agiToken.safeTransfer(job.employer, employerRefund);
@@ -867,14 +867,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             PERCENTAGE_DENOMINATOR;
         uint256 validatorReputationChange =
             calculateValidatorReputationPoints(reputationPoints);
-        uint256 correctValidatorCount = 0;
+        uint256 correctValidatorCount = job.validatorApprovals;
+        address[] memory approvedValidators =
+            new address[](correctValidatorCount);
+        uint256 approvedIndex = 0;
         uint256 totalSlashed = 0;
 
         for (uint256 i = 0; i < job.validators.length; i++) {
             address validator = job.validators[i];
             if (job.approvals[validator]) {
                 _removeValidatorApprovedJob(validator, _jobId);
-                correctValidatorCount++;
+                approvedValidators[approvedIndex++] = validator;
+                enforceReputationGrowth(validator, validatorReputationChange);
             } else {
                 _removeValidatorDisapprovedJob(validator, _jobId);
                 uint256 slashAmount =
@@ -887,7 +891,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
                 enforceReputationPenalty(validator, validatorReputationChange);
             }
+            delete job.approvals[validator];
+            delete job.disapprovals[validator];
         }
+
+        delete job.validators;
 
         if (correctValidatorCount == 0) {
             validatorPayoutTotal = 0;
@@ -904,23 +912,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
         if (correctValidatorCount == 0 && totalSlashed > 0) {
             agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
-        }
-
-        for (uint256 i = 0; i < job.validators.length; i++) {
-            address validator = job.validators[i];
-            if (job.approvals[validator]) {
+        } else {
+            for (uint256 i = 0; i < approvedValidators.length; i++) {
                 uint256 reward = validatorPayout + slashedReward;
                 if (reward > 0) {
-                    agiToken.safeTransfer(validator, reward);
-                    emit ValidatorPayout(validator, reward);
+                    agiToken.safeTransfer(approvedValidators[i], reward);
+                    emit ValidatorPayout(approvedValidators[i], reward);
                 }
-                enforceReputationGrowth(validator, validatorReputationChange);
             }
-            delete job.approvals[validator];
-            delete job.disapprovals[validator];
         }
-
-        delete job.validators;
 
         uint256 agentPayout = job.payout - burnAmount - validatorPayoutTotal;
         uint256 bonusPercentage = getHighestPayoutPercentage(job.assignedAgent);
