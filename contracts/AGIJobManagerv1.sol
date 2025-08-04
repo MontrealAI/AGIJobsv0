@@ -251,6 +251,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event BurnAddressUpdated(address indexed newBurnAddress);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
+    /// @notice Emitted when the validation reward percentage is updated.
+    event ValidationRewardPercentageUpdated(uint256 newPercentage);
     event StakeDeposited(address indexed validator, uint256 amount);
     event StakeWithdrawn(address indexed validator, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
@@ -513,9 +515,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         return (job.completed, job.completionRequested, job.ipfsHash);
     }
 
+    /// @notice Update the percentage of job payout allocated to validators.
+    /// @param _percentage New reward percentage for validators.
     function setValidationRewardPercentage(uint256 _percentage) external onlyOwner {
         require(_percentage > 0 && _percentage <= 100, "Invalid percentage");
         validationRewardPercentage = _percentage;
+        emit ValidationRewardPercentageUpdated(_percentage);
     }
 
     /// @notice Update burn rate in basis points.
