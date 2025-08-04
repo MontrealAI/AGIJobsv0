@@ -87,6 +87,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
   - Misaligned votes incur stake slashing and reputation penalties.
   - All validator parameters (reward %, slashing %, stake requirement,
     approval thresholds, etc.) are owner-configurable.
+  - Setting the stake requirement or slashing percentage to `0` disables those mechanisms.
 - **Basis-point standardization** – percentage parameters like burns, slashing, and rewards are expressed in basis points for deterministic math.
 - **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address) while the validator reward portion reverts to the agent or employer.
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
