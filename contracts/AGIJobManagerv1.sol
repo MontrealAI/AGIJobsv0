@@ -208,6 +208,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     mapping(address => bool) public additionalValidators;
     mapping(address => bool) public additionalAgents;
     mapping(address => uint256[]) public validatorApprovedJobs;
+    mapping(address => uint256[]) public validatorDisapprovedJobs;
     mapping(uint256 => Listing) public listings;
     mapping(address => bool) public blacklistedAgents;
     mapping(address => bool) public blacklistedValidators;
@@ -347,7 +348,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (isNewValidator) {
             job.validators.push(msg.sender);
         }
-        validatorApprovedJobs[msg.sender].push(_jobId);
+        validatorDisapprovedJobs[msg.sender].push(_jobId);
         emit JobDisapproved(_jobId, msg.sender);
         if (job.validatorDisapprovals >= requiredValidatorDisapprovals) {
             job.disputed = true;
