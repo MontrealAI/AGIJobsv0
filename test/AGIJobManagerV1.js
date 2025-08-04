@@ -81,4 +81,19 @@ describe("AGIJobManagerV1 payouts", function () {
 
     expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
   });
+
+  it("rejects validation before completion is requested", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("1000");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+
+    await expect(
+      manager.connect(validator).validateJob(jobId, "", [])
+    ).to.be.revertedWith("Completion not requested");
+  });
 });
