@@ -13,7 +13,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; features `JobFinalizedAndBurned` and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
+- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; features `finalizeJobAndBurn`, `JobFinalizedAndBurned`, and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -80,9 +80,10 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply.
 
-- **Default burn percentage:** `0` (no burn until set).
-- **Burn address:** `burnAddress` (`0x000000000000000000000000000000000000dEaD`).
-- **Owner controls:** `setBurnPercentage` (0–10,000 bps) adjusts the rate; `setBurnAddress` updates the burn destination; `JobFinalizedAndBurned` logs agent payouts and tokens destroyed.
+- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated by the owner via `setBurnPercentage(newBps)`, which emits `BurnPercentageUpdated(oldBps, newBps)`.
+- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD` but may be changed by the owner using `setBurnAddress(newAddress)`, emitting `BurnAddressUpdated(oldAddress, newAddress)`.
+- **finalizeJobAndBurn** – validators or employers call this function after work is approved to release payment and trigger burning. The worker receives the remaining funds, while `burnPercentage` of the escrow is sent to `burnAddress`; `JobFinalizedAndBurned` records the payout and burn.
+- **Caution:** Only the owner may alter `burnPercentage` or `burnAddress`, and tokens sent to the burn address are irrecoverable.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
