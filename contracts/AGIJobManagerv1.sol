@@ -609,11 +609,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @notice Update the percentage of job payout allocated to validators.
     /// @param _percentage New reward percentage for validators in basis points.
+    /// @dev Setting `_percentage` to 0 disables validator rewards.
     function setValidationRewardPercentage(uint256 _percentage) external onlyOwner {
-        require(
-            _percentage > 0 && _percentage <= PERCENTAGE_DENOMINATOR,
-            "Invalid percentage"
-        );
+        require(_percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         validationRewardPercentage = _percentage;
         emit ValidationRewardPercentageUpdated(_percentage);
     }
@@ -969,12 +967,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         additionalAgents[agent] = false;
     }
 
+    /// @notice Deposit $AGI to satisfy the staking requirement for validators.
+    /// @param amount Quantity of tokens to stake.
+    /// @dev Validators may top up their stake in multiple transactions; validation
+    ///      functions enforce that the total meets `stakeRequirement` before voting.
     function stake(uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert InvalidAmount();
-        require(
-            validatorStake[msg.sender] + amount >= stakeRequirement,
-            "Stake below requirement"
-        );
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         validatorStake[msg.sender] += amount;
         emit StakeDeposited(msg.sender, amount);
