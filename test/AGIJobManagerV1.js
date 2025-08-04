@@ -649,5 +649,33 @@ describe("AGIJobManagerV1 payouts", function () {
         manager.connect(validator).revealValidation(jobId, true, salt)
       ).to.be.revertedWith("Reveal phase over");
     });
+
+    it("blocks stake withdrawal with pending commits", async function () {
+      const { token, manager, employer, agent, validator } = await deployFixture();
+      await manager.setCommitRevealWindows(100, 100);
+      const stakeAmount = ethers.parseEther("100");
+      await token.mint(validator.address, stakeAmount);
+      await token
+        .connect(validator)
+        .approve(await manager.getAddress(), stakeAmount);
+      await manager.connect(validator).stake(stakeAmount);
+      const payout = ethers.parseEther("100");
+      await token.connect(employer).approve(await manager.getAddress(), payout);
+      await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+      const jobId = 0;
+      await manager.connect(agent).applyForJob(jobId, "", []);
+      await manager.connect(agent).requestJobCompletion(jobId, "result");
+      const salt = ethers.id("pendingCommit");
+      const commitment = ethers.solidityPackedKeccak256(
+        ["address", "uint256", "bool", "bytes32"],
+        [validator.address, jobId, true, salt]
+      );
+      await manager
+        .connect(validator)
+        .commitValidation(jobId, commitment, "", []);
+      await expect(
+        manager.connect(validator).withdrawStake(stakeAmount)
+      ).to.be.revertedWith("Pending commitments");
+    });
   });
 });
