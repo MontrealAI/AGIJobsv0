@@ -11,11 +11,11 @@
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; not deployed.
 
-> Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
+## Disclaimer
 
-> **Audit Status:** _Unaudited – use at your own risk._
-
-> **Security Notice:** This repository is research code. Confirm contract addresses, compiled bytecode, and deployment parameters yourself and experiment on public testnets before interacting with real assets.
+- Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
+- **Audit Status:** Unaudited – use at your own risk.
+- **Security Notice:** This repository is research code. Confirm contract addresses, compiled bytecode, and deployment parameters yourself and experiment on public testnets before interacting with real assets.
 
 ## Safety Checklist
 
@@ -70,6 +70,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 ## Table of Contents
 - [Quick Links](#quick-links)
+- [Disclaimer](#disclaimer)
 - [Safety Checklist](#safety-checklist)
 - [Overview](#overview)
 - [Versions](#versions)
