@@ -228,6 +228,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     mapping(uint256 => Job) public jobs;
     mapping(address => uint256) public reputation;
     mapping(address => uint256) public validatorStake;
+    mapping(address => uint256) public pendingCommits;
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
     mapping(address => bool) public additionalAgents;
@@ -434,6 +435,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(job.commitments[msg.sender] == bytes32(0), "Already committed");
         job.commitments[msg.sender] = commitment;
         job.validators.push(msg.sender);
+        pendingCommits[msg.sender] += 1;
         emit ValidationCommitted(_jobId, msg.sender, commitment);
     }
 
@@ -585,6 +587,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                         emit StakeSlashed(validator, slashAmount);
                     }
                     enforceReputationPenalty(validator, validatorReputationChange);
+                }
+                if (pendingCommits[validator] > 0) {
+                    pendingCommits[validator] -= 1;
                 }
                 delete job.approvals[validator];
                 delete job.disapprovals[validator];
@@ -1071,6 +1076,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
                 enforceReputationPenalty(validator, validatorReputationChange);
             }
+            if (pendingCommits[validator] > 0) {
+                pendingCommits[validator] -= 1;
+            }
             delete job.approvals[validator];
             delete job.disapprovals[validator];
             delete job.commitments[validator];
@@ -1245,6 +1253,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             validatorApprovedJobs[msg.sender].length == 0 &&
                 validatorDisapprovedJobs[msg.sender].length == 0,
             "Pending or disputed job"
+        );
+        require(
+            pendingCommits[msg.sender] == 0,
+            "Pending commitments"
         );
         validatorStake[msg.sender] -= amount;
         require(
