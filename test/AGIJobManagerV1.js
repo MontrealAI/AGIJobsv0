@@ -55,9 +55,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator).validateJob(jobId, "", []);
 
       const burnAmount = (payout * 1000n) / 10000n;
-      const remaining = payout - burnAmount;
-      const validatorPayoutTotal = (remaining * 800n) / 10000n;
-    const agentExpected = remaining - validatorPayoutTotal;
+      const validatorPayoutTotal = (payout * 800n) / 10000n;
+    const agentExpected = payout - burnAmount - validatorPayoutTotal;
     const burnAddr = await manager.burnAddress();
 
     expect(await token.balanceOf(burnAddr)).to.equal(burnAmount);
@@ -211,9 +210,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
     const burnAmount = (payout * 1000n) / 10000n;
-    const remaining = payout - burnAmount;
-    const validatorPayoutTotal = (remaining * 800n) / 10000n;
-    const agentExpected = remaining - validatorPayoutTotal;
+    const validatorPayoutTotal = (payout * 800n) / 10000n;
+    const agentExpected = payout - burnAmount - validatorPayoutTotal;
 
     await expect(
       manager.connect(validator).validateJob(jobId, "", [])
