@@ -74,6 +74,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
+- **Stake-based validator incentives** – validators must stake $AGI, misaligned votes are slashed and lose reputation, and owner tunes requirements and rewards.
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
 
 ### Burn Mechanism
@@ -108,6 +109,13 @@ await manager.connect(validator).validateJob(jobId, "", []);
 // employer receives the completion NFT
 ```
 
+### Validator Incentives
+
+- **Staking & withdrawals** – validators deposit $AGI via `stake()` and must maintain at least `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
+- **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow along with any slashed stake.
+- **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` of staked tokens and incur a reputation deduction.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage`, and `validationRewardPercentage` to calibrate incentives.
+
 ## Table of Contents
 - [Quick Links](#quick-links)
 - [Disclaimer](#disclaimer)
@@ -118,6 +126,7 @@ await manager.connect(validator).validateJob(jobId, "", []);
 - [Project Purpose](#project-purpose)
 - [Features](#features)
 - [Burn Mechanism](#burn-mechanism)
+- [Validator Incentives](#validator-incentives)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
@@ -279,6 +288,13 @@ forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerV1 --chain sepoli
 
 Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
 
+6. **Stake & validate (example)**
+   ```ts
+   await agiJobManager.stake(ethers.parseUnits("100", 18)); // deposit required stake
+   await agiJobManager.validateJob(jobId); // cast a vote
+   await agiJobManager.withdrawStake(ethers.parseUnits("100", 18)); // withdraw after finalization
+   ```
+
 ## Deployment
 
 The `scripts/deploy.ts` helper reads its configuration from environment variables. Define them before running the script:
@@ -369,13 +385,16 @@ Compare the compiler settings and bytecode against the deployed address on multi
   await agiJobManager.delistNFT(tokenId);
   ```
 
-#### Validator Flow
+#### Validator Staking & Flow
 
-Validators call `validateJob` until the approval threshold is met. The final call automatically releases payment, burns the configured portion, and mints the completion NFT.
+Validators stake tokens before voting. Correct votes share rewards, while incorrect votes are slashed and lose reputation. The final approval releases payment, burns tokens, and mints the completion NFT.
 
 ```ts
+await agiJobManager.connect(v1).stake(ethers.parseUnits("100", 18));
+await agiJobManager.connect(v2).stake(ethers.parseUnits("100", 18));
 await agiJobManager.connect(v1).validateJob(jobId); // 1/2 approvals
 await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals triggers burn and payout
+await agiJobManager.connect(v1).withdrawStake(ethers.parseUnits("100", 18)); // after job finalization
 ```
 
 CLI example using `cast`:
