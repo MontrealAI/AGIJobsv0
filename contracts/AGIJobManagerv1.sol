@@ -179,6 +179,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public commitDuration;
     /// @notice Duration of the reveal phase following commits.
     uint256 public revealDuration;
+    /// @notice Waiting period after completion request before validators may vote.
+    uint256 public reviewWindow;
 
     struct Job {
         uint256 id;
@@ -190,6 +192,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 assignedAt;
         bool completed;
         bool completionRequested;
+        uint256 completionRequestedAt; // timestamp when completion was requested
         uint256 validatorApprovals;
         uint256 validatorDisapprovals;
         bool disputed;
@@ -248,6 +251,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidationCommitted(uint256 jobId, address validator, bytes32 commitment);
     event ValidationRevealed(uint256 jobId, address validator, bool approved);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
+    event ReviewWindowUpdated(uint256 newWindow);
     event JobFinalizedAndBurned(
         uint256 indexed jobId,
         address indexed agent,
@@ -355,7 +359,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function unpause() external onlyOwner {
         _unpause();
     }
-
+    /// Job lifecycle overview:
+    /// 1. Employer calls `createJob`.
+    /// 2. An agent `applyForJob`.
+    /// 3. The agent submits results via `requestJobCompletion`, starting the `reviewWindow`.
+    /// 4. Validators commit and reveal votes.
+    /// 5. After `reviewWindow` elapses, validators call `validateJob` or `disapproveJob`.
+    ///    Sufficient approvals finalize the job; enough disapprovals open a dispute.
     function createJob(string memory _ipfsHash, uint256 _payout, uint256 _duration, string memory _details) external whenNotPaused nonReentrant {
         require(_payout > 0 && _duration > 0 && _payout <= maxJobPayout && _duration <= jobDurationLimit, "Invalid job parameters");
         uint256 jobId = nextJobId++;
@@ -379,12 +389,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit JobApplied(_jobId, msg.sender);
     }
 
+    /// @notice Agent submits job results and starts the review window.
     function requestJobCompletion(uint256 _jobId, string calldata _ipfsHash) external whenNotPaused {
         Job storage job = jobs[_jobId];
         require(msg.sender == job.assignedAgent && block.timestamp <= job.assignedAt + job.duration, "Not authorized or expired");
         job.ipfsHash = _ipfsHash;
         job.completionRequested = true;
         job.validationStart = block.timestamp;
+        job.completionRequestedAt = block.timestamp;
         emit JobCompletionRequested(_jobId, msg.sender);
     }
 
@@ -459,7 +471,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit ValidationRevealed(_jobId, msg.sender, approve);
     }
 
-    /// @notice Approve a job's completion.
+    /// @notice Approve a job's completion after the review window has elapsed.
     /// @dev Only validators with sufficient stake and reputation may vote.
     ///      Rewards are paid only to validators whose approvals match the final
     ///      outcome; incorrect approvals are slashed and lose reputation.
@@ -471,6 +483,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
+        require(block.timestamp >= job.completionRequestedAt + reviewWindow, "Review window active");
         require(job.revealed[msg.sender], "Vote not revealed");
         require(job.revealedVotes[msg.sender], "Commitment mismatched");
         require(
@@ -488,7 +501,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
     }
 
-    /// @notice Reject a job's completion.
+    /// @notice Reject a job's completion after the review window has elapsed.
     /// @dev Misaligned disapprovals are slashed and penalized. Validators voting
     ///      with the ultimate outcome share the reward pool and any slashed stake.
     function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
@@ -499,6 +512,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
+        require(block.timestamp >= job.completionRequestedAt + reviewWindow, "Review window active");
         require(job.revealed[msg.sender], "Vote not revealed");
         require(!job.revealedVotes[msg.sender], "Commitment mismatched");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
@@ -818,6 +832,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         commitDuration = commitWindow;
         revealDuration = revealWindow;
         emit CommitRevealWindowsUpdated(commitWindow, revealWindow);
+    }
+
+    /// @notice Update the mandatory waiting period after completion requests.
+    /// @param newWindow Duration in seconds validators must wait to vote.
+    function setReviewWindow(uint256 newWindow) external onlyOwner {
+        reviewWindow = newWindow;
+        emit ReviewWindowUpdated(newWindow);
     }
 
     /// @notice Atomically update validator incentive parameters.
