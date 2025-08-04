@@ -148,6 +148,7 @@ When validators disapprove a job and the employer prevails:
 await agiJobManager.connect(v1).validateJob(jobId); // incorrect approval; will be slashed
 await agiJobManager.connect(v2).disapproveJob(jobId, "", []);
 await agiJobManager.connect(v3).disapproveJob(jobId, "", []); // employer wins, v2 & v3 rewarded
+await agiJobManager.resolveDispute(jobId, 1); // 1 = DisputeOutcome.EmployerWin
 ```
 
 ## Table of Contents

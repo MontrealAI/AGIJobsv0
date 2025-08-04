@@ -202,6 +202,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         bool isActive;
     }
 
+    enum DisputeOutcome {
+        AgentWin,
+        EmployerWin
+    }
+
     uint256 public nextJobId;
     uint256 public nextTokenId;
     mapping(uint256 => Job) public jobs;
@@ -232,7 +237,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     );
     event ReputationUpdated(address user, uint256 newReputation);
     event JobCancelled(uint256 jobId);
-    event DisputeResolved(uint256 jobId, address resolver, string resolution);
+    event DisputeResolved(uint256 jobId, address resolver, DisputeOutcome outcome);
     event JobDisputed(uint256 jobId, address disputant);
     event ClubRootNodeUpdated(bytes32 indexed newClubRootNode);
     event AgentRootNodeUpdated(bytes32 indexed newAgentRootNode);
@@ -383,12 +388,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit JobDisputed(_jobId, msg.sender);
     }
 
-    function resolveDispute(uint256 _jobId, string calldata resolution) external onlyModerator nonReentrant {
+    function resolveDispute(uint256 _jobId, DisputeOutcome outcome) external onlyModerator nonReentrant {
         Job storage job = jobs[_jobId];
         require(job.disputed, "Job not disputed");
-        if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("agent win"))) {
+        if (outcome == DisputeOutcome.AgentWin) {
             _finalizeJobAndBurn(_jobId);
-        } else if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("employer win"))) {
+        } else if (outcome == DisputeOutcome.EmployerWin) {
             job.completed = true;
             uint256 validatorPayoutTotal = (job.payout * validationRewardPercentage) / 100;
             uint256 completionTime = block.timestamp - job.assignedAt;
@@ -435,7 +440,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             agiToken.safeTransfer(job.employer, employerRefund);
         }
         job.disputed = false;
-        emit DisputeResolved(_jobId, msg.sender, resolution);
+        emit DisputeResolved(_jobId, msg.sender, outcome);
     }
 
     function blacklistAgent(address _agent, bool _status) external onlyOwner {
