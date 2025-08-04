@@ -157,7 +157,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     ENS public ens;
     NameWrapper public nameWrapper;
 
-    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address public burnAddress;
     uint256 public burnPercentage;
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
 
@@ -236,6 +236,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidatorBlacklisted(address indexed validator, bool status);
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
+    event BurnAddressUpdated(address indexed newBurnAddress);
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
@@ -261,6 +262,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         agentRootNode = _agentRootNode;
         validatorMerkleRoot = _validatorMerkleRoot;
         agentMerkleRoot = _agentMerkleRoot;
+        burnAddress = 0x000000000000000000000000000000000000dEaD;
     }
 
     modifier onlyModerator() {
@@ -468,6 +470,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         burnPercentage = newPercentage;
     }
 
+    function setBurnAddress(address newBurnAddress) external onlyOwner {
+        require(newBurnAddress != address(0), "invalid address");
+        burnAddress = newBurnAddress;
+        emit BurnAddressUpdated(newBurnAddress);
+    }
+
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {
         uint256 scaledPayout = _payout / 1e18;
         uint256 payoutPoints = scaledPayout ** 3 / 1e5;
@@ -551,7 +559,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         if (burnAmount > 0) {
-            agiToken.safeTransfer(BURN_ADDRESS, burnAmount);
+            agiToken.safeTransfer(burnAddress, burnAmount);
         }
 
         uint256 tokenId = nextTokenId++;
