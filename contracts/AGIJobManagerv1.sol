@@ -376,6 +376,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit JobCompletionRequested(_jobId, msg.sender);
     }
 
+    /// @notice Approve a job's completion.
+    /// @dev Only validators with sufficient stake and reputation may vote.
+    ///      Rewards are paid only to validators whose approvals match the final
+    ///      outcome; incorrect approvals are slashed and lose reputation.
     function validateJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
@@ -400,6 +404,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
     }
 
+    /// @notice Reject a job's completion.
+    /// @dev Misaligned disapprovals are slashed and penalized. Validators voting
+    ///      with the ultimate outcome share the reward pool and any slashed stake.
     function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
