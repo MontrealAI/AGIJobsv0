@@ -255,6 +255,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event StakeWithdrawn(address indexed validator, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
     event SlashingPercentageUpdated(uint256 newPercentage);
+    event StakeSlashed(address indexed validator, uint256 amount);
+    event ValidatorPayout(address indexed validator, uint256 amount);
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
@@ -381,7 +383,50 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("agent win"))) {
             _finalizeJobAndBurn(_jobId);
         } else if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("employer win"))) {
-            agiToken.safeTransfer(job.employer, job.payout);
+            job.completed = true;
+            uint256 validatorPayoutTotal = (job.payout * validationRewardPercentage) / 100;
+            uint256 completionTime = block.timestamp - job.assignedAt;
+            uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
+            uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
+            uint256 correctValidatorCount = 0;
+            uint256 totalSlashed = 0;
+
+            for (uint256 i = 0; i < job.validators.length; i++) {
+                address validator = job.validators[i];
+                if (job.disapprovals[validator]) {
+                    correctValidatorCount++;
+                } else if (job.approvals[validator]) {
+                    uint256 slashAmount = (validatorStake[validator] * slashingPercentage) / 100;
+                    if (slashAmount > 0) {
+                        validatorStake[validator] -= slashAmount;
+                        totalSlashed += slashAmount;
+                        emit StakeSlashed(validator, slashAmount);
+                    }
+                    enforceReputationPenalty(validator, validatorReputationChange);
+                }
+            }
+
+            uint256 validatorPayout = correctValidatorCount > 0
+                ? validatorPayoutTotal / correctValidatorCount
+                : 0;
+            uint256 slashedReward = correctValidatorCount > 0
+                ? totalSlashed / correctValidatorCount
+                : 0;
+
+            for (uint256 i = 0; i < job.validators.length; i++) {
+                address validator = job.validators[i];
+                if (job.disapprovals[validator]) {
+                    uint256 reward = validatorPayout + slashedReward;
+                    if (reward > 0) {
+                        agiToken.safeTransfer(validator, reward);
+                        emit ValidatorPayout(validator, reward);
+                    }
+                    enforceReputationGrowth(validator, validatorReputationChange);
+                }
+            }
+
+            uint256 employerRefund = job.payout - validatorPayoutTotal;
+            agiToken.safeTransfer(job.employer, employerRefund);
         }
         job.disputed = false;
         emit DisputeResolved(_jobId, msg.sender, resolution);
@@ -619,6 +664,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 if (slashAmount > 0) {
                     validatorStake[validator] -= slashAmount;
                     totalSlashed += slashAmount;
+                    emit StakeSlashed(validator, slashAmount);
                 }
                 enforceReputationPenalty(validator, validatorReputationChange);
             }
@@ -637,6 +683,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 uint256 reward = validatorPayout + slashedReward;
                 if (reward > 0) {
                     agiToken.safeTransfer(validator, reward);
+                    emit ValidatorPayout(validator, reward);
                 }
                 enforceReputationGrowth(validator, validatorReputationChange);
             }
