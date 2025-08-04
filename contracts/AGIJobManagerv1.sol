@@ -544,26 +544,43 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
         uint256 burnAmount = (job.payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
-        uint256 payoutAfterBurn = job.payout - burnAmount;
-
-        uint256 agentPayoutPercentage = getHighestPayoutPercentage(job.assignedAgent);
-        uint256 agentPayout = (payoutAfterBurn * agentPayoutPercentage) / 100;
-
-        agiToken.safeTransfer(job.assignedAgent, agentPayout);
-
-        uint256 totalValidatorPayout = (payoutAfterBurn * validationRewardPercentage) / 100;
-        uint256 validatorPayout = totalValidatorPayout / job.validators.length;
-        uint256 validatorReputationGain = calculateValidatorReputationPoints(reputationPoints);
-
-        for (uint256 i = 0; i < job.validators.length; i++) {
-            address validator = job.validators[i];
-            agiToken.safeTransfer(validator, validatorPayout);
-            enforceReputationGrowth(validator, validatorReputationGain);
-        }
+        uint256 remainingEscrow = job.payout - burnAmount;
 
         if (burnAmount > 0) {
             agiToken.safeTransfer(burnAddress, burnAmount);
         }
+
+        uint256 validatorPayoutTotal = (remainingEscrow * validationRewardPercentage) / 100;
+        uint256 validatorPayout = job.validators.length > 0
+            ? validatorPayoutTotal / job.validators.length
+            : 0;
+        uint256 validatorReputationGain = calculateValidatorReputationPoints(reputationPoints);
+
+        for (uint256 i = 0; i < job.validators.length; i++) {
+            address validator = job.validators[i];
+            if (validatorPayout > 0) {
+                agiToken.safeTransfer(validator, validatorPayout);
+            }
+            enforceReputationGrowth(validator, validatorReputationGain);
+        }
+
+        uint256 agentPayout = remainingEscrow - validatorPayoutTotal;
+        uint256 bonusPercentage = getHighestPayoutPercentage(job.assignedAgent);
+        if (bonusPercentage > 0) {
+            uint256 bonusAmount = (agentPayout * bonusPercentage) / 100;
+            uint256 maxBonus = job.payout - (agentPayout + validatorPayoutTotal + burnAmount);
+            if (bonusAmount > maxBonus) {
+                bonusAmount = maxBonus;
+            }
+            agentPayout += bonusAmount;
+        }
+
+        require(
+            agentPayout + validatorPayoutTotal + burnAmount <= job.payout,
+            "Payout exceeds escrow"
+        );
+
+        agiToken.safeTransfer(job.assignedAgent, agentPayout);
 
         uint256 tokenId = nextTokenId++;
         string memory tokenURI = string(abi.encodePacked(baseIpfsUrl, "/", job.ipfsHash));
