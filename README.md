@@ -84,10 +84,11 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Enum-based dispute resolution** – moderators settle conflicts with a typed `DisputeOutcome` enum instead of fragile string comparisons.
 - **Stake-based validator incentives**
   - Validators must stake $AGI and maintain a minimum reputation.
-  - Only validators voting with the final outcome earn rewards.
-  - Misaligned votes incur stake slashing and reputation penalties.
+  - Rewards accrue only to validators whose votes match the final outcome; others are excluded.
+  - Misaligned votes are slashed and lose reputation; correct validators share the slashed stake.
+  - If no validator votes correctly, slashed stakes go to `slashedStakeRecipient` and the reserved reward portion refunds to the agent or employer.
   - All validator parameters (reward %, slashing %, stake requirement,
-    approval thresholds, slashed-stake recipient, etc.) are owner-configurable.
+    approval thresholds, slashed-stake recipient, etc.) are owner-configurable via `onlyOwner` functions.
   - Setting the stake requirement or slashing percentage to `0` disables those mechanisms.
 - **Basis-point standardization** – percentage parameters like burns, slashing, and rewards are expressed in basis points for deterministic math.
 - **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address) while the validator reward portion reverts to the agent or employer.
