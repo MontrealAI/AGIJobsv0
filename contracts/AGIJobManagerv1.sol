@@ -160,10 +160,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Default address used to irretrievably burn tokens.
     address public constant DEFAULT_BURN_ADDRESS =
         0x000000000000000000000000000000000000dEaD;
+    /// @notice Default portion of a job's payout to burn (5% = 500 basis points).
+    uint256 public constant DEFAULT_BURN_PERCENTAGE = 500;
     /// @notice Destination for burned tokens. Owner may update if needed.
     address public burnAddress = DEFAULT_BURN_ADDRESS;
     /// @notice Portion of a job's payout (in basis points) to destroy on completion.
-    uint256 public burnPercentage;
+    uint256 public burnPercentage = DEFAULT_BURN_PERCENTAGE;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
 
@@ -526,6 +528,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function _finalizeJob(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
+        // Ensure burning and payouts occur only after the job meets validation requirements
+        require(
+            job.validatorApprovals >= requiredValidatorApprovals || job.disputed,
+            "Job not fully validated"
+        );
         job.completed = true;
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
