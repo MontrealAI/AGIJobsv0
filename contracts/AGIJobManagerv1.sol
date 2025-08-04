@@ -317,7 +317,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.validators.push(msg.sender);
         validatorApprovedJobs[msg.sender].push(_jobId);
         emit JobValidated(_jobId, msg.sender);
-        if (job.validatorApprovals >= requiredValidatorApprovals) _completeJob(_jobId);
+        if (job.validatorApprovals >= requiredValidatorApprovals)
+            this.finalizeJobAndBurn(_jobId, subdomain, proof);
     }
 
     function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
@@ -347,12 +348,33 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.disputed, "Job not disputed");
         if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("agent win"))) {
-            _completeJob(_jobId);
+            this.finalizeJobAndBurn(_jobId, "", new bytes32[](0));
         } else if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("employer win"))) {
             agiToken.safeTransfer(job.employer, job.payout);
         }
         job.disputed = false;
         emit DisputeResolved(_jobId, msg.sender, resolution);
+    }
+
+    function finalizeJobAndBurn(
+        uint256 _jobId,
+        string memory subdomain,
+        bytes32[] calldata proof
+    ) external whenNotPaused {
+        if (msg.sender != address(this)) {
+            require(
+                _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
+                    additionalValidators[msg.sender],
+                "Not authorized validator"
+            );
+            require(!blacklistedValidators[msg.sender], "Blacklisted validator");
+        }
+        Job storage job = jobs[_jobId];
+        require(
+            job.validatorApprovals >= requiredValidatorApprovals && !job.completed,
+            "Job not ready for finalization"
+        );
+        _completeJob(_jobId);
     }
 
     function blacklistAgent(address _agent, bool _status) external onlyOwner {
