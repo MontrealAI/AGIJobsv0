@@ -157,6 +157,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     ENS public ens;
     NameWrapper public nameWrapper;
 
+    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    uint256 public burnPercentage;
+    uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
+
     struct Job {
         uint256 id;
         address employer;
@@ -207,6 +211,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event JobValidated(uint256 jobId, address validator);
     event JobDisapproved(uint256 jobId, address validator);
     event JobCompleted(uint256 jobId, address agent, uint256 reputationPoints);
+    event JobFinalizedAndBurned(
+        uint256 indexed jobId,
+        address indexed agent,
+        address indexed employer,
+        uint256 payoutToAgent,
+        uint256 tokensBurned
+    );
     event ReputationUpdated(address user, uint256 newReputation);
     event JobCancelled(uint256 jobId);
     event DisputeResolved(uint256 jobId, address resolver, string resolution);
@@ -430,6 +441,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validationRewardPercentage = _percentage;
     }
 
+    function setBurnPercentage(uint256 newPercentage) external onlyOwner {
+        require(newPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        burnPercentage = newPercentage;
+    }
+
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {
         uint256 scaledPayout = _payout / 1e18;
         uint256 payoutPoints = scaledPayout ** 3 / 1e5;
@@ -494,13 +510,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
+        uint256 burnAmount = (job.payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
+        uint256 payoutAfterBurn = job.payout - burnAmount;
 
         uint256 agentPayoutPercentage = getHighestPayoutPercentage(job.assignedAgent);
-        uint256 agentPayout = (job.payout * agentPayoutPercentage) / 100;
+        uint256 agentPayout = (payoutAfterBurn * agentPayoutPercentage) / 100;
 
         agiToken.safeTransfer(job.assignedAgent, agentPayout);
 
-        uint256 totalValidatorPayout = (job.payout * validationRewardPercentage) / 100;
+        uint256 totalValidatorPayout = (payoutAfterBurn * validationRewardPercentage) / 100;
         uint256 validatorPayout = totalValidatorPayout / job.validators.length;
         uint256 validatorReputationGain = calculateValidatorReputationPoints(reputationPoints);
 
@@ -510,11 +528,22 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             enforceReputationGrowth(validator, validatorReputationGain);
         }
 
+        if (burnAmount > 0) {
+            agiToken.safeTransfer(BURN_ADDRESS, burnAmount);
+        }
+
         uint256 tokenId = nextTokenId++;
         string memory tokenURI = string(abi.encodePacked(baseIpfsUrl, "/", job.ipfsHash));
         _mint(job.employer, tokenId);
         _setTokenURI(tokenId, tokenURI);
         emit NFTIssued(tokenId, job.employer, tokenURI);
+        emit JobFinalizedAndBurned(
+            _jobId,
+            job.assignedAgent,
+            job.employer,
+            agentPayout,
+            burnAmount
+        );
 
         emit JobCompleted(_jobId, job.assignedAgent, reputationPoints);
         emit ReputationUpdated(job.assignedAgent, reputation[job.assignedAgent]);
