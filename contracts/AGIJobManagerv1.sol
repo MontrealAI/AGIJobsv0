@@ -660,6 +660,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setStakeRequirement(uint256 amount) external onlyOwner {
+        require(amount > 0, "Invalid amount");
         stakeRequirement = amount;
         emit StakeRequirementUpdated(amount);
     }
