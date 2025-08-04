@@ -288,5 +288,41 @@ describe("AGIJobManagerV1 payouts", function () {
         .connect(validator)
         .withdrawStake(stakeAmount - slashAmount)
     ).not.to.be.reverted;
+    await expect(
+      manager.validatorApprovedJobs(validator.address, 0)
+    ).to.be.reverted;
+    await expect(
+      manager.validatorDisapprovedJobs(validator2.address, 0)
+    ).to.be.reverted;
+  });
+
+  it("cleans up validator history enabling stake withdrawal after many jobs", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("10");
+    const stakeAmount = ethers.parseEther("100");
+
+    await token.mint(validator.address, stakeAmount);
+    await token.connect(validator).approve(await manager.getAddress(), stakeAmount);
+    await manager.connect(validator).stake(stakeAmount);
+
+    const numJobs = 50;
+    const totalPayout = payout * BigInt(numJobs);
+    await token.connect(employer).approve(await manager.getAddress(), totalPayout);
+
+    for (let i = 0; i < numJobs; i++) {
+      await manager
+        .connect(employer)
+        .createJob("jobhash" + i, payout, 1000, "details");
+      await manager.connect(agent).applyForJob(i, "", []);
+      await manager.connect(agent).requestJobCompletion(i, "result");
+      await manager.connect(validator).validateJob(i, "", []);
+      await expect(
+        manager.validatorApprovedJobs(validator.address, 0)
+      ).to.be.reverted;
+    }
+
+    await expect(
+      manager.connect(validator).withdrawStake(stakeAmount)
+    ).not.to.be.reverted;
   });
 });
