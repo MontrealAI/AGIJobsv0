@@ -255,6 +255,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when the supplied amount is zero or exceeds the contract balance.
     error InvalidAmount();
 
+    /// @dev Thrown when the burn address has not been configured.
+    error BurnAddressNotSet();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -568,7 +571,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 remainingEscrow = job.payout - burnAmount;
 
         if (burnAmount > 0) {
-            require(burnAddress != address(0), "Burn address not set");
+            if (burnAddress == address(0)) revert BurnAddressNotSet();
             agiToken.safeTransfer(burnAddress, burnAmount);
         }
 
