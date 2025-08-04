@@ -220,6 +220,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     mapping(address => bool) public additionalAgents;
     mapping(address => uint256[]) public validatorApprovedJobs;
     mapping(address => uint256[]) public validatorDisapprovedJobs;
+    mapping(address => mapping(uint256 => uint256))
+        private validatorApprovedJobIndex;
+    mapping(address => mapping(uint256 => uint256))
+        private validatorDisapprovedJobIndex;
     mapping(uint256 => Listing) public listings;
     mapping(address => bool) public blacklistedAgents;
     mapping(address => bool) public blacklistedValidators;
@@ -372,7 +376,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.validatorApprovals++;
         job.approvals[msg.sender] = true;
         job.validators.push(msg.sender);
-        validatorApprovedJobs[msg.sender].push(_jobId);
+        _addValidatorApprovedJob(msg.sender, _jobId);
         emit JobValidated(_jobId, msg.sender);
         if (job.validatorApprovals >= requiredValidatorApprovals) {
             _finalizeJobAndBurn(_jobId);
@@ -394,7 +398,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (isNewValidator) {
             job.validators.push(msg.sender);
         }
-        validatorDisapprovedJobs[msg.sender].push(_jobId);
+        _addValidatorDisapprovedJob(msg.sender, _jobId);
         emit JobDisapproved(_jobId, msg.sender);
         if (job.validatorDisapprovals >= requiredValidatorDisapprovals) {
             job.disputed = true;
@@ -428,8 +432,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             for (uint256 i = 0; i < job.validators.length; i++) {
                 address validator = job.validators[i];
                 if (job.disapprovals[validator]) {
+                    _removeValidatorDisapprovedJob(validator, _jobId);
                     correctValidatorCount++;
                 } else if (job.approvals[validator]) {
+                    _removeValidatorApprovedJob(validator, _jobId);
                     uint256 slashAmount =
                         (validatorStake[validator] * slashingPercentage) /
                         PERCENTAGE_DENOMINATOR;
@@ -731,6 +737,43 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
     }
 
+    function _addValidatorApprovedJob(address validator, uint256 jobId) internal {
+        validatorApprovedJobs[validator].push(jobId);
+        validatorApprovedJobIndex[validator][jobId] =
+            validatorApprovedJobs[validator].length;
+    }
+
+    function _addValidatorDisapprovedJob(address validator, uint256 jobId) internal {
+        validatorDisapprovedJobs[validator].push(jobId);
+        validatorDisapprovedJobIndex[validator][jobId] =
+            validatorDisapprovedJobs[validator].length;
+    }
+
+    function _removeValidatorApprovedJob(address validator, uint256 jobId) internal {
+        uint256 indexPlusOne = validatorApprovedJobIndex[validator][jobId];
+        if (indexPlusOne == 0) return;
+        uint256[] storage jobsArray = validatorApprovedJobs[validator];
+        uint256 lastIndex = jobsArray.length - 1;
+        uint256 lastJobId = jobsArray[lastIndex];
+        jobsArray[indexPlusOne - 1] = lastJobId;
+        validatorApprovedJobIndex[validator][lastJobId] = indexPlusOne;
+        jobsArray.pop();
+        delete validatorApprovedJobIndex[validator][jobId];
+    }
+
+    function _removeValidatorDisapprovedJob(address validator, uint256 jobId) internal {
+        uint256 indexPlusOne =
+            validatorDisapprovedJobIndex[validator][jobId];
+        if (indexPlusOne == 0) return;
+        uint256[] storage jobsArray = validatorDisapprovedJobs[validator];
+        uint256 lastIndex = jobsArray.length - 1;
+        uint256 lastJobId = jobsArray[lastIndex];
+        jobsArray[indexPlusOne - 1] = lastJobId;
+        validatorDisapprovedJobIndex[validator][lastJobId] = indexPlusOne;
+        jobsArray.pop();
+        delete validatorDisapprovedJobIndex[validator][jobId];
+    }
+
     function cancelJob(uint256 _jobId) external nonReentrant {
         Job storage job = jobs[_jobId];
         require(msg.sender == job.employer && !job.completed && job.assignedAgent == address(0), "Not authorized or already completed/assigned");
@@ -773,8 +816,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         for (uint256 i = 0; i < job.validators.length; i++) {
             address validator = job.validators[i];
             if (job.approvals[validator]) {
+                _removeValidatorApprovedJob(validator, _jobId);
                 correctValidatorCount++;
             } else {
+                _removeValidatorDisapprovedJob(validator, _jobId);
                 uint256 slashAmount =
                     (validatorStake[validator] * slashingPercentage) /
                     PERCENTAGE_DENOMINATOR;
@@ -933,16 +978,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function withdrawStake(uint256 amount) external nonReentrant {
         if (amount == 0 || amount > validatorStake[msg.sender]) revert InvalidAmount();
-        uint256[] storage approved = validatorApprovedJobs[msg.sender];
-        for (uint256 i = 0; i < approved.length; i++) {
-            Job storage job = jobs[approved[i]];
-            require(job.completed && !job.disputed, "Pending or disputed job");
-        }
-        uint256[] storage disapproved = validatorDisapprovedJobs[msg.sender];
-        for (uint256 i = 0; i < disapproved.length; i++) {
-            Job storage job = jobs[disapproved[i]];
-            require(job.completed && !job.disputed, "Pending or disputed job");
-        }
+        require(
+            validatorApprovedJobs[msg.sender].length == 0 &&
+                validatorDisapprovedJobs[msg.sender].length == 0,
+            "Pending or disputed job"
+        );
         validatorStake[msg.sender] -= amount;
         require(
             validatorStake[msg.sender] == 0 ||
