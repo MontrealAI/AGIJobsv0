@@ -535,6 +535,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function _finalizeJob(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
+        // Explicit existence and completion checks per best practices
+        require(job.employer != address(0), "Job does not exist");
+        require(!job.completed, "Already finalized");
         // Ensure burning and payouts occur only after the job meets validation requirements
         require(
             job.validatorApprovals >= requiredValidatorApprovals || job.disputed,
