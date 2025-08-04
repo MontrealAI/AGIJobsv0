@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("AGIJobManagerV1 payouts", function () {
   async function deployFixture(burnPct = 1000) {
-    const [owner, employer, agent, validator] = await ethers.getSigners();
+    const [owner, employer, agent, validator, validator2] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
     const token = await Token.deploy();
@@ -36,8 +36,9 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.setBurnPercentage(burnPct);
     await manager.addAdditionalAgent(agent.address);
     await manager.addAdditionalValidator(validator.address);
+    await manager.addAdditionalValidator(validator2.address);
 
-    return { token, manager, owner, employer, agent, validator };
+    return { token, manager, owner, employer, agent, validator, validator2 };
   }
 
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
@@ -187,5 +188,54 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(
       await manager.validatorDisapprovedJobs(validator.address, 0)
     ).to.equal(0n);
+  });
+
+  it("handles employer-win disputes and allows stake withdrawal", async function () {
+    const { token, manager, owner, employer, agent, validator, validator2 } =
+      await deployFixture();
+
+    await manager.setRequiredValidatorApprovals(2);
+    await manager.setRequiredValidatorDisapprovals(1);
+    await manager.setSlashingPercentage(50);
+
+    const payout = ethers.parseEther("1000");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+
+    const stakeAmount = ethers.parseEther("100");
+    await token.mint(validator.address, stakeAmount);
+    await token.mint(validator2.address, stakeAmount);
+    await token.connect(validator).approve(await manager.getAddress(), stakeAmount);
+    await token
+      .connect(validator2)
+      .approve(await manager.getAddress(), stakeAmount);
+    await manager.connect(validator).stake(stakeAmount);
+    await manager.connect(validator2).stake(stakeAmount);
+
+    await manager.connect(validator).validateJob(jobId, "", []);
+    await manager.connect(validator2).disapproveJob(jobId, "", []);
+
+    await manager.addModerator(owner.address);
+    await manager.resolveDispute(jobId, "employer win");
+
+    const validatorPayoutTotal = (payout * 8n) / 100n;
+    const slashAmount = (stakeAmount * 50n) / 100n;
+    const employerRefund = payout - validatorPayoutTotal;
+
+    expect(await token.balanceOf(validator2.address)).to.equal(
+      validatorPayoutTotal + slashAmount
+    );
+    expect(await token.balanceOf(employer.address)).to.equal(employerRefund);
+    await expect(
+      manager
+        .connect(validator)
+        .withdrawStake(stakeAmount - slashAmount)
+    ).not.to.be.reverted;
   });
 });
