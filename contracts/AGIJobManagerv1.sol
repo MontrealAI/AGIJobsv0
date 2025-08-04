@@ -145,6 +145,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
     uint256 public slashingPercentage;
+    uint256 public minValidatorReputation;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -278,6 +279,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event StakeWithdrawn(address indexed validator, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
     event SlashingPercentageUpdated(uint256 newPercentage);
+    event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
     event ValidatorPayout(address indexed validator, uint256 amount);
 
@@ -358,6 +360,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
         require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
+        require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.approvals[msg.sender], "Job completed or already approved");
@@ -375,6 +378,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
         require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
+        require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
@@ -628,6 +632,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit SlashingPercentageUpdated(percentage);
     }
 
+    function setMinValidatorReputation(uint256 minimum) external onlyOwner {
+        minValidatorReputation = minimum;
+        emit MinValidatorReputationUpdated(minimum);
+    }
+
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {
         uint256 scaledPayout = _payout / 1e18;
         uint256 payoutPoints = scaledPayout ** 3 / 1e5;
@@ -686,6 +695,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             reputation[_user] = currentReputation - _points;
         }
         emit ReputationUpdated(_user, reputation[_user]);
+        if (
+            reputation[_user] < minValidatorReputation &&
+            (validatorStake[_user] > 0 || additionalValidators[_user]) &&
+            !blacklistedValidators[_user]
+        ) {
+            blacklistedValidators[_user] = true;
+            emit ValidatorBlacklisted(_user, true);
+        }
     }
 
     function cancelJob(uint256 _jobId) external nonReentrant {

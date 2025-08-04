@@ -74,7 +74,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
-- **Stake-based validator incentives** – validators must stake $AGI, misaligned votes are slashed and lose reputation, and owner tunes requirements and rewards.
+- **Stake-based validator incentives** – validators must stake $AGI and maintain a minimum reputation. Misaligned votes are slashed, reputation drops can auto-blacklist validators, and the owner tunes requirements and rewards.
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
 
 ### Burn Mechanism
@@ -455,6 +455,7 @@ Compare the compiler settings and bytecode against the deployed address on multi
 #### Validator Staking & Flow
 
 Validators stake tokens before voting. Correct votes share rewards, while incorrect votes are slashed and lose reputation. The final approval releases payment, burns tokens, and mints the completion NFT.
+Validators whose reputation falls below the owner-set `minValidatorReputation` threshold are prevented from validating and may be automatically blacklisted.
 
 ```ts
 await agiJobManager.connect(v1).stake(ethers.parseUnits("100", 18));
