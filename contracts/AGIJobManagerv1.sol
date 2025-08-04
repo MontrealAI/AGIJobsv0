@@ -257,6 +257,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidatorBlacklisted(address indexed validator, bool status);
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
+    event AGITokenAddressUpdated(address indexed newTokenAddress);
+    event BaseIpfsUrlUpdated(string newUrl);
+    event RequiredValidatorApprovalsUpdated(uint256 newApprovals);
+    event RequiredValidatorDisapprovalsUpdated(uint256 newDisapprovals);
+    event PremiumReputationThresholdUpdated(uint256 newThreshold);
+    event MaxJobPayoutUpdated(uint256 newMaxPayout);
+    event JobDurationLimitUpdated(uint256 newLimit);
+    event TermsAndConditionsIpfsHashUpdated(string newHash);
+    event ContactEmailUpdated(string newEmail);
+    event AdditionalText1Updated(string newText);
+    event AdditionalText2Updated(string newText);
+    event AdditionalText3Updated(string newText);
     event BurnAddressUpdated(address indexed newBurnAddress);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
@@ -473,50 +485,62 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function updateAGITokenAddress(address _newTokenAddress) external onlyOwner {
         agiToken = IERC20(_newTokenAddress);
+        emit AGITokenAddressUpdated(_newTokenAddress);
     }
 
     function setBaseIpfsUrl(string calldata _url) external onlyOwner {
         baseIpfsUrl = _url;
+        emit BaseIpfsUrlUpdated(_url);
     }
 
     function setRequiredValidatorApprovals(uint256 _approvals) external onlyOwner {
         requiredValidatorApprovals = _approvals;
+        emit RequiredValidatorApprovalsUpdated(_approvals);
     }
 
     function setRequiredValidatorDisapprovals(uint256 _disapprovals) external onlyOwner {
         requiredValidatorDisapprovals = _disapprovals;
+        emit RequiredValidatorDisapprovalsUpdated(_disapprovals);
     }
 
     function setPremiumReputationThreshold(uint256 _threshold) external onlyOwner {
         premiumReputationThreshold = _threshold;
+        emit PremiumReputationThresholdUpdated(_threshold);
     }
 
     function setMaxJobPayout(uint256 _maxPayout) external onlyOwner {
         maxJobPayout = _maxPayout;
+        emit MaxJobPayoutUpdated(_maxPayout);
     }
 
     function setJobDurationLimit(uint256 _limit) external onlyOwner {
         jobDurationLimit = _limit;
+        emit JobDurationLimitUpdated(_limit);
     }
 
     function updateTermsAndConditionsIpfsHash(string calldata _hash) external onlyOwner {
         termsAndConditionsIpfsHash = _hash;
+        emit TermsAndConditionsIpfsHashUpdated(_hash);
     }
 
     function updateContactEmail(string calldata _email) external onlyOwner {
         contactEmail = _email;
+        emit ContactEmailUpdated(_email);
     }
 
     function updateAdditionalText1(string calldata _text) external onlyOwner {
         additionalText1 = _text;
+        emit AdditionalText1Updated(_text);
     }
 
     function updateAdditionalText2(string calldata _text) external onlyOwner {
         additionalText2 = _text;
+        emit AdditionalText2Updated(_text);
     }
 
     function updateAdditionalText3(string calldata _text) external onlyOwner {
         additionalText3 = _text;
+        emit AdditionalText3Updated(_text);
     }
 
     function setClubRootNode(bytes32 newClubRootNode) external onlyOwner {
