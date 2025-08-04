@@ -168,6 +168,8 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
 - `setMaxJobPayout(uint256 newMax)` → `MaxJobPayoutUpdated`
 - `setJobDurationLimit(uint256 newLimit)` → `JobDurationLimitUpdated`
+- `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; short windows require quick action while longer windows offer more flexibility.
+- `setReviewWindow(uint256 newWindow)` → `ReviewWindowUpdated` – defines the mandatory wait after completion requests before validators can finalize votes, influencing how fast validators can conclude jobs.
 - `updateTermsAndConditionsIpfsHash(string newHash)` → `TermsAndConditionsIpfsHashUpdated`
 - `updateContactEmail(string newEmail)` → `ContactEmailUpdated`
 - `updateAdditionalText1(string newText)` → `AdditionalText1Updated`
