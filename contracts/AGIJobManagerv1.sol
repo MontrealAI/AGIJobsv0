@@ -456,6 +456,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validationRewardPercentage = _percentage;
     }
 
+    /// @notice Update burn rate in basis points.
+    /// @dev Setting `newPercentage` to 0 disables burning.
     function setBurnPercentage(uint256 newPercentage) external onlyOwner {
         require(newPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         burnPercentage = newPercentage;
