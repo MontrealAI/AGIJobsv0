@@ -192,6 +192,7 @@ Incorrect validator votes lose stake according to `slashingPercentage`. Slashed 
 - **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` basis points of the remaining escrow along with any slashed stake. If no votes are correct, the slashed tokens are sent to `slashedStakeRecipient`.
 - **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` basis points of staked tokens and incur a reputation deduction.
 - **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
+- **Single-shot voting** – validators cannot change their vote once cast; a validator address may approve *or* disapprove a job, but never both. Attempts to vote twice revert.
 
 #### Employer-Win Dispute Path
 
