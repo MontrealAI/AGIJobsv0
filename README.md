@@ -114,7 +114,23 @@ await manager.connect(validator).validateJob(jobId, "", []);
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and must maintain at least `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
 - **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow along with any slashed stake.
 - **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` of staked tokens and incur a reputation deduction.
-- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage`, and `validationRewardPercentage` to calibrate incentives.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage`, and `validationRewardPercentage`; each `onlyOwner` update emits a dedicated event.
+
+#### Employer-Win Dispute Path
+
+When validators disapprove a job and the employer prevails:
+
+- Disapproving validators split `validationRewardPercentage` of the escrow along with any slashed stake.
+- Approving validators are slashed and receive no reward.
+- The remaining escrow returns to the employer.
+
+**Example employer-win dispute**
+
+```ts
+await agiJobManager.connect(v1).validateJob(jobId); // incorrect approval; will be slashed
+await agiJobManager.connect(v2).disapproveJob(jobId, "", []);
+await agiJobManager.connect(v3).disapproveJob(jobId, "", []); // employer wins, v2 & v3 rewarded
+```
 
 ## Table of Contents
 - [Quick Links](#quick-links)
