@@ -296,6 +296,62 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.reverted;
   });
 
+  it("allows owner to update validator incentive parameters atomically", async function () {
+    const { manager, employer } = await deployFixture();
+    const cfg = {
+      rewardPct: 500,
+      stakeReq: 123n,
+      slashPct: 250,
+      minRep: 42n,
+      approvals: 2,
+      disapprovals: 3,
+    };
+
+    await expect(
+      manager
+        .connect(employer)
+        .setValidatorConfig(
+          cfg.rewardPct,
+          cfg.stakeReq,
+          cfg.slashPct,
+          cfg.minRep,
+          cfg.approvals,
+          cfg.disapprovals
+        )
+    )
+      .to.be.revertedWithCustomError(manager, "OwnableUnauthorizedAccount")
+      .withArgs(employer.address);
+
+    await expect(
+      manager.setValidatorConfig(
+        cfg.rewardPct,
+        cfg.stakeReq,
+        cfg.slashPct,
+        cfg.minRep,
+        cfg.approvals,
+        cfg.disapprovals
+      )
+    )
+      .to.emit(manager, "ValidatorConfigUpdated")
+      .withArgs(
+        cfg.rewardPct,
+        cfg.stakeReq,
+        cfg.slashPct,
+        cfg.minRep,
+        cfg.approvals,
+        cfg.disapprovals
+      );
+
+    expect(await manager.validationRewardPercentage()).to.equal(cfg.rewardPct);
+    expect(await manager.stakeRequirement()).to.equal(cfg.stakeReq);
+    expect(await manager.slashingPercentage()).to.equal(cfg.slashPct);
+    expect(await manager.minValidatorReputation()).to.equal(cfg.minRep);
+    expect(await manager.requiredValidatorApprovals()).to.equal(cfg.approvals);
+    expect(await manager.requiredValidatorDisapprovals()).to.equal(
+      cfg.disapprovals
+    );
+  });
+
   it("cleans up validator history enabling stake withdrawal after many jobs", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture();
     const payout = ethers.parseEther("10");
