@@ -96,4 +96,59 @@ describe("AGIJobManagerV1 payouts", function () {
       manager.connect(validator).validateJob(jobId, "", [])
     ).to.be.revertedWith("Completion not requested");
   });
+
+  it("restricts burn address updates to owner and emits event", async function () {
+    const { manager, owner, employer } = await deployFixture();
+    const newAddress = ethers.getAddress(
+      "0x000000000000000000000000000000000000BEEF"
+    );
+
+    await expect(
+      manager.connect(employer).setBurnAddress(newAddress)
+    )
+      .to.be.revertedWithCustomError(manager, "OwnableUnauthorizedAccount")
+      .withArgs(employer.address);
+
+    await expect(manager.setBurnAddress(newAddress))
+      .to.emit(manager, "BurnAddressUpdated")
+      .withArgs(newAddress);
+  });
+
+  it("restricts burn percentage updates to owner and emits event", async function () {
+    const { manager, employer } = await deployFixture();
+    const newPercentage = 500;
+
+    await expect(
+      manager.connect(employer).setBurnPercentage(newPercentage)
+    )
+      .to.be.revertedWithCustomError(manager, "OwnableUnauthorizedAccount")
+      .withArgs(employer.address);
+
+    await expect(manager.setBurnPercentage(newPercentage))
+      .to.emit(manager, "BurnPercentageUpdated")
+      .withArgs(newPercentage);
+  });
+
+  it("emits JobFinalizedAndBurned with correct payouts", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("1000");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+
+    const burnAmount = (payout * 1000n) / 10000n;
+    const remaining = payout - burnAmount;
+    const validatorPayoutTotal = (remaining * 8n) / 100n;
+    const agentExpected = remaining - validatorPayoutTotal;
+
+    await expect(
+      manager.connect(validator).validateJob(jobId, "", [])
+    )
+      .to.emit(manager, "JobFinalizedAndBurned")
+      .withArgs(jobId, agent.address, employer.address, agentExpected, burnAmount);
+  });
 });
