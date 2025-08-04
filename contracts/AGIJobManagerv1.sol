@@ -491,7 +491,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                     }
                     enforceReputationGrowth(validator, validatorReputationChange);
                 }
+                delete job.approvals[validator];
+                delete job.disapprovals[validator];
             }
+
+            delete job.validators;
 
             uint256 employerRefund = job.payout - validatorPayoutTotal;
             agiToken.safeTransfer(job.employer, employerRefund);
@@ -912,7 +916,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
                 enforceReputationGrowth(validator, validatorReputationChange);
             }
+            delete job.approvals[validator];
+            delete job.disapprovals[validator];
         }
+
+        delete job.validators;
 
         uint256 agentPayout = job.payout - burnAmount - validatorPayoutTotal;
         uint256 bonusPercentage = getHighestPayoutPercentage(job.assignedAgent);

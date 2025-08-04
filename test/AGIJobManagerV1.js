@@ -241,6 +241,55 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.equal(0n);
   });
 
+  it("keeps pending validator jobs after other jobs are finalized", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("100");
+
+    // Fund employer for multiple jobs
+    await token.mint(employer.address, payout * 3n);
+
+    // Job 0: validator approves and job finalizes
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("jobhash1", payout, 1000, "details1");
+    await manager.connect(agent).applyForJob(0, "", []);
+    await manager.connect(agent).requestJobCompletion(0, "result1");
+    await manager.connect(validator).validateJob(0, "", []);
+    await expect(
+      manager.validatorApprovedJobs(validator.address, 0)
+    ).to.be.reverted;
+
+    // Increase thresholds so subsequent jobs remain pending
+    await manager.setRequiredValidatorApprovals(2);
+    await manager.setRequiredValidatorDisapprovals(2);
+
+    // Job 1: validator approves but job remains pending
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("jobhash2", payout, 1000, "details2");
+    await manager.connect(agent).applyForJob(1, "", []);
+    await manager.connect(agent).requestJobCompletion(1, "result2");
+    await manager.connect(validator).validateJob(1, "", []);
+
+    // Job 2: validator disapproves and job remains pending
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("jobhash3", payout, 1000, "details3");
+    await manager.connect(agent).applyForJob(2, "", []);
+    await manager.connect(agent).requestJobCompletion(2, "result3");
+    await manager.connect(validator).disapproveJob(2, "", []);
+
+    expect(
+      await manager.validatorApprovedJobs(validator.address, 0)
+    ).to.equal(1n);
+    expect(
+      await manager.validatorDisapprovedJobs(validator.address, 0)
+    ).to.equal(2n);
+  });
+
   it("handles employer-win disputes and allows stake withdrawal", async function () {
     const { token, manager, owner, employer, agent, validator, validator2 } =
       await deployFixture();
