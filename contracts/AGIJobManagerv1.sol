@@ -237,6 +237,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
     event BurnAddressUpdated(address indexed newBurnAddress);
+    /// @notice Emitted when the burn percentage is updated.
+    event BurnPercentageUpdated(uint256 newPercentage);
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
@@ -468,6 +470,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function setBurnPercentage(uint256 newPercentage) external onlyOwner {
         require(newPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         burnPercentage = newPercentage;
+        emit BurnPercentageUpdated(newPercentage);
     }
 
     function setBurnAddress(address newBurnAddress) external onlyOwner {
