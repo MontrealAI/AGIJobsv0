@@ -13,7 +13,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; not deployed. No contract address currently exists; treat any address claiming to be v1 as unverified until announced through official channels.
+- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; features `JobFinalizedAndBurned` and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -33,10 +33,11 @@ Follow these steps before trusting any address or artifact:
 - Reproduce builds locally with pinned compiler and dependency versions to confirm bytecode.
 - Avoid links or addresses from untrusted third parties.
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
+- Understand that job payouts may be partially and irreversibly burned to `0x000000000000000000000000000000000000dEaD`; the owner controls the `burnPercentage` parameter.
 
 ## Overview
 
-AGIJob Manager orchestrates trustless labor markets for autonomous agents.  The project
+AGIJob Manager orchestrates trustless labor markets for autonomous agents. When a job is validated and its NFT is minted, a configurable portion of the escrowed payout is burned. The project
 contains two smart‑contract generations:
 
 - **v0** – the immutable mainnet release, permanently deployed at
@@ -73,6 +74,15 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
+- **Configurable token burn** – `JobFinalizedAndBurned` destroys a portion of job escrow upon validation and NFT minting, reducing supply and recording agent payouts and burn amounts.
+
+### Burn Mechanism
+
+The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply.
+
+- **Default burn percentage:** `0` (no burn until set).
+- **Burn address:** `BURN_ADDRESS` (`0x000000000000000000000000000000000000dEaD`).
+- **Owner controls:** `setBurnPercentage` (0–10,000 bps) adjusts the rate; `JobFinalizedAndBurned` logs agent payouts and tokens destroyed.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
@@ -83,6 +93,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - [Repository Structure](#repository-structure)
 - [Project Purpose](#project-purpose)
 - [Features](#features)
+- [Burn Mechanism](#burn-mechanism)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
