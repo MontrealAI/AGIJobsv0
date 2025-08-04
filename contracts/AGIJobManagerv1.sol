@@ -127,8 +127,10 @@ interface NameWrapper {
 }
 
 /// @title AGIJobManagerV1
-/// @notice Experimental upgrade of the immutable AGIJobManager v0. This contract
-///         is a work in progress and has not been deployed on any network.
+/// @notice Experimental upgrade of the immutable AGIJobManager v0. Implements
+///         stake-based validator incentives with slashing and outcome-aligned
+///         rewards. This contract is a work in progress and has not been
+///         deployed on any network.
 /// @custom:security-contact security@agi.network
 contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage {
     using ECDSA for bytes32;
@@ -537,11 +539,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setRequiredValidatorApprovals(uint256 _approvals) external onlyOwner {
+        require(_approvals > 0, "Invalid approvals");
         requiredValidatorApprovals = _approvals;
         emit RequiredValidatorApprovalsUpdated(_approvals);
     }
 
     function setRequiredValidatorDisapprovals(uint256 _disapprovals) external onlyOwner {
+        require(_disapprovals > 0, "Invalid disapprovals");
         requiredValidatorDisapprovals = _disapprovals;
         emit RequiredValidatorDisapprovalsUpdated(_disapprovals);
     }
@@ -696,6 +700,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     ) external onlyOwner {
         require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        require(stakeReq > 0, "Invalid stake");
+        require(approvals > 0, "Invalid approvals");
+        require(disapprovals > 0, "Invalid disapprovals");
         validationRewardPercentage = rewardPercentage;
         stakeRequirement = stakeReq;
         slashingPercentage = slashPercentage;
