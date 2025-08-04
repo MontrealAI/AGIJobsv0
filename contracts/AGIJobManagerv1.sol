@@ -140,7 +140,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public requiredValidatorApprovals = 3;
     uint256 public requiredValidatorDisapprovals = 3;
     uint256 public premiumReputationThreshold = 10000;
-    uint256 public validationRewardPercentage = 8;
+    uint256 public validationRewardPercentage = 800;
     uint256 public maxJobPayout = 4888e18;
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
@@ -416,7 +416,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             _finalizeJobAndBurn(_jobId);
         } else if (outcome == DisputeOutcome.EmployerWin) {
             job.completed = true;
-            uint256 validatorPayoutTotal = (job.payout * validationRewardPercentage) / 100;
+            uint256 validatorPayoutTotal =
+                (job.payout * validationRewardPercentage) /
+                PERCENTAGE_DENOMINATOR;
             uint256 completionTime = block.timestamp - job.assignedAt;
             uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
             uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
@@ -428,7 +430,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 if (job.disapprovals[validator]) {
                     correctValidatorCount++;
                 } else if (job.approvals[validator]) {
-                    uint256 slashAmount = (validatorStake[validator] * slashingPercentage) / 100;
+                    uint256 slashAmount =
+                        (validatorStake[validator] * slashingPercentage) /
+                        PERCENTAGE_DENOMINATOR;
                     if (slashAmount > 0) {
                         validatorStake[validator] -= slashAmount;
                         totalSlashed += slashAmount;
@@ -594,9 +598,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     /// @notice Update the percentage of job payout allocated to validators.
-    /// @param _percentage New reward percentage for validators.
+    /// @param _percentage New reward percentage for validators in basis points.
     function setValidationRewardPercentage(uint256 _percentage) external onlyOwner {
-        require(_percentage > 0 && _percentage <= 100, "Invalid percentage");
+        require(
+            _percentage > 0 && _percentage <= PERCENTAGE_DENOMINATOR,
+            "Invalid percentage"
+        );
         validationRewardPercentage = _percentage;
         emit ValidationRewardPercentageUpdated(_percentage);
     }
@@ -641,8 +648,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit StakeRequirementUpdated(amount);
     }
 
+    /// @notice Update the slashing rate applied to incorrect validator stakes.
+    /// @param percentage Portion of staked tokens to slash in basis points.
     function setSlashingPercentage(uint256 percentage) external onlyOwner {
-        require(percentage <= 100, "Invalid percentage");
+        require(percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         slashingPercentage = percentage;
         emit SlashingPercentageUpdated(percentage);
     }
@@ -659,7 +668,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function calculateValidatorReputationPoints(uint256 agentReputationGain) internal view returns (uint256) {
-        return (agentReputationGain * validationRewardPercentage) / 100;
+        return
+            (agentReputationGain * validationRewardPercentage) /
+            PERCENTAGE_DENOMINATOR;
     }
 
     function log2(uint x) internal pure returns (uint y) {
@@ -752,7 +763,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             agiToken.safeTransfer(burnAddress, burnAmount);
         }
 
-        uint256 validatorPayoutTotal = (remainingEscrow * validationRewardPercentage) / 100;
+        uint256 validatorPayoutTotal =
+            (remainingEscrow * validationRewardPercentage) /
+            PERCENTAGE_DENOMINATOR;
         uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
         uint256 correctValidatorCount = 0;
         uint256 totalSlashed = 0;
@@ -762,7 +775,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             if (job.approvals[validator]) {
                 correctValidatorCount++;
             } else {
-                uint256 slashAmount = (validatorStake[validator] * slashingPercentage) / 100;
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
                 if (slashAmount > 0) {
                     validatorStake[validator] -= slashAmount;
                     totalSlashed += slashAmount;

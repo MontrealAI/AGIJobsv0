@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("AGIJobManagerV1 payouts", function () {
-  async function deployFixture(burnPct = 1000) {
+    async function deployFixture(burnPct = 1000) {
     const [owner, employer, agent, validator, validator2] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
@@ -33,7 +33,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.waitForDeployment();
 
     await manager.setRequiredValidatorApprovals(1);
-    await manager.setBurnPercentage(burnPct);
+      await manager.setBurnPercentage(burnPct);
+      await manager.setValidationRewardPercentage(800);
     await manager.addAdditionalAgent(agent.address);
     await manager.addAdditionalValidator(validator.address);
     await manager.addAdditionalValidator(validator2.address);
@@ -53,9 +54,9 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).requestJobCompletion(jobId, "result");
     await manager.connect(validator).validateJob(jobId, "", []);
 
-    const burnAmount = (payout * 1000n) / 10000n;
-    const remaining = payout - burnAmount;
-    const validatorPayoutTotal = (remaining * 8n) / 100n;
+      const burnAmount = (payout * 1000n) / 10000n;
+      const remaining = payout - burnAmount;
+      const validatorPayoutTotal = (remaining * 800n) / 10000n;
     const agentExpected = remaining - validatorPayoutTotal;
     const burnAddr = await manager.burnAddress();
 
@@ -77,7 +78,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).requestJobCompletion(jobId, "result");
     await manager.connect(validator).validateJob(jobId, "", []);
 
-    const validatorPayoutTotal = (payout * 8n) / 100n;
+      const validatorPayoutTotal = (payout * 800n) / 10000n;
     const agentExpected = payout - validatorPayoutTotal;
 
     expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
@@ -211,7 +212,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).requestJobCompletion(jobId, "result");
     const burnAmount = (payout * 1000n) / 10000n;
     const remaining = payout - burnAmount;
-    const validatorPayoutTotal = (remaining * 8n) / 100n;
+    const validatorPayoutTotal = (remaining * 800n) / 10000n;
     const agentExpected = remaining - validatorPayoutTotal;
 
     await expect(
@@ -248,7 +249,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     await manager.setRequiredValidatorApprovals(2);
     await manager.setRequiredValidatorDisapprovals(1);
-    await manager.setSlashingPercentage(50);
+    await manager.setSlashingPercentage(5000);
 
     const payout = ethers.parseEther("1000");
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -276,8 +277,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.addModerator(owner.address);
     await manager.resolveDispute(jobId, 1); // 1 = DisputeOutcome.EmployerWin
 
-    const validatorPayoutTotal = (payout * 8n) / 100n;
-    const slashAmount = (stakeAmount * 50n) / 100n;
+    const validatorPayoutTotal = (payout * 800n) / 10000n;
+    const slashAmount = (stakeAmount * 5000n) / 10000n;
     const employerRefund = payout - validatorPayoutTotal;
 
     expect(await token.balanceOf(validator2.address)).to.equal(
