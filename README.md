@@ -34,6 +34,10 @@ Follow these steps before trusting any address or artifact:
 - Avoid links or addresses from untrusted third parties.
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
+- All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
+- Monitor `*Updated` events for changes to burn rates, slashing percentages, or stake requirements.
+- Validators that fall below `minValidatorReputation` are automatically blacklisted until their reputation is restored.
+- If no validator votes correctly, slashed stake is sent to `slashedStakeRecipient`; verify this recipient before staking.
 
 ## Overview
 
@@ -74,7 +78,9 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
+- **Enum-based dispute resolution** – moderators settle conflicts with a typed `DisputeOutcome` enum instead of fragile string comparisons.
 - **Stake-based validator incentives** – validators must stake $AGI and maintain a minimum reputation. Misaligned votes are slashed, reputation drops can auto-blacklist validators, and the owner tunes requirements and rewards.
+- **Basis-point standardization** – percentage parameters like burns, slashing, and rewards are expressed in basis points for deterministic math.
 - **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address).
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
 
@@ -106,7 +112,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 ```javascript
 // validator is the final approver
 await manager.connect(validator).validateJob(jobId, "", []);
-// burnPercentage of escrow is sent to burnAddress
+// burnPercentage (in basis points) of escrow is sent to burnAddress
 // employer receives the completion NFT
 ```
 
@@ -128,9 +134,9 @@ Rotate Merkle roots when membership changes or an allowlist leak is suspected. U
 
 Control these owner functions with a multisig or timelock, and watch the event logs for unexpected modifications. Continuous monitoring helps detect unauthorized updates before they affect job flow.
 
-### General Configuration Events
+### Configuration Change Events
 
-Several operational parameters are adjustable by the owner. Each setter emits an event for on‑chain transparency:
+Several operational parameters are adjustable by the owner. Every update emits a dedicated event so off‑chain services can react to new values:
 
 - `updateAGITokenAddress(address newToken)` → `AGITokenAddressUpdated`
 - `setBaseIpfsUrl(string newUrl)` → `BaseIpfsUrlUpdated`
@@ -145,6 +151,22 @@ Several operational parameters are adjustable by the owner. Each setter emits an
 - `updateAdditionalText2(string newText)` → `AdditionalText2Updated`
 - `updateAdditionalText3(string newText)` → `AdditionalText3Updated`
 - `setSlashedStakeRecipient(address newRecipient)` → `SlashedStakeRecipientUpdated`
+
+### Enum-Based Dispute Resolution
+
+Disputes between agents and employers are settled by moderators using a strongly typed `DisputeOutcome` enum with `AgentWin` and `EmployerWin` values. This removes ambiguity from string-based resolutions and simplifies client handling.
+
+### Reputation Threshold Gating and Automatic Suspension
+
+Validators must maintain reputation above `minValidatorReputation`. When slashing or penalties drop a validator below this threshold, the contract automatically blacklists them, preventing further validations until reputation is restored.
+
+### Basis-Point Standardization
+
+All tunable percentages—such as `burnPercentage`, `validationRewardPercentage`, and `slashingPercentage`—are supplied in basis points (1 basis point = 0.01%). This consistent unit avoids rounding issues and clarifies configuration.
+
+### Handling of Slashed Stake
+
+Incorrect validator votes lose stake according to `slashingPercentage`. Slashed tokens are pooled and distributed to validators whose votes matched the outcome; if no votes were correct, the entire amount is forwarded to `slashedStakeRecipient`.
 
 ### Validator Incentives
 
@@ -164,10 +186,10 @@ When validators disapprove a job and the employer prevails:
 **Example employer-win dispute**
 
 ```ts
-await agiJobManager.connect(v1).validateJob(jobId); // incorrect approval; will be slashed
-await agiJobManager.connect(v2).disapproveJob(jobId, "", []);
-await agiJobManager.connect(v3).disapproveJob(jobId, "", []); // employer wins, v2 & v3 rewarded
-await agiJobManager.resolveDispute(jobId, 1); // 1 = DisputeOutcome.EmployerWin
+await agiJobManager.connect(v1).validateJob(jobId); // incorrect approval; slashed and may trigger auto-blacklist
+await agiJobManager.connect(v2).disapproveJob(jobId, "", []); // correct disapproval
+await agiJobManager.connect(v3).disapproveJob(jobId, "", []); // employer wins, v2 & v3 split rewards and slashed stake
+await agiJobManager.resolveDispute(jobId, AGIJobManager.DisputeOutcome.EmployerWin);
 ```
 
 ## Table of Contents
@@ -463,7 +485,7 @@ Validators whose reputation falls below the owner-set `minValidatorReputation` t
 await agiJobManager.connect(v1).stake(ethers.parseUnits("100", 18));
 await agiJobManager.connect(v2).stake(ethers.parseUnits("100", 18));
 await agiJobManager.connect(v1).validateJob(jobId); // 1/2 approvals
-await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals triggers burn and payout
+await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals triggers burn, slashing logic, and payout
 await agiJobManager.connect(v1).withdrawStake(ethers.parseUnits("100", 18)); // after job finalization
 ```
 
