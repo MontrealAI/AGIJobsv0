@@ -127,6 +127,23 @@ Rotate Merkle roots when membership changes or an allowlist leak is suspected. U
 
 Control these owner functions with a multisig or timelock, and watch the event logs for unexpected modifications. Continuous monitoring helps detect unauthorized updates before they affect job flow.
 
+### General Configuration Events
+
+Several operational parameters are adjustable by the owner. Each setter emits an event for on‑chain transparency:
+
+- `updateAGITokenAddress(address newToken)` → `AGITokenAddressUpdated`
+- `setBaseIpfsUrl(string newUrl)` → `BaseIpfsUrlUpdated`
+- `setRequiredValidatorApprovals(uint256 count)` → `RequiredValidatorApprovalsUpdated`
+- `setRequiredValidatorDisapprovals(uint256 count)` → `RequiredValidatorDisapprovalsUpdated`
+- `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
+- `setMaxJobPayout(uint256 newMax)` → `MaxJobPayoutUpdated`
+- `setJobDurationLimit(uint256 newLimit)` → `JobDurationLimitUpdated`
+- `updateTermsAndConditionsIpfsHash(string newHash)` → `TermsAndConditionsIpfsHashUpdated`
+- `updateContactEmail(string newEmail)` → `ContactEmailUpdated`
+- `updateAdditionalText1(string newText)` → `AdditionalText1Updated`
+- `updateAdditionalText2(string newText)` → `AdditionalText2Updated`
+- `updateAdditionalText3(string newText)` → `AdditionalText3Updated`
+
 ### Validator Incentives
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and must maintain at least `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
@@ -161,6 +178,8 @@ await agiJobManager.resolveDispute(jobId, 1); // 1 = DisputeOutcome.EmployerWin
 - [Project Purpose](#project-purpose)
 - [Features](#features)
 - [Burn Mechanism](#burn-mechanism)
+- [Allowlist and ENS Management](#allowlist-and-ens-management)
+- [General Configuration Events](#general-configuration-events)
 - [Validator Incentives](#validator-incentives)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
