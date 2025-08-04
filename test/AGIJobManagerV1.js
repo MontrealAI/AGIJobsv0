@@ -150,4 +150,25 @@ describe("AGIJobManagerV1 payouts", function () {
       .to.emit(manager, "JobFinalizedAndBurned")
       .withArgs(jobId, agent.address, employer.address, agentExpected, burnAmount);
   });
+
+  it("tracks validator job disapprovals separately from approvals", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("1000");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+
+    await manager.connect(validator).disapproveJob(jobId, "", []);
+
+    await expect(
+      manager.validatorApprovedJobs(validator.address, 0)
+    ).to.be.reverted;
+    expect(
+      await manager.validatorDisapprovedJobs(validator.address, 0)
+    ).to.equal(0n);
+  });
 });
