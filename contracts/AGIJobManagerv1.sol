@@ -229,6 +229,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
 
+    /// @dev Thrown when the supplied amount is zero or exceeds the contract balance.
+    error InvalidAmount();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -592,17 +595,26 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         additionalAgents[agent] = false;
     }
 
+    /// @notice Withdraw AGI tokens held by the contract.
+    /// @param amount Amount of AGI to withdraw.
     function withdrawAGI(uint256 amount) external onlyOwner nonReentrant {
-        require(amount > 0 && amount <= agiToken.balanceOf(address(this)), "Invalid amount");
+        uint256 balance = agiToken.balanceOf(address(this));
+        if (amount == 0 || amount > balance) revert InvalidAmount();
         agiToken.safeTransfer(msg.sender, amount);
     }
 
-    function canAccessPremiumFeature(address user) public view returns (bool) {
+    /// @notice Determine if a user meets the premium reputation threshold.
+    /// @param user Address being evaluated.
+    /// @return hasAccess True if the user can access premium features.
+    function canAccessPremiumFeature(address user) public view returns (bool hasAccess) {
+        // solhint-disable-next-line gas-strict-inequalities
         return reputation[user] >= premiumReputationThreshold;
     }
 
+    /// @notice Contribute AGI tokens to the communal reward pool.
+    /// @param amount Amount of AGI to contribute.
     function contributeToRewardPool(uint256 amount) external whenNotPaused nonReentrant {
-        require(amount > 0, "Invalid amount");
+        if (amount == 0) revert InvalidAmount();
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         emit RewardPoolContribution(msg.sender, amount);
     }
