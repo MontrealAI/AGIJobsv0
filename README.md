@@ -164,15 +164,6 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `updateAdditionalText2(string newText)` → `AdditionalText2Updated`
 - `updateAdditionalText3(string newText)` → `AdditionalText3Updated`
 
-Validator staking economics are owner‑configurable as well:
-
-- `setValidatorConfig(uint256 rewardPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient)` → `ValidatorConfigUpdated`
-- `setStakeRequirement(uint256 amount)` → `StakeRequirementUpdated`
-- `setSlashingPercentage(uint256 percentage)` → `SlashingPercentageUpdated`
-- `setValidationRewardPercentage(uint256 percentage)` → `ValidationRewardPercentageUpdated` (set to `0` to disable rewards)
-- `setMinValidatorReputation(uint256 minimum)` → `MinValidatorReputationUpdated`
-- `setSlashedStakeRecipient(address newRecipient)` → `SlashedStakeRecipientUpdated`
-
 ### Enum-Based Dispute Resolution
 
 Disputes between agents and employers are settled by moderators using a strongly typed `DisputeOutcome` enum with `AgentWin` and `EmployerWin` values. This removes ambiguity from string-based resolutions and simplifies client handling.
@@ -550,6 +541,32 @@ CLI example using `cast`:
 cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V1
 cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2 # finalizes and burns
 ```
+
+### Owner Controls for Validators
+
+The contract owner can tune validator requirements and incentives. Each update emits an event so indexers can track new values:
+
+- `setValidatorConfig(uint256 rewardPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient)` – update all validator parameters in one transaction; emits `ValidatorConfigUpdated`.
+- `setSlashingPercentage(uint256 percentage)` – adjust how much stake is slashed for incorrect votes (basis points); emits `SlashingPercentageUpdated`.
+- `setValidationRewardPercentage(uint256 percentage)` – define the reward share for validators in basis points (set to `0` to disable); emits `ValidationRewardPercentageUpdated`.
+- `setMinValidatorReputation(uint256 minimum)` – set the reputation floor validators must maintain; emits `MinValidatorReputationUpdated`.
+- `setSlashedStakeRecipient(address newRecipient)` – designate the beneficiary of slashed stake when no validator votes correctly; emits `SlashedStakeRecipientUpdated`.
+
+Example updating multiple parameters at once:
+
+```ts
+await agiJobManager.setValidatorConfig(
+  800,                     // rewardPct = 8%
+  ethers.parseUnits("100", 18), // stakeReq = 100 AGI
+  500,                     // slashPct = 5%
+  50,                      // minRep
+  2,                       // approvals
+  1,                       // disapprovals
+  "0x1234567890abcdef1234567890ABCDEF12345678" // slashRecipient
+);
+```
+
+`ValidatorConfigUpdated` fires with the new settings, enabling off-chain services to monitor validator policy changes.
 
 ## Testing
 
