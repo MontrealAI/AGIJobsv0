@@ -80,10 +80,10 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply.
 
-- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated by the owner via `setBurnPercentage(newBps)`, which emits `BurnPercentageUpdated(oldBps, newBps)`.
-- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD` but may be changed by the owner using `setBurnAddress(newAddress)`, emitting `BurnAddressUpdated(oldAddress, newAddress)`.
-- **finalizeJobAndBurn** – validators or employers call this function after work is approved to release payment and trigger burning. The worker receives the remaining funds, while `burnPercentage` of the escrow is sent to `burnAddress`; `JobFinalizedAndBurned` records the payout and burn.
-- **Caution:** Only the owner may alter `burnPercentage` or `burnAddress`, and tokens sent to the burn address are irrecoverable.
+- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated by the owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(oldBps, newBps)`.
+- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but the owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(oldAddress, newAddress)`.
+- **finalizeJobAndBurn** – validators or employers call this after work is approved to release payment and trigger burning. The worker receives the remaining funds, while `burnPercentage` of the escrow is sent to `burnAddress`. The contract emits `JobFinalizedAndBurned` to trace each burn on-chain.
+- **Caution:** Tokens sent to the burn address are irrecoverable.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
