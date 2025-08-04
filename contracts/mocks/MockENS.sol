@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.30;
+pragma solidity 0.8.21;
 
 contract MockENS {
     function resolver(bytes32) external pure returns (address) {
