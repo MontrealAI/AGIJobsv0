@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+pragma solidity 0.8.30;
 // AGIJobManagerV1 supersedes AGIJobManager v0
 
 /*
@@ -102,8 +103,6 @@ THIS IS PART OF AN ASPIRATIONAL RESEARCH PROGRAM WITH AN AMBITIOUS RESEARCH AGEN
 OVERRIDING AUTHORITY: AGI.ETH
    
 */
-
-pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
