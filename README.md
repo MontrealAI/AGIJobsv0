@@ -13,7 +13,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
-- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; features `finalizeJobAndBurn`, `JobFinalizedAndBurned`, and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
+- [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; includes an automatic token burn on final validation via the `JobFinalizedAndBurned` event and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -80,9 +80,9 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply.
 
-- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated by the owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(oldBps, newBps)`.
-- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but the owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(oldAddress, newAddress)`.
-- **finalizeJobAndBurn** – validators or employers call this after work is approved to release payment and trigger burning. The worker receives the remaining funds, while `burnPercentage` of the escrow is sent to `burnAddress`. The contract emits `JobFinalizedAndBurned` to trace each burn on-chain.
+- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated by the owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(newBps)`.
+- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but the owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(newAddress)`.
+- **Automatic finalization** – when the required number of validators approves a job, the contract automatically releases payment and burns `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned` records the agent payout and amount destroyed.
 - **Caution:** Tokens sent to the burn address are irrecoverable.
 
 ## Table of Contents
@@ -348,22 +348,18 @@ Compare the compiler settings and bytecode against the deployed address on multi
 
 #### Validator Flow
 
-Validators call `validateJob` until the approval threshold is met. After the last approval, a validator must invoke `finalizeJobAndBurn` to release the payout and burn the configured portion of the escrow.
+Validators call `validateJob` until the approval threshold is met. The final call automatically releases payment, burns the configured portion, and mints the completion NFT.
 
 ```ts
 await agiJobManager.connect(v1).validateJob(jobId); // 1/2 approvals
-await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals
-await agiJobManager.connect(v2).finalizeJobAndBurn(jobId); // payout minus burn
+await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals triggers burn and payout
 ```
 
 CLI example using `cast`:
 
 ```bash
-# validator 1 approves
 cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V1
-# validator 2 approves and finalizes
-cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2
-cast send $AGI_JOB_MANAGER "finalizeJobAndBurn(uint256)" $JOB_ID --from $V2
+cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2 # finalizes and burns
 ```
 
 ## Testing
