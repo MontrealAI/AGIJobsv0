@@ -320,6 +320,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
         Job storage job = jobs[_jobId];
+        require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.approvals[msg.sender], "Job completed or already approved");
         job.validatorApprovals++;
         job.approvals[msg.sender] = true;
@@ -335,6 +336,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
         Job storage job = jobs[_jobId];
+        require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
         job.validatorDisapprovals++;
         job.disapprovals[msg.sender] = true;
