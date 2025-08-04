@@ -340,9 +340,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
+        require(!job.approvals[msg.sender], "Validator already approved");
+        bool isNewValidator = !job.approvals[msg.sender] && !job.disapprovals[msg.sender];
         job.validatorDisapprovals++;
         job.disapprovals[msg.sender] = true;
-        job.validators.push(msg.sender);
+        if (isNewValidator) {
+            job.validators.push(msg.sender);
+        }
         validatorApprovedJobs[msg.sender].push(_jobId);
         emit JobDisapproved(_jobId, msg.sender);
         if (job.validatorDisapprovals >= requiredValidatorDisapprovals) {
