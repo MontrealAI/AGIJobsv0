@@ -143,6 +143,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public validationRewardPercentage = 8;
     uint256 public maxJobPayout = 4888e18;
     uint256 public jobDurationLimit = 10000000;
+    uint256 public stakeRequirement;
+    uint256 public slashingPercentage;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -204,6 +206,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public nextTokenId;
     mapping(uint256 => Job) public jobs;
     mapping(address => uint256) public reputation;
+    mapping(address => uint256) public validatorStake;
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
     mapping(address => bool) public additionalAgents;
@@ -248,6 +251,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event BurnAddressUpdated(address indexed newBurnAddress);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
+    event StakeDeposited(address indexed validator, uint256 amount);
+    event StakeWithdrawn(address indexed validator, uint256 amount);
+    event StakeRequirementUpdated(uint256 newRequirement);
+    event SlashingPercentageUpdated(uint256 newPercentage);
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
@@ -325,6 +332,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function validateJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
+        require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.approvals[msg.sender], "Job completed or already approved");
@@ -341,6 +349,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
+        require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
@@ -493,6 +502,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit BurnPercentageUpdated(newPercentage);
     }
 
+    function setStakeRequirement(uint256 amount) external onlyOwner {
+        stakeRequirement = amount;
+        emit StakeRequirementUpdated(amount);
+    }
+
+    function setSlashingPercentage(uint256 percentage) external onlyOwner {
+        require(percentage <= 100, "Invalid percentage");
+        slashingPercentage = percentage;
+        emit SlashingPercentageUpdated(percentage);
+    }
+
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {
         uint256 scaledPayout = _payout / 1e18;
         uint256 payoutPoints = scaledPayout ** 3 / 1e5;
@@ -543,6 +563,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit ReputationUpdated(_user, reputation[_user]);
     }
 
+    function enforceReputationPenalty(address _user, uint256 _points) internal {
+        uint256 currentReputation = reputation[_user];
+        if (_points >= currentReputation) {
+            reputation[_user] = 0;
+        } else {
+            reputation[_user] = currentReputation - _points;
+        }
+        emit ReputationUpdated(_user, reputation[_user]);
+    }
+
     function cancelJob(uint256 _jobId) external nonReentrant {
         Job storage job = jobs[_jobId];
         require(msg.sender == job.employer && !job.completed && job.assignedAgent == address(0), "Not authorized or already completed/assigned");
@@ -576,17 +606,40 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         uint256 validatorPayoutTotal = (remainingEscrow * validationRewardPercentage) / 100;
-        uint256 validatorPayout = job.validators.length > 0
-            ? validatorPayoutTotal / job.validators.length
-            : 0;
-        uint256 validatorReputationGain = calculateValidatorReputationPoints(reputationPoints);
+        uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
+        uint256 correctValidatorCount = 0;
+        uint256 totalSlashed = 0;
 
         for (uint256 i = 0; i < job.validators.length; i++) {
             address validator = job.validators[i];
-            if (validatorPayout > 0) {
-                agiToken.safeTransfer(validator, validatorPayout);
+            if (job.approvals[validator]) {
+                correctValidatorCount++;
+            } else {
+                uint256 slashAmount = (validatorStake[validator] * slashingPercentage) / 100;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalSlashed += slashAmount;
+                }
+                enforceReputationPenalty(validator, validatorReputationChange);
             }
-            enforceReputationGrowth(validator, validatorReputationGain);
+        }
+
+        uint256 validatorPayout = correctValidatorCount > 0
+            ? validatorPayoutTotal / correctValidatorCount
+            : 0;
+        uint256 slashedReward = correctValidatorCount > 0
+            ? totalSlashed / correctValidatorCount
+            : 0;
+
+        for (uint256 i = 0; i < job.validators.length; i++) {
+            address validator = job.validators[i];
+            if (job.approvals[validator]) {
+                uint256 reward = validatorPayout + slashedReward;
+                if (reward > 0) {
+                    agiToken.safeTransfer(validator, reward);
+                }
+                enforceReputationGrowth(validator, validatorReputationChange);
+            }
         }
 
         uint256 agentPayout = remainingEscrow - validatorPayoutTotal;
@@ -697,6 +750,31 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function removeAdditionalAgent(address agent) external onlyOwner {
         additionalAgents[agent] = false;
+    }
+
+    function stake(uint256 amount) external whenNotPaused nonReentrant {
+        if (amount == 0) revert InvalidAmount();
+        agiToken.safeTransferFrom(msg.sender, address(this), amount);
+        validatorStake[msg.sender] += amount;
+        require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
+        emit StakeDeposited(msg.sender, amount);
+    }
+
+    function withdrawStake(uint256 amount) external nonReentrant {
+        if (amount == 0 || amount > validatorStake[msg.sender]) revert InvalidAmount();
+        uint256[] storage approved = validatorApprovedJobs[msg.sender];
+        for (uint256 i = 0; i < approved.length; i++) {
+            Job storage job = jobs[approved[i]];
+            require(job.completed && !job.disputed, "Pending or disputed job");
+        }
+        uint256[] storage disapproved = validatorDisapprovedJobs[msg.sender];
+        for (uint256 i = 0; i < disapproved.length; i++) {
+            Job storage job = jobs[disapproved[i]];
+            require(job.completed && !job.disputed, "Pending or disputed job");
+        }
+        validatorStake[msg.sender] -= amount;
+        agiToken.safeTransfer(msg.sender, amount);
+        emit StakeWithdrawn(msg.sender, amount);
     }
 
     /// @notice Withdraw AGI tokens held by the contract.
