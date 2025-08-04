@@ -372,6 +372,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
+        require(!job.disputed, "Job disputed");
         require(
             !job.completed &&
                 !job.approvals[msg.sender] &&
@@ -395,14 +396,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
+        require(!job.disputed, "Job disputed");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
         require(!job.approvals[msg.sender], "Validator already approved");
-        bool isNewValidator = !job.approvals[msg.sender] && !job.disapprovals[msg.sender];
         job.validatorDisapprovals++;
         job.disapprovals[msg.sender] = true;
-        if (isNewValidator) {
-            job.validators.push(msg.sender);
-        }
+        job.validators.push(msg.sender);
         _addValidatorDisapprovedJob(msg.sender, _jobId);
         emit JobDisapproved(_jobId, msg.sender);
         if (job.validatorDisapprovals >= requiredValidatorDisapprovals) {
