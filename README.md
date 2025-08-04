@@ -345,7 +345,27 @@ Compare the compiler settings and bytecode against the deployed address on multi
   await agiJobManager.purchaseNFT(tokenId);
   await agiJobManager.delistNFT(tokenId);
   ```
- 
+
+#### Validator Flow
+
+Validators call `validateJob` until the approval threshold is met. After the last approval, a validator must invoke `finalizeJobAndBurn` to release the payout and burn the configured portion of the escrow.
+
+```ts
+await agiJobManager.connect(v1).validateJob(jobId); // 1/2 approvals
+await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals
+await agiJobManager.connect(v2).finalizeJobAndBurn(jobId); // payout minus burn
+```
+
+CLI example using `cast`:
+
+```bash
+# validator 1 approves
+cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V1
+# validator 2 approves and finalizes
+cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2
+cast send $AGI_JOB_MANAGER "finalizeJobAndBurn(uint256)" $JOB_ID --from $V2
+```
+
 ## Testing
 
 Run the test suite with either Hardhat or Foundry:
