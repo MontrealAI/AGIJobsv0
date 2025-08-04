@@ -80,7 +80,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply. Burning occurs automatically when the last validator approval triggers `_finalizeJob` to mint the NFT, release payment, and burn tokens—no separate `finalizeJobAndBurn` call is required.
 
-- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated only by the contract owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(newBps)`.
+- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `5%` (500 basis points) and can be updated only by the contract owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(newBps)`.
 - **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but only the contract owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(newAddress)`.
 - **Automatic finalization** – the final validator approval executes `_finalizeJob`, minting the completion NFT, releasing payment, and burning `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned` records the agent payout and amount destroyed; `finalizeJobAndBurn` is not called separately.
 - **Caution:** Tokens sent to the burn address are irrecoverable; verify any parameter changes by watching for the `BurnPercentageUpdated` and `BurnAddressUpdated` events.
