@@ -5,5 +5,10 @@ module.exports = {
   solidity: { version: '0.8.30', settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true } },
   paths: {
     sources: './contracts'
+  },
+  networks: {
+    hardhat: {
+      allowUnlimitedContractSize: true
+    }
   }
 };

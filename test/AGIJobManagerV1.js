@@ -147,6 +147,58 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(await manager.burnPercentage()).to.equal(newPercentage);
   });
 
+  it("restricts root node and Merkle root updates to owner and emits events", async function () {
+    const { manager, employer } = await deployFixture();
+    const newClub = ethers.id("club");
+    const newAgent = ethers.id("agent");
+    const newValidatorRoot = ethers.id("validator");
+    const newAgentRoot = ethers.id("agentRoot");
+
+    await expect(
+      manager.connect(employer).setClubRootNode(newClub)
+    )
+      .to.be.revertedWithCustomError(manager, "OwnableUnauthorizedAccount")
+      .withArgs(employer.address);
+
+    await expect(manager.setClubRootNode(newClub))
+      .to.emit(manager, "ClubRootNodeUpdated")
+      .withArgs(newClub);
+
+    await expect(manager.setAgentRootNode(newAgent))
+      .to.emit(manager, "AgentRootNodeUpdated")
+      .withArgs(newAgent);
+
+    await expect(manager.setValidatorMerkleRoot(newValidatorRoot))
+      .to.emit(manager, "ValidatorMerkleRootUpdated")
+      .withArgs(newValidatorRoot);
+
+    await expect(manager.setAgentMerkleRoot(newAgentRoot))
+      .to.emit(manager, "AgentMerkleRootUpdated")
+      .withArgs(newAgentRoot);
+  });
+
+  it("restricts ENS and NameWrapper updates to owner and emits events", async function () {
+    const { manager, employer } = await deployFixture();
+    const newEns = ethers.getAddress(
+      "0x000000000000000000000000000000000000dEaD"
+    );
+    const newWrapper = ethers.getAddress(
+      "0x000000000000000000000000000000000000bEEF"
+    );
+
+    await expect(manager.connect(employer).setENS(newEns))
+      .to.be.revertedWithCustomError(manager, "OwnableUnauthorizedAccount")
+      .withArgs(employer.address);
+
+    await expect(manager.setENS(newEns))
+      .to.emit(manager, "ENSAddressUpdated")
+      .withArgs(newEns);
+
+    await expect(manager.setNameWrapper(newWrapper))
+      .to.emit(manager, "NameWrapperAddressUpdated")
+      .withArgs(newWrapper);
+  });
+
   it("emits JobFinalizedAndBurned with correct payouts", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture();
     const payout = ethers.parseEther("1000");

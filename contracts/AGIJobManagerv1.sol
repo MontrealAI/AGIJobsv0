@@ -234,8 +234,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event JobCancelled(uint256 jobId);
     event DisputeResolved(uint256 jobId, address resolver, string resolution);
     event JobDisputed(uint256 jobId, address disputant);
-    event RootNodeUpdated(bytes32 indexed newRootNode);
-    event MerkleRootUpdated(bytes32 indexed newMerkleRoot);
+    event ClubRootNodeUpdated(bytes32 indexed newClubRootNode);
+    event AgentRootNodeUpdated(bytes32 indexed newAgentRootNode);
+    event ValidatorMerkleRootUpdated(bytes32 indexed newValidatorMerkleRoot);
+    event AgentMerkleRootUpdated(bytes32 indexed newAgentMerkleRoot);
+    event ENSAddressUpdated(address indexed newEnsAddress);
+    event NameWrapperAddressUpdated(address indexed newNameWrapperAddress);
     event OwnershipVerified(address claimant, string subdomain);
     event RecoveryInitiated(string reason);
     event AGITypeUpdated(address indexed nftAddress, uint256 payoutPercentage);
@@ -508,6 +512,38 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function updateAdditionalText3(string calldata _text) external onlyOwner {
         additionalText3 = _text;
+    }
+
+    function setClubRootNode(bytes32 newClubRootNode) external onlyOwner {
+        clubRootNode = newClubRootNode;
+        emit ClubRootNodeUpdated(newClubRootNode);
+    }
+
+    function setAgentRootNode(bytes32 newAgentRootNode) external onlyOwner {
+        agentRootNode = newAgentRootNode;
+        emit AgentRootNodeUpdated(newAgentRootNode);
+    }
+
+    function setValidatorMerkleRoot(bytes32 newValidatorMerkleRoot) external onlyOwner {
+        validatorMerkleRoot = newValidatorMerkleRoot;
+        emit ValidatorMerkleRootUpdated(newValidatorMerkleRoot);
+    }
+
+    function setAgentMerkleRoot(bytes32 newAgentMerkleRoot) external onlyOwner {
+        agentMerkleRoot = newAgentMerkleRoot;
+        emit AgentMerkleRootUpdated(newAgentMerkleRoot);
+    }
+
+    function setENS(address newEnsAddress) external onlyOwner {
+        require(newEnsAddress != address(0), "invalid address");
+        ens = ENS(newEnsAddress);
+        emit ENSAddressUpdated(newEnsAddress);
+    }
+
+    function setNameWrapper(address newNameWrapperAddress) external onlyOwner {
+        require(newNameWrapperAddress != address(0), "invalid address");
+        nameWrapper = NameWrapper(newNameWrapperAddress);
+        emit NameWrapperAddressUpdated(newNameWrapperAddress);
     }
 
     function getJobStatus(uint256 _jobId) external view returns (bool, bool, string memory) {

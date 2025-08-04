@@ -340,6 +340,19 @@ export AGENT_MERKLE_ROOT=0xAgentRoot
 npx hardhat run scripts/deploy.ts --network sepolia
 ```
 
+After deployment the contract owner may adjust these values if needed:
+
+```ts
+await agiJobManager.setClubRootNode(0xNewClubRoot);
+await agiJobManager.setAgentRootNode(0xNewAgentRoot);
+await agiJobManager.setValidatorMerkleRoot(0xNewValidatorRoot);
+await agiJobManager.setAgentMerkleRoot(0xNewAgentMerkleRoot);
+await agiJobManager.setENS(0xNewEnsRegistry);
+await agiJobManager.setNameWrapper(0xNewNameWrapper);
+```
+
+Each setter emits a corresponding `*Updated` event for off‑chain tracking.
+
 Always deploy to a public test network first and independently verify the resulting address on at least one block explorer before handling real assets.
 
 ### Deployed Contracts
