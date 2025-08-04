@@ -274,7 +274,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator2).disapproveJob(jobId, "", []);
 
     await manager.addModerator(owner.address);
-    await manager.resolveDispute(jobId, "employer win");
+    await manager.resolveDispute(jobId, 1); // 1 = DisputeOutcome.EmployerWin
 
     const validatorPayoutTotal = (payout * 8n) / 100n;
     const slashAmount = (stakeAmount * 50n) / 100n;
