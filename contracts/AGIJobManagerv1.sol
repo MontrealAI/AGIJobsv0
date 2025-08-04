@@ -298,7 +298,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 slashingPercentage,
         uint256 minValidatorReputation,
         uint256 requiredApprovals,
-        uint256 requiredDisapprovals
+        uint256 requiredDisapprovals,
+        address slashedStakeRecipient
     );
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
@@ -703,31 +704,36 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param minRep Minimum reputation required to validate.
     /// @param approvals Validator approvals needed to finalize a job.
     /// @param disapprovals Validator disapprovals needed to dispute a job.
+    /// @param slashRecipient Address receiving slashed stake when no validator votes correctly.
     function setValidatorConfig(
         uint256 rewardPercentage,
         uint256 stakeReq,
         uint256 slashPercentage,
         uint256 minRep,
         uint256 approvals,
-        uint256 disapprovals
+        uint256 disapprovals,
+        address slashRecipient
     ) external onlyOwner {
         require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(approvals > 0, "Invalid approvals");
         require(disapprovals > 0, "Invalid disapprovals");
+        require(slashRecipient != address(0), "invalid address");
         validationRewardPercentage = rewardPercentage;
         stakeRequirement = stakeReq;
         slashingPercentage = slashPercentage;
         minValidatorReputation = minRep;
         requiredValidatorApprovals = approvals;
         requiredValidatorDisapprovals = disapprovals;
+        slashedStakeRecipient = slashRecipient;
         emit ValidatorConfigUpdated(
             rewardPercentage,
             stakeReq,
             slashPercentage,
             minRep,
             approvals,
-            disapprovals
+            disapprovals,
+            slashRecipient
         );
     }
 
