@@ -26,6 +26,7 @@ Follow these steps before trusting any address or artifact:
 - Exercise new code on public testnets prior to mainnet usage.
 - Reproduce builds locally with pinned compiler and dependency versions to confirm bytecode.
 - Avoid links or addresses from untrusted third parties.
+- Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
 
 ## Overview
 
@@ -96,7 +97,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - [License](#license)
 
 ## Prerequisites
-- **Node.js & npm** – Node.js ≥ 22.x LTS (tested with v22.18.0; check with `node --version`).
+- **Node.js & npm** – Node.js ≥ 20.x LTS (tested with v20.19.4; check with `node --version`).
 - **Hardhat 2.26.1** or **Foundry** – choose either development toolkit and use its respective commands (`npx hardhat` or `forge`).
 - **Solidity Compiler** – version 0.8.30 (pinned).
 - **OpenZeppelin Contracts** – version 5.4.0 with `SafeERC20` for secure token transfers.
@@ -105,8 +106,10 @@ Confirm toolchain versions:
 
 ```bash
 node --version
+npm --version
 npm view hardhat version
 npm view @openzeppelin/contracts version
+hardhat --version
 ```
 
 ## Installation
@@ -118,16 +121,16 @@ npm view @openzeppelin/contracts version
    npm ci
    ```
 
-2. **Install Node.js 22.x LTS and npm**
+2. **Install Node.js 20.x LTS and npm**
    Using [`nvm`](https://github.com/nvm-sh/nvm):
 
    ```bash
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
    source ~/.nvm/nvm.sh
-   nvm install 22
+   nvm install 20
    ```
 
-   > For platform-specific installation details, see the [official Node.js documentation](https://nodejs.org/en/download/package-manager).
+   > For platform-specific installation details or newer LTS releases (e.g., Node 22 when available), see the [official Node.js documentation](https://nodejs.org/en/download/package-manager).
 3. **Set up a development framework**
    - Hardhat
      ```bash
@@ -208,7 +211,7 @@ private_key = "${PRIVATE_KEY}"
 3. **Lint & test**
    ```bash
    npm run lint
-   npm test
+   npm run test
    ```
 4. **Deploy**
    ```bash
