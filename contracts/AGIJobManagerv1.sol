@@ -175,6 +175,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     address public slashedStakeRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
+    /// @notice Duration of the commit phase for validator votes.
+    uint256 public commitDuration;
+    /// @notice Duration of the reveal phase following commits.
+    uint256 public revealDuration;
 
     struct Job {
         uint256 id;
@@ -193,6 +197,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         mapping(address => bool) approvals;
         mapping(address => bool) disapprovals;
         address[] validators;
+        mapping(address => bytes32) commitments;
+        mapping(address => bool) revealed;
+        mapping(address => bool) revealedVotes;
+        uint256 validationStart;
     }
 
     struct AGIType {
@@ -237,6 +245,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event JobValidated(uint256 jobId, address validator);
     event JobDisapproved(uint256 jobId, address validator);
     event JobCompleted(uint256 jobId, address agent, uint256 reputationPoints);
+    event ValidationCommitted(uint256 jobId, address validator, bytes32 commitment);
+    event ValidationRevealed(uint256 jobId, address validator, bool approved);
+    event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event JobFinalizedAndBurned(
         uint256 indexed jobId,
         address indexed agent,
@@ -373,7 +384,79 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(msg.sender == job.assignedAgent && block.timestamp <= job.assignedAt + job.duration, "Not authorized or expired");
         job.ipfsHash = _ipfsHash;
         job.completionRequested = true;
+        job.validationStart = block.timestamp;
         emit JobCompletionRequested(_jobId, msg.sender);
+    }
+
+    /// @notice Commit to a validation vote without revealing it.
+    /// @param _jobId Identifier of the job being validated.
+    /// @param commitment Hash of the vote and salt.
+    function commitValidation(
+        uint256 _jobId,
+        bytes32 commitment,
+        string memory subdomain,
+        bytes32[] calldata proof
+    ) external whenNotPaused nonReentrant {
+        require(
+            _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
+                additionalValidators[msg.sender],
+            "Not authorized validator"
+        );
+        require(!blacklistedValidators[msg.sender], "Blacklisted validator");
+        require(
+            validatorStake[msg.sender] >= stakeRequirement,
+            "Stake below requirement"
+        );
+        require(
+            reputation[msg.sender] >= minValidatorReputation,
+            "Insufficient reputation"
+        );
+        Job storage job = jobs[_jobId];
+        require(job.completionRequested, "Completion not requested");
+        require(!job.disputed, "Job disputed");
+        require(!job.completed, "Job completed");
+        require(
+            block.timestamp <= job.validationStart + commitDuration,
+            "Commit phase over"
+        );
+        require(job.commitments[msg.sender] == bytes32(0), "Already committed");
+        job.commitments[msg.sender] = commitment;
+        job.validators.push(msg.sender);
+        emit ValidationCommitted(_jobId, msg.sender, commitment);
+    }
+
+    /// @notice Reveal a previously committed vote.
+    /// @param _jobId Identifier of the job being validated.
+    /// @param approve True to approve, false to disapprove.
+    /// @param salt Random value used during commit.
+    function revealValidation(
+        uint256 _jobId,
+        bool approve,
+        bytes32 salt
+    ) external whenNotPaused nonReentrant {
+        Job storage job = jobs[_jobId];
+        require(job.completionRequested, "Completion not requested");
+        require(!job.disputed, "Job disputed");
+        require(!job.completed, "Job completed");
+        require(
+            block.timestamp > job.validationStart + commitDuration,
+            "Reveal phase not started"
+        );
+        require(
+            block.timestamp <=
+                job.validationStart + commitDuration + revealDuration,
+            "Reveal phase over"
+        );
+        bytes32 commitment = job.commitments[msg.sender];
+        require(commitment != bytes32(0), "No commitment");
+        require(!job.revealed[msg.sender], "Already revealed");
+        bytes32 expected = keccak256(
+            abi.encodePacked(msg.sender, _jobId, approve, salt)
+        );
+        require(expected == commitment, "Invalid reveal");
+        job.revealed[msg.sender] = true;
+        job.revealedVotes[msg.sender] = approve;
+        emit ValidationRevealed(_jobId, msg.sender, approve);
     }
 
     /// @notice Approve a job's completion.
@@ -388,6 +471,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
+        require(job.revealed[msg.sender], "Vote not revealed");
+        require(job.revealedVotes[msg.sender], "Commitment mismatched");
         require(
             !job.completed &&
                 !job.approvals[msg.sender] &&
@@ -396,7 +481,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         );
         job.validatorApprovals++;
         job.approvals[msg.sender] = true;
-        job.validators.push(msg.sender);
         _addValidatorApprovedJob(msg.sender, _jobId);
         emit JobValidated(_jobId, msg.sender);
         if (job.validatorApprovals >= requiredValidatorApprovals) {
@@ -415,11 +499,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
+        require(job.revealed[msg.sender], "Vote not revealed");
+        require(!job.revealedVotes[msg.sender], "Commitment mismatched");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
         require(!job.approvals[msg.sender], "Validator already approved");
         job.validatorDisapprovals++;
         job.disapprovals[msg.sender] = true;
-        job.validators.push(msg.sender);
         _addValidatorDisapprovedJob(msg.sender, _jobId);
         emit JobDisapproved(_jobId, msg.sender);
         if (job.validatorDisapprovals >= requiredValidatorDisapprovals) {
@@ -458,12 +543,25 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
             for (uint256 i = 0; i < job.validators.length; i++) {
                 address validator = job.validators[i];
-                if (job.disapprovals[validator]) {
+                bool revealed = job.revealed[validator];
+                if (revealed && job.disapprovals[validator]) {
                     _removeValidatorDisapprovedJob(validator, _jobId);
                     correctValidators[correctIndex++] = validator;
                     enforceReputationGrowth(validator, validatorReputationChange);
-                } else if (job.approvals[validator]) {
+                } else if (revealed && job.approvals[validator]) {
                     _removeValidatorApprovedJob(validator, _jobId);
+                    uint256 slashAmount =
+                        (validatorStake[validator] * slashingPercentage) /
+                        PERCENTAGE_DENOMINATOR;
+                    if (slashAmount > 0) {
+                        validatorStake[validator] -= slashAmount;
+                        totalSlashed += slashAmount;
+                        emit StakeSlashed(validator, slashAmount);
+                    }
+                    enforceReputationPenalty(validator, validatorReputationChange);
+                } else {
+                    _removeValidatorApprovedJob(validator, _jobId);
+                    _removeValidatorDisapprovedJob(validator, _jobId);
                     uint256 slashAmount =
                         (validatorStake[validator] * slashingPercentage) /
                         PERCENTAGE_DENOMINATOR;
@@ -476,6 +574,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
                 delete job.approvals[validator];
                 delete job.disapprovals[validator];
+                delete job.commitments[validator];
+                delete job.revealed[validator];
+                delete job.revealedVotes[validator];
             }
 
             delete job.validators;
@@ -707,6 +808,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit MinValidatorReputationUpdated(minimum);
     }
 
+    /// @notice Update commit and reveal window durations.
+    /// @param commitWindow Length of the commit phase in seconds.
+    /// @param revealWindow Length of the reveal phase in seconds.
+    function setCommitRevealWindows(
+        uint256 commitWindow,
+        uint256 revealWindow
+    ) external onlyOwner {
+        commitDuration = commitWindow;
+        revealDuration = revealWindow;
+        emit CommitRevealWindowsUpdated(commitWindow, revealWindow);
+    }
+
     /// @notice Atomically update validator incentive parameters.
     /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
     /// @param stakeReq Minimum stake required to validate (0 disables staking).
@@ -908,11 +1021,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
         for (uint256 i = 0; i < job.validators.length; i++) {
             address validator = job.validators[i];
-            if (job.approvals[validator]) {
+            bool revealed = job.revealed[validator];
+            if (revealed && job.approvals[validator]) {
                 _removeValidatorApprovedJob(validator, _jobId);
                 approvedValidators[approvedIndex++] = validator;
                 enforceReputationGrowth(validator, validatorReputationChange);
+            } else if (revealed && job.disapprovals[validator]) {
+                _removeValidatorDisapprovedJob(validator, _jobId);
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalSlashed += slashAmount;
+                    emit StakeSlashed(validator, slashAmount);
+                }
+                enforceReputationPenalty(validator, validatorReputationChange);
             } else {
+                _removeValidatorApprovedJob(validator, _jobId);
                 _removeValidatorDisapprovedJob(validator, _jobId);
                 uint256 slashAmount =
                     (validatorStake[validator] * slashingPercentage) /
@@ -926,6 +1052,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             }
             delete job.approvals[validator];
             delete job.disapprovals[validator];
+            delete job.commitments[validator];
+            delete job.revealed[validator];
+            delete job.revealedVotes[validator];
         }
 
         delete job.validators;

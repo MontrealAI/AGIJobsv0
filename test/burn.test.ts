@@ -1,5 +1,7 @@
 const { expect } = require("chai");
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 async function deployFixture() {
   const [owner, employer, agent, validator] = await ethers.getSigners();
@@ -32,6 +34,7 @@ async function deployFixture() {
   await manager.waitForDeployment();
 
   await manager.setRequiredValidatorApprovals(1);
+  await manager.setCommitRevealWindows(1000, 1000);
   await manager.addAdditionalAgent(agent.address);
   await manager.addAdditionalValidator(validator.address);
 
@@ -55,6 +58,16 @@ describe("burn mechanics", function () {
     const burnPct = await manager.burnPercentage();
     const expectedBurn = (payout * burnPct) / 10_000n;
 
+    const salt = ethers.id("burnts1");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, true, salt]
+    );
+    await manager
+      .connect(validator)
+      .commitValidation(jobId, commitment, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, true, salt);
     await manager.connect(validator).validateJob(jobId, "", []);
 
     const burnAddr = await manager.burnAddress();
