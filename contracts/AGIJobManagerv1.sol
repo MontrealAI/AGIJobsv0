@@ -176,8 +176,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
     /// @notice Duration of the commit phase for validator votes.
+    /// @dev Defaults to 1 hour and may be updated by the owner.
     uint256 public commitDuration;
     /// @notice Duration of the reveal phase following commits.
+    /// @dev Defaults to 1 hour and may be updated by the owner.
     uint256 public revealDuration;
     /// @notice Waiting period after completion request before validators may vote.
     uint256 public reviewWindow;
@@ -346,6 +348,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validatorMerkleRoot = _validatorMerkleRoot;
         agentMerkleRoot = _agentMerkleRoot;
         slashedStakeRecipient = msg.sender;
+        // Set sensible non-zero defaults to avoid inadvertent instant phases.
+        commitDuration = 1 hours;
+        revealDuration = 1 hours;
     }
 
     modifier onlyModerator() {
@@ -830,6 +835,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Update commit and reveal window durations.
     /// @param commitWindow Length of the commit phase in seconds.
     /// @param revealWindow Length of the reveal phase in seconds.
+    /// @dev Setting either value to zero results in an instant phase with no time for participation.
     function setCommitRevealWindows(
         uint256 commitWindow,
         uint256 revealWindow
