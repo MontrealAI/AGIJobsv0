@@ -331,7 +331,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validatorApprovedJobs[msg.sender].push(_jobId);
         emit JobValidated(_jobId, msg.sender);
         if (job.validatorApprovals >= requiredValidatorApprovals) {
-            _finalizeJob(_jobId);
+            _finalizeJobAndBurn(_jobId);
         }
     }
 
@@ -367,7 +367,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Job storage job = jobs[_jobId];
         require(job.disputed, "Job not disputed");
         if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("agent win"))) {
-            _finalizeJob(_jobId);
+            _finalizeJobAndBurn(_jobId);
         } else if (keccak256(abi.encodePacked(resolution)) == keccak256(abi.encodePacked("employer win"))) {
             agiToken.safeTransfer(job.employer, job.payout);
         }
@@ -548,7 +548,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit JobCancelled(_jobId);
     }
 
-    function _finalizeJob(uint256 _jobId) internal {
+    /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
+    /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
+    function _finalizeJobAndBurn(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
         // Explicit existence and completion checks per best practices
         require(job.employer != address(0), "Job does not exist");
