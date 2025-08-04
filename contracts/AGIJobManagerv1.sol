@@ -755,8 +755,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
-        uint256 burnAmount = (job.payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
-        uint256 remainingEscrow = job.payout - burnAmount;
+        uint256 burnAmount =
+            (job.payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
 
         if (burnAmount > 0) {
             if (burnAddress == address(0)) revert BurnAddressNotSet();
@@ -764,7 +764,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         uint256 validatorPayoutTotal =
-            (remainingEscrow * validationRewardPercentage) /
+            (job.payout * validationRewardPercentage) /
             PERCENTAGE_DENOMINATOR;
         uint256 validatorReputationChange = calculateValidatorReputationPoints(reputationPoints);
         uint256 correctValidatorCount = 0;
@@ -810,7 +810,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             }
         }
 
-        uint256 agentPayout = remainingEscrow - validatorPayoutTotal;
+        uint256 agentPayout = job.payout - burnAmount - validatorPayoutTotal;
         uint256 bonusPercentage = getHighestPayoutPercentage(job.assignedAgent);
         if (bonusPercentage > 0) {
             uint256 bonusAmount = (agentPayout * bonusPercentage) / 100;
@@ -922,9 +922,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function stake(uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert InvalidAmount();
+        require(
+            validatorStake[msg.sender] + amount >= stakeRequirement,
+            "Stake below requirement"
+        );
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         validatorStake[msg.sender] += amount;
-        require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
         emit StakeDeposited(msg.sender, amount);
     }
 
@@ -941,6 +944,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             require(job.completed && !job.disputed, "Pending or disputed job");
         }
         validatorStake[msg.sender] -= amount;
+        require(
+            validatorStake[msg.sender] == 0 ||
+                validatorStake[msg.sender] >= stakeRequirement,
+            "Stake below requirement"
+        );
         agiToken.safeTransfer(msg.sender, amount);
         emit StakeWithdrawn(msg.sender, amount);
     }
