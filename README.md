@@ -11,7 +11,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v0 on Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
-- [$AGI token contract on Etherscan](https://etherscan.io/address/0x8eb24319393716668d768dcec29356ae9cffe285#code) / [Blockscout](https://eth.blockscout.com/address/0x8eb24319393716668d768dcec29356ae9cffe285?tab=contract) – cross-verify the token address before transacting.
+- [$AGI token contract on Etherscan](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code) / [Blockscout](https://eth.blockscout.com/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D?tab=contract) – cross-verify the token address before transacting.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.30; includes an automatic token burn on final validation via the `JobFinalizedAndBurned` event and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 
@@ -78,11 +78,11 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 ### Burn Mechanism
 
-The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply.
+The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply. Burning occurs only after the final validator approval triggers NFT minting and payout release.
 
-- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated by the owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(newBps)`.
-- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but the owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(newAddress)`.
-- **Automatic finalization** – when the required number of validators approves a job, the contract automatically releases payment and burns `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned` records the agent payout and amount destroyed.
+- **burnPercentage** – basis points of escrow destroyed on finalization. Defaults to `0` and can be updated only by the contract owner via `setBurnPercentage(newBps)` (e.g., `setBurnPercentage(500)` sets a 5% burn rate). This `onlyOwner` function emits `BurnPercentageUpdated(newBps)`.
+- **burnAddress** – destination for burned tokens. Initially `0x000000000000000000000000000000000000dEaD`, but only the contract owner can redirect burns with `setBurnAddress(newAddress)`. This `onlyOwner` call emits `BurnAddressUpdated(newAddress)`.
+- **Automatic finalization** – the final validator approval mints the completion NFT, releases payment, and burns `burnPercentage` of the escrow to `burnAddress`. `JobFinalizedAndBurned` records the agent payout and amount destroyed.
 - **Caution:** Tokens sent to the burn address are irrecoverable.
 
 ## Table of Contents
