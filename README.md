@@ -81,8 +81,8 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 The v1 prototype sends a slice of each finalized job's payout to a burn address, permanently reducing token supply.
 
 - **Default burn percentage:** `0` (no burn until set).
-- **Burn address:** `BURN_ADDRESS` (`0x000000000000000000000000000000000000dEaD`).
-- **Owner controls:** `setBurnPercentage` (0–10,000 bps) adjusts the rate; `JobFinalizedAndBurned` logs agent payouts and tokens destroyed.
+- **Burn address:** `burnAddress` (`0x000000000000000000000000000000000000dEaD`).
+- **Owner controls:** `setBurnPercentage` (0–10,000 bps) adjusts the rate; `setBurnAddress` updates the burn destination; `JobFinalizedAndBurned` logs agent payouts and tokens destroyed.
 
 ## Table of Contents
 - [Quick Links](#quick-links)
