@@ -107,10 +107,12 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 **Execution flow**
 
 1. The employer escrows `$AGI` when posting the job.
-2. Validators review the submission; the last approval triggers `_finalizeJobAndBurn`.
-3. The contract computes `burnAmount = payout * burnPercentage / 10_000` and sends it to `burnAddress`.
-4. Validator rewards and the remaining payout are transferred to participants.
-5. The completion NFT is minted and sent to the employer.
+2. When completion is requested, validators enter the commit phase and submit hashed votes via `commitValidation`.
+3. After the commit phase, validators reveal their votes with `revealValidation`.
+4. Once the review window closes, validators call `validateJob` or `disapproveJob`; the final approval triggers `_finalizeJobAndBurn`.
+5. The contract computes `burnAmount = payout * burnPercentage / 10_000` and sends it to `burnAddress`.
+6. Validator rewards and the remaining payout are transferred to participants.
+7. The completion NFT is minted and sent to the employer.
 
 **Setup checklist**
 
@@ -123,7 +125,15 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 **Example finalization**
 
 ```javascript
-// validator is the final approver
+// commit during the commit phase
+await manager
+  .connect(validator)
+  .commitValidation(jobId, commitment, "", []);
+
+// reveal during the reveal phase
+await manager.connect(validator).revealValidation(jobId, true, salt);
+
+// finalize after the review window
 await manager.connect(validator).validateJob(jobId, "", []);
 // burnPercentage (in basis points) of escrow is sent to burnAddress
 // employer receives the completion NFT
@@ -181,6 +191,7 @@ All tunable percentages—such as `burnPercentage`, `validationRewardPercentage`
 Incorrect validator votes lose stake according to `slashingPercentage`. Slashed tokens are pooled and distributed to validators whose votes matched the outcome. If none were correct, slashed tokens go to `slashedStakeRecipient` and the escrowed validator reward returns to the agent or employer, depending on the final outcome.
 
 ### Validator Incentives
+Validators follow a commit–reveal process and can finalize their vote only after the review window closes.
 - **Quick-start:**
   1. **Stake tokens** – deposit the required $AGI before voting.
 
@@ -188,7 +199,21 @@ Incorrect validator votes lose stake according to `slashingPercentage`. Slashed 
      await agiJobManager.connect(validator).stake(ethers.parseUnits("100", 18));
      ```
 
-  2. **Approve or disapprove** – cast a single vote per job with `validateJob` or `disapproveJob`.
+ 2. **Commit vote** – during the commit phase, submit a hashed vote with `commitValidation`.
+
+     ```ts
+     await agiJobManager
+       .connect(validator)
+       .commitValidation(jobId, commitment, "", []);
+     ```
+
+ 3. **Reveal vote** – after the commit phase ends, disclose your vote with `revealValidation`.
+
+     ```ts
+     await agiJobManager.connect(validator).revealValidation(jobId, true, salt);
+     ```
+
+ 4. **Approve or disapprove** – once the review window elapses, finalize with `validateJob` or `disapproveJob`.
 
      ```ts
      await agiJobManager.connect(validator).validateJob(jobId, "", []);
@@ -196,15 +221,19 @@ Incorrect validator votes lose stake according to `slashingPercentage`. Slashed 
      await agiJobManager.connect(validator).disapproveJob(jobId, "", []);
      ```
 
-  3. **Rewards & slashing** – when required approvals/disapprovals are met, correct validators split `validationRewardPercentage` of escrow plus any slashed stake. Incorrect votes lose `slashingPercentage` of their bonded tokens.
+  5. **Rewards & slashing** – when required approvals/disapprovals are met, correct validators split `validationRewardPercentage` of escrow plus any slashed stake. Incorrect votes lose `slashingPercentage` of their bonded tokens.
 
      ```ts
+     await agiJobManager.connect(v1).commitValidation(jobId, commit1, "", []);
+     await agiJobManager.connect(v1).revealValidation(jobId, true, salt1);
+     await agiJobManager.connect(v2).commitValidation(jobId, commit2, "", []);
+     await agiJobManager.connect(v2).revealValidation(jobId, false, salt2);
      await agiJobManager.connect(v1).validateJob(jobId, "", []);
      await agiJobManager.connect(v2).disapproveJob(jobId, "", []);
      // finalization distributes rewards and applies slashing
      ```
 
-  4. **Withdraw stake** – succeeds only after every job you've voted on is finalized without disputes.
+  6. **Withdraw stake** – succeeds only after every job you've voted on is finalized without disputes.
 
      ```ts
      await agiJobManager.connect(validator).withdrawStake(ethers.parseUnits("100", 18));
@@ -232,6 +261,12 @@ When validators disapprove a job and the employer prevails:
 **Example employer-win dispute**
 
 ```ts
+await agiJobManager.connect(v1).commitValidation(jobId, commitA, "", []);
+await agiJobManager.connect(v1).revealValidation(jobId, true, saltA);
+await agiJobManager.connect(v2).commitValidation(jobId, commitB, "", []);
+await agiJobManager.connect(v2).revealValidation(jobId, false, saltB);
+await agiJobManager.connect(v3).commitValidation(jobId, commitC, "", []);
+await agiJobManager.connect(v3).revealValidation(jobId, false, saltC);
 await agiJobManager.connect(v1).validateJob(jobId); // incorrect approval; slashed and may trigger auto-blacklist
 await agiJobManager.connect(v2).disapproveJob(jobId, "", []); // correct disapproval
 await agiJobManager.connect(v3).disapproveJob(jobId, "", []); // employer wins, v2 & v3 split rewards and slashed stake
@@ -415,7 +450,9 @@ Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHE
 6. **Stake & validate (example)**
    ```ts
    await agiJobManager.stake(ethers.parseUnits("100", 18)); // deposit required stake
-   await agiJobManager.validateJob(jobId); // cast a vote
+   await agiJobManager.commitValidation(jobId, commitment, "", []);
+   await agiJobManager.revealValidation(jobId, true, salt);
+   await agiJobManager.validateJob(jobId); // cast a vote after the review window
    await agiJobManager.withdrawStake(ethers.parseUnits("100", 18)); // withdraw after finalization
    ```
 
@@ -530,6 +567,10 @@ Validators whose reputation falls below the owner-set `minValidatorReputation` t
 ```ts
 await agiJobManager.connect(v1).stake(ethers.parseUnits("100", 18));
 await agiJobManager.connect(v2).stake(ethers.parseUnits("100", 18));
+await agiJobManager.connect(v1).commitValidation(jobId, commit1, "", []);
+await agiJobManager.connect(v2).commitValidation(jobId, commit2, "", []);
+await agiJobManager.connect(v1).revealValidation(jobId, true, salt1);
+await agiJobManager.connect(v2).revealValidation(jobId, true, salt2);
 await agiJobManager.connect(v1).validateJob(jobId); // 1/2 approvals
 await agiJobManager.connect(v2).validateJob(jobId); // 2/2 approvals triggers burn, slashing logic, and payout
 await agiJobManager.connect(v1).withdrawStake(ethers.parseUnits("100", 18)); // after job finalization
@@ -538,6 +579,10 @@ await agiJobManager.connect(v1).withdrawStake(ethers.parseUnits("100", 18)); // 
 CLI example using `cast`:
 
 ```bash
+cast send $AGI_JOB_MANAGER "commitValidation(uint256,bytes32,string,bytes32[])" $JOB_ID $COMMIT_V1 "" [] --from $V1
+cast send $AGI_JOB_MANAGER "revealValidation(uint256,bool,bytes32)" $JOB_ID true $SALT_V1 --from $V1
+cast send $AGI_JOB_MANAGER "commitValidation(uint256,bytes32,string,bytes32[])" $JOB_ID $COMMIT_V2 "" [] --from $V2
+cast send $AGI_JOB_MANAGER "revealValidation(uint256,bool,bytes32)" $JOB_ID true $SALT_V2 --from $V2
 cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V1
 cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2 # finalizes and burns
 ```
