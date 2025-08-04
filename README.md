@@ -75,6 +75,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
 - **Stake-based validator incentives** – validators must stake $AGI and maintain a minimum reputation. Misaligned votes are slashed, reputation drops can auto-blacklist validators, and the owner tunes requirements and rewards.
+- **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address).
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
 
 ### Burn Mechanism
@@ -143,19 +144,20 @@ Several operational parameters are adjustable by the owner. Each setter emits an
 - `updateAdditionalText1(string newText)` → `AdditionalText1Updated`
 - `updateAdditionalText2(string newText)` → `AdditionalText2Updated`
 - `updateAdditionalText3(string newText)` → `AdditionalText3Updated`
+- `setSlashedStakeRecipient(address newRecipient)` → `SlashedStakeRecipientUpdated`
 
 ### Validator Incentives
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and must maintain at least `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
-- **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow along with any slashed stake.
+- **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow along with any slashed stake. If no votes are correct, the slashed tokens are sent to `slashedStakeRecipient`.
 - **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` of staked tokens and incur a reputation deduction.
-- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage`, and `validationRewardPercentage`; each `onlyOwner` update emits a dedicated event.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage`, `validationRewardPercentage`, and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
 
 #### Employer-Win Dispute Path
 
 When validators disapprove a job and the employer prevails:
 
-- Disapproving validators split `validationRewardPercentage` of the escrow along with any slashed stake.
+- Disapproving validators split `validationRewardPercentage` of the escrow along with any slashed stake. If none disapprove correctly, slashed tokens go to `slashedStakeRecipient`.
 - Approving validators are slashed and receive no reward.
 - The remaining escrow returns to the employer.
 
