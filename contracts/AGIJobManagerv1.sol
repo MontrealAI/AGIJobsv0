@@ -869,6 +869,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         // Explicit existence and completion checks per best practices
         require(job.employer != address(0), "Job does not exist");
         require(!job.completed, "Already finalized");
+        // Disallow payout without an explicit completion request
+        require(job.completionRequested, "Completion not requested");
         // Ensure burning and payouts occur only after the job meets validation requirements
         require(
             job.validatorApprovals >= requiredValidatorApprovals || job.disputed,

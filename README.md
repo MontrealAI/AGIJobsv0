@@ -36,6 +36,7 @@ Follow these steps before trusting any address or artifact:
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
+- Jobs finalize only after the agent calls `requestJobCompletion`; even moderator resolutions in favor of the agent revert otherwise.
 - Confirm the current `stakeRequirement` before staking and plan for withdrawals; `withdrawStake` only succeeds once all of your jobs are finalized without disputes.
 - Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, or the slashed‑stake recipient.
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
