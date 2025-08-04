@@ -22,6 +22,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
 - **Audit Status:** Unaudited – use at your own risk.
 - **Security Notice:** This repository is research code. Confirm contract addresses, compiled bytecode, and deployment parameters yourself and experiment on public testnets before interacting with real assets.
+- **Validator Risk:** Validators must lock stake before voting. Incorrect votes are slashed and stakes remain locked until all of the validator's jobs finalize; review the slashing and withdrawal rules before committing funds.
 
 ## Safety Checklist
 
@@ -35,9 +36,10 @@ Follow these steps before trusting any address or artifact:
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
-- Monitor `*Updated` events for changes to burn rates, slashing percentages, or stake requirements.
+- Confirm the current `stakeRequirement` before staking and plan for withdrawals; `withdrawStake` only succeeds once all of your jobs are finalized without disputes.
+- Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, or the slashed‑stake recipient.
 - Validators that fall below `minValidatorReputation` are automatically blacklisted until their reputation is restored.
-- If no validator votes correctly, slashed stake is sent to `slashedStakeRecipient`; verify this recipient before staking.
+- If no validator votes correctly, slashed stake is sent to `slashedStakeRecipient`; verify this recipient and watch for updates before staking.
 
 ## Overview
 
@@ -105,7 +107,10 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 **Setup checklist**
 
 1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
-2. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
+2. Ensure each validator has staked at least `stakeRequirement` before validating.
+3. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
+4. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, and `SlashedStakeRecipientUpdated` for configuration changes.
+5. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**
 
@@ -150,6 +155,13 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `updateAdditionalText1(string newText)` → `AdditionalText1Updated`
 - `updateAdditionalText2(string newText)` → `AdditionalText2Updated`
 - `updateAdditionalText3(string newText)` → `AdditionalText3Updated`
+
+Validator staking economics are owner‑configurable as well:
+
+- `setStakeRequirement(uint256 amount)` → `StakeRequirementUpdated`
+- `setSlashingPercentage(uint256 percentage)` → `SlashingPercentageUpdated`
+- `setValidationRewardPercentage(uint256 percentage)` → `ValidationRewardPercentageUpdated`
+- `setMinValidatorReputation(uint256 minimum)` → `MinValidatorReputationUpdated`
 - `setSlashedStakeRecipient(address newRecipient)` → `SlashedStakeRecipientUpdated`
 
 ### Enum-Based Dispute Resolution
@@ -169,11 +181,12 @@ All tunable percentages—such as `burnPercentage`, `validationRewardPercentage`
 Incorrect validator votes lose stake according to `slashingPercentage`. Slashed tokens are pooled and distributed to validators whose votes matched the outcome; if no votes were correct, the entire amount is forwarded to `slashedStakeRecipient`.
 
 ### Validator Incentives
+- Validators must maintain an on-chain stake and reputation before voting. `stakeRequirement` defines the minimum bonded $AGI, while `slashingPercentage` dictates how much of that stake is forfeited on an incorrect vote. When a job concludes, validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow plus any slashed stake; others lose the slashed amount.
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and must maintain at least `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
 - **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` basis points of the remaining escrow along with any slashed stake. If no votes are correct, the slashed tokens are sent to `slashedStakeRecipient`.
 - **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` basis points of staked tokens and incur a reputation deduction.
-- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement`, `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, and `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
 
 #### Employer-Win Dispute Path
 
@@ -203,7 +216,7 @@ await agiJobManager.resolveDispute(jobId, AGIJobManager.DisputeOutcome.EmployerW
 - [Features](#features)
 - [Burn Mechanism](#burn-mechanism)
 - [Allowlist and ENS Management](#allowlist-and-ens-management)
-- [General Configuration Events](#general-configuration-events)
+- [Configuration Change Events](#configuration-change-events)
 - [Validator Incentives](#validator-incentives)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
