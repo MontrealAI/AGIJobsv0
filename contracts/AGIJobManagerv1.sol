@@ -342,6 +342,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidatorsPerJobUpdated(uint256 count);
     event StakeDeposited(address indexed validator, uint256 amount);
     event StakeWithdrawn(address indexed validator, uint256 amount);
+    event AGIWithdrawn(address indexed owner, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
     event SlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
@@ -1712,6 +1713,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (amount == 0 || balance <= locked || amount > balance - locked)
             revert InvalidAmount();
         agiToken.safeTransfer(msg.sender, amount);
+        emit AGIWithdrawn(msg.sender, amount);
     }
 
     /// @notice Determine if a user meets the premium reputation threshold.
