@@ -145,6 +145,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Basis-point standardization** – percentage parameters like burns, slashing, and rewards are expressed in basis points for deterministic math.
 - **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address) while the validator reward portion reverts to the agent or employer.
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
+- **Timeout recovery** – if validators never reach the approval or disapproval thresholds by `reviewWindow + commitDuration + revealDuration + gracePeriod`, the employer, agent, or a moderator may invoke `finalizeAfterTimeout` to either pay the agent or refund the employer. The `JobTimedOut(jobId, caller, agentPaid)` event logs this fallback.
 
 ### NFT Bonus
 
@@ -169,6 +170,11 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 5. The contract computes `burnAmount = payout * burnPercentage / 10_000` and sends it to `burnAddress`.
 6. Validator rewards and the remaining payout are transferred to participants.
 7. The completion NFT is minted and sent to the employer.
+8. If neither approval nor disapproval thresholds are met once `reviewWindow + commitDuration + revealDuration + gracePeriod` elapses, any party (employer, agent, or moderator) may call `finalizeAfterTimeout` to pay the agent or refund the employer.
+
+### Timeout & Recovery
+
+If validators fail to reach consensus before the combined `reviewWindow`, `commitDuration`, `revealDuration`, and `gracePeriod` expire, the job can be closed manually. Calling `finalizeAfterTimeout(jobId, payAgent)` releases escrow either to the agent (`payAgent = true`) or back to the employer (`payAgent = false`). `JobTimedOut(jobId, caller, agentPaid)` records which path was taken, and owners may tune the extra buffer with `setGracePeriod`.
 
 ### Security & Marketplace Updates
 
@@ -187,7 +193,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 2. Ensure each validator has staked at least `stakeRequirement` before validating.
 3. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool.
 4. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
-5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
+5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), `GracePeriodUpdated`, and `SlashedStakeRecipientUpdated` for configuration changes.
 6. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**
