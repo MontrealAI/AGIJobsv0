@@ -487,6 +487,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when a percentage parameter exceeds the denominator.
     error InvalidPercentage();
 
+    /// @dev Thrown when combined payout percentages exceed 100%.
+    error InvalidPercentageCombination();
+
     /// @dev Thrown when a numeric count is out of range or zero.
     error InvalidCount();
 
@@ -1217,11 +1220,20 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         return jobs[_jobId].selectedValidators;
     }
 
+    function _validatePayoutSplits(
+        uint256 _burnPercentage,
+        uint256 _validationRewardPercentage
+    ) internal pure {
+        if (_burnPercentage + _validationRewardPercentage > PERCENTAGE_DENOMINATOR)
+            revert InvalidPercentageCombination();
+    }
+
     /// @notice Update the percentage of job payout allocated to validators.
     /// @param _percentage New reward percentage for validators in basis points.
     /// @dev Setting `_percentage` to 0 disables validator rewards.
     function setValidationRewardPercentage(uint256 _percentage) external onlyOwner {
         if (_percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        _validatePayoutSplits(burnPercentage, _percentage);
         validationRewardPercentage = _percentage;
         emit ValidationRewardPercentageUpdated(_percentage);
     }
@@ -1239,6 +1251,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Setting `newPercentage` to 0 disables burning.
     function setBurnPercentage(uint256 newPercentage) external onlyOwner {
         if (newPercentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        _validatePayoutSplits(newPercentage, validationRewardPercentage);
         burnPercentage = newPercentage;
         emit BurnPercentageUpdated(newPercentage);
     }
@@ -1367,6 +1380,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             reputationPercentage > PERCENTAGE_DENOMINATOR ||
             slashPercentage > PERCENTAGE_DENOMINATOR
         ) revert InvalidPercentage();
+        _validatePayoutSplits(burnPercentage, rewardPercentage);
         if (validatorsCount == 0) revert InvalidCount();
         if (approvals == 0 || approvals > validatorsCount)
             revert InvalidApprovals();
