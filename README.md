@@ -123,6 +123,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
+- **Indexed events** – key identifiers like `jobId` and participant addresses are indexed in events (`JobCreated`, `JobCompleted`, `JobValidated`, etc.) for easier off-chain filtering and monitoring.
 - **Escrow accounting** – tracks total job escrow and validator stakes so owner withdrawals never touch locked funds.
 - **Custom-error reverts** – v1 eliminates string `require` messages in favor of named custom errors across admin and validation paths, reducing gas and giving clearer failures.
 - **Enhanced state enforcement** – agents can only apply to jobs in the `Open` state, and validator actions revert with dedicated
