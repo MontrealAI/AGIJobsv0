@@ -43,6 +43,28 @@ Follow these steps before trusting any address or artifact:
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
 - If no validator votes correctly, only slashed stake goes to `slashedStakeRecipient` while the reserved validator reward portion returns to the job's agent or employer; verify this recipient and watch for updates before staking.
 
+## Simple Workflow
+
+Interact with the contracts using a wallet or block explorer. Always verify contract addresses on multiple explorers before sending transactions. For method-level details and code samples, see the [Quick Start](#quick-start).
+
+**Employers**
+- Confirm the AGIJobManager contract address on Etherscan, Blockscout, or official channels.
+- From the explorer's **Write** tab or your wallet's contract interface, call `createJob` to post the task and escrow funds (≈1 transaction).
+- Wait for an agent to apply and for validators to finalize; the NFT and remaining payout arrive automatically.
+
+**Agents**
+- Double-check the contract address before interacting.
+- Use `applyForJob` to claim the task (≈1 transaction).
+- After completing the work, call `requestJobCompletion` with the result reference such as an IPFS hash (≈1 transaction).
+- Monitor the job status until validators approve and funds release.
+
+**Validators**
+- Verify the contract address and ensure you meet the current stake requirement.
+- Stake AGI with `stake` to join the validator pool (≈1 transaction).
+- When selected, submit `commitValidation` during the commit phase (≈1 transaction) and later `revealValidation` in the reveal phase (≈1 transaction).
+- Finalize the job with `validateJob` or `disapproveJob` once the review window ends (≈1 transaction).
+- Expect roughly 4–5 transactions per job, not counting the initial stake.
+
 ## Quick Start
 
 **Employers**
