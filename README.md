@@ -84,6 +84,40 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Reveal it through [`revealValidation`](contracts/AGIJobManagerv1.sol#L685) once the reveal window opens.
 - Finalize by calling [`validateJob`](contracts/AGIJobManagerv1.sol#L720) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L764).
 - Always verify contract addresses and monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
+## Owner Configuration
+
+Only the contract owner can adjust global settings. The following `onlyOwner`
+functions control validation incentives, burn behavior, and system limits.
+
+| Function | Purpose | Safe Default Range |
+| --- | --- | --- |
+| `setBurnPercentage(uint256 bps)` | Portion of job payout burned on finalization (basis points). | `0`–`1000` (0–10%) |
+| `setBurnAddress(address addr)` | Destination for burned tokens (non-zero). | Use a known burn or treasury address. |
+| `setValidationRewardPercentage(uint256 bps)` | Share of payout granted to correct validators. | `0`–`2000` (0–20%) |
+| `setValidatorReputationPercentage(uint256 bps)` | Share of agent reputation awarded to correct validators. | `0`–`1000` (0–10%) |
+| `setStakeRequirement(uint256 amount)` | Minimum AGI stake required to validate. | `10`–`1000` AGI |
+| `setSlashingPercentage(uint256 bps)` | Stake forfeited for incorrect votes. | `0`–`1000` (0–10%) |
+| `setMinValidatorReputation(uint256 value)` | Reputation threshold validators must meet. | `0`–`100` |
+| `setValidatorsPerJob(uint256 count)` | Number of validators randomly selected per job. | `1`–`10` (default `3`) |
+| `setCommitRevealWindows(uint256 commit, uint256 reveal)` | Length of commit/reveal phases in seconds. | `300`–`3600` seconds each |
+| `setReviewWindow(uint256 secs)` | Waiting period before validators vote. | ≥ commit + reveal, typically `3600`–`86400` |
+
+Convenience functions:
+
+- `setBurnConfig(address addr, uint256 bps)` atomically updates burn address and percentage.
+- `setValidatorConfig(...)` adjusts reward, reputation, staking, slashing, and timing in one call.
+
+### Example: Updating Burn and Validator Settings with a Block Explorer
+
+1. Verify the AGIJobManager contract address on at least two explorers.
+2. In a block explorer's **Write** tab, connect your owner wallet.
+3. Call **setBurnConfig** with the burn address and percentage (basis points) and submit the transaction.
+4. Confirm `BurnAddressUpdated` and `BurnPercentageUpdated` events appear in the receipt.
+5. Call **setValidatorConfig** with desired reward, reputation, staking, slashing, and timing parameters.
+6. Verify the transaction emitted `ValidatorConfigUpdated` with the expected values.
+7. Cross-check both transactions on another explorer to ensure changes were applied.
+
+> **Warning:** Always double-check contract addresses before sending transactions. After any update, confirm parameter changes via the emitted events and monitor them on-chain.
 
 ## Overview
 
