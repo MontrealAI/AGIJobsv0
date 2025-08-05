@@ -82,6 +82,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
 - **Enum-based dispute resolution** – moderators settle conflicts with a typed `DisputeOutcome` enum instead of fragile string comparisons.
+- **Unified job status** – a `JobStatus` enum (`Open`, `CompletionRequested`, `Disputed`, `Completed`) replaces multiple booleans and is emitted with state-change events like `JobCreated`, `JobCompletionRequested`, `JobDisputed`, and `JobCompleted`.
 - **Stake-based validator incentives**
   - Validators must stake $AGI and maintain a minimum reputation.
   - Rewards accrue only to validators whose votes match the final outcome; others are excluded.
