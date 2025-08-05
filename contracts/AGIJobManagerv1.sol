@@ -375,6 +375,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when the burn address has not been configured.
     error BurnAddressNotSet();
 
+    /// @dev Thrown when caller lacks required permissions or is blacklisted.
+    error Unauthorized();
+
+    /// @dev Thrown when supplied parameters are invalid.
+    error InvalidParameters();
+
+    /// @dev Thrown when an action is not permitted in the job's current state.
+    error InvalidJobState();
+
+    /// @dev Thrown when a validator submits more than one commitment.
+    error AlreadyCommitted();
+
+    /// @dev Thrown when a validator tries to reveal twice.
+    error AlreadyRevealed();
+
+    /// @dev Thrown when reveal data does not match the original commitment.
+    error InvalidReveal();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -426,7 +444,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// 5. After `reviewWindow` elapses, validators call `validateJob` or `disapproveJob`.
     ///    Sufficient approvals finalize the job; enough disapprovals open a dispute.
     function createJob(string memory _ipfsHash, uint256 _payout, uint256 _duration, string memory _details) external whenNotPaused nonReentrant {
-        require(_payout > 0 && _duration > 0 && _payout <= maxJobPayout && _duration <= jobDurationLimit, "Invalid job parameters");
+        if (
+            _payout == 0 ||
+            _duration == 0 ||
+            _payout > maxJobPayout ||
+            _duration > jobDurationLimit
+        ) revert InvalidParameters();
         uint256 jobId = nextJobId++;
         Job storage job = jobs[jobId];
         job.id = jobId;
@@ -447,8 +470,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(job.assignedAgent == address(0), "Job already assigned");
-        require((_verifyOwnership(msg.sender, subdomain, proof, agentRootNode) || additionalAgents[msg.sender]) && !blacklistedAgents[msg.sender], "Not authorized agent");
+        if (job.assignedAgent != address(0)) revert InvalidJobState();
+        if (
+            !(
+                _verifyOwnership(
+                    msg.sender,
+                    subdomain,
+                    proof,
+                    agentRootNode
+                ) || additionalAgents[msg.sender]
+            ) ||
+            blacklistedAgents[msg.sender]
+        ) revert Unauthorized();
         job.assignedAgent = msg.sender;
         job.assignedAt = block.timestamp;
         emit JobApplied(_jobId, msg.sender);
@@ -492,7 +525,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             abi.encodePacked(blockhash(block.number - 1), _jobId)
         );
 
-        for (uint256 i = 0; i < validatorsPerJob; i++) {
+        for (uint256 i; i < validatorsPerJob; ) {
             seed = keccak256(abi.encodePacked(seed, i));
             uint256 index = uint256(seed) % (poolLength - i);
             address validator = pool[index];
@@ -500,6 +533,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             job.selectedValidators.push(validator);
             selected[i] = validator;
             pool[index] = pool[poolLength - 1 - i];
+            unchecked {
+                ++i;
+            }
         }
 
         emit ValidatorsSelected(_jobId, selected);
@@ -1441,24 +1477,37 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit ReputationUpdated(job.assignedAgent, reputation[job.assignedAgent]);
     }
 
-    function listNFT(uint256 tokenId, uint256 price) external {
-        require(ownerOf(tokenId) == msg.sender && price > 0, "Not authorized or invalid price");
+    function listNFT(uint256 tokenId, uint256 price)
+        external
+        whenNotPaused
+        nonReentrant
+    {
+        if (ownerOf(tokenId) != msg.sender) revert Unauthorized();
+        if (price == 0) revert InvalidParameters();
         listings[tokenId] = Listing(tokenId, msg.sender, price, true);
         emit NFTListed(tokenId, msg.sender, price);
     }
 
-    function purchaseNFT(uint256 tokenId) external nonReentrant {
+    function purchaseNFT(uint256 tokenId)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         Listing storage listing = listings[tokenId];
-        require(listing.isActive, "Listing not active");
+        if (!listing.isActive) revert InvalidJobState();
         listing.isActive = false;
         agiToken.safeTransferFrom(msg.sender, listing.seller, listing.price);
         _safeTransfer(listing.seller, msg.sender, tokenId, "");
         emit NFTPurchased(tokenId, msg.sender, listing.price);
     }
 
-    function delistNFT(uint256 tokenId) external {
+    function delistNFT(uint256 tokenId)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         Listing storage listing = listings[tokenId];
-        require(listing.isActive && listing.seller == msg.sender, "Not authorized or listing not active");
+        if (!listing.isActive || listing.seller != msg.sender) revert Unauthorized();
         listing.isActive = false;
         emit NFTDelisted(tokenId);
     }
@@ -1618,11 +1667,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         bool exists = false;
-        for (uint256 i = 0; i < agiTypes.length; ++i) {
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ) {
             if (agiTypes[i].nftAddress == nftAddress) {
                 agiTypes[i].payoutPercentage = payoutPercentage;
                 exists = true;
                 break;
+            }
+            unchecked {
+                ++i;
             }
         }
         if (!exists) {
@@ -1637,9 +1690,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @return highestPercentage Maximum bonus percentage in basis points among held AGI types.
     function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {
         uint256 len = agiTypes.length;
-        for (uint256 i; i < len; ++i) {
+        for (uint256 i; i < len; ) {
             if (IERC721(agiTypes[i].nftAddress).balanceOf(agent) > 0 && agiTypes[i].payoutPercentage > highestPercentage) {
                 highestPercentage = agiTypes[i].payoutPercentage;
+            }
+            unchecked {
+                ++i;
             }
         }
     }
