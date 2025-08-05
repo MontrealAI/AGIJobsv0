@@ -148,6 +148,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public stakeRequirement;
     uint256 public slashingPercentage;
     uint256 public minValidatorReputation;
+    uint256 public validatorsPerJob = 1;
+    address[] public validatorPool;
+    mapping(address => bool) public isValidatorInPool;
+    uint256 public nextValidatorIndex;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -202,6 +206,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         mapping(address => bool) approvals;
         mapping(address => bool) disapprovals;
         address[] validators;
+        address[] selectedValidators;
+        mapping(address => bool) isSelectedValidator;
         mapping(address => bytes32) commitments;
         mapping(address => bool) revealed;
         mapping(address => bool) revealedVotes;
@@ -253,6 +259,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event JobCompleted(uint256 jobId, address agent, uint256 reputationPoints);
     event ValidationCommitted(uint256 jobId, address validator, bytes32 commitment);
     event ValidationRevealed(uint256 jobId, address validator, bool approved);
+    event ValidatorsSelected(uint256 jobId, address[] validators);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
     event JobFinalizedAndBurned(
@@ -303,6 +310,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event BurnPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validation reward percentage is updated.
     event ValidationRewardPercentageUpdated(uint256 newPercentage);
+    event ValidatorsPerJobUpdated(uint256 count);
     event StakeDeposited(address indexed validator, uint256 amount);
     event StakeWithdrawn(address indexed validator, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
@@ -404,7 +412,23 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.completionRequested = true;
         job.validationStart = block.timestamp;
         job.completionRequestedAt = block.timestamp;
+        _selectValidators(_jobId);
         emit JobCompletionRequested(_jobId, msg.sender);
+    }
+
+    function _selectValidators(uint256 _jobId) internal {
+        Job storage job = jobs[_jobId];
+        uint256 poolLength = validatorPool.length;
+        require(poolLength >= validatorsPerJob, "Not enough validators");
+        address[] memory selected = new address[](validatorsPerJob);
+        for (uint256 i = 0; i < validatorsPerJob; i++) {
+            address validator = validatorPool[(nextValidatorIndex + i) % poolLength];
+            job.isSelectedValidator[validator] = true;
+            job.selectedValidators.push(validator);
+            selected[i] = validator;
+        }
+        nextValidatorIndex = (nextValidatorIndex + validatorsPerJob) % poolLength;
+        emit ValidatorsSelected(_jobId, selected);
     }
 
     /// @notice Commit to a validation vote without revealing it.
@@ -431,6 +455,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             "Insufficient reputation"
         );
         Job storage job = jobs[_jobId];
+        require(job.isSelectedValidator[msg.sender], "Validator not selected");
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
         require(!job.completed, "Job completed");
@@ -455,6 +480,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         bytes32 salt
     ) external whenNotPaused nonReentrant {
         Job storage job = jobs[_jobId];
+        require(job.isSelectedValidator[msg.sender], "Validator not selected");
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
         require(!job.completed, "Job completed");
@@ -605,6 +631,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             }
 
             delete job.validators;
+            for (uint256 i = 0; i < job.selectedValidators.length; i++) {
+                delete job.isSelectedValidator[job.selectedValidators[i]];
+            }
+            delete job.selectedValidators;
 
             if (correctValidatorCount == 0) {
                 if (totalSlashed > 0) {
@@ -831,6 +861,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function setMinValidatorReputation(uint256 minimum) external onlyOwner {
         minValidatorReputation = minimum;
         emit MinValidatorReputationUpdated(minimum);
+    }
+
+    function setValidatorsPerJob(uint256 count) external onlyOwner {
+        require(count > 0, "Invalid count");
+        validatorsPerJob = count;
+        emit ValidatorsPerJobUpdated(count);
     }
 
     /// @notice Update commit and reveal window durations.
@@ -1094,6 +1130,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         delete job.validators;
+        for (uint256 i = 0; i < job.selectedValidators.length; i++) {
+            delete job.isSelectedValidator[job.selectedValidators[i]];
+        }
+        delete job.selectedValidators;
 
         if (correctValidatorCount == 0) {
             validatorPayoutTotal = 0;
@@ -1229,6 +1269,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function addAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = true;
+        if (!isValidatorInPool[validator]) {
+            validatorPool.push(validator);
+            isValidatorInPool[validator] = true;
+        }
     }
 
     function removeAdditionalValidator(address validator) external onlyOwner {
