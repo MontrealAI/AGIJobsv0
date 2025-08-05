@@ -1355,7 +1355,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
         uint256 tokenId = nextTokenId++;
         string memory tokenURI = string(abi.encodePacked(baseIpfsUrl, "/", job.ipfsHash));
-        _mint(job.employer, tokenId);
+        _safeMint(job.employer, tokenId);
         _setTokenURI(tokenId, tokenURI);
         emit NFTIssued(tokenId, job.employer, tokenURI);
         emit JobFinalizedAndBurned(
