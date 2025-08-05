@@ -113,6 +113,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 
 interface ENS {
     function resolver(bytes32 node) external view returns (address);
@@ -155,6 +156,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public validatorsPerJob = 3;
     address[] public validatorPool;
     mapping(address => bool) public isValidatorInPool;
+
+    // Chainlink VRF configuration
+    VRFCoordinatorV2Interface public vrfCoordinator;
+    bytes32 public vrfKeyHash;
+    uint64 public vrfSubscriptionId;
+    uint32 private constant VRF_CALLBACK_GAS_LIMIT = 200000;
+    uint16 private constant VRF_REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant VRF_NUM_WORDS = 1;
+    mapping(uint256 => uint256) private vrfRequestToJobId;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -263,6 +273,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidationCommitted(uint256 jobId, address validator, bytes32 commitment);
     event ValidationRevealed(uint256 jobId, address validator, bool approved);
     event ValidatorsSelected(uint256 jobId, address[] validators);
+    event ValidatorSelectionRequested(uint256 indexed jobId, uint256 indexed requestId);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
     event JobFinalizedAndBurned(
@@ -311,6 +322,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event AdditionalText2Updated(string newText);
     event AdditionalText3Updated(string newText);
     event BurnAddressUpdated(address indexed newBurnAddress);
+    event VrfCoordinatorUpdated(address indexed newCoordinator);
+    event VrfKeyHashUpdated(bytes32 indexed newKeyHash);
+    event VrfSubscriptionIdUpdated(uint64 indexed newSubscriptionId);
     /// @notice Emitted when the slashed stake recipient is updated.
     event SlashedStakeRecipientUpdated(address indexed newRecipient);
     /// @notice Emitted when the burn percentage is updated.
@@ -360,7 +374,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         bytes32 _clubRootNode,
         bytes32 _agentRootNode,
         bytes32 _validatorMerkleRoot,
-        bytes32 _agentMerkleRoot
+        bytes32 _agentMerkleRoot,
+        address _vrfCoordinator
     ) ERC721("AGIJobs", "Job") Ownable(msg.sender) {
         agiToken = IERC20(_agiTokenAddress);
         baseIpfsUrl = _baseIpfsUrl;
@@ -371,6 +386,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validatorMerkleRoot = _validatorMerkleRoot;
         agentMerkleRoot = _agentMerkleRoot;
         slashedStakeRecipient = msg.sender;
+        vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
         // Set sensible non-zero defaults to avoid inadvertent instant phases.
         commitDuration = 1 hours;
         revealDuration = 1 hours;
@@ -426,28 +442,44 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(msg.sender == job.assignedAgent && block.timestamp <= job.assignedAt + job.duration, "Not authorized or expired");
         job.ipfsHash = _ipfsHash;
         job.completionRequested = true;
-        job.validationStart = block.timestamp;
         job.completionRequestedAt = block.timestamp;
         _selectValidators(_jobId);
         emit JobCompletionRequested(_jobId, msg.sender);
     }
 
-    /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
-    ///      Uses blockhash-based entropy; not suitable for high-stakes randomness.
+    /// @dev Initiates a Chainlink VRF request to select validators asynchronously.
     function _selectValidators(uint256 _jobId) internal {
-        Job storage job = jobs[_jobId];
+        require(address(vrfCoordinator) != address(0), "VRF coordinator not set");
+        require(vrfKeyHash != bytes32(0), "VRF key hash not set");
+        require(vrfSubscriptionId != 0, "VRF sub ID not set");
+        uint256 requestId = vrfCoordinator.requestRandomWords(
+            vrfKeyHash,
+            vrfSubscriptionId,
+            VRF_REQUEST_CONFIRMATIONS,
+            VRF_CALLBACK_GAS_LIMIT,
+            VRF_NUM_WORDS
+        );
+        vrfRequestToJobId[requestId] = _jobId;
+        emit ValidatorSelectionRequested(_jobId, requestId);
+    }
+
+    /// @dev Consumes VRF randomness and selects unique validators.
+    function _fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal {
+        uint256 jobId = vrfRequestToJobId[requestId];
+        Job storage job = jobs[jobId];
         uint256 poolLength = validatorPool.length;
         require(poolLength >= validatorsPerJob, "Not enough validators");
 
         address[] memory pool = validatorPool;
         address[] memory selected = new address[](validatorsPerJob);
-        bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), _jobId)
-        );
+        uint256 seed = randomWords[0];
 
         for (uint256 i = 0; i < validatorsPerJob; i++) {
-            seed = keccak256(abi.encodePacked(seed, i));
-            uint256 index = uint256(seed) % (poolLength - i);
+            seed = uint256(keccak256(abi.encode(seed, i)));
+            uint256 index = seed % (poolLength - i);
             address validator = pool[index];
             job.isSelectedValidator[validator] = true;
             job.selectedValidators.push(validator);
@@ -455,7 +487,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             pool[index] = pool[poolLength - 1 - i];
         }
 
-        emit ValidatorsSelected(_jobId, selected);
+        job.validationStart = block.timestamp;
+        emit ValidatorsSelected(jobId, selected);
+    }
+
+    /// @notice VRF callback entry point.
+    function rawFulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) external {
+        require(msg.sender == address(vrfCoordinator), "Only VRF coordinator");
+        _fulfillRandomWords(requestId, randomWords);
     }
 
     /// @notice Commit to a validation vote without revealing it.
@@ -952,6 +994,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         );
         reviewWindow = newWindow;
         emit ReviewWindowUpdated(newWindow);
+    }
+
+    /// @notice Configure the Chainlink VRF coordinator address.
+    function setVrfCoordinator(address _coordinator) external onlyOwner {
+        vrfCoordinator = VRFCoordinatorV2Interface(_coordinator);
+        emit VrfCoordinatorUpdated(_coordinator);
+    }
+
+    /// @notice Configure the Chainlink VRF key hash.
+    function setVrfKeyHash(bytes32 _keyHash) external onlyOwner {
+        vrfKeyHash = _keyHash;
+        emit VrfKeyHashUpdated(_keyHash);
+    }
+
+    /// @notice Configure the Chainlink VRF subscription ID.
+    function setVrfSubscriptionId(uint64 _subId) external onlyOwner {
+        vrfSubscriptionId = _subId;
+        emit VrfSubscriptionIdUpdated(_subId);
     }
 
     /// @notice Atomically update validator incentive parameters.

@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("AGIJobManagerV1 payouts", function () {
-    async function deployFixture(burnPct = 1000) {
+  async function deployFixture(burnPct = 1000) {
     const [owner, employer, agent, validator, validator2, validator3] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
@@ -20,6 +20,14 @@ describe("AGIJobManagerV1 payouts", function () {
     const wrapper = await WrapperMock.deploy();
     await wrapper.waitForDeployment();
 
+    const VRFMock = await ethers.getContractFactory("VRFCoordinatorV2Mock");
+    const vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+    const subTx = await vrf.createSubscription();
+    const subReceipt = await subTx.wait();
+    const subId = subReceipt.logs[0].args.subId;
+    await vrf.fundSubscription(subId, ethers.parseEther("1"));
+
     const Manager = await ethers.getContractFactory("AGIJobManagerV1");
     const manager = await Manager.deploy(
       await token.getAddress(),
@@ -29,9 +37,14 @@ describe("AGIJobManagerV1 payouts", function () {
       ethers.ZeroHash,
       ethers.ZeroHash,
       ethers.ZeroHash,
-      ethers.ZeroHash
+      ethers.ZeroHash,
+      await vrf.getAddress()
     );
     await manager.waitForDeployment();
+    const keyHash = ethers.keccak256(ethers.toUtf8Bytes("keyHash"));
+    await manager.setVrfKeyHash(keyHash);
+    await manager.setVrfSubscriptionId(subId);
+    await vrf.addConsumer(subId, await manager.getAddress());
 
     await manager.setRequiredValidatorApprovals(1);
     await manager.setBurnPercentage(burnPct);
@@ -45,11 +58,27 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.addAdditionalValidator(validator3.address);
     await manager.setValidatorsPerJob(3);
 
-    return { token, manager, owner, employer, agent, validator, validator2, validator3 };
+    return { token, manager, owner, employer, agent, validator, validator2, validator3, vrf };
+  }
+
+  async function requestAndFulfill(manager, vrf, agent, jobId, ipfsHash = "result") {
+    const tx = await manager.connect(agent).requestJobCompletion(jobId, ipfsHash);
+    const receipt = await tx.wait();
+    const event = receipt.logs
+      .map((log) => {
+        try {
+          return manager.interface.parseLog(log);
+        } catch {
+          return undefined;
+        }
+      })
+      .find((e) => e && e.name === "ValidatorSelectionRequested");
+    const requestId = event.args.requestId;
+    await vrf.fulfillRandomWords(requestId, await manager.getAddress());
   }
 
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -57,7 +86,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const salt = ethers.id("payout1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -83,7 +112,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("sends validator leftovers to slashedStakeRecipient", async function () {
-    const { token, manager, owner, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    const { token, manager, owner, employer, agent, validator, validator2, validator3, vrf } = await deployFixture();
     await manager.setRequiredValidatorApprovals(3);
     const payout = ethers.parseEther("1000");
     const initialOwnerBalance = await token.balanceOf(owner.address);
@@ -93,7 +122,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
 
     const validators = [validator, validator2, validator3];
     const salts = [ethers.id("lv1"), ethers.id("lv2"), ethers.id("lv3")];
@@ -140,7 +169,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("pays base payout to agent without AGI NFT", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture(0);
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture(0);
     const payout = ethers.parseEther("1000");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -148,7 +177,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const salt2 = ethers.id("payout2");
     const commitment2 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -169,7 +198,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("rejects validation before completion is requested", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -184,7 +213,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("enforces review window before validation", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
 
     await manager.setReviewWindow(5000);
@@ -194,7 +223,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const salt = ethers.id("rw1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -212,7 +241,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("enforces review window before disapproval", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
 
     await manager.setReviewWindow(5000);
@@ -222,7 +251,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const salt = ethers.id("rw2");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -240,7 +269,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("restricts commit and reveal to selected validators", async function () {
-    const { token, manager, employer, agent, validator, validator2 } = await deployFixture();
+    const { token, manager, employer, agent, validator, validator2, vrf } = await deployFixture();
     await manager.setValidatorPool([validator.address]);
     await manager.setRequiredValidatorDisapprovals(1);
     await manager.setValidatorsPerJob(1);
@@ -251,8 +280,20 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
+    const tx = await manager.connect(agent).requestJobCompletion(jobId, "result");
+    const rc = await tx.wait();
+    const event = rc.logs
+      .map((log) => {
+        try {
+          return manager.interface.parseLog(log);
+        } catch {
+          return undefined;
+        }
+      })
+      .find((e) => e && e.name === "ValidatorSelectionRequested");
+    const reqId = event.args.requestId;
     await expect(
-      manager.connect(agent).requestJobCompletion(jobId, "result")
+      vrf.fulfillRandomWords(reqId, await manager.getAddress())
     )
       .to.emit(manager, "ValidatorsSelected")
       .withArgs(jobId, [validator.address]);
@@ -284,7 +325,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("restricts burn address updates to owner and emits event", async function () {
-    const { manager, employer } = await deployFixture();
+    const { manager, employer, vrf } = await deployFixture();
     const newAddress = ethers.getAddress(
       "0x000000000000000000000000000000000000BEEF"
     );
@@ -301,7 +342,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("restricts burn percentage updates to owner and emits event", async function () {
-    const { manager, employer } = await deployFixture();
+    const { manager, employer, vrf } = await deployFixture();
     const newPercentage = 500;
 
     await expect(
@@ -316,7 +357,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("allows owner to update burn config atomically", async function () {
-    const { manager } = await deployFixture();
+    const { manager, vrf } = await deployFixture();
     const newAddress = ethers.getAddress(
       "0x000000000000000000000000000000000000BEEF"
     );
@@ -333,7 +374,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("restricts root node and Merkle root updates to owner and emits events", async function () {
-    const { manager, employer } = await deployFixture();
+    const { manager, employer, vrf } = await deployFixture();
     const newClub = ethers.id("club");
     const newAgent = ethers.id("agent");
     const newValidatorRoot = ethers.id("validator");
@@ -363,7 +404,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("allows owner to remove validators from the selection pool", async function () {
-    const { manager, validator } = await deployFixture();
+    const { manager, validator, vrf } = await deployFixture();
     expect(await manager.isValidatorInPool(validator.address)).to.equal(true);
     await expect(manager.removeAdditionalValidator(validator.address))
       .to.emit(manager, "ValidatorRemoved")
@@ -372,7 +413,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("restricts ENS and NameWrapper updates to owner and emits events", async function () {
-    const { manager, employer } = await deployFixture();
+    const { manager, employer, vrf } = await deployFixture();
     const newEns = ethers.getAddress(
       "0x000000000000000000000000000000000000dEaD"
     );
@@ -394,7 +435,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("emits JobFinalizedAndBurned with correct payouts", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -402,7 +443,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const burnAmount = (payout * 1000n) / 10000n;
     const validatorPayoutTotal = (payout * 800n) / 10000n;
     const agentExpected = payout - burnAmount - validatorPayoutTotal;
@@ -425,7 +466,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("tracks validator job disapprovals separately from approvals", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -433,7 +474,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const salt3 = ethers.id("dis1");
     const commitment3 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -456,7 +497,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("keeps pending validator jobs after other jobs are finalized", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("100");
 
     // Fund employer for multiple jobs
@@ -468,7 +509,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .connect(employer)
       .createJob("jobhash1", payout, 1000, "details1");
     await manager.connect(agent).applyForJob(0, "", []);
-    await manager.connect(agent).requestJobCompletion(0, "result1");
+    await requestAndFulfill(manager, vrf, agent, 0, "result1");
     const salt4 = ethers.id("job0");
     const commitment4 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -495,7 +536,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .connect(employer)
       .createJob("jobhash2", payout, 1000, "details2");
     await manager.connect(agent).applyForJob(1, "", []);
-    await manager.connect(agent).requestJobCompletion(1, "result2");
+    await requestAndFulfill(manager, vrf, agent, 1, "result2");
     const salt5 = ethers.id("job1");
     const commitment5 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -515,7 +556,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .connect(employer)
       .createJob("jobhash3", payout, 1000, "details3");
     await manager.connect(agent).applyForJob(2, "", []);
-    await manager.connect(agent).requestJobCompletion(2, "result3");
+    await requestAndFulfill(manager, vrf, agent, 2, "result3");
     const salt6 = ethers.id("job2");
     const commitment6 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -553,7 +594,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
 
     const stakeAmount = ethers.parseEther("100");
     await token.mint(validator.address, stakeAmount);
@@ -612,7 +653,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("allows owner to update validator incentive parameters atomically", async function () {
-    const { manager, employer, validator } = await deployFixture();
+    const { manager, employer, validator, vrf } = await deployFixture();
     const cfg = {
       rewardPct: 500,
       repPct: 123,
@@ -698,7 +739,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("cleans up validator history enabling stake withdrawal after many jobs", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("10");
     const stakeAmount = ethers.parseEther("100");
 
@@ -715,7 +756,7 @@ describe("AGIJobManagerV1 payouts", function () {
         .connect(employer)
         .createJob("jobhash" + i, payout, 1000, "details");
       await manager.connect(agent).applyForJob(i, "", []);
-      await manager.connect(agent).requestJobCompletion(i, "result");
+      await requestAndFulfill(manager, vrf, agent, i, "result");
       const salt = ethers.id("loop" + i);
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],
@@ -740,7 +781,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
   describe("commit-reveal workflow", function () {
     it("allows on-time commit and reveal", async function () {
-      const { token, manager, employer, agent, validator } = await deployFixture();
+      const { token, manager, employer, agent, validator, vrf } = await deployFixture();
       await manager.setCommitRevealWindows(100, 100);
       await manager.setReviewWindow(200);
       const payout = ethers.parseEther("100");
@@ -748,7 +789,7 @@ describe("AGIJobManagerV1 payouts", function () {
       await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
       const jobId = 0;
       await manager.connect(agent).applyForJob(jobId, "", []);
-      await manager.connect(agent).requestJobCompletion(jobId, "result");
+      await requestAndFulfill(manager, vrf, agent, jobId, "result");
       const salt = ethers.id("salt");
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],
@@ -776,7 +817,7 @@ describe("AGIJobManagerV1 payouts", function () {
     });
 
     it("reverts when revealing after the window", async function () {
-      const { token, manager, employer, agent, validator } = await deployFixture();
+      const { token, manager, employer, agent, validator, vrf } = await deployFixture();
       await manager.setCommitRevealWindows(100, 100);
       await manager.setReviewWindow(200);
       const payout = ethers.parseEther("100");
@@ -784,7 +825,7 @@ describe("AGIJobManagerV1 payouts", function () {
       await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
       const jobId = 0;
       await manager.connect(agent).applyForJob(jobId, "", []);
-      await manager.connect(agent).requestJobCompletion(jobId, "result");
+      await requestAndFulfill(manager, vrf, agent, jobId, "result");
       const salt = ethers.id("salt2");
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],
@@ -802,7 +843,7 @@ describe("AGIJobManagerV1 payouts", function () {
     });
 
     it("blocks stake withdrawal with pending commits", async function () {
-      const { token, manager, employer, agent, validator } = await deployFixture();
+      const { token, manager, employer, agent, validator, vrf } = await deployFixture();
       await manager.setCommitRevealWindows(100, 100);
       const stakeAmount = ethers.parseEther("100");
       await token.mint(validator.address, stakeAmount);
@@ -815,7 +856,7 @@ describe("AGIJobManagerV1 payouts", function () {
       await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
       const jobId = 0;
       await manager.connect(agent).applyForJob(jobId, "", []);
-      await manager.connect(agent).requestJobCompletion(jobId, "result");
+      await requestAndFulfill(manager, vrf, agent, jobId, "result");
       const salt = ethers.id("pendingCommit");
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],

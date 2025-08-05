@@ -18,6 +18,14 @@ async function deployFixture(burnPct = 1000) {
   const wrapper = await WrapperMock.deploy();
   await wrapper.waitForDeployment();
 
+  const VRFMock = await ethers.getContractFactory("VRFCoordinatorV2Mock");
+  const vrf = await VRFMock.deploy();
+  await vrf.waitForDeployment();
+  const subTx = await vrf.createSubscription();
+  const subRc = await subTx.wait();
+  const subId = subRc.logs[0].args.subId;
+  await vrf.fundSubscription(subId, ethers.parseEther("1"));
+
   const Manager = await ethers.getContractFactory("AGIJobManagerV1");
   const manager = await Manager.deploy(
     await token.getAddress(),
@@ -27,9 +35,14 @@ async function deployFixture(burnPct = 1000) {
     ethers.ZeroHash,
     ethers.ZeroHash,
     ethers.ZeroHash,
-    ethers.ZeroHash
+    ethers.ZeroHash,
+    await vrf.getAddress()
   );
   await manager.waitForDeployment();
+  const keyHash = ethers.keccak256(ethers.toUtf8Bytes("keyHash"));
+  await manager.setVrfKeyHash(keyHash);
+  await manager.setVrfSubscriptionId(subId);
+  await vrf.addConsumer(subId, await manager.getAddress());
 
   await manager.setRequiredValidatorApprovals(1);
   await manager.setRequiredValidatorDisapprovals(1);
@@ -41,19 +54,35 @@ async function deployFixture(burnPct = 1000) {
   await manager.addAdditionalValidator(validator.address);
   await manager.setValidatorsPerJob(1);
 
-  return { token, manager, owner, employer, agent, validator };
+  return { token, manager, owner, employer, agent, validator, vrf };
+}
+
+async function requestAndFulfill(manager, vrf, agent, jobId, ipfsHash = "result") {
+  const tx = await manager.connect(agent).requestJobCompletion(jobId, ipfsHash);
+  const rc = await tx.wait();
+  const event = rc.logs
+    .map((log) => {
+      try {
+        return manager.interface.parseLog(log);
+      } catch {
+        return undefined;
+      }
+    })
+    .find((e) => e && e.name === "ValidatorSelectionRequested");
+  const requestId = event.args.requestId;
+  await vrf.fulfillRandomWords(requestId, await manager.getAddress());
 }
 
 describe("Burn configuration", function () {
   it("burns a portion of payout when job is finalized", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("1000");
     await token.connect(employer).approve(await manager.getAddress(), payout);
     await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
     const salt = ethers.id("burn1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -73,7 +102,7 @@ describe("Burn configuration", function () {
   });
 
   it("restricts burn address updates to owner and emits event", async function () {
-    const { manager, employer } = await deployFixture();
+    const { manager, employer, vrf } = await deployFixture();
     const newAddress = ethers.getAddress("0x000000000000000000000000000000000000BEEF");
 
     await expect(manager.connect(employer).setBurnAddress(newAddress))

@@ -20,6 +20,14 @@ async function deployFixture() {
   const wrapper = await WrapperMock.deploy();
   await wrapper.waitForDeployment();
 
+  const VRFMock = await ethers.getContractFactory("VRFCoordinatorV2Mock");
+  const vrf = await VRFMock.deploy();
+  await vrf.waitForDeployment();
+  const subTx = await vrf.createSubscription();
+  const subRc = await subTx.wait();
+  const subId = subRc.logs[0].args.subId;
+  await vrf.fundSubscription(subId, ethers.parseEther("1"));
+
   const Manager = await ethers.getContractFactory("AGIJobManagerV1");
   const manager = await Manager.deploy(
     await token.getAddress(),
@@ -29,9 +37,14 @@ async function deployFixture() {
     ethers.ZeroHash,
     ethers.ZeroHash,
     ethers.ZeroHash,
-    ethers.ZeroHash
+    ethers.ZeroHash,
+    await vrf.getAddress()
   );
   await manager.waitForDeployment();
+  const keyHash = ethers.keccak256(ethers.toUtf8Bytes("keyHash"));
+  await manager.setVrfKeyHash(keyHash);
+  await manager.setVrfSubscriptionId(subId);
+  await vrf.addConsumer(subId, await manager.getAddress());
 
   await manager.setRequiredValidatorApprovals(1);
   await manager.setRequiredValidatorDisapprovals(1);
@@ -40,12 +53,28 @@ async function deployFixture() {
   await manager.addAdditionalValidator(validator.address);
   await manager.setValidatorsPerJob(1);
 
-  return { owner, employer, agent, validator, token, manager };
+  return { owner, employer, agent, validator, token, manager, vrf };
+}
+
+async function requestAndFulfill(manager, vrf, agent, jobId, ipfsHash = "result") {
+  const tx = await manager.connect(agent).requestJobCompletion(jobId, ipfsHash);
+  const rc = await tx.wait();
+  const event = rc.logs
+    .map((log) => {
+      try {
+        return manager.interface.parseLog(log);
+      } catch {
+        return undefined;
+      }
+    })
+    .find((e) => e && e.name === "ValidatorSelectionRequested");
+  const requestId = event.args.requestId;
+  await vrf.fulfillRandomWords(requestId, await manager.getAddress());
 }
 
 describe("burn mechanics", function () {
   it("burns the expected portion of funds on job finalization", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+    const { token, manager, employer, agent, validator, vrf } = await deployFixture();
     const payout = ethers.parseEther("100");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -55,7 +84,7 @@ describe("burn mechanics", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await requestAndFulfill(manager, vrf, agent, jobId, "result");
 
     const burnPct = await manager.burnPercentage();
     const expectedBurn = (payout * burnPct) / 10_000n;
