@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("AGIJobManagerV1 payouts", function () {
-    async function deployFixture(burnPct = 1000) {
+    async function deployFixture(burnPct = 1000, useMerkle = false) {
     const [owner, employer, agent, validator, validator2, validator3] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
@@ -39,13 +39,26 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.setReviewWindow(7200);
     await manager.setCommitRevealWindows(1000, 1000);
     await manager.setReviewWindow(2000);
-    await manager.addAdditionalAgent(agent.address);
-    await manager.addAdditionalValidator(validator.address);
-    await manager.addAdditionalValidator(validator2.address);
-    await manager.addAdditionalValidator(validator3.address);
+    let proof = [];
+    if (useMerkle) {
+      const leafAgent = ethers.solidityPackedKeccak256(["address"], [agent.address]);
+      const leafOther = ethers.solidityPackedKeccak256(["address"], [validator.address]);
+      const [first, second] = leafAgent < leafOther ? [leafAgent, leafOther] : [leafOther, leafAgent];
+      const root = ethers.solidityPackedKeccak256(["bytes32", "bytes32"], [first, second]);
+      await manager.setAgentMerkleRoot(root);
+      proof = [leafOther];
+      await manager.addAdditionalValidator(validator.address);
+      await manager.addAdditionalValidator(validator2.address);
+      await manager.addAdditionalValidator(validator3.address);
+    } else {
+      await manager.addAdditionalAgent(agent.address);
+      await manager.addAdditionalValidator(validator.address);
+      await manager.addAdditionalValidator(validator2.address);
+      await manager.addAdditionalValidator(validator3.address);
+    }
     await manager.setValidatorsPerJob(3);
 
-    return { token, manager, owner, employer, agent, validator, validator2, validator3 };
+    return { token, manager, owner, employer, agent, validator, validator2, validator3, proof };
   }
 
   it("reverts when updating AGI token address to zero", async function () {
@@ -53,6 +66,19 @@ describe("AGIJobManagerV1 payouts", function () {
     await expect(
       manager.updateAGITokenAddress(ethers.ZeroAddress)
     ).to.be.revertedWithCustomError(manager, "InvalidAddress");
+  });
+
+  it("allows agent to apply for a job using a Merkle proof", async function () {
+    const { token, manager, employer, agent, proof } = await deployFixture(1000, true);
+    const payout = ethers.parseEther("1");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    const jobId = 0;
+    await expect(
+      manager.connect(agent).applyForJob(jobId, "alice", proof)
+    )
+      .to.emit(manager, "OwnershipVerified")
+      .withArgs(agent.address, "alice");
   });
 
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {

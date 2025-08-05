@@ -134,7 +134,6 @@ interface NameWrapper {
 /// @custom:security-contact security@agi.network
 contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     using ECDSA for bytes32;
-    using MerkleProof for bytes32[];
     using SafeERC20 for IERC20;
 
     IERC20 public agiToken;
@@ -1733,7 +1732,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function _verifyOwnership(address claimant, string memory subdomain, bytes32[] calldata proof, bytes32 rootNode) internal returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(claimant));
-        if (proof.verify(rootNode == agentRootNode ? agentMerkleRoot : validatorMerkleRoot, leaf)) {
+        if (
+            MerkleProof.verifyCalldata(
+                proof,
+                rootNode == agentRootNode
+                    ? agentMerkleRoot
+                    : validatorMerkleRoot,
+                leaf
+            )
+        ) {
             emit OwnershipVerified(claimant, subdomain);
             return true;
         }
