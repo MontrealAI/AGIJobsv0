@@ -1565,7 +1565,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param agent Address being queried.
     /// @return highestPercentage Maximum bonus percentage among held AGI types.
     function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {
-        for (uint256 i = 0; i < agiTypes.length; ++i) {
+        uint256 len = agiTypes.length;
+        for (uint256 i; i < len; ++i) {
             if (IERC721(agiTypes[i].nftAddress).balanceOf(agent) > 0 && agiTypes[i].payoutPercentage > highestPercentage) {
                 highestPercentage = agiTypes[i].payoutPercentage;
             }
