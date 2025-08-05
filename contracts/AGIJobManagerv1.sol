@@ -151,7 +151,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public validatorsPerJob = 1;
     address[] public validatorPool;
     mapping(address => bool) public isValidatorInPool;
-    uint256 public nextValidatorIndex;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -427,13 +426,21 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 poolLength = validatorPool.length;
         require(poolLength >= validatorsPerJob, "Not enough validators");
         address[] memory selected = new address[](validatorsPerJob);
+        uint256 randomSeed = uint256(
+            keccak256(abi.encodePacked(block.prevrandao, block.timestamp, _jobId))
+        );
         for (uint256 i = 0; i < validatorsPerJob; i++) {
-            address validator = validatorPool[(nextValidatorIndex + i) % poolLength];
+            uint256 index = randomSeed % poolLength;
+            address validator = validatorPool[index];
+            while (job.isSelectedValidator[validator]) {
+                index = (index + 1) % poolLength;
+                validator = validatorPool[index];
+            }
             job.isSelectedValidator[validator] = true;
             job.selectedValidators.push(validator);
             selected[i] = validator;
+            randomSeed = uint256(keccak256(abi.encodePacked(randomSeed, i)));
         }
-        nextValidatorIndex = (nextValidatorIndex + validatorsPerJob) % poolLength;
         emit ValidatorsSelected(_jobId, selected);
     }
 
@@ -1336,11 +1343,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
             }
             delete isValidatorInPool[validator];
-            if (validatorPool.length > 0) {
-                nextValidatorIndex = nextValidatorIndex % validatorPool.length;
-            } else {
-                nextValidatorIndex = 0;
-            }
         }
         emit ValidatorRemoved(validator);
     }

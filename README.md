@@ -89,7 +89,8 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
   - If no validator votes correctly, slashed stakes go to `slashedStakeRecipient` and the reserved reward portion refunds to the agent or employer.
   - All validator parameters (reward %, slashing %, stake requirement,
     approval thresholds, commit/reveal/review windows, validator count, slashed-stake recipient, etc.) are owner-configurable via `onlyOwner` functions.
-  - The contract owner may add or remove validators from the rotation with `addAdditionalValidator` and `removeAdditionalValidator`; removed validators emit `ValidatorRemoved` and cease being selected for jobs.
+  - Validators for each job are pseudo-randomly drawn from the validator pool, mitigating race conditions and collusion.
+  - The contract owner may add or remove validators from the pool with `addAdditionalValidator` and `removeAdditionalValidator`; removed validators emit `ValidatorRemoved` and cease being selected for jobs.
   - Setting the stake requirement or slashing percentage to `0` disables those mechanisms.
 - **Basis-point standardization** – percentage parameters like burns, slashing, and rewards are expressed in basis points for deterministic math.
 - **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address) while the validator reward portion reverts to the agent or employer.
