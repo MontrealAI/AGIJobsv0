@@ -308,6 +308,23 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWithCustomError(manager, "ValidatorNotSelected");
   });
 
+  it("reverts if eligible validators below required count", async function () {
+    const { token, manager, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    const payout = ethers.parseEther("1000");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.blacklistValidator(validator2.address, true);
+    await manager.setValidatorsPerJob(3);
+
+    await expect(
+      manager.connect(agent).requestJobCompletion(jobId, "result")
+    ).to.be.revertedWithCustomError(manager, "NotEnoughValidators");
+  });
+
   it("restricts burn address updates to owner and emits event", async function () {
     const { manager, employer } = await deployFixture();
     const newAddress = ethers.getAddress(
