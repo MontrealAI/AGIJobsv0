@@ -155,6 +155,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public validatorsPerJob = 3;
     address[] public validatorPool;
     mapping(address => bool) public isValidatorInPool;
+    mapping(address => uint256) public validatorPoolIndex;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -1618,7 +1619,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (validators.length == 0) revert InvalidParameters();
         uint256 currentLength = validatorPool.length;
         for (uint256 i; i < currentLength; ) {
-            delete isValidatorInPool[validatorPool[i]];
+            address vOld = validatorPool[i];
+            delete isValidatorInPool[vOld];
+            delete validatorPoolIndex[vOld];
             unchecked {
                 ++i;
             }
@@ -1629,6 +1632,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             address v = validators[i];
             validatorPool.push(v);
             isValidatorInPool[v] = true;
+            validatorPoolIndex[v] = validatorPool.length - 1;
             unchecked {
                 ++i;
             }
@@ -1639,6 +1643,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function addAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = true;
         if (!isValidatorInPool[validator]) {
+            validatorPoolIndex[validator] = validatorPool.length;
             validatorPool.push(validator);
             isValidatorInPool[validator] = true;
         }
@@ -1651,18 +1656,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         );
         additionalValidators[validator] = false;
         if (isValidatorInPool[validator]) {
-            uint256 length = validatorPool.length;
-            for (uint256 i; i < length; ) {
-                if (validatorPool[i] == validator) {
-                    validatorPool[i] = validatorPool[length - 1];
-                    validatorPool.pop();
-                    break;
-                }
-                unchecked {
-                    ++i;
-                }
+            uint256 index = validatorPoolIndex[validator];
+            uint256 lastIndex = validatorPool.length - 1;
+            if (index != lastIndex) {
+                address lastValidator = validatorPool[lastIndex];
+                validatorPool[index] = lastValidator;
+                validatorPoolIndex[lastValidator] = index;
             }
+            validatorPool.pop();
             delete isValidatorInPool[validator];
+            delete validatorPoolIndex[validator];
         }
         emit ValidatorRemoved(validator);
     }
