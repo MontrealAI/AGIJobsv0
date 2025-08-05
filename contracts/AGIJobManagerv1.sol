@@ -149,7 +149,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public stakeRequirement;
     uint256 public slashingPercentage;
     uint256 public minValidatorReputation;
-    uint256 public validatorsPerJob = 1;
+    /// @notice Number of validators randomly chosen for each job. Defaults to
+    /// three to match the initial approval/disapproval thresholds and avoid
+    /// misconfiguration.
+    uint256 public validatorsPerJob = 3;
     address[] public validatorPool;
     mapping(address => bool) public isValidatorInPool;
 
@@ -744,13 +747,19 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setRequiredValidatorApprovals(uint256 _approvals) external onlyOwner {
-        require(_approvals > 0, "Invalid approvals");
+        require(
+            _approvals > 0 && _approvals <= validatorsPerJob,
+            "Invalid approvals"
+        );
         requiredValidatorApprovals = _approvals;
         emit RequiredValidatorApprovalsUpdated(_approvals);
     }
 
     function setRequiredValidatorDisapprovals(uint256 _disapprovals) external onlyOwner {
-        require(_disapprovals > 0, "Invalid disapprovals");
+        require(
+            _disapprovals > 0 && _disapprovals <= validatorsPerJob,
+            "Invalid disapprovals"
+        );
         requiredValidatorDisapprovals = _disapprovals;
         emit RequiredValidatorDisapprovalsUpdated(_disapprovals);
     }
@@ -907,7 +916,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setValidatorsPerJob(uint256 count) external onlyOwner {
-        require(count > 0, "Invalid count");
+        require(
+            count > 0 &&
+                count >= requiredValidatorApprovals &&
+                count >= requiredValidatorDisapprovals,
+            "Invalid count"
+        );
         validatorsPerJob = count;
         emit ValidatorsPerJobUpdated(count);
     }
@@ -970,9 +984,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(reputationPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
-        require(approvals > 0, "Invalid approvals");
-        require(disapprovals > 0, "Invalid disapprovals");
         require(validatorsCount > 0, "Invalid validators");
+        require(
+            approvals > 0 && approvals <= validatorsCount,
+            "Invalid approvals"
+        );
+        require(
+            disapprovals > 0 && disapprovals <= validatorsCount,
+            "Invalid disapprovals"
+        );
         require(slashRecipient != address(0), "invalid address");
         require(
             reviewWin >= commitWindow + revealWindow,

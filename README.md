@@ -86,6 +86,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
   - Validators must stake $AGI and maintain a minimum reputation.
   - Rewards accrue only to validators whose votes match the final outcome; others are excluded.
   - Misaligned votes are slashed and lose reputation; correct validators share the slashed stake.
+  - `validatorsPerJob` defaults to three and can never fall below the approval or disapproval thresholds, preventing owner misconfiguration.
   - If no validator votes correctly, slashed stakes go to `slashedStakeRecipient` and the reserved reward portion refunds to the agent or employer.
   - Default timing uses a one-hour commit phase and one-hour reveal phase with a two-hour review window, all adjustable by the owner.
   - Validator reputation gains use a separate `validatorReputationPercentage` so reputation rewards can differ from token rewards.
@@ -123,7 +124,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 2. Ensure each validator has staked at least `stakeRequirement` before validating.
 3. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool.
 4. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
-5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (should stay ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
+5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
 6. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**

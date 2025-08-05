@@ -34,9 +34,11 @@ async function deployFixture() {
   await manager.waitForDeployment();
 
   await manager.setRequiredValidatorApprovals(1);
+  await manager.setRequiredValidatorDisapprovals(1);
   await manager.setCommitRevealWindows(1000, 1000);
   await manager.addAdditionalAgent(agent.address);
   await manager.addAdditionalValidator(validator.address);
+  await manager.setValidatorsPerJob(1);
 
   return { owner, employer, agent, validator, token, manager };
 }
