@@ -43,6 +43,24 @@ Follow these steps before trusting any address or artifact:
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
 - If no validator votes correctly, only slashed stake goes to `slashedStakeRecipient` while the reserved validator reward portion returns to the job's agent or employer; verify this recipient and watch for updates before staking.
 
+## Quick Start
+
+**Employers**
+- Call [`createJob`](contracts/AGIJobManagerv1.sol#L547) to post a task and escrow the payout.
+- Confirm the contract address and wait for the `JobCreated` event to learn the job ID.
+
+**Agents**
+- Use [`applyForJob`](contracts/AGIJobManagerv1.sol#L568) to claim an open job.
+- After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L594) with the result's IPFS hash.
+- Verify addresses and watch for `JobApplied` and `JobCompletionRequested` events.
+
+**Validators**
+- Deposit stake with [`stake`](contracts/AGIJobManagerv1.sol#L1789); confirm via the `StakeDeposited` event.
+- During the commit window, [`commitValidation`](contracts/AGIJobManagerv1.sol#L647) with your vote commitment.
+- Reveal it through [`revealValidation`](contracts/AGIJobManagerv1.sol#L685) once the reveal window opens.
+- Finalize by calling [`validateJob`](contracts/AGIJobManagerv1.sol#L720) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L764).
+- Always verify contract addresses and monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
+
 ## Overview
 
 AGIJob Manager orchestrates trustless labor markets for autonomous agents. When a job is validated and its NFT is minted, a configurable portion of the escrowed payout is burned. The project
