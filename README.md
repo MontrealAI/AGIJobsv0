@@ -261,7 +261,7 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
 - `setMaxJobPayout(uint256 newMax)` → `MaxJobPayoutUpdated`
 - `setJobDurationLimit(uint256 newLimit)` → `JobDurationLimitUpdated`
-- `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; the existing `reviewWindow` must be at least `commitWindow + revealWindow`.
+- `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; the existing `reviewWindow` must be at least `commitWindow + revealWindow`. Zero values are rejected.
 - `setReviewWindow(uint256 newWindow)` → `ReviewWindowUpdated` – defines the mandatory wait after completion requests and must be greater than or equal to `commitDuration + revealDuration`.
 - `updateTermsAndConditionsIpfsHash(string newHash)` → `TermsAndConditionsIpfsHashUpdated`
 - `updateContactEmail(string newEmail)` → `ContactEmailUpdated`
@@ -713,7 +713,7 @@ cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2 # finalizes
 
 The contract owner can tune validator requirements and incentives. Each update emits an event so indexers can track new values:
 
-- `setValidatorConfig(uint256 rewardPct, uint256 repPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient, uint256 commitWindow, uint256 revealWindow, uint256 reviewWin, uint256 validatorsCount)` – update all validator parameters in one transaction; emits `ValidatorConfigUpdated`.
+- `setValidatorConfig(uint256 rewardPct, uint256 repPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient, uint256 commitWindow, uint256 revealWindow, uint256 reviewWin, uint256 validatorsCount)` – update all validator parameters in one transaction; emits `ValidatorConfigUpdated`. Zero `commitWindow` or `revealWindow` values are rejected.
 - `setValidationRewardPercentage(uint256 percentage)` – define the token reward share for validators in basis points (set to `0` to disable); emits `ValidationRewardPercentageUpdated`.
 - `setValidatorReputationPercentage(uint256 percentage)` – set the fraction of agent reputation awarded to correct validators; emits `ValidatorReputationPercentageUpdated`.
 - `setSlashingPercentage(uint256 percentage)` – adjust how much stake is slashed for incorrect votes (basis points); emits `SlashingPercentageUpdated`.
