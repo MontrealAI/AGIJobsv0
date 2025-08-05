@@ -788,6 +788,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function validateJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
         external
         whenNotPaused
+        nonReentrant
         jobExists(_jobId)
     {
         if (
@@ -891,6 +892,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function resolveDispute(uint256 _jobId, DisputeOutcome outcome)
         external
+        nonReentrant
         onlyModerator
         jobExists(_jobId)
     {
@@ -904,7 +906,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit DisputeResolved(_jobId, msg.sender, outcome);
     }
 
-    function _resolveEmployerWin(uint256 _jobId) internal nonReentrant {
+    function _resolveEmployerWin(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
@@ -1562,7 +1564,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
-    function _finalizeJobAndBurn(uint256 _jobId) internal nonReentrant jobExists(_jobId) {
+    function _finalizeJobAndBurn(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         if (job.status == JobStatus.Completed) revert JobAlreadyFinalized();
         // Disallow payout without an explicit completion request
