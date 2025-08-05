@@ -1377,6 +1377,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         address employer = job.employer;
         uint256 payout = job.payout;
         delete jobs[_jobId];
+        totalJobEscrow -= payout;
         agiToken.safeTransfer(employer, payout);
         emit JobCancelled(_jobId);
     }
