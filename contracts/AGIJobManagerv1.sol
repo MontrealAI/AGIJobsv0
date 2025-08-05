@@ -152,6 +152,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// three to match the initial approval/disapproval thresholds and avoid
     /// misconfiguration.
     uint256 public validatorsPerJob = 3;
+    /// @notice Maximum number of validators allowed in the pool.
+    uint256 public maxValidatorPoolSize = 100;
     address[] public validatorPool;
     mapping(address => bool) public isValidatorInPool;
     mapping(address => uint256) public validatorPoolIndex;
@@ -317,6 +319,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event ValidatorRemoved(address indexed validator);
     /// @notice Emitted when the full validator pool is replaced.
     event ValidatorPoolSet(address[] newValidators);
+    /// @notice Emitted when the maximum validator pool size changes.
+    event MaxValidatorPoolSizeUpdated(uint256 oldSize, uint256 newSize);
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
     event AGITokenAddressUpdated(address indexed newTokenAddress);
@@ -477,6 +481,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when a validator address appears more than once in the pool.
     error DuplicateValidator();
+
+    /// @dev Thrown when the validator pool exceeds `maxValidatorPoolSize`.
+    error ValidatorPoolFull();
 
     /// @dev Thrown when stake withdrawal is blocked by active or disputed jobs.
     error PendingOrDisputedJob();
@@ -1276,6 +1283,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit ValidatorsPerJobUpdated(count);
     }
 
+    /// @notice Update the maximum size of the validator pool.
+    /// @param newSize The new maximum number of validators allowed.
+    function setMaxValidatorPoolSize(uint256 newSize) external onlyOwner {
+        if (newSize < validatorPool.length) revert ValidatorPoolFull();
+        uint256 oldSize = maxValidatorPoolSize;
+        maxValidatorPoolSize = newSize;
+        emit MaxValidatorPoolSizeUpdated(oldSize, newSize);
+    }
+
     /// @notice Update commit and reveal window durations.
     /// @param commitWindow Length of the commit phase in seconds.
     /// @param revealWindow Length of the reveal phase in seconds.
@@ -1779,6 +1795,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @param validators New list of validator addresses.
     function setValidatorPool(address[] calldata validators) external onlyOwner {
         if (validators.length == 0) revert InvalidParameters();
+        if (validators.length > maxValidatorPoolSize) revert ValidatorPoolFull();
         for (uint256 i; i < validators.length; ) {
             address v = validators[i];
             if (v == address(0)) revert InvalidAddress();
@@ -1818,6 +1835,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function addAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = true;
         if (!isValidatorInPool[validator]) {
+            if (validatorPool.length >= maxValidatorPoolSize) {
+                revert ValidatorPoolFull();
+            }
             validatorPoolIndex[validator] = validatorPool.length;
             validatorPool.push(validator);
             isValidatorInPool[validator] = true;
