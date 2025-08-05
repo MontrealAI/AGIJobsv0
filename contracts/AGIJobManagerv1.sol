@@ -152,7 +152,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public validatorsPerJob = 1;
     address[] public validatorPool;
     mapping(address => bool) public isValidatorInPool;
-    uint256 public nextValidatorIndex;
 
     string public termsAndConditionsIpfsHash;
     string public contactEmail;
@@ -430,18 +429,29 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit JobCompletionRequested(_jobId, msg.sender);
     }
 
+    /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
+    ///      Uses blockhash-based entropy; not suitable for high-stakes randomness.
     function _selectValidators(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
         require(poolLength >= validatorsPerJob, "Not enough validators");
+
+        address[] memory pool = validatorPool;
         address[] memory selected = new address[](validatorsPerJob);
+        bytes32 seed = keccak256(
+            abi.encodePacked(blockhash(block.number - 1), _jobId)
+        );
+
         for (uint256 i = 0; i < validatorsPerJob; i++) {
-            address validator = validatorPool[(nextValidatorIndex + i) % poolLength];
+            seed = keccak256(abi.encodePacked(seed, i));
+            uint256 index = uint256(seed) % (poolLength - i);
+            address validator = pool[index];
             job.isSelectedValidator[validator] = true;
             job.selectedValidators.push(validator);
             selected[i] = validator;
+            pool[index] = pool[poolLength - 1 - i];
         }
-        nextValidatorIndex = (nextValidatorIndex + validatorsPerJob) % poolLength;
+
         emit ValidatorsSelected(_jobId, selected);
     }
 
@@ -1348,7 +1358,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             validatorPool.push(v);
             isValidatorInPool[v] = true;
         }
-        nextValidatorIndex = 0;
         emit ValidatorPoolSet(validators);
     }
 
@@ -1376,11 +1385,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
             }
             delete isValidatorInPool[validator];
-            if (validatorPool.length > 0) {
-                nextValidatorIndex = nextValidatorIndex % validatorPool.length;
-            } else {
-                nextValidatorIndex = 0;
-            }
         }
         emit ValidatorRemoved(validator);
     }
