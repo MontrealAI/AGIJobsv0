@@ -795,6 +795,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function updateAGITokenAddress(address _newTokenAddress) external onlyOwner {
+        require(_newTokenAddress != address(0), "invalid address");
         agiToken = IERC20(_newTokenAddress);
         emit AGITokenAddressUpdated(_newTokenAddress);
     }
