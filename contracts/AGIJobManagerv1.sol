@@ -291,6 +291,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidatorBlacklisted(address indexed validator, bool status);
     /// @notice Emitted when a validator is removed from the rotating pool.
     event ValidatorRemoved(address indexed validator);
+    /// @notice Emitted when the full validator pool is replaced.
+    event ValidatorPoolSet(address[] newValidators);
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
     event AGITokenAddressUpdated(address indexed newTokenAddress);
@@ -1310,6 +1312,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         return false;
+    }
+
+    /// @notice Replace the entire validator pool.
+    /// @param validators New list of validator addresses.
+    function setValidatorPool(address[] calldata validators) external onlyOwner {
+        require(validators.length > 0, "Invalid validators");
+        uint256 currentLength = validatorPool.length;
+        for (uint256 i = 0; i < currentLength; i++) {
+            delete isValidatorInPool[validatorPool[i]];
+        }
+        delete validatorPool;
+        for (uint256 i = 0; i < validators.length; i++) {
+            address v = validators[i];
+            validatorPool.push(v);
+            isValidatorInPool[v] = true;
+        }
+        nextValidatorIndex = 0;
+        emit ValidatorPoolSet(validators);
     }
 
     function addAdditionalValidator(address validator) external onlyOwner {
