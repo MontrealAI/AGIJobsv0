@@ -143,6 +143,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public requiredValidatorDisapprovals = 3;
     uint256 public premiumReputationThreshold = 10000;
     uint256 public validationRewardPercentage = 800;
+    uint256 public validatorReputationPercentage = 800;
     uint256 public maxJobPayout = 4888e18;
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
@@ -314,6 +315,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event BurnPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validation reward percentage is updated.
     event ValidationRewardPercentageUpdated(uint256 newPercentage);
+    /// @notice Emitted when the validator reputation percentage is updated.
+    event ValidatorReputationPercentageUpdated(uint256 newPercentage);
     event ValidatorsPerJobUpdated(uint256 count);
     event StakeDeposited(address indexed validator, uint256 amount);
     event StakeWithdrawn(address indexed validator, uint256 amount);
@@ -325,6 +328,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorConfigUpdated(
         uint256 rewardPercentage,
+        uint256 reputationPercentage,
         uint256 stakeRequirement,
         uint256 slashingPercentage,
         uint256 minValidatorReputation,
@@ -827,6 +831,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit ValidationRewardPercentageUpdated(_percentage);
     }
 
+    /// @notice Update the percentage of agent reputation granted to correct validators.
+    /// @param _percentage Reputation share for validators in basis points.
+    /// @dev Setting `_percentage` to 0 disables validator reputation gains.
+    function setValidatorReputationPercentage(uint256 _percentage) external onlyOwner {
+        require(_percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        validatorReputationPercentage = _percentage;
+        emit ValidatorReputationPercentageUpdated(_percentage);
+    }
+
     /// @notice Update burn rate in basis points.
     /// @dev Setting `newPercentage` to 0 disables burning.
     function setBurnPercentage(uint256 newPercentage) external onlyOwner {
@@ -919,6 +932,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @notice Atomically update validator incentive parameters.
     /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
+    /// @param reputationPercentage Share of agent reputation granted to correct validators (basis points).
     /// @param stakeReq Minimum stake required to validate (0 disables staking).
     /// @param slashPercentage Portion of incorrect stake to slash (basis points; 0 disables).
     /// @param minRep Minimum reputation required to validate.
@@ -931,6 +945,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param validatorsCount Number of validators randomly selected per job.
     function setValidatorConfig(
         uint256 rewardPercentage,
+        uint256 reputationPercentage,
         uint256 stakeReq,
         uint256 slashPercentage,
         uint256 minRep,
@@ -943,6 +958,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 validatorsCount
     ) external onlyOwner {
         require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        require(reputationPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(approvals > 0, "Invalid approvals");
         require(disapprovals > 0, "Invalid disapprovals");
@@ -953,6 +969,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             "review below commit+reveal"
         );
         validationRewardPercentage = rewardPercentage;
+        validatorReputationPercentage = reputationPercentage;
         stakeRequirement = stakeReq;
         slashingPercentage = slashPercentage;
         minValidatorReputation = minRep;
@@ -965,6 +982,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validatorsPerJob = validatorsCount;
         emit ValidatorConfigUpdated(
             rewardPercentage,
+            reputationPercentage,
             stakeReq,
             slashPercentage,
             minRep,
@@ -986,7 +1004,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function calculateValidatorReputationPoints(uint256 agentReputationGain) internal view returns (uint256) {
         return
-            (agentReputationGain * validationRewardPercentage) /
+            (agentReputationGain * validatorReputationPercentage) /
             PERCENTAGE_DENOMINATOR;
     }
 
