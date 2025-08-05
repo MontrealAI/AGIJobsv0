@@ -106,7 +106,7 @@ OVERRIDING AUTHORITY: AGI.ETH
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
@@ -132,13 +132,13 @@ interface NameWrapper {
 ///         rewards. This contract is a work in progress and has not been
 ///         deployed on any network.
 /// @custom:security-contact security@agi.network
-contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage {
+contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     using ECDSA for bytes32;
     using MerkleProof for bytes32[];
     using SafeERC20 for IERC20;
 
     IERC20 public agiToken;
-    string private baseIpfsUrl;
+    string private baseURI;
     uint256 public requiredValidatorApprovals = 3;
     uint256 public requiredValidatorDisapprovals = 3;
     uint256 public premiumReputationThreshold = 10000;
@@ -321,7 +321,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
     event AGITokenAddressUpdated(address indexed newTokenAddress);
-    event BaseIpfsUrlUpdated(string newUrl);
+    event BaseURIUpdated(string newBaseURI);
     event RequiredValidatorApprovalsUpdated(uint256 newApprovals);
     event RequiredValidatorDisapprovalsUpdated(uint256 newDisapprovals);
     event PremiumReputationThresholdUpdated(uint256 newThreshold);
@@ -499,7 +499,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     constructor(
         address _agiTokenAddress,
-        string memory _baseIpfsUrl,
+        string memory _initialBaseURI,
         address _ensAddress,
         address _nameWrapperAddress,
         bytes32 _clubRootNode,
@@ -508,7 +508,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         bytes32 _agentMerkleRoot
     ) ERC721("AGIJobs", "Job") Ownable(msg.sender) {
         agiToken = IERC20(_agiTokenAddress);
-        baseIpfsUrl = _baseIpfsUrl;
+        baseURI = _initialBaseURI;
         ens = ENS(_ensAddress);
         nameWrapper = NameWrapper(_nameWrapperAddress);
         clubRootNode = _clubRootNode;
@@ -521,6 +521,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         revealDuration = 1 hours;
         // Ensure the initial review window accommodates both phases.
         reviewWindow = commitDuration + revealDuration;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
     }
 
     modifier onlyModerator() {
@@ -1018,9 +1022,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit AGITokenAddressUpdated(_newTokenAddress);
     }
 
-    function setBaseIpfsUrl(string calldata _url) external onlyOwner {
-        baseIpfsUrl = _url;
-        emit BaseIpfsUrlUpdated(_url);
+    function setBaseURI(string calldata _newBaseURI) external onlyOwner {
+        baseURI = _newBaseURI;
+        emit BaseURIUpdated(_newBaseURI);
     }
 
     function setRequiredValidatorApprovals(uint256 _approvals) external onlyOwner {
@@ -1653,10 +1657,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         agiToken.safeTransfer(job.assignedAgent, agentPayout);
 
         uint256 tokenId = nextTokenId++;
-        string memory tokenURI = string(abi.encodePacked(baseIpfsUrl, "/", job.ipfsHash));
         _safeMint(job.employer, tokenId);
-        _setTokenURI(tokenId, tokenURI);
-        emit NFTIssued(tokenId, job.employer, tokenURI);
+        emit NFTIssued(tokenId, job.employer, tokenURI(tokenId));
         emit JobFinalizedAndBurned(
             _jobId,
             job.assignedAgent,
