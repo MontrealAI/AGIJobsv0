@@ -614,9 +614,23 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
-        if (poolLength < validatorsPerJob) revert NotEnoughValidators();
+        address[] memory pool = new address[](poolLength);
+        uint256 eligibleCount;
+        for (uint256 i; i < poolLength; ) {
+            address validator = validatorPool[i];
+            if (
+                !blacklistedValidators[validator] &&
+                reputation[validator] >= minValidatorReputation &&
+                validatorStake[validator] >= stakeRequirement
+            ) {
+                pool[eligibleCount++] = validator;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        if (eligibleCount < validatorsPerJob) revert NotEnoughValidators();
 
-        address[] memory pool = validatorPool;
         address[] memory selected = new address[](validatorsPerJob);
         bytes32 seed = keccak256(
             abi.encodePacked(blockhash(block.number - 1), _jobId)
@@ -624,18 +638,29 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
         for (uint256 i; i < validatorsPerJob; ) {
             seed = keccak256(abi.encodePacked(seed, i));
-            uint256 index = uint256(seed) % (poolLength - i);
+            uint256 index = uint256(seed) % (eligibleCount - i);
             address validator = pool[index];
             job.isSelectedValidator[validator] = true;
             job.selectedValidators.push(validator);
             selected[i] = validator;
-            pool[index] = pool[poolLength - 1 - i];
+            pool[index] = pool[eligibleCount - 1 - i];
             unchecked {
                 ++i;
             }
         }
 
         emit ValidatorsSelected(_jobId, selected);
+    }
+
+    /// @notice Check if a validator was selected for a job.
+    /// @param _jobId Identifier of the job.
+    /// @param _validator Address of the validator.
+    function isSelectedValidator(uint256 _jobId, address _validator)
+        external
+        view
+        returns (bool)
+    {
+        return jobs[_jobId].isSelectedValidator[_validator];
     }
 
     /// @notice Commit to a validation vote without revealing it.
