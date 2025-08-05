@@ -139,6 +139,29 @@ await manager.connect(validator).validateJob(jobId, "", []);
 // employer receives the completion NFT
 ```
 
+### Validator Workflow
+
+- **Staking requirement** – bond $AGI via [`stake`](contracts/AGIJobManagerv1.sol#L1294-L1299) and exit with [`withdrawStake`](contracts/AGIJobManagerv1.sol#L1301-L1320), emitting [`StakeDeposited`](contracts/AGIJobManagerv1.sol#L314) and [`StakeWithdrawn`](contracts/AGIJobManagerv1.sol#L315).
+- **Commit → reveal → finalize** – submit a hashed vote with [`commitValidation`](contracts/AGIJobManagerv1.sol#L437-L471), disclose it via [`revealValidation`](contracts/AGIJobManagerv1.sol#L477-L506), then call [`validateJob`](contracts/AGIJobManagerv1.sol#L512-L536) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L541-L562) once the review window closes. These steps emit [`ValidationCommitted`](contracts/AGIJobManagerv1.sol#L260), [`ValidationRevealed`](contracts/AGIJobManagerv1.sol#L261), [`JobValidated`](contracts/AGIJobManagerv1.sol#L257), and [`JobDisapproved`](contracts/AGIJobManagerv1.sol#L258).
+- **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L804-L808) of escrow plus any slashed stake, while incorrect votes lose [`slashingPercentage`](contracts/AGIJobManagerv1.sol#L855-L858) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L265-L272).
+- **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L900-L930) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L847-L850), [`setSlashingPercentage`](contracts/AGIJobManagerv1.sol#L855-L858), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L804-L808), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L861-L864), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L839-L843), each emitting their respective `*Updated` events.
+
+**Commit, reveal, finalize**
+
+```ts
+await agiJobManager.connect(validator).stake(ethers.parseUnits("100", 18));
+const commitment = ethers.solidityPackedKeccak256(
+  ["address", "uint256", "bool", "bytes32"],
+  [validator.address, jobId, true, salt]
+);
+await agiJobManager
+  .connect(validator)
+  .commitValidation(jobId, commitment, "", []);
+await agiJobManager.connect(validator).revealValidation(jobId, true, salt);
+await agiJobManager.connect(validator).validateJob(jobId, "", []);
+// JobFinalizedAndBurned(jobId, ...) records payout and burn
+```
+
 ### Allowlist and ENS Management
 
 Owners can refresh allowlists and name-service references without redeploying the contract.
@@ -285,6 +308,7 @@ await agiJobManager.resolveDispute(jobId, AGIJobManager.DisputeOutcome.EmployerW
 - [Project Purpose](#project-purpose)
 - [Features](#features)
 - [Burn Mechanism](#burn-mechanism)
+- [Validator Workflow](#validator-workflow)
 - [Allowlist and ENS Management](#allowlist-and-ens-management)
 - [Configuration Change Events](#configuration-change-events)
 - [Validator Incentives](#validator-incentives)
