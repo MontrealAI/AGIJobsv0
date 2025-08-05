@@ -136,7 +136,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
   - Misaligned votes are slashed and lose reputation; correct validators share the slashed stake.
   - `validatorsPerJob` defaults to three and can never fall below the approval or disapproval thresholds, preventing owner misconfiguration.
   - If no validator votes correctly, slashed stakes go to `slashedStakeRecipient` and the reserved reward portion refunds to the agent or employer.
-  - Default timing uses a one-hour commit phase and one-hour reveal phase with a two-hour review window, all adjustable by the owner.
+  - Default timing uses a one-hour commit phase and one-hour reveal phase with a two-hour review window, all adjustable by the owner. Attempts to set either window to zero revert with the `InvalidDuration` custom error.
   - Validator reputation gains use a separate `validatorReputationPercentage` so reputation rewards can differ from token rewards.
   - All validator parameters (reward %, reputation %, slashing %, stake requirement,
     approval thresholds, commit/reveal/review windows, validator count, slashed-stake recipient, etc.) are owner-configurable via `onlyOwner` functions.

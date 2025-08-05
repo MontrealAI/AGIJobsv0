@@ -68,6 +68,16 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWithCustomError(manager, "InvalidAddress");
   });
 
+  it("reverts when commit or reveal window is zero", async function () {
+    const { manager } = await deployFixture();
+    await expect(
+      manager.setCommitRevealWindows(0, 1)
+    ).to.be.revertedWithCustomError(manager, "InvalidDuration");
+    await expect(
+      manager.setCommitRevealWindows(1, 0)
+    ).to.be.revertedWithCustomError(manager, "InvalidDuration");
+  });
+
   it("allows agent to apply for a job using a Merkle proof", async function () {
     const { token, manager, employer, agent, proof } = await deployFixture(1000, true);
     const payout = ethers.parseEther("1");
