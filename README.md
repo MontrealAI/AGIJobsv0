@@ -118,6 +118,14 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 6. Validator rewards and the remaining payout are transferred to participants.
 7. The completion NFT is minted and sent to the employer.
 
+### Security & Marketplace Updates
+
+- **`jobExists` requirement** – The new [`jobExists`](contracts/AGIJobManagerv1.sol#L391-L394) modifier guards functions and reverts when an unknown job ID is supplied.
+- **Checks–effects–interactions** – NFT marketplace operations such as [`listNFT`](contracts/AGIJobManagerv1.sol#L1373-L1377), [`purchaseNFT`](contracts/AGIJobManagerv1.sol#L1379-L1385), and [`delistNFT`](contracts/AGIJobManagerv1.sol#L1388-L1392) update internal state before token transfers to prevent reentrancy.
+- **Safe minting and transfers** – Completion NFTs are minted with [`_safeMint`](contracts/AGIJobManagerv1.sol#L1358) and traded with [`_safeTransfer`](contracts/AGIJobManagerv1.sol#L1384), ensuring recipients implement ERC-721.
+- **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L454-L468); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
+- **Owner-controlled parameters** – Only the contract owner may adjust validator or burn settings through [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1033-L1089), emitting [`ValidatorConfigUpdated`](contracts/AGIJobManagerv1.sol#L336-L349), and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L942-L951), emitting [`BurnAddressUpdated`](contracts/AGIJobManagerv1.sol#L313) and [`BurnPercentageUpdated`](contracts/AGIJobManagerv1.sol#L317).
+
 **Setup checklist**
 
 1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
