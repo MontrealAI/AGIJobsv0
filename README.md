@@ -37,6 +37,7 @@ Follow these steps before trusting any address or artifact:
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
 - Jobs finalize only after the agent calls `requestJobCompletion`; even moderator resolutions in favor of the agent revert otherwise.
+- Escrowed payouts and validator stakes are tracked separately; `withdrawAGI` only permits withdrawing surplus funds not locked for jobs or staking.
 - Confirm the current `stakeRequirement` before staking and plan for withdrawals; `withdrawStake` only succeeds once all of your jobs are finalized without disputes.
 - Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, the slashed‑stake recipient, or validator pool resets via `ValidatorPoolSet`.
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
@@ -80,6 +81,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
+- **Escrow accounting** – tracks total job escrow and validator stakes so owner withdrawals never touch locked funds.
 - **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and unchecked prefix increments.
 - **Enhanced state enforcement** – agents can only apply to jobs in the `Open` state, and validator actions revert with dedicated
   custom errors (e.g., `InsufficientStake`, `ReviewWindowActive`) for clearer failure modes and lower gas use.

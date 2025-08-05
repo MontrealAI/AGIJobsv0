@@ -190,6 +190,24 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWithCustomError(manager, "InvalidJobState");
   });
 
+  it("prevents owner from withdrawing escrow or stake", async function () {
+    const { token, manager, owner, employer, validator } = await deployFixture();
+    const payout = ethers.parseEther("100");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    await token.mint(validator.address, ethers.parseEther("10"));
+    await token
+      .connect(validator)
+      .approve(await manager.getAddress(), ethers.parseEther("10"));
+    await manager.connect(validator).stake(ethers.parseEther("10"));
+
+    await expect(
+      manager.connect(owner).withdrawAGI(1n)
+    ).to.be.revertedWithCustomError(manager, "InvalidAmount");
+  });
+
   it("enforces review window before validation", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture();
     const payout = ethers.parseEther("1000");
