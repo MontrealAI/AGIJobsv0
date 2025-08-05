@@ -185,6 +185,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Escrow accounting** – tracks total job escrow and validator stakes so owner withdrawals never touch locked funds.
 - **Custom-error reverts** – v1 eliminates string `require` messages in favor of named custom errors across admin and validation paths, reducing gas and giving clearer failures.
 - **Checks–effects–interactions discipline** – `createJob` now transfers escrow before recording job details, and dispute-resolution loops cache lengths with unchecked increments, reducing reentrancy surface and gas usage.
+- **Reentrancy-guarded finalization** – `validateJob` and `resolveDispute` now use `nonReentrant`, preventing malicious re-entry during payout and dispute resolution.
 - **Enhanced state enforcement** – agents can only apply to jobs in the `Open` state, and validator actions revert with dedicated
   custom errors (e.g., `InsufficientStake`, `ReviewWindowActive`) for clearer failure modes and lower gas use.
 - **Explicit completion checks** – `requestJobCompletion` now reverts with dedicated errors (`JobExpired`, `JobNotOpen`) and validator selection fails fast with `NotEnoughValidators` when the pool lacks participants.
