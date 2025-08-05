@@ -46,7 +46,7 @@ Follow these steps before trusting any address or artifact:
 
 ## Simple Workflow
 
-Interact with the contracts using a wallet or block explorer. Always verify contract addresses on multiple explorers before sending transactions. For method-level details and code samples, see the [Quick Start](#quick-start).
+Interact with the contracts using a wallet or block explorer. Always verify contract addresses on multiple explorers before sending transactions. For method-level details and code samples, see the [Quick Start](#quick-start). See the [Glossary](docs/glossary.md) for definitions of the commit phase, review window, and other terms.
 
 **Employers**
 - Confirm the AGIJobManager contract address on Etherscan, Blockscout, or official channels.
@@ -67,6 +67,29 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Expect roughly 4–5 transactions per job, not counting the initial stake.
 
 ## Quick Start
+
+### Plain-Language Quick Start
+See the [Glossary](docs/glossary.md) for key terminology.
+
+**Employers**
+- Post a job and deposit the payout.
+- Wait for an agent to finish and validators to approve.
+- Receive the NFT and any remaining funds.
+- Example: [createJob transaction](https://etherscan.io/tx/0xccd6d21a8148a06e233063f57b286832f3c2ca015ab4d8387a529e3508e8f32e).
+
+**Agents**
+- Claim an open job.
+- Submit your work with a link or hash.
+- Get paid after validators sign off.
+- Examples: [applyForJob](https://etherscan.io/tx/0x55f8ee0370c9c08a6e871a4184650419b520d4e9666536cbdcf47f4f03917ce2) · [requestJobCompletion](https://etherscan.io/tx/0xd4f85a33a73319c04df3497ebe8f43095bfae6ed8e5acdd6a80d295869e6f809).
+
+**Validators**
+- Stake AGI to join the pool.
+- Submit a hashed vote during the commit phase and reveal it later.
+- Finalize the job after the review window.
+- Example: [validateJob transaction](https://etherscan.io/tx/0x90d59c0d47ae3e36b7dc6b26ad06fe2ce64955c6d049e675a42bbd5a24647832).
+
+### Contract Quick Start
 
 **Employers**
 - Call [`createJob`](contracts/AGIJobManagerv1.sol#L547) to post a task and escrow the payout.
