@@ -613,6 +613,7 @@ describe("AGIJobManagerV1 payouts", function () {
     const { manager, employer, validator } = await deployFixture();
     const cfg = {
       rewardPct: 500,
+      repPct: 123,
       stakeReq: 123n,
       slashPct: 250,
       minRep: 42n,
@@ -630,6 +631,7 @@ describe("AGIJobManagerV1 payouts", function () {
         .connect(employer)
         .setValidatorConfig(
           cfg.rewardPct,
+          cfg.repPct,
           cfg.stakeReq,
           cfg.slashPct,
           cfg.minRep,
@@ -648,6 +650,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await expect(
       manager.setValidatorConfig(
         cfg.rewardPct,
+        cfg.repPct,
         cfg.stakeReq,
         cfg.slashPct,
         cfg.minRep,
@@ -663,6 +666,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .to.emit(manager, "ValidatorConfigUpdated")
       .withArgs(
         cfg.rewardPct,
+        cfg.repPct,
         cfg.stakeReq,
         cfg.slashPct,
         cfg.minRep,
@@ -676,6 +680,7 @@ describe("AGIJobManagerV1 payouts", function () {
       );
 
     expect(await manager.validationRewardPercentage()).to.equal(cfg.rewardPct);
+    expect(await manager.validatorReputationPercentage()).to.equal(cfg.repPct);
     expect(await manager.stakeRequirement()).to.equal(cfg.stakeReq);
     expect(await manager.slashingPercentage()).to.equal(cfg.slashPct);
     expect(await manager.minValidatorReputation()).to.equal(cfg.minRep);

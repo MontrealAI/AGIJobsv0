@@ -88,7 +88,8 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
   - Misaligned votes are slashed and lose reputation; correct validators share the slashed stake.
   - If no validator votes correctly, slashed stakes go to `slashedStakeRecipient` and the reserved reward portion refunds to the agent or employer.
   - Default timing uses a one-hour commit phase and one-hour reveal phase with a two-hour review window, all adjustable by the owner.
-  - All validator parameters (reward %, slashing %, stake requirement,
+  - Validator reputation gains use a separate `validatorReputationPercentage` so reputation rewards can differ from token rewards.
+  - All validator parameters (reward %, reputation %, slashing %, stake requirement,
     approval thresholds, commit/reveal/review windows, validator count, slashed-stake recipient, etc.) are owner-configurable via `onlyOwner` functions.
   - The contract owner may add or remove validators from the rotation with `addAdditionalValidator` and `removeAdditionalValidator`; removed validators emit `ValidatorRemoved` and cease being selected for jobs.
   - Setting the stake requirement or slashing percentage to `0` disables those mechanisms.
@@ -621,9 +622,10 @@ cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2 # finalizes
 
 The contract owner can tune validator requirements and incentives. Each update emits an event so indexers can track new values:
 
-- `setValidatorConfig(uint256 rewardPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient)` – update all validator parameters in one transaction; emits `ValidatorConfigUpdated`.
+- `setValidatorConfig(uint256 rewardPct, uint256 repPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient, uint256 commitWindow, uint256 revealWindow, uint256 reviewWin, uint256 validatorsCount)` – update all validator parameters in one transaction; emits `ValidatorConfigUpdated`.
+- `setValidationRewardPercentage(uint256 percentage)` – define the token reward share for validators in basis points (set to `0` to disable); emits `ValidationRewardPercentageUpdated`.
+- `setValidatorReputationPercentage(uint256 percentage)` – set the fraction of agent reputation awarded to correct validators; emits `ValidatorReputationPercentageUpdated`.
 - `setSlashingPercentage(uint256 percentage)` – adjust how much stake is slashed for incorrect votes (basis points); emits `SlashingPercentageUpdated`.
-- `setValidationRewardPercentage(uint256 percentage)` – define the reward share for validators in basis points (set to `0` to disable); emits `ValidationRewardPercentageUpdated`.
 - `setMinValidatorReputation(uint256 minimum)` – set the reputation floor validators must maintain; emits `MinValidatorReputationUpdated`.
 - `setSlashedStakeRecipient(address newRecipient)` – designate the beneficiary of slashed stake when no validator votes correctly; emits `SlashedStakeRecipientUpdated`.
 
@@ -632,12 +634,17 @@ Example updating multiple parameters at once:
 ```ts
 await agiJobManager.setValidatorConfig(
   800,                     // rewardPct = 8%
+  800,                     // repPct = 8%
   ethers.parseUnits("100", 18), // stakeReq = 100 AGI
   500,                     // slashPct = 5%
   50,                      // minRep
   2,                       // approvals
   1,                       // disapprovals
-  "0x1234567890abcdef1234567890ABCDEF12345678" // slashRecipient
+  "0x1234567890abcdef1234567890ABCDEF12345678", // slashRecipient
+  3600,                   // commitWindow = 1h
+  3600,                   // revealWindow = 1h
+  7200,                   // reviewWin = 2h
+  3                        // validatorsCount
 );
 ```
 
