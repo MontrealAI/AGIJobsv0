@@ -202,7 +202,7 @@ Control these owner functions with a multisig or timelock, and watch the event l
 
 Several operational parameters are adjustable by the owner. Every update emits a dedicated event so off‑chain services can react to new values:
 
-- `updateAGITokenAddress(address newToken)` → `AGITokenAddressUpdated`
+- `updateAGITokenAddress(address newToken)` → `AGITokenAddressUpdated` (reverts if `newToken` is the zero address)
 - `setBaseIpfsUrl(string newUrl)` → `BaseIpfsUrlUpdated`
 - `setRequiredValidatorApprovals(uint256 count)` → `RequiredValidatorApprovalsUpdated`
 - `setRequiredValidatorDisapprovals(uint256 count)` → `RequiredValidatorDisapprovalsUpdated`

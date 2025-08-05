@@ -48,6 +48,13 @@ describe("AGIJobManagerV1 payouts", function () {
     return { token, manager, owner, employer, agent, validator, validator2, validator3 };
   }
 
+  it("reverts when updating AGI token address to zero", async function () {
+    const { manager } = await deployFixture();
+    await expect(
+      manager.updateAGITokenAddress(ethers.ZeroAddress)
+    ).to.be.revertedWith("invalid address");
+  });
+
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture();
     const payout = ethers.parseEther("1000");
