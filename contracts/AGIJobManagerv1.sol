@@ -822,6 +822,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function delistJob(uint256 _jobId)
         external
         onlyOwner
+        nonReentrant
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
@@ -829,8 +830,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             job.status == JobStatus.Open && job.assignedAgent == address(0),
             "Job already completed or assigned"
         );
-        agiToken.safeTransfer(job.employer, job.payout);
+        address employer = job.employer;
+        uint256 payout = job.payout;
         delete jobs[_jobId];
+        agiToken.safeTransfer(employer, payout);
         emit JobCancelled(_jobId);
     }
 
@@ -1266,8 +1269,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 job.assignedAgent == address(0),
             "Not authorized or already completed/assigned"
         );
-        agiToken.safeTransfer(job.employer, job.payout);
+        address employer = job.employer;
+        uint256 payout = job.payout;
         delete jobs[_jobId];
+        agiToken.safeTransfer(employer, payout);
         emit JobCancelled(_jobId);
     }
 
