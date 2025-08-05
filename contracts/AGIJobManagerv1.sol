@@ -596,7 +596,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             _payout > maxJobPayout ||
             _duration > jobDurationLimit
         ) revert InvalidParameters();
-        uint256 jobId = nextJobId++;
+        uint256 jobId = nextJobId;
+        agiToken.safeTransferFrom(msg.sender, address(this), _payout);
+        totalJobEscrow += _payout;
         Job storage job = jobs[jobId];
         job.id = jobId;
         job.employer = msg.sender;
@@ -605,9 +607,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         job.duration = _duration;
         job.details = _details;
         job.status = JobStatus.Open;
-        totalJobEscrow += _payout;
-        agiToken.safeTransferFrom(msg.sender, address(this), _payout);
         emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details, JobStatus.Open);
+        nextJobId = jobId + 1;
     }
 
     function applyForJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
@@ -921,7 +922,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 correctIndex = 0;
         uint256 totalSlashed = 0;
 
-        for (uint256 i = 0; i < job.validators.length; i++) {
+        uint256 vLen = job.validators.length;
+        for (uint256 i; i < vLen; ) {
             address validator = job.validators[i];
             bool revealed = job.revealed[validator];
             if (revealed && job.disapprovals[validator]) {
@@ -961,11 +963,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             delete job.commitments[validator];
             delete job.revealed[validator];
             delete job.revealedVotes[validator];
+            unchecked {
+                ++i;
+            }
         }
 
         delete job.validators;
-        for (uint256 i = 0; i < job.selectedValidators.length; i++) {
+        uint256 svLen = job.selectedValidators.length;
+        for (uint256 i; i < svLen; ) {
             delete job.isSelectedValidator[job.selectedValidators[i]];
+            unchecked {
+                ++i;
+            }
         }
         delete job.selectedValidators;
 
