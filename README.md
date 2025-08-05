@@ -98,6 +98,10 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Configurable slashed stake recipient** – if no validator votes correctly, all slashed stake is sent to `slashedStakeRecipient` (initially the owner but adjustable, e.g. to the burn address) while the validator reward portion reverts to the agent or employer.
 - **Automatic finalization & configurable token burn** – the last validator approval triggers `_finalizeJobAndBurn`, minting the completion NFT, releasing the payout, and burning the configured portion of escrow. The `JobFinalizedAndBurned` event records agent payouts and burn amounts.
 
+### NFT Bonus
+
+Agents holding qualifying AGI NFTs receive a payout boost. Each bonus is specified in basis points (1 bp = 0.01%) when calling `addAGIType`, and the highest applicable bonus is applied to the agent's payout.
+
 ### Burn Mechanism
 
 The v1 prototype destroys a slice of each finalized job's escrow, permanently reducing total supply. Burning occurs automatically when the last validator approval triggers `_finalizeJobAndBurn` to mint the NFT, release payment and burn tokens—no separate call is required.
