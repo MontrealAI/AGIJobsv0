@@ -609,6 +609,10 @@ describe("AGIJobManagerV1 payouts", function () {
       approvals: 2,
       disapprovals: 3,
       recipient: validator.address,
+      commitWindow: 60,
+      revealWindow: 60,
+      reviewWin: 30,
+      validatorsCount: 1,
     };
 
     await expect(
@@ -621,7 +625,11 @@ describe("AGIJobManagerV1 payouts", function () {
           cfg.minRep,
           cfg.approvals,
           cfg.disapprovals,
-          cfg.recipient
+          cfg.recipient,
+          cfg.commitWindow,
+          cfg.revealWindow,
+          cfg.reviewWin,
+          cfg.validatorsCount
         )
     )
       .to.be.revertedWithCustomError(manager, "OwnableUnauthorizedAccount")
@@ -635,7 +643,11 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
-        cfg.recipient
+        cfg.recipient,
+        cfg.commitWindow,
+        cfg.revealWindow,
+        cfg.reviewWin,
+        cfg.validatorsCount
       )
     )
       .to.emit(manager, "ValidatorConfigUpdated")
@@ -646,7 +658,11 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
-        cfg.recipient
+        cfg.recipient,
+        cfg.commitWindow,
+        cfg.revealWindow,
+        cfg.reviewWin,
+        cfg.validatorsCount
       );
 
     expect(await manager.validationRewardPercentage()).to.equal(cfg.rewardPct);
@@ -658,6 +674,10 @@ describe("AGIJobManagerV1 payouts", function () {
       cfg.disapprovals
     );
     expect(await manager.slashedStakeRecipient()).to.equal(cfg.recipient);
+    expect(await manager.commitDuration()).to.equal(cfg.commitWindow);
+    expect(await manager.revealDuration()).to.equal(cfg.revealWindow);
+    expect(await manager.reviewWindow()).to.equal(cfg.reviewWin);
+    expect(await manager.validatorsPerJob()).to.equal(cfg.validatorsCount);
   });
 
   it("cleans up validator history enabling stake withdrawal after many jobs", async function () {
