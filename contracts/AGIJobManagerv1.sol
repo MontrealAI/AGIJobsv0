@@ -402,6 +402,39 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when there are insufficient validators available for selection.
     error NotEnoughValidators();
 
+    /// @dev Thrown when a validator's stake is below the required minimum.
+    error InsufficientStake();
+
+    /// @dev Thrown when a validator's reputation is below the threshold.
+    error InsufficientReputation();
+
+    /// @dev Thrown when a validator is not selected for a job.
+    error ValidatorNotSelected();
+
+    /// @dev Thrown when committing after the commit phase has elapsed.
+    error CommitPhaseOver();
+
+    /// @dev Thrown when revealing before the reveal phase begins.
+    error RevealPhaseNotStarted();
+
+    /// @dev Thrown when revealing after the reveal phase has ended.
+    error RevealPhaseOver();
+
+    /// @dev Thrown when a validator attempts to reveal without committing.
+    error CommitmentMissing();
+
+    /// @dev Thrown when a validator attempts to finalize without revealing.
+    error VoteNotRevealed();
+
+    /// @dev Thrown when validation is attempted while the review window is active.
+    error ReviewWindowActive();
+
+    /// @dev Thrown when validation is attempted during the reveal phase.
+    error RevealPhaseActive();
+
+    /// @dev Thrown when a validator's revealed vote does not match the action.
+    error CommitmentMismatch();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -479,6 +512,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
+        if (job.status != JobStatus.Open) revert JobNotOpen();
         if (job.assignedAgent != address(0)) revert InvalidJobState();
         if (
             !(
@@ -561,31 +595,23 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         nonReentrant
         jobExists(_jobId)
     {
-        require(
-            _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
-                additionalValidators[msg.sender],
-            "Not authorized validator"
-        );
-        require(!blacklistedValidators[msg.sender], "Blacklisted validator");
-        require(
-            validatorStake[msg.sender] >= stakeRequirement,
-            "Stake below requirement"
-        );
-        require(
-            reputation[msg.sender] >= minValidatorReputation,
-            "Insufficient reputation"
-        );
+        if (
+            !(
+                _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
+                    additionalValidators[msg.sender]
+            ) ||
+            blacklistedValidators[msg.sender]
+        ) revert Unauthorized();
+        if (validatorStake[msg.sender] < stakeRequirement)
+            revert InsufficientStake();
+        if (reputation[msg.sender] < minValidatorReputation)
+            revert InsufficientReputation();
         Job storage job = jobs[_jobId];
-        require(job.isSelectedValidator[msg.sender], "Validator not selected");
-        require(
-            job.status == JobStatus.CompletionRequested,
-            "Completion not requested"
-        );
-        require(
-            block.timestamp <= job.validationStart + commitDuration,
-            "Commit phase over"
-        );
-        require(job.commitments[msg.sender] == bytes32(0), "Already committed");
+        if (!job.isSelectedValidator[msg.sender]) revert ValidatorNotSelected();
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (block.timestamp > job.validationStart + commitDuration)
+            revert CommitPhaseOver();
+        if (job.commitments[msg.sender] != bytes32(0)) revert AlreadyCommitted();
         job.commitments[msg.sender] = commitment;
         job.validators.push(msg.sender);
         pendingCommits[msg.sender] += 1;
@@ -607,27 +633,21 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(job.isSelectedValidator[msg.sender], "Validator not selected");
-        require(
-            job.status == JobStatus.CompletionRequested,
-            "Completion not requested"
-        );
-        require(
-            block.timestamp > job.validationStart + commitDuration,
-            "Reveal phase not started"
-        );
-        require(
-            block.timestamp <=
-                job.validationStart + commitDuration + revealDuration,
-            "Reveal phase over"
-        );
+        if (!job.isSelectedValidator[msg.sender]) revert ValidatorNotSelected();
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (block.timestamp <= job.validationStart + commitDuration)
+            revert RevealPhaseNotStarted();
+        if (
+            block.timestamp >
+            job.validationStart + commitDuration + revealDuration
+        ) revert RevealPhaseOver();
         bytes32 commitment = job.commitments[msg.sender];
-        require(commitment != bytes32(0), "No commitment");
-        require(!job.revealed[msg.sender], "Already revealed");
+        if (commitment == bytes32(0)) revert CommitmentMissing();
+        if (job.revealed[msg.sender]) revert AlreadyRevealed();
         bytes32 expected = keccak256(
             abi.encodePacked(msg.sender, _jobId, approve, salt)
         );
-        require(expected == commitment, "Invalid reveal");
+        if (expected != commitment) revert InvalidReveal();
         job.revealed[msg.sender] = true;
         job.revealedVotes[msg.sender] = approve;
         emit ValidationRevealed(_jobId, msg.sender, approve);
@@ -643,32 +663,32 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         nonReentrant
         jobExists(_jobId)
     {
-        require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
-        require(!blacklistedValidators[msg.sender], "Blacklisted validator");
-        require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
-        require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
+        if (
+            !(
+                _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
+                    additionalValidators[msg.sender]
+            ) ||
+            blacklistedValidators[msg.sender]
+        ) revert Unauthorized();
+        if (validatorStake[msg.sender] < stakeRequirement)
+            revert InsufficientStake();
+        if (reputation[msg.sender] < minValidatorReputation)
+            revert InsufficientReputation();
         Job storage job = jobs[_jobId];
-        require(
-            job.status == JobStatus.CompletionRequested,
-            "Completion not requested"
-        );
-        require(
-            block.timestamp >= job.completionRequestedAt + reviewWindow,
-            "Review window active"
-        );
-        require(
-            block.timestamp >
-                job.validationStart + commitDuration + revealDuration,
-            "Reveal phase active"
-        );
-        require(job.revealed[msg.sender], "Vote not revealed");
-        require(job.revealedVotes[msg.sender], "Commitment mismatched");
-        require(
-            job.status != JobStatus.Completed &&
-                !job.approvals[msg.sender] &&
-                !job.disapprovals[msg.sender],
-            "Job completed or already reviewed"
-        );
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (block.timestamp < job.completionRequestedAt + reviewWindow)
+            revert ReviewWindowActive();
+        if (
+            block.timestamp <=
+            job.validationStart + commitDuration + revealDuration
+        ) revert RevealPhaseActive();
+        if (!job.revealed[msg.sender]) revert VoteNotRevealed();
+        if (!job.revealedVotes[msg.sender]) revert CommitmentMismatch();
+        if (
+            job.status == JobStatus.Completed ||
+            job.approvals[msg.sender] ||
+            job.disapprovals[msg.sender]
+        ) revert InvalidJobState();
         job.validatorApprovals++;
         job.approvals[msg.sender] = true;
         _addValidatorApprovedJob(msg.sender, _jobId);
@@ -687,31 +707,30 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         nonReentrant
         jobExists(_jobId)
     {
-        require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
-        require(!blacklistedValidators[msg.sender], "Blacklisted validator");
-        require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
-        require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
+        if (
+            !(
+                _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
+                    additionalValidators[msg.sender]
+            ) ||
+            blacklistedValidators[msg.sender]
+        ) revert Unauthorized();
+        if (validatorStake[msg.sender] < stakeRequirement)
+            revert InsufficientStake();
+        if (reputation[msg.sender] < minValidatorReputation)
+            revert InsufficientReputation();
         Job storage job = jobs[_jobId];
-        require(
-            job.status == JobStatus.CompletionRequested,
-            "Completion not requested"
-        );
-        require(
-            block.timestamp >= job.completionRequestedAt + reviewWindow,
-            "Review window active"
-        );
-        require(
-            block.timestamp >
-                job.validationStart + commitDuration + revealDuration,
-            "Reveal phase active"
-        );
-        require(job.revealed[msg.sender], "Vote not revealed");
-        require(!job.revealedVotes[msg.sender], "Commitment mismatched");
-        require(
-            job.status != JobStatus.Completed && !job.disapprovals[msg.sender],
-            "Job completed or already disapproved"
-        );
-        require(!job.approvals[msg.sender], "Validator already approved");
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (block.timestamp < job.completionRequestedAt + reviewWindow)
+            revert ReviewWindowActive();
+        if (
+            block.timestamp <=
+            job.validationStart + commitDuration + revealDuration
+        ) revert RevealPhaseActive();
+        if (!job.revealed[msg.sender]) revert VoteNotRevealed();
+        if (job.revealedVotes[msg.sender]) revert CommitmentMismatch();
+        if (job.status == JobStatus.Completed || job.disapprovals[msg.sender])
+            revert InvalidJobState();
+        if (job.approvals[msg.sender]) revert InvalidJobState();
         job.validatorDisapprovals++;
         job.disapprovals[msg.sender] = true;
         _addValidatorDisapprovedJob(msg.sender, _jobId);
@@ -729,12 +748,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(
-            (msg.sender == job.assignedAgent || msg.sender == job.employer) &&
-                job.status != JobStatus.Disputed &&
-                job.status != JobStatus.Completed,
-            "Not authorized or invalid state"
-        );
+        if (
+            (msg.sender != job.assignedAgent && msg.sender != job.employer) ||
+            job.status == JobStatus.Disputed ||
+            job.status == JobStatus.Completed
+        ) revert Unauthorized();
         job.status = JobStatus.Disputed;
         emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
     }
@@ -746,7 +764,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(job.status == JobStatus.Disputed, "Job not disputed");
+        if (job.status != JobStatus.Disputed) revert InvalidJobState();
         if (outcome == DisputeOutcome.AgentWin) {
             _finalizeJobAndBurn(_jobId);
         } else if (outcome == DisputeOutcome.EmployerWin) {
@@ -1502,9 +1520,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         Listing storage listing = listings[tokenId];
         if (!listing.isActive) revert InvalidJobState();
         listing.isActive = false;
-        agiToken.safeTransferFrom(msg.sender, listing.seller, listing.price);
-        _safeTransfer(listing.seller, msg.sender, tokenId, "");
-        emit NFTPurchased(tokenId, msg.sender, listing.price);
+        uint256 price = listing.price;
+        address seller = listing.seller;
+        agiToken.safeTransferFrom(msg.sender, seller, price);
+        _safeTransfer(seller, msg.sender, tokenId, "");
+        emit NFTPurchased(tokenId, msg.sender, price);
     }
 
     function delistNFT(uint256 tokenId)
