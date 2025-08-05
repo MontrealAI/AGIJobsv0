@@ -81,6 +81,18 @@ describe("AGIJobManagerV1 payouts", function () {
       .withArgs(agent.address, "alice");
   });
 
+  it("reverts when requesting completion with an empty IPFS hash", async function () {
+    const { token, manager, employer, agent } = await deployFixture();
+    const payout = ethers.parseEther("1");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await expect(
+      manager.connect(agent).requestJobCompletion(jobId, "")
+    ).to.be.revertedWithCustomError(manager, "InvalidParameters");
+  });
+
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture();
     const payout = ethers.parseEther("1000");
