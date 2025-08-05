@@ -319,6 +319,7 @@ Validators follow a commit–reveal process and can finalize their vote only aft
 - **Remainder handling** – integer division leftovers from reward or slashed-stake calculations are paid to the first validator on the winning side. If no validator votes correctly, all slashed stake goes to `slashedStakeRecipient` and the validator reward pool returns to the agent or employer as appropriate.
 - **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement` (must be greater than zero), `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, `slashedStakeRecipient`, and approval/disapproval thresholds. All of these values can be updated atomically via `setValidatorConfig`, which also sets `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
 - **Dispute lock** – once a job is disputed, no additional validator votes are accepted until a moderator resolves the dispute.
+- **Dispute timing** – `disputeJob` is callable only after the review window and commit/reveal phases elapse (`block.timestamp >= job.validationStart + commitDuration + revealDuration`).
 - **Single-shot voting** – validators cannot change their vote once cast; a validator address may approve *or* disapprove a job, but never both. Attempts to vote twice revert.
 
 #### Employer-Win Dispute Path

@@ -761,6 +761,34 @@ describe("AGIJobManagerV1 payouts", function () {
     ).not.to.be.reverted;
   });
 
+  describe("dispute timing", function () {
+    it("requires review and reveal windows to elapse before disputing", async function () {
+      const { token, manager, employer, agent } = await deployFixture();
+      const payout = ethers.parseEther("100");
+
+      await token.connect(employer).approve(await manager.getAddress(), payout);
+      await manager
+        .connect(employer)
+        .createJob("jobhash", payout, 1000, "details");
+
+      const jobId = 0;
+      await manager.connect(agent).applyForJob(jobId, "", []);
+      await manager
+        .connect(agent)
+        .requestJobCompletion(jobId, "result");
+
+      await expect(
+        manager.connect(employer).disputeJob(jobId)
+      ).to.be.revertedWithCustomError(manager, "PrematureDispute");
+
+      await time.increase(2001);
+
+      await expect(manager.connect(employer).disputeJob(jobId))
+        .to.emit(manager, "JobDisputed")
+        .withArgs(jobId, employer.address, 2);
+    });
+  });
+
   describe("commit-reveal workflow", function () {
     it("allows on-time commit and reveal", async function () {
       const { token, manager, employer, agent, validator } = await deployFixture();
