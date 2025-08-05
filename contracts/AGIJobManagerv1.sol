@@ -289,6 +289,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event AgentBlacklisted(address indexed agent, bool status);
     event ValidatorBlacklisted(address indexed validator, bool status);
+    /// @notice Emitted when a validator is removed from the rotating pool.
+    event ValidatorRemoved(address indexed validator);
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
     event AGITokenAddressUpdated(address indexed newTokenAddress);
@@ -1276,7 +1278,28 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function removeAdditionalValidator(address validator) external onlyOwner {
+        require(
+            additionalValidators[validator] || isValidatorInPool[validator],
+            "Validator not found"
+        );
         additionalValidators[validator] = false;
+        if (isValidatorInPool[validator]) {
+            uint256 length = validatorPool.length;
+            for (uint256 i = 0; i < length; i++) {
+                if (validatorPool[i] == validator) {
+                    validatorPool[i] = validatorPool[length - 1];
+                    validatorPool.pop();
+                    break;
+                }
+            }
+            delete isValidatorInPool[validator];
+            if (validatorPool.length > 0) {
+                nextValidatorIndex = nextValidatorIndex % validatorPool.length;
+            } else {
+                nextValidatorIndex = 0;
+            }
+        }
+        emit ValidatorRemoved(validator);
     }
 
     function addAdditionalAgent(address agent) external onlyOwner {

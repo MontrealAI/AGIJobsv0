@@ -356,6 +356,15 @@ describe("AGIJobManagerV1 payouts", function () {
       .withArgs(newAgentRoot);
   });
 
+  it("allows owner to remove validators from the selection pool", async function () {
+    const { manager, validator } = await deployFixture();
+    expect(await manager.isValidatorInPool(validator.address)).to.equal(true);
+    await expect(manager.removeAdditionalValidator(validator.address))
+      .to.emit(manager, "ValidatorRemoved")
+      .withArgs(validator.address);
+    expect(await manager.isValidatorInPool(validator.address)).to.equal(false);
+  });
+
   it("restricts ENS and NameWrapper updates to owner and emits events", async function () {
     const { manager, employer } = await deployFixture();
     const newEns = ethers.getAddress(
