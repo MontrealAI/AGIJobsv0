@@ -1294,13 +1294,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     /// @notice Update commit and reveal window durations.
-    /// @param commitWindow Length of the commit phase in seconds.
-    /// @param revealWindow Length of the reveal phase in seconds.
-    /// @dev Setting either value to zero results in an instant phase with no time for participation.
+    /// @param commitWindow Length of the commit phase in seconds; must be greater than zero.
+    /// @param revealWindow Length of the reveal phase in seconds; must be greater than zero.
+    /// @dev Both `commitWindow` and `revealWindow` must be greater than zero.
     function setCommitRevealWindows(
         uint256 commitWindow,
         uint256 revealWindow
     ) external onlyOwner {
+        require(commitWindow > 0 && revealWindow > 0);
         if (reviewWindow < commitWindow + revealWindow)
             revert ReviewWindowTooShort();
         commitDuration = commitWindow;
@@ -1326,8 +1327,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @param approvals Validator approvals needed to finalize a job.
     /// @param disapprovals Validator disapprovals needed to dispute a job.
     /// @param slashRecipient Address receiving slashed stake when no validator votes correctly.
-    /// @param commitWindow Length of commit phase in seconds.
-    /// @param revealWindow Length of reveal phase in seconds.
+    /// @param commitWindow Length of commit phase in seconds; must be greater than zero.
+    /// @param revealWindow Length of reveal phase in seconds; must be greater than zero.
     /// @param reviewWin Mandatory waiting period before validators may vote.
     /// @param validatorsCount Number of validators randomly selected per job.
     function setValidatorConfig(
@@ -1355,6 +1356,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (disapprovals == 0 || disapprovals > validatorsCount)
             revert InvalidDisapprovals();
         if (slashRecipient == address(0)) revert InvalidAddress();
+        require(commitWindow > 0 && revealWindow > 0);
         if (reviewWin < commitWindow + revealWindow)
             revert WindowBelowCommitReveal();
         validationRewardPercentage = rewardPercentage;
