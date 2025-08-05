@@ -191,6 +191,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     uint256 public revealDuration;
     /// @notice Waiting period after completion request before validators may vote.
     uint256 public reviewWindow;
+    /// @notice Additional buffer after validation phases before timeout may be triggered.
+    uint256 public gracePeriod;
 
     /// @notice Tracks the lifecycle of a job.
     enum JobStatus {
@@ -286,6 +288,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ValidatorsSelected(uint256 jobId, address[] validators);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
+    event GracePeriodUpdated(uint256 newPeriod);
     event JobFinalizedAndBurned(
         uint256 indexed jobId,
         address indexed agent,
@@ -293,6 +296,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 payoutToAgent,
         uint256 tokensBurned
     );
+    event JobTimedOut(uint256 indexed jobId, address indexed caller, bool agentPaid);
     event ReputationUpdated(address user, uint256 newReputation);
     event JobCancelled(uint256 jobId);
     event DisputeResolved(uint256 jobId, address resolver, DisputeOutcome outcome);
@@ -496,6 +500,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @dev Thrown when payout accounting exceeds escrowed funds.
     error PayoutExceedsEscrow();
+    /// @dev Thrown when attempting timeout finalization before deadlines.
+    error TimeoutNotReached();
+    /// @dev Thrown when validator thresholds are already satisfied.
+    error ThresholdsMet();
 
     constructor(
         address _agiTokenAddress,
@@ -975,6 +983,83 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit DisputeResolved(_jobId, msg.sender, outcome);
     }
 
+    /// @notice Finalize a job if validators fail to reach thresholds before timeout.
+    /// @param _jobId Identifier of the job to finalize.
+    /// @param payAgent True to pay the agent and mint the completion NFT; false to refund the employer.
+    /// @dev Callable by the employer, assigned agent, or a moderator once all
+    ///      validation windows plus the grace period have elapsed.
+    function finalizeAfterTimeout(uint256 _jobId, bool payAgent)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (
+            job.validatorApprovals >= requiredValidatorApprovals ||
+            job.validatorDisapprovals >= requiredValidatorDisapprovals
+        ) revert ThresholdsMet();
+        uint256 timeout =
+            job.validationStart +
+            commitDuration +
+            revealDuration +
+            reviewWindow +
+            gracePeriod;
+        if (block.timestamp <= timeout) revert TimeoutNotReached();
+        bool callerIsAgent = msg.sender == job.assignedAgent;
+        bool callerIsEmployer = msg.sender == job.employer;
+        bool callerIsModerator = moderators[msg.sender];
+        if (!(callerIsAgent || callerIsEmployer || callerIsModerator))
+            revert Unauthorized();
+        _clearValidatorData(_jobId, job);
+        job.status = JobStatus.Completed;
+        totalJobEscrow -= job.payout;
+        if (payAgent) {
+            if (!(callerIsAgent || callerIsModerator)) revert Unauthorized();
+            uint256 completionTime = block.timestamp - job.assignedAt;
+            uint256 reputationPoints =
+                calculateReputationPoints(job.payout, completionTime);
+            enforceReputationGrowth(job.assignedAgent, reputationPoints);
+            uint256 burnAmount =
+                (job.payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
+            if (burnAmount > 0) {
+                if (burnAddress == address(0)) revert BurnAddressNotSet();
+                agiToken.safeTransfer(burnAddress, burnAmount);
+            }
+            uint256 agentPayout = job.payout - burnAmount;
+            agiToken.safeTransfer(job.assignedAgent, agentPayout);
+            uint256 tokenId = nextTokenId++;
+            string memory tokenURI =
+                string(abi.encodePacked(baseIpfsUrl, "/", job.ipfsHash));
+            _safeMint(job.employer, tokenId);
+            _setTokenURI(tokenId, tokenURI);
+            emit NFTIssued(tokenId, job.employer, tokenURI);
+            emit JobFinalizedAndBurned(
+                _jobId,
+                job.assignedAgent,
+                job.employer,
+                agentPayout,
+                burnAmount
+            );
+            emit JobCompleted(
+                _jobId,
+                job.assignedAgent,
+                reputationPoints,
+                JobStatus.Completed
+            );
+            emit ReputationUpdated(
+                job.assignedAgent,
+                reputation[job.assignedAgent]
+            );
+            emit JobTimedOut(_jobId, msg.sender, true);
+        } else {
+            if (!(callerIsEmployer || callerIsModerator)) revert Unauthorized();
+            agiToken.safeTransfer(job.employer, job.payout);
+            emit JobTimedOut(_jobId, msg.sender, false);
+        }
+    }
+
     function blacklistAgent(address _agent, bool _status) external onlyOwner {
         blacklistedAgents[_agent] = _status;
         emit AgentBlacklisted(_agent, _status);
@@ -1297,6 +1382,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit ReviewWindowUpdated(newWindow);
     }
 
+    /// @notice Update the additional grace period after all validation windows.
+    /// @param newPeriod Extra seconds before a job can be finalized due to timeout.
+    function setGracePeriod(uint256 newPeriod) external onlyOwner {
+        gracePeriod = newPeriod;
+        emit GracePeriodUpdated(newPeriod);
+    }
+
     /// @notice Atomically update validator incentive parameters.
     /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
     /// @param reputationPercentage Share of agent reputation granted to correct validators (basis points).
@@ -1477,6 +1569,35 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         validatorDisapprovedJobIndex[validator][lastJobId] = indexPlusOne;
         jobsArray.pop();
         delete validatorDisapprovedJobIndex[validator][jobId];
+    }
+
+    function _clearValidatorData(uint256 _jobId, Job storage job) internal {
+        uint256 vLen = job.validators.length;
+        for (uint256 i; i < vLen; ) {
+            address validator = job.validators[i];
+            _removeValidatorApprovedJob(validator, _jobId);
+            _removeValidatorDisapprovedJob(validator, _jobId);
+            if (pendingCommits[validator] > 0) {
+                pendingCommits[validator] -= 1;
+            }
+            delete job.approvals[validator];
+            delete job.disapprovals[validator];
+            delete job.commitments[validator];
+            delete job.revealed[validator];
+            delete job.revealedVotes[validator];
+            unchecked {
+                ++i;
+            }
+        }
+        delete job.validators;
+        uint256 svLen = job.selectedValidators.length;
+        for (uint256 i; i < svLen; ) {
+            delete job.isSelectedValidator[job.selectedValidators[i]];
+            unchecked {
+                ++i;
+            }
+        }
+        delete job.selectedValidators;
     }
 
     function cancelJob(uint256 _jobId)
