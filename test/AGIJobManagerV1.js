@@ -34,9 +34,11 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.waitForDeployment();
 
     await manager.setRequiredValidatorApprovals(1);
-      await manager.setBurnPercentage(burnPct);
-      await manager.setValidationRewardPercentage(800);
+    await manager.setBurnPercentage(burnPct);
+    await manager.setValidationRewardPercentage(800);
+    await manager.setReviewWindow(7200);
     await manager.setCommitRevealWindows(1000, 1000);
+    await manager.setReviewWindow(2000);
     await manager.addAdditionalAgent(agent.address);
     await manager.addAdditionalValidator(validator.address);
     await manager.addAdditionalValidator(validator2.address);
@@ -66,6 +68,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(jobId, commitment, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(jobId, true, salt);
+    await time.increase(1000);
     await manager.connect(validator).validateJob(jobId, "", []);
 
       const burnAmount = (payout * 1000n) / 10000n;
@@ -109,7 +112,7 @@ describe("AGIJobManagerV1 payouts", function () {
         .connect(validators[i])
         .revealValidation(jobId, true, salts[i]);
     }
-
+    await time.increase(1000);
     await manager.connect(validator).validateJob(jobId, "", []);
     await manager.connect(validator2).validateJob(jobId, "", []);
     await expect(
@@ -156,6 +159,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(jobId, commitment2, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(jobId, true, salt2);
+    await time.increase(1000);
     await manager.connect(validator).validateJob(jobId, "", []);
 
       const validatorPayoutTotal = (payout * 800n) / 10000n;
@@ -410,6 +414,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(jobId, commitment, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(jobId, true, salt);
+    await time.increase(1000);
     await expect(
       manager.connect(validator).validateJob(jobId, "", [])
     )
@@ -437,6 +442,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(jobId, commitment3, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(jobId, false, salt3);
+    await time.increase(1000);
     await manager.connect(validator).disapproveJob(jobId, "", []);
 
     await expect(
@@ -471,6 +477,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(0, commitment4, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(0, true, salt4);
+    await time.increase(1000);
     await manager.connect(validator).validateJob(0, "", []);
     await expect(
       manager.validatorApprovedJobs(validator.address, 0)
@@ -497,6 +504,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(1, commitment5, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(1, true, salt5);
+    await time.increase(1000);
     await manager.connect(validator).validateJob(1, "", []);
 
     // Job 2: validator disapproves and job remains pending
@@ -516,6 +524,7 @@ describe("AGIJobManagerV1 payouts", function () {
       .commitValidation(2, commitment6, "", []);
     await time.increase(1001);
     await manager.connect(validator).revealValidation(2, false, salt6);
+    await time.increase(1000);
     await manager.connect(validator).disapproveJob(2, "", []);
 
     expect(
@@ -572,6 +581,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await time.increase(1001);
     await manager.connect(validator).revealValidation(jobId, true, salt7);
     await manager.connect(validator2).revealValidation(jobId, false, salt8);
+    await time.increase(1000);
     await manager.connect(validator).validateJob(jobId, "", []);
     await manager.connect(validator2).disapproveJob(jobId, "", []);
 
@@ -611,7 +621,7 @@ describe("AGIJobManagerV1 payouts", function () {
       recipient: validator.address,
       commitWindow: 60,
       revealWindow: 60,
-      reviewWin: 30,
+      reviewWin: 120,
       validatorsCount: 1,
     };
 
@@ -709,6 +719,7 @@ describe("AGIJobManagerV1 payouts", function () {
         .commitValidation(i, commitment, "", []);
       await time.increase(1001);
       await manager.connect(validator).revealValidation(i, true, salt);
+      await time.increase(1000);
       await manager.connect(validator).validateJob(i, "", []);
       await expect(
         manager.validatorApprovedJobs(validator.address, 0)
@@ -724,6 +735,7 @@ describe("AGIJobManagerV1 payouts", function () {
     it("allows on-time commit and reveal", async function () {
       const { token, manager, employer, agent, validator } = await deployFixture();
       await manager.setCommitRevealWindows(100, 100);
+      await manager.setReviewWindow(200);
       const payout = ethers.parseEther("100");
       await token.connect(employer).approve(await manager.getAddress(), payout);
       await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
@@ -751,6 +763,7 @@ describe("AGIJobManagerV1 payouts", function () {
         .to.emit(manager, "ValidationRevealed")
         .withArgs(jobId, validator.address, true);
 
+      await time.increase(200);
       await manager.connect(validator).validateJob(jobId, "", []);
       expect(await manager.balanceOf(employer.address)).to.equal(1n);
     });
@@ -758,6 +771,7 @@ describe("AGIJobManagerV1 payouts", function () {
     it("reverts when revealing after the window", async function () {
       const { token, manager, employer, agent, validator } = await deployFixture();
       await manager.setCommitRevealWindows(100, 100);
+      await manager.setReviewWindow(200);
       const payout = ethers.parseEther("100");
       await token.connect(employer).approve(await manager.getAddress(), payout);
       await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
