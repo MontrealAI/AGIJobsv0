@@ -76,11 +76,11 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 - **On-chain job board** – employers escrow $AGI and assign tasks to approved agents.
 - **Reputation system** – agents and validators earn points that unlock premium capabilities.
-- **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted.
+- **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted; marketplace calls are pausable and guarded by `ReentrancyGuard`.
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
-- **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and prefix increments.
+- **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and unchecked prefix increments.
 - **Enum-based dispute resolution** – moderators settle conflicts with a typed `DisputeOutcome` enum instead of fragile string comparisons.
 - **Unified job status** – a `JobStatus` enum (`Open`, `CompletionRequested`, `Disputed`, `Completed`) replaces multiple booleans and is emitted with state-change events like `JobCreated`, `JobCompletionRequested`, `JobDisputed`, and `JobCompleted`.
 - **Stake-based validator incentives**
@@ -126,7 +126,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 ### Security & Marketplace Updates
 
 - **`jobExists` requirement** – The new [`jobExists`](contracts/AGIJobManagerv1.sol#L391-L394) modifier guards functions and reverts when an unknown job ID is supplied.
-- **Checks–effects–interactions** – job cancellation and marketplace functions such as [`cancelJob`](contracts/AGIJobManagerv1.sol#L1260-L1277), [`delistJob`](contracts/AGIJobManagerv1.sol#L822-L838), [`listNFT`](contracts/AGIJobManagerv1.sol#L1444-L1448), [`purchaseNFT`](contracts/AGIJobManagerv1.sol#L1450-L1455), and [`delistNFT`](contracts/AGIJobManagerv1.sol#L1459-L1463) update internal state before token transfers to prevent reentrancy.
+- **Checks–effects–interactions** – job cancellation and marketplace functions such as [`cancelJob`](contracts/AGIJobManagerv1.sol#L1260-L1277), [`delistJob`](contracts/AGIJobManagerv1.sol#L822-L838), [`listNFT`](contracts/AGIJobManagerv1.sol#L1480-L1488), [`purchaseNFT`](contracts/AGIJobManagerv1.sol#L1491-L1498), and [`delistNFT`](contracts/AGIJobManagerv1.sol#L1504-L1508) update internal state before token transfers to prevent reentrancy and respect the pause modifier.
 - **Safe minting and transfers** – Completion NFTs are minted with [`_safeMint`](contracts/AGIJobManagerv1.sol#L1358) and traded with [`_safeTransfer`](contracts/AGIJobManagerv1.sol#L1384), ensuring recipients implement ERC-721.
 - **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L454-L468); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
 - **Owner-controlled parameters** – Only the contract owner may adjust validator or burn settings through [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1033-L1089), emitting [`ValidatorConfigUpdated`](contracts/AGIJobManagerv1.sol#L336-L349), and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L942-L951), emitting [`BurnAddressUpdated`](contracts/AGIJobManagerv1.sol#L313) and [`BurnPercentageUpdated`](contracts/AGIJobManagerv1.sol#L317).
