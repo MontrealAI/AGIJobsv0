@@ -617,22 +617,57 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
-        if (poolLength < validatorsPerJob) revert NotEnoughValidators();
+        uint256 eligibleCount;
+        for (uint256 i; i < poolLength; ) {
+            address validator = validatorPool[i];
+            if (
+                !blacklistedValidators[validator] &&
+                validatorStake[validator] >= stakeRequirement &&
+                reputation[validator] >= minValidatorReputation
+            ) {
+                unchecked {
+                    ++eligibleCount;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        if (eligibleCount < validatorsPerJob) revert NotEnoughValidators();
 
-        address[] memory pool = validatorPool;
+        address[] memory pool = new address[](eligibleCount);
+        uint256 pos;
+        for (uint256 i; i < poolLength; ) {
+            address validator = validatorPool[i];
+            if (
+                !blacklistedValidators[validator] &&
+                validatorStake[validator] >= stakeRequirement &&
+                reputation[validator] >= minValidatorReputation
+            ) {
+                pool[pos] = validator;
+                unchecked {
+                    ++pos;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
         address[] memory selected = new address[](validatorsPerJob);
         bytes32 seed = keccak256(
             abi.encodePacked(blockhash(block.number - 1), _jobId)
         );
+        uint256 remaining = eligibleCount;
 
         for (uint256 i; i < validatorsPerJob; ) {
             seed = keccak256(abi.encodePacked(seed, i));
-            uint256 index = uint256(seed) % (poolLength - i);
+            uint256 index = uint256(seed) % remaining;
             address validator = pool[index];
             job.isSelectedValidator[validator] = true;
             job.selectedValidators.push(validator);
             selected[i] = validator;
-            pool[index] = pool[poolLength - 1 - i];
+            pool[index] = pool[--remaining];
             unchecked {
                 ++i;
             }

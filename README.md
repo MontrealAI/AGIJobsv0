@@ -56,6 +56,7 @@ Follow these steps before trusting any address or artifact:
 
 **Validators**
 - Deposit stake with [`stake`](contracts/AGIJobManagerv1.sol#L1789); confirm via the `StakeDeposited` event.
+- Validator selection skips blacklisted or underqualified addresses and reverts if fewer than `validatorsPerJob` meet `stakeRequirement` and `minValidatorReputation`.
 - During the commit window, [`commitValidation`](contracts/AGIJobManagerv1.sol#L647) with your vote commitment.
 - Reveal it through [`revealValidation`](contracts/AGIJobManagerv1.sol#L685) once the reveal window opens.
 - Finalize by calling [`validateJob`](contracts/AGIJobManagerv1.sol#L720) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L764).
