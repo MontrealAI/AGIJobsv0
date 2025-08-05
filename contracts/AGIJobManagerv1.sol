@@ -393,6 +393,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when reveal data does not match the original commitment.
     error InvalidReveal();
 
+    /// @dev Thrown when the job's duration has elapsed.
+    error JobExpired();
+
+    /// @dev Thrown when a job is not in the expected open state.
+    error JobNotOpen();
+
+    /// @dev Thrown when there are insufficient validators available for selection.
+    error NotEnoughValidators();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -494,12 +503,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(
-            msg.sender == job.assignedAgent &&
-                block.timestamp <= job.assignedAt + job.duration,
-            "Not authorized or expired"
-        );
-        require(job.status == JobStatus.Open, "Job not open");
+        if (msg.sender != job.assignedAgent) revert Unauthorized();
+        if (block.timestamp > job.assignedAt + job.duration) revert JobExpired();
+        if (job.status != JobStatus.Open) revert JobNotOpen();
         job.ipfsHash = _ipfsHash;
         job.status = JobStatus.CompletionRequested;
         job.validationStart = block.timestamp;
@@ -517,7 +523,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
-        require(poolLength >= validatorsPerJob, "Not enough validators");
+        if (poolLength < validatorsPerJob) revert NotEnoughValidators();
 
         address[] memory pool = validatorPool;
         address[] memory selected = new address[](validatorsPerJob);
