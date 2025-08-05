@@ -524,6 +524,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
         require(block.timestamp >= job.completionRequestedAt + reviewWindow, "Review window active");
+        require(
+            block.timestamp >
+                job.validationStart + commitDuration + revealDuration,
+            "Reveal phase active"
+        );
         require(job.revealed[msg.sender], "Vote not revealed");
         require(job.revealedVotes[msg.sender], "Commitment mismatched");
         require(
@@ -553,6 +558,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(job.completionRequested, "Completion not requested");
         require(!job.disputed, "Job disputed");
         require(block.timestamp >= job.completionRequestedAt + reviewWindow, "Review window active");
+        require(
+            block.timestamp >
+                job.validationStart + commitDuration + revealDuration,
+            "Reveal phase active"
+        );
         require(job.revealed[msg.sender], "Vote not revealed");
         require(!job.revealedVotes[msg.sender], "Commitment mismatched");
         require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
@@ -883,6 +893,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 commitWindow,
         uint256 revealWindow
     ) external onlyOwner {
+        require(
+            reviewWindow >= commitWindow + revealWindow,
+            "review window too short"
+        );
         commitDuration = commitWindow;
         revealDuration = revealWindow;
         emit CommitRevealWindowsUpdated(commitWindow, revealWindow);
@@ -891,6 +905,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Update the mandatory waiting period after completion requests.
     /// @param newWindow Duration in seconds validators must wait to vote.
     function setReviewWindow(uint256 newWindow) external onlyOwner {
+        require(
+            newWindow >= commitDuration + revealDuration,
+            "window below commit+reveal"
+        );
         reviewWindow = newWindow;
         emit ReviewWindowUpdated(newWindow);
     }
@@ -926,6 +944,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(disapprovals > 0, "Invalid disapprovals");
         require(validatorsCount > 0, "Invalid validators");
         require(slashRecipient != address(0), "invalid address");
+        require(
+            reviewWin >= commitWindow + revealWindow,
+            "review below commit+reveal"
+        );
         validationRewardPercentage = rewardPercentage;
         stakeRequirement = stakeReq;
         slashingPercentage = slashPercentage;

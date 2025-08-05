@@ -110,7 +110,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 1. The employer escrows `$AGI` when posting the job.
 2. When completion is requested, validators enter the commit phase and submit hashed votes via `commitValidation`.
 3. After the commit phase, validators reveal their votes with `revealValidation`.
-4. Once the review window closes, validators call `validateJob` or `disapproveJob`; the final approval triggers `_finalizeJobAndBurn`.
+4. After the commit and reveal windows **and** the review window have all closed, validators call `validateJob` or `disapproveJob`; the final approval triggers `_finalizeJobAndBurn`.
 5. The contract computes `burnAmount = payout * burnPercentage / 10_000` and sends it to `burnAddress`.
 6. Validator rewards and the remaining payout are transferred to participants.
 7. The completion NFT is minted and sent to the employer.
@@ -121,7 +121,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 2. Ensure each validator has staked at least `stakeRequirement` before validating.
 3. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool.
 4. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
-5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated`, and `SlashedStakeRecipientUpdated` for configuration changes.
+5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (should stay ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
 6. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**
@@ -193,8 +193,8 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
 - `setMaxJobPayout(uint256 newMax)` → `MaxJobPayoutUpdated`
 - `setJobDurationLimit(uint256 newLimit)` → `JobDurationLimitUpdated`
-- `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; short windows require quick action while longer windows offer more flexibility.
-- `setReviewWindow(uint256 newWindow)` → `ReviewWindowUpdated` – defines the mandatory wait after completion requests before validators can finalize votes, influencing how fast validators can conclude jobs.
+- `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; the existing `reviewWindow` must be at least `commitWindow + revealWindow`.
+- `setReviewWindow(uint256 newWindow)` → `ReviewWindowUpdated` – defines the mandatory wait after completion requests and must be greater than or equal to `commitDuration + revealDuration`.
 - `updateTermsAndConditionsIpfsHash(string newHash)` → `TermsAndConditionsIpfsHashUpdated`
 - `updateContactEmail(string newEmail)` → `ContactEmailUpdated`
 - `updateAdditionalText1(string newText)` → `AdditionalText1Updated`
