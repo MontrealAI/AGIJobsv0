@@ -470,6 +470,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when a numeric count is out of range or zero.
     error InvalidCount();
 
+    /// @dev Thrown when a duration parameter is zero.
+    error InvalidDuration();
+
     /// @dev Thrown when approval thresholds are misconfigured.
     error InvalidApprovals();
 
@@ -1301,7 +1304,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 commitWindow,
         uint256 revealWindow
     ) external onlyOwner {
-        require(commitWindow > 0 && revealWindow > 0);
+        if (commitWindow == 0 || revealWindow == 0) revert InvalidDuration();
         if (reviewWindow < commitWindow + revealWindow)
             revert ReviewWindowTooShort();
         commitDuration = commitWindow;
@@ -1356,7 +1359,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (disapprovals == 0 || disapprovals > validatorsCount)
             revert InvalidDisapprovals();
         if (slashRecipient == address(0)) revert InvalidAddress();
-        require(commitWindow > 0 && revealWindow > 0);
+        if (commitWindow == 0 || revealWindow == 0) revert InvalidDuration();
         if (reviewWin < commitWindow + revealWindow)
             revert WindowBelowCommitReveal();
         validationRewardPercentage = rewardPercentage;
