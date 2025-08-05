@@ -265,26 +265,38 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     AGIType[] public agiTypes;
 
     event JobCreated(
-        uint256 jobId,
+        uint256 indexed jobId,
         string ipfsHash,
         uint256 payout,
         uint256 duration,
         string details,
         JobStatus status
     );
-    event JobApplied(uint256 jobId, address agent);
-    event JobCompletionRequested(uint256 jobId, address agent, JobStatus status);
-    event JobValidated(uint256 jobId, address validator);
-    event JobDisapproved(uint256 jobId, address validator);
+    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event JobCompletionRequested(
+        uint256 indexed jobId,
+        address indexed agent,
+        JobStatus status
+    );
+    event JobValidated(uint256 indexed jobId, address indexed validator);
+    event JobDisapproved(uint256 indexed jobId, address indexed validator);
     event JobCompleted(
-        uint256 jobId,
-        address agent,
+        uint256 indexed jobId,
+        address indexed agent,
         uint256 reputationPoints,
         JobStatus status
     );
-    event ValidationCommitted(uint256 jobId, address validator, bytes32 commitment);
-    event ValidationRevealed(uint256 jobId, address validator, bool approved);
-    event ValidatorsSelected(uint256 jobId, address[] validators);
+    event ValidationCommitted(
+        uint256 indexed jobId,
+        address indexed validator,
+        bytes32 commitment
+    );
+    event ValidationRevealed(
+        uint256 indexed jobId,
+        address indexed validator,
+        bool approved
+    );
+    event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
     event JobFinalizedAndBurned(
@@ -294,17 +306,25 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 payoutToAgent,
         uint256 tokensBurned
     );
-    event ReputationUpdated(address user, uint256 newReputation);
-    event JobCancelled(uint256 jobId);
-    event DisputeResolved(uint256 jobId, address resolver, DisputeOutcome outcome);
-    event JobDisputed(uint256 jobId, address disputant, JobStatus status);
+    event ReputationUpdated(address indexed user, uint256 newReputation);
+    event JobCancelled(uint256 indexed jobId);
+    event DisputeResolved(
+        uint256 indexed jobId,
+        address indexed resolver,
+        DisputeOutcome outcome
+    );
+    event JobDisputed(
+        uint256 indexed jobId,
+        address indexed disputant,
+        JobStatus status
+    );
     event ClubRootNodeUpdated(bytes32 indexed newClubRootNode);
     event AgentRootNodeUpdated(bytes32 indexed newAgentRootNode);
     event ValidatorMerkleRootUpdated(bytes32 indexed newValidatorMerkleRoot);
     event AgentMerkleRootUpdated(bytes32 indexed newAgentMerkleRoot);
     event ENSAddressUpdated(address indexed newEnsAddress);
     event NameWrapperAddressUpdated(address indexed newNameWrapperAddress);
-    event OwnershipVerified(address claimant, string subdomain);
+    event OwnershipVerified(address indexed claimant, string subdomain);
     event RecoveryInitiated(string reason);
     event AGITypeUpdated(address indexed nftAddress, uint256 payoutPercentage);
     event AGITypeRemoved(address indexed nftAddress);
@@ -355,7 +375,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event ValidatorPayout(address indexed validator, uint256 amount);
     event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorRewardReduced(
-        uint256 jobId,
+        uint256 indexed jobId,
         uint256 availableSlashed,
         uint256 expectedReward
     );
