@@ -784,7 +784,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function validateJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
         external
         whenNotPaused
-        nonReentrant
         jobExists(_jobId)
     {
         if (
@@ -889,7 +888,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function resolveDispute(uint256 _jobId, DisputeOutcome outcome)
         external
         onlyModerator
-        nonReentrant
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
@@ -897,108 +895,112 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (outcome == DisputeOutcome.AgentWin) {
             _finalizeJobAndBurn(_jobId);
         } else if (outcome == DisputeOutcome.EmployerWin) {
-            job.status = JobStatus.Completed;
-            totalJobEscrow -= job.payout;
-            uint256 validatorPayoutTotal =
-                (job.payout * validationRewardPercentage) /
-                PERCENTAGE_DENOMINATOR;
-            uint256 completionTime = block.timestamp - job.assignedAt;
-            uint256 reputationPoints =
-                calculateReputationPoints(job.payout, completionTime);
-            uint256 validatorReputationChange =
-                calculateValidatorReputationPoints(reputationPoints);
-            uint256 correctValidatorCount = job.validatorDisapprovals;
-            address[] memory correctValidators =
-                new address[](correctValidatorCount);
-            uint256 correctIndex = 0;
-            uint256 totalSlashed = 0;
-
-            for (uint256 i = 0; i < job.validators.length; i++) {
-                address validator = job.validators[i];
-                bool revealed = job.revealed[validator];
-                if (revealed && job.disapprovals[validator]) {
-                    _removeValidatorDisapprovedJob(validator, _jobId);
-                    correctValidators[correctIndex++] = validator;
-                    enforceReputationGrowth(validator, validatorReputationChange);
-                } else if (revealed && job.approvals[validator]) {
-                    _removeValidatorApprovedJob(validator, _jobId);
-                    uint256 slashAmount =
-                        (validatorStake[validator] * slashingPercentage) /
-                        PERCENTAGE_DENOMINATOR;
-                    if (slashAmount > 0) {
-                        validatorStake[validator] -= slashAmount;
-                        totalValidatorStake -= slashAmount;
-                        totalSlashed += slashAmount;
-                        emit StakeSlashed(validator, slashAmount);
-                    }
-                    enforceReputationPenalty(validator, validatorReputationChange);
-                } else {
-                    _removeValidatorApprovedJob(validator, _jobId);
-                    _removeValidatorDisapprovedJob(validator, _jobId);
-                    uint256 slashAmount =
-                        (validatorStake[validator] * slashingPercentage) /
-                        PERCENTAGE_DENOMINATOR;
-                    if (slashAmount > 0) {
-                        validatorStake[validator] -= slashAmount;
-                        totalValidatorStake -= slashAmount;
-                        totalSlashed += slashAmount;
-                        emit StakeSlashed(validator, slashAmount);
-                    }
-                    enforceReputationPenalty(validator, validatorReputationChange);
-                }
-                if (pendingCommits[validator] > 0) {
-                    pendingCommits[validator] -= 1;
-                }
-                delete job.approvals[validator];
-                delete job.disapprovals[validator];
-                delete job.commitments[validator];
-                delete job.revealed[validator];
-                delete job.revealedVotes[validator];
-            }
-
-            delete job.validators;
-            for (uint256 i = 0; i < job.selectedValidators.length; i++) {
-                delete job.isSelectedValidator[job.selectedValidators[i]];
-            }
-            delete job.selectedValidators;
-
-            if (correctValidatorCount > 0) {
-                uint256 rewardCap = validatorPayoutTotal;
-                if (totalSlashed < rewardCap) {
-                    rewardCap = totalSlashed;
-                    emit ValidatorRewardReduced(
-                        _jobId,
-                        totalSlashed,
-                        validatorPayoutTotal
-                    );
-                }
-                uint256 rewardPerValidator = rewardCap / correctValidatorCount;
-                uint256 distributed = rewardPerValidator * correctValidatorCount;
-                uint256 leftover = totalSlashed - distributed;
-                for (uint256 i = 0; i < correctValidators.length; i++) {
-                    if (rewardPerValidator > 0) {
-                        agiToken.safeTransfer(
-                            correctValidators[i],
-                            rewardPerValidator
-                        );
-                        emit ValidatorPayout(
-                            correctValidators[i],
-                            rewardPerValidator
-                        );
-                    }
-                }
-                if (leftover > 0) {
-                    agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                    emit LeftoverTransferred(slashedStakeRecipient, leftover);
-                }
-            } else {
-                if (totalSlashed > 0) {
-                    agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
-                }
-            }
-            agiToken.safeTransfer(job.employer, job.payout);
+            _resolveEmployerWin(_jobId);
         }
         emit DisputeResolved(_jobId, msg.sender, outcome);
+    }
+
+    function _resolveEmployerWin(uint256 _jobId) internal nonReentrant {
+        Job storage job = jobs[_jobId];
+        job.status = JobStatus.Completed;
+        totalJobEscrow -= job.payout;
+        uint256 validatorPayoutTotal =
+            (job.payout * validationRewardPercentage) /
+            PERCENTAGE_DENOMINATOR;
+        uint256 completionTime = block.timestamp - job.assignedAt;
+        uint256 reputationPoints =
+            calculateReputationPoints(job.payout, completionTime);
+        uint256 validatorReputationChange =
+            calculateValidatorReputationPoints(reputationPoints);
+        uint256 correctValidatorCount = job.validatorDisapprovals;
+        address[] memory correctValidators =
+            new address[](correctValidatorCount);
+        uint256 correctIndex = 0;
+        uint256 totalSlashed = 0;
+
+        for (uint256 i = 0; i < job.validators.length; i++) {
+            address validator = job.validators[i];
+            bool revealed = job.revealed[validator];
+            if (revealed && job.disapprovals[validator]) {
+                _removeValidatorDisapprovedJob(validator, _jobId);
+                correctValidators[correctIndex++] = validator;
+                enforceReputationGrowth(validator, validatorReputationChange);
+            } else if (revealed && job.approvals[validator]) {
+                _removeValidatorApprovedJob(validator, _jobId);
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
+                    totalSlashed += slashAmount;
+                    emit StakeSlashed(validator, slashAmount);
+                }
+                enforceReputationPenalty(validator, validatorReputationChange);
+            } else {
+                _removeValidatorApprovedJob(validator, _jobId);
+                _removeValidatorDisapprovedJob(validator, _jobId);
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
+                    totalSlashed += slashAmount;
+                    emit StakeSlashed(validator, slashAmount);
+                }
+            }
+            if (pendingCommits[validator] > 0) {
+                pendingCommits[validator] -= 1;
+            }
+            delete job.approvals[validator];
+            delete job.disapprovals[validator];
+            delete job.commitments[validator];
+            delete job.revealed[validator];
+            delete job.revealedVotes[validator];
+        }
+
+        delete job.validators;
+        for (uint256 i = 0; i < job.selectedValidators.length; i++) {
+            delete job.isSelectedValidator[job.selectedValidators[i]];
+        }
+        delete job.selectedValidators;
+
+        if (correctValidatorCount > 0) {
+            uint256 rewardCap = validatorPayoutTotal;
+            if (totalSlashed < rewardCap) {
+                rewardCap = totalSlashed;
+                emit ValidatorRewardReduced(
+                    _jobId,
+                    totalSlashed,
+                    validatorPayoutTotal
+                );
+            }
+            uint256 rewardPerValidator = rewardCap / correctValidatorCount;
+            uint256 distributed = rewardPerValidator * correctValidatorCount;
+            uint256 leftover = totalSlashed - distributed;
+            for (uint256 i = 0; i < correctValidators.length; i++) {
+                if (rewardPerValidator > 0) {
+                    agiToken.safeTransfer(
+                        correctValidators[i],
+                        rewardPerValidator
+                    );
+                    emit ValidatorPayout(
+                        correctValidators[i],
+                        rewardPerValidator
+                    );
+                }
+            }
+            if (leftover > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, leftover);
+                emit LeftoverTransferred(slashedStakeRecipient, leftover);
+            }
+        } else {
+            if (totalSlashed > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+            }
+        }
+        agiToken.safeTransfer(job.employer, job.payout);
     }
 
     function blacklistAgent(address _agent, bool _status) external onlyOwner {
@@ -1537,7 +1539,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
-    function _finalizeJobAndBurn(uint256 _jobId) internal jobExists(_jobId) {
+    function _finalizeJobAndBurn(uint256 _jobId) internal nonReentrant jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         if (job.status == JobStatus.Completed) revert JobAlreadyFinalized();
         // Disallow payout without an explicit completion request
