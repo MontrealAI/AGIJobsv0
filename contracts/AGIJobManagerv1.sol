@@ -473,6 +473,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when attempting to remove a validator that is unknown.
     error ValidatorNotFound();
 
+    /// @dev Thrown when a validator address appears more than once in the pool.
+    error DuplicateValidator();
+
     /// @dev Thrown when stake withdrawal is blocked by active or disputed jobs.
     error PendingOrDisputedJob();
 
@@ -1073,6 +1076,76 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         return (job.status, job.ipfsHash);
     }
 
+    /// @notice Retrieve comprehensive job details.
+    /// @param _jobId Identifier of the job.
+    /// @return id Job identifier.
+    /// @return employer Job creator address.
+    /// @return ipfsHash IPFS hash of job details or results.
+    /// @return payout Escrowed payout amount.
+    /// @return duration Job duration in seconds.
+    /// @return assignedAgent Agent assigned to the job.
+    /// @return assignedAt Timestamp when the agent was assigned.
+    /// @return status Current job status.
+    /// @return completionRequestedAt Timestamp when completion was requested.
+    /// @return validatorApprovals Number of validator approvals.
+    /// @return validatorDisapprovals Number of validator disapprovals.
+    /// @return details Additional job description.
+    function getJobInfo(uint256 _jobId)
+        external
+        view
+        jobExists(_jobId)
+        returns (
+            uint256 id,
+            address employer,
+            string memory ipfsHash,
+            uint256 payout,
+            uint256 duration,
+            address assignedAgent,
+            uint256 assignedAt,
+            JobStatus status,
+            uint256 completionRequestedAt,
+            uint256 validatorApprovals,
+            uint256 validatorDisapprovals,
+            string memory details
+        )
+    {
+        Job storage job = jobs[_jobId];
+        return (
+            job.id,
+            job.employer,
+            job.ipfsHash,
+            job.payout,
+            job.duration,
+            job.assignedAgent,
+            job.assignedAt,
+            job.status,
+            job.completionRequestedAt,
+            job.validatorApprovals,
+            job.validatorDisapprovals,
+            job.details
+        );
+    }
+
+    /// @notice Retrieve validators that committed to a job.
+    function getJobValidators(uint256 _jobId)
+        external
+        view
+        jobExists(_jobId)
+        returns (address[] memory)
+    {
+        return jobs[_jobId].validators;
+    }
+
+    /// @notice Retrieve validators selected for a job.
+    function getSelectedValidators(uint256 _jobId)
+        external
+        view
+        jobExists(_jobId)
+        returns (address[] memory)
+    {
+        return jobs[_jobId].selectedValidators;
+    }
+
     /// @notice Update the percentage of job payout allocated to validators.
     /// @param _percentage New reward percentage for validators in basis points.
     /// @dev Setting `_percentage` to 0 disables validator rewards.
@@ -1636,6 +1709,19 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param validators New list of validator addresses.
     function setValidatorPool(address[] calldata validators) external onlyOwner {
         if (validators.length == 0) revert InvalidParameters();
+        for (uint256 i; i < validators.length; ) {
+            address v = validators[i];
+            if (v == address(0)) revert InvalidAddress();
+            for (uint256 j = i + 1; j < validators.length; ) {
+                if (v == validators[j]) revert DuplicateValidator();
+                unchecked {
+                    ++j;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
         uint256 currentLength = validatorPool.length;
         for (uint256 i; i < currentLength; ) {
             address vOld = validatorPool[i];
