@@ -328,7 +328,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 minValidatorReputation,
         uint256 requiredApprovals,
         uint256 requiredDisapprovals,
-        address slashedStakeRecipient
+        address slashedStakeRecipient,
+        uint256 commitWindow,
+        uint256 revealWindow,
+        uint256 reviewWindow,
+        uint256 validatorsPerJob
     );
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
@@ -899,6 +903,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param approvals Validator approvals needed to finalize a job.
     /// @param disapprovals Validator disapprovals needed to dispute a job.
     /// @param slashRecipient Address receiving slashed stake when no validator votes correctly.
+    /// @param commitWindow Length of commit phase in seconds.
+    /// @param revealWindow Length of reveal phase in seconds.
+    /// @param reviewWin Mandatory waiting period before validators may vote.
+    /// @param validatorsCount Number of validators randomly selected per job.
     function setValidatorConfig(
         uint256 rewardPercentage,
         uint256 stakeReq,
@@ -906,12 +914,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 minRep,
         uint256 approvals,
         uint256 disapprovals,
-        address slashRecipient
+        address slashRecipient,
+        uint256 commitWindow,
+        uint256 revealWindow,
+        uint256 reviewWin,
+        uint256 validatorsCount
     ) external onlyOwner {
         require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
         require(approvals > 0, "Invalid approvals");
         require(disapprovals > 0, "Invalid disapprovals");
+        require(validatorsCount > 0, "Invalid validators");
         require(slashRecipient != address(0), "invalid address");
         validationRewardPercentage = rewardPercentage;
         stakeRequirement = stakeReq;
@@ -920,6 +933,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         requiredValidatorApprovals = approvals;
         requiredValidatorDisapprovals = disapprovals;
         slashedStakeRecipient = slashRecipient;
+        commitDuration = commitWindow;
+        revealDuration = revealWindow;
+        reviewWindow = reviewWin;
+        validatorsPerJob = validatorsCount;
         emit ValidatorConfigUpdated(
             rewardPercentage,
             stakeReq,
@@ -927,7 +944,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             minRep,
             approvals,
             disapprovals,
-            slashRecipient
+            slashRecipient,
+            commitWindow,
+            revealWindow,
+            reviewWin,
+            validatorsCount
         );
     }
 
