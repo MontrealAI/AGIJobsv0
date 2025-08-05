@@ -258,6 +258,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     mapping(uint256 => Listing) public listings;
     mapping(address => bool) public blacklistedAgents;
     mapping(address => bool) public blacklistedValidators;
+    uint256 public totalJobEscrow;
+    uint256 public totalValidatorStake;
     AGIType[] public agiTypes;
 
     event JobCreated(
@@ -501,6 +503,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.duration = _duration;
         job.details = _details;
         job.status = JobStatus.Open;
+        totalJobEscrow += _payout;
         agiToken.safeTransferFrom(msg.sender, address(this), _payout);
         emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details, JobStatus.Open);
     }
@@ -769,6 +772,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             _finalizeJobAndBurn(_jobId);
         } else if (outcome == DisputeOutcome.EmployerWin) {
             job.status = JobStatus.Completed;
+            totalJobEscrow -= job.payout;
             uint256 validatorPayoutTotal =
                 (job.payout * validationRewardPercentage) /
                 PERCENTAGE_DENOMINATOR;
@@ -797,6 +801,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                         PERCENTAGE_DENOMINATOR;
                     if (slashAmount > 0) {
                         validatorStake[validator] -= slashAmount;
+                        totalValidatorStake -= slashAmount;
                         totalSlashed += slashAmount;
                         emit StakeSlashed(validator, slashAmount);
                     }
@@ -809,6 +814,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                         PERCENTAGE_DENOMINATOR;
                     if (slashAmount > 0) {
                         validatorStake[validator] -= slashAmount;
+                        totalValidatorStake -= slashAmount;
                         totalSlashed += slashAmount;
                         emit StakeSlashed(validator, slashAmount);
                     }
@@ -893,6 +899,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         address employer = job.employer;
         uint256 payout = job.payout;
         delete jobs[_jobId];
+        totalJobEscrow -= payout;
         agiToken.safeTransfer(employer, payout);
         emit JobCancelled(_jobId);
     }
@@ -1354,6 +1361,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             "Job not fully validated"
         );
         job.status = JobStatus.Completed;
+        totalJobEscrow -= job.payout;
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
@@ -1390,6 +1398,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                     PERCENTAGE_DENOMINATOR;
                 if (slashAmount > 0) {
                     validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
                     totalSlashed += slashAmount;
                     emit StakeSlashed(validator, slashAmount);
                 }
@@ -1402,6 +1411,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                     PERCENTAGE_DENOMINATOR;
                 if (slashAmount > 0) {
                     validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
                     totalSlashed += slashAmount;
                     emit StakeSlashed(validator, slashAmount);
                 }
@@ -1636,6 +1646,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         if (amount == 0) revert InvalidAmount();
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         validatorStake[msg.sender] += amount;
+        totalValidatorStake += amount;
         emit StakeDeposited(msg.sender, amount);
     }
 
@@ -1651,6 +1662,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             "Pending commitments"
         );
         validatorStake[msg.sender] -= amount;
+        totalValidatorStake -= amount;
         require(
             validatorStake[msg.sender] == 0 ||
                 validatorStake[msg.sender] >= stakeRequirement,
@@ -1664,7 +1676,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param amount Amount of AGI to withdraw.
     function withdrawAGI(uint256 amount) external onlyOwner nonReentrant {
         uint256 balance = agiToken.balanceOf(address(this));
-        if (amount == 0 || amount > balance) revert InvalidAmount();
+        uint256 locked = totalJobEscrow + totalValidatorStake;
+        if (amount == 0 || balance <= locked || amount > balance - locked)
+            revert InvalidAmount();
         agiToken.safeTransfer(msg.sender, amount);
     }
 
