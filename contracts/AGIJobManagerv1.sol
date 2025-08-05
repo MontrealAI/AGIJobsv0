@@ -1524,15 +1524,45 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
         uint256 burnAmount =
             (job.payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
+        uint256 validatorPayoutTotal =
+            (job.payout * validationRewardPercentage) /
+            PERCENTAGE_DENOMINATOR;
+        uint256 agentPayout = job.payout - burnAmount - validatorPayoutTotal;
+        uint256 bonusPercentage =
+            getHighestPayoutPercentage(job.assignedAgent);
+        if (bonusPercentage > 0) {
+            uint256 bonusAmount =
+                (agentPayout * bonusPercentage) / PERCENTAGE_DENOMINATOR;
+            uint256 maxFundedBonus = burnAmount + validatorPayoutTotal;
+            if (bonusAmount > maxFundedBonus) {
+                bonusAmount = maxFundedBonus;
+            }
+            uint256 remaining = bonusAmount;
+            if (validatorPayoutTotal >= remaining) {
+                validatorPayoutTotal -= remaining;
+                remaining = 0;
+            } else {
+                remaining -= validatorPayoutTotal;
+                validatorPayoutTotal = 0;
+            }
+            if (remaining > 0) {
+                if (burnAmount >= remaining) {
+                    burnAmount -= remaining;
+                } else {
+                    burnAmount = 0;
+                }
+            }
+            agentPayout = job.payout - burnAmount - validatorPayoutTotal;
+        }
+
+        if (agentPayout + validatorPayoutTotal + burnAmount > job.payout)
+            revert PayoutExceedsEscrow();
 
         if (burnAmount > 0) {
             if (burnAddress == address(0)) revert BurnAddressNotSet();
             agiToken.safeTransfer(burnAddress, burnAmount);
         }
 
-        uint256 validatorPayoutTotal =
-            (job.payout * validationRewardPercentage) /
-            PERCENTAGE_DENOMINATOR;
         uint256 validatorReputationChange =
             calculateValidatorReputationPoints(reputationPoints);
         uint256 correctValidatorCount = job.validatorApprovals;
@@ -1640,19 +1670,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
 
-        uint256 agentPayout = job.payout - burnAmount - validatorPayoutTotal;
-        uint256 bonusPercentage = getHighestPayoutPercentage(job.assignedAgent);
-        if (bonusPercentage > 0) {
-            uint256 bonusAmount = (agentPayout * bonusPercentage) / PERCENTAGE_DENOMINATOR;
-            uint256 maxBonus = job.payout - (agentPayout + validatorPayoutTotal + burnAmount);
-            if (bonusAmount > maxBonus) {
-                bonusAmount = maxBonus;
-            }
-            agentPayout += bonusAmount;
-        }
-
-        if (agentPayout + validatorPayoutTotal + burnAmount > job.payout)
-            revert PayoutExceedsEscrow();
+        agentPayout = job.payout - burnAmount - validatorPayoutTotal;
 
         agiToken.safeTransfer(job.assignedAgent, agentPayout);
 

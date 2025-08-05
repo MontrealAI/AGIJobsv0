@@ -148,7 +148,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 ### NFT Bonus
 
-Agents holding qualifying AGI NFTs receive a payout boost. Each bonus is specified in basis points (1 bp = 0.01%) when calling `addAGIType`, and the highest applicable bonus is applied to the agent's payout.
+Agents holding qualifying AGI NFTs receive a payout boost derived from the agent's base payout after subtracting validator rewards and burns. The highest applicable bonus (specified in basis points when calling `addAGIType`) is applied. If the bonus would push total distributions over the job's escrow, validator rewards are reduced first and then the burn portion so the sum of payouts never exceeds escrow.
 
 ### Burn Mechanism
 
@@ -167,7 +167,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 3. After the commit phase, validators reveal their votes with `revealValidation`.
 4. After the commit and reveal windows **and** the review window have all closed, validators call `validateJob` or `disapproveJob`; the final approval triggers `_finalizeJobAndBurn`.
 5. The contract computes `burnAmount = payout * burnPercentage / 10_000` and sends it to `burnAddress`.
-6. Validator rewards and the remaining payout are transferred to participants.
+6. Validator rewards and the remaining payout are transferred. If the agent qualifies for an NFT bonus, it is funded from validator rewards and then the burn portion while ensuring the total of agent, validator, and burn amounts never exceeds the original escrow.
 7. The completion NFT is minted and sent to the employer.
 
 ### Security & Marketplace Updates
