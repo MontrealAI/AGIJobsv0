@@ -388,6 +388,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         _;
     }
 
+    modifier jobExists(uint256 jobId) {
+        require(jobs[jobId].employer != address(0), "Job does not exist");
+        _;
+    }
+
     function pause() external onlyOwner {
         _pause();
     }
@@ -416,7 +421,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details);
     }
 
-    function applyForJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
+    function applyForJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require(job.assignedAgent == address(0), "Job already assigned");
         require((_verifyOwnership(msg.sender, subdomain, proof, agentRootNode) || additionalAgents[msg.sender]) && !blacklistedAgents[msg.sender], "Not authorized agent");
@@ -426,7 +436,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     /// @notice Agent submits job results and starts the review window.
-    function requestJobCompletion(uint256 _jobId, string calldata _ipfsHash) external whenNotPaused {
+    function requestJobCompletion(uint256 _jobId, string calldata _ipfsHash)
+        external
+        whenNotPaused
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require(msg.sender == job.assignedAgent && block.timestamp <= job.assignedAt + job.duration, "Not authorized or expired");
         job.ipfsHash = _ipfsHash;
@@ -439,7 +453,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
     ///      Uses blockhash-based entropy; not suitable for high-stakes randomness.
-    function _selectValidators(uint256 _jobId) internal {
+    function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
         require(poolLength >= validatorsPerJob, "Not enough validators");
@@ -471,7 +485,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         bytes32 commitment,
         string memory subdomain,
         bytes32[] calldata proof
-    ) external whenNotPaused nonReentrant {
+    )
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
         require(
             _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
                 additionalValidators[msg.sender],
@@ -510,7 +529,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 _jobId,
         bool approve,
         bytes32 salt
-    ) external whenNotPaused nonReentrant {
+    )
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require(job.isSelectedValidator[msg.sender], "Validator not selected");
         require(job.completionRequested, "Completion not requested");
@@ -541,7 +565,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Only validators with sufficient stake and reputation may vote.
     ///      Rewards are paid only to validators whose approvals match the final
     ///      outcome; incorrect approvals are slashed and lose reputation.
-    function validateJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
+    function validateJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
         require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
@@ -575,7 +604,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Reject a job's completion after the review window has elapsed.
     /// @dev Misaligned disapprovals are slashed and penalized. Validators voting
     ///      with the ultimate outcome share the reward pool and any slashed stake.
-    function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof) external whenNotPaused nonReentrant {
+    function disapproveJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
         require(_verifyOwnership(msg.sender, subdomain, proof, clubRootNode) || additionalValidators[msg.sender], "Not authorized validator");
         require(!blacklistedValidators[msg.sender], "Blacklisted validator");
         require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
@@ -603,14 +637,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
     }
 
-    function disputeJob(uint256 _jobId) external whenNotPaused nonReentrant {
+    function disputeJob(uint256 _jobId)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require((msg.sender == job.assignedAgent || msg.sender == job.employer) && !job.disputed && !job.completed, "Not authorized or invalid state");
         job.disputed = true;
         emit JobDisputed(_jobId, msg.sender);
     }
 
-    function resolveDispute(uint256 _jobId, DisputeOutcome outcome) external onlyModerator nonReentrant {
+    function resolveDispute(uint256 _jobId, DisputeOutcome outcome)
+        external
+        onlyModerator
+        nonReentrant
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require(job.disputed, "Job not disputed");
         if (outcome == DisputeOutcome.AgentWin) {
@@ -728,7 +772,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit ValidatorBlacklisted(_validator, _status);
     }
 
-    function delistJob(uint256 _jobId) external onlyOwner {
+    function delistJob(uint256 _jobId)
+        external
+        onlyOwner
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require(!job.completed && job.assignedAgent == address(0), "Job already completed or assigned");
         agiToken.safeTransfer(job.employer, job.payout);
@@ -846,7 +894,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         emit NameWrapperAddressUpdated(newNameWrapperAddress);
     }
 
-    function getJobStatus(uint256 _jobId) external view returns (bool, bool, string memory) {
+    function getJobStatus(uint256 _jobId)
+        external
+        view
+        jobExists(_jobId)
+        returns (bool, bool, string memory)
+    {
         Job storage job = jobs[_jobId];
         return (job.completed, job.completionRequested, job.ipfsHash);
     }
@@ -1150,7 +1203,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         delete validatorDisapprovedJobIndex[validator][jobId];
     }
 
-    function cancelJob(uint256 _jobId) external nonReentrant {
+    function cancelJob(uint256 _jobId)
+        external
+        nonReentrant
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         require(msg.sender == job.employer && !job.completed && job.assignedAgent == address(0), "Not authorized or already completed/assigned");
         agiToken.safeTransfer(job.employer, job.payout);
@@ -1160,10 +1217,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
-    function _finalizeJobAndBurn(uint256 _jobId) internal {
+    function _finalizeJobAndBurn(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
-        // Explicit existence and completion checks per best practices
-        require(job.employer != address(0), "Job does not exist");
         require(!job.completed, "Already finalized");
         // Disallow payout without an explicit completion request
         require(job.completionRequested, "Completion not requested");
