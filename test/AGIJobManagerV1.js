@@ -241,6 +241,8 @@ describe("AGIJobManagerV1 payouts", function () {
 
   it("restricts commit and reveal to selected validators", async function () {
     const { token, manager, employer, agent, validator, validator2 } = await deployFixture();
+    await manager.setValidatorPool([validator.address]);
+    await manager.setRequiredValidatorDisapprovals(1);
     await manager.setValidatorsPerJob(1);
     const payout = ethers.parseEther("1000");
 
@@ -617,8 +619,8 @@ describe("AGIJobManagerV1 payouts", function () {
       stakeReq: 123n,
       slashPct: 250,
       minRep: 42n,
-      approvals: 2,
-      disapprovals: 3,
+      approvals: 1,
+      disapprovals: 1,
       recipient: validator.address,
       commitWindow: 60,
       revealWindow: 60,

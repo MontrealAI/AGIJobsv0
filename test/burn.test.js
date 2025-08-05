@@ -32,12 +32,14 @@ async function deployFixture(burnPct = 1000) {
   await manager.waitForDeployment();
 
   await manager.setRequiredValidatorApprovals(1);
+  await manager.setRequiredValidatorDisapprovals(1);
   await manager.setBurnPercentage(burnPct);
   await manager.setReviewWindow(7200);
   await manager.setCommitRevealWindows(1000, 1000);
   await manager.setReviewWindow(2000);
   await manager.addAdditionalAgent(agent.address);
   await manager.addAdditionalValidator(validator.address);
+  await manager.setValidatorsPerJob(1);
 
   return { token, manager, owner, employer, agent, validator };
 }
