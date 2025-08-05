@@ -499,6 +499,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when disapproval thresholds are misconfigured.
     error InvalidDisapprovals();
 
+    /// @dev Thrown when attempting to list an already listed NFT.
+    error ListingAlreadyActive();
+
+    /// @dev Thrown when a seller tries to purchase their own NFT.
+    error SelfPurchase();
+
     /// @dev Thrown when attempting to remove a validator that is unknown.
     error ValidatorNotFound();
 
@@ -1742,6 +1748,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     {
         if (ownerOf(tokenId) != msg.sender) revert Unauthorized();
         if (price == 0) revert InvalidParameters();
+        if (listings[tokenId].isActive) revert ListingAlreadyActive();
         listings[tokenId] = Listing(tokenId, msg.sender, price, true);
         emit NFTListed(tokenId, msg.sender, price);
     }
@@ -1753,8 +1760,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     {
         Listing storage listing = listings[tokenId];
         if (!listing.isActive) revert InvalidJobState();
-        uint256 price = listing.price;
         address seller = listing.seller;
+        if (seller == msg.sender) revert SelfPurchase();
+        uint256 price = listing.price;
         delete listings[tokenId];
         agiToken.safeTransferFrom(msg.sender, seller, price);
         _safeTransfer(seller, msg.sender, tokenId, "");

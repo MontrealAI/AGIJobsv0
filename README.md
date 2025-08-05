@@ -33,6 +33,7 @@ Follow these steps before trusting any address or artifact:
 - Exercise new code on public testnets prior to mainnet usage.
 - Reproduce builds locally with pinned compiler and dependency versions to confirm bytecode.
 - Avoid links or addresses from untrusted third parties.
+- Marketplace functions prevent duplicate listings and block sellers from purchasing their own NFTs, reducing accidental misuse.
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
@@ -118,7 +119,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 
 - **On-chain job board** – employers escrow $AGI and assign tasks to approved agents.
 - **Reputation system** – agents and validators earn points that unlock premium capabilities.
-- **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted; marketplace calls are pausable and guarded by `ReentrancyGuard`.
+- **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted; marketplace calls are pausable and guarded by `ReentrancyGuard`, with checks preventing duplicate listings and self-purchases.
 - **Base URI metadata** – completion NFTs derive metadata from a contract-level base URI set via `setBaseURI`; token URIs follow the `<baseURI><tokenId>` pattern, so deployments migrating from older versions should configure the base URI to preserve existing links.
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
@@ -766,7 +767,7 @@ npx eslint .
 ## AGIJobManagerv0.sol Capabilities
 - **Job assignments** – employers post jobs, Agents apply, validators confirm completion, and payouts are released.
 - **Reputation tracking** – Agents build reputation from finished work which unlocks premium features and influences future opportunities.
-- **NFT marketplace** – completed jobs can mint NFTs that are listed, purchased, or delisted using $AGI tokens.
+- **NFT marketplace** – completed jobs can mint NFTs that are listed, purchased, or delisted using $AGI tokens, and include protections against duplicate listings and self-purchases.
 - **Reward pool contributions** – participants can contribute $AGI to a communal pool; custom AGI types and payout percentages enable flexible reward schemes.
 
 ## The Economy of AGI
