@@ -121,11 +121,12 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 **Setup checklist**
 
 1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
-2. Ensure each validator has staked at least `stakeRequirement` before validating.
-3. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool.
-4. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
-5. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
-6. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
+1. Configure Chainlink VRF with `setVrfCoordinator`, `setVrfKeyHash`, and `setVrfSubscriptionId`, and fund the subscription.
+1. Ensure each validator has staked at least `stakeRequirement` before validating.
+1. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool.
+1. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
+1. Monitor `StakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
+1. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**
 
@@ -149,7 +150,7 @@ await manager.connect(validator).validateJob(jobId, "", []);
   - **Staking requirement** – bond $AGI via [`stake`](contracts/AGIJobManagerv1.sol#L1400-L1408) and exit with [`withdrawStake`](contracts/AGIJobManagerv1.sol#L1411-L1429), emitting [`StakeDeposited`](contracts/AGIJobManagerv1.sol#L320) and [`StakeWithdrawn`](contracts/AGIJobManagerv1.sol#L321).
   - **Commit → reveal → finalize** – submit a hashed vote with [`commitValidation`](contracts/AGIJobManagerv1.sol#L461-L495), disclose it via [`revealValidation`](contracts/AGIJobManagerv1.sol#L497-L529), then call [`validateJob`](contracts/AGIJobManagerv1.sol#L532-L561) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L567-L596) once the review window closes. These steps emit [`ValidationCommitted`](contracts/AGIJobManagerv1.sol#L260), [`ValidationRevealed`](contracts/AGIJobManagerv1.sol#L261), [`JobValidated`](contracts/AGIJobManagerv1.sol#L257), and [`JobDisapproved`](contracts/AGIJobManagerv1.sol#L258).
   - **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L822-L826) of escrow plus any slashed stake, while incorrect votes lose [`slashingPercentage`](contracts/AGIJobManagerv1.sol#L898-L902) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L265-L272).
-  - **Random validator selection** – the contract owner can replace the entire validator list with [`setValidatorPool`](contracts/AGIJobManagerv1.sol#L1347-L1362); each job draws validators pseudo‑randomly from this pool to mitigate race conditions and collusion.
+  - **Random validator selection** – validators are chosen via Chainlink VRF from the owner‑curated pool (`setValidatorPool`), and the commit phase begins only after VRF fulfills the request. Configure VRF with `setVrfCoordinator`, `setVrfKeyHash`, and `setVrfSubscriptionId`.
   - **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L956-L993) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L890-L893), [`setSlashingPercentage`](contracts/AGIJobManagerv1.sol#L895-L902), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L838-L842), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L904-L907), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L882-L886), each emitting their respective `*Updated` events. `setValidatorConfig` additionally sets commit, reveal, and review windows plus the number of validators per job.
 
 **Commit, reveal, finalize**
@@ -527,6 +528,9 @@ The `scripts/deploy.ts` helper reads its configuration from environment variable
 | `AGENT_ROOT_NODE` | `bytes32` ENS node for agent subdomains |
 | `VALIDATOR_MERKLE_ROOT` | Merkle root governing validator allowlists |
 | `AGENT_MERKLE_ROOT` | Merkle root governing agent allowlists |
+| `VRF_COORDINATOR` | Chainlink VRF coordinator address |
+| `VRF_KEY_HASH` | Key hash identifying the Chainlink VRF job |
+| `VRF_SUBSCRIPTION_ID` | Subscription ID funding VRF requests |
 
 Example (Sepolia):
 
@@ -539,6 +543,9 @@ export CLUB_ROOT_NODE=0xYourClubRoot
 export AGENT_ROOT_NODE=0xYourAgentRoot
 export VALIDATOR_MERKLE_ROOT=0xValidatorRoot
 export AGENT_MERKLE_ROOT=0xAgentRoot
+export VRF_COORDINATOR=0xYourVRFCoordinator
+export VRF_KEY_HASH=0xYourKeyHash
+export VRF_SUBSCRIPTION_ID=1
 npx hardhat run scripts/deploy.ts --network sepolia
 ```
 

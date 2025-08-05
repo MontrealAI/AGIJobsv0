@@ -14,6 +14,7 @@
   "type": "commonjs",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "6.1.0",
+    "@chainlink/contracts": "^1.4.0",
     "@openzeppelin/contracts": "^5.4.0",
     "eslint": "^9.32.0",
     "hardhat": "^2.26.1",
