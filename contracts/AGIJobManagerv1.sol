@@ -305,6 +305,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event OwnershipVerified(address claimant, string subdomain);
     event RecoveryInitiated(string reason);
     event AGITypeUpdated(address indexed nftAddress, uint256 payoutPercentage);
+    event AGITypeRemoved(address indexed nftAddress);
     event NFTIssued(uint256 indexed tokenId, address indexed employer, string tokenURI);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
@@ -371,6 +372,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
+
+    /// @dev Thrown when the specified AGI type does not exist.
+    error AGITypeNotFound();
 
     /// @dev Thrown when the supplied amount is zero or exceeds the contract balance.
     error InvalidAmount();
@@ -1757,6 +1761,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         }
 
         emit AGITypeUpdated(nftAddress, payoutPercentage);
+    }
+
+    /// @notice Remove an AGI NFT type.
+    /// @param nftAddress Address of the NFT collection to remove.
+    function removeAGIType(address nftAddress) external onlyOwner {
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ) {
+            if (agiTypes[i].nftAddress == nftAddress) {
+                agiTypes[i] = agiTypes[length - 1];
+                agiTypes.pop();
+                emit AGITypeRemoved(nftAddress);
+                return;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        revert AGITypeNotFound();
     }
 
     /// @notice Determine the highest AGI payout bonus available to an agent.
