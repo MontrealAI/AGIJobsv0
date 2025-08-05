@@ -328,6 +328,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event StakeSlashed(address indexed validator, uint256 amount);
     event ValidatorPayout(address indexed validator, uint256 amount);
     event LeftoverTransferred(address indexed recipient, uint256 amount);
+    event ValidatorRewardReduced(
+        uint256 jobId,
+        uint256 availableSlashed,
+        uint256 expectedReward
+    );
     event ValidatorConfigUpdated(
         uint256 rewardPercentage,
         uint256 reputationPercentage,
@@ -673,36 +678,41 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             }
             delete job.selectedValidators;
 
-            if (correctValidatorCount == 0) {
-                if (totalSlashed > 0) {
-                    agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+            if (correctValidatorCount > 0) {
+                uint256 rewardCap = validatorPayoutTotal;
+                if (totalSlashed < rewardCap) {
+                    rewardCap = totalSlashed;
+                    emit ValidatorRewardReduced(
+                        _jobId,
+                        totalSlashed,
+                        validatorPayoutTotal
+                    );
                 }
-                agiToken.safeTransfer(job.employer, job.payout);
-            } else {
-                uint256 validatorPayout =
-                    validatorPayoutTotal / correctValidatorCount;
-                uint256 slashedReward = totalSlashed / correctValidatorCount;
-                uint256 distributedValidator =
-                    validatorPayout * correctValidatorCount;
-                uint256 distributedSlashed =
-                    slashedReward * correctValidatorCount;
-                uint256 leftover =
-                    (validatorPayoutTotal - distributedValidator) +
-                    (totalSlashed - distributedSlashed);
+                uint256 rewardPerValidator = rewardCap / correctValidatorCount;
+                uint256 distributed = rewardPerValidator * correctValidatorCount;
+                uint256 leftover = totalSlashed - distributed;
                 for (uint256 i = 0; i < correctValidators.length; i++) {
-                    uint256 reward = validatorPayout + slashedReward;
-                    if (reward > 0) {
-                        agiToken.safeTransfer(correctValidators[i], reward);
-                        emit ValidatorPayout(correctValidators[i], reward);
+                    if (rewardPerValidator > 0) {
+                        agiToken.safeTransfer(
+                            correctValidators[i],
+                            rewardPerValidator
+                        );
+                        emit ValidatorPayout(
+                            correctValidators[i],
+                            rewardPerValidator
+                        );
                     }
                 }
                 if (leftover > 0) {
                     agiToken.safeTransfer(slashedStakeRecipient, leftover);
                     emit LeftoverTransferred(slashedStakeRecipient, leftover);
                 }
-                uint256 employerRefund = job.payout - validatorPayoutTotal;
-                agiToken.safeTransfer(job.employer, employerRefund);
+            } else {
+                if (totalSlashed > 0) {
+                    agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+                }
             }
+            agiToken.safeTransfer(job.employer, job.payout);
         }
         job.disputed = false;
         emit DisputeResolved(_jobId, msg.sender, outcome);
