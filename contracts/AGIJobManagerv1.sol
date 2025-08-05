@@ -440,6 +440,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when validation is attempted during the reveal phase.
     error RevealPhaseActive();
 
+    /// @dev Thrown when disputing before required windows have elapsed.
+    error PrematureDispute();
+
     /// @dev Thrown when a validator's revealed vote does not match the action.
     error CommitmentMismatch();
 
@@ -848,6 +851,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             job.status == JobStatus.Disputed ||
             job.status == JobStatus.Completed
         ) revert Unauthorized();
+        if (
+            block.timestamp < job.completionRequestedAt + reviewWindow ||
+            block.timestamp <=
+                job.validationStart + commitDuration + revealDuration
+        ) revert PrematureDispute();
         job.status = JobStatus.Disputed;
         emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
     }
