@@ -187,7 +187,7 @@ describe("AGIJobManagerV1 payouts", function () {
 
     await expect(
       manager.connect(validator).validateJob(jobId, "", [])
-    ).to.be.revertedWith("Completion not requested");
+    ).to.be.revertedWithCustomError(manager, "InvalidJobState");
   });
 
   it("enforces review window before validation", async function () {
@@ -212,7 +212,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator).revealValidation(jobId, true, salt);
     await expect(
       manager.connect(validator).validateJob(jobId, "", [])
-    ).to.be.revertedWith("Review window active");
+    ).to.be.revertedWithCustomError(manager, "ReviewWindowActive");
 
     await time.increase(5000);
     await manager.connect(validator).validateJob(jobId, "", []);
@@ -240,7 +240,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator).revealValidation(jobId, false, salt);
     await expect(
       manager.connect(validator).disapproveJob(jobId, "", [])
-    ).to.be.revertedWith("Review window active");
+    ).to.be.revertedWithCustomError(manager, "ReviewWindowActive");
 
     await time.increase(5000);
     await manager.connect(validator).disapproveJob(jobId, "", []);
@@ -280,14 +280,14 @@ describe("AGIJobManagerV1 payouts", function () {
       manager
         .connect(validator2)
         .commitValidation(jobId, otherCommitment, "", [])
-    ).to.be.revertedWith("Validator not selected");
+    ).to.be.revertedWithCustomError(manager, "ValidatorNotSelected");
     await time.increase(1001);
     await manager.connect(validator).revealValidation(jobId, true, salt);
     await expect(
       manager
         .connect(validator2)
         .revealValidation(jobId, true, otherSalt)
-    ).to.be.revertedWith("Validator not selected");
+    ).to.be.revertedWithCustomError(manager, "ValidatorNotSelected");
   });
 
   it("restricts burn address updates to owner and emits event", async function () {
@@ -801,9 +801,9 @@ describe("AGIJobManagerV1 payouts", function () {
 
       await time.increase(201);
 
-      await expect(
-        manager.connect(validator).revealValidation(jobId, true, salt)
-      ).to.be.revertedWith("Reveal phase over");
+    await expect(
+      manager.connect(validator).revealValidation(jobId, true, salt)
+    ).to.be.revertedWithCustomError(manager, "RevealPhaseOver");
     });
 
     it("blocks stake withdrawal with pending commits", async function () {
