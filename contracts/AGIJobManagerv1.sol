@@ -1337,18 +1337,28 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
         uint256 agentPayout = job.payout - burnAmount - validatorPayoutTotal;
         uint256 bonusPercentage = getHighestPayoutPercentage(job.assignedAgent);
+        uint256 bonusAmount;
         if (bonusPercentage > 0) {
-            uint256 bonusAmount = (agentPayout * bonusPercentage) / 100;
-            uint256 maxBonus = job.payout - (agentPayout + validatorPayoutTotal + burnAmount);
-            if (bonusAmount > maxBonus) {
-                bonusAmount = maxBonus;
+            bonusAmount =
+                (agentPayout * bonusPercentage) /
+                PERCENTAGE_DENOMINATOR;
+            uint256 available = burnAmount + validatorPayoutTotal;
+            if (bonusAmount > available) {
+                bonusAmount = available;
+            }
+            if (bonusAmount <= burnAmount) {
+                burnAmount -= bonusAmount;
+            } else {
+                uint256 remaining = bonusAmount - burnAmount;
+                burnAmount = 0;
+                validatorPayoutTotal -= remaining;
             }
             agentPayout += bonusAmount;
         }
 
         require(
-            agentPayout + validatorPayoutTotal + burnAmount <= job.payout,
-            "Payout exceeds escrow"
+            agentPayout + validatorPayoutTotal + burnAmount == job.payout,
+            "Payout mismatch"
         );
 
         agiToken.safeTransfer(job.assignedAgent, agentPayout);
@@ -1540,9 +1550,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @notice Register or update an AGI NFT type that grants bonus payouts.
     /// @param nftAddress Address of the qualifying NFT collection.
-    /// @param payoutPercentage Bonus percentage applied to job payouts for holders of the NFT.
+    /// @param payoutPercentage Bonus percentage in basis points for holders of the NFT.
     function addAGIType(address nftAddress, uint256 payoutPercentage) external onlyOwner {
-        if (nftAddress == address(0) || payoutPercentage == 0 || payoutPercentage > 100) {
+        if (
+            nftAddress == address(0) ||
+            payoutPercentage == 0 ||
+            payoutPercentage > PERCENTAGE_DENOMINATOR
+        ) {
             revert InvalidAGITypeParameters();
         }
 
@@ -1563,7 +1577,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     /// @notice Determine the highest AGI payout bonus available to an agent.
     /// @param agent Address being queried.
-    /// @return highestPercentage Maximum bonus percentage among held AGI types.
+    /// @return highestPercentage Maximum bonus in basis points among held AGI types.
     function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {
         uint256 len = agiTypes.length;
         for (uint256 i; i < len; ++i) {
