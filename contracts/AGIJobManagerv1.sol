@@ -660,6 +660,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
+        address[] memory pool = new address[](poolLength);
         uint256 eligibleCount;
         for (uint256 i; i < poolLength; ) {
             address validator = validatorPool[i];
@@ -668,6 +669,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 validatorStake[validator] >= stakeRequirement &&
                 reputation[validator] >= minValidatorReputation
             ) {
+                pool[eligibleCount] = validator;
                 unchecked {
                     ++eligibleCount;
                 }
@@ -677,31 +679,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
         if (eligibleCount < validatorsPerJob) revert NotEnoughValidators();
-
-        address[] memory pool = new address[](eligibleCount);
-        uint256 pos;
-        for (uint256 i; i < poolLength; ) {
-            address validator = validatorPool[i];
-            if (
-                !blacklistedValidators[validator] &&
-                validatorStake[validator] >= stakeRequirement &&
-                reputation[validator] >= minValidatorReputation
-            ) {
-                pool[pos] = validator;
-                unchecked {
-                    ++pos;
-                }
-            }
-            unchecked {
-                ++i;
-            }
+        assembly {
+            mstore(pool, eligibleCount)
         }
 
         address[] memory selected = new address[](validatorsPerJob);
         bytes32 seed = keccak256(
             abi.encodePacked(blockhash(block.number - 1), _jobId)
         );
-        uint256 remaining = eligibleCount;
+        uint256 remaining = pool.length;
 
         for (uint256 i; i < validatorsPerJob; ) {
             seed = keccak256(abi.encodePacked(seed, i));
