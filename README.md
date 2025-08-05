@@ -34,6 +34,7 @@ Follow these steps before trusting any address or artifact:
 - Reproduce builds locally with pinned compiler and dependency versions to confirm bytecode.
 - Avoid links or addresses from untrusted third parties.
 - Marketplace functions prevent duplicate listings and block sellers from purchasing their own NFTs, reducing accidental misuse.
+- Direct ETH transfers revert, preventing accidental loss of Ether.
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.

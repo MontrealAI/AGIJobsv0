@@ -535,6 +535,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when payout accounting exceeds escrowed funds.
     error PayoutExceedsEscrow();
 
+    /// @dev Thrown when the contract is sent Ether directly.
+    error ETHNotAccepted();
+
     constructor(
         address _agiTokenAddress,
         string memory _initialBaseURI,
@@ -2033,6 +2036,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 ++i;
             }
         }
+    }
+
+    /// @notice Reject any direct ETH transfers to the contract.
+    /// @dev Prevents accidental ETH deposits which would otherwise be locked.
+    receive() external payable {
+        revert ETHNotAccepted();
+    }
+
+    /// @notice Fallback handler that reverts on unexpected calls or ETH transfers.
+    fallback() external payable {
+        revert ETHNotAccepted();
     }
 }
 
