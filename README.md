@@ -304,6 +304,31 @@ await agiJobManager.connect(v3).disapproveJob(jobId, "", []); // employer wins, 
 await agiJobManager.resolveDispute(jobId, AGIJobManager.DisputeOutcome.EmployerWin);
 ```
 
+## Validator Incentives
+
+Validators must lock stake before participating in job approvals. Each vote carries slashing risk: incorrect votes forfeit a portion of the bonded stake while correct votes earn outcome‑aligned rewards from the job's escrow and any slashed tokens. During disputes, validator rewards come exclusively from the stakes lost by misaligned validators.
+
+### Workflow
+
+1. `stake` – deposit at least `stakeRequirement` of $AGI before voting.
+2. `commitValidation` – submit a hashed vote during the commit phase.
+3. `revealValidation` – disclose your vote when the reveal window opens.
+4. `validateJob` / `disapproveJob` – finalize the vote after the review window.
+5. `withdrawStake` – reclaim bonded tokens once all jobs you touched are finalized without dispute.
+
+### Owner Controls
+
+Only the contract owner may tune validator economics via:
+
+- `setValidatorConfig`
+- `setValidationRewardPercentage`
+- `setStakeRequirement`
+- `setSlashingPercentage`
+- `setMinValidatorReputation`
+- `setSlashedStakeRecipient`
+
+These `onlyOwner` functions define stake requirements, reward shares, slashing rates, reputation floors, and where forfeited stake is sent.
+
 ## Table of Contents
 - [Quick Links](#quick-links)
 - [Disclaimer](#disclaimer)
