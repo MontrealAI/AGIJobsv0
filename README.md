@@ -55,7 +55,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 **Agents**
 - Double-check the contract address before interacting.
 - Use `applyForJob` to claim the task (≈1 transaction).
-- After completing the work, call `requestJobCompletion` with the result reference such as an IPFS hash (≈1 transaction).
+- After completing the work, call `requestJobCompletion` with a non-empty result reference such as an IPFS hash (≈1 transaction).
 - Monitor the job status until validators approve and funds release.
 
 **Validators**
@@ -73,7 +73,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 
 **Agents**
 - Use [`applyForJob`](contracts/AGIJobManagerv1.sol#L568) to claim an open job.
-- After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L594) with the result's IPFS hash.
+- After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L594) with a non-empty IPFS hash.
 - Verify addresses and watch for `JobApplied` and `JobCompletionRequested` events.
 
 **Validators**

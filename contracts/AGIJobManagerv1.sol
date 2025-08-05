@@ -613,6 +613,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (msg.sender != job.assignedAgent) revert Unauthorized();
         if (block.timestamp > job.assignedAt + job.duration) revert JobExpired();
         if (job.status != JobStatus.Open) revert JobNotOpen();
+        if (bytes(_ipfsHash).length == 0) revert InvalidParameters();
         job.ipfsHash = _ipfsHash;
         job.status = JobStatus.CompletionRequested;
         job.validationStart = block.timestamp;
