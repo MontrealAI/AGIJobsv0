@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("AGIJobManagerV1 payouts", function () {
     async function deployFixture(burnPct = 1000) {
-    const [owner, employer, agent, validator, validator2] = await ethers.getSigners();
+    const [owner, employer, agent, validator, validator2, validator3] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
     const token = await Token.deploy();
@@ -40,8 +40,9 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.addAdditionalAgent(agent.address);
     await manager.addAdditionalValidator(validator.address);
     await manager.addAdditionalValidator(validator2.address);
+    await manager.addAdditionalValidator(validator3.address);
 
-    return { token, manager, owner, employer, agent, validator, validator2 };
+    return { token, manager, owner, employer, agent, validator, validator2, validator3 };
   }
 
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
@@ -73,6 +74,63 @@ describe("AGIJobManagerV1 payouts", function () {
 
     expect(await token.balanceOf(burnAddr)).to.equal(burnAmount);
     expect(await token.balanceOf(validator.address)).to.equal(validatorPayoutTotal);
+    expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
+    expect(agentExpected + validatorPayoutTotal + burnAmount).to.equal(payout);
+  });
+
+  it("sends validator leftovers to slashedStakeRecipient", async function () {
+    const { token, manager, owner, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    await manager.setRequiredValidatorApprovals(3);
+    const payout = ethers.parseEther("1000");
+    const initialOwnerBalance = await token.balanceOf(owner.address);
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+
+    const validators = [validator, validator2, validator3];
+    const salts = [ethers.id("lv1"), ethers.id("lv2"), ethers.id("lv3")];
+    for (let i = 0; i < validators.length; i++) {
+      const commitment = ethers.solidityPackedKeccak256(
+        ["address", "uint256", "bool", "bytes32"],
+        [validators[i].address, jobId, true, salts[i]]
+      );
+      await manager
+        .connect(validators[i])
+        .commitValidation(jobId, commitment, "", []);
+    }
+    await time.increase(1001);
+    for (let i = 0; i < validators.length; i++) {
+      await manager
+        .connect(validators[i])
+        .revealValidation(jobId, true, salts[i]);
+    }
+
+    await manager.connect(validator).validateJob(jobId, "", []);
+    await manager.connect(validator2).validateJob(jobId, "", []);
+    await expect(
+      manager.connect(validator3).validateJob(jobId, "", [])
+    )
+      .to.emit(manager, "LeftoverTransferred")
+      .withArgs(owner.address, 2n);
+
+    const burnAddr = await manager.burnAddress();
+    const burnAmount = (payout * 1000n) / 10000n;
+    const validatorPayoutTotal = (payout * 800n) / 10000n;
+    const baseReward = validatorPayoutTotal / 3n;
+    const leftover = validatorPayoutTotal - baseReward * 3n;
+    const agentExpected = payout - burnAmount - validatorPayoutTotal;
+
+    expect(await token.balanceOf(validator.address)).to.equal(baseReward);
+    expect(await token.balanceOf(validator2.address)).to.equal(baseReward);
+    expect(await token.balanceOf(validator3.address)).to.equal(baseReward);
+    expect(await token.balanceOf(owner.address)).to.equal(
+      initialOwnerBalance + leftover
+    );
+    expect(await token.balanceOf(burnAddr)).to.equal(burnAmount);
     expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
     expect(agentExpected + validatorPayoutTotal + burnAmount).to.equal(payout);
   });

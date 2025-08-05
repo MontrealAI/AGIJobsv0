@@ -310,6 +310,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
     event ValidatorPayout(address indexed validator, uint256 amount);
+    event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorConfigUpdated(
         uint256 rewardPercentage,
         uint256 stakeRequirement,
@@ -629,8 +630,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                     }
                 }
                 if (leftover > 0) {
-                    agiToken.safeTransfer(correctValidators[0], leftover);
-                    emit ValidatorPayout(correctValidators[0], leftover);
+                    agiToken.safeTransfer(slashedStakeRecipient, leftover);
+                    emit LeftoverTransferred(slashedStakeRecipient, leftover);
                 }
                 uint256 employerRefund = job.payout - validatorPayoutTotal;
                 agiToken.safeTransfer(job.employer, employerRefund);
@@ -1127,8 +1128,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 }
             }
             if (leftover > 0) {
-                agiToken.safeTransfer(approvedValidators[0], leftover);
-                emit ValidatorPayout(approvedValidators[0], leftover);
+                agiToken.safeTransfer(slashedStakeRecipient, leftover);
+                emit LeftoverTransferred(slashedStakeRecipient, leftover);
             }
         }
 
