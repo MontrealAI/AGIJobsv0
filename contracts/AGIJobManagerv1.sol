@@ -446,6 +446,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when a job fails validation checks prior to finalization.
     error JobNotValidated();
 
+    /// @dev Thrown when a referenced job cannot be found.
+    error JobDoesNotExist();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -478,7 +481,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     modifier jobExists(uint256 jobId) {
-        require(jobs[jobId].employer != address(0), "Job does not exist");
+        if (jobs[jobId].employer == address(0)) revert JobDoesNotExist();
         _;
     }
 
