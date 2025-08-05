@@ -68,7 +68,7 @@ describe("Finalization reentrancy", function () {
     await token.setAttack(await manager.getAddress(), jobId);
     await expect(
       manager.connect(validator).validateJob(jobId, "", [])
-    ).to.be.revertedWithCustomError(manager, "InvalidJobState");
+    ).to.be.revertedWithCustomError(manager, "ReentrancyGuardReentrantCall");
   });
 
   it("guards finalization via resolveDispute", async function () {
@@ -86,6 +86,6 @@ describe("Finalization reentrancy", function () {
       manager
         .connect(moderator)
         .resolveDispute(jobId, 0) // AgentWin
-    ).to.be.revertedWithCustomError(manager, "InvalidJobState");
+    ).to.be.revertedWithCustomError(manager, "ReentrancyGuardReentrantCall");
   });
 });
