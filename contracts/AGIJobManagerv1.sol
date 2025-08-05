@@ -191,6 +191,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Waiting period after completion request before validators may vote.
     uint256 public reviewWindow;
 
+    /// @notice Tracks the lifecycle of a job.
+    enum JobStatus {
+        Open,
+        CompletionRequested,
+        Disputed,
+        Completed
+    }
+
     struct Job {
         uint256 id;
         address employer;
@@ -199,12 +207,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 duration;
         address assignedAgent;
         uint256 assignedAt;
-        bool completed;
-        bool completionRequested;
+        JobStatus status;
         uint256 completionRequestedAt; // timestamp when completion was requested
         uint256 validatorApprovals;
         uint256 validatorDisapprovals;
-        bool disputed;
         string details;
         mapping(address => bool) approvals;
         mapping(address => bool) disapprovals;
@@ -254,12 +260,24 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     mapping(address => bool) public blacklistedValidators;
     AGIType[] public agiTypes;
 
-    event JobCreated(uint256 jobId, string ipfsHash, uint256 payout, uint256 duration, string details);
+    event JobCreated(
+        uint256 jobId,
+        string ipfsHash,
+        uint256 payout,
+        uint256 duration,
+        string details,
+        JobStatus status
+    );
     event JobApplied(uint256 jobId, address agent);
-    event JobCompletionRequested(uint256 jobId, address agent);
+    event JobCompletionRequested(uint256 jobId, address agent, JobStatus status);
     event JobValidated(uint256 jobId, address validator);
     event JobDisapproved(uint256 jobId, address validator);
-    event JobCompleted(uint256 jobId, address agent, uint256 reputationPoints);
+    event JobCompleted(
+        uint256 jobId,
+        address agent,
+        uint256 reputationPoints,
+        JobStatus status
+    );
     event ValidationCommitted(uint256 jobId, address validator, bytes32 commitment);
     event ValidationRevealed(uint256 jobId, address validator, bool approved);
     event ValidatorsSelected(uint256 jobId, address[] validators);
@@ -275,7 +293,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     event ReputationUpdated(address user, uint256 newReputation);
     event JobCancelled(uint256 jobId);
     event DisputeResolved(uint256 jobId, address resolver, DisputeOutcome outcome);
-    event JobDisputed(uint256 jobId, address disputant);
+    event JobDisputed(uint256 jobId, address disputant, JobStatus status);
     event ClubRootNodeUpdated(bytes32 indexed newClubRootNode);
     event AgentRootNodeUpdated(bytes32 indexed newAgentRootNode);
     event ValidatorMerkleRootUpdated(bytes32 indexed newValidatorMerkleRoot);
@@ -417,8 +435,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         job.payout = _payout;
         job.duration = _duration;
         job.details = _details;
+        job.status = JobStatus.Open;
         agiToken.safeTransferFrom(msg.sender, address(this), _payout);
-        emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details);
+        emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details, JobStatus.Open);
     }
 
     function applyForJob(uint256 _jobId, string memory subdomain, bytes32[] calldata proof)
@@ -442,13 +461,22 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(msg.sender == job.assignedAgent && block.timestamp <= job.assignedAt + job.duration, "Not authorized or expired");
+        require(
+            msg.sender == job.assignedAgent &&
+                block.timestamp <= job.assignedAt + job.duration,
+            "Not authorized or expired"
+        );
+        require(job.status == JobStatus.Open, "Job not open");
         job.ipfsHash = _ipfsHash;
-        job.completionRequested = true;
+        job.status = JobStatus.CompletionRequested;
         job.validationStart = block.timestamp;
         job.completionRequestedAt = block.timestamp;
         _selectValidators(_jobId);
-        emit JobCompletionRequested(_jobId, msg.sender);
+        emit JobCompletionRequested(
+            _jobId,
+            msg.sender,
+            JobStatus.CompletionRequested
+        );
     }
 
     /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
@@ -507,9 +535,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         );
         Job storage job = jobs[_jobId];
         require(job.isSelectedValidator[msg.sender], "Validator not selected");
-        require(job.completionRequested, "Completion not requested");
-        require(!job.disputed, "Job disputed");
-        require(!job.completed, "Job completed");
+        require(
+            job.status == JobStatus.CompletionRequested,
+            "Completion not requested"
+        );
         require(
             block.timestamp <= job.validationStart + commitDuration,
             "Commit phase over"
@@ -537,9 +566,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     {
         Job storage job = jobs[_jobId];
         require(job.isSelectedValidator[msg.sender], "Validator not selected");
-        require(job.completionRequested, "Completion not requested");
-        require(!job.disputed, "Job disputed");
-        require(!job.completed, "Job completed");
+        require(
+            job.status == JobStatus.CompletionRequested,
+            "Completion not requested"
+        );
         require(
             block.timestamp > job.validationStart + commitDuration,
             "Reveal phase not started"
@@ -576,9 +606,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
         require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
         Job storage job = jobs[_jobId];
-        require(job.completionRequested, "Completion not requested");
-        require(!job.disputed, "Job disputed");
-        require(block.timestamp >= job.completionRequestedAt + reviewWindow, "Review window active");
+        require(
+            job.status == JobStatus.CompletionRequested,
+            "Completion not requested"
+        );
+        require(
+            block.timestamp >= job.completionRequestedAt + reviewWindow,
+            "Review window active"
+        );
         require(
             block.timestamp >
                 job.validationStart + commitDuration + revealDuration,
@@ -587,7 +622,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(job.revealed[msg.sender], "Vote not revealed");
         require(job.revealedVotes[msg.sender], "Commitment mismatched");
         require(
-            !job.completed &&
+            job.status != JobStatus.Completed &&
                 !job.approvals[msg.sender] &&
                 !job.disapprovals[msg.sender],
             "Job completed or already reviewed"
@@ -615,9 +650,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         require(validatorStake[msg.sender] >= stakeRequirement, "Stake below requirement");
         require(reputation[msg.sender] >= minValidatorReputation, "Insufficient reputation");
         Job storage job = jobs[_jobId];
-        require(job.completionRequested, "Completion not requested");
-        require(!job.disputed, "Job disputed");
-        require(block.timestamp >= job.completionRequestedAt + reviewWindow, "Review window active");
+        require(
+            job.status == JobStatus.CompletionRequested,
+            "Completion not requested"
+        );
+        require(
+            block.timestamp >= job.completionRequestedAt + reviewWindow,
+            "Review window active"
+        );
         require(
             block.timestamp >
                 job.validationStart + commitDuration + revealDuration,
@@ -625,15 +665,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         );
         require(job.revealed[msg.sender], "Vote not revealed");
         require(!job.revealedVotes[msg.sender], "Commitment mismatched");
-        require(!job.completed && !job.disapprovals[msg.sender], "Job completed or already disapproved");
+        require(
+            job.status != JobStatus.Completed && !job.disapprovals[msg.sender],
+            "Job completed or already disapproved"
+        );
         require(!job.approvals[msg.sender], "Validator already approved");
         job.validatorDisapprovals++;
         job.disapprovals[msg.sender] = true;
         _addValidatorDisapprovedJob(msg.sender, _jobId);
         emit JobDisapproved(_jobId, msg.sender);
         if (job.validatorDisapprovals >= requiredValidatorDisapprovals) {
-            job.disputed = true;
-            emit JobDisputed(_jobId, msg.sender);
+            job.status = JobStatus.Disputed;
+            emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
         }
     }
 
@@ -644,9 +687,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require((msg.sender == job.assignedAgent || msg.sender == job.employer) && !job.disputed && !job.completed, "Not authorized or invalid state");
-        job.disputed = true;
-        emit JobDisputed(_jobId, msg.sender);
+        require(
+            (msg.sender == job.assignedAgent || msg.sender == job.employer) &&
+                job.status != JobStatus.Disputed &&
+                job.status != JobStatus.Completed,
+            "Not authorized or invalid state"
+        );
+        job.status = JobStatus.Disputed;
+        emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
     }
 
     function resolveDispute(uint256 _jobId, DisputeOutcome outcome)
@@ -656,11 +704,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(job.disputed, "Job not disputed");
+        require(job.status == JobStatus.Disputed, "Job not disputed");
         if (outcome == DisputeOutcome.AgentWin) {
             _finalizeJobAndBurn(_jobId);
         } else if (outcome == DisputeOutcome.EmployerWin) {
-            job.completed = true;
+            job.status = JobStatus.Completed;
             uint256 validatorPayoutTotal =
                 (job.payout * validationRewardPercentage) /
                 PERCENTAGE_DENOMINATOR;
@@ -758,7 +806,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             }
             agiToken.safeTransfer(job.employer, job.payout);
         }
-        job.disputed = false;
         emit DisputeResolved(_jobId, msg.sender, outcome);
     }
 
@@ -778,7 +825,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(!job.completed && job.assignedAgent == address(0), "Job already completed or assigned");
+        require(
+            job.status == JobStatus.Open && job.assignedAgent == address(0),
+            "Job already completed or assigned"
+        );
         agiToken.safeTransfer(job.employer, job.payout);
         delete jobs[_jobId];
         emit JobCancelled(_jobId);
@@ -899,10 +949,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         external
         view
         jobExists(_jobId)
-        returns (bool, bool, string memory)
+        returns (JobStatus, string memory)
     {
         Job storage job = jobs[_jobId];
-        return (job.completed, job.completionRequested, job.ipfsHash);
+        return (job.status, job.ipfsHash);
     }
 
     /// @notice Update the percentage of job payout allocated to validators.
@@ -1210,7 +1260,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(msg.sender == job.employer && !job.completed && job.assignedAgent == address(0), "Not authorized or already completed/assigned");
+        require(
+            msg.sender == job.employer &&
+                job.status == JobStatus.Open &&
+                job.assignedAgent == address(0),
+            "Not authorized or already completed/assigned"
+        );
         agiToken.safeTransfer(job.employer, job.payout);
         delete jobs[_jobId];
         emit JobCancelled(_jobId);
@@ -1220,15 +1275,20 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
     function _finalizeJobAndBurn(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
-        require(!job.completed, "Already finalized");
+        require(job.status != JobStatus.Completed, "Already finalized");
         // Disallow payout without an explicit completion request
-        require(job.completionRequested, "Completion not requested");
+        require(
+            job.status == JobStatus.CompletionRequested ||
+                job.status == JobStatus.Disputed,
+            "Completion not requested"
+        );
         // Ensure burning and payouts occur only after the job meets validation requirements
         require(
-            job.validatorApprovals >= requiredValidatorApprovals || job.disputed,
+            job.validatorApprovals >= requiredValidatorApprovals ||
+                job.status == JobStatus.Disputed,
             "Job not fully validated"
         );
-        job.completed = true;
+        job.status = JobStatus.Completed;
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
@@ -1367,7 +1427,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             burnAmount
         );
 
-        emit JobCompleted(_jobId, job.assignedAgent, reputationPoints);
+        emit JobCompleted(
+            _jobId,
+            job.assignedAgent,
+            reputationPoints,
+            JobStatus.Completed
+        );
         emit ReputationUpdated(job.assignedAgent, reputation[job.assignedAgent]);
     }
 
