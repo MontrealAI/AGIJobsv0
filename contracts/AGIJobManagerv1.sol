@@ -368,6 +368,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         // Set sensible non-zero defaults to avoid inadvertent instant phases.
         commitDuration = 1 hours;
         revealDuration = 1 hours;
+        // Ensure the initial review window accommodates both phases.
+        reviewWindow = commitDuration + revealDuration;
     }
 
     modifier onlyModerator() {
