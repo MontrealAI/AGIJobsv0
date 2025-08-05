@@ -82,7 +82,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Escrow accounting** – tracks total job escrow and validator stakes so owner withdrawals never touch locked funds.
-- **Gas-efficient validations** – v1 replaces string `require` messages with custom errors and unchecked prefix increments.
+- **Custom-error reverts** – v1 eliminates string `require` messages in favor of named custom errors across admin and validation paths, reducing gas and giving clearer failures.
 - **Enhanced state enforcement** – agents can only apply to jobs in the `Open` state, and validator actions revert with dedicated
   custom errors (e.g., `InsufficientStake`, `ReviewWindowActive`) for clearer failure modes and lower gas use.
 - **Explicit completion checks** – `requestJobCompletion` now reverts with dedicated errors (`JobExpired`, `JobNotOpen`) and validator selection fails fast with `NotEnoughValidators` when the pool lacks participants.
@@ -136,7 +136,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 - **Safe minting and transfers** – Completion NFTs are minted with [`_safeMint`](contracts/AGIJobManagerv1.sol#L1358) and traded with [`_safeTransfer`](contracts/AGIJobManagerv1.sol#L1384), ensuring recipients implement ERC-721.
  - **Custom error finalization** – [`_finalizeJobAndBurn`](contracts/AGIJobManagerv1.sol#L1357-L1531) reverts with dedicated custom errors, lowering gas costs versus string-based `require`s.
 - **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L454-L468); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
-- **Owner-controlled parameters** – Only the contract owner may adjust validator or burn settings through [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1033-L1089), emitting [`ValidatorConfigUpdated`](contracts/AGIJobManagerv1.sol#L336-L349), and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L942-L951), emitting [`BurnAddressUpdated`](contracts/AGIJobManagerv1.sol#L313) and [`BurnPercentageUpdated`](contracts/AGIJobManagerv1.sol#L317).
+- **Owner-controlled parameters** – Only the contract owner may tune validator counts, reward and slashing percentages, burn settings, timing windows, and recipient addresses via `onlyOwner` functions such as [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1033-L1089) and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L942-L951); each change emits a corresponding `*Updated` event.
 
 **Setup checklist**
 

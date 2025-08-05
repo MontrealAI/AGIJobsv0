@@ -455,6 +455,42 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when a referenced job cannot be found.
     error JobDoesNotExist();
 
+    /// @dev Thrown when an address parameter is the zero address.
+    error InvalidAddress();
+
+    /// @dev Thrown when a percentage parameter exceeds the denominator.
+    error InvalidPercentage();
+
+    /// @dev Thrown when a numeric count is out of range or zero.
+    error InvalidCount();
+
+    /// @dev Thrown when approval thresholds are misconfigured.
+    error InvalidApprovals();
+
+    /// @dev Thrown when disapproval thresholds are misconfigured.
+    error InvalidDisapprovals();
+
+    /// @dev Thrown when attempting to remove a validator that is unknown.
+    error ValidatorNotFound();
+
+    /// @dev Thrown when stake withdrawal is blocked by active or disputed jobs.
+    error PendingOrDisputedJob();
+
+    /// @dev Thrown when stake withdrawal is blocked by pending commitments.
+    error PendingCommitments();
+
+    /// @dev Thrown when remaining stake drops below the required minimum.
+    error StakeBelowRequirement();
+
+    /// @dev Thrown when review window is too short for commit and reveal phases.
+    error ReviewWindowTooShort();
+
+    /// @dev Thrown when review window is below commit+reveal durations.
+    error WindowBelowCommitReveal();
+
+    /// @dev Thrown when payout accounting exceeds escrowed funds.
+    error PayoutExceedsEscrow();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -482,7 +518,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     modifier onlyModerator() {
-        require(moderators[msg.sender], "Not a moderator");
+        if (!moderators[msg.sender]) revert Unauthorized();
         _;
     }
 
@@ -910,10 +946,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(
-            job.status == JobStatus.Open && job.assignedAgent == address(0),
-            "Job already completed or assigned"
-        );
+        if (job.status != JobStatus.Open || job.assignedAgent != address(0))
+            revert InvalidJobState();
         address employer = job.employer;
         uint256 payout = job.payout;
         delete jobs[_jobId];
@@ -933,7 +967,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function updateAGITokenAddress(address _newTokenAddress) external onlyOwner {
-        require(_newTokenAddress != address(0), "invalid address");
+        if (_newTokenAddress == address(0)) revert InvalidAddress();
         agiToken = IERC20(_newTokenAddress);
         emit AGITokenAddressUpdated(_newTokenAddress);
     }
@@ -944,19 +978,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setRequiredValidatorApprovals(uint256 _approvals) external onlyOwner {
-        require(
-            _approvals > 0 && _approvals <= validatorsPerJob,
-            "Invalid approvals"
-        );
+        if (_approvals == 0 || _approvals > validatorsPerJob)
+            revert InvalidApprovals();
         requiredValidatorApprovals = _approvals;
         emit RequiredValidatorApprovalsUpdated(_approvals);
     }
 
     function setRequiredValidatorDisapprovals(uint256 _disapprovals) external onlyOwner {
-        require(
-            _disapprovals > 0 && _disapprovals <= validatorsPerJob,
-            "Invalid disapprovals"
-        );
+        if (_disapprovals == 0 || _disapprovals > validatorsPerJob)
+            revert InvalidDisapprovals();
         requiredValidatorDisapprovals = _disapprovals;
         emit RequiredValidatorDisapprovalsUpdated(_disapprovals);
     }
@@ -1022,13 +1052,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setENS(address newEnsAddress) external onlyOwner {
-        require(newEnsAddress != address(0), "invalid address");
+        if (newEnsAddress == address(0)) revert InvalidAddress();
         ens = ENS(newEnsAddress);
         emit ENSAddressUpdated(newEnsAddress);
     }
 
     function setNameWrapper(address newNameWrapperAddress) external onlyOwner {
-        require(newNameWrapperAddress != address(0), "invalid address");
+        if (newNameWrapperAddress == address(0)) revert InvalidAddress();
         nameWrapper = NameWrapper(newNameWrapperAddress);
         emit NameWrapperAddressUpdated(newNameWrapperAddress);
     }
@@ -1047,7 +1077,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param _percentage New reward percentage for validators in basis points.
     /// @dev Setting `_percentage` to 0 disables validator rewards.
     function setValidationRewardPercentage(uint256 _percentage) external onlyOwner {
-        require(_percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        if (_percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
         validationRewardPercentage = _percentage;
         emit ValidationRewardPercentageUpdated(_percentage);
     }
@@ -1056,7 +1086,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param _percentage Reputation share for validators in basis points.
     /// @dev Setting `_percentage` to 0 disables validator reputation gains.
     function setValidatorReputationPercentage(uint256 _percentage) external onlyOwner {
-        require(_percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        if (_percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
         validatorReputationPercentage = _percentage;
         emit ValidatorReputationPercentageUpdated(_percentage);
     }
@@ -1064,13 +1094,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Update burn rate in basis points.
     /// @dev Setting `newPercentage` to 0 disables burning.
     function setBurnPercentage(uint256 newPercentage) external onlyOwner {
-        require(newPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        if (newPercentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
         burnPercentage = newPercentage;
         emit BurnPercentageUpdated(newPercentage);
     }
 
     function setBurnAddress(address newBurnAddress) external onlyOwner {
-        require(newBurnAddress != address(0), "invalid address");
+        if (newBurnAddress == address(0)) revert InvalidAddress();
         burnAddress = newBurnAddress;
         emit BurnAddressUpdated(newBurnAddress);
     }
@@ -1082,8 +1112,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         address newBurnAddress,
         uint256 newPercentage
     ) external onlyOwner {
-        require(newBurnAddress != address(0), "invalid address");
-        require(newPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        if (newBurnAddress == address(0)) revert InvalidAddress();
+        if (newPercentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
         burnAddress = newBurnAddress;
         burnPercentage = newPercentage;
         emit BurnAddressUpdated(newBurnAddress);
@@ -1091,7 +1121,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setSlashedStakeRecipient(address newRecipient) external onlyOwner {
-        require(newRecipient != address(0), "invalid address");
+        if (newRecipient == address(0)) revert InvalidAddress();
         slashedStakeRecipient = newRecipient;
         emit SlashedStakeRecipientUpdated(newRecipient);
     }
@@ -1107,7 +1137,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @param percentage Portion of staked tokens to slash in basis points.
     /// @dev Setting `percentage` to 0 disables slashing.
     function setSlashingPercentage(uint256 percentage) external onlyOwner {
-        require(percentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
+        if (percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
         slashingPercentage = percentage;
         emit SlashingPercentageUpdated(percentage);
     }
@@ -1118,12 +1148,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function setValidatorsPerJob(uint256 count) external onlyOwner {
-        require(
-            count > 0 &&
-                count >= requiredValidatorApprovals &&
-                count >= requiredValidatorDisapprovals,
-            "Invalid count"
-        );
+        if (
+            count == 0 ||
+            count < requiredValidatorApprovals ||
+            count < requiredValidatorDisapprovals
+        ) revert InvalidCount();
         validatorsPerJob = count;
         emit ValidatorsPerJobUpdated(count);
     }
@@ -1136,10 +1165,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 commitWindow,
         uint256 revealWindow
     ) external onlyOwner {
-        require(
-            reviewWindow >= commitWindow + revealWindow,
-            "review window too short"
-        );
+        if (reviewWindow < commitWindow + revealWindow)
+            revert ReviewWindowTooShort();
         commitDuration = commitWindow;
         revealDuration = revealWindow;
         emit CommitRevealWindowsUpdated(commitWindow, revealWindow);
@@ -1148,10 +1175,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Update the mandatory waiting period after completion requests.
     /// @param newWindow Duration in seconds validators must wait to vote.
     function setReviewWindow(uint256 newWindow) external onlyOwner {
-        require(
-            newWindow >= commitDuration + revealDuration,
-            "window below commit+reveal"
-        );
+        if (newWindow < commitDuration + revealDuration)
+            revert WindowBelowCommitReveal();
         reviewWindow = newWindow;
         emit ReviewWindowUpdated(newWindow);
     }
@@ -1183,23 +1208,19 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 reviewWin,
         uint256 validatorsCount
     ) external onlyOwner {
-        require(rewardPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
-        require(reputationPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
-        require(slashPercentage <= PERCENTAGE_DENOMINATOR, "Invalid percentage");
-        require(validatorsCount > 0, "Invalid validators");
-        require(
-            approvals > 0 && approvals <= validatorsCount,
-            "Invalid approvals"
-        );
-        require(
-            disapprovals > 0 && disapprovals <= validatorsCount,
-            "Invalid disapprovals"
-        );
-        require(slashRecipient != address(0), "invalid address");
-        require(
-            reviewWin >= commitWindow + revealWindow,
-            "review below commit+reveal"
-        );
+        if (
+            rewardPercentage > PERCENTAGE_DENOMINATOR ||
+            reputationPercentage > PERCENTAGE_DENOMINATOR ||
+            slashPercentage > PERCENTAGE_DENOMINATOR
+        ) revert InvalidPercentage();
+        if (validatorsCount == 0) revert InvalidCount();
+        if (approvals == 0 || approvals > validatorsCount)
+            revert InvalidApprovals();
+        if (disapprovals == 0 || disapprovals > validatorsCount)
+            revert InvalidDisapprovals();
+        if (slashRecipient == address(0)) revert InvalidAddress();
+        if (reviewWin < commitWindow + revealWindow)
+            revert WindowBelowCommitReveal();
         validationRewardPercentage = rewardPercentage;
         validatorReputationPercentage = reputationPercentage;
         stakeRequirement = stakeReq;
@@ -1348,12 +1369,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        require(
-            msg.sender == job.employer &&
-                job.status == JobStatus.Open &&
-                job.assignedAgent == address(0),
-            "Not authorized or already completed/assigned"
-        );
+        if (
+            msg.sender != job.employer ||
+            job.status != JobStatus.Open ||
+            job.assignedAgent != address(0)
+        ) revert Unauthorized();
         address employer = job.employer;
         uint256 payout = job.payout;
         delete jobs[_jobId];
@@ -1510,10 +1530,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             agentPayout += bonusAmount;
         }
 
-        require(
-            agentPayout + validatorPayoutTotal + burnAmount <= job.payout,
-            "Payout exceeds escrow"
-        );
+        if (agentPayout + validatorPayoutTotal + burnAmount > job.payout)
+            revert PayoutExceedsEscrow();
 
         agiToken.safeTransfer(job.assignedAgent, agentPayout);
 
@@ -1650,10 +1668,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     }
 
     function removeAdditionalValidator(address validator) external onlyOwner {
-        require(
-            additionalValidators[validator] || isValidatorInPool[validator],
-            "Validator not found"
-        );
+        if (
+            !(additionalValidators[validator] || isValidatorInPool[validator])
+        ) revert ValidatorNotFound();
         additionalValidators[validator] = false;
         if (isValidatorInPool[validator]) {
             uint256 index = validatorPoolIndex[validator];
@@ -1692,22 +1709,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
 
     function withdrawStake(uint256 amount) external nonReentrant {
         if (amount == 0 || amount > validatorStake[msg.sender]) revert InvalidAmount();
-        require(
-            validatorApprovedJobs[msg.sender].length == 0 &&
-                validatorDisapprovedJobs[msg.sender].length == 0,
-            "Pending or disputed job"
-        );
-        require(
-            pendingCommits[msg.sender] == 0,
-            "Pending commitments"
-        );
+        if (
+            validatorApprovedJobs[msg.sender].length != 0 ||
+            validatorDisapprovedJobs[msg.sender].length != 0
+        ) revert PendingOrDisputedJob();
+        if (pendingCommits[msg.sender] != 0) revert PendingCommitments();
         validatorStake[msg.sender] -= amount;
         totalValidatorStake -= amount;
-        require(
-            validatorStake[msg.sender] == 0 ||
-                validatorStake[msg.sender] >= stakeRequirement,
-            "Stake below requirement"
-        );
+        if (
+            validatorStake[msg.sender] != 0 &&
+            validatorStake[msg.sender] < stakeRequirement
+        ) revert StakeBelowRequirement();
         agiToken.safeTransfer(msg.sender, amount);
         emit StakeWithdrawn(msg.sender, amount);
     }

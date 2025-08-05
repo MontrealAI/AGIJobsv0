@@ -52,7 +52,7 @@ describe("AGIJobManagerV1 payouts", function () {
     const { manager } = await deployFixture();
     await expect(
       manager.updateAGITokenAddress(ethers.ZeroAddress)
-    ).to.be.revertedWith("invalid address");
+    ).to.be.revertedWithCustomError(manager, "InvalidAddress");
   });
 
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
@@ -849,7 +849,7 @@ describe("AGIJobManagerV1 payouts", function () {
         .commitValidation(jobId, commitment, "", []);
       await expect(
         manager.connect(validator).withdrawStake(stakeAmount)
-      ).to.be.revertedWith("Pending commitments");
+      ).to.be.revertedWithCustomError(manager, "PendingCommitments");
     });
   });
 });
