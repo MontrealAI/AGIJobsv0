@@ -97,6 +97,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **On-chain job board** – employers escrow $AGI and assign tasks to approved agents.
 - **Reputation system** – agents and validators earn points that unlock premium capabilities.
 - **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted; marketplace calls are pausable and guarded by `ReentrancyGuard`.
+- **Base URI metadata** – completion NFTs derive metadata from a contract-level base URI set via `setBaseURI`; token URIs follow the `<baseURI><tokenId>` pattern, so deployments migrating from older versions should configure the base URI to preserve existing links.
 - **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
@@ -231,7 +232,7 @@ Control these owner functions with a multisig or timelock, and watch the event l
 Several operational parameters are adjustable by the owner. Every update emits a dedicated event so off‑chain services can react to new values:
 
 - `updateAGITokenAddress(address newToken)` → `AGITokenAddressUpdated` (reverts if `newToken` is the zero address)
-- `setBaseIpfsUrl(string newUrl)` → `BaseIpfsUrlUpdated`
+- `setBaseURI(string newBaseURI)` → `BaseURIUpdated`
 - `setRequiredValidatorApprovals(uint256 count)` → `RequiredValidatorApprovalsUpdated`
 - `setRequiredValidatorDisapprovals(uint256 count)` → `RequiredValidatorDisapprovalsUpdated`
 - `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
