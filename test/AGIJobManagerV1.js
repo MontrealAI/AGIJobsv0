@@ -68,6 +68,35 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWithCustomError(manager, "InvalidAddress");
   });
 
+  it("reverts when _verifyOwnership is given an invalid root", async function () {
+    const [owner] = await ethers.getSigners();
+    const Token = await ethers.getContractFactory("MockERC20");
+    const token = await Token.deploy();
+    await token.waitForDeployment();
+    const ENSMock = await ethers.getContractFactory("MockENS");
+    const ens = await ENSMock.deploy();
+    await ens.waitForDeployment();
+    const WrapperMock = await ethers.getContractFactory("MockNameWrapper");
+    const wrapper = await WrapperMock.deploy();
+    await wrapper.waitForDeployment();
+    const Harness = await ethers.getContractFactory("AGIJobManagerV1Harness");
+    const manager = await Harness.deploy(
+      await token.getAddress(),
+      "ipfs://",
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      ethers.ZeroHash,
+      ethers.ZeroHash,
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
+    await manager.waitForDeployment();
+    const badRoot = ethers.id("badRoot");
+    await expect(
+      manager.callVerifyOwnership(owner.address, "sub", [], badRoot)
+    ).to.be.revertedWithCustomError(manager, "InvalidRootNode");
+  });
+
   it("allows agent to apply for a job using a Merkle proof", async function () {
     const { token, manager, employer, agent, proof } = await deployFixture(1000, true);
     const payout = ethers.parseEther("1");

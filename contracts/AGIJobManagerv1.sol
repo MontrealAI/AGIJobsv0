@@ -460,6 +460,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when an address parameter is the zero address.
     error InvalidAddress();
 
+    /// @dev Thrown when an unexpected ENS root node is supplied.
+    error InvalidRootNode();
+
     /// @dev Thrown when a percentage parameter exceeds the denominator.
     error InvalidPercentage();
 
@@ -1731,6 +1734,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     function _verifyOwnership(address claimant, string memory subdomain, bytes32[] calldata proof, bytes32 rootNode) internal returns (bool) {
+        if (rootNode != clubRootNode && rootNode != agentRootNode) revert InvalidRootNode();
         bytes32 leaf = keccak256(abi.encodePacked(claimant));
         if (
             MerkleProof.verifyCalldata(

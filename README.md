@@ -120,7 +120,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
 - **Reputation system** – agents and validators earn points that unlock premium capabilities.
 - **NFT marketplace** – completed jobs mint NFTs that can be listed, purchased, or delisted; marketplace calls are pausable and guarded by `ReentrancyGuard`.
 - **Base URI metadata** – completion NFTs derive metadata from a contract-level base URI set via `setBaseURI`; token URIs follow the `<baseURI><tokenId>` pattern, so deployments migrating from older versions should configure the base URI to preserve existing links.
-- **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation.
+- **ENS & Merkle verification** – subdomain ownership and allowlists guard access to jobs and validation. The internal `_verifyOwnership` helper only accepts the predefined `clubRootNode` or `agentRootNode`; any other root reverts.
 - **Pausable and owner‑controlled** – emergency stop, moderator management, and tunable parameters.
 - **Transparent moderation** – emits `AgentBlacklisted`, `ValidatorBlacklisted`, `ModeratorAdded`, and `ModeratorRemoved` events for on-chain auditability.
 - **Escrow accounting** – tracks total job escrow and validator stakes so owner withdrawals never touch locked funds.
@@ -233,7 +233,7 @@ await agiJobManager.connect(validator).validateJob(jobId, "", []);
 
 ### Allowlist and ENS Management
 
-Owners can refresh allowlists and name-service references without redeploying the contract.
+Owners can refresh allowlists and name-service references without redeploying the contract. The `_verifyOwnership` helper enforces that only `clubRootNode` or `agentRootNode` values are valid.
 
 - `setValidatorMerkleRoot(bytes32 newValidatorMerkleRoot)` – rotates the validator allowlist and emits `ValidatorMerkleRootUpdated`.
 - `setAgentMerkleRoot(bytes32 newAgentMerkleRoot)` – updates the agent allowlist and emits `AgentMerkleRootUpdated`.
