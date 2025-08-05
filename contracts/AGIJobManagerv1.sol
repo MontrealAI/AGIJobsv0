@@ -437,6 +437,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Thrown when a validator's revealed vote does not match the action.
     error CommitmentMismatch();
 
+    /// @dev Thrown when attempting to finalize an already completed job.
+    error JobAlreadyFinalized();
+
+    /// @dev Thrown when a job has not requested completion before finalization.
+    error CompletionNotRequested();
+
+    /// @dev Thrown when a job fails validation checks prior to finalization.
+    error JobNotValidated();
+
     constructor(
         address _agiTokenAddress,
         string memory _baseIpfsUrl,
@@ -1347,19 +1356,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
     function _finalizeJobAndBurn(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
-        require(job.status != JobStatus.Completed, "Already finalized");
+        if (job.status == JobStatus.Completed) revert JobAlreadyFinalized();
         // Disallow payout without an explicit completion request
-        require(
-            job.status == JobStatus.CompletionRequested ||
-                job.status == JobStatus.Disputed,
-            "Completion not requested"
-        );
+        if (
+            job.status != JobStatus.CompletionRequested &&
+            job.status != JobStatus.Disputed
+        ) revert CompletionNotRequested();
         // Ensure burning and payouts occur only after the job meets validation requirements
-        require(
-            job.validatorApprovals >= requiredValidatorApprovals ||
-                job.status == JobStatus.Disputed,
-            "Job not fully validated"
-        );
+        if (
+            job.status != JobStatus.Disputed &&
+            job.validatorApprovals < requiredValidatorApprovals
+        ) revert JobNotValidated();
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
         uint256 completionTime = block.timestamp - job.assignedAt;
@@ -1384,7 +1391,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         uint256 approvedIndex = 0;
         uint256 totalSlashed = 0;
 
-        for (uint256 i = 0; i < job.validators.length; i++) {
+        uint256 vLen = job.validators.length;
+        for (uint256 i; i < vLen; ) {
             address validator = job.validators[i];
             bool revealed = job.revealed[validator];
             if (revealed && job.approvals[validator]) {
@@ -1425,11 +1433,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
             delete job.commitments[validator];
             delete job.revealed[validator];
             delete job.revealedVotes[validator];
+            unchecked {
+                ++i;
+            }
         }
 
         delete job.validators;
-        for (uint256 i = 0; i < job.selectedValidators.length; i++) {
+        uint256 svLen = job.selectedValidators.length;
+        for (uint256 i; i < svLen; ) {
             delete job.isSelectedValidator[job.selectedValidators[i]];
+            unchecked {
+                ++i;
+            }
         }
         delete job.selectedValidators;
 
@@ -1458,11 +1473,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
             }
         } else {
-            for (uint256 i = 0; i < approvedValidators.length; i++) {
+            uint256 aLen = approvedValidators.length;
+            for (uint256 i; i < aLen; ) {
                 uint256 reward = validatorPayout + slashedReward;
                 if (reward > 0) {
                     agiToken.safeTransfer(approvedValidators[i], reward);
                     emit ValidatorPayout(approvedValidators[i], reward);
+                }
+                unchecked {
+                    ++i;
                 }
             }
             if (leftover > 0) {
@@ -1529,9 +1548,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     {
         Listing storage listing = listings[tokenId];
         if (!listing.isActive) revert InvalidJobState();
-        listing.isActive = false;
         uint256 price = listing.price;
         address seller = listing.seller;
+        delete listings[tokenId];
         agiToken.safeTransferFrom(msg.sender, seller, price);
         _safeTransfer(seller, msg.sender, tokenId, "");
         emit NFTPurchased(tokenId, msg.sender, price);
@@ -1544,7 +1563,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     {
         Listing storage listing = listings[tokenId];
         if (!listing.isActive || listing.seller != msg.sender) revert Unauthorized();
-        listing.isActive = false;
+        delete listings[tokenId];
         emit NFTDelisted(tokenId);
     }
 
@@ -1588,16 +1607,23 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
     /// @notice Replace the entire validator pool.
     /// @param validators New list of validator addresses.
     function setValidatorPool(address[] calldata validators) external onlyOwner {
-        require(validators.length > 0, "Invalid validators");
+        if (validators.length == 0) revert InvalidParameters();
         uint256 currentLength = validatorPool.length;
-        for (uint256 i = 0; i < currentLength; i++) {
+        for (uint256 i; i < currentLength; ) {
             delete isValidatorInPool[validatorPool[i]];
+            unchecked {
+                ++i;
+            }
         }
         delete validatorPool;
-        for (uint256 i = 0; i < validators.length; i++) {
+        uint256 newLen = validators.length;
+        for (uint256 i; i < newLen; ) {
             address v = validators[i];
             validatorPool.push(v);
             isValidatorInPool[v] = true;
+            unchecked {
+                ++i;
+            }
         }
         emit ValidatorPoolSet(validators);
     }
@@ -1618,11 +1644,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721URIStorage
         additionalValidators[validator] = false;
         if (isValidatorInPool[validator]) {
             uint256 length = validatorPool.length;
-            for (uint256 i = 0; i < length; i++) {
+            for (uint256 i; i < length; ) {
                 if (validatorPool[i] == validator) {
                     validatorPool[i] = validatorPool[length - 1];
                     validatorPool.pop();
                     break;
+                }
+                unchecked {
+                    ++i;
                 }
             }
             delete isValidatorInPool[validator];
