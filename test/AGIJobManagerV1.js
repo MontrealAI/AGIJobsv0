@@ -41,6 +41,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.addAdditionalValidator(validator.address);
     await manager.addAdditionalValidator(validator2.address);
     await manager.addAdditionalValidator(validator3.address);
+    await manager.setValidatorsPerJob(3);
 
     return { token, manager, owner, employer, agent, validator, validator2, validator3 };
   }
@@ -232,6 +233,48 @@ describe("AGIJobManagerV1 payouts", function () {
 
     await time.increase(5000);
     await manager.connect(validator).disapproveJob(jobId, "", []);
+  });
+
+  it("restricts commit and reveal to selected validators", async function () {
+    const { token, manager, employer, agent, validator, validator2 } = await deployFixture();
+    await manager.setValidatorsPerJob(1);
+    const payout = ethers.parseEther("1000");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await expect(
+      manager.connect(agent).requestJobCompletion(jobId, "result")
+    )
+      .to.emit(manager, "ValidatorsSelected")
+      .withArgs(jobId, [validator.address]);
+    const salt = ethers.id("sel1");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, true, salt]
+    );
+    await manager
+      .connect(validator)
+      .commitValidation(jobId, commitment, "", []);
+    const otherSalt = ethers.id("sel2");
+    const otherCommitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator2.address, jobId, true, otherSalt]
+    );
+    await expect(
+      manager
+        .connect(validator2)
+        .commitValidation(jobId, otherCommitment, "", [])
+    ).to.be.revertedWith("Validator not selected");
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, true, salt);
+    await expect(
+      manager
+        .connect(validator2)
+        .revealValidation(jobId, true, otherSalt)
+    ).to.be.revertedWith("Validator not selected");
   });
 
   it("restricts burn address updates to owner and emits event", async function () {
