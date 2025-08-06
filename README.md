@@ -192,6 +192,7 @@ functions control validation incentives, burn behavior, and system limits.
 | `removeAdditionalValidator(address validator)` | Remove a validator from the manual allowlist; emits `ValidatorRemoved`. | previously added address |
 | `addAdditionalAgent(address agent)` | Manually whitelist an agent; emits `AdditionalAgentAdded`. | non-zero address |
 | `removeAdditionalAgent(address agent)` | Remove an agent from the manual allowlist; emits `AdditionalAgentRemoved`. | previously added address |
+| `updateAGITokenAddress(address addr)` | Switch to a new $AGI token contract if ever required. | non-zero address |
 
 The current implementation relies on on-chain entropy for validator selection. For stronger guarantees against manipulation, integrate a verifiable randomness oracle such as Chainlink VRF in a future deployment.
 
@@ -200,6 +201,8 @@ Convenience functions:
 - `setBurnConfig(address addr, uint256 bps)` atomically updates burn address and percentage and reverts if burn plus validator reward exceed 100%.
 - `setValidatorConfig(...)` adjusts reward, reputation, staking, slashing, and timing in one call.
 - `getTimingConfig()` and `getValidatorConfig()` let anyone inspect current timing and incentive parameters in a single read call.
+- `getPayoutConfig()` reports burn, validator reward, and expiration caller reward settings along with the burn address.
+- `getAGITypes()` lists all NFT collections currently eligible for payout bonuses.
 
 ### Example: Updating Burn and Validator Settings with a Block Explorer
 
@@ -904,6 +907,7 @@ npx eslint .
 - **NFT marketplace** – completed jobs can mint NFTs that are listed, purchased, or delisted using $AGI tokens, and include protections against duplicate listings and self-purchases.
 - **Reward pool contributions** – participants can contribute $AGI to a communal pool; custom AGI types and payout percentages enable flexible reward schemes.
 - **AGI type limit** – the list of NFT collections granting payout bonuses is capped at 50 entries to keep per-job checks efficient.
+- Use `getAGITypes()` to view the currently registered bonus NFT collections on-chain.
 
 ## The Economy of AGI
 How jobs, reputation, and value circulate within the AGI ecosystem. Read the expanded discussion in [docs/economy-of-agi.md](docs/economy-of-agi.md).

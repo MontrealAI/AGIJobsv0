@@ -36,6 +36,10 @@ describe("AGIJobManagerV1 AGI types", function () {
     const nftAddress = await manager.getAddress();
 
     await manager.addAGIType(nftAddress, 500);
+    const types = await manager.getAGITypes();
+    expect(types.length).to.equal(1);
+    expect(types[0].nftAddress).to.equal(nftAddress);
+    expect(types[0].payoutPercentage).to.equal(500n);
 
     await expect(manager.removeAGIType(nftAddress))
       .to.emit(manager, "AGITypeRemoved")

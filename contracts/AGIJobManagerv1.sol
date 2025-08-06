@@ -1460,6 +1460,30 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         );
     }
 
+    /// @notice Retrieve payout parameters in a single call.
+    /// @dev Exposes burn and reward settings for non-technical users.
+    /// @return burnPct Portion of a job payout destroyed on completion.
+    /// @return validationRewardPct Portion of a job payout allocated to correct validators.
+    /// @return cancelRewardPct Share of escrow granted to the caller of `cancelExpiredJob`.
+    /// @return burnAddr Destination address for burned tokens.
+    function getPayoutConfig()
+        external
+        view
+        returns (
+            uint256 burnPct,
+            uint256 validationRewardPct,
+            uint256 cancelRewardPct,
+            address burnAddr
+        )
+    {
+        return (
+            burnPercentage,
+            validationRewardPercentage,
+            cancelRewardPercentage,
+            burnAddress
+        );
+    }
+
     function _validatePayoutSplits(
         uint256 _burnPercentage,
         uint256 _validationRewardPercentage
@@ -2366,6 +2390,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
         revert AGITypeNotFound();
+    }
+
+    /// @notice Retrieve all AGI NFT types that grant payout bonuses.
+    /// @return types Array of AGIType structs with `nftAddress` and `payoutPercentage`.
+    function getAGITypes() external view returns (AGIType[] memory types) {
+        types = agiTypes;
     }
 
     /// @notice Determine the highest AGI payout bonus available to an agent.

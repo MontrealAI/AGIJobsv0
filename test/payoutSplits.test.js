@@ -97,4 +97,24 @@ describe("payout split validation", function () {
       )
     ).to.emit(manager, "ValidatorConfigUpdated");
   });
+
+  it("returns current payout configuration", async function () {
+    const { manager } = await deployFixture();
+    const initial = await manager.getPayoutConfig();
+    expect(initial.burnPct).to.equal(500n);
+    expect(initial.validationRewardPct).to.equal(800n);
+    expect(initial.cancelRewardPct).to.equal(100n);
+    expect(initial.burnAddr).to.equal(await manager.BURN_ADDRESS());
+
+    const newBurnAddr = ethers.Wallet.createRandom().address;
+    await manager.setBurnConfig(newBurnAddr, 1000);
+    await manager.setValidationRewardPercentage(700);
+    await manager.setCancelRewardPercentage(200);
+
+    const updated = await manager.getPayoutConfig();
+    expect(updated.burnPct).to.equal(1000n);
+    expect(updated.validationRewardPct).to.equal(700n);
+    expect(updated.cancelRewardPct).to.equal(200n);
+    expect(updated.burnAddr).to.equal(newBurnAddr);
+  });
 });
