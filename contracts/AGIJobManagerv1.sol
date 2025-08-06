@@ -737,7 +737,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
-    ///      Uses blockhash-based entropy; not suitable for high-stakes randomness.
+    ///      Mixes `blockhash` and `block.prevrandao` with an owner-provided seed.
+    ///      This on-chain entropy is not secure for high-stakes randomness; a
+    ///      future version should integrate a verifiable randomness source.
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
@@ -768,6 +770,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         bytes32 seed = keccak256(
             abi.encodePacked(
                 blockhash(block.number - 1),
+                block.prevrandao,
                 _jobId,
                 validatorSelectionSeed
             )
