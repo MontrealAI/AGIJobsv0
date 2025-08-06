@@ -344,6 +344,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         bool agentPaid
     );
     event JobTie(uint256 indexed jobId, address indexed resolver);
+    event JobQuorumNotMet(uint256 indexed jobId, address indexed resolver);
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -539,6 +540,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when attempting to resolve a job before the grace period ends.
     error GracePeriodActive();
+
+    /// @dev Thrown when insufficient validator participation prevents resolution.
+    error QuorumNotMet();
 
     /// @dev Thrown when disputing before required windows have elapsed.
     error PrematureDispute();
@@ -914,7 +918,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         _addValidatorApprovedJob(msg.sender, _jobId);
         emit JobValidated(_jobId, msg.sender);
         if (job.validatorApprovals >= requiredValidatorApprovals) {
-            _finalizeJobAndBurn(_jobId, false);
+            _finalizeJobAndBurn(_jobId, false, true);
         }
     }
 
@@ -986,6 +990,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Resolve a job that has stalled after commit and reveal phases.
     /// @param _jobId Identifier of the job to resolve.
     /// @dev Anyone may call this after `resolveGracePeriod` has elapsed.
+    ///      Resolution requires total validator participation to meet `validatorsPerJob`.
     function resolveStalledJob(uint256 _jobId)
         external
         whenNotPaused
@@ -998,11 +1003,17 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             block.timestamp <=
             job.validationStart + commitDuration + revealDuration + resolveGracePeriod
         ) revert GracePeriodActive();
-        if (job.validatorApprovals > job.validatorDisapprovals) {
-            _finalizeJobAndBurn(_jobId, true);
+        uint256 totalVotes =
+            job.validatorApprovals + job.validatorDisapprovals;
+        if (totalVotes < validatorsPerJob) {
+            job.status = JobStatus.Disputed;
+            emit JobQuorumNotMet(_jobId, msg.sender);
+            emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
+        } else if (job.validatorApprovals > job.validatorDisapprovals) {
+            _finalizeJobAndBurn(_jobId, true, true);
             emit StalledJobResolved(_jobId, msg.sender, true);
         } else if (job.validatorDisapprovals > job.validatorApprovals) {
-            _resolveEmployerWin(_jobId);
+            _resolveEmployerWin(_jobId, true);
             emit StalledJobResolved(_jobId, msg.sender, false);
         } else {
             job.status = JobStatus.Disputed;
@@ -1020,14 +1031,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         Job storage job = jobs[_jobId];
         if (job.status != JobStatus.Disputed) revert InvalidJobState();
         if (outcome == DisputeOutcome.AgentWin) {
-            _finalizeJobAndBurn(_jobId, false);
+            _finalizeJobAndBurn(_jobId, false, true);
         } else if (outcome == DisputeOutcome.EmployerWin) {
-            _resolveEmployerWin(_jobId);
+            _resolveEmployerWin(_jobId, true);
         }
         emit DisputeResolved(_jobId, msg.sender, outcome);
     }
 
-    function _resolveEmployerWin(uint256 _jobId) internal {
+    function _resolveEmployerWin(uint256 _jobId, bool quorumMet) internal {
+        if (!quorumMet) revert QuorumNotMet();
         Job storage job = jobs[_jobId];
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
@@ -1958,10 +1970,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
     /// @param bypassApprovalRequirement If true, skips the minimum approval check.
-    function _finalizeJobAndBurn(uint256 _jobId, bool bypassApprovalRequirement)
-        internal
-        jobExists(_jobId)
-    {
+    /// @param quorumMet If false, reverts instead of finalizing.
+    function _finalizeJobAndBurn(
+        uint256 _jobId,
+        bool bypassApprovalRequirement,
+        bool quorumMet
+    ) internal jobExists(_jobId) {
+        if (!quorumMet) revert QuorumNotMet();
         Job storage job = jobs[_jobId];
         if (job.status == JobStatus.Completed) revert JobAlreadyFinalized();
         // Disallow payout without an explicit completion request

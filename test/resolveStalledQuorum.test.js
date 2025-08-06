@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
-describe("resolveStalledJob ties", function () {
+describe("resolveStalledJob quorum", function () {
   async function deployFixture() {
     const [owner, employer, agent, validator] = await ethers.getSigners();
 
@@ -55,11 +55,11 @@ describe("resolveStalledJob ties", function () {
     return { manager, owner, jobId };
   }
 
-  it("moves job to Disputed on tie and emits JobTie", async function () {
+  it("moves job to Disputed when quorum is not met and emits JobQuorumNotMet", async function () {
     const { manager, owner, jobId } = await deployFixture();
     await time.increase(5 + 5 + 5 + 1);
     await expect(manager.connect(owner).resolveStalledJob(jobId))
-      .to.emit(manager, "JobTie")
+      .to.emit(manager, "JobQuorumNotMet")
       .withArgs(jobId, owner.address)
       .and.to.emit(manager, "JobDisputed")
       .withArgs(jobId, owner.address, 2);
