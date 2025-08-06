@@ -194,6 +194,71 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(agentExpected + validatorPayoutTotal + burnAmount).to.equal(payout);
   });
 
+  it("sends slashed stake leftovers to slashedStakeRecipient", async function () {
+    const { token, manager, owner, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    await manager.setRequiredValidatorApprovals(2);
+    await manager.setSlashingPercentage(500);
+
+    const stake = ethers.parseEther("100");
+    const managerAddr = await manager.getAddress();
+    for (const v of [validator, validator2, validator3]) {
+      await token.mint(v.address, stake);
+      await token.connect(v).approve(managerAddr, stake);
+      await manager.connect(v).stake(stake);
+    }
+
+    const payout = ethers.parseEther("1000");
+    await token.connect(employer).approve(managerAddr, payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+
+    const validators = [validator, validator2, validator3];
+    const votes = [true, true, false];
+    const salts = [ethers.id("ss1"), ethers.id("ss2"), ethers.id("ss3")];
+    for (let i = 0; i < validators.length; i++) {
+      const commitment = ethers.solidityPackedKeccak256(
+        ["address", "uint256", "bool", "bytes32"],
+        [validators[i].address, jobId, votes[i], salts[i]]
+      );
+      await manager
+        .connect(validators[i])
+        .commitValidation(jobId, commitment, "", []);
+    }
+
+    await time.increase(1001);
+    for (let i = 0; i < validators.length; i++) {
+      await manager
+        .connect(validators[i])
+        .revealValidation(jobId, votes[i], salts[i]);
+    }
+    await time.increase(1000);
+
+    const initialOwnerBalance = await token.balanceOf(owner.address);
+
+    await manager.connect(validator).validateJob(jobId, "", []);
+    await manager.connect(validator3).disapproveJob(jobId, "", []);
+    await expect(
+      manager.connect(validator2).validateJob(jobId, "", [])
+    )
+      .to.emit(manager, "LeftoverTransferred")
+      .withArgs(owner.address, ethers.parseEther("1"));
+
+    const baseReward = ethers.parseEther("40");
+    const slashReward = ethers.parseEther("2");
+    expect(await token.balanceOf(validator.address)).to.equal(
+      baseReward + slashReward
+    );
+    expect(await token.balanceOf(validator2.address)).to.equal(
+      baseReward + slashReward
+    );
+    expect(await token.balanceOf(owner.address)).to.equal(
+      initialOwnerBalance + ethers.parseEther("1")
+    );
+  });
+
   it("pays base payout to agent without AGI NFT", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture(0);
     const payout = ethers.parseEther("1000");
