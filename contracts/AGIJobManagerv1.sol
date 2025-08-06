@@ -198,7 +198,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         Open,
         CompletionRequested,
         Disputed,
-        Completed
+        Completed,
+        Cancelled
     }
 
     struct Job {
@@ -311,6 +312,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 tokensBurned
     );
     event ReputationUpdated(address indexed user, uint256 newReputation);
+    event JobExpired(
+        uint256 indexed jobId,
+        address indexed employer,
+        JobStatus status
+    );
     event JobCancelled(uint256 indexed jobId);
     event DisputeResolved(
         uint256 indexed jobId,
@@ -449,7 +455,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     error InvalidReveal();
 
     /// @dev Thrown when the job's duration has elapsed.
-    error JobExpired();
+    error JobExpiredError();
+
+    /// @dev Thrown when attempting to cancel before a job expires.
+    error JobNotExpired();
 
     /// @dev Thrown when a job is not in the expected open state.
     error JobNotOpen();
@@ -668,7 +677,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     {
         Job storage job = jobs[_jobId];
         if (msg.sender != job.assignedAgent) revert Unauthorized();
-        if (block.timestamp > job.assignedAt + job.duration) revert JobExpired();
+        if (block.timestamp > job.assignedAt + job.duration)
+            revert JobExpiredError();
         if (job.status != JobStatus.Open) revert JobNotOpen();
         if (bytes(_ipfsHash).length == 0) revert InvalidParameters();
         job.ipfsHash = _ipfsHash;
@@ -904,7 +914,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (
             (msg.sender != job.assignedAgent && msg.sender != job.employer) ||
             job.status == JobStatus.Disputed ||
-            job.status == JobStatus.Completed
+            job.status == JobStatus.Completed ||
+            job.status == JobStatus.Cancelled
         ) revert Unauthorized();
         if (
             block.timestamp < job.completionRequestedAt + reviewWindow ||
@@ -1620,6 +1631,23 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         totalJobEscrow -= payout;
         agiToken.safeTransfer(employer, payout);
         emit JobCancelled(_jobId);
+    }
+
+    function cancelExpiredJob(uint256 _jobId)
+        external
+        nonReentrant
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (msg.sender != job.employer) revert Unauthorized();
+        if (job.status != JobStatus.Open || job.assignedAgent == address(0))
+            revert InvalidJobState();
+        if (block.timestamp <= job.assignedAt + job.duration)
+            revert JobNotExpired();
+        job.status = JobStatus.Cancelled;
+        totalJobEscrow -= job.payout;
+        agiToken.safeTransfer(job.employer, job.payout);
+        emit JobExpired(_jobId, job.employer, JobStatus.Cancelled);
     }
 
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
