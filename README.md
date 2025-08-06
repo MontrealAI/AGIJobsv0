@@ -38,6 +38,7 @@ Follow these steps before trusting any address or artifact:
 - Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. The burn occurs only after all internal state updates are complete to follow the checks‑effects‑interactions pattern. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
 - Jobs finalize only after the agent calls `requestJobCompletion`; even moderator resolutions in favor of the agent revert otherwise.
+- If an agent fails to submit results before the job's duration ends, employers may reclaim escrow with `timeoutJob`.
 - Escrowed payouts and validator stakes are tracked separately; `withdrawAGI` only permits withdrawing surplus funds not locked for jobs or staking.
 - Confirm the current `stakeRequirement` before staking and plan for withdrawals; `withdrawStake` only succeeds once all of your jobs are finalized without disputes.
 - Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, the slashed‑stake recipient, or validator pool resets via `ValidatorPoolSet`.
@@ -51,6 +52,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 **Employers**
 - Confirm the AGIJobManager contract address on Etherscan, Blockscout, or official channels.
 - From the explorer's **Write** tab or your wallet's contract interface, call `createJob` to post the task and escrow funds (≈1 transaction).
+- If the agent fails to request completion before the job's `duration` ends, reclaim your escrow with `timeoutJob`.
 - Wait for an agent to apply and for validators to finalize; the NFT and remaining payout arrive automatically.
 
 **Agents**
@@ -75,6 +77,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - Post a job and deposit the payout.
 - Wait for an agent to finish and validators to approve.
 - Receive the NFT and any remaining funds.
+- If no completion request arrives before the job's duration ends, call `timeoutJob` to recover your payout.
 - Example: [createJob transaction](https://etherscan.io/tx/0xccd6d21a8148a06e233063f57b286832f3c2ca015ab4d8387a529e3508e8f32e).
 
 **Agents**
