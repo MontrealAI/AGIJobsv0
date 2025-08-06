@@ -8,3 +8,5 @@
 - **Review Window**: Delay between an agent's completion request and the start of validation, allowing participants to examine the submitted work.
 - **Stake Requirement**: Minimum AGI a validator must lock to participate in the pool.
 - **Slashing**: Penalty where a portion of a validator's stake is forfeited for incorrect or missing votes.
+- **Agent Stake Requirement**: Minimum AGI an agent must lock before applying for jobs. Agents can read `agentStakeRequirement()` and check their deposited amount with `agentStake(address)`.
+- **Verifiable Random Function (VRF)**: Cryptographic randomness used to select validators. Requires configuring a VRF coordinator address, key hash, and subscription.

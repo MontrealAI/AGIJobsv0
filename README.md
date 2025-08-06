@@ -24,7 +24,7 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 ### Employers
 
 1. Open the **Write Contract** tab and expand `createJob` to post a task with escrowed payout.
-2. Monitor the job; if the agent misses the deadline, anyone can call `cancelExpiredJob` to refund the employer's escrow.
+2. Monitor the job; if the agent misses the deadline, anyone can call `cancelExpiredJob` to refund the employer's escrow, so keep an eye on the timer.
 
 ### Agents
 
@@ -69,7 +69,7 @@ Follow these steps before trusting any address or artifact:
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
 - Jobs finalize only after the agent calls `requestJobCompletion`; even moderator resolutions in favor of the agent revert otherwise.
 - Escrowed payouts and validator stakes are tracked separately; `withdrawAGI` only permits withdrawing surplus funds not locked for jobs or staking.
-- Confirm the current `stakeRequirement` and `agentStakeRequirement` before staking or applying; `withdrawStake` only succeeds once all of your jobs are finalized without disputes.
+- Confirm the current `stakeRequirement` and `agentStakeRequirement` with the contract's **Read** tab before staking or applying; `withdrawStake` only succeeds once all of your jobs are finalized without disputes. Agents can check their own stake via `agentStake(address)`.
 - Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, the slashed‑stake recipient, or validator pool resets via `ValidatorPoolSet`.
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
 - If no validator votes correctly, only slashed stake goes to `slashedStakeRecipient` while the reserved validator reward portion returns to the job's agent or employer; verify this recipient and watch for updates before staking.
@@ -82,16 +82,16 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Confirm the AGIJobManager contract address on Etherscan, Blockscout, or official channels.
 - From the explorer's **Write** tab or your wallet's contract interface, call `createJob` to post the task and escrow funds (≈1 transaction).
 - Wait for an agent to apply and for validators to finalize; the NFT and remaining payout arrive automatically.
-- Track the job's deadline; if the agent misses it, anyone can call `cancelExpiredJob(jobId)` from the contract's Write tab to return your escrow.
-- Validators reviewing the job are chosen pseudo-randomly for each task, reducing the chance of collusion.
+- Track the job's deadline; if the agent misses it, anyone can call `cancelExpiredJob(jobId)` from the contract's Write tab to return your escrow. Because cancellation is permissionless, monitor deadlines so funds aren't locked longer than necessary.
+- Validators reviewing the job are chosen through verifiable randomness via a VRF coordinator, reducing the chance of collusion. The contract owner must configure the VRF coordinator and fund its subscription for selections to work.
 
 **Agents**
 - Double-check the contract address before interacting.
-- Stake at least `agentStakeRequirement` via `stakeAgent` before applying.
+- Stake at least `agentStakeRequirement` via `stakeAgent` before applying. Check the requirement with `agentStakeRequirement()` and verify your balance with `agentStake(address)` in the contract's **Read** tab.
 - Use `applyForJob` to claim the task (≈1 transaction).
 - After completing the work, call `requestJobCompletion` with a non-empty result reference such as an IPFS hash (≈1 transaction).
 - Monitor the job status until validators approve and funds release.
-- Request completion before the deadline or anyone can cancel via `cancelExpiredJob` to refund the employer's escrow.
+- Request completion before the deadline or anyone can cancel via `cancelExpiredJob` to refund the employer's escrow, so keep a close eye on the timer.
 - Losing a dispute reduces your reputation and can slash any staked AGI. The `AgentPenalized` event records the penalty.
 
 **Penalties**
@@ -112,21 +112,22 @@ See the [Glossary](docs/glossary.md) for key terminology.
 **Employers**
 - Post a job and deposit the payout.
 - Wait for an agent to finish and validators to approve.
-- If no completion request arrives before the deadline, anyone may call `cancelExpiredJob(jobId)` to refund the employer and close the job.
-- Validators are picked at random for each job, improving fairness.
+- If no completion request arrives before the deadline, anyone may call `cancelExpiredJob(jobId)` to refund the employer and close the job, so monitor the deadline.
+- Validators are picked via verifiable randomness (VRF) for each job. The contract owner must configure and fund the VRF coordinator.
 - Receive the NFT and any remaining funds.
 - Example: [createJob transaction](https://etherscan.io/tx/0xccd6d21a8148a06e233063f57b286832f3c2ca015ab4d8387a529e3508e8f32e).
 
 **Agents**
-- Stake the required AGI with `stakeAgent`, then claim an open job.
+- Stake the required AGI with `stakeAgent`, then claim an open job. Verify your balance with `agentStake(address)` and the threshold via `agentStakeRequirement()`.
 - Submit your work with a link or hash.
-- Be sure to request completion before the job duration expires; otherwise anyone can call `cancelExpiredJob` to refund the employer's escrow.
+- Be sure to request completion before the job duration expires; otherwise anyone can call `cancelExpiredJob` to refund the employer's escrow, so track your deadline closely.
 - Missing the deadline or losing a dispute can reduce your reputation and staked AGI.
 - Get paid after validators sign off.
 - Examples: [applyForJob](https://etherscan.io/tx/0x55f8ee0370c9c08a6e871a4184650419b520d4e9666536cbdcf47f4f03917ce2) · [requestJobCompletion](https://etherscan.io/tx/0xd4f85a33a73319c04df3497ebe8f43095bfae6ed8e5acdd6a80d295869e6f809).
 
 **Validators**
 - Stake AGI to join the pool.
+- Validator selection uses Chainlink VRF; ensure the VRF coordinator is configured and funded.
 - Submit a hashed vote during the commit phase and reveal it later.
 - Finalize the job after the review window.
 - Example: [validateJob transaction](https://etherscan.io/tx/0x90d59c0d47ae3e36b7dc6b26ad06fe2ce64955c6d049e675a42bbd5a24647832).
@@ -136,19 +137,19 @@ See the [Glossary](docs/glossary.md) for key terminology.
 **Employers**
 - Call [`createJob`](contracts/AGIJobManagerv1.sol#L602) to post a task and escrow the payout.
 - Confirm the contract address and wait for the `JobCreated` event to learn the job ID.
-- If the agent misses the deadline without requesting completion, anyone may call [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635) with the job ID to refund the employer's escrow.
-- Validators are drawn pseudo-randomly from the pool; the [`ValidatorsSelected`](contracts/AGIJobManagerv1.sol#L303) event shows who was chosen.
+- If the agent misses the deadline without requesting completion, anyone may call [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635) with the job ID to refund the employer's escrow, so monitor job deadlines.
+- Validators are drawn using verifiable randomness via a VRF coordinator; the [`ValidatorsSelected`](contracts/AGIJobManagerv1.sol#L303) event shows who was chosen once the coordinator is configured and funded.
 
 **Agents**
-- Stake AGI with [`stakeAgent`](contracts/AGIJobManagerv1.sol#L2036) to meet `agentStakeRequirement`, then use [`applyForJob`](contracts/AGIJobManagerv1.sol#L658) to claim an open job.
+- Stake AGI with [`stakeAgent`](contracts/AGIJobManagerv1.sol#L2036) to meet `agentStakeRequirement`, then use [`applyForJob`](contracts/AGIJobManagerv1.sol#L658) to claim an open job. Use the contract's **Read** tab to check `agentStakeRequirement()` and your current stake with `agentStake(address)`.
 - After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L687) with a non-empty IPFS hash.
-- Submit before the deadline to avoid cancellation via [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635).
+- Submit before the deadline to avoid cancellation via [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635); deadlines are enforced and anyone can cancel once they pass.
 - An employer win via [`resolveDispute`](contracts/AGIJobManagerv1.sol#L927) or a missed deadline can cut your reputation and staked AGI.
 - Verify addresses and watch for `JobApplied` and `JobCompletionRequested` events.
 
 **Validators**
 - Deposit stake with [`stake`](contracts/AGIJobManagerv1.sol#L1941); confirm via the `StakeDeposited` event.
-- Validator selection skips blacklisted or underqualified addresses and reverts if fewer than `validatorsPerJob` meet `stakeRequirement` and `minValidatorReputation`.
+- Validator selection uses Chainlink VRF, skipping blacklisted or underqualified addresses and reverting if fewer than `validatorsPerJob` meet `stakeRequirement` and `minValidatorReputation`.
 - During the commit window, [`commitValidation`](contracts/AGIJobManagerv1.sol#L725) with your vote commitment.
 - Reveal it through [`revealValidation`](contracts/AGIJobManagerv1.sol#L763) once the reveal window opens.
 - Finalize by calling [`validateJob`](contracts/AGIJobManagerv1.sol#L798) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L842).
@@ -167,7 +168,7 @@ functions control validation incentives, burn behavior, and system limits.
 | `setStakeRequirement(uint256 amount)` | Minimum AGI stake required to validate. | `10`–`1000` AGI |
 | `setSlashingPercentage(uint256 bps)` | Stake forfeited for incorrect votes. | `0`–`1000` (0–10%) |
 | `setMinValidatorReputation(uint256 value)` | Reputation threshold validators must meet. | `0`–`100` |
-| `setValidatorsPerJob(uint256 count)` | Number of validators randomly selected per job. | `1`–`10` (default `3`) |
+| `setValidatorsPerJob(uint256 count)` | Number of validators selected per job via VRF. | `1`–`10` (default `3`) |
 | `setCommitRevealWindows(uint256 commit, uint256 reveal)` | Length of commit/reveal phases in seconds. | `300`–`3600` seconds each |
 | `setReviewWindow(uint256 secs)` | Waiting period before validators vote. | ≥ commit + reveal, typically `3600`–`86400` |
 | `addAdditionalValidator(address validator)` | Manually whitelist a validator outside the Merkle allowlist; emits `AdditionalValidatorAdded`. | non-zero address |
@@ -289,18 +290,19 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 - **Storage cleanup** – marketplace listings are deleted on purchase or delist to reclaim gas and prevent stale entries.
 - **Safe minting and transfers** – Completion NFTs are minted with [`_safeMint`](contracts/AGIJobManagerv1.sol#L1748) and traded with [`_safeTransfer`](contracts/AGIJobManagerv1.sol#L1791), ensuring recipients implement ERC-721.
  - **Custom error finalization** – [`_finalizeJobAndBurn`](contracts/AGIJobManagerv1.sol#L1577-L1765) reverts with dedicated custom errors, lowering gas costs versus string-based `require`s.
-- **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L674-L720); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
+- **Verifiable randomness** – Validator selection now relies on Chainlink VRF instead of blockhash entropy, providing a publicly auditable random seed. Configure the VRF coordinator, key hash, and subscription before creating jobs.
 - **Owner-controlled parameters** – Only the contract owner may tune validator counts, reward and slashing percentages, burn settings, timing windows, and recipient addresses via `onlyOwner` functions such as [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L1289-L1299); each change emits a corresponding `*Updated` event.
 - **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1246-L1278) and [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1283-L1290) expose job and validator details for front‑end integrations without traversing storage mappings.
 
 **Setup checklist**
 
 1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
-2. Ensure each validator has staked at least `stakeRequirement` before validating and each agent meets `agentStakeRequirement` before applying.
-3. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool and adjust `maxValidatorPoolSize` with `setMaxValidatorPoolSize` if the pool approaches the cap.
-4. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
-5. Monitor `StakeRequirementUpdated`, `AgentStakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `MaxValidatorPoolSizeUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
-6. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
+2. Configure the VRF coordinator, key hash, and subscription ID so validator selection can request randomness.
+3. Ensure each validator has staked at least `stakeRequirement` before validating and each agent meets `agentStakeRequirement` before applying.
+4. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool and adjust `maxValidatorPoolSize` with `setMaxValidatorPoolSize` if the pool approaches the cap.
+5. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
+6. Monitor `StakeRequirementUpdated`, `AgentStakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `MaxValidatorPoolSizeUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
+7. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.
 
 **Example finalization**
 
@@ -324,7 +326,7 @@ await manager.connect(validator).validateJob(jobId, "", []);
   - **Staking requirement** – bond $AGI via [`stake`](contracts/AGIJobManagerv1.sol#L1941-L1947) and exit with [`withdrawStake`](contracts/AGIJobManagerv1.sol#L1949-L1965), emitting [`StakeDeposited`](contracts/AGIJobManagerv1.sol#L375) and [`StakeWithdrawn`](contracts/AGIJobManagerv1.sol#L376).
   - **Commit → reveal → finalize** – submit a hashed vote with [`commitValidation`](contracts/AGIJobManagerv1.sol#L725-L757), disclose it via [`revealValidation`](contracts/AGIJobManagerv1.sol#L763-L792), then call [`validateJob`](contracts/AGIJobManagerv1.sol#L798-L837) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L842-L880) once the review window closes. These steps emit [`ValidationCommitted`](contracts/AGIJobManagerv1.sol#L290-L294), [`ValidationRevealed`](contracts/AGIJobManagerv1.sol#L295-L299), [`JobValidated`](contracts/AGIJobManagerv1.sol#L282), and [`JobDisapproved`](contracts/AGIJobManagerv1.sol#L283).
   - **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L144) of escrow plus any slashed stake, while incorrect votes lose [`slashingPercentage`](contracts/AGIJobManagerv1.sol#L149) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L303-L309).
-  - **Random validator selection** – the contract owner can replace the entire validator list with [`setValidatorPool`](contracts/AGIJobManagerv1.sol#L1853-L1890), which rejects zero addresses and duplicate entries; each job draws validators pseudo‑randomly from this pool to mitigate race conditions and collusion.
+  - **VRF-backed validator selection** – the contract owner can replace the entire validator list with [`setValidatorPool`](contracts/AGIJobManagerv1.sol#L1853-L1890), which rejects zero addresses and duplicate entries. Each job then draws validators from this pool using Chainlink VRF. Ensure the VRF coordinator address, key hash, and subscription are set before relying on randomness.
   - **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L1309-L1312), [`setSlashingPercentage`](contracts/AGIJobManagerv1.sol#L1317-L1321), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L1255-L1260), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L1323-L1326), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L1301-L1305), each emitting their respective `*Updated` events. `setValidatorConfig` additionally sets commit, reveal, and review windows plus the number of validators per job.
 
 **Commit, reveal, finalize**
