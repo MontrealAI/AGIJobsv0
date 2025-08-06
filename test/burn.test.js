@@ -59,6 +59,8 @@ describe("Burn configuration", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("burn1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
