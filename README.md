@@ -166,7 +166,8 @@ functions control validation incentives, burn behavior, and system limits.
 | `setValidationRewardPercentage(uint256 bps)` | Share of payout granted to correct validators. | `0`–`2000` (0–20%) |
 | `setValidatorReputationPercentage(uint256 bps)` | Share of agent reputation awarded to correct validators. | `0`–`1000` (0–10%) |
 | `setStakeRequirement(uint256 amount)` | Minimum AGI stake required to validate. | `10`–`1000` AGI |
-| `setSlashingPercentage(uint256 bps)` | Stake forfeited for incorrect votes. | `0`–`1000` (0–10%) |
+| `setValidatorSlashingPercentage(uint256 bps)` | Validator stake forfeited for incorrect votes. | `0`–`1000` (0–10%) |
+| `setAgentSlashingPercentage(uint256 bps)` | Agent stake forfeited on failures or disputes. | `0`–`1000` (0–10%) |
 | `setMinValidatorReputation(uint256 value)` | Reputation threshold validators must meet. | `0`–`100` |
 | `setValidatorsPerJob(uint256 count)` | Number of validators pseudo-randomly selected per job. | `1`–`10` (default `3`) |
 | `setCommitRevealWindows(uint256 commit, uint256 reveal)` | Length of commit/reveal phases in seconds. | `300`–`3600` seconds each |
@@ -325,9 +326,9 @@ await manager.connect(validator).validateJob(jobId, "", []);
 
   - **Staking requirement** – bond $AGI via [`stake`](contracts/AGIJobManagerv1.sol#L1941-L1947) and exit with [`withdrawStake`](contracts/AGIJobManagerv1.sol#L1949-L1965), emitting [`StakeDeposited`](contracts/AGIJobManagerv1.sol#L375) and [`StakeWithdrawn`](contracts/AGIJobManagerv1.sol#L376).
   - **Commit → reveal → finalize** – submit a hashed vote with [`commitValidation`](contracts/AGIJobManagerv1.sol#L725-L757), disclose it via [`revealValidation`](contracts/AGIJobManagerv1.sol#L763-L792), then call [`validateJob`](contracts/AGIJobManagerv1.sol#L798-L837) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L842-L880) once the review window closes. These steps emit [`ValidationCommitted`](contracts/AGIJobManagerv1.sol#L290-L294), [`ValidationRevealed`](contracts/AGIJobManagerv1.sol#L295-L299), [`JobValidated`](contracts/AGIJobManagerv1.sol#L282), and [`JobDisapproved`](contracts/AGIJobManagerv1.sol#L283).
-  - **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L144) of escrow plus any slashed stake, while incorrect votes lose [`slashingPercentage`](contracts/AGIJobManagerv1.sol#L149) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L303-L309).
+  - **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L144) of escrow plus any slashed stake, while incorrect votes lose [`validatorSlashingPercentage`](contracts/AGIJobManagerv1.sol#L149) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L303-L309).
   - **Validator pool management** – the contract owner can replace the entire validator list with [`setValidatorPool`](contracts/AGIJobManagerv1.sol#L1853-L1890), which rejects zero addresses and duplicate entries. Each job then draws validators from this pool using blockhash-based entropy.
-  - **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L1309-L1312), [`setSlashingPercentage`](contracts/AGIJobManagerv1.sol#L1317-L1321), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L1255-L1260), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L1323-L1326), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L1301-L1305), each emitting their respective `*Updated` events. `setValidatorConfig` additionally sets commit, reveal, and review windows plus the number of validators per job.
+  - **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L1309-L1312), [`setValidatorSlashingPercentage`](contracts/AGIJobManagerv1.sol#L1317-L1324), [`setAgentSlashingPercentage`](contracts/AGIJobManagerv1.sol#L1326-L1333), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L1255-L1260), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L1335-L1338), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L1301-L1305), each emitting their respective `*Updated` events. `setValidatorConfig` additionally sets commit, reveal, and review windows plus the number of validators per job.
 
 **Commit, reveal, finalize**
 
@@ -392,11 +393,11 @@ Validators must maintain reputation above `minValidatorReputation`. When slashin
 
 ### Basis-Point Standardization
 
-All tunable percentages—such as `burnPercentage`, `validationRewardPercentage`, and `slashingPercentage`—are supplied in basis points (1 basis point = 0.01%). This consistent unit avoids rounding issues and clarifies configuration.
+All tunable percentages—such as `burnPercentage`, `validationRewardPercentage`, and the validator/agent slashing percentages—are supplied in basis points (1 basis point = 0.01%). This consistent unit avoids rounding issues and clarifies configuration.
 
 ### Handling of Slashed Stake
 
-Incorrect validator votes lose stake according to `slashingPercentage`. Slashed tokens are pooled and distributed to validators whose votes matched the outcome. If none were correct, slashed tokens go to `slashedStakeRecipient` and the escrowed validator reward returns to the agent or employer, depending on the final outcome.
+Incorrect validator votes lose stake according to `validatorSlashingPercentage`. Slashed tokens are pooled and distributed to validators whose votes matched the outcome. If none were correct, slashed tokens go to `slashedStakeRecipient` and the escrowed validator reward returns to the agent or employer, depending on the final outcome. Agents that miss deadlines or lose disputes forfeit `agentSlashingPercentage` of their stake.
 
 ### Validator Incentives
 Validators follow a commit–reveal process and can finalize their vote only after the review window closes.
@@ -429,7 +430,7 @@ Validators follow a commit–reveal process and can finalize their vote only aft
      await agiJobManager.connect(validator).disapproveJob(jobId, "", []);
      ```
 
-  5. **Rewards & slashing** – when required approvals/disapprovals are met, correct validators split `validationRewardPercentage` of escrow plus any slashed stake. Incorrect votes lose `slashingPercentage` of their bonded tokens.
+  5. **Rewards & slashing** – when required approvals/disapprovals are met, correct validators split `validationRewardPercentage` of escrow plus any slashed stake. Incorrect votes lose `validatorSlashingPercentage` of their bonded tokens.
 
      ```ts
      await agiJobManager.connect(v1).commitValidation(jobId, commit1, "", []);
@@ -447,14 +448,14 @@ Validators follow a commit–reveal process and can finalize their vote only aft
      await agiJobManager.connect(validator).withdrawStake(ethers.parseUnits("100", 18));
      ```
 
-- **Owner‑configurable parameters:** [setValidatorConfig](contracts/AGIJobManagerv1.sol#L1385-L1440), [setStakeRequirement](contracts/AGIJobManagerv1.sol#L1309-L1312), [setSlashingPercentage](contracts/AGIJobManagerv1.sol#L1317-L1321), [setValidationRewardPercentage](contracts/AGIJobManagerv1.sol#L1255-L1260), [setMinValidatorReputation](contracts/AGIJobManagerv1.sol#L1323-L1326), and [setSlashedStakeRecipient](contracts/AGIJobManagerv1.sol#L1301-L1305).
-- Validators must maintain an on-chain stake and reputation before voting. `stakeRequirement` defines the minimum bonded $AGI, while `slashingPercentage` dictates how much of that stake is forfeited on an incorrect vote. When a job concludes, validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow plus any slashed stake; others lose the slashed amount. The owner may set `validationRewardPercentage` to `0` to disable rewards entirely.
+- **Owner‑configurable parameters:** [setValidatorConfig](contracts/AGIJobManagerv1.sol#L1385-L1440), [setStakeRequirement](contracts/AGIJobManagerv1.sol#L1309-L1312), [setValidatorSlashingPercentage](contracts/AGIJobManagerv1.sol#L1317-L1324), [setAgentSlashingPercentage](contracts/AGIJobManagerv1.sol#L1326-L1333), [setValidationRewardPercentage](contracts/AGIJobManagerv1.sol#L1255-L1260), [setMinValidatorReputation](contracts/AGIJobManagerv1.sol#L1335-L1338), and [setSlashedStakeRecipient](contracts/AGIJobManagerv1.sol#L1301-L1305).
+- Validators must maintain an on-chain stake and reputation before voting. `stakeRequirement` defines the minimum bonded $AGI, while `validatorSlashingPercentage` dictates how much of that stake is forfeited on an incorrect vote. When a job concludes, validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow plus any slashed stake; others lose the slashed amount. The owner may set `validationRewardPercentage` to `0` to disable rewards entirely.
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and may top up incrementally. Validation is only permitted once their total stake meets `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
 - **Aligned rewards** – when a job finalizes, only validators whose votes match the outcome split `validationRewardPercentage` basis points of the remaining escrow along with any slashed stake. If no votes are correct, slashed tokens go to `slashedStakeRecipient` and the reserved validator reward portion is returned to the job's agent or employer.
-- **Slashing & reputation penalties** – incorrect votes lose `slashingPercentage` basis points of staked tokens and incur a reputation deduction.
+- **Slashing & reputation penalties** – incorrect votes lose `validatorSlashingPercentage` basis points of staked tokens and incur a reputation deduction.
 - **Remainder handling** – integer division leftovers from reward or slashed-stake calculations are paid to the first validator on the winning side. If no validator votes correctly, all slashed stake goes to `slashedStakeRecipient` and the validator reward pool returns to the agent or employer as appropriate.
-- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement` (must be greater than zero), `slashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, `slashedStakeRecipient`, and approval/disapproval thresholds. All of these values can be updated atomically via `setValidatorConfig`, which also sets `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
+- **Owner‑tunable parameters** – the contract owner can adjust `stakeRequirement` (must be greater than zero), `validatorSlashingPercentage` and `agentSlashingPercentage` (basis points), `validationRewardPercentage` (basis points), `minValidatorReputation`, `slashedStakeRecipient`, and approval/disapproval thresholds. All of these values can be updated atomically via `setValidatorConfig`, which also sets `slashedStakeRecipient`; each `onlyOwner` update emits a dedicated event.
 - **Dispute lock** – once a job is disputed, no additional validator votes are accepted until a moderator resolves the dispute.
 - **Dispute timing** – `disputeJob` is callable only after the review window and commit/reveal phases elapse (`block.timestamp >= job.validationStart + commitDuration + revealDuration`).
 - **Single-shot voting** – validators cannot change their vote once cast; a validator address may approve *or* disapprove a job, but never both. Attempts to vote twice revert.
@@ -501,7 +502,8 @@ Only the contract owner may tune validator economics via:
 - `setValidatorConfig`
 - `setValidationRewardPercentage`
 - `setStakeRequirement`
-- `setSlashingPercentage`
+- `setValidatorSlashingPercentage`
+- `setAgentSlashingPercentage`
 - `setMinValidatorReputation`
 - `setSlashedStakeRecipient`
 
@@ -826,10 +828,11 @@ cast send $AGI_JOB_MANAGER "validateJob(uint256)" $JOB_ID --from $V2 # finalizes
 
 The contract owner can tune validator requirements and incentives. Each update emits an event so indexers can track new values:
 
-- `setValidatorConfig(uint256 rewardPct, uint256 repPct, uint256 stakeReq, uint256 slashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient, uint256 commitWindow, uint256 revealWindow, uint256 reviewWin, uint256 validatorsCount)` – update all validator parameters in one transaction; emits `ValidatorConfigUpdated`. Zero `commitWindow` or `revealWindow` values are rejected.
+- `setValidatorConfig(uint256 rewardPct, uint256 repPct, uint256 stakeReq, uint256 validatorSlashPct, uint256 agentSlashPct, uint256 minRep, uint256 approvals, uint256 disapprovals, address slashRecipient, uint256 commitWindow, uint256 revealWindow, uint256 reviewWin, uint256 validatorsCount)` – update all validator and agent parameters in one transaction; emits `ValidatorConfigUpdated`. Zero `commitWindow` or `revealWindow` values are rejected.
 - `setValidationRewardPercentage(uint256 percentage)` – define the token reward share for validators in basis points (set to `0` to disable); emits `ValidationRewardPercentageUpdated`.
 - `setValidatorReputationPercentage(uint256 percentage)` – set the fraction of agent reputation awarded to correct validators; emits `ValidatorReputationPercentageUpdated`.
-- `setSlashingPercentage(uint256 percentage)` – adjust how much stake is slashed for incorrect votes (basis points); emits `SlashingPercentageUpdated`.
+- `setValidatorSlashingPercentage(uint256 percentage)` – adjust how much validator stake is slashed for incorrect votes (basis points); emits `ValidatorSlashingPercentageUpdated`.
+- `setAgentSlashingPercentage(uint256 percentage)` – adjust how much agent stake is slashed on failure (basis points); emits `AgentSlashingPercentageUpdated`.
 - `setMinValidatorReputation(uint256 minimum)` – set the reputation floor validators must maintain; emits `MinValidatorReputationUpdated`.
 - `setSlashedStakeRecipient(address newRecipient)` – designate the beneficiary of slashed stake when no validator votes correctly; emits `SlashedStakeRecipientUpdated`.
 

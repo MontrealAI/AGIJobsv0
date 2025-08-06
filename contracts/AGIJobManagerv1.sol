@@ -147,7 +147,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
     uint256 public agentStakeRequirement;
-    uint256 public slashingPercentage;
+    uint256 public validatorSlashingPercentage;
+    uint256 public agentSlashingPercentage;
     uint256 public minValidatorReputation;
     /// @notice Number of validators randomly chosen for each job. Defaults to
     /// three to match the initial approval/disapproval thresholds and avoid
@@ -390,7 +391,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AGIWithdrawn(address indexed owner, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
     event AgentStakeRequirementUpdated(uint256 newRequirement);
-    event SlashingPercentageUpdated(uint256 newPercentage);
+    event ValidatorSlashingPercentageUpdated(uint256 newPercentage);
+    event AgentSlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
     event AgentPenalized(
@@ -415,7 +417,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 rewardPercentage,
         uint256 reputationPercentage,
         uint256 stakeRequirement,
-        uint256 slashingPercentage,
+        uint256 validatorSlashingPercentage,
+        uint256 agentSlashingPercentage,
         uint256 minValidatorReputation,
         uint256 requiredApprovals,
         uint256 requiredDisapprovals,
@@ -973,7 +976,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 agentSlashAmount;
         if (agentStake[job.assignedAgent] >= agentStakeRequirement) {
             agentSlashAmount =
-                (agentStake[job.assignedAgent] * slashingPercentage) /
+                (agentStake[job.assignedAgent] * agentSlashingPercentage) /
                 PERCENTAGE_DENOMINATOR;
             if (agentSlashAmount > 0) {
                 agentStake[job.assignedAgent] -= agentSlashAmount;
@@ -1080,7 +1083,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 if (disapproved)
                     _removeValidatorDisapprovedJob(validator, _jobId);
                 uint256 slashAmount =
-                    (validatorStake[validator] * slashingPercentage) /
+                    (validatorStake[validator] *
+                        validatorSlashingPercentage) /
                     PERCENTAGE_DENOMINATOR;
                 if (slashAmount > 0) {
                     validatorStake[validator] -= slashAmount;
@@ -1413,11 +1417,21 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @notice Update the slashing rate applied to incorrect validator stakes.
     /// @param percentage Portion of staked tokens to slash in basis points.
-    /// @dev Setting `percentage` to 0 disables slashing.
-    function setSlashingPercentage(uint256 percentage) external onlyOwner {
+    function setValidatorSlashingPercentage(uint256 percentage)
+        external
+        onlyOwner
+    {
         if (percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
-        slashingPercentage = percentage;
-        emit SlashingPercentageUpdated(percentage);
+        validatorSlashingPercentage = percentage;
+        emit ValidatorSlashingPercentageUpdated(percentage);
+    }
+
+    /// @notice Update the slashing rate applied to agent stakes.
+    /// @param percentage Portion of staked tokens to slash in basis points.
+    function setAgentSlashingPercentage(uint256 percentage) external onlyOwner {
+        if (percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        agentSlashingPercentage = percentage;
+        emit AgentSlashingPercentageUpdated(percentage);
     }
 
     function setMinValidatorReputation(uint256 minimum) external onlyOwner {
@@ -1473,7 +1487,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
     /// @param reputationPercentage Share of agent reputation granted to correct validators (basis points).
     /// @param stakeReq Minimum stake required to validate (0 disables staking).
-    /// @param slashPercentage Portion of incorrect stake to slash (basis points; 0 disables).
+    /// @param validatorSlashPercentage Portion of validator stake to slash on incorrect votes (basis points; 0 disables).
+    /// @param agentSlashPercentage Portion of agent stake to slash on failure (basis points; 0 disables).
     /// @param minRep Minimum reputation required to validate.
     /// @param approvals Validator approvals needed to finalize a job.
     /// @param disapprovals Validator disapprovals needed to dispute a job.
@@ -1486,7 +1501,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 rewardPercentage,
         uint256 reputationPercentage,
         uint256 stakeReq,
-        uint256 slashPercentage,
+        uint256 validatorSlashPercentage,
+        uint256 agentSlashPercentage,
         uint256 minRep,
         uint256 approvals,
         uint256 disapprovals,
@@ -1499,7 +1515,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (
             rewardPercentage > PERCENTAGE_DENOMINATOR ||
             reputationPercentage > PERCENTAGE_DENOMINATOR ||
-            slashPercentage > PERCENTAGE_DENOMINATOR
+            validatorSlashPercentage > PERCENTAGE_DENOMINATOR ||
+            agentSlashPercentage > PERCENTAGE_DENOMINATOR
         ) revert InvalidPercentage();
         _validatePayoutSplits(burnPercentage, rewardPercentage);
         if (validatorsCount == 0) revert InvalidCount();
@@ -1514,7 +1531,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         validationRewardPercentage = rewardPercentage;
         validatorReputationPercentage = reputationPercentage;
         stakeRequirement = stakeReq;
-        slashingPercentage = slashPercentage;
+        validatorSlashingPercentage = validatorSlashPercentage;
+        agentSlashingPercentage = agentSlashPercentage;
         minValidatorReputation = minRep;
         requiredValidatorApprovals = approvals;
         requiredValidatorDisapprovals = disapprovals;
@@ -1527,7 +1545,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             rewardPercentage,
             reputationPercentage,
             stakeReq,
-            slashPercentage,
+            validatorSlashPercentage,
+            agentSlashPercentage,
             minRep,
             approvals,
             disapprovals,
@@ -1697,7 +1716,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 agentSlashAmount;
         if (agentStake[agent] >= agentStakeRequirement) {
             agentSlashAmount =
-                (agentStake[agent] * slashingPercentage) /
+                (agentStake[agent] * agentSlashingPercentage) /
                 PERCENTAGE_DENOMINATOR;
             if (agentSlashAmount > 0) {
                 agentStake[agent] -= agentSlashAmount;

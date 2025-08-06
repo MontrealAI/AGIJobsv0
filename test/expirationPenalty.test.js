@@ -34,7 +34,8 @@ async function deployFixture() {
 
   await manager.addAdditionalAgent(agent.address);
   await manager.setAgentStakeRequirement(ethers.parseEther("100"));
-  await manager.setSlashingPercentage(2000);
+  await manager.setValidatorSlashingPercentage(2000);
+  await manager.setAgentSlashingPercentage(2000);
 
   const stake = ethers.parseEther("100");
   await token.mint(agent.address, stake);
