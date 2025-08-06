@@ -83,6 +83,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - From the explorer's **Write** tab or your wallet's contract interface, call `createJob` to post the task and escrow funds (≈1 transaction).
 - Wait for an agent to apply and for validators to finalize; the NFT and remaining payout arrive automatically.
 - Track the job's deadline; if the agent misses it, call `cancelExpiredJob(jobId)` from the contract's Write tab to recover your escrow.
+- If validators fail to reach approval or disapproval thresholds after `reviewWindow + revealDuration`, call `finalizeStaleJob(jobId)` to resolve the job and slash inactive validators.
 - Validators reviewing the job are chosen pseudo-randomly for each task, reducing the chance of collusion.
 
 **Agents**
