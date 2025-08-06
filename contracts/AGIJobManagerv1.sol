@@ -372,6 +372,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event SlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
+    /// @notice Emitted when a validator is slashed for failing to reveal a vote.
+    event UnrevealedVoteSlashed(address indexed validator, uint256 amount);
     event ValidatorPayout(address indexed validator, uint256 amount);
     event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorRewardReduced(
@@ -779,6 +781,65 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         job.revealed[msg.sender] = true;
         job.revealedVotes[msg.sender] = approve;
         emit ValidationRevealed(_jobId, msg.sender, approve);
+    }
+
+    /// @notice Slash validators that committed but failed to reveal their votes.
+    /// @param _jobId Identifier of the job with unrevealed commits.
+    function slashUnrevealedVotes(uint256 _jobId)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (
+            block.timestamp <=
+            job.validationStart + commitDuration + revealDuration
+        ) revert RevealPhaseActive();
+        uint256 completionTime = block.timestamp - job.assignedAt;
+        uint256 reputationPoints =
+            calculateReputationPoints(job.payout, completionTime);
+        uint256 validatorReputationChange =
+            calculateValidatorReputationPoints(reputationPoints);
+        uint256 i = 0;
+        while (i < job.validators.length) {
+            address validator = job.validators[i];
+            if (
+                job.commitments[validator] != bytes32(0) &&
+                !job.revealed[validator]
+            ) {
+                _removeValidatorApprovedJob(validator, _jobId);
+                _removeValidatorDisapprovedJob(validator, _jobId);
+                job.isSelectedValidator[validator] = false;
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
+                    agiToken.safeTransfer(slashedStakeRecipient, slashAmount);
+                    emit StakeSlashed(validator, slashAmount);
+                    emit UnrevealedVoteSlashed(validator, slashAmount);
+                }
+                enforceReputationPenalty(
+                    validator,
+                    validatorReputationChange
+                );
+                if (pendingCommits[validator] > 0) {
+                    pendingCommits[validator] -= 1;
+                }
+                delete job.commitments[validator];
+                delete job.revealed[validator];
+                delete job.revealedVotes[validator];
+                job.validators[i] = job.validators[job.validators.length - 1];
+                job.validators.pop();
+            } else {
+                unchecked {
+                    ++i;
+                }
+            }
+        }
     }
 
     /// @notice Approve a job's completion after the review window has elapsed.
