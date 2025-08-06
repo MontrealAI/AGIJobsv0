@@ -1041,17 +1041,28 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("enforces agent stake requirement before applying for a job", async function () {
-    const { token, manager, owner, employer, agent } = await deployFixture(1000, false, false);
+    const { token, manager, owner, employer, agent } = await deployFixture(
+      1000,
+      false,
+      false
+    );
     const requirement = ethers.parseEther("10");
     await manager.connect(owner).setAgentStakeRequirement(requirement);
+    await manager.connect(owner).setAgentStakePercentage(500); // 5%
     const payout = ethers.parseEther("1");
-    await token.connect(employer).approve(await manager.getAddress(), payout);
-    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    await token
+      .connect(employer)
+      .approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("jobhash", payout, 1000, "details");
     await expect(
       manager.connect(agent).applyForJob(0, "", [])
     ).to.be.revertedWithCustomError(manager, "AgentStakeRequired");
     await token.mint(agent.address, requirement);
-    await token.connect(agent).approve(await manager.getAddress(), requirement);
+    await token
+      .connect(agent)
+      .approve(await manager.getAddress(), requirement);
     await manager.connect(agent).stakeAgent(requirement);
     await expect(manager.connect(agent).applyForJob(0, "", []))
       .to.emit(manager, "JobApplied")
@@ -1083,6 +1094,49 @@ describe("AGIJobManagerV1 payouts", function () {
     await expect(manager.connect(agent).applyForJob(1, "", []))
       .to.emit(manager, "JobApplied")
       .withArgs(1, agent.address);
+  });
+
+  it("requires additional stake for large payouts based on percentage", async function () {
+    const { token, manager, owner, employer, agent } = await deployFixture(
+      1000,
+      false,
+      false
+    );
+    const baseReq = ethers.parseEther("10");
+    await manager.connect(owner).setAgentStakeRequirement(baseReq);
+    await expect(
+      manager.connect(owner).setAgentStakePercentage(1000)
+    )
+      .to.emit(manager, "AgentStakePercentageUpdated")
+      .withArgs(1000);
+
+    const initialStake = ethers.parseEther("20");
+    await token.mint(agent.address, initialStake);
+    await token
+      .connect(agent)
+      .approve(await manager.getAddress(), initialStake);
+    await manager.connect(agent).stakeAgent(initialStake);
+
+    const payout = ethers.parseEther("500");
+    await token
+      .connect(employer)
+      .approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("bigjob", payout, 1000, "details");
+    await expect(
+      manager.connect(agent).applyForJob(0, "", [])
+    ).to.be.revertedWithCustomError(manager, "AgentStakeRequired");
+
+    const extraStake = ethers.parseEther("40");
+    await token.mint(agent.address, extraStake);
+    await token
+      .connect(agent)
+      .approve(await manager.getAddress(), extraStake);
+    await manager.connect(agent).stakeAgent(extraStake);
+    await expect(manager.connect(agent).applyForJob(0, "", []))
+      .to.emit(manager, "JobApplied")
+      .withArgs(0, agent.address);
   });
 
   it("allows agents to stake and withdraw", async function () {

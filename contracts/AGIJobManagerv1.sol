@@ -147,6 +147,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
     uint256 public agentStakeRequirement;
+    uint256 public agentStakePercentage;
     uint256 public validatorSlashingPercentage;
     uint256 public agentSlashingPercentage;
     uint256 public minValidatorReputation;
@@ -423,6 +424,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AGIWithdrawn(address indexed owner, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
     event AgentStakeRequirementUpdated(uint256 newRequirement);
+    event AgentStakePercentageUpdated(uint256 newPercentage);
     event ValidatorSlashingPercentageUpdated(uint256 newPercentage);
     event AgentSlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
@@ -719,7 +721,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             ) ||
             blacklistedAgents[msg.sender]
         ) revert Unauthorized();
-        if (agentStake[msg.sender] < agentStakeRequirement)
+        uint256 requiredStake = agentStakeRequirement;
+        uint256 percentageStake =
+            (job.payout * agentStakePercentage) /
+            PERCENTAGE_DENOMINATOR;
+        if (percentageStake > requiredStake) requiredStake = percentageStake;
+        if (agentStake[msg.sender] < requiredStake)
             revert AgentStakeRequired();
         if (reputation[msg.sender] < minAgentReputation)
             revert InsufficientReputation();
@@ -1603,6 +1610,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function setAgentStakeRequirement(uint256 amount) external onlyOwner {
         agentStakeRequirement = amount;
         emit AgentStakeRequirementUpdated(amount);
+    }
+
+    /// @notice Update the minimum stake agents must maintain as a percentage of job payout.
+    /// @param percentage Required portion of the payout in basis points.
+    function setAgentStakePercentage(uint256 percentage) external onlyOwner {
+        if (percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        agentStakePercentage = percentage;
+        emit AgentStakePercentageUpdated(percentage);
     }
 
     /// @notice Update the slashing rate applied to incorrect validator stakes.
