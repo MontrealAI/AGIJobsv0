@@ -1133,6 +1133,41 @@ describe("AGIJobManagerV1 payouts", function () {
     );
   });
 
+  it("finalizes disputes even if agent stake falls below requirement", async function () {
+    const { token, manager, owner, employer, agent } = await deployFixture();
+    const requirement = ethers.parseEther("60");
+    await manager.setAgentStakeRequirement(requirement);
+    await manager.setAgentSlashingPercentage(5000);
+    const payout = ethers.parseEther("100");
+    await token
+      .connect(employer)
+      .approve(await manager.getAddress(), payout * 2n);
+    await manager
+      .connect(employer)
+      .createJob("job0", payout, 1000, "details0");
+    await manager
+      .connect(employer)
+      .createJob("job1", payout, 1000, "details1");
+    await manager.connect(agent).applyForJob(0, "", []);
+    await manager.connect(agent).applyForJob(1, "", []);
+    await manager.connect(agent).requestJobCompletion(0, "result0");
+    await manager.connect(agent).requestJobCompletion(1, "result1");
+    await time.increase(2001);
+    await manager.connect(employer).disputeJob(0);
+    await manager.connect(employer).disputeJob(1);
+    await manager.addModerator(owner.address);
+    await manager.resolveDispute(1, 1);
+    const remainingStake = await manager.agentStake(agent.address);
+    expect(remainingStake).to.equal(ethers.parseEther("50"));
+    await expect(manager.resolveDispute(0, 1)).not.to.be.reverted;
+    const job = await manager.jobs(0);
+    expect(job.status).to.equal(3);
+    expect(await manager.agentStake(agent.address)).to.equal(remainingStake);
+    expect(await token.balanceOf(employer.address)).to.equal(
+      ethers.parseEther("1000")
+    );
+  });
+
   describe("dispute timing", function () {
     it("requires review and reveal windows to elapse before disputing", async function () {
       const { token, manager, employer, agent } = await deployFixture();
