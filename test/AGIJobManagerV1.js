@@ -183,7 +183,7 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(agentExpected + validatorPayoutTotal + burnAmount).to.equal(payout);
   });
 
-  it("sends validator leftovers to slashedStakeRecipient", async function () {
+  it("adds leftover validator rewards to first validator", async function () {
     const { token, manager, owner, employer, agent, validator, validator2, validator3 } = await deployFixture();
     await manager.setRequiredValidatorApprovals(3);
     const payout = ethers.parseEther("1000");
@@ -216,11 +216,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await time.increase(1000);
     await manager.connect(validator).validateJob(jobId, "", []);
     await manager.connect(validator2).validateJob(jobId, "", []);
-    await expect(
-      manager.connect(validator3).validateJob(jobId, "", [])
-    )
-      .to.emit(manager, "LeftoverTransferred")
-      .withArgs(owner.address, 2n);
+    await manager.connect(validator3).validateJob(jobId, "", []);
 
     const burnAddr = await manager.burnAddress();
     const burnAmount = (payout * 1000n) / 10000n;
@@ -229,11 +225,13 @@ describe("AGIJobManagerV1 payouts", function () {
     const leftover = validatorPayoutTotal - baseReward * 3n;
     const agentExpected = payout - burnAmount - validatorPayoutTotal;
 
-    expect(await token.balanceOf(validator.address)).to.equal(baseReward);
+    expect(await token.balanceOf(validator.address)).to.equal(
+      baseReward + leftover
+    );
     expect(await token.balanceOf(validator2.address)).to.equal(baseReward);
     expect(await token.balanceOf(validator3.address)).to.equal(baseReward);
     expect(await token.balanceOf(owner.address)).to.equal(
-      initialOwnerBalance + leftover
+      initialOwnerBalance
     );
     expect(await token.balanceOf(burnAddr)).to.equal(burnAmount);
     expect(await token.balanceOf(agent.address)).to.equal(agentExpected);

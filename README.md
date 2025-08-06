@@ -38,8 +38,11 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 1. Call `acceptTerms` with the IPFS hash of the terms of service.
 2. Deposit stake through `stake` to join the pool.
 3. View the current validator roster via `getValidatorPool` in the **Read Contract** tab.
-4. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
-5. Finalize with `validateJob` or `disapproveJob`.
+4. Honest validators share a reward pool funded from each job. Any slashed stake from incorrect votes is redistributed to those who voted correctly; rounding remainders are added to the first correct validator so the entire amount is paid out.
+
+### Configuration helpers
+
+All economic parameters are adjustable by the contract owner via simple setter functions (for example `setValidationRewardPercentage`, `setStakeRequirement`, or `setCommitRevealWindows`). Non‑technical users can inspect current values in one call using helper views such as `getValidatorConfig`, `getPayoutConfig`, and `getTimingConfig` on block explorers like Etherscan.
 
 #### Example Write Functions
 
