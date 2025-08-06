@@ -194,6 +194,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public cancelRewardPercentage = 100; // 1%
     /// @notice Recipient of slashed validator stakes when no correct votes exist.
     address public slashedStakeRecipient;
+    /// @notice Recipient of slashed agent stakes. If zero, funds go to the employer.
+    address public agentSlashRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
     /// @notice Number of penalties before an agent is automatically blacklisted.
@@ -417,6 +419,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event BurnAddressUpdated(address indexed newBurnAddress);
     /// @notice Emitted when the slashed stake recipient is updated.
     event SlashedStakeRecipientUpdated(address indexed newRecipient);
+    /// @notice Emitted when the agent slash recipient is updated.
+    event AgentSlashRecipientUpdated(address indexed newRecipient);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the cancel reward percentage is updated.
@@ -1115,10 +1119,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             if (agentSlashAmount > 0) {
                 agentStake[job.assignedAgent] -= agentSlashAmount;
                 totalAgentStake -= agentSlashAmount;
-                agiToken.safeTransfer(
-                    slashedStakeRecipient,
-                    agentSlashAmount
-                );
+                address slashDest =
+                    agentSlashRecipient == address(0)
+                        ? job.employer
+                        : agentSlashRecipient;
+                agiToken.safeTransfer(slashDest, agentSlashAmount);
             }
         }
         if (agentActiveJobs[job.assignedAgent] > 0) {
@@ -1544,6 +1549,19 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @notice Retrieve validator incentive parameters in a single call.
     /// @dev Helps non-technical users inspect system settings via block explorers.
+    /// @return rewardPercentage Portion of job payout allocated to correct validators (basis points).
+    /// @return reputationPercentage Share of agent reputation granted to correct validators (basis points).
+    /// @return stakeReq Minimum stake required to validate.
+    /// @return validatorSlashPercentage Portion of validator stake slashed for incorrect votes (basis points).
+    /// @return agentSlashPercentage Portion of agent stake slashed on failure (basis points).
+    /// @return maxSlashRewardPercentage Cap on slashed stake redistributed to correct validators (basis points).
+    /// @return minValidatorRep Minimum reputation required to validate.
+    /// @return minAgentRep Minimum reputation agents must maintain.
+    /// @return approvals Validator approvals needed to finalize a job.
+    /// @return disapprovals Validator disapprovals needed to dispute a job.
+    /// @return validatorsCount Number of validators randomly selected per job.
+    /// @return validatorSlashRecipient Address receiving slashed validator stakes when no correct vote exists.
+    /// @return agentSlashRecipientAddr Address receiving slashed agent stakes (zero address routes to employer).
     function getValidatorConfig()
         external
         view
@@ -1559,7 +1577,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 approvals,
             uint256 disapprovals,
             uint256 validatorsCount,
-            address slashRecipient
+            address validatorSlashRecipient,
+            address agentSlashRecipientAddr
         )
     {
         return (
@@ -1574,7 +1593,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             requiredValidatorApprovals,
             requiredValidatorDisapprovals,
             validatorsPerJob,
-            slashedStakeRecipient
+            slashedStakeRecipient,
+            agentSlashRecipient
         );
     }
 
@@ -1633,7 +1653,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Helps non-technical users verify configuration via read-only calls.
     /// @return agiTokenAddr Current $AGI token address used for payments.
     /// @return burnAddr Destination for burned tokens.
-    /// @return slashRecipient Address receiving slashed stake when no validator is correct.
+    /// @return slashRecipient Address receiving slashed validator stake when no validator is correct.
+    /// @return agentSlashRecipientAddr Address receiving slashed agent stake (zero = employer).
     /// @return ensAddr ENS registry used for subdomain ownership checks.
     /// @return nameWrapperAddr ENS NameWrapper contract address.
     /// @return ownerAddr Address of the contract owner.
@@ -1644,6 +1665,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             address agiTokenAddr,
             address burnAddr,
             address slashRecipient,
+            address agentSlashRecipientAddr,
             address ensAddr,
             address nameWrapperAddr,
             address ownerAddr
@@ -1653,6 +1675,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             address(agiToken),
             burnAddress,
             slashedStakeRecipient,
+            agentSlashRecipient,
             address(ens),
             address(nameWrapper),
             owner()
@@ -1850,6 +1873,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (newRecipient == address(0)) revert InvalidAddress();
         slashedStakeRecipient = newRecipient;
         emit SlashedStakeRecipientUpdated(newRecipient);
+    }
+
+    /// @notice Update the recipient for slashed agent stakes.
+    /// @dev If set to the zero address, slashed stakes are sent to the job employer.
+    function setAgentSlashRecipient(address newRecipient) external onlyOwner {
+        agentSlashRecipient = newRecipient;
+        emit AgentSlashRecipientUpdated(newRecipient);
     }
 
     /// @notice Update the minimum stake validators must maintain.
@@ -2286,7 +2316,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             if (agentSlashAmount > 0) {
                 agentStake[agent] -= agentSlashAmount;
                 totalAgentStake -= agentSlashAmount;
-                agiToken.safeTransfer(slashedStakeRecipient, agentSlashAmount);
+                address slashDest =
+                    agentSlashRecipient == address(0)
+                        ? job.employer
+                        : agentSlashRecipient;
+                agiToken.safeTransfer(slashDest, agentSlashAmount);
             }
         }
         emit AgentPenalized(agent, reputationPenalty, agentSlashAmount);
