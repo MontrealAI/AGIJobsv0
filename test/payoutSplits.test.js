@@ -34,7 +34,7 @@ describe("payout split validation", function () {
   }
 
   it("reverts when burn and validation reward exceed 100%", async function () {
-    const { manager } = await deployFixture();
+    const { manager, owner } = await deployFixture();
     await expect(manager.setBurnPercentage(9500)).to.be.revertedWithCustomError(
       manager,
       "InvalidPercentageCombination"
@@ -61,6 +61,7 @@ describe("payout split validation", function () {
         1,
         1,
         owner.address,
+        0,
         1,
         1,
         3,
@@ -90,6 +91,7 @@ describe("payout split validation", function () {
         1,
         1,
         owner.address,
+        0,
         1,
         1,
         3,
@@ -105,6 +107,8 @@ describe("payout split validation", function () {
     expect(initial.validationRewardPct).to.equal(800n);
     expect(initial.cancelRewardPct).to.equal(100n);
     expect(initial.burnAddr).to.equal(await manager.BURN_ADDRESS());
+    expect(initial.slashRecipient).to.equal(owner.address);
+    expect(initial.slashRedistributionPct).to.equal(10000n);
 
     const newBurnAddr = ethers.Wallet.createRandom().address;
     await manager.setBurnConfig(newBurnAddr, 1000);
@@ -116,6 +120,8 @@ describe("payout split validation", function () {
     expect(updated.validationRewardPct).to.equal(700n);
     expect(updated.cancelRewardPct).to.equal(200n);
     expect(updated.burnAddr).to.equal(newBurnAddr);
+    expect(updated.slashRecipient).to.equal(owner.address);
+    expect(updated.slashRedistributionPct).to.equal(10000n);
   });
 
   it("previews payout splits and agent stake requirements", async function () {
