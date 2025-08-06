@@ -113,6 +113,7 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 
 interface ENS {
     function resolver(bytes32 node) external view returns (address);
@@ -237,6 +238,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         mapping(address => bool) revealed;
         mapping(address => bool) revealedVotes;
         uint256 validationStart;
+        uint256 vrfRequestId;
     }
 
     struct AGIType {
@@ -284,6 +286,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public constant MAX_AGI_TYPES = 50; // limits AGI type iterations
     AGIType[] public agiTypes;
 
+    VRFCoordinatorV2Interface public vrfCoordinator;
+    bytes32 public vrfKeyHash;
+    uint64 public vrfSubscriptionId;
+    uint16 public constant VRF_REQUEST_CONFIRMATIONS = 3;
+    uint32 public vrfCallbackGasLimit = 200000;
+    mapping(uint256 => uint256) public vrfRequestToJob;
+
     event JobCreated(
         uint256 indexed jobId,
         string ipfsHash,
@@ -317,6 +326,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         bool approved
     );
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
+    event VRFCoordinatorUpdated(address coordinator);
+    event VRFKeyHashUpdated(bytes32 keyHash);
+    event VRFSubscriptionIdUpdated(uint64 subId);
+    event VRFRequested(uint256 indexed jobId, uint256 requestId);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
     event ResolveGracePeriodUpdated(uint256 newGracePeriod);
@@ -620,6 +633,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when payout accounting exceeds escrowed funds.
     error PayoutExceedsEscrow();
 
+    /// @dev Thrown when VRF parameters are not configured.
+    error VRFNotConfigured();
+
+    /// @dev Thrown when randomness fulfillment is attempted by an unknown caller.
+    error OnlyCoordinatorCanFulfill(address have, address want);
+
     constructor(
         address _agiTokenAddress,
         string memory _initialBaseURI,
@@ -744,7 +763,21 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         job.status = JobStatus.CompletionRequested;
         job.validationStart = block.timestamp;
         job.completionRequestedAt = block.timestamp;
-        _selectValidators(_jobId);
+        if (
+            address(vrfCoordinator) == address(0) ||
+            vrfKeyHash == bytes32(0) ||
+            vrfSubscriptionId == 0
+        ) revert VRFNotConfigured();
+        uint256 requestId = vrfCoordinator.requestRandomWords(
+            vrfKeyHash,
+            vrfSubscriptionId,
+            VRF_REQUEST_CONFIRMATIONS,
+            vrfCallbackGasLimit,
+            1
+        );
+        job.vrfRequestId = requestId;
+        vrfRequestToJob[requestId] = _jobId;
+        emit VRFRequested(_jobId, requestId);
         emit JobCompletionRequested(
             _jobId,
             msg.sender,
@@ -752,11 +785,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         );
     }
 
-    /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
-    ///      Mixes `blockhash` and `block.prevrandao` with an owner-provided seed.
-    ///      This on-chain entropy is not secure for high-stakes randomness; a
-    ///      future version should integrate a verifiable randomness source.
-    function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
+    /// @dev Selects `validatorsPerJob` unique validators using VRF randomness.
+    /// @param _jobId Identifier of the job being processed.
+    /// @param randomWord Random value supplied by Chainlink VRF.
+    function _selectValidators(
+        uint256 _jobId,
+        uint256 randomWord
+    ) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
         address[] memory pool = new address[](poolLength);
@@ -784,12 +819,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
         address[] memory selected = new address[](validatorsPerJob);
         bytes32 seed = keccak256(
-            abi.encodePacked(
-                blockhash(block.number - 1),
-                block.prevrandao,
-                _jobId,
-                validatorSelectionSeed
-            )
+            abi.encodePacked(randomWord, _jobId, validatorSelectionSeed)
         );
         uint256 remaining = pool.length;
 
@@ -808,6 +838,27 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         }
 
         emit ValidatorsSelected(_jobId, selected);
+    }
+
+    /// @dev Internal callback invoked once VRF provides randomness.
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal {
+        uint256 jobId = vrfRequestToJob[requestId];
+        delete vrfRequestToJob[requestId];
+        if (jobs[jobId].vrfRequestId != requestId) return;
+        _selectValidators(jobId, randomWords[0]);
+    }
+
+    /// @dev External entry point for VRF coordinator.
+    function rawFulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) external {
+        if (msg.sender != address(vrfCoordinator))
+            revert OnlyCoordinatorCanFulfill(msg.sender, address(vrfCoordinator));
+        fulfillRandomWords(requestId, randomWords);
     }
 
     /// @notice Commit to a validation vote without revealing it.
@@ -1657,6 +1708,27 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function setValidatorSelectionSeed(bytes32 newSeed) external onlyOwner {
         validatorSelectionSeed = newSeed;
         emit ValidatorSelectionSeedUpdated(newSeed);
+    }
+
+    /// @notice Update the Chainlink VRF coordinator address.
+    /// @param coordinator New coordinator contract.
+    function setVRFCoordinator(address coordinator) external onlyOwner {
+        vrfCoordinator = VRFCoordinatorV2Interface(coordinator);
+        emit VRFCoordinatorUpdated(coordinator);
+    }
+
+    /// @notice Update the Chainlink VRF key hash.
+    /// @param keyHash New key hash value.
+    function setVRFKeyHash(bytes32 keyHash) external onlyOwner {
+        vrfKeyHash = keyHash;
+        emit VRFKeyHashUpdated(keyHash);
+    }
+
+    /// @notice Update the Chainlink VRF subscription ID.
+    /// @param subId New subscription identifier.
+    function setVRFSubscriptionId(uint64 subId) external onlyOwner {
+        vrfSubscriptionId = subId;
+        emit VRFSubscriptionIdUpdated(subId);
     }
 
     /// @notice Update the commit phase duration.
