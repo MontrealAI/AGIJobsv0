@@ -192,6 +192,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     address public slashedStakeRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
+    /// @notice Portion of slashed stake redistributed to correct validators
+    ///         when at least one validator votes with the final outcome.
+    ///         Expressed in basis points and defaults to 100%.
+    uint256 public slashedStakeRedistributionPercentage =
+        PERCENTAGE_DENOMINATOR;
     /// @notice Number of penalties before an agent is automatically blacklisted.
     uint256 public agentBlacklistThreshold = 3;
     /// @notice Duration of the commit phase for validator votes.
@@ -431,6 +436,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AgentStakePercentageUpdated(uint256 newPercentage);
     event ValidatorSlashingPercentageUpdated(uint256 newPercentage);
     event AgentSlashingPercentageUpdated(uint256 newPercentage);
+    event SlashedStakeRedistributionPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event MinAgentReputationUpdated(uint256 newMinimum);
     event AgentBlacklistThresholdUpdated(uint256 newThreshold);
@@ -457,6 +463,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 requiredApprovals,
         uint256 requiredDisapprovals,
         address slashedStakeRecipient,
+        uint256 slashedStakeRedistributionPercentage,
         uint256 commitWindow,
         uint256 revealWindow,
         uint256 reviewWindow,
@@ -1148,9 +1155,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
             }
         } else {
-            uint256 totalReward = validatorPayoutTotal + totalSlashed;
+            uint256 redistributed =
+                (totalSlashed * slashedStakeRedistributionPercentage) /
+                PERCENTAGE_DENOMINATOR;
+            uint256 totalReward = validatorPayoutTotal + redistributed;
             uint256 rewardPerValidator = totalReward / correctValidatorCount;
             uint256 remainder = totalReward % correctValidatorCount;
+            uint256 leftover = totalSlashed - redistributed;
+            if (leftover > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, leftover);
+            }
             for (uint256 i; i < correctValidatorCount; ) {
                 uint256 reward = rewardPerValidator;
                 if (remainder > 0) {
@@ -1526,7 +1540,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 approvals,
             uint256 disapprovals,
             uint256 validatorsCount,
-            address slashRecipient
+            address slashRecipient,
+            uint256 slashedStakeRedistributionPct
         )
     {
         return (
@@ -1540,7 +1555,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             requiredValidatorApprovals,
             requiredValidatorDisapprovals,
             validatorsPerJob,
-            slashedStakeRecipient
+            slashedStakeRecipient,
+            slashedStakeRedistributionPercentage
         );
     }
 
@@ -1550,6 +1566,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @return validationRewardPct Portion of a job payout allocated to correct validators.
     /// @return cancelRewardPct Share of escrow granted to the caller of `cancelExpiredJob`.
     /// @return burnAddr Destination address for burned tokens.
+    /// @return slashRecipient Address receiving slashed stake not redistributed to validators.
+    /// @return slashRedistributionPct Portion of slashed stake awarded to correct validators.
     function getPayoutConfig()
         external
         view
@@ -1557,14 +1575,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 burnPct,
             uint256 validationRewardPct,
             uint256 cancelRewardPct,
-            address burnAddr
+            address burnAddr,
+            address slashRecipient,
+            uint256 slashRedistributionPct
         )
     {
         return (
             burnPercentage,
             validationRewardPercentage,
             cancelRewardPercentage,
-            burnAddress
+            burnAddress,
+            slashedStakeRecipient,
+            slashedStakeRedistributionPercentage
         );
     }
 
@@ -1761,6 +1783,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit SlashedStakeRecipientUpdated(newRecipient);
     }
 
+    /// @notice Configure how much of slashed stake is redistributed to
+    ///         validators who voted with the final outcome.
+    /// @param newPercentage Portion of slashed stake awarded to correct validators in basis points.
+    function setSlashedStakeRedistributionPercentage(uint256 newPercentage)
+        external
+        onlyOwner
+    {
+        if (newPercentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        slashedStakeRedistributionPercentage = newPercentage;
+        emit SlashedStakeRedistributionPercentageUpdated(newPercentage);
+    }
+
     /// @notice Update the minimum stake validators must maintain.
     /// @dev Setting `amount` to 0 removes the staking requirement entirely.
     function setStakeRequirement(uint256 amount) external onlyOwner {
@@ -1928,6 +1962,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @param approvals Validator approvals needed to finalize a job.
     /// @param disapprovals Validator disapprovals needed to dispute a job.
     /// @param slashRecipient Address receiving slashed stake when no validator votes correctly.
+    /// @param slashedStakeRedistributionPct Portion of slashed stake redistributed to correct validators (basis points).
     /// @param commitWindow Length of commit phase in seconds; must be greater than zero.
     /// @param revealWindow Length of reveal phase in seconds; must be greater than zero.
     /// @param reviewWin Mandatory waiting period before validators may vote.
@@ -1942,6 +1977,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 approvals,
         uint256 disapprovals,
         address slashRecipient,
+        uint256 slashedStakeRedistributionPct,
         uint256 commitWindow,
         uint256 revealWindow,
         uint256 reviewWin,
@@ -1951,7 +1987,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             rewardPercentage > PERCENTAGE_DENOMINATOR ||
             reputationPercentage > PERCENTAGE_DENOMINATOR ||
             validatorSlashPercentage > PERCENTAGE_DENOMINATOR ||
-            agentSlashPercentage > PERCENTAGE_DENOMINATOR
+            agentSlashPercentage > PERCENTAGE_DENOMINATOR ||
+            slashedStakeRedistributionPct > PERCENTAGE_DENOMINATOR
         ) revert InvalidPercentage();
         _validatePayoutSplits(burnPercentage, rewardPercentage);
         if (validatorsCount == 0) revert InvalidCount();
@@ -1972,6 +2009,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         requiredValidatorApprovals = approvals;
         requiredValidatorDisapprovals = disapprovals;
         slashedStakeRecipient = slashRecipient;
+        slashedStakeRedistributionPercentage = slashedStakeRedistributionPct;
         commitDuration = commitWindow;
         revealDuration = revealWindow;
         reviewWindow = reviewWin;
@@ -1986,6 +2024,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             approvals,
             disapprovals,
             slashRecipient,
+            slashedStakeRedistributionPct,
             commitWindow,
             revealWindow,
             reviewWin,
@@ -2285,13 +2324,20 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             validatorPayoutTotal = 0;
         }
 
-        uint256 totalReward = validatorPayoutTotal + totalSlashed;
+        uint256 redistributed =
+            (totalSlashed * slashedStakeRedistributionPercentage) /
+            PERCENTAGE_DENOMINATOR;
+        uint256 totalReward = validatorPayoutTotal +
+            (correctValidatorCount > 0 ? redistributed : 0);
         uint256 rewardPerValidator = correctValidatorCount > 0
             ? totalReward / correctValidatorCount
             : 0;
         uint256 remainder = correctValidatorCount > 0
             ? totalReward % correctValidatorCount
             : 0;
+        uint256 leftover = correctValidatorCount > 0
+            ? totalSlashed - redistributed
+            : totalSlashed;
 
         if (burnAmount > 0) {
             if (burnAddress == address(0)) revert BurnAddressNotSet();
@@ -2299,10 +2345,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         }
 
         if (correctValidatorCount == 0) {
-            if (totalSlashed > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+            if (leftover > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, leftover);
             }
         } else {
+            if (leftover > 0) {
+                agiToken.safeTransfer(slashedStakeRecipient, leftover);
+            }
             for (uint256 i; i < correctValidatorCount; ) {
                 uint256 reward = rewardPerValidator;
                 if (remainder > 0) {
