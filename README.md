@@ -17,6 +17,36 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
+## Getting Started for Non‑Technical Users
+
+Use a block explorer like Etherscan to interact with the contract—no coding required. Confirm the [AGIJobManager address](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract) on multiple explorers before sending transactions.
+
+### Employers
+
+1. Open the **Write Contract** tab and expand `createJob` to post a task with escrowed payout.
+2. Monitor the job; if the agent misses the deadline, call `cancelExpiredJob` to reclaim funds.
+
+### Agents
+
+1. Connect your wallet on the same page.
+2. Use `applyForJob` with the job ID.
+3. After finishing work, call `requestJobCompletion` with an IPFS hash or URL.
+
+### Validators
+
+1. Deposit stake through `stake` to join the pool.
+2. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
+3. Finalize with `validateJob` or `disapproveJob`.
+
+#### Example Write Functions
+
+- [createJob](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
+- [stake](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
+- [commitValidation](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
+- [revealValidation](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
+
+For detailed examples and code snippets, see the [Quick Start](#quick-start).
+
 ## Disclaimer
 
 - Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
