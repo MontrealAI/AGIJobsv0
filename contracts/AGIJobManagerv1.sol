@@ -229,6 +229,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 validatorApprovals;
         uint256 validatorDisapprovals;
         string details;
+        uint256 selectionBlock;
         mapping(address => bool) approvals;
         mapping(address => bool) disapprovals;
         address[] selectedValidators;
@@ -295,6 +296,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         string details,
         JobStatus status
     );
+    event SelectionBlockSet(uint256 indexed jobId, uint256 blockNumber);
     event JobApplied(uint256 indexed jobId, address indexed agent);
     event JobCompletionRequested(
         uint256 indexed jobId,
@@ -517,6 +519,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when there are insufficient validators available for selection.
     error NotEnoughValidators();
 
+    /// @dev Thrown when validator selection is attempted before the committed block.
+    error SelectionBlockNotReached();
+
+    /// @dev Thrown when the stored selection blockhash is no longer available.
+    error SelectionBlockHashUnavailable();
+
     /// @dev Thrown when a validator's stake is below the required minimum.
     error InsufficientStake();
 
@@ -713,8 +721,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         job.payout = _payout;
         job.duration = _duration;
         job.details = _details;
+        job.selectionBlock = block.number + 1;
         job.status = JobStatus.Open;
         emit JobCreated(jobId, _ipfsHash, _payout, _duration, _details, JobStatus.Open);
+        emit SelectionBlockSet(jobId, job.selectionBlock);
         nextJobId = jobId + 1;
     }
 
@@ -775,9 +785,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
-    ///      Mixes `blockhash` and `block.prevrandao` with an owner-provided seed.
-    ///      This on-chain entropy is not secure for high-stakes randomness; a
-    ///      future version should integrate a verifiable randomness source.
+    ///      Uses `blockhash(selectionBlock)` mixed with an owner-provided seed.
+    ///      If the hash is unavailable (e.g., after 256 blocks), the selection
+    ///      block is reseeded and the call reverts.
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
@@ -805,13 +815,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         }
 
         address[] memory selected = new address[](validatorsPerJob);
+        if (block.number <= job.selectionBlock) revert SelectionBlockNotReached();
+        bytes32 bh = blockhash(job.selectionBlock);
+        if (bh == bytes32(0)) {
+            job.selectionBlock = block.number + 1;
+            emit SelectionBlockSet(_jobId, job.selectionBlock);
+            revert SelectionBlockHashUnavailable();
+        }
         bytes32 seed = keccak256(
-            abi.encodePacked(
-                blockhash(block.number - 1),
-                block.prevrandao,
-                _jobId,
-                validatorSelectionSeed
-            )
+            abi.encodePacked(bh, _jobId, validatorSelectionSeed)
         );
         uint256 remaining = pool.length;
 

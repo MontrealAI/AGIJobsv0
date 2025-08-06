@@ -114,6 +114,9 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 
 Review `*Updated` events after any call to confirm changes on-chain.
 
+To lessen predictability in validator selection, the contract owner should
+periodically call `setValidatorSelectionSeed` with a fresh random value.
+
 ## Disclaimer
 
 - Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
