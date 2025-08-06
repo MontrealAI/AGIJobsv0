@@ -335,8 +335,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event AgentBlacklisted(address indexed agent, bool status);
     event ValidatorBlacklisted(address indexed validator, bool status);
-    /// @notice Emitted when a validator is removed from the rotating pool.
+    /// @notice Emitted when a validator is manually added outside the Merkle allowlist.
+    event AdditionalValidatorAdded(address indexed validator);
+    /// @notice Emitted when a validator is removed from the additional allowlist or rotating pool.
     event ValidatorRemoved(address indexed validator);
+    /// @notice Emitted when an agent is manually whitelisted outside the Merkle allowlist.
+    event AdditionalAgentAdded(address indexed agent);
+    /// @notice Emitted when an agent is removed from the additional allowlist.
+    event AdditionalAgentRemoved(address indexed agent);
     /// @notice Emitted when the full validator pool is replaced.
     event ValidatorPoolSet(address[] newValidators);
     /// @notice Emitted when the maximum validator pool size changes.
@@ -1880,6 +1886,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     function addAdditionalValidator(address validator) external onlyOwner {
+        if (validator == address(0)) revert InvalidAddress();
         additionalValidators[validator] = true;
         if (!isValidatorInPool[validator]) {
             if (validatorPool.length >= maxValidatorPoolSize) {
@@ -1889,6 +1896,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             validatorPool.push(validator);
             isValidatorInPool[validator] = true;
         }
+        emit AdditionalValidatorAdded(validator);
     }
 
     function removeAdditionalValidator(address validator) external onlyOwner {
@@ -1912,11 +1920,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     function addAdditionalAgent(address agent) external onlyOwner {
+        if (agent == address(0)) revert InvalidAddress();
         additionalAgents[agent] = true;
+        emit AdditionalAgentAdded(agent);
     }
 
     function removeAdditionalAgent(address agent) external onlyOwner {
         additionalAgents[agent] = false;
+        emit AdditionalAgentRemoved(agent);
     }
 
     /// @notice Deposit $AGI to satisfy the staking requirement for validators.
