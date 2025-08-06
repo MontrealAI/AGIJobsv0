@@ -156,6 +156,22 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("payout1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -192,6 +208,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
 
     const validators = [validator, validator2, validator3];
     const salts = [ethers.id("lv1"), ethers.id("lv2"), ethers.id("lv3")];
@@ -247,6 +265,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt2 = ethers.id("payout2");
     const commitment2 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -282,6 +302,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("bonus1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -329,6 +351,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("malicious");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -370,6 +394,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("bonus2");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -441,6 +467,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("rw1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -469,6 +497,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("rw2");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -497,9 +527,9 @@ describe("AGIJobManagerV1 payouts", function () {
 
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    await expect(
-      manager.connect(agent).requestJobCompletion(jobId, "result")
-    )
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await expect(manager.finalizeValidatorSelection(jobId))
       .to.emit(manager, "ValidatorsSelected")
       .withArgs(jobId, [validator.address]);
     const salt = ethers.id("sel1");
@@ -649,6 +679,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const burnAmount = (payout * 1000n) / 10000n;
     const validatorPayoutTotal = (payout * 800n) / 10000n;
     const agentExpected = payout - burnAmount - validatorPayoutTotal;
@@ -680,6 +712,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt3 = ethers.id("dis1");
     const commitment3 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -715,6 +749,8 @@ describe("AGIJobManagerV1 payouts", function () {
       .createJob("jobhash1", payout, 1000, "details1");
     await manager.connect(agent).applyForJob(0, "", []);
     await manager.connect(agent).requestJobCompletion(0, "result1");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(0);
     const salt4 = ethers.id("job0");
     const commitment4 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -742,6 +778,8 @@ describe("AGIJobManagerV1 payouts", function () {
       .createJob("jobhash2", payout, 1000, "details2");
     await manager.connect(agent).applyForJob(1, "", []);
     await manager.connect(agent).requestJobCompletion(1, "result2");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(1);
     const salt5 = ethers.id("job1");
     const commitment5 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -762,6 +800,8 @@ describe("AGIJobManagerV1 payouts", function () {
       .createJob("jobhash3", payout, 1000, "details3");
     await manager.connect(agent).applyForJob(2, "", []);
     await manager.connect(agent).requestJobCompletion(2, "result3");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(2);
     const salt6 = ethers.id("job2");
     const commitment6 = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -803,6 +843,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator3).stake(stakeAmount);
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     await expect(
       manager.connect(validator3).withdrawStake(stakeAmount)
     ).to.be.revertedWithCustomError(manager, "PendingCommitments");
@@ -849,6 +891,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
 
     const stakeAmount = ethers.parseEther("100");
     await token.mint(validator.address, stakeAmount);
@@ -1018,6 +1062,8 @@ describe("AGIJobManagerV1 payouts", function () {
         .createJob("jobhash" + i, payout, 1000, "details");
       await manager.connect(agent).applyForJob(i, "", []);
       await manager.connect(agent).requestJobCompletion(i, "result");
+      await ethers.provider.send("evm_mine", []);
+      await manager.finalizeValidatorSelection(i);
       const salt = ethers.id("loop" + i);
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],
@@ -1113,6 +1159,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
     await manager.connect(agent).applyForJob(0, "", []);
     await manager.connect(agent).requestJobCompletion(0, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(0);
     const salt = ethers.id("agentSlash");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -1151,7 +1199,11 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(agent).applyForJob(0, "", []);
     await manager.connect(agent).applyForJob(1, "", []);
     await manager.connect(agent).requestJobCompletion(0, "result0");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(0);
     await manager.connect(agent).requestJobCompletion(1, "result1");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(1);
     await time.increase(2001);
     await manager.connect(employer).disputeJob(0);
     await manager.connect(employer).disputeJob(1);
@@ -1183,6 +1235,8 @@ describe("AGIJobManagerV1 payouts", function () {
       await manager
         .connect(agent)
         .requestJobCompletion(jobId, "result");
+      await ethers.provider.send("evm_mine", []);
+      await manager.finalizeValidatorSelection(jobId);
 
       await expect(
         manager.connect(employer).disputeJob(jobId)
@@ -1207,6 +1261,10 @@ describe("AGIJobManagerV1 payouts", function () {
       const jobId = 0;
       await manager.connect(agent).applyForJob(jobId, "", []);
       await manager.connect(agent).requestJobCompletion(jobId, "result");
+      await ethers.provider.send("evm_mine", []);
+      await manager.finalizeValidatorSelection(jobId);
+      await ethers.provider.send("evm_mine", []);
+      await manager.finalizeValidatorSelection(jobId);
       const salt = ethers.id("salt");
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],
@@ -1243,6 +1301,8 @@ describe("AGIJobManagerV1 payouts", function () {
       const jobId = 0;
       await manager.connect(agent).applyForJob(jobId, "", []);
       await manager.connect(agent).requestJobCompletion(jobId, "result");
+      await ethers.provider.send("evm_mine", []);
+      await manager.finalizeValidatorSelection(jobId);
       const salt = ethers.id("salt2");
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],
@@ -1274,6 +1334,8 @@ describe("AGIJobManagerV1 payouts", function () {
       const jobId = 0;
       await manager.connect(agent).applyForJob(jobId, "", []);
       await manager.connect(agent).requestJobCompletion(jobId, "result");
+      await ethers.provider.send("evm_mine", []);
+      await manager.finalizeValidatorSelection(jobId);
       const salt = ethers.id("pendingCommit");
       const commitment = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool", "bytes32"],

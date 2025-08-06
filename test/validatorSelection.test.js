@@ -51,9 +51,9 @@ describe("validator selection", function () {
       .createJob("jobhash", payout, 1000, "details");
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    const tx = await manager
-      .connect(agent)
-      .requestJobCompletion(jobId, "result");
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    const tx = await manager.finalizeValidatorSelection(jobId);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -83,9 +83,9 @@ describe("validator selection", function () {
       .createJob("jobhash", payout, 1000, "details");
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
-    const tx = await manager
-      .connect(agent)
-      .requestJobCompletion(jobId, "result");
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    const tx = await manager.finalizeValidatorSelection(jobId);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"

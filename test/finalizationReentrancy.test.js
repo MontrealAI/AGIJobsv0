@@ -59,6 +59,8 @@ describe("Finalization reentrancy", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     const salt = ethers.id("reentrancy1");
     const commitment = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool", "bytes32"],
@@ -84,6 +86,8 @@ describe("Finalization reentrancy", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
     await time.increase(3001); // pass commit, reveal and review windows
     await manager.connect(agent).disputeJob(jobId);
     await token.setAttack(await manager.getAddress(), jobId);

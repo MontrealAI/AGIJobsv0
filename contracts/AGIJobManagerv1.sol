@@ -193,6 +193,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
     /// @notice Number of penalties before an agent is automatically blacklisted.
     uint256 public constant AGENT_BLACKLIST_THRESHOLD = 3;
+    /// @notice Delay (in blocks) before randomness for validator selection is fixed.
+    /// @dev Using a future blockhash reduces manipulation by the completion requester.
+    uint256 public constant RANDOMNESS_DELAY = 1;
     /// @notice Duration of the commit phase for validator votes.
     /// @dev Defaults to 1 hour and may be updated by the owner.
     uint256 public commitDuration;
@@ -225,6 +228,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 assignedAt;
         JobStatus status;
         uint256 completionRequestedAt; // timestamp when completion was requested
+        uint256 selectionBlock; // block when completion was requested
         uint256 validatorApprovals;
         uint256 validatorDisapprovals;
         string details;
@@ -522,6 +526,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when a validator is not selected for a job.
     error ValidatorNotSelected();
 
+    /// @dev Thrown when validator selection is finalized more than once.
+    error ValidatorsAlreadySelected();
+
+    /// @dev Thrown when attempting to finalize selection before randomness is available.
+    error RandomnessNotReady();
+
     /// @dev Thrown when committing after the commit phase has elapsed.
     error CommitPhaseOver();
 
@@ -673,9 +683,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// Job lifecycle overview:
     /// 1. Employer calls `createJob`.
     /// 2. An agent `applyForJob`.
-    /// 3. The agent submits results via `requestJobCompletion`, starting the `reviewWindow`.
-    /// 4. Validators commit and reveal votes.
-    /// 5. After `reviewWindow` elapses, validators call `validateJob` or `disapproveJob`.
+    /// 3. The agent submits results via `requestJobCompletion`, storing the block number.
+    /// 4. After `RANDOMNESS_DELAY` blocks, anyone may call `finalizeValidatorSelection`
+    ///    to start the commit phase based on the delayed blockhash.
+    /// 5. Validators commit and reveal votes.
+    /// 6. After `reviewWindow` elapses, validators call `validateJob` or `disapproveJob`.
     ///    Sufficient approvals finalize the job; enough disapprovals open a dispute.
     function createJob(string memory _ipfsHash, uint256 _payout, uint256 _duration, string memory _details) external whenNotPaused nonReentrant {
         if (
@@ -743,9 +755,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (bytes(_ipfsHash).length == 0) revert InvalidParameters();
         job.ipfsHash = _ipfsHash;
         job.status = JobStatus.CompletionRequested;
-        job.validationStart = block.timestamp;
         job.completionRequestedAt = block.timestamp;
-        _selectValidators(_jobId);
+        // Record the current block so validator selection can later draw
+        // randomness from a future blockhash, reducing manipulation by the
+        // completion requester.
+        job.selectionBlock = block.number;
         emit JobCompletionRequested(
             _jobId,
             msg.sender,
@@ -754,10 +768,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
-    ///      Mixes `blockhash` and `block.prevrandao` with an owner-provided seed.
-    ///      This on-chain entropy is not secure for high-stakes randomness; a
-    ///      future version should integrate a verifiable randomness source.
-    function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
+    ///      Uses a future blockhash recorded at `requestJobCompletion` mixed with
+    ///      an evolving seed to deter manipulation without relying on external
+    ///      randomness beacons.
+    function _selectValidators(uint256 _jobId, bytes32 entropy) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
         address[] memory pool = new address[](poolLength);
@@ -785,12 +799,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
         address[] memory selected = new address[](validatorsPerJob);
         bytes32 seed = keccak256(
-            abi.encodePacked(
-                blockhash(block.number - 1),
-                block.prevrandao,
-                _jobId,
-                validatorSelectionSeed
-            )
+            abi.encodePacked(entropy, _jobId, validatorSelectionSeed)
         );
         uint256 remaining = pool.length;
 
@@ -808,7 +817,33 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
 
+        // Evolve the global seed with fresh entropy so each selection reduces
+        // the owner's ability to bias future draws.
+        validatorSelectionSeed = keccak256(
+            abi.encodePacked(validatorSelectionSeed, entropy)
+        );
         emit ValidatorsSelected(_jobId, selected);
+    }
+
+    /// @notice Finalize validator selection using a future blockhash.
+    /// @dev The block number at `requestJobCompletion` is stored and combined
+    ///      with a one-block delay to source randomness from the chain itself.
+    ///      This approach avoids external randomness subscriptions while
+    ///      preventing the requester from knowing the selection in advance.
+    function finalizeValidatorSelection(uint256 _jobId)
+        external
+        whenNotPaused
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (job.validationStart != 0) revert ValidatorsAlreadySelected();
+        uint256 target = job.selectionBlock + RANDOMNESS_DELAY;
+        if (block.number <= target) revert RandomnessNotReady();
+        bytes32 entropy = blockhash(target);
+        if (entropy == bytes32(0)) revert RandomnessNotReady();
+        _selectValidators(_jobId, entropy);
+        job.validationStart = block.timestamp;
     }
 
     /// @notice Commit to a validation vote without revealing it.

@@ -51,6 +51,8 @@ describe("resolveStalledJob quorum", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
 
     return { manager, owner, jobId };
   }

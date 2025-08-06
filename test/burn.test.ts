@@ -60,6 +60,8 @@ describe("burn mechanics", function () {
     const jobId = 0;
     await manager.connect(agent).applyForJob(jobId, "", []);
     await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await ethers.provider.send("evm_mine", []);
+    await manager.finalizeValidatorSelection(jobId);
 
     const burnPct = await manager.burnPercentage();
     const expectedBurn = (payout * burnPct) / 10_000n;
