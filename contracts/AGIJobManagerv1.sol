@@ -280,6 +280,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(uint256 => string) private jobIpfsHash;
     mapping(address => bool) public blacklistedAgents;
     mapping(address => bool) public blacklistedValidators;
+    mapping(address => bool) public acceptedTerms;
     uint256 public totalJobEscrow;
     uint256 public totalValidatorStake;
     uint256 public totalAgentStake;
@@ -378,6 +379,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event AgentBlacklisted(address indexed agent, bool status);
     event ValidatorBlacklisted(address indexed validator, bool status);
+    event TermsAccepted(address indexed user, string ipfsHash);
     /// @notice Emitted when a validator is manually added outside the Merkle allowlist.
     event AdditionalValidatorAdded(address indexed validator);
     /// @notice Emitted when a validator is removed from the additional allowlist or rotating pool.
@@ -622,6 +624,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when payout accounting exceeds escrowed funds.
     error PayoutExceedsEscrow();
+    /// @dev Thrown when a user has not accepted terms of service.
+    error TermsNotAccepted();
 
     constructor(
         address _agiTokenAddress,
@@ -672,12 +676,22 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function unpause() external onlyOwner {
         _unpause();
     }
+    function acceptTerms(string calldata ipfsHash)
+        external
+        whenNotPaused
+        nonReentrant
+    {
+        if (bytes(ipfsHash).length == 0) revert InvalidParameters();
+        acceptedTerms[msg.sender] = true;
+        emit TermsAccepted(msg.sender, ipfsHash);
+    }
     /// Job lifecycle overview:
-    /// 1. Employer calls `createJob`.
-    /// 2. An agent `applyForJob`.
-    /// 3. The agent submits results via `requestJobCompletion`, starting the `reviewWindow`.
-    /// 4. Validators commit and reveal votes.
-    /// 5. After `reviewWindow` elapses, validators call `validateJob` or `disapproveJob`.
+    /// 1. A participant calls `acceptTerms` with the IPFS hash of the terms of service.
+    /// 2. Employer calls `createJob`.
+    /// 3. An agent `applyForJob`.
+    /// 4. The agent submits results via `requestJobCompletion`, starting the `reviewWindow`.
+    /// 5. Validators commit and reveal votes.
+    /// 6. After `reviewWindow` elapses, validators call `validateJob` or `disapproveJob`.
     ///    Sufficient approvals finalize the job; enough disapprovals open a dispute.
     function createJob(string memory _ipfsHash, uint256 _payout, uint256 _duration, string memory _details) external whenNotPaused nonReentrant {
         if (
@@ -707,6 +721,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
+        if (!acceptedTerms[msg.sender]) revert TermsNotAccepted();
         Job storage job = jobs[_jobId];
         if (job.status != JobStatus.Open) revert JobNotOpen();
         if (job.assignedAgent != address(0)) revert InvalidJobState();
@@ -2358,6 +2373,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Validators may top up their stake in multiple transactions; validation
     ///      functions enforce that the total meets `stakeRequirement` before voting.
     function stake(uint256 amount) external whenNotPaused nonReentrant {
+        if (!acceptedTerms[msg.sender]) revert TermsNotAccepted();
         if (amount == 0) revert InvalidAmount();
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         validatorStake[msg.sender] += amount;
@@ -2385,6 +2401,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Deposit $AGI as stake for agents before applying for jobs.
     /// @param amount Quantity of tokens to stake.
     function stakeAgent(uint256 amount) external whenNotPaused nonReentrant {
+        if (!acceptedTerms[msg.sender]) revert TermsNotAccepted();
         if (amount == 0) revert InvalidAmount();
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         agentStake[msg.sender] += amount;

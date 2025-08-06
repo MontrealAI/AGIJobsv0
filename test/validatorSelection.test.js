@@ -26,6 +26,7 @@ async function deployManager() {
   );
   await manager.waitForDeployment();
   await manager.addAdditionalAgent(agent.address);
+  await manager.connect(agent).acceptTerms("ipfs://terms");
   const stakeAmount = ethers.parseEther("100");
   await token.mint(agent.address, stakeAmount);
   await token.connect(agent).approve(await manager.getAddress(), stakeAmount);

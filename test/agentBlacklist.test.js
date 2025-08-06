@@ -37,6 +37,8 @@ async function deployFixture() {
   await manager.setValidatorSlashingPercentage(2000);
   await manager.setAgentSlashingPercentage(0);
 
+  await manager.connect(agent).acceptTerms("ipfs://terms");
+
   const stake = ethers.parseEther("100");
   await token.mint(agent.address, stake);
   await token.connect(agent).approve(await manager.getAddress(), stake);
