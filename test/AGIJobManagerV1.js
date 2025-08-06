@@ -927,6 +927,7 @@ describe("AGIJobManagerV1 payouts", function () {
       revealWindow: 60,
       reviewWin: 120,
       validatorsCount: 1,
+      maxSlashRewardPct: 800,
     };
 
     await expect(
@@ -938,6 +939,7 @@ describe("AGIJobManagerV1 payouts", function () {
           cfg.stakeReq,
           cfg.validatorSlashPct,
           cfg.agentSlashPct,
+          cfg.maxSlashRewardPct,
           cfg.minRep,
           cfg.approvals,
           cfg.disapprovals,
@@ -958,6 +960,7 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.stakeReq,
         cfg.validatorSlashPct,
         cfg.agentSlashPct,
+        cfg.maxSlashRewardPct,
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
@@ -975,6 +978,7 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.stakeReq,
         cfg.validatorSlashPct,
         cfg.agentSlashPct,
+        cfg.maxSlashRewardPct,
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
