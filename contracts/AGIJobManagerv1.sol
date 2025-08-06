@@ -1618,11 +1618,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (agentPayout + validatorPayoutTotal + burnAmount > job.payout)
             revert PayoutExceedsEscrow();
 
-        if (burnAmount > 0) {
-            if (burnAddress == address(0)) revert BurnAddressNotSet();
-            agiToken.safeTransfer(burnAddress, burnAmount);
-        }
-
         uint256 validatorReputationChange =
             calculateValidatorReputationPoints(reputationPoints);
         uint256 correctValidatorCount = job.validatorApprovals;
@@ -1707,6 +1702,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 leftover =
             (validatorPayoutTotal - distributedValidator) +
             (totalSlashed - distributedSlashed);
+
+        if (burnAmount > 0) {
+            if (burnAddress == address(0)) revert BurnAddressNotSet();
+            agiToken.safeTransfer(burnAddress, burnAmount);
+        }
 
         if (correctValidatorCount == 0) {
             if (totalSlashed > 0) {

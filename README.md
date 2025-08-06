@@ -35,7 +35,7 @@ Follow these steps before trusting any address or artifact:
 - Avoid links or addresses from untrusted third parties.
 - Marketplace functions prevent duplicate listings and block sellers from purchasing their own NFTs, reducing accidental misuse.
 - Verify repository integrity (`git tag --verify` / `git log --show-signature`) before relying on published code.
-- Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. Both parameters remain `onlyOwner` configurable.
+- Understand that tokens are burned instantly upon the final validator approval, irreversibly sending `burnPercentage` of escrow to `burnAddress`. The burn occurs only after all internal state updates are complete to follow the checks‑effects‑interactions pattern. Both parameters remain `onlyOwner` configurable.
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
 - Jobs finalize only after the agent calls `requestJobCompletion`; even moderator resolutions in favor of the agent revert otherwise.
 - Escrowed payouts and validator stakes are tracked separately; `withdrawAGI` only permits withdrawing surplus funds not locked for jobs or staking.
