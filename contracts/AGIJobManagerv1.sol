@@ -1473,6 +1473,26 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit ValidatorSelectionSeedUpdated(newSeed);
     }
 
+    /// @notice Update the commit phase duration.
+    /// @param newCommitDuration Length of the commit phase in seconds; must be greater than zero.
+    function setCommitDuration(uint256 newCommitDuration) external onlyOwner {
+        if (newCommitDuration == 0) revert InvalidDuration();
+        if (reviewWindow < newCommitDuration + revealDuration)
+            revert ReviewWindowTooShort();
+        commitDuration = newCommitDuration;
+        emit CommitRevealWindowsUpdated(newCommitDuration, revealDuration);
+    }
+
+    /// @notice Update the reveal phase duration.
+    /// @param newRevealDuration Length of the reveal phase in seconds; must be greater than zero.
+    function setRevealDuration(uint256 newRevealDuration) external onlyOwner {
+        if (newRevealDuration == 0) revert InvalidDuration();
+        if (reviewWindow < commitDuration + newRevealDuration)
+            revert ReviewWindowTooShort();
+        revealDuration = newRevealDuration;
+        emit CommitRevealWindowsUpdated(commitDuration, newRevealDuration);
+    }
+
     /// @notice Update commit and reveal window durations.
     /// @param commitWindow Length of the commit phase in seconds; must be greater than zero.
     /// @param revealWindow Length of the reveal phase in seconds; must be greater than zero.
