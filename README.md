@@ -58,6 +58,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Use `applyForJob` to claim the task (≈1 transaction).
 - After completing the work, call `requestJobCompletion` with a non-empty result reference such as an IPFS hash (≈1 transaction).
 - Monitor the job status until validators approve and funds release.
+- Losing a dispute reduces your reputation and can slash any staked AGI. The `AgentPenalized` event records the penalty.
 
 **Validators**
 - Verify the contract address and ensure you meet the current stake requirement.
@@ -336,7 +337,7 @@ Several operational parameters are adjustable by the owner. Every update emits a
 
 ### Enum-Based Dispute Resolution
 
-Disputes between agents and employers are settled by moderators using a strongly typed `DisputeOutcome` enum with `AgentWin` and `EmployerWin` values. This removes ambiguity from string-based resolutions and simplifies client handling.
+Disputes between agents and employers are settled by moderators using a strongly typed `DisputeOutcome` enum with `AgentWin` and `EmployerWin` values. When an employer prevails, the agent's reputation is reduced and any staked AGI may be slashed, emitting `AgentPenalized`. This removes ambiguity from string-based resolutions and simplifies client handling.
 
 ### Reputation Threshold Gating and Automatic Suspension
 
