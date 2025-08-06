@@ -308,6 +308,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     );
     event ReputationUpdated(address indexed user, uint256 newReputation);
     event JobCancelled(uint256 indexed jobId);
+    event JobTimedOut(
+        uint256 indexed jobId,
+        address indexed employer,
+        JobStatus status
+    );
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -427,8 +432,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when the job's duration has elapsed.
     error JobExpired();
 
+    /// @dev Thrown when an employer attempts to timeout before expiration.
+    error JobNotExpired();
+
     /// @dev Thrown when a job is not in the expected open state.
     error JobNotOpen();
+
+    /// @dev Thrown when an agent tries to submit after a timeout.
+    error JobTimedOutAlready();
 
     /// @dev Thrown when there are insufficient validators available for selection.
     error NotEnoughValidators();
@@ -644,6 +655,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     {
         Job storage job = jobs[_jobId];
         if (msg.sender != job.assignedAgent) revert Unauthorized();
+        if (job.status == JobStatus.Completed) revert JobTimedOutAlready();
         if (block.timestamp > job.assignedAt + job.duration) revert JobExpired();
         if (job.status != JobStatus.Open) revert JobNotOpen();
         if (bytes(_ipfsHash).length == 0) revert InvalidParameters();
@@ -1541,6 +1553,37 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         validatorDisapprovedJobIndex[validator][lastJobId] = indexPlusOne;
         jobsArray.pop();
         delete validatorDisapprovedJobIndex[validator][jobId];
+    }
+
+    /// @notice Allow the employer to reclaim funds if the agent never submits results.
+    /// @param _jobId Identifier of the job to timeout.
+    function timeoutJob(uint256 _jobId)
+        external
+        nonReentrant
+        whenNotPaused
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (msg.sender != job.employer) revert Unauthorized();
+        if (job.status != JobStatus.Open) revert JobNotOpen();
+        if (job.assignedAgent == address(0)) revert InvalidJobState();
+        if (block.timestamp <= job.assignedAt + job.duration) revert JobNotExpired();
+
+        // Clear any selected validators for the job
+        for (uint256 i; i < job.selectedValidators.length; ) {
+            address validator = job.selectedValidators[i];
+            job.isSelectedValidator[validator] = false;
+            unchecked {
+                ++i;
+            }
+        }
+        delete job.selectedValidators;
+
+        job.status = JobStatus.Completed;
+        totalJobEscrow -= job.payout;
+        agiToken.safeTransfer(job.employer, job.payout);
+
+        emit JobTimedOut(_jobId, job.employer, JobStatus.Completed);
     }
 
     function cancelJob(uint256 _jobId)
