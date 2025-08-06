@@ -24,7 +24,7 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 ### Employers
 
 1. Open the **Write Contract** tab and expand `createJob` to post a task with escrowed payout.
-2. Monitor the job; if the agent misses the deadline, call `cancelExpiredJob` to reclaim funds.
+2. Monitor the job; if the agent misses the deadline, anyone can call `cancelExpiredJob` to refund the employer's escrow.
 
 ### Agents
 
@@ -82,7 +82,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Confirm the AGIJobManager contract address on Etherscan, Blockscout, or official channels.
 - From the explorer's **Write** tab or your wallet's contract interface, call `createJob` to post the task and escrow funds (≈1 transaction).
 - Wait for an agent to apply and for validators to finalize; the NFT and remaining payout arrive automatically.
-- Track the job's deadline; if the agent misses it, call `cancelExpiredJob(jobId)` from the contract's Write tab to recover your escrow.
+- Track the job's deadline; if the agent misses it, anyone can call `cancelExpiredJob(jobId)` from the contract's Write tab to return your escrow.
 - Validators reviewing the job are chosen pseudo-randomly for each task, reducing the chance of collusion.
 
 **Agents**
@@ -90,11 +90,11 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Use `applyForJob` to claim the task (≈1 transaction).
 - After completing the work, call `requestJobCompletion` with a non-empty result reference such as an IPFS hash (≈1 transaction).
 - Monitor the job status until validators approve and funds release.
-- Request completion before the deadline or the employer can cancel via `cancelExpiredJob` and recover the escrow.
+- Request completion before the deadline or anyone can cancel via `cancelExpiredJob` to refund the employer's escrow.
 - Losing a dispute reduces your reputation and can slash any staked AGI. The `AgentPenalized` event records the penalty.
 
 **Penalties**
-- Missing a deadline or having a moderator side with the employer via `resolveDispute` can lower your reputation and slash staked AGI if the employer finalizes with `cancelExpiredJob`.
+- Missing a deadline or having a moderator side with the employer via `resolveDispute` can lower your reputation and slash staked AGI if the job is cancelled with `cancelExpiredJob`.
 
 **Validators**
 - Verify the contract address and ensure you meet the current stake requirement.
@@ -111,7 +111,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 **Employers**
 - Post a job and deposit the payout.
 - Wait for an agent to finish and validators to approve.
-- If no completion request arrives before the deadline, call `cancelExpiredJob(jobId)` to reclaim escrow and close the job.
+- If no completion request arrives before the deadline, anyone may call `cancelExpiredJob(jobId)` to refund the employer and close the job.
 - Validators are picked at random for each job, improving fairness.
 - Receive the NFT and any remaining funds.
 - Example: [createJob transaction](https://etherscan.io/tx/0xccd6d21a8148a06e233063f57b286832f3c2ca015ab4d8387a529e3508e8f32e).
@@ -119,7 +119,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 **Agents**
 - Claim an open job.
 - Submit your work with a link or hash.
-- Be sure to request completion before the job duration expires; otherwise the employer can call `cancelExpiredJob` and recover the escrow.
+- Be sure to request completion before the job duration expires; otherwise anyone can call `cancelExpiredJob` to refund the employer's escrow.
 - Missing the deadline or losing a dispute can reduce your reputation and staked AGI.
 - Get paid after validators sign off.
 - Examples: [applyForJob](https://etherscan.io/tx/0x55f8ee0370c9c08a6e871a4184650419b520d4e9666536cbdcf47f4f03917ce2) · [requestJobCompletion](https://etherscan.io/tx/0xd4f85a33a73319c04df3497ebe8f43095bfae6ed8e5acdd6a80d295869e6f809).
@@ -135,13 +135,13 @@ See the [Glossary](docs/glossary.md) for key terminology.
 **Employers**
 - Call [`createJob`](contracts/AGIJobManagerv1.sol#L602) to post a task and escrow the payout.
 - Confirm the contract address and wait for the `JobCreated` event to learn the job ID.
-- If the agent misses the deadline without requesting completion, call [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635) with the job ID to recover escrow.
+- If the agent misses the deadline without requesting completion, anyone may call [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635) with the job ID to refund the employer's escrow.
 - Validators are drawn pseudo-randomly from the pool; the [`ValidatorsSelected`](contracts/AGIJobManagerv1.sol#L303) event shows who was chosen.
 
 **Agents**
 - Use [`applyForJob`](contracts/AGIJobManagerv1.sol#L624) to claim an open job.
 - After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L650) with a non-empty IPFS hash.
-- Submit before the deadline to avoid employer cancelling with [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635).
+- Submit before the deadline to avoid cancellation via [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1635).
 - An employer win via [`resolveDispute`](contracts/AGIJobManagerv1.sol#L927) or a missed deadline can cut your reputation and staked AGI.
 - Verify addresses and watch for `JobApplied` and `JobCompletionRequested` events.
 
