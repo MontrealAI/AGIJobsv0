@@ -150,6 +150,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public validatorSlashingPercentage;
     uint256 public agentSlashingPercentage;
     uint256 public minValidatorReputation;
+    uint256 public minAgentReputation;
     /// @notice Number of validators randomly chosen for each job. Defaults to
     /// three to match the initial approval/disapproval thresholds and avoid
     /// misconfiguration.
@@ -403,6 +404,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event ValidatorSlashingPercentageUpdated(uint256 newPercentage);
     event AgentSlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
+    event MinAgentReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
     event AgentPenalized(
         address indexed agent,
@@ -690,6 +692,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         ) revert Unauthorized();
         if (agentStake[msg.sender] < agentStakeRequirement)
             revert AgentStakeRequired();
+        if (reputation[msg.sender] < minAgentReputation)
+            revert InsufficientReputation();
         job.assignedAgent = msg.sender;
         job.assignedAt = block.timestamp;
         agentActiveJobs[msg.sender] += 1;
@@ -1459,6 +1463,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function setMinValidatorReputation(uint256 minimum) external onlyOwner {
         minValidatorReputation = minimum;
         emit MinValidatorReputationUpdated(minimum);
+    }
+
+    function setMinAgentReputation(uint256 minimum) external onlyOwner {
+        minAgentReputation = minimum;
+        emit MinAgentReputationUpdated(minimum);
     }
 
     function setValidatorsPerJob(uint256 count) external onlyOwner {
