@@ -422,6 +422,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event ValidationRewardPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validator reputation percentage is updated.
     event ValidatorReputationPercentageUpdated(uint256 newPercentage);
+    /// @notice Emitted when payout configuration is atomically updated.
+    event PayoutConfigUpdated(
+        uint256 burnPercentage,
+        uint256 validationRewardPercentage,
+        uint256 cancelRewardPercentage,
+        address indexed burnAddress
+    );
     event ValidatorsPerJobUpdated(uint256 count);
     event ValidatorSelectionSeedUpdated(bytes32 newSeed);
     event StakeDeposited(address indexed validator, uint256 amount);
@@ -1707,6 +1714,30 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         agentAmount = payout - burnAmount - validatorReward;
     }
 
+    /// @notice Preview agent stake requirement and payout distribution together.
+    /// @param payout Total amount escrowed for the job.
+    /// @return requiredStake Minimum stake the agent must provide.
+    /// @return burnAmount Tokens that would be burned.
+    /// @return validatorReward Tokens reserved for correct validators.
+    /// @return agentAmount Tokens paid to the agent upon successful completion.
+    function previewJobParameters(uint256 payout)
+        external
+        view
+        returns (
+            uint256 requiredStake,
+            uint256 burnAmount,
+            uint256 validatorReward,
+            uint256 agentAmount
+        )
+    {
+        requiredStake = computeRequiredAgentStake(payout);
+        burnAmount = (payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
+        validatorReward =
+            (payout * validationRewardPercentage) /
+            PERCENTAGE_DENOMINATOR;
+        agentAmount = payout - burnAmount - validatorReward;
+    }
+
     function _validatePayoutSplits(
         uint256 _burnPercentage,
         uint256 _validationRewardPercentage
@@ -1771,6 +1802,39 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         burnPercentage = newPercentage;
         emit BurnAddressUpdated(newBurnAddress);
         emit BurnPercentageUpdated(newPercentage);
+    }
+
+    /// @notice Atomically update payout parameters for clarity on block explorers.
+    /// @param newBurnAddress Destination for burned tokens.
+    /// @param newBurnPercentage Portion of payout destroyed on completion (basis points).
+    /// @param newValidationRewardPercentage Portion of payout reserved for validators (basis points).
+    /// @param newCancelRewardPercentage Portion of escrow awarded to the caller of `cancelExpiredJob`.
+    function setPayoutConfig(
+        address newBurnAddress,
+        uint256 newBurnPercentage,
+        uint256 newValidationRewardPercentage,
+        uint256 newCancelRewardPercentage
+    ) external onlyOwner {
+        if (newBurnAddress == address(0)) revert InvalidAddress();
+        if (
+            newBurnPercentage > PERCENTAGE_DENOMINATOR ||
+            newValidationRewardPercentage > PERCENTAGE_DENOMINATOR ||
+            newCancelRewardPercentage > MAX_CANCEL_REWARD_PERCENTAGE
+        ) revert InvalidPercentage();
+        _validatePayoutSplits(
+            newBurnPercentage,
+            newValidationRewardPercentage
+        );
+        burnAddress = newBurnAddress;
+        burnPercentage = newBurnPercentage;
+        validationRewardPercentage = newValidationRewardPercentage;
+        cancelRewardPercentage = newCancelRewardPercentage;
+        emit PayoutConfigUpdated(
+            newBurnPercentage,
+            newValidationRewardPercentage,
+            newCancelRewardPercentage,
+            newBurnAddress
+        );
     }
 
     function setSlashedStakeRecipient(address newRecipient) external onlyOwner {

@@ -59,7 +59,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 ### Employers
 
 1. Confirm the AGIJobManager v1 address on [Etherscan](https://etherscan.io/) and a secondary explorer.
-2. In **Read Contract**, look up `reviewWindow()`, `validatorsPerJob()`, and other getters to understand current timing and validation parameters. `previewPayout(payout)` shows how funds would be split between burn, validators, and the agent.
+2. In **Read Contract**, look up `reviewWindow()`, `validatorsPerJob()`, and other getters to understand current timing and validation parameters. `previewJobParameters(payout)` shows the required agent stake and how funds would be split between burn, validators, and the agent.
 3. In **Write Contract**, use `createJob` to post work and escrow funds. Record the `JobCreated` event to obtain the job ID.
 4. Track `JobApplied`, `ValidationCommitted`, and `JobFinalizedAndBurned` events to monitor progress.
 5. If validators reject the work, your escrow is returned minus the burn and validator reward portions.
@@ -67,7 +67,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 ### Agents
 
 1. Verify the contract address and call `acceptTerms` with the IPFS hash of the terms.
-2. Use `getAgentConfig()` in **Read Contract** to inspect staking, slashing, and reputation requirements. `computeRequiredAgentStake(payout)` calculates the exact stake needed for a job payout.
+2. Use `getAgentConfig()` in **Read Contract** to inspect staking, slashing, and reputation requirements. `previewJobParameters(payout)` or `computeRequiredAgentStake(payout)` calculate the exact stake needed for a job payout and show how escrow would be distributed.
 3. Stake via `stakeAgent` if needed, then `applyForJob` with the job ID.
 4. After work is complete, call `requestJobCompletion` with an IPFS hash or URL and watch for `ValidatorsSelected` and `JobFinalizedAndBurned` events.
 
@@ -89,6 +89,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `validationRewardPercentage` | `setValidationRewardPercentage(uint256)` | Payout share awarded to correct validators |
 | `validatorReputationPercentage` | `setValidatorReputationPercentage(uint256)` | Portion of agent reputation granted to correct validators |
 | `cancelRewardPercentage` | `setCancelRewardPercentage(uint256)` | Share of escrow paid to caller when cancelling expired jobs |
+| `payout parameters` | `setPayoutConfig(address,uint256,uint256,uint256)` | Atomically update burn, validator reward, cancel reward and burn address |
 | `slashedStakeRecipient` | `setSlashedStakeRecipient(address)` | Recipient of slashed stake if no validator votes correctly |
 | `stakeRequirement` | `setStakeRequirement(uint256)` | Minimum validator stake |
 | `agentStakeRequirement` | `setAgentStakeRequirement(uint256)` | Minimum agent stake |
