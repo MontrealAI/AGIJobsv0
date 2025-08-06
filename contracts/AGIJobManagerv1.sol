@@ -178,10 +178,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         0x000000000000000000000000000000000000dEaD;
     /// @notice Default portion of a job's payout to burn (5% = 500 basis points).
     uint256 public constant BURN_PERCENTAGE = 500;
+    /// @notice Maximum portion of escrow rewarded for cancelling an expired job (10% = 1000 bps).
+    uint256 public constant MAX_CANCEL_REWARD_PERCENTAGE = 1000;
     /// @notice Destination for burned tokens. Owner may update if needed.
     address public burnAddress = BURN_ADDRESS;
     /// @notice Portion of a job's payout (in basis points) to destroy on completion.
     uint256 public burnPercentage = BURN_PERCENTAGE;
+    /// @notice Portion of escrow awarded to the caller of `cancelExpiredJob`.
+    uint256 public cancelRewardPercentage = 100; // 1%
     /// @notice Recipient of slashed validator stakes when no correct votes exist.
     address public slashedStakeRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
@@ -381,6 +385,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event SlashedStakeRecipientUpdated(address indexed newRecipient);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
+    /// @notice Emitted when the cancel reward percentage is updated.
+    event CancelRewardPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validation reward percentage is updated.
     event ValidationRewardPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validator reputation percentage is updated.
@@ -1388,6 +1394,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit BurnAddressUpdated(newBurnAddress);
     }
 
+    /// @notice Update the reward percentage granted to the caller of `cancelExpiredJob`.
+    /// @param newPercentage Portion of escrow awarded for cancelling an expired job in basis points.
+    function setCancelRewardPercentage(uint256 newPercentage) external onlyOwner {
+        if (newPercentage > MAX_CANCEL_REWARD_PERCENTAGE) revert InvalidPercentage();
+        cancelRewardPercentage = newPercentage;
+        emit CancelRewardPercentageUpdated(newPercentage);
+    }
+
     /// @notice Atomically update burn address and percentage.
     /// @param newBurnAddress Destination for burned tokens.
     /// @param newPercentage Portion of payout (in basis points) to burn.
@@ -1760,7 +1774,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
         emit AgentPenalized(agent, reputationPenalty, agentSlashAmount);
-        agiToken.safeTransfer(job.employer, job.payout);
+        uint256 reward =
+            (job.payout * cancelRewardPercentage) / PERCENTAGE_DENOMINATOR;
+        uint256 refund = job.payout - reward;
+        if (reward > 0) {
+            agiToken.safeTransfer(msg.sender, reward);
+        }
+        agiToken.safeTransfer(job.employer, refund);
         emit JobExpired(_jobId, job.employer, msg.sender, JobStatus.Cancelled);
     }
 
