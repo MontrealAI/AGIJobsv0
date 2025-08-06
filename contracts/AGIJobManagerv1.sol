@@ -311,6 +311,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 payoutToAgent,
         uint256 tokensBurned
     );
+    event StaleJobFinalized(uint256 indexed jobId, bool agentPaid);
     event ReputationUpdated(address indexed user, uint256 newReputation);
     event JobExpired(
         uint256 indexed jobId,
@@ -572,6 +573,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when payout accounting exceeds escrowed funds.
     error PayoutExceedsEscrow();
+
+    /// @dev Thrown when finalizing a job before the stale period expires.
+    error StaleReviewWindowActive();
+
+    /// @dev Thrown when validation thresholds have already been met.
+    error ThresholdsMet();
 
     constructor(
         address _agiTokenAddress,
@@ -946,6 +953,34 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             _resolveEmployerWin(_jobId);
         }
         emit DisputeResolved(_jobId, msg.sender, outcome);
+    }
+
+    function finalizeStaleJob(uint256 _jobId)
+        external
+        nonReentrant
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (msg.sender != job.employer) revert Unauthorized();
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (
+            job.validatorApprovals >= requiredValidatorApprovals ||
+            job.validatorDisapprovals >= requiredValidatorDisapprovals
+        ) revert ThresholdsMet();
+        if (
+            block.timestamp <=
+            job.completionRequestedAt + reviewWindow + revealDuration
+        ) revert StaleReviewWindowActive();
+        bool agentWins =
+            job.validatorApprovals > job.validatorDisapprovals &&
+            job.validatorApprovals > 0;
+        if (agentWins) {
+            job.status = JobStatus.Disputed;
+            _finalizeJobAndBurn(_jobId);
+        } else {
+            _resolveEmployerWin(_jobId);
+        }
+        emit StaleJobFinalized(_jobId, agentWins);
     }
 
     function _resolveEmployerWin(uint256 _jobId) internal {
