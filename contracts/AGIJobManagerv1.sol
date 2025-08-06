@@ -446,11 +446,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         bool committed,
         bool revealed
     );
-    event ValidatorRewardReduced(
-        uint256 indexed jobId,
-        uint256 availableSlashed,
-        uint256 expectedReward
-    );
     event ValidatorConfigUpdated(
         uint256 rewardPercentage,
         uint256 reputationPercentage,
@@ -1071,9 +1066,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         Job storage job = jobs[_jobId];
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
-        uint256 validatorPayoutTotal =
-            (job.payout * validationRewardPercentage) /
-            PERCENTAGE_DENOMINATOR;
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints =
             calculateReputationPoints(job.payout, completionTime);
@@ -1122,16 +1114,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         );
 
         if (correctValidatorCount > 0) {
-            uint256 rewardCap = validatorPayoutTotal;
-            if (totalSlashed < rewardCap) {
-                rewardCap = totalSlashed;
-                emit ValidatorRewardReduced(
-                    _jobId,
-                    totalSlashed,
-                    validatorPayoutTotal
-                );
-            }
-            uint256 rewardPerValidator = rewardCap / correctValidatorCount;
+            uint256 rewardPerValidator = totalSlashed / correctValidatorCount;
             uint256 distributed = rewardPerValidator * correctValidatorCount;
             uint256 leftover = totalSlashed - distributed;
             for (uint256 i; i < correctValidatorCount; ) {

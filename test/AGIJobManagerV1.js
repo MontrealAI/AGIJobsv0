@@ -887,12 +887,8 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator2).disapproveJob(jobId, "", []);
 
     await manager.addModerator(owner.address);
-    const validatorPayoutTotal = (payout * 800n) / 10000n;
     const slashAmount = (stakeAmount * 5000n) / 10000n;
-    await expect(manager.resolveDispute(jobId, 1))
-      .to.emit(manager, "ValidatorRewardReduced")
-      .withArgs(jobId, slashAmount, validatorPayoutTotal);
-
+    await manager.resolveDispute(jobId, 1);
     expect(await token.balanceOf(validator2.address)).to.equal(slashAmount);
     expect(await token.balanceOf(employer.address)).to.equal(payout);
     await expect(
