@@ -114,6 +114,12 @@ describe("AGIJobManagerV1 payouts", function () {
       .withArgs(10);
   });
 
+  it("allows owner to update max reputation", async function () {
+    const { manager } = await deployFixture();
+    await manager.setMaxReputation(50000);
+    expect(await manager.maxReputation()).to.equal(50000);
+  });
+
   it("reverts when agent reputation is below minimum", async function () {
     const { token, manager, employer, agent } = await deployFixture();
     const payout = ethers.parseEther("1");

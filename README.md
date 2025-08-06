@@ -109,6 +109,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `requiredValidatorApprovals` | `setRequiredValidatorApprovals(uint256)` | Approvals needed to finalize |
 | `requiredValidatorDisapprovals` | `setRequiredValidatorDisapprovals(uint256)` | Disapprovals needed to reject |
 | `premiumReputationThreshold` | `setPremiumReputationThreshold(uint256)` | Reputation needed for premium tier |
+| `maxReputation` | `setMaxReputation(uint256)` | Upper bound on reputation |
 | `maxJobPayout` | `setMaxJobPayout(uint256)` | Maximum allowed job payout |
 | `jobDurationLimit` | `setJobDurationLimit(uint256)` | Maximum job duration |
 | `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
