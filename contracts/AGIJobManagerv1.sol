@@ -289,7 +289,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public totalJobEscrow;
     uint256 public totalValidatorStake;
     uint256 public totalAgentStake;
-    uint256 public constant MAX_AGI_TYPES = 50; // limits AGI type iterations
+    uint256 public maxAGITypes = 50; // limits AGI type iterations
     AGIType[] public agiTypes;
 
     event JobCreated(
@@ -378,6 +378,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event RecoveryInitiated(string reason);
     event AGITypeUpdated(address indexed nftAddress, uint256 payoutPercentage);
     event AGITypeRemoved(address indexed nftAddress);
+    event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event NFTIssued(uint256 indexed tokenId, address indexed employer, string tokenURI);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
@@ -2738,6 +2739,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit RewardPoolContribution(msg.sender, amount);
     }
 
+    /// @notice Update the maximum number of AGI NFT types tracked.
+    /// @param newMax New maximum number of AGI types.
+    function setMaxAGITypes(uint256 newMax) external onlyOwner {
+        if (newMax == 0 || newMax < agiTypes.length) revert InvalidParameters();
+        uint256 oldMax = maxAGITypes;
+        maxAGITypes = newMax;
+        emit MaxAGITypesUpdated(oldMax, newMax);
+    }
+
     /// @notice Register or update an AGI NFT type that grants bonus payouts.
     /// @param nftAddress Address of the qualifying NFT collection.
     /// @param payoutPercentage Bonus percentage in basis points applied to job payouts for holders of the NFT.
@@ -2759,7 +2769,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
         if (!exists) {
-            if (length >= MAX_AGI_TYPES) {
+            if (length >= maxAGITypes) {
                 revert MaxAGITypesReached();
             }
             agiTypes.push(AGIType({ nftAddress: nftAddress, payoutPercentage: payoutPercentage }));
