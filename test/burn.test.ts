@@ -39,6 +39,8 @@ async function deployFixture() {
   await manager.addAdditionalAgent(agent.address);
   await manager.addAdditionalValidator(validator.address);
   await manager.setValidatorsPerJob(1);
+  await manager.connect(agent).acceptTerms("ipfs://terms");
+  await manager.connect(validator).acceptTerms("ipfs://terms");
   const stakeAmount = ethers.parseEther("100");
   await token.mint(agent.address, stakeAmount);
   await token.connect(agent).approve(await manager.getAddress(), stakeAmount);

@@ -43,6 +43,8 @@ describe("resolveStalledJob quorum", function () {
 
     await manager.addAdditionalAgent(agent.address);
     await manager.addAdditionalValidator(validator.address);
+    await manager.connect(agent).acceptTerms("ipfs://terms");
+    await manager.connect(validator).acceptTerms("ipfs://terms");
 
     const payout = ethers.parseEther("1");
     await token.connect(employer).approve(await manager.getAddress(), payout);

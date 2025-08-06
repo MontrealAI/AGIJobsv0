@@ -29,15 +29,17 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 ### Agents
 
 1. Connect your wallet on the same page.
-2. Ensure your reputation meets `minAgentReputation`, then use `applyForJob` with the job ID.
-3. After finishing work, call `requestJobCompletion` with an IPFS hash or URL.
+2. Call `acceptTerms` with the IPFS hash of the terms of service.
+3. Ensure your reputation meets `minAgentReputation`, then use `applyForJob` with the job ID.
+4. After finishing work, call `requestJobCompletion` with an IPFS hash or URL.
 
 ### Validators
 
-1. Deposit stake through `stake` to join the pool.
-2. View the current validator roster via `getValidatorPool` in the **Read Contract** tab.
-3. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
-4. Finalize with `validateJob` or `disapproveJob`.
+1. Call `acceptTerms` with the IPFS hash of the terms of service.
+2. Deposit stake through `stake` to join the pool.
+3. View the current validator roster via `getValidatorPool` in the **Read Contract** tab.
+4. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
+5. Finalize with `validateJob` or `disapproveJob`.
 
 #### Example Write Functions
 
@@ -112,6 +114,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Validators reviewing the job are selected pseudo-randomly using recent block data mixed with an owner-provided seed. This provides reasonable variability but is not tamper-proof; high-value deployments should integrate a verifiable randomness source such as a VRF oracle, which the project may adopt in a future upgrade.
 **Agents**
 - Double-check the contract address before interacting.
+- Call `acceptTerms` with the IPFS hash of the terms of service before staking or applying.
 - Stake at least `max(agentStakeRequirement, payout * agentStakePercentage / 10_000)` via `stakeAgent` and maintain `minAgentReputation` before applying. Check the thresholds with `agentStakeRequirement()`, `agentStakePercentage()`, and `minAgentReputation()` and verify your balance with `agentStake(address)` in the contract's **Read** tab.
 - Use `applyForJob` to claim the task (≈1 transaction).
 - After completing the work, call `requestJobCompletion` with a non-empty result reference such as an IPFS hash (≈1 transaction).
@@ -127,6 +130,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 
 **Validators**
 - Verify the contract address and ensure you meet the current stake requirement.
+- Call `acceptTerms` with the IPFS hash of the terms of service before staking.
 - Stake AGI with `stake` to join the validator pool (≈1 transaction).
 - Validators are chosen via on-chain pseudo-randomness mixed with an owner-provided seed. This makes reviews hard to predict but is not fully tamper-proof; later versions may integrate a verifiable randomness function (VRF).
 - When selected, submit `commitValidation` during the commit phase (≈1 transaction) and later `revealValidation` in the reveal phase (≈1 transaction).
@@ -165,6 +169,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - Receive the NFT and any remaining funds.
 - Example: [createJob transaction](https://etherscan.io/tx/0xccd6d21a8148a06e233063f57b286832f3c2ca015ab4d8387a529e3508e8f32e).
 **Agents**
+- Call `acceptTerms` with the IPFS hash of the terms of service.
 - Stake the required AGI with `stakeAgent` and ensure your reputation meets `minAgentReputation` before claiming an open job. Verify your balance with `agentStake(address)` and check the thresholds via `agentStakeRequirement()`, `agentStakePercentage()`, and `minAgentReputation()`.
 - Submit your work with a link or hash.
 - Be sure to request completion before the job duration expires; otherwise anyone can call `cancelExpiredJob` to refund the employer and claim the caller reward, so track your deadline closely.
@@ -173,6 +178,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - Examples: [applyForJob](https://etherscan.io/tx/0x55f8ee0370c9c08a6e871a4184650419b520d4e9666536cbdcf47f4f03917ce2) · [requestJobCompletion](https://etherscan.io/tx/0xd4f85a33a73319c04df3497ebe8f43095bfae6ed8e5acdd6a80d295869e6f809).
 
 **Validators**
+- Call `acceptTerms` with the IPFS hash of the terms of service.
 - Stake AGI to join the pool.
 - Validator selection uses on-chain pseudo-randomness with owner-provided entropy, so miners and participants cannot easily predict who will review a job. This mechanism may be upgraded to a verifiable randomness function (VRF) for tamper-resistant selection.
 - Submit a hashed vote during the commit phase and reveal it later.
@@ -189,6 +195,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - After commit and reveal phases conclude, a `resolveGracePeriod` starts. If no validator finalizes the job within this period, anyone can call [`resolveStalledJob`](contracts/AGIJobManagerv1.sol#L989) to settle based on majority votes. The function requires a quorum of `validatorsPerJob`; lacking that, it emits `JobQuorumNotMet` and marks the job disputed. When quorum is met but votes tie, it emits `JobTie` and also moves the job to `Disputed`; monitor jobs for this timeout.
 
 **Agents**
+- Call [`acceptTerms`](contracts/AGIJobManagerv1.sol#L689) with the IPFS hash of the terms of service.
 - Stake AGI with [`stakeAgent`](contracts/AGIJobManagerv1.sol#L2088) to meet the greater of `agentStakeRequirement` or `payout * agentStakePercentage / 10_000` and ensure your reputation meets `minAgentReputation`, then use [`applyForJob`](contracts/AGIJobManagerv1.sol#L665) to claim an open job. Use the contract's **Read** tab to check `agentStakeRequirement()`, `agentStakePercentage()`, `minAgentReputation()`, and your current stake with `agentStake(address)`.
 - After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L694) with a non-empty IPFS hash.
 - Submit before the deadline to avoid cancellation via [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1709); deadlines are enforced and anyone can cancel once they pass, earning a small reward.
@@ -196,6 +203,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - Verify addresses and watch for `JobApplied` and `JobCompletionRequested` events.
 
 - **Validators**
+- Call [`acceptTerms`](contracts/AGIJobManagerv1.sol#L689) with the IPFS hash of the terms of service.
 - Deposit stake with [`stake`](contracts/AGIJobManagerv1.sol#L2061); confirm via the `StakeDeposited` event.
 - Validator selection uses on-chain pseudo-randomness, skipping blacklisted or underqualified addresses and reverting if fewer than `validatorsPerJob` meet `stakeRequirement` and `minValidatorReputation`. Future releases may swap this for a verifiable randomness function (VRF) to harden selection against manipulation.
 - During the commit window, [`commitValidation`](contracts/AGIJobManagerv1.sol#L775) with your vote commitment.
