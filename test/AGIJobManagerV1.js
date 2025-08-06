@@ -749,7 +749,8 @@ describe("AGIJobManagerV1 payouts", function () {
 
   it("penalizes validators who fail to commit or reveal", async function () {
     const { token, manager, employer, agent, validator, validator2, validator3 } = await deployFixture();
-    await manager.setSlashingPercentage(5000);
+    await manager.setValidatorSlashingPercentage(5000);
+    await manager.setAgentSlashingPercentage(5000);
     const payout = ethers.parseEther("100");
     await token.connect(employer).approve(await manager.getAddress(), payout);
     await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
@@ -800,7 +801,8 @@ describe("AGIJobManagerV1 payouts", function () {
 
     await manager.setRequiredValidatorApprovals(2);
     await manager.setRequiredValidatorDisapprovals(1);
-    await manager.setSlashingPercentage(5000);
+    await manager.setValidatorSlashingPercentage(5000);
+    await manager.setAgentSlashingPercentage(5000);
 
     const payout = ethers.parseEther("1000");
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -872,7 +874,8 @@ describe("AGIJobManagerV1 payouts", function () {
       rewardPct: 500,
       repPct: 123,
       stakeReq: 123n,
-      slashPct: 250,
+      validatorSlashPct: 250,
+      agentSlashPct: 250,
       minRep: 42n,
       approvals: 1,
       disapprovals: 1,
@@ -890,7 +893,8 @@ describe("AGIJobManagerV1 payouts", function () {
           cfg.rewardPct,
           cfg.repPct,
           cfg.stakeReq,
-          cfg.slashPct,
+          cfg.validatorSlashPct,
+          cfg.agentSlashPct,
           cfg.minRep,
           cfg.approvals,
           cfg.disapprovals,
@@ -909,7 +913,8 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.rewardPct,
         cfg.repPct,
         cfg.stakeReq,
-        cfg.slashPct,
+        cfg.validatorSlashPct,
+        cfg.agentSlashPct,
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
@@ -925,7 +930,8 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.rewardPct,
         cfg.repPct,
         cfg.stakeReq,
-        cfg.slashPct,
+        cfg.validatorSlashPct,
+        cfg.agentSlashPct,
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
@@ -939,7 +945,12 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(await manager.validationRewardPercentage()).to.equal(cfg.rewardPct);
     expect(await manager.validatorReputationPercentage()).to.equal(cfg.repPct);
     expect(await manager.stakeRequirement()).to.equal(cfg.stakeReq);
-    expect(await manager.slashingPercentage()).to.equal(cfg.slashPct);
+    expect(await manager.validatorSlashingPercentage()).to.equal(
+      cfg.validatorSlashPct
+    );
+    expect(await manager.agentSlashingPercentage()).to.equal(
+      cfg.agentSlashPct
+    );
     expect(await manager.minValidatorReputation()).to.equal(cfg.minRep);
     expect(await manager.requiredValidatorApprovals()).to.equal(cfg.approvals);
     expect(await manager.requiredValidatorDisapprovals()).to.equal(
@@ -1055,7 +1066,8 @@ describe("AGIJobManagerV1 payouts", function () {
     const { token, manager, owner, employer, agent, validator } = await deployFixture(1000, false, false);
     await manager.setRequiredValidatorApprovals(1);
     await manager.setRequiredValidatorDisapprovals(1);
-    await manager.setSlashingPercentage(5000);
+    await manager.setValidatorSlashingPercentage(5000);
+    await manager.setAgentSlashingPercentage(5000);
     const stakeAmount = ethers.parseEther("100");
     await token.mint(agent.address, stakeAmount);
     await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
