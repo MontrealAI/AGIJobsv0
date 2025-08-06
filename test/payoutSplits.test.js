@@ -104,17 +104,20 @@ describe("payout split validation", function () {
     expect(initial.burnPct).to.equal(500n);
     expect(initial.validationRewardPct).to.equal(800n);
     expect(initial.cancelRewardPct).to.equal(100n);
+    expect(initial.resolveRewardPct).to.equal(100n);
     expect(initial.burnAddr).to.equal(await manager.BURN_ADDRESS());
 
     const newBurnAddr = ethers.Wallet.createRandom().address;
     await manager.setBurnConfig(newBurnAddr, 1000);
     await manager.setValidationRewardPercentage(700);
     await manager.setCancelRewardPercentage(200);
+    await manager.setResolveRewardPercentage(300);
 
     const updated = await manager.getPayoutConfig();
     expect(updated.burnPct).to.equal(1000n);
     expect(updated.validationRewardPct).to.equal(700n);
     expect(updated.cancelRewardPct).to.equal(200n);
+    expect(updated.resolveRewardPct).to.equal(300n);
     expect(updated.burnAddr).to.equal(newBurnAddr);
   });
 });
