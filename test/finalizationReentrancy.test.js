@@ -42,6 +42,11 @@ async function deployFixture() {
   await manager.addModerator(moderator.address);
   await manager.addModerator(await token.getAddress());
 
+  const stakeAmount = ethers.parseEther("100");
+  await token.mint(agent.address, stakeAmount);
+  await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+  await manager.connect(agent).stakeAgent(stakeAmount);
+
   return { token, manager, owner, employer, agent, validator, moderator };
 }
 

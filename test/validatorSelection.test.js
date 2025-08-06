@@ -26,6 +26,10 @@ async function deployManager() {
   );
   await manager.waitForDeployment();
   await manager.addAdditionalAgent(agent.address);
+  const stakeAmount = ethers.parseEther("100");
+  await token.mint(agent.address, stakeAmount);
+  await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+  await manager.connect(agent).stakeAgent(stakeAmount);
   return { token, manager, employer, agent };
 }
 

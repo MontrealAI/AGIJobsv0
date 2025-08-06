@@ -249,6 +249,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(address => uint256) public reputation;
     mapping(address => uint256) public validatorStake;
     mapping(address => uint256) public agentStake;
+    mapping(address => uint256) public agentActiveJobs;
     mapping(address => uint256) public pendingCommits;
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
@@ -382,6 +383,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event ValidatorsPerJobUpdated(uint256 count);
     event StakeDeposited(address indexed validator, uint256 amount);
     event StakeWithdrawn(address indexed validator, uint256 amount);
+    event AgentStakeDeposited(address indexed agent, uint256 amount);
+    event AgentStakeWithdrawn(address indexed agent, uint256 amount);
     event AGIWithdrawn(address indexed owner, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
     event SlashingPercentageUpdated(uint256 newPercentage);
@@ -467,6 +470,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when a validator's stake is below the required minimum.
     error InsufficientStake();
+
+    /// @dev Thrown when an agent has not staked the required amount.
+    error AgentStakeRequired();
 
     /// @dev Thrown when a validator's reputation is below the threshold.
     error InsufficientReputation();
@@ -663,8 +669,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             ) ||
             blacklistedAgents[msg.sender]
         ) revert Unauthorized();
+        if (agentStake[msg.sender] == 0) revert AgentStakeRequired();
         job.assignedAgent = msg.sender;
         job.assignedAt = block.timestamp;
+        agentActiveJobs[msg.sender] += 1;
         emit JobApplied(_jobId, msg.sender);
     }
 
@@ -942,6 +950,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function _resolveEmployerWin(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
+        if (agentStake[job.assignedAgent] == 0) revert AgentStakeRequired();
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
         uint256 validatorPayoutTotal =
@@ -966,6 +975,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                     agentSlashAmount
                 );
             }
+        }
+        if (agentActiveJobs[job.assignedAgent] > 0) {
+            agentActiveJobs[job.assignedAgent] -= 1;
         }
         emit AgentPenalized(
             job.assignedAgent,
@@ -1633,6 +1645,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             revert JobNotExpired();
         job.status = JobStatus.Cancelled;
         totalJobEscrow -= job.payout;
+        if (agentActiveJobs[job.assignedAgent] > 0) {
+            agentActiveJobs[job.assignedAgent] -= 1;
+        }
         agiToken.safeTransfer(job.employer, job.payout);
         emit JobExpired(_jobId, job.employer, JobStatus.Cancelled);
     }
@@ -1654,6 +1669,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         ) revert JobNotValidated();
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
+        if (agentActiveJobs[job.assignedAgent] > 0) {
+            agentActiveJobs[job.assignedAgent] -= 1;
+        }
         uint256 completionTime = block.timestamp - job.assignedAt;
         uint256 reputationPoints = calculateReputationPoints(job.payout, completionTime);
         enforceReputationGrowth(job.assignedAgent, reputationPoints);
@@ -2042,11 +2060,32 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit StakeWithdrawn(msg.sender, amount);
     }
 
+    /// @notice Deposit $AGI as stake for agents before applying for jobs.
+    /// @param amount Quantity of tokens to stake.
+    function stakeAgent(uint256 amount) external whenNotPaused nonReentrant {
+        if (amount == 0) revert InvalidAmount();
+        agiToken.safeTransferFrom(msg.sender, address(this), amount);
+        agentStake[msg.sender] += amount;
+        totalAgentStake += amount;
+        emit AgentStakeDeposited(msg.sender, amount);
+    }
+
+    /// @notice Withdraw staked $AGI for agents.
+    /// @param amount Quantity of tokens to withdraw.
+    function withdrawAgentStake(uint256 amount) external nonReentrant {
+        if (amount == 0 || amount > agentStake[msg.sender]) revert InvalidAmount();
+        if (agentActiveJobs[msg.sender] != 0) revert PendingOrDisputedJob();
+        agentStake[msg.sender] -= amount;
+        totalAgentStake -= amount;
+        agiToken.safeTransfer(msg.sender, amount);
+        emit AgentStakeWithdrawn(msg.sender, amount);
+    }
+
     /// @notice Withdraw AGI tokens held by the contract.
     /// @param amount Amount of AGI to withdraw.
     function withdrawAGI(uint256 amount) external onlyOwner nonReentrant {
         uint256 balance = agiToken.balanceOf(address(this));
-        uint256 locked = totalJobEscrow + totalValidatorStake;
+        uint256 locked = totalJobEscrow + totalValidatorStake + totalAgentStake;
         if (amount == 0 || balance <= locked || amount > balance - locked)
             revert InvalidAmount();
         agiToken.safeTransfer(msg.sender, amount);
