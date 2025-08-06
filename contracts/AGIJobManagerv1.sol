@@ -461,6 +461,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 reviewWindow,
         uint256 validatorsPerJob
     );
+    event AgentConfigUpdated(
+        uint256 stakeRequirement,
+        uint256 stakePercentage,
+        uint256 slashingPercentage,
+        uint256 minReputation,
+        uint256 blacklistThreshold
+    );
 
     /// @dev Thrown when an AGI type is added with invalid parameters.
     error InvalidAGITypeParameters();
@@ -732,11 +739,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             ) ||
             blacklistedAgents[msg.sender]
         ) revert Unauthorized();
-        uint256 requiredStake = agentStakeRequirement;
-        uint256 percentageStake =
-            (job.payout * agentStakePercentage) /
-            PERCENTAGE_DENOMINATOR;
-        if (percentageStake > requiredStake) requiredStake = percentageStake;
+        uint256 requiredStake = computeRequiredAgentStake(job.payout);
         if (agentStake[msg.sender] < requiredStake)
             revert AgentStakeRequired();
         if (reputation[msg.sender] < minAgentReputation)
@@ -1555,6 +1558,67 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         );
     }
 
+    /// @notice Retrieve agent incentive parameters in a single call.
+    /// @dev Exposes staking and reputation settings for non-technical users.
+    /// @return stakeReq Minimum fixed stake required from agents.
+    /// @return stakePct Portion of payout required as agent stake (basis points).
+    /// @return slashPct Portion of agent stake slashed on failure (basis points).
+    /// @return minRep Minimum reputation an agent must maintain.
+    /// @return blacklistThresh Penalties before automatic blacklisting.
+    function getAgentConfig()
+        external
+        view
+        returns (
+            uint256 stakeReq,
+            uint256 stakePct,
+            uint256 slashPct,
+            uint256 minRep,
+            uint256 blacklistThresh
+        )
+    {
+        return (
+            agentStakeRequirement,
+            agentStakePercentage,
+            agentSlashingPercentage,
+            minAgentReputation,
+            agentBlacklistThreshold
+        );
+    }
+
+    /// @notice Calculate the stake an agent must maintain for a job payout.
+    /// @param payout Proposed job payout.
+    /// @return requiredStake Minimum stake the agent must lock.
+    function computeRequiredAgentStake(uint256 payout)
+        public
+        view
+        returns (uint256 requiredStake)
+    {
+        requiredStake = agentStakeRequirement;
+        uint256 percentageStake =
+            (payout * agentStakePercentage) / PERCENTAGE_DENOMINATOR;
+        if (percentageStake > requiredStake) requiredStake = percentageStake;
+    }
+
+    /// @notice Preview how a job payout would be split under current settings.
+    /// @param payout Total amount escrowed for the job.
+    /// @return burnAmount Tokens that would be burned.
+    /// @return validatorReward Tokens reserved for correct validators.
+    /// @return agentAmount Tokens paid to the agent upon successful completion.
+    function previewPayout(uint256 payout)
+        external
+        view
+        returns (
+            uint256 burnAmount,
+            uint256 validatorReward,
+            uint256 agentAmount
+        )
+    {
+        burnAmount = (payout * burnPercentage) / PERCENTAGE_DENOMINATOR;
+        validatorReward =
+            (payout * validationRewardPercentage) / PERCENTAGE_DENOMINATOR;
+        agentAmount = payout - burnAmount - validatorReward;
+    }
+
     function _validatePayoutSplits(
         uint256 _burnPercentage,
         uint256 _validationRewardPercentage
@@ -1857,6 +1921,29 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             reviewWin,
             validatorsCount
         );
+    }
+
+    /// @notice Atomically update agent incentive parameters.
+    /// @param stakeReq Minimum fixed stake required to apply for jobs (0 disables staking).
+    /// @param stakePct Portion of job payout agents must stake (basis points).
+    /// @param slashPct Portion of agent stake slashed on failure (basis points).
+    /// @param minRep Minimum reputation required to apply for jobs.
+    /// @param blacklistThresh Penalties before an agent is automatically blacklisted.
+    function setAgentConfig(
+        uint256 stakeReq,
+        uint256 stakePct,
+        uint256 slashPct,
+        uint256 minRep,
+        uint256 blacklistThresh
+    ) external onlyOwner {
+        if (stakePct > PERCENTAGE_DENOMINATOR || slashPct > PERCENTAGE_DENOMINATOR)
+            revert InvalidPercentage();
+        agentStakeRequirement = stakeReq;
+        agentStakePercentage = stakePct;
+        agentSlashingPercentage = slashPct;
+        minAgentReputation = minRep;
+        agentBlacklistThreshold = blacklistThresh;
+        emit AgentConfigUpdated(stakeReq, stakePct, slashPct, minRep, blacklistThresh);
     }
 
     function calculateReputationPoints(uint256 _payout, uint256 _duration) internal pure returns (uint256) {

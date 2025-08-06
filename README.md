@@ -57,7 +57,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 ### Employers
 
 1. Confirm the AGIJobManager v1 address on [Etherscan](https://etherscan.io/) and a secondary explorer.
-2. In **Read Contract**, look up `reviewWindow()`, `validatorsPerJob()`, and other getters to understand current timing and validation parameters.
+2. In **Read Contract**, look up `reviewWindow()`, `validatorsPerJob()`, and other getters to understand current timing and validation parameters. `previewPayout(payout)` shows how funds would be split between burn, validators, and the agent.
 3. In **Write Contract**, use `createJob` to post work and escrow funds. Record the `JobCreated` event to obtain the job ID.
 4. Track `JobApplied`, `ValidationCommitted`, and `JobFinalizedAndBurned` events to monitor progress.
 5. If validators reject the work, your escrow is returned minus the burn and validator reward portions.
@@ -65,7 +65,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 ### Agents
 
 1. Verify the contract address and call `acceptTerms` with the IPFS hash of the terms.
-2. Check `agentStakeRequirement()`, `agentStakePercentage()`, and `minAgentReputation()` in the **Read Contract** tab to ensure eligibility.
+2. Use `getAgentConfig()` in **Read Contract** to inspect staking, slashing, and reputation requirements. `computeRequiredAgentStake(payout)` calculates the exact stake needed for a job payout.
 3. Stake via `stakeAgent` if needed, then `applyForJob` with the job ID.
 4. After work is complete, call `requestJobCompletion` with an IPFS hash or URL and watch for `ValidatorsSelected` and `JobFinalizedAndBurned` events.
 
@@ -95,6 +95,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `agentSlashingPercentage` | `setAgentSlashingPercentage(uint256)` | Stake slashed from agents on failure or dispute |
 | `minValidatorReputation` | `setMinValidatorReputation(uint256)` | Minimum validator reputation |
 | `minAgentReputation` | `setMinAgentReputation(uint256)` | Minimum agent reputation |
+| `agent parameters` | `setAgentConfig(uint256,uint256,uint256,uint256,uint256)` | Update all agent incentive settings in one call |
 | `validatorsPerJob` | `setValidatorsPerJob(uint256)` | Number of validators drawn per job |
 | `validatorSelectionSeed` | `setValidatorSelectionSeed(bytes32)` | Extra entropy for validator selection |
 | `commitDuration` | `setCommitDuration(uint256)` | Length of commit phase (seconds) |
