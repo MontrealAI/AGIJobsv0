@@ -143,6 +143,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public premiumReputationThreshold = 10000;
     uint256 public validationRewardPercentage = 800;
     uint256 public validatorReputationPercentage = 800;
+    /// @notice Maximum portion of a job's payout (in basis points) that can be
+    /// redistributed from slashed stakes to correct validators.
+    uint256 public maxSlashedRewardPercentage = 800;
     uint256 public maxJobPayout = 4888e18;
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
@@ -431,6 +434,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AgentStakePercentageUpdated(uint256 newPercentage);
     event ValidatorSlashingPercentageUpdated(uint256 newPercentage);
     event AgentSlashingPercentageUpdated(uint256 newPercentage);
+    event MaxSlashedRewardPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event MinAgentReputationUpdated(uint256 newMinimum);
     event AgentBlacklistThresholdUpdated(uint256 newThreshold);
@@ -453,6 +457,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 stakeRequirement,
         uint256 validatorSlashingPercentage,
         uint256 agentSlashingPercentage,
+        uint256 maxSlashRewardPercentage,
         uint256 minValidatorReputation,
         uint256 requiredApprovals,
         uint256 requiredDisapprovals,
@@ -1148,7 +1153,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
             }
         } else {
-            uint256 totalReward = validatorPayoutTotal + totalSlashed;
+            uint256 slashCap =
+                (job.payout * maxSlashedRewardPercentage) /
+                PERCENTAGE_DENOMINATOR;
+            uint256 slashReward = totalSlashed;
+            if (slashReward > slashCap) {
+                uint256 overflow = slashReward - slashCap;
+                slashReward = slashCap;
+                if (overflow > 0) {
+                    agiToken.safeTransfer(slashedStakeRecipient, overflow);
+                }
+            }
+            uint256 totalReward = validatorPayoutTotal + slashReward;
             uint256 rewardPerValidator = totalReward / correctValidatorCount;
             uint256 remainder = totalReward % correctValidatorCount;
             for (uint256 i; i < correctValidatorCount; ) {
@@ -1521,6 +1537,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 stakeReq,
             uint256 validatorSlashPercentage,
             uint256 agentSlashPercentage,
+            uint256 maxSlashRewardPercentage,
             uint256 minValidatorRep,
             uint256 minAgentRep,
             uint256 approvals,
@@ -1535,6 +1552,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             stakeRequirement,
             validatorSlashingPercentage,
             agentSlashingPercentage,
+            maxSlashedRewardPercentage,
             minValidatorReputation,
             minAgentReputation,
             requiredValidatorApprovals,
@@ -1794,6 +1812,18 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit ValidatorSlashingPercentageUpdated(percentage);
     }
 
+    /// @notice Cap the portion of slashed stake redistributed to correct validators.
+    /// @param percentage Maximum share of a job's payout (basis points) that
+    /// correct validators may receive from slashed stakes.
+    function setMaxSlashedRewardPercentage(uint256 percentage)
+        external
+        onlyOwner
+    {
+        if (percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        maxSlashedRewardPercentage = percentage;
+        emit MaxSlashedRewardPercentageUpdated(percentage);
+    }
+
     /// @notice Update the slashing rate applied to agent stakes.
     /// @param percentage Portion of staked tokens to slash in basis points.
     function setAgentSlashingPercentage(uint256 percentage) external onlyOwner {
@@ -1938,6 +1968,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 stakeReq,
         uint256 validatorSlashPercentage,
         uint256 agentSlashPercentage,
+        uint256 maxSlashRewardPct,
         uint256 minRep,
         uint256 approvals,
         uint256 disapprovals,
@@ -1951,7 +1982,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             rewardPercentage > PERCENTAGE_DENOMINATOR ||
             reputationPercentage > PERCENTAGE_DENOMINATOR ||
             validatorSlashPercentage > PERCENTAGE_DENOMINATOR ||
-            agentSlashPercentage > PERCENTAGE_DENOMINATOR
+            agentSlashPercentage > PERCENTAGE_DENOMINATOR ||
+            maxSlashRewardPct > PERCENTAGE_DENOMINATOR
         ) revert InvalidPercentage();
         _validatePayoutSplits(burnPercentage, rewardPercentage);
         if (validatorsCount == 0) revert InvalidCount();
@@ -1968,6 +2000,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         stakeRequirement = stakeReq;
         validatorSlashingPercentage = validatorSlashPercentage;
         agentSlashingPercentage = agentSlashPercentage;
+        maxSlashedRewardPercentage = maxSlashRewardPct;
         minValidatorReputation = minRep;
         requiredValidatorApprovals = approvals;
         requiredValidatorDisapprovals = disapprovals;
@@ -1982,6 +2015,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             stakeReq,
             validatorSlashPercentage,
             agentSlashPercentage,
+            maxSlashRewardPct,
             minRep,
             approvals,
             disapprovals,
@@ -2285,7 +2319,22 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             validatorPayoutTotal = 0;
         }
 
-        uint256 totalReward = validatorPayoutTotal + totalSlashed;
+        uint256 slashReward = 0;
+        if (correctValidatorCount > 0) {
+            slashReward = totalSlashed;
+            uint256 slashCap =
+                (job.payout * maxSlashedRewardPercentage) /
+                PERCENTAGE_DENOMINATOR;
+            if (slashReward > slashCap) {
+                uint256 overflow = slashReward - slashCap;
+                slashReward = slashCap;
+                if (overflow > 0) {
+                    agiToken.safeTransfer(slashedStakeRecipient, overflow);
+                }
+            }
+        }
+
+        uint256 totalReward = validatorPayoutTotal + slashReward;
         uint256 rewardPerValidator = correctValidatorCount > 0
             ? totalReward / correctValidatorCount
             : 0;
