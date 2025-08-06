@@ -85,6 +85,24 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWithCustomError(manager, "InvalidDuration");
   });
 
+  it("allows owner to update commit and reveal durations individually", async function () {
+    const { manager } = await deployFixture();
+    await manager.setCommitDuration(500);
+    expect(await manager.commitDuration()).to.equal(500);
+    await manager.setRevealDuration(600);
+    expect(await manager.revealDuration()).to.equal(600);
+  });
+
+  it("reverts when commit or reveal duration exceeds review window", async function () {
+    const { manager } = await deployFixture();
+    await expect(
+      manager.setCommitDuration(1900)
+    ).to.be.revertedWithCustomError(manager, "ReviewWindowTooShort");
+    await expect(
+      manager.setRevealDuration(1900)
+    ).to.be.revertedWithCustomError(manager, "ReviewWindowTooShort");
+  });
+
   it("allows agent to apply for a job using a Merkle proof", async function () {
     const { token, manager, employer, agent, proof } = await deployFixture(1000, true);
     const payout = ethers.parseEther("1");
