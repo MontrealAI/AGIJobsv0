@@ -117,4 +117,25 @@ describe("payout split validation", function () {
     expect(updated.cancelRewardPct).to.equal(200n);
     expect(updated.burnAddr).to.equal(newBurnAddr);
   });
+
+  it("previews payout splits and agent stake requirements", async function () {
+    const { manager } = await deployFixture();
+    // preview payout for 10,000 units
+    const preview = await manager.previewPayout(10000);
+    expect(preview.burnAmount).to.equal(500n);
+    expect(preview.validatorReward).to.equal(800n);
+    expect(preview.agentAmount).to.equal(8700n);
+
+    // update agent config then compute required stake
+    await manager.setAgentConfig(100, 1000, 200, 0, 3);
+    const stakeNeeded = await manager.computeRequiredAgentStake(2000);
+    expect(stakeNeeded).to.equal(200n); // max(100, 20% of payout)
+
+    const cfg = await manager.getAgentConfig();
+    expect(cfg.stakeReq).to.equal(100n);
+    expect(cfg.stakePct).to.equal(1000n);
+    expect(cfg.slashPct).to.equal(200n);
+    expect(cfg.minRep).to.equal(0n);
+    expect(cfg.blacklistThresh).to.equal(3n);
+  });
 });
