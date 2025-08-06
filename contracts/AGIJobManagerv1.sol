@@ -276,6 +276,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(address => mapping(uint256 => uint256))
         private validatorDisapprovedJobIndex;
     mapping(uint256 => Listing) public listings;
+    mapping(uint256 => string) private jobIpfsHash;
     mapping(address => bool) public blacklistedAgents;
     mapping(address => bool) public blacklistedValidators;
     uint256 public totalJobEscrow;
@@ -2123,6 +2124,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         agiToken.safeTransfer(job.assignedAgent, agentPayout);
 
         uint256 tokenId = nextTokenId++;
+        jobIpfsHash[tokenId] = job.ipfsHash;
         _safeMint(job.employer, tokenId);
         emit NFTIssued(tokenId, job.employer, tokenURI(tokenId));
         emit JobFinalizedAndBurned(
@@ -2140,6 +2142,30 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             JobStatus.Completed
         );
         emit ReputationUpdated(job.assignedAgent, reputation[job.assignedAgent]);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        _requireOwned(tokenId);
+        string memory hash = jobIpfsHash[tokenId];
+        string memory base = _baseURI();
+        if (bytes(base).length == 0) {
+            return string.concat("ipfs://", hash);
+        }
+        return string.concat(base, hash);
+    }
+
+    function getJobIpfsHash(uint256 tokenId)
+        external
+        view
+        returns (string memory)
+    {
+        _requireOwned(tokenId);
+        return jobIpfsHash[tokenId];
     }
 
     function listNFT(uint256 tokenId, uint256 price)
