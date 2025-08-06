@@ -343,6 +343,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         address indexed resolver,
         bool agentPaid
     );
+    event JobTie(uint256 indexed jobId, address indexed resolver);
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -1000,9 +1001,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (job.validatorApprovals > job.validatorDisapprovals) {
             _finalizeJobAndBurn(_jobId, true);
             emit StalledJobResolved(_jobId, msg.sender, true);
-        } else {
+        } else if (job.validatorDisapprovals > job.validatorApprovals) {
             _resolveEmployerWin(_jobId);
             emit StalledJobResolved(_jobId, msg.sender, false);
+        } else {
+            job.status = JobStatus.Disputed;
+            emit JobTie(_jobId, msg.sender);
+            emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
         }
     }
 
