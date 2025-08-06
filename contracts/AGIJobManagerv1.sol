@@ -193,7 +193,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
     /// @notice Number of penalties before an agent is automatically blacklisted.
-    uint256 public constant AGENT_BLACKLIST_THRESHOLD = 3;
+    uint256 public agentBlacklistThreshold = 3;
     /// @notice Duration of the commit phase for validator votes.
     /// @dev Defaults to 1 hour and may be updated by the owner.
     uint256 public commitDuration;
@@ -431,6 +431,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AgentSlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event MinAgentReputationUpdated(uint256 newMinimum);
+    event AgentBlacklistThresholdUpdated(uint256 newThreshold);
     event StakeSlashed(address indexed validator, uint256 amount);
     event AgentPenalized(
         address indexed agent,
@@ -1103,7 +1104,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         );
         agentPenaltyCount[job.assignedAgent] += 1;
         if (
-            agentPenaltyCount[job.assignedAgent] >= AGENT_BLACKLIST_THRESHOLD &&
+            agentPenaltyCount[job.assignedAgent] >= agentBlacklistThreshold &&
             !blacklistedAgents[job.assignedAgent]
         ) {
             blacklistedAgents[job.assignedAgent] = true;
@@ -1664,6 +1665,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit MinAgentReputationUpdated(minimum);
     }
 
+    function setAgentBlacklistThreshold(uint256 newThreshold) external onlyOwner {
+        agentBlacklistThreshold = newThreshold;
+        emit AgentBlacklistThresholdUpdated(newThreshold);
+    }
+
     function setValidatorsPerJob(uint256 count) external onlyOwner {
         if (
             count == 0 ||
@@ -2009,7 +2015,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit AgentPenalized(agent, reputationPenalty, agentSlashAmount);
         agentPenaltyCount[agent] += 1;
         if (
-            agentPenaltyCount[agent] >= AGENT_BLACKLIST_THRESHOLD &&
+            agentPenaltyCount[agent] >= agentBlacklistThreshold &&
             !blacklistedAgents[agent]
         ) {
             blacklistedAgents[agent] = true;
