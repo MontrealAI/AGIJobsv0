@@ -151,7 +151,7 @@ describe("AGIJobManagerV1 payouts", function () {
   });
 
   it("distributes burn, validator, and agent payouts equal to job.payout", async function () {
-    const { token, manager, employer, agent, validator } = await deployFixture();
+      const { token, manager, employer, agent, validator } = await deployFixture(500);
     const payout = ethers.parseEther("1000");
 
     await token.connect(employer).approve(await manager.getAddress(), payout);
@@ -173,11 +173,10 @@ describe("AGIJobManagerV1 payouts", function () {
     await time.increase(1000);
     await manager.connect(validator).validateJob(jobId, "", []);
 
-      const burnAmount = (payout * 1000n) / 10000n;
-      const validatorPayoutTotal = (payout * 800n) / 10000n;
+        const burnAmount = (payout * 500n) / 10000n;
+        const validatorPayoutTotal = (payout * 800n) / 10000n;
     const agentExpected = payout - burnAmount - validatorPayoutTotal;
     const burnAddr = await manager.burnAddress();
-
     expect(await token.balanceOf(burnAddr)).to.equal(burnAmount);
     expect(await token.balanceOf(validator.address)).to.equal(validatorPayoutTotal);
     expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
@@ -889,8 +888,14 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.addModerator(owner.address);
     const slashAmount = (stakeAmount * 5000n) / 10000n;
     await manager.resolveDispute(jobId, 1);
-    expect(await token.balanceOf(validator2.address)).to.equal(slashAmount);
-    expect(await token.balanceOf(employer.address)).to.equal(payout);
+    const validatorReward = (payout * 800n) / 10000n;
+    const burnAmount = (payout * 1000n) / 10000n;
+    expect(await token.balanceOf(validator2.address)).to.equal(
+      slashAmount + validatorReward
+    );
+    expect(await token.balanceOf(employer.address)).to.equal(
+      payout - validatorReward - burnAmount
+    );
     await expect(
       manager
         .connect(validator)
@@ -1187,6 +1192,40 @@ describe("AGIJobManagerV1 payouts", function () {
     );
   });
 
+  it("rewards validators and burns tokens on employer win", async function () {
+    const { token, manager, owner, employer, agent, validator } = await deployFixture(500);
+    await manager.setRequiredValidatorApprovals(1);
+    await manager.setRequiredValidatorDisapprovals(1);
+    await manager.setValidatorPool([validator.address]);
+    await manager.setValidatorsPerJob(1);
+    const payout = ethers.parseEther("1000");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    const salt = ethers.id("employerWin");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, false, salt]
+    );
+    await manager
+      .connect(validator)
+      .commitValidation(jobId, commitment, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, false, salt);
+    await time.increase(1000);
+    await manager.connect(validator).disapproveJob(jobId, "", []);
+    await manager.addModerator(owner.address);
+    await manager.resolveDispute(jobId, 1);
+    expect(await token.balanceOf(validator.address)).to.equal(
+      ethers.parseEther("80")
+    );
+    expect(await token.balanceOf(employer.address)).to.equal(
+      ethers.parseEther("870")
+    );
+  });
+
   it("finalizes disputes even if agent stake falls below requirement", async function () {
     const { token, manager, owner, employer, agent } = await deployFixture();
     const requirement = ethers.parseEther("60");
@@ -1218,7 +1257,7 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(job.status).to.equal(3);
     expect(await manager.agentStake(agent.address)).to.equal(remainingStake);
     expect(await token.balanceOf(employer.address)).to.equal(
-      ethers.parseEther("1000")
+      ethers.parseEther("980")
     );
   });
 
