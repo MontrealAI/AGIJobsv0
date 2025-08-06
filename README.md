@@ -118,10 +118,12 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Monitor the job status until validators approve and funds release.
 - Request completion before the deadline or anyone can cancel via `cancelExpiredJob` to refund the employer's escrow and claim the caller reward, so keep a close eye on the timer.
 - Losing a dispute reduces your reputation and can slash any staked AGI. The `AgentPenalized` event records the penalty.
+- Accumulating three penalties (missed deadlines or employer wins) automatically blacklists your address until the owner calls `clearAgentBlacklist`.
 - Disputes still resolve even if your stake drops below `agentStakeRequirement`; jobs finalize but no additional slashing occurs when funds are insufficient.
 
 **Penalties**
 - Missing a deadline or having a moderator side with the employer via `resolveDispute` can lower your reputation and slash staked AGI if the job is cancelled with `cancelExpiredJob`.
+- After three such penalties, `blacklistedAgents[agent]` becomes `true` and you must appeal to the owner to run `clearAgentBlacklist` before applying again.
 
 **Validators**
 - Verify the contract address and ensure you meet the current stake requirement.

@@ -191,6 +191,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     address public slashedStakeRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
+    /// @notice Number of penalties before an agent is automatically blacklisted.
+    uint256 public constant AGENT_BLACKLIST_THRESHOLD = 3;
     /// @notice Duration of the commit phase for validator votes.
     /// @dev Defaults to 1 hour and may be updated by the owner.
     uint256 public commitDuration;
@@ -261,6 +263,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(address => uint256) public validatorStake;
     mapping(address => uint256) public agentStake;
     mapping(address => uint256) public agentActiveJobs;
+    /// @notice Count of penalties incurred by each agent.
+    mapping(address => uint256) public agentPenaltyCount;
     mapping(address => uint256) public pendingCommits;
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
@@ -1074,6 +1078,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             reputationPoints,
             agentSlashAmount
         );
+        agentPenaltyCount[job.assignedAgent] += 1;
+        if (
+            agentPenaltyCount[job.assignedAgent] >= AGENT_BLACKLIST_THRESHOLD &&
+            !blacklistedAgents[job.assignedAgent]
+        ) {
+            blacklistedAgents[job.assignedAgent] = true;
+            emit AgentBlacklisted(job.assignedAgent, true);
+        }
         (
             address[] memory correctValidators,
             uint256 correctValidatorCount,
@@ -1221,6 +1233,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function blacklistValidator(address _validator, bool _status) external onlyOwner {
         blacklistedValidators[_validator] = _status;
         emit ValidatorBlacklisted(_validator, _status);
+    }
+
+    /// @notice Remove an agent from the blacklist and reset their penalty count.
+    function clearAgentBlacklist(address _agent) external onlyOwner {
+        blacklistedAgents[_agent] = false;
+        agentPenaltyCount[_agent] = 0;
+        emit AgentBlacklisted(_agent, false);
     }
 
     function delistJob(uint256 _jobId)
@@ -1957,6 +1976,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
         emit AgentPenalized(agent, reputationPenalty, agentSlashAmount);
+        agentPenaltyCount[agent] += 1;
+        if (
+            agentPenaltyCount[agent] >= AGENT_BLACKLIST_THRESHOLD &&
+            !blacklistedAgents[agent]
+        ) {
+            blacklistedAgents[agent] = true;
+            emit AgentBlacklisted(agent, true);
+        }
         uint256 reward =
             (job.payout * cancelRewardPercentage) / PERCENTAGE_DENOMINATOR;
         uint256 refund = job.payout - reward;
