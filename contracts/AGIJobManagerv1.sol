@@ -146,6 +146,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public maxJobPayout = 4888e18;
     uint256 public jobDurationLimit = 10000000;
     uint256 public stakeRequirement;
+    uint256 public agentStakeRequirement;
     uint256 public slashingPercentage;
     uint256 public minValidatorReputation;
     /// @notice Number of validators randomly chosen for each job. Defaults to
@@ -388,6 +389,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AgentStakeWithdrawn(address indexed agent, uint256 amount);
     event AGIWithdrawn(address indexed owner, uint256 amount);
     event StakeRequirementUpdated(uint256 newRequirement);
+    event AgentStakeRequirementUpdated(uint256 newRequirement);
     event SlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
@@ -673,7 +675,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             ) ||
             blacklistedAgents[msg.sender]
         ) revert Unauthorized();
-        if (agentStake[msg.sender] == 0) revert AgentStakeRequired();
+        if (agentStake[msg.sender] < agentStakeRequirement)
+            revert AgentStakeRequired();
         job.assignedAgent = msg.sender;
         job.assignedAt = block.timestamp;
         agentActiveJobs[msg.sender] += 1;
@@ -954,7 +957,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function _resolveEmployerWin(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
-        if (agentStake[job.assignedAgent] == 0) revert AgentStakeRequired();
+        if (agentStake[job.assignedAgent] < agentStakeRequirement)
+            revert AgentStakeRequired();
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
         uint256 validatorPayoutTotal =
@@ -967,7 +971,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             calculateValidatorReputationPoints(reputationPoints);
         enforceReputationPenalty(job.assignedAgent, reputationPoints);
         uint256 agentSlashAmount;
-        if (agentStake[job.assignedAgent] > 0) {
+        if (agentStake[job.assignedAgent] >= agentStakeRequirement) {
             agentSlashAmount =
                 (agentStake[job.assignedAgent] * slashingPercentage) /
                 PERCENTAGE_DENOMINATOR;
@@ -1398,6 +1402,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function setStakeRequirement(uint256 amount) external onlyOwner {
         stakeRequirement = amount;
         emit StakeRequirementUpdated(amount);
+    }
+
+    /// @notice Update the minimum stake agents must maintain to apply for jobs.
+    /// @dev Setting `amount` to 0 removes the staking requirement entirely.
+    function setAgentStakeRequirement(uint256 amount) external onlyOwner {
+        agentStakeRequirement = amount;
+        emit AgentStakeRequirementUpdated(amount);
     }
 
     /// @notice Update the slashing rate applied to incorrect validator stakes.
