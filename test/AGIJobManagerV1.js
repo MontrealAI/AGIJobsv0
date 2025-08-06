@@ -180,8 +180,9 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(agentExpected + validatorPayoutTotal + burnAmount).to.equal(payout);
   });
 
-  it("sends validator leftovers to slashedStakeRecipient", async function () {
+  it("sends validator leftovers to treasury", async function () {
     const { token, manager, owner, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    await manager.setTreasury(owner.address);
     await manager.setRequiredValidatorApprovals(3);
     const payout = ethers.parseEther("1000");
     const initialOwnerBalance = await token.balanceOf(owner.address);
@@ -915,7 +916,7 @@ describe("AGIJobManagerV1 payouts", function () {
       minRep: 42n,
       approvals: 1,
       disapprovals: 1,
-      recipient: validator.address,
+      treasury: validator.address,
       commitWindow: 60,
       revealWindow: 60,
       reviewWin: 120,
@@ -934,7 +935,7 @@ describe("AGIJobManagerV1 payouts", function () {
           cfg.minRep,
           cfg.approvals,
           cfg.disapprovals,
-          cfg.recipient,
+          cfg.treasury,
           cfg.commitWindow,
           cfg.revealWindow,
           cfg.reviewWin,
@@ -954,7 +955,7 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
-        cfg.recipient,
+        cfg.treasury,
         cfg.commitWindow,
         cfg.revealWindow,
         cfg.reviewWin,
@@ -971,7 +972,7 @@ describe("AGIJobManagerV1 payouts", function () {
         cfg.minRep,
         cfg.approvals,
         cfg.disapprovals,
-        cfg.recipient,
+        cfg.treasury,
         cfg.commitWindow,
         cfg.revealWindow,
         cfg.reviewWin,
@@ -992,7 +993,7 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(await manager.requiredValidatorDisapprovals()).to.equal(
       cfg.disapprovals
     );
-    expect(await manager.slashedStakeRecipient()).to.equal(cfg.recipient);
+    expect(await manager.treasury()).to.equal(cfg.treasury);
     expect(await manager.commitDuration()).to.equal(cfg.commitWindow);
     expect(await manager.revealDuration()).to.equal(cfg.revealWindow);
     expect(await manager.reviewWindow()).to.equal(cfg.reviewWin);
