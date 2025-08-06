@@ -63,6 +63,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - Verify the contract address and ensure you meet the current stake requirement.
 - Stake AGI with `stake` to join the validator pool (≈1 transaction).
 - When selected, submit `commitValidation` during the commit phase (≈1 transaction) and later `revealValidation` in the reveal phase (≈1 transaction).
+- The commitment must be a non-zero hash; empty commitments are rejected.
 - Finalize the job with `validateJob` or `disapproveJob` once the review window ends (≈1 transaction).
 - Expect roughly 4–5 transactions per job, not counting the initial stake.
 
