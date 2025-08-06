@@ -187,8 +187,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public burnPercentage = BURN_PERCENTAGE;
     /// @notice Portion of escrow awarded to the caller of `cancelExpiredJob`.
     uint256 public cancelRewardPercentage = 100; // 1%
-    /// @notice Recipient of slashed validator stakes when no correct votes exist.
-    address public slashedStakeRecipient;
+    /// @notice Destination for surplus validator rewards and slashed stakes.
+    /// @dev Defaults to `BURN_ADDRESS` to destroy tokens if unset.
+    address public treasury = BURN_ADDRESS;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
     /// @notice Number of penalties before an agent is automatically blacklisted.
@@ -403,8 +404,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event AdditionalText2Updated(string newText);
     event AdditionalText3Updated(string newText);
     event BurnAddressUpdated(address indexed newBurnAddress);
-    /// @notice Emitted when the slashed stake recipient is updated.
-    event SlashedStakeRecipientUpdated(address indexed newRecipient);
+    /// @notice Emitted when the treasury address is updated.
+    event TreasuryUpdated(address indexed newTreasury);
     /// @notice Emitted when the burn percentage is updated.
     event BurnPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the cancel reward percentage is updated.
@@ -454,7 +455,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 minValidatorReputation,
         uint256 requiredApprovals,
         uint256 requiredDisapprovals,
-        address slashedStakeRecipient,
+        address treasury,
         uint256 commitWindow,
         uint256 revealWindow,
         uint256 reviewWindow,
@@ -638,7 +639,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         agentRootNode = _agentRootNode;
         validatorMerkleRoot = _validatorMerkleRoot;
         agentMerkleRoot = _agentMerkleRoot;
-        slashedStakeRecipient = msg.sender;
         // Set sensible non-zero defaults to avoid inadvertent instant phases.
         commitDuration = 1 hours;
         revealDuration = 1 hours;
@@ -1064,10 +1064,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             if (agentSlashAmount > 0) {
                 agentStake[job.assignedAgent] -= agentSlashAmount;
                 totalAgentStake -= agentSlashAmount;
-                agiToken.safeTransfer(
-                    slashedStakeRecipient,
-                    agentSlashAmount
-                );
+                agiToken.safeTransfer(treasury, agentSlashAmount);
             }
         }
         if (agentActiveJobs[job.assignedAgent] > 0) {
@@ -1126,12 +1123,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 }
             }
             if (leftover > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                emit LeftoverTransferred(slashedStakeRecipient, leftover);
+                agiToken.safeTransfer(treasury, leftover);
+                emit LeftoverTransferred(treasury, leftover);
             }
         } else {
             if (totalSlashed > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+                agiToken.safeTransfer(treasury, totalSlashed);
             }
         }
         agiToken.safeTransfer(job.employer, job.payout);
@@ -1476,7 +1473,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 approvals,
             uint256 disapprovals,
             uint256 validatorsCount,
-            address slashRecipient
+            address treasuryAddress
         )
     {
         return (
@@ -1490,7 +1487,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             requiredValidatorApprovals,
             requiredValidatorDisapprovals,
             validatorsPerJob,
-            slashedStakeRecipient
+            treasury
         );
     }
 
@@ -1584,10 +1581,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit BurnPercentageUpdated(newPercentage);
     }
 
-    function setSlashedStakeRecipient(address newRecipient) external onlyOwner {
-        if (newRecipient == address(0)) revert InvalidAddress();
-        slashedStakeRecipient = newRecipient;
-        emit SlashedStakeRecipientUpdated(newRecipient);
+    function setTreasury(address newTreasury) external onlyOwner {
+        if (newTreasury == address(0)) revert InvalidAddress();
+        treasury = newTreasury;
+        emit TreasuryUpdated(newTreasury);
     }
 
     /// @notice Update the minimum stake validators must maintain.
@@ -1743,7 +1740,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @param minRep Minimum reputation required to validate.
     /// @param approvals Validator approvals needed to finalize a job.
     /// @param disapprovals Validator disapprovals needed to dispute a job.
-    /// @param slashRecipient Address receiving slashed stake when no validator votes correctly.
+    /// @param treasuryAddress Address receiving surplus slashed stake when no validator votes correctly.
     /// @param commitWindow Length of commit phase in seconds; must be greater than zero.
     /// @param revealWindow Length of reveal phase in seconds; must be greater than zero.
     /// @param reviewWin Mandatory waiting period before validators may vote.
@@ -1757,7 +1754,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 minRep,
         uint256 approvals,
         uint256 disapprovals,
-        address slashRecipient,
+        address treasuryAddress,
         uint256 commitWindow,
         uint256 revealWindow,
         uint256 reviewWin,
@@ -1775,7 +1772,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             revert InvalidApprovals();
         if (disapprovals == 0 || disapprovals > validatorsCount)
             revert InvalidDisapprovals();
-        if (slashRecipient == address(0)) revert InvalidAddress();
+        if (treasuryAddress == address(0)) revert InvalidAddress();
         if (commitWindow == 0 || revealWindow == 0) revert InvalidDuration();
         if (reviewWin < commitWindow + revealWindow)
             revert WindowBelowCommitReveal();
@@ -1787,7 +1784,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         minValidatorReputation = minRep;
         requiredValidatorApprovals = approvals;
         requiredValidatorDisapprovals = disapprovals;
-        slashedStakeRecipient = slashRecipient;
+        treasury = treasuryAddress;
         commitDuration = commitWindow;
         revealDuration = revealWindow;
         reviewWindow = reviewWin;
@@ -1801,7 +1798,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             minRep,
             approvals,
             disapprovals,
-            slashRecipient,
+            treasuryAddress,
             commitWindow,
             revealWindow,
             reviewWin,
@@ -1972,7 +1969,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             if (agentSlashAmount > 0) {
                 agentStake[agent] -= agentSlashAmount;
                 totalAgentStake -= agentSlashAmount;
-                agiToken.safeTransfer(slashedStakeRecipient, agentSlashAmount);
+                agiToken.safeTransfer(treasury, agentSlashAmount);
             }
         }
         emit AgentPenalized(agent, reputationPenalty, agentSlashAmount);
@@ -2099,7 +2096,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
         if (correctValidatorCount == 0) {
             if (totalSlashed > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
+                agiToken.safeTransfer(treasury, totalSlashed);
             }
         } else {
             for (uint256 i; i < correctValidatorCount; ) {
@@ -2113,8 +2110,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 }
             }
             if (leftover > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                emit LeftoverTransferred(slashedStakeRecipient, leftover);
+                agiToken.safeTransfer(treasury, leftover);
+                emit LeftoverTransferred(treasury, leftover);
             }
         }
 
