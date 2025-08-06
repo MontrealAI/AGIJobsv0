@@ -92,20 +92,20 @@ See the [Glossary](docs/glossary.md) for key terminology.
 ### Contract Quick Start
 
 **Employers**
-- Call [`createJob`](contracts/AGIJobManagerv1.sol#L547) to post a task and escrow the payout.
+- Call [`createJob`](contracts/AGIJobManagerv1.sol#L602) to post a task and escrow the payout.
 - Confirm the contract address and wait for the `JobCreated` event to learn the job ID.
 
 **Agents**
-- Use [`applyForJob`](contracts/AGIJobManagerv1.sol#L568) to claim an open job.
-- After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L594) with a non-empty IPFS hash.
+- Use [`applyForJob`](contracts/AGIJobManagerv1.sol#L624) to claim an open job.
+- After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L650) with a non-empty IPFS hash.
 - Verify addresses and watch for `JobApplied` and `JobCompletionRequested` events.
 
 **Validators**
-- Deposit stake with [`stake`](contracts/AGIJobManagerv1.sol#L1789); confirm via the `StakeDeposited` event.
+- Deposit stake with [`stake`](contracts/AGIJobManagerv1.sol#L1941); confirm via the `StakeDeposited` event.
 - Validator selection skips blacklisted or underqualified addresses and reverts if fewer than `validatorsPerJob` meet `stakeRequirement` and `minValidatorReputation`.
-- During the commit window, [`commitValidation`](contracts/AGIJobManagerv1.sol#L647) with your vote commitment.
-- Reveal it through [`revealValidation`](contracts/AGIJobManagerv1.sol#L685) once the reveal window opens.
-- Finalize by calling [`validateJob`](contracts/AGIJobManagerv1.sol#L720) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L764).
+- During the commit window, [`commitValidation`](contracts/AGIJobManagerv1.sol#L725) with your vote commitment.
+- Reveal it through [`revealValidation`](contracts/AGIJobManagerv1.sol#L763) once the reveal window opens.
+- Finalize by calling [`validateJob`](contracts/AGIJobManagerv1.sol#L798) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L842).
 - Always verify contract addresses and monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
 ## Owner Configuration
 
@@ -238,14 +238,14 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 
 ### Security & Marketplace Updates
 
-- **`jobExists` requirement** – The new [`jobExists`](contracts/AGIJobManagerv1.sol#L391-L394) modifier guards functions and reverts when an unknown job ID is supplied.
-- **Checks–effects–interactions** – job cancellation and marketplace functions such as [`cancelJob`](contracts/AGIJobManagerv1.sol#L1366-L1384), [`delistJob`](contracts/AGIJobManagerv1.sol#L897-L914), [`listNFT`](contracts/AGIJobManagerv1.sol#L1533-L1542), [`purchaseNFT`](contracts/AGIJobManagerv1.sol#L1544-L1557), and [`delistNFT`](contracts/AGIJobManagerv1.sol#L1559-L1567) update internal state before token transfers to prevent reentrancy and ensure escrow accounting is accurate.
+- **`jobExists` requirement** – The new [`jobExists`](contracts/AGIJobManagerv1.sol#L583-L586) modifier guards functions and reverts when an unknown job ID is supplied.
+- **Checks–effects–interactions** – job cancellation and marketplace functions such as [`cancelJob`](contracts/AGIJobManagerv1.sol#L1556-L1573), [`delistJob`](contracts/AGIJobManagerv1.sol#L1040-L1055), [`listNFT`](contracts/AGIJobManagerv1.sol#L1767-L1777), [`purchaseNFT`](contracts/AGIJobManagerv1.sol#L1779-L1793), and [`delistNFT`](contracts/AGIJobManagerv1.sol#L1795-L1804) update internal state before token transfers to prevent reentrancy and ensure escrow accounting is accurate.
 - **Storage cleanup** – marketplace listings are deleted on purchase or delist to reclaim gas and prevent stale entries.
-- **Safe minting and transfers** – Completion NFTs are minted with [`_safeMint`](contracts/AGIJobManagerv1.sol#L1358) and traded with [`_safeTransfer`](contracts/AGIJobManagerv1.sol#L1384), ensuring recipients implement ERC-721.
- - **Custom error finalization** – [`_finalizeJobAndBurn`](contracts/AGIJobManagerv1.sol#L1357-L1531) reverts with dedicated custom errors, lowering gas costs versus string-based `require`s.
-- **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L454-L468); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
-- **Owner-controlled parameters** – Only the contract owner may tune validator counts, reward and slashing percentages, burn settings, timing windows, and recipient addresses via `onlyOwner` functions such as [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1033-L1089) and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L942-L951); each change emits a corresponding `*Updated` event.
-- **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1093-L1127), [`getJobValidators`](contracts/AGIJobManagerv1.sol#L1130-L1137), and [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1140-L1147) expose job and validator details for front‑end integrations without traversing storage mappings.
+- **Safe minting and transfers** – Completion NFTs are minted with [`_safeMint`](contracts/AGIJobManagerv1.sol#L1748) and traded with [`_safeTransfer`](contracts/AGIJobManagerv1.sol#L1791), ensuring recipients implement ERC-721.
+ - **Custom error finalization** – [`_finalizeJobAndBurn`](contracts/AGIJobManagerv1.sol#L1577-L1765) reverts with dedicated custom errors, lowering gas costs versus string-based `require`s.
+- **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L674-L720); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
+- **Owner-controlled parameters** – Only the contract owner may tune validator counts, reward and slashing percentages, burn settings, timing windows, and recipient addresses via `onlyOwner` functions such as [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L1289-L1299); each change emits a corresponding `*Updated` event.
+- **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1188-L1222), [`getJobValidators`](contracts/AGIJobManagerv1.sol#L1225-L1232), and [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1235-L1242) expose job and validator details for front‑end integrations without traversing storage mappings.
 
 **Setup checklist**
 
@@ -275,11 +275,11 @@ await manager.connect(validator).validateJob(jobId, "", []);
 
 ### Validator Workflow
 
-  - **Staking requirement** – bond $AGI via [`stake`](contracts/AGIJobManagerv1.sol#L1400-L1408) and exit with [`withdrawStake`](contracts/AGIJobManagerv1.sol#L1411-L1429), emitting [`StakeDeposited`](contracts/AGIJobManagerv1.sol#L320) and [`StakeWithdrawn`](contracts/AGIJobManagerv1.sol#L321).
-  - **Commit → reveal → finalize** – submit a hashed vote with [`commitValidation`](contracts/AGIJobManagerv1.sol#L461-L495), disclose it via [`revealValidation`](contracts/AGIJobManagerv1.sol#L497-L529), then call [`validateJob`](contracts/AGIJobManagerv1.sol#L532-L561) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L567-L596) once the review window closes. These steps emit [`ValidationCommitted`](contracts/AGIJobManagerv1.sol#L260), [`ValidationRevealed`](contracts/AGIJobManagerv1.sol#L261), [`JobValidated`](contracts/AGIJobManagerv1.sol#L257), and [`JobDisapproved`](contracts/AGIJobManagerv1.sol#L258).
-  - **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L822-L826) of escrow plus any slashed stake, while incorrect votes lose [`slashingPercentage`](contracts/AGIJobManagerv1.sol#L898-L902) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L265-L272).
-  - **Random validator selection** – the contract owner can replace the entire validator list with [`setValidatorPool`](contracts/AGIJobManagerv1.sol#L1710-L1746), which rejects zero addresses and duplicate entries; each job draws validators pseudo‑randomly from this pool to mitigate race conditions and collusion.
-  - **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L956-L993) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L890-L893), [`setSlashingPercentage`](contracts/AGIJobManagerv1.sol#L895-L902), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L838-L842), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L904-L907), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L882-L886), each emitting their respective `*Updated` events. `setValidatorConfig` additionally sets commit, reveal, and review windows plus the number of validators per job.
+  - **Staking requirement** – bond $AGI via [`stake`](contracts/AGIJobManagerv1.sol#L1941-L1947) and exit with [`withdrawStake`](contracts/AGIJobManagerv1.sol#L1949-L1965), emitting [`StakeDeposited`](contracts/AGIJobManagerv1.sol#L375) and [`StakeWithdrawn`](contracts/AGIJobManagerv1.sol#L376).
+  - **Commit → reveal → finalize** – submit a hashed vote with [`commitValidation`](contracts/AGIJobManagerv1.sol#L725-L757), disclose it via [`revealValidation`](contracts/AGIJobManagerv1.sol#L763-L792), then call [`validateJob`](contracts/AGIJobManagerv1.sol#L798-L837) or [`disapproveJob`](contracts/AGIJobManagerv1.sol#L842-L880) once the review window closes. These steps emit [`ValidationCommitted`](contracts/AGIJobManagerv1.sol#L290-L294), [`ValidationRevealed`](contracts/AGIJobManagerv1.sol#L295-L299), [`JobValidated`](contracts/AGIJobManagerv1.sol#L282), and [`JobDisapproved`](contracts/AGIJobManagerv1.sol#L283).
+  - **Slashing & rewards** – correct validators split [`validationRewardPercentage`](contracts/AGIJobManagerv1.sol#L144) of escrow plus any slashed stake, while incorrect votes lose [`slashingPercentage`](contracts/AGIJobManagerv1.sol#L149) and may trigger `StakeSlashed`. Final approval emits [`JobFinalizedAndBurned`](contracts/AGIJobManagerv1.sol#L303-L309).
+  - **Random validator selection** – the contract owner can replace the entire validator list with [`setValidatorPool`](contracts/AGIJobManagerv1.sol#L1853-L1890), which rejects zero addresses and duplicate entries; each job draws validators pseudo‑randomly from this pool to mitigate race conditions and collusion.
+  - **Owner controls** – validator settings are adjustable via [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) or individual setters like [`setStakeRequirement`](contracts/AGIJobManagerv1.sol#L1309-L1312), [`setSlashingPercentage`](contracts/AGIJobManagerv1.sol#L1317-L1321), [`setValidationRewardPercentage`](contracts/AGIJobManagerv1.sol#L1255-L1260), [`setMinValidatorReputation`](contracts/AGIJobManagerv1.sol#L1323-L1326), and [`setSlashedStakeRecipient`](contracts/AGIJobManagerv1.sol#L1301-L1305), each emitting their respective `*Updated` events. `setValidatorConfig` additionally sets commit, reveal, and review windows plus the number of validators per job.
 
 **Commit, reveal, finalize**
 
@@ -399,7 +399,7 @@ Validators follow a commit–reveal process and can finalize their vote only aft
      await agiJobManager.connect(validator).withdrawStake(ethers.parseUnits("100", 18));
      ```
 
-- **Owner‑configurable parameters:** [setValidatorConfig](contracts/AGIJobManagerv1.sol#L956-L993), [setStakeRequirement](contracts/AGIJobManagerv1.sol#L890-L893), [setSlashingPercentage](contracts/AGIJobManagerv1.sol#L895-L902), [setValidationRewardPercentage](contracts/AGIJobManagerv1.sol#L838-L842), [setMinValidatorReputation](contracts/AGIJobManagerv1.sol#L904-L907), and [setSlashedStakeRecipient](contracts/AGIJobManagerv1.sol#L882-L886).
+- **Owner‑configurable parameters:** [setValidatorConfig](contracts/AGIJobManagerv1.sol#L1385-L1440), [setStakeRequirement](contracts/AGIJobManagerv1.sol#L1309-L1312), [setSlashingPercentage](contracts/AGIJobManagerv1.sol#L1317-L1321), [setValidationRewardPercentage](contracts/AGIJobManagerv1.sol#L1255-L1260), [setMinValidatorReputation](contracts/AGIJobManagerv1.sol#L1323-L1326), and [setSlashedStakeRecipient](contracts/AGIJobManagerv1.sol#L1301-L1305).
 - Validators must maintain an on-chain stake and reputation before voting. `stakeRequirement` defines the minimum bonded $AGI, while `slashingPercentage` dictates how much of that stake is forfeited on an incorrect vote. When a job concludes, validators whose votes match the outcome split `validationRewardPercentage` of the remaining escrow plus any slashed stake; others lose the slashed amount. The owner may set `validationRewardPercentage` to `0` to disable rewards entirely.
 
 - **Staking & withdrawals** – validators deposit $AGI via `stake()` and may top up incrementally. Validation is only permitted once their total stake meets `stakeRequirement`. Stakes can be withdrawn with `withdrawStake` only after all participated jobs are finalized and undisputed.
