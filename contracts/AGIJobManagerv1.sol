@@ -785,7 +785,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     /// @dev Selects `validatorsPerJob` unique validators pseudo-randomly from the pool.
-    ///      Uses `blockhash(selectionBlock)` mixed with an owner-provided seed.
+    ///      Uses `blockhash(selectionBlock)` and `block.prevrandao` mixed with an
+    ///      owner-provided seed for entropy.
     ///      If the hash is unavailable (e.g., after 256 blocks), the selection
     ///      block is reseeded and the call reverts.
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
@@ -823,7 +824,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             revert SelectionBlockHashUnavailable();
         }
         bytes32 seed = keccak256(
-            abi.encodePacked(bh, _jobId, validatorSelectionSeed)
+            abi.encodePacked(
+                bh,
+                block.prevrandao,
+                _jobId,
+                validatorSelectionSeed
+            )
         );
         uint256 remaining = pool.length;
 
@@ -1594,6 +1600,66 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             agentSlashingPercentage,
             minAgentReputation,
             agentBlacklistThreshold
+        );
+    }
+
+    /// @notice Retrieve key contract addresses for transparency on block explorers.
+    /// @dev Helps non-technical users verify configuration via read-only calls.
+    /// @return agiTokenAddr Current $AGI token address used for payments.
+    /// @return burnAddr Destination for burned tokens.
+    /// @return slashRecipient Address receiving slashed stake when no validator is correct.
+    /// @return ensAddr ENS registry used for subdomain ownership checks.
+    /// @return nameWrapperAddr ENS NameWrapper contract address.
+    /// @return ownerAddr Address of the contract owner.
+    function getAddresses()
+        external
+        view
+        returns (
+            address agiTokenAddr,
+            address burnAddr,
+            address slashRecipient,
+            address ensAddr,
+            address nameWrapperAddr,
+            address ownerAddr
+        )
+    {
+        return (
+            address(agiToken),
+            burnAddress,
+            slashedStakeRecipient,
+            address(ens),
+            address(nameWrapper),
+            owner()
+        );
+    }
+
+    /// @notice Retrieve general metadata strings used by the contract.
+    /// @dev Enables easy inspection of textual configuration values.
+    /// @return termsHash IPFS hash of the Terms and Conditions.
+    /// @return email Contact email address.
+    /// @return text1 Additional text field 1.
+    /// @return text2 Additional text field 2.
+    /// @return text3 Additional text field 3.
+    /// @return base Current base URI for NFT metadata.
+    function getGeneralInfo()
+        external
+        view
+        returns (
+            string memory termsHash,
+            string memory email,
+            string memory text1,
+            string memory text2,
+            string memory text3,
+            string memory base
+        )
+    {
+        return (
+            termsAndConditionsIpfsHash,
+            contactEmail,
+            additionalText1,
+            additionalText2,
+            additionalText3,
+            _baseURI()
         );
     }
 
