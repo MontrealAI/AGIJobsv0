@@ -285,7 +285,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(uint256 => string) private jobIpfsHash;
     mapping(address => bool) public blacklistedAgents;
     mapping(address => bool) public blacklistedValidators;
-    mapping(address => bool) public acceptedTerms;
+    uint256 public termsVersion;
+    mapping(address => uint256) public acceptedTermsVersion;
     uint256 public totalJobEscrow;
     uint256 public totalValidatorStake;
     uint256 public totalAgentStake;
@@ -410,6 +411,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event MaxJobPayoutUpdated(uint256 newMaxPayout);
     event JobDurationLimitUpdated(uint256 newLimit);
     event TermsAndConditionsIpfsHashUpdated(string newHash);
+    event TermsVersionUpdated(uint256 newVersion);
     event ContactEmailUpdated(string newEmail);
     event AdditionalText1Updated(string newText);
     event AdditionalText2Updated(string newText);
@@ -707,7 +709,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
     {
         if (bytes(ipfsHash).length == 0) revert InvalidParameters();
-        acceptedTerms[msg.sender] = true;
+        acceptedTermsVersion[msg.sender] = termsVersion;
         emit TermsAccepted(msg.sender, ipfsHash);
     }
     /// Job lifecycle overview:
@@ -748,7 +750,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
-        if (!acceptedTerms[msg.sender]) revert TermsNotAccepted();
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         Job storage job = jobs[_jobId];
         if (job.status != JobStatus.Open) revert JobNotOpen();
         if (job.assignedAgent != address(0)) revert InvalidJobState();
@@ -1392,8 +1395,10 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     function updateTermsAndConditionsIpfsHash(string calldata _hash) external onlyOwner {
+        termsVersion += 1;
         termsAndConditionsIpfsHash = _hash;
         emit TermsAndConditionsIpfsHashUpdated(_hash);
+        emit TermsVersionUpdated(termsVersion);
     }
 
     function updateContactEmail(string calldata _email) external onlyOwner {
@@ -2665,7 +2670,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Validators may top up their stake in multiple transactions; validation
     ///      functions enforce that the total meets `stakeRequirement` before voting.
     function stake(uint256 amount) external whenNotPaused nonReentrant {
-        if (!acceptedTerms[msg.sender]) revert TermsNotAccepted();
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (amount == 0) revert InvalidAmount();
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         validatorStake[msg.sender] += amount;
@@ -2693,7 +2699,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Deposit $AGI as stake for agents before applying for jobs.
     /// @param amount Quantity of tokens to stake.
     function stakeAgent(uint256 amount) external whenNotPaused nonReentrant {
-        if (!acceptedTerms[msg.sender]) revert TermsNotAccepted();
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (amount == 0) revert InvalidAmount();
         agiToken.safeTransferFrom(msg.sender, address(this), amount);
         agentStake[msg.sender] += amount;
