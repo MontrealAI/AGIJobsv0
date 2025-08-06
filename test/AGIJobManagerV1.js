@@ -264,6 +264,53 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
   });
 
+  it("ignores malicious NFT contracts when computing bonus", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture(500);
+    const payout = ethers.parseEther("1000");
+
+    const Mal = await ethers.getContractFactory("MaliciousERC721");
+    const mal = await Mal.deploy();
+    await mal.waitForDeployment();
+
+    const NFT = await ethers.getContractFactory("MockERC721");
+    const nft = await NFT.deploy();
+    await nft.waitForDeployment();
+    await nft.mint(agent.address);
+
+    await manager.addAGIType(await mal.getAddress(), 1000);
+    await manager.addAGIType(await nft.getAddress(), 500);
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    const salt = ethers.id("malicious");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, true, salt]
+    );
+    await manager
+      .connect(validator)
+      .commitValidation(jobId, commitment, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, true, salt);
+    await time.increase(1000);
+    await manager.connect(validator).validateJob(jobId, "", []);
+
+    const burnAmount = (payout * 500n) / 10000n;
+    const validatorInitial = (payout * 800n) / 10000n;
+    const bonusAmount = ((payout - burnAmount - validatorInitial) * 500n) / 10000n;
+    const validatorExpected = validatorInitial - bonusAmount;
+    const agentExpected = payout - burnAmount - validatorExpected;
+    const burnAddr = await manager.burnAddress();
+
+    expect(await token.balanceOf(burnAddr)).to.equal(burnAmount);
+    expect(await token.balanceOf(validator.address)).to.equal(validatorExpected);
+    expect(await token.balanceOf(agent.address)).to.equal(agentExpected);
+  });
+
   it("funds large bonus from validator and burn portions", async function () {
     const { token, manager, employer, agent, validator } = await deployFixture(500);
     const payout = ethers.parseEther("1000");

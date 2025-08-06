@@ -262,6 +262,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(address => bool) public blacklistedValidators;
     uint256 public totalJobEscrow;
     uint256 public totalValidatorStake;
+    uint256 public constant MAX_AGI_TYPES = 50; // limits AGI type iterations
     AGIType[] public agiTypes;
 
     event JobCreated(
@@ -405,6 +406,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when the specified AGI type does not exist.
     error AGITypeNotFound();
+
+    /// @dev Thrown when attempting to add more AGI types than allowed.
+    error MaxAGITypesReached();
 
     /// @dev Thrown when the supplied amount is zero or exceeds the contract balance.
     error InvalidAmount();
@@ -2007,6 +2011,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
         if (!exists) {
+            if (length >= MAX_AGI_TYPES) {
+                revert MaxAGITypesReached();
+            }
             agiTypes.push(AGIType({ nftAddress: nftAddress, payoutPercentage: payoutPercentage }));
         }
 
@@ -2037,8 +2044,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function getHighestPayoutPercentage(address agent) public view returns (uint256 highestPercentage) {
         uint256 len = agiTypes.length;
         for (uint256 i; i < len; ) {
-            if (IERC721(agiTypes[i].nftAddress).balanceOf(agent) > 0 && agiTypes[i].payoutPercentage > highestPercentage) {
-                highestPercentage = agiTypes[i].payoutPercentage;
+            try IERC721(agiTypes[i].nftAddress).balanceOf(agent) returns (uint256 bal) {
+                if (bal > 0 && agiTypes[i].payoutPercentage > highestPercentage) {
+                    highestPercentage = agiTypes[i].payoutPercentage;
+                }
+            } catch {
+                // treat as zero balance
             }
             unchecked {
                 ++i;
