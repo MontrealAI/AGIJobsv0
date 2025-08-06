@@ -248,6 +248,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(uint256 => Job) public jobs;
     mapping(address => uint256) public reputation;
     mapping(address => uint256) public validatorStake;
+    mapping(address => uint256) public agentStake;
     mapping(address => uint256) public pendingCommits;
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
@@ -263,6 +264,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(address => bool) public blacklistedValidators;
     uint256 public totalJobEscrow;
     uint256 public totalValidatorStake;
+    uint256 public totalAgentStake;
     uint256 public constant MAX_AGI_TYPES = 50; // limits AGI type iterations
     AGIType[] public agiTypes;
 
@@ -380,6 +382,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event SlashingPercentageUpdated(uint256 newPercentage);
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event StakeSlashed(address indexed validator, uint256 amount);
+    event AgentPenalized(
+        address indexed agent,
+        uint256 reputationPenalty,
+        uint256 stakeSlashed
+    );
     event ValidatorPayout(address indexed validator, uint256 amount);
     event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorSkipped(
@@ -936,6 +943,26 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             calculateReputationPoints(job.payout, completionTime);
         uint256 validatorReputationChange =
             calculateValidatorReputationPoints(reputationPoints);
+        enforceReputationPenalty(job.assignedAgent, reputationPoints);
+        uint256 agentSlashAmount;
+        if (agentStake[job.assignedAgent] > 0) {
+            agentSlashAmount =
+                (agentStake[job.assignedAgent] * slashingPercentage) /
+                PERCENTAGE_DENOMINATOR;
+            if (agentSlashAmount > 0) {
+                agentStake[job.assignedAgent] -= agentSlashAmount;
+                totalAgentStake -= agentSlashAmount;
+                agiToken.safeTransfer(
+                    slashedStakeRecipient,
+                    agentSlashAmount
+                );
+            }
+        }
+        emit AgentPenalized(
+            job.assignedAgent,
+            reputationPoints,
+            agentSlashAmount
+        );
         uint256 correctValidatorCount = job.validatorDisapprovals;
         address[] memory correctValidators =
             new address[](correctValidatorCount);
