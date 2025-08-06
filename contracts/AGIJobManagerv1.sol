@@ -194,6 +194,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public revealDuration;
     /// @notice Waiting period after completion request before validators may vote.
     uint256 public reviewWindow;
+    /// @notice Additional entropy for validator selection; owner-settable.
+    bytes32 public validatorSelectionSeed;
 
     /// @notice Tracks the lifecycle of a job.
     enum JobStatus {
@@ -384,6 +386,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Emitted when the validator reputation percentage is updated.
     event ValidatorReputationPercentageUpdated(uint256 newPercentage);
     event ValidatorsPerJobUpdated(uint256 count);
+    event ValidatorSelectionSeedUpdated(bytes32 newSeed);
     event StakeDeposited(address indexed validator, uint256 amount);
     event StakeWithdrawn(address indexed validator, uint256 amount);
     event AgentStakeDeposited(address indexed agent, uint256 amount);
@@ -606,6 +609,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         revealDuration = 1 hours;
         // Ensure the initial review window accommodates both phases.
         reviewWindow = commitDuration + revealDuration;
+        validatorSelectionSeed = blockhash(block.number - 1);
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -740,7 +744,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
         address[] memory selected = new address[](validatorsPerJob);
         bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), _jobId)
+            abi.encodePacked(
+                blockhash(block.number - 1),
+                _jobId,
+                validatorSelectionSeed
+            )
         );
         uint256 remaining = pool.length;
 
@@ -1456,6 +1464,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 oldSize = maxValidatorPoolSize;
         maxValidatorPoolSize = newSize;
         emit MaxValidatorPoolSizeUpdated(oldSize, newSize);
+    }
+
+    /// @notice Update the entropy seed used in validator selection.
+    /// @param newSeed Additional randomness value mixed with blockhash.
+    function setValidatorSelectionSeed(bytes32 newSeed) external onlyOwner {
+        validatorSelectionSeed = newSeed;
+        emit ValidatorSelectionSeedUpdated(newSeed);
     }
 
     /// @notice Update commit and reveal window durations.

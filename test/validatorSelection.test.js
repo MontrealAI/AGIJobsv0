@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 async function deployManager() {
-  const [, employer, agent] = await ethers.getSigners();
+  const [owner, employer, agent] = await ethers.getSigners();
   const Token = await ethers.getContractFactory("MockERC20");
   const token = await Token.deploy();
   await token.waitForDeployment();
@@ -30,7 +30,7 @@ async function deployManager() {
   await token.mint(agent.address, stakeAmount);
   await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
   await manager.connect(agent).stakeAgent(stakeAmount);
-  return { token, manager, employer, agent };
+  return { token, manager, employer, agent, owner };
 }
 
 describe("validator selection", function () {
@@ -99,6 +99,17 @@ describe("validator selection", function () {
       unique.add(addr);
     }
     expect(unique.size).to.equal(10);
+  });
+
+  it("allows owner to update selection seed", async function () {
+    const { manager, owner } = await deployManager();
+    const newSeed = ethers.keccak256(ethers.toUtf8Bytes("seed"));
+    const tx = await manager.connect(owner).setValidatorSelectionSeed(newSeed);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorSelectionSeedUpdated"
+    );
+    expect(event.args[0]).to.equal(newSeed);
   });
 });
 
