@@ -219,6 +219,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         address[] validators;
         address[] selectedValidators;
         mapping(address => bool) isSelectedValidator;
+        mapping(address => bool) committed;
         mapping(address => bytes32) commitments;
         mapping(address => bool) revealed;
         mapping(address => bool) revealedVotes;
@@ -381,6 +382,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event StakeSlashed(address indexed validator, uint256 amount);
     event ValidatorPayout(address indexed validator, uint256 amount);
     event LeftoverTransferred(address indexed recipient, uint256 amount);
+    event ValidatorSkipped(
+        uint256 indexed jobId,
+        address indexed validator,
+        bool committed,
+        bool revealed
+    );
     event ValidatorRewardReduced(
         uint256 indexed jobId,
         uint256 availableSlashed,
@@ -709,6 +716,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             address validator = pool[index];
             job.isSelectedValidator[validator] = true;
             job.selectedValidators.push(validator);
+            pendingCommits[validator] += 1;
             selected[i] = validator;
             pool[index] = pool[--remaining];
             unchecked {
@@ -752,7 +760,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (job.commitments[msg.sender] != bytes32(0)) revert AlreadyCommitted();
         job.commitments[msg.sender] = commitment;
         job.validators.push(msg.sender);
-        pendingCommits[msg.sender] += 1;
+        job.committed[msg.sender] = true;
         emit ValidationCommitted(_jobId, msg.sender, commitment);
     }
 
@@ -934,16 +942,30 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 correctIndex = 0;
         uint256 totalSlashed = 0;
 
-        uint256 vLen = job.validators.length;
-        for (uint256 i; i < vLen; ) {
-            address validator = job.validators[i];
+        uint256 svLen = job.selectedValidators.length;
+        for (uint256 i; i < svLen; ) {
+            address validator = job.selectedValidators[i];
+            bool committed = job.committed[validator];
             bool revealed = job.revealed[validator];
-            if (revealed && job.disapprovals[validator]) {
+            if (committed && revealed && job.disapprovals[validator]) {
                 _removeValidatorDisapprovedJob(validator, _jobId);
                 correctValidators[correctIndex++] = validator;
                 enforceReputationGrowth(validator, validatorReputationChange);
-            } else if (revealed && job.approvals[validator]) {
+            } else if (committed && revealed && job.approvals[validator]) {
                 _removeValidatorApprovedJob(validator, _jobId);
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
+                    totalSlashed += slashAmount;
+                    emit StakeSlashed(validator, slashAmount);
+                }
+                enforceReputationPenalty(validator, validatorReputationChange);
+            } else if (committed && revealed) {
+                _removeValidatorApprovedJob(validator, _jobId);
+                _removeValidatorDisapprovedJob(validator, _jobId);
                 uint256 slashAmount =
                     (validatorStake[validator] * slashingPercentage) /
                     PERCENTAGE_DENOMINATOR;
@@ -966,6 +988,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                     totalSlashed += slashAmount;
                     emit StakeSlashed(validator, slashAmount);
                 }
+                emit ValidatorSkipped(_jobId, validator, committed, revealed);
             }
             if (pendingCommits[validator] > 0) {
                 pendingCommits[validator] -= 1;
@@ -975,13 +998,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             delete job.commitments[validator];
             delete job.revealed[validator];
             delete job.revealedVotes[validator];
+            delete job.committed[validator];
             unchecked {
                 ++i;
             }
         }
 
         delete job.validators;
-        uint256 svLen = job.selectedValidators.length;
         for (uint256 i; i < svLen; ) {
             delete job.isSelectedValidator[job.selectedValidators[i]];
             unchecked {
@@ -1636,15 +1659,29 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 approvedIndex = 0;
         uint256 totalSlashed = 0;
 
-        uint256 vLen = job.validators.length;
-        for (uint256 i; i < vLen; ) {
-            address validator = job.validators[i];
+        uint256 svLen = job.selectedValidators.length;
+        for (uint256 i; i < svLen; ) {
+            address validator = job.selectedValidators[i];
+            bool committed = job.committed[validator];
             bool revealed = job.revealed[validator];
-            if (revealed && job.approvals[validator]) {
+            if (committed && revealed && job.approvals[validator]) {
                 _removeValidatorApprovedJob(validator, _jobId);
                 approvedValidators[approvedIndex++] = validator;
                 enforceReputationGrowth(validator, validatorReputationChange);
-            } else if (revealed && job.disapprovals[validator]) {
+            } else if (committed && revealed && job.disapprovals[validator]) {
+                _removeValidatorDisapprovedJob(validator, _jobId);
+                uint256 slashAmount =
+                    (validatorStake[validator] * slashingPercentage) /
+                    PERCENTAGE_DENOMINATOR;
+                if (slashAmount > 0) {
+                    validatorStake[validator] -= slashAmount;
+                    totalValidatorStake -= slashAmount;
+                    totalSlashed += slashAmount;
+                    emit StakeSlashed(validator, slashAmount);
+                }
+                enforceReputationPenalty(validator, validatorReputationChange);
+            } else if (committed && revealed) {
+                _removeValidatorApprovedJob(validator, _jobId);
                 _removeValidatorDisapprovedJob(validator, _jobId);
                 uint256 slashAmount =
                     (validatorStake[validator] * slashingPercentage) /
@@ -1669,6 +1706,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                     emit StakeSlashed(validator, slashAmount);
                 }
                 enforceReputationPenalty(validator, validatorReputationChange);
+                emit ValidatorSkipped(_jobId, validator, committed, revealed);
             }
             if (pendingCommits[validator] > 0) {
                 pendingCommits[validator] -= 1;
@@ -1678,13 +1716,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             delete job.commitments[validator];
             delete job.revealed[validator];
             delete job.revealedVotes[validator];
+            delete job.committed[validator];
             unchecked {
                 ++i;
             }
         }
 
         delete job.validators;
-        uint256 svLen = job.selectedValidators.length;
         for (uint256 i; i < svLen; ) {
             delete job.isSelectedValidator[job.selectedValidators[i]];
             unchecked {

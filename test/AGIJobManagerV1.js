@@ -735,9 +735,56 @@ describe("AGIJobManagerV1 payouts", function () {
     expect(
       await manager.validatorApprovedJobs(validator.address, 0)
     ).to.equal(1n);
-    expect(
+  expect(
       await manager.validatorDisapprovedJobs(validator.address, 0)
-    ).to.equal(2n);
+  ).to.equal(2n);
+  });
+
+  it("penalizes validators who fail to commit or reveal", async function () {
+    const { token, manager, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    await manager.setSlashingPercentage(5000);
+    const payout = ethers.parseEther("100");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    const jobId = 0;
+    const stakeAmount = ethers.parseEther("10");
+    await token.mint(validator.address, stakeAmount);
+    await token.mint(validator2.address, stakeAmount);
+    await token.mint(validator3.address, stakeAmount);
+    await token.connect(validator).approve(await manager.getAddress(), stakeAmount);
+    await token.connect(validator2).approve(await manager.getAddress(), stakeAmount);
+    await token.connect(validator3).approve(await manager.getAddress(), stakeAmount);
+    await manager.connect(validator).stake(stakeAmount);
+    await manager.connect(validator2).stake(stakeAmount);
+    await manager.connect(validator3).stake(stakeAmount);
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+    await expect(
+      manager.connect(validator3).withdrawStake(stakeAmount)
+    ).to.be.revertedWithCustomError(manager, "PendingCommitments");
+    const saltA = ethers.id("a");
+    const commitA = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, jobId, true, saltA]
+    );
+    await manager.connect(validator).commitValidation(jobId, commitA, "", []);
+    const saltB = ethers.id("b");
+    const commitB = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator2.address, jobId, true, saltB]
+    );
+    await manager.connect(validator2).commitValidation(jobId, commitB, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(jobId, true, saltA);
+    await time.increase(1001);
+    await manager.connect(validator).validateJob(jobId, "", []);
+    const slashAmount = (stakeAmount * 5000n) / 10000n;
+    expect(await manager.validatorStake(validator.address)).to.equal(stakeAmount);
+    expect(await manager.validatorStake(validator2.address)).to.equal(stakeAmount - slashAmount);
+    expect(await manager.validatorStake(validator3.address)).to.equal(stakeAmount - slashAmount);
+    await expect(
+      manager.connect(validator3).withdrawStake(stakeAmount - slashAmount)
+    ).not.to.be.reverted;
   });
 
   it("handles employer-win disputes and allows stake withdrawal", async function () {
