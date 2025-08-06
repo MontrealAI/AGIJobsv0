@@ -441,7 +441,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 stakeSlashed
     );
     event ValidatorPayout(address indexed validator, uint256 amount);
-    event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorSkipped(
         uint256 indexed jobId,
         address indexed validator,
@@ -1149,18 +1148,15 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
             }
         } else {
-            uint256 validatorPayout = validatorPayoutTotal /
-                correctValidatorCount;
-            uint256 slashedReward = totalSlashed / correctValidatorCount;
-            uint256 distributedValidator =
-                validatorPayout * correctValidatorCount;
-            uint256 distributedSlashed =
-                slashedReward * correctValidatorCount;
-            uint256 leftover =
-                (validatorPayoutTotal - distributedValidator) +
-                (totalSlashed - distributedSlashed);
+            uint256 totalReward = validatorPayoutTotal + totalSlashed;
+            uint256 rewardPerValidator = totalReward / correctValidatorCount;
+            uint256 remainder = totalReward % correctValidatorCount;
             for (uint256 i; i < correctValidatorCount; ) {
-                uint256 reward = validatorPayout + slashedReward;
+                uint256 reward = rewardPerValidator;
+                if (remainder > 0) {
+                    reward += 1;
+                    remainder -= 1;
+                }
                 if (reward > 0) {
                     agiToken.safeTransfer(correctValidators[i], reward);
                     emit ValidatorPayout(correctValidators[i], reward);
@@ -1168,10 +1164,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 unchecked {
                     ++i;
                 }
-            }
-            if (leftover > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                emit LeftoverTransferred(slashedStakeRecipient, leftover);
             }
         }
 
@@ -2293,19 +2285,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             validatorPayoutTotal = 0;
         }
 
-        uint256 validatorPayout = correctValidatorCount > 0
-            ? validatorPayoutTotal / correctValidatorCount
+        uint256 totalReward = validatorPayoutTotal + totalSlashed;
+        uint256 rewardPerValidator = correctValidatorCount > 0
+            ? totalReward / correctValidatorCount
             : 0;
-        uint256 slashedReward = correctValidatorCount > 0
-            ? totalSlashed / correctValidatorCount
+        uint256 remainder = correctValidatorCount > 0
+            ? totalReward % correctValidatorCount
             : 0;
-        uint256 distributedValidator =
-            validatorPayout * correctValidatorCount;
-        uint256 distributedSlashed =
-            slashedReward * correctValidatorCount;
-        uint256 leftover =
-            (validatorPayoutTotal - distributedValidator) +
-            (totalSlashed - distributedSlashed);
 
         if (burnAmount > 0) {
             if (burnAddress == address(0)) revert BurnAddressNotSet();
@@ -2318,7 +2304,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         } else {
             for (uint256 i; i < correctValidatorCount; ) {
-                uint256 reward = validatorPayout + slashedReward;
+                uint256 reward = rewardPerValidator;
+                if (remainder > 0) {
+                    reward += 1;
+                    remainder -= 1;
+                }
                 if (reward > 0) {
                     agiToken.safeTransfer(approvedValidators[i], reward);
                     emit ValidatorPayout(approvedValidators[i], reward);
@@ -2326,10 +2316,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 unchecked {
                     ++i;
                 }
-            }
-            if (leftover > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                emit LeftoverTransferred(slashedStakeRecipient, leftover);
             }
         }
 
