@@ -60,6 +60,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 2. In **Read Contract**, look up `reviewWindow()`, `validatorsPerJob()`, and other getters to understand current timing and validation parameters.
 3. In **Write Contract**, use `createJob` to post work and escrow funds. Record the `JobCreated` event to obtain the job ID.
 4. Track `JobApplied`, `ValidationCommitted`, and `JobFinalizedAndBurned` events to monitor progress.
+5. If validators reject the work, your escrow is returned minus the burn and validator reward portions.
 
 ### Agents
 
@@ -75,7 +76,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 3. Stake AGI with `stake` and wait to be selected.
 4. **Commit:** Off‑chain, compute `commitHash = keccak256(abi.encode(jobId, approve, salt))` using any Keccak‑256 tool (e.g., Node, ethers.js). Example: `node -e "console.log(require('ethers').solidityPackedKeccak256(['uint256','bool','bytes32'], [JOB_ID,true,'0xSALT']))"`. Call `commitValidation(jobId, commitHash)` during the commit window.
 5. **Reveal:** After the commit window ends, call `revealValidation(jobId, approve, salt)` using the same `approve` flag and secret `salt`.
-6. Finalize with `validateJob` or `disapproveJob` after the review window and monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
+6. Finalize with `validateJob` or `disapproveJob` after the review window; correct validators split the reserved reward and any slashed stakes. Monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
 
 ### Owner Configuration Summary
 
@@ -107,6 +108,8 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `jobDurationLimit` | `setJobDurationLimit(uint256)` | Maximum job duration |
 | `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
 | `maxValidatorPoolSize` | `setMaxValidatorPoolSize(uint256)` | Cap on validator pool size |
+| `AGI token address` | `updateAGITokenAddress(address)` | Replace the $AGI token used for payments |
+| `baseURI` | `setBaseURI(string)` | Prefix for NFT metadata |
 
 Review `*Updated` events after any call to confirm changes on-chain.
 
