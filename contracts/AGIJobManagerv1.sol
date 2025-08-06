@@ -1024,8 +1024,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function _resolveEmployerWin(uint256 _jobId) internal {
         Job storage job = jobs[_jobId];
-        if (agentStake[job.assignedAgent] < agentStakeRequirement)
-            revert AgentStakeRequired();
         job.status = JobStatus.Completed;
         totalJobEscrow -= job.payout;
         uint256 validatorPayoutTotal =
