@@ -103,6 +103,24 @@ describe("AGIJobManagerV1 payouts", function () {
     ).to.be.revertedWithCustomError(manager, "ReviewWindowTooShort");
   });
 
+  it("emits event when updating minimum agent reputation", async function () {
+    const { manager } = await deployFixture();
+    await expect(manager.setMinAgentReputation(10))
+      .to.emit(manager, "MinAgentReputationUpdated")
+      .withArgs(10);
+  });
+
+  it("reverts when agent reputation is below minimum", async function () {
+    const { token, manager, employer, agent } = await deployFixture();
+    const payout = ethers.parseEther("1");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    await manager.setMinAgentReputation(1);
+    await expect(
+      manager.connect(agent).applyForJob(0, "", [])
+    ).to.be.revertedWithCustomError(manager, "InsufficientReputation");
+  });
+
   it("allows agent to apply for a job using a Merkle proof", async function () {
     const { token, manager, employer, agent, proof } = await deployFixture(1000, true);
     const payout = ethers.parseEther("1");

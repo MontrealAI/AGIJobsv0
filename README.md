@@ -29,7 +29,7 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 ### Agents
 
 1. Connect your wallet on the same page.
-2. Use `applyForJob` with the job ID.
+2. Ensure your reputation meets `minAgentReputation`, then use `applyForJob` with the job ID.
 3. After finishing work, call `requestJobCompletion` with an IPFS hash or URL.
 
 ### Validators
@@ -69,7 +69,7 @@ Follow these steps before trusting any address or artifact:
 - All percentage parameters use basis points (1 bp = 0.01%); double‑check values before submitting transactions.
 - Jobs finalize only after the agent calls `requestJobCompletion`; even moderator resolutions in favor of the agent revert otherwise.
 - Escrowed payouts and validator stakes are tracked separately; `withdrawAGI` only permits withdrawing surplus funds not locked for jobs or staking.
-- Confirm the current `stakeRequirement` and `agentStakeRequirement` with the contract's **Read** tab before staking or applying; `withdrawStake` only succeeds once all of your jobs are finalized without disputes. Agents can check their own stake via `agentStake(address)`.
+- Confirm the current `stakeRequirement`, `agentStakeRequirement`, and `minAgentReputation` with the contract's **Read** tab before staking or applying; `withdrawStake` only succeeds once all of your jobs are finalized without disputes. Agents can check their own stake via `agentStake(address)`.
 - Monitor `*Updated` events for changes to burn rates, slashing percentages, reward splits, minimum reputation, the slashed‑stake recipient, or validator pool resets via `ValidatorPoolSet`.
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
 - If no validator votes correctly, only slashed stake goes to `slashedStakeRecipient` while the reserved validator reward portion returns to the job's agent or employer; verify this recipient and watch for updates before staking.
@@ -87,7 +87,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 
 **Agents**
 - Double-check the contract address before interacting.
-- Stake at least `agentStakeRequirement` via `stakeAgent` before applying. Check the requirement with `agentStakeRequirement()` and verify your balance with `agentStake(address)` in the contract's **Read** tab.
+- Stake at least `agentStakeRequirement` via `stakeAgent` and maintain `minAgentReputation` before applying. Check the thresholds with `agentStakeRequirement()` and `minAgentReputation()` and verify your balance with `agentStake(address)` in the contract's **Read** tab.
 - Use `applyForJob` to claim the task (≈1 transaction).
 - After completing the work, call `requestJobCompletion` with a non-empty result reference such as an IPFS hash (≈1 transaction).
 - Monitor the job status until validators approve and funds release.
@@ -118,7 +118,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - Example: [createJob transaction](https://etherscan.io/tx/0xccd6d21a8148a06e233063f57b286832f3c2ca015ab4d8387a529e3508e8f32e).
 
 **Agents**
-- Stake the required AGI with `stakeAgent`, then claim an open job. Verify your balance with `agentStake(address)` and the threshold via `agentStakeRequirement()`.
+- Stake the required AGI with `stakeAgent` and ensure your reputation meets `minAgentReputation` before claiming an open job. Verify your balance with `agentStake(address)` and check the thresholds via `agentStakeRequirement()` and `minAgentReputation()`.
 - Submit your work with a link or hash.
 - Be sure to request completion before the job duration expires; otherwise anyone can call `cancelExpiredJob` to refund the employer (minus a small reward to the caller), so track your deadline closely.
 - Missing the deadline or losing a dispute can reduce your reputation and staked AGI.
@@ -141,7 +141,7 @@ See the [Glossary](docs/glossary.md) for key terminology.
 - Validators are drawn using blockhash-based pseudo-randomness combined with an owner-controlled seed; the [`ValidatorsSelected`](contracts/AGIJobManagerv1.sol#L308) event shows who was chosen for each job.
 
 **Agents**
-- Stake AGI with [`stakeAgent`](contracts/AGIJobManagerv1.sol#L2088) to meet `agentStakeRequirement`, then use [`applyForJob`](contracts/AGIJobManagerv1.sol#L665) to claim an open job. Use the contract's **Read** tab to check `agentStakeRequirement()` and your current stake with `agentStake(address)`.
+- Stake AGI with [`stakeAgent`](contracts/AGIJobManagerv1.sol#L2088) to meet `agentStakeRequirement` and ensure your reputation meets `minAgentReputation`, then use [`applyForJob`](contracts/AGIJobManagerv1.sol#L665) to claim an open job. Use the contract's **Read** tab to check `agentStakeRequirement()`, `minAgentReputation()`, and your current stake with `agentStake(address)`.
 - After finishing work, [`requestJobCompletion`](contracts/AGIJobManagerv1.sol#L694) with a non-empty IPFS hash.
 - Submit before the deadline to avoid cancellation via [`cancelExpiredJob`](contracts/AGIJobManagerv1.sol#L1709); deadlines are enforced and anyone can cancel once they pass, earning a small reward.
 - An employer win via [`resolveDispute`](contracts/AGIJobManagerv1.sol#L953) or a missed deadline can cut your reputation and staked AGI.
@@ -303,7 +303,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 
 1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
 2. Maintain a sufficiently large validator pool; selection uses blockhash entropy plus the configurable seed and can be biased if the pool is small.
-3. Ensure each validator has staked at least `stakeRequirement` before validating and each agent meets `agentStakeRequirement` before applying.
+3. Ensure each validator has staked at least `stakeRequirement` before validating and each agent meets `agentStakeRequirement` and `minAgentReputation` before applying.
 4. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool and adjust `maxValidatorPoolSize` with `setMaxValidatorPoolSize` if the pool approaches the cap.
 5. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
 6. Monitor `StakeRequirementUpdated`, `AgentStakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `MaxValidatorPoolSizeUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
