@@ -76,6 +76,29 @@ Follow these steps before trusting any address or artifact:
 - Validators that fall below `minValidatorReputation` are automatically blacklisted; the restriction lifts once their reputation rises back above the threshold.
 - If no validator votes correctly, only slashed stake goes to `slashedStakeRecipient` while the reserved validator reward portion returns to the job's agent or employer; verify this recipient and watch for updates before staking.
 
+## Default Parameters
+
+These values reflect the contract's initial configuration. Confirm current settings with the on-chain getters before interacting.
+
+### Timing Defaults
+
+| Parameter | Default | Purpose | Getter |
+| --- | --- | --- | --- |
+| `commitDuration` | `3600 s` (1 h) | Length of commit phase for hashed votes | `commitDuration()` |
+| `revealDuration` | `3600 s` (1 h) | Time validators have to reveal votes | `revealDuration()` |
+| `reviewWindow` | `7200 s` (2 h) | Delay after completion request before finalization | `reviewWindow()` |
+| `resolveGracePeriod` | `3600 s` (1 h) | Additional time before anyone can resolve stalled jobs | `resolveGracePeriod()` |
+
+### Stake & Slashing Defaults
+
+| Parameter | Default | Notes |
+| --- | --- | --- |
+| `stakeRequirement` | `0 AGI` | Minimum validator bond before voting |
+| `agentStakeRequirement` | `0 AGI` | Minimum agent bond before applying |
+| `validationRewardPercentage` | `8%` | Portion of payout shared among correct validators |
+| `validatorSlashingPercentage` | `0%` | Stake burned when a validator votes incorrectly |
+| `agentSlashingPercentage` | `0%` | Stake burned if an agent misses a deadline or loses a dispute |
+
 ## Simple Workflow
 
 Interact with the contracts using a wallet or block explorer. Always verify contract addresses on multiple explorers before sending transactions. For method-level details and code samples, see the [Quick Start](#quick-start). See the [Glossary](docs/glossary.md) for definitions of the commit phase, review window, and other terms.
@@ -107,6 +130,24 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
 - When selected, submit `commitValidation` during the commit phase (≈1 transaction) and later `revealValidation` in the reveal phase (≈1 transaction).
 - Finalize the job with `validateJob` or `disapproveJob` once the review window ends (≈1 transaction).
 - Expect roughly 4–5 transactions per job, not counting the initial stake.
+
+### Validation Timeline
+
+```mermaid
+timeline
+    title Validation Phases
+    Agent submits completion : Review window begins
+    Commit phase : Validators submit hashed votes
+    Reveal phase : Validators open votes
+    Review window ends : Validators finalize the job
+    Slashing/rewards : Stakes adjusted and payouts distributed
+```
+
+### Stake Locking, Slashing, and Rewards
+
+- **Locking:** Validator `stake()` and agent `stakeAgent()` deposits remain locked while they have unresolved jobs. Withdrawals succeed only after all associated jobs finalize without disputes.
+- **Slashing:** Incorrect validator reveals forfeit `validatorSlashingPercentage` of their bonded stake. Agents lose `agentSlashingPercentage` of stake when a deadline is missed or a dispute favors the employer.
+- **Rewards:** Correct validators split `validationRewardPercentage` of the job's remaining payout plus any slashed validator stake. Agents receive the remaining escrow minus burn and validator rewards when validators approve their work.
 
 ## Quick Start
 
