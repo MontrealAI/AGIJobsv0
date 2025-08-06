@@ -1379,5 +1379,18 @@ describe("AGIJobManagerV1 payouts", function () {
         manager.connect(validator).withdrawStake(stakeAmount)
       ).to.be.revertedWithCustomError(manager, "PendingCommitments");
     });
+
+    it("exposes address and info helpers", async function () {
+      const { manager, owner } = await deployFixture();
+      const [tokenAddr, , , ensAddr, wrapperAddr, ownerAddr] = await manager.getAddresses();
+      expect(ownerAddr).to.equal(owner.address);
+      expect(tokenAddr).to.equal(await manager.agiToken());
+      const [termsHash, email, , , , base] = await manager.getGeneralInfo();
+      expect(termsHash).to.equal("");
+      expect(base).to.equal("ipfs://");
+      expect(email).to.equal("");
+      expect(wrapperAddr).to.equal(await manager.nameWrapper());
+      expect(ensAddr).to.equal(await manager.ens());
+    });
   });
 });

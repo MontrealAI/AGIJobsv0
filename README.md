@@ -54,6 +54,8 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 
 > **Important:** Always verify the contract address on at least two explorers and through official AGI.eth channels before interacting. Call [`acceptTerms`](contracts/AGIJobManagerv1.sol#L689) once per address with the IPFS hash of the terms of service and monitor `*Updated` events for configuration changes.
 
+`getValidatorConfig`, `getPayoutConfig`, `getAgentConfig`, `getTimingConfig`, `getAddresses`, and `getGeneralInfo` expose human-readable settings in the **Read Contract** tab so non‑technical users can inspect parameters without decoding storage.
+
 ### Employers
 
 1. Confirm the AGIJobManager v1 address on [Etherscan](https://etherscan.io/) and a secondary explorer.
@@ -116,6 +118,8 @@ Review `*Updated` events after any call to confirm changes on-chain.
 
 To lessen predictability in validator selection, the contract owner should
 periodically call `setValidatorSelectionSeed` with a fresh random value.
+Each draw mixes the prior block hash, the beacon's `prevrandao`, the job ID,
+and this seed.
 
 ## Disclaimer
 
@@ -289,7 +293,7 @@ These rules keep funds from being locked when validators tie or fail to particip
 
 ### Lifecycle Examples
 
-- **Pseudo-random validator selection**: Alice posts a job and Bob completes it. When Bob calls `requestJobCompletion`, the contract mixes recent block data with an owner-provided seed to select validators, making predictions difficult though not impossible.
+- **Pseudo-random validator selection**: Alice posts a job and Bob completes it. When Bob calls `requestJobCompletion`, the contract mixes recent block data, `block.prevrandao`, and an owner-provided seed to select validators, making predictions difficult though not impossible.
 - **Expiry caller reward**: If an agent fails to request completion before the deadline, anyone—such as Carol—can invoke `cancelExpiredJob` to refund the employer and immediately receive the caller reward.
 - **Agent reputation requirement**: Dana has a reputation of 2 but `minAgentReputation` is 5. Her attempt to `applyForJob` reverts until she finishes smaller tasks to raise her score, after which she can claim higher-value jobs.
 ## Owner Configuration
