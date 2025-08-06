@@ -152,6 +152,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public stakeRequirement;
     uint256 public agentStakeRequirement;
     uint256 public agentStakePercentage;
+    uint256 public validatorStakePercentage;
     uint256 public validatorSlashingPercentage;
     uint256 public agentSlashingPercentage;
     uint256 public minValidatorReputation;
@@ -444,6 +445,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event StakeRequirementUpdated(uint256 newRequirement);
     event AgentStakeRequirementUpdated(uint256 newRequirement);
     event AgentStakePercentageUpdated(uint256 newPercentage);
+    event ValidatorStakePercentageUpdated(uint256 newPercentage);
     event ValidatorSlashingPercentageUpdated(uint256 newPercentage);
     event AgentSlashingPercentageUpdated(uint256 newPercentage);
     event MaxSlashedRewardPercentageUpdated(uint256 newPercentage);
@@ -809,13 +811,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function _selectValidators(uint256 _jobId) internal jobExists(_jobId) {
         Job storage job = jobs[_jobId];
         uint256 poolLength = validatorPool.length;
+        uint256 requiredStake = computeRequiredValidatorStake(job.payout);
         address[] memory pool = new address[](poolLength);
         uint256 eligibleCount;
         for (uint256 i; i < poolLength; ) {
             address validator = validatorPool[i];
             if (
                 !blacklistedValidators[validator] &&
-                validatorStake[validator] >= stakeRequirement &&
+                validatorStake[validator] >= requiredStake &&
                 reputation[validator] >= minValidatorReputation
             ) {
                 pool[eligibleCount] = validator;
@@ -888,11 +891,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             ) ||
             blacklistedValidators[msg.sender]
         ) revert Unauthorized();
-        if (validatorStake[msg.sender] < stakeRequirement)
+        Job storage job = jobs[_jobId];
+        uint256 requiredStake = computeRequiredValidatorStake(job.payout);
+        if (validatorStake[msg.sender] < requiredStake)
             revert InsufficientStake();
         if (reputation[msg.sender] < minValidatorReputation)
             revert InsufficientReputation();
-        Job storage job = jobs[_jobId];
         if (!job.isSelectedValidator[msg.sender]) revert ValidatorNotSelected();
         if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
         if (block.timestamp > job.validationStart + commitDuration)
@@ -1556,6 +1560,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 rewardPercentage,
             uint256 reputationPercentage,
             uint256 stakeReq,
+            uint256 stakePct,
             uint256 validatorSlashPercentage,
             uint256 agentSlashPercentage,
             uint256 maxSlashRewardPercentage,
@@ -1571,6 +1576,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             validationRewardPercentage,
             validatorReputationPercentage,
             stakeRequirement,
+            validatorStakePercentage,
             validatorSlashingPercentage,
             agentSlashingPercentage,
             maxSlashedRewardPercentage,
@@ -1692,6 +1698,20 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             additionalText3,
             _baseURI()
         );
+    }
+
+    /// @notice Calculate the stake a validator must maintain for a job payout.
+    /// @param payout Proposed job payout.
+    /// @return requiredStake Minimum stake the validator must lock.
+    function computeRequiredValidatorStake(uint256 payout)
+        public
+        view
+        returns (uint256 requiredStake)
+    {
+        requiredStake = stakeRequirement;
+        uint256 percentageStake =
+            (payout * validatorStakePercentage) / PERCENTAGE_DENOMINATOR;
+        if (percentageStake > requiredStake) requiredStake = percentageStake;
     }
 
     /// @notice Calculate the stake an agent must maintain for a job payout.
@@ -1879,6 +1899,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit AgentStakePercentageUpdated(percentage);
     }
 
+    /// @notice Update the minimum stake validators must maintain as a percentage of job payout.
+    /// @param percentage Required portion of the payout in basis points.
+    function setValidatorStakePercentage(uint256 percentage) external onlyOwner {
+        if (percentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        validatorStakePercentage = percentage;
+        emit ValidatorStakePercentageUpdated(percentage);
+    }
+
     /// @notice Update the slashing rate applied to incorrect validator stakes.
     /// @param percentage Portion of staked tokens to slash in basis points.
     function setValidatorSlashingPercentage(uint256 percentage)
@@ -2029,7 +2057,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Atomically update validator incentive parameters.
     /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
     /// @param reputationPercentage Share of agent reputation granted to correct validators (basis points).
-    /// @param stakeReq Minimum stake required to validate (0 disables staking).
+    /// @param stakeReq Minimum fixed stake required to validate (0 disables staking).
     /// @param validatorSlashPercentage Portion of validator stake to slash on incorrect votes (basis points; 0 disables).
     /// @param agentSlashPercentage Portion of agent stake to slash on failure (basis points; 0 disables).
     /// @param minRep Minimum reputation required to validate.
