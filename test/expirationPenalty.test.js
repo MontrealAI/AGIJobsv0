@@ -59,13 +59,19 @@ describe("AGIJobManagerV1 expiration penalties", function () {
     const ownerStart = await token.balanceOf(owner.address);
     const employerStart = await token.balanceOf(employer.address);
     await expect(manager.cancelExpiredJob(jobId))
-      .to.emit(manager, "AgentPenalized");
+      .to.emit(manager, "AgentPenalized")
+      .and.to.emit(manager, "AgentSlashDistributed");
     const slashAmount = (stake * 2000n) / 10000n;
+    const employerPct = await manager.agentSlashEmployerPercentage();
+    const employerSlash = (slashAmount * employerPct) / 10000n;
+    const recipientSlash = slashAmount - employerSlash;
     const rewardBps = await manager.cancelRewardPercentage();
     const reward = (payout * rewardBps) / 10000n;
     expect(await manager.agentStake(agent.address)).to.equal(stake - slashAmount);
-    expect(await token.balanceOf(owner.address)).to.equal(ownerStart + slashAmount + reward);
-    expect(await token.balanceOf(employer.address)).to.equal(employerStart + payout - reward);
+    expect(await token.balanceOf(owner.address)).to.equal(ownerStart + recipientSlash + reward);
+    expect(await token.balanceOf(employer.address)).to.equal(
+      employerStart + payout - reward + employerSlash
+    );
     expect(await token.balanceOf(agent.address)).to.equal(0n);
   });
 });
