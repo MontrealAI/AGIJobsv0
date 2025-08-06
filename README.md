@@ -35,8 +35,9 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 ### Validators
 
 1. Deposit stake through `stake` to join the pool.
-2. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
-3. Finalize with `validateJob` or `disapproveJob`.
+2. View the current validator roster via `getValidatorPool` in the **Read Contract** tab.
+3. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
+4. Finalize with `validateJob` or `disapproveJob`.
 
 #### Example Write Functions
 
@@ -194,7 +195,7 @@ The current implementation relies on on-chain entropy for validator selection. F
 
 Convenience functions:
 
-- `setBurnConfig(address addr, uint256 bps)` atomically updates burn address and percentage.
+- `setBurnConfig(address addr, uint256 bps)` atomically updates burn address and percentage and reverts if burn plus validator reward exceed 100%.
 - `setValidatorConfig(...)` adjusts reward, reputation, staking, slashing, and timing in one call.
 
 ### Example: Updating Burn and Validator Settings with a Block Explorer
@@ -308,7 +309,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 - **Custom error finalization** – [`_finalizeJobAndBurn`](contracts/AGIJobManagerv1.sol#L1734-L1880) reverts with dedicated custom errors, lowering gas costs versus string-based `require`s.
 - **Pseudo-random validator selection** – Validators are chosen using blockhash, `block.prevrandao`, and an owner-provided seed so no participant can easily predict who reviews a job.
 - **Owner-controlled parameters** – Only the contract owner may tune validator counts, reward and slashing percentages, burn settings, timing windows, and recipient addresses via `onlyOwner` functions such as [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1515-L1574) and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L1394-L1404); each change emits a corresponding `*Updated` event.
-- **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1303-L1337) and [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1340-L1346) expose job and validator details for front‑end integrations without traversing storage mappings.
+- **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1338-L1372), [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1388-L1394), and [`getValidatorPool`](contracts/AGIJobManagerv1.sol#L1398-L1402) expose job and validator details for front‑end integrations without traversing storage mappings.
 
 **Setup checklist**
 

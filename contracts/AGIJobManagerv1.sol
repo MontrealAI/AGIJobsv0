@@ -1395,6 +1395,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         return jobs[_jobId].selectedValidators;
     }
 
+    /// @notice Retrieve the full validator pool.
+    /// @return Array of validator addresses currently in the pool.
+    function getValidatorPool() external view returns (address[] memory) {
+        return validatorPool;
+    }
+
     function _validatePayoutSplits(
         uint256 _burnPercentage,
         uint256 _validationRewardPercentage
@@ -1454,6 +1460,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     ) external onlyOwner {
         if (newBurnAddress == address(0)) revert InvalidAddress();
         if (newPercentage > PERCENTAGE_DENOMINATOR) revert InvalidPercentage();
+        _validatePayoutSplits(newPercentage, validationRewardPercentage);
         burnAddress = newBurnAddress;
         burnPercentage = newPercentage;
         emit BurnAddressUpdated(newBurnAddress);
