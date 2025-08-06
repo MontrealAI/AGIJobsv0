@@ -1685,9 +1685,27 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             revert JobNotExpired();
         job.status = JobStatus.Cancelled;
         totalJobEscrow -= job.payout;
-        if (agentActiveJobs[job.assignedAgent] > 0) {
-            agentActiveJobs[job.assignedAgent] -= 1;
+        address agent = job.assignedAgent;
+        if (agentActiveJobs[agent] > 0) {
+            agentActiveJobs[agent] -= 1;
         }
+        uint256 reputationPenalty = calculateReputationPoints(
+            job.payout,
+            job.duration
+        );
+        enforceReputationPenalty(agent, reputationPenalty);
+        uint256 agentSlashAmount;
+        if (agentStake[agent] >= agentStakeRequirement) {
+            agentSlashAmount =
+                (agentStake[agent] * slashingPercentage) /
+                PERCENTAGE_DENOMINATOR;
+            if (agentSlashAmount > 0) {
+                agentStake[agent] -= agentSlashAmount;
+                totalAgentStake -= agentSlashAmount;
+                agiToken.safeTransfer(slashedStakeRecipient, agentSlashAmount);
+            }
+        }
+        emit AgentPenalized(agent, reputationPenalty, agentSlashAmount);
         agiToken.safeTransfer(job.employer, job.payout);
         emit JobExpired(_jobId, job.employer, msg.sender, JobStatus.Cancelled);
     }
