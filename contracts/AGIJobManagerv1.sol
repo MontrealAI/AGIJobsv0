@@ -217,7 +217,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         string details;
         mapping(address => bool) approvals;
         mapping(address => bool) disapprovals;
-        address[] validators;
         address[] selectedValidators;
         mapping(address => bool) isSelectedValidator;
         mapping(address => bool) committed;
@@ -776,7 +775,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             revert CommitPhaseOver();
         if (job.commitments[msg.sender] != bytes32(0)) revert AlreadyCommitted();
         job.commitments[msg.sender] = commitment;
-        job.validators.push(msg.sender);
         job.committed[msg.sender] = true;
         emit ValidationCommitted(_jobId, msg.sender, commitment);
     }
@@ -1042,7 +1040,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
 
-        delete job.validators;
         for (uint256 i; i < svLen; ) {
             delete job.isSelectedValidator[job.selectedValidators[i]];
             unchecked {
@@ -1280,16 +1277,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             job.validatorDisapprovals,
             job.details
         );
-    }
-
-    /// @notice Retrieve validators that committed to a job.
-    function getJobValidators(uint256 _jobId)
-        external
-        view
-        jobExists(_jobId)
-        returns (address[] memory)
-    {
-        return jobs[_jobId].validators;
     }
 
     /// @notice Retrieve validators selected for a job.
@@ -1777,7 +1764,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             }
         }
 
-        delete job.validators;
         for (uint256 i; i < svLen; ) {
             delete job.isSelectedValidator[job.selectedValidators[i]];
             unchecked {

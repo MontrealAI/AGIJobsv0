@@ -252,7 +252,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
  - **Custom error finalization** – [`_finalizeJobAndBurn`](contracts/AGIJobManagerv1.sol#L1577-L1765) reverts with dedicated custom errors, lowering gas costs versus string-based `require`s.
 - **Verifiable randomness roadmap** – Validators are presently chosen with blockhash entropy via [`_selectValidators`](contracts/AGIJobManagerv1.sol#L674-L720); future versions will integrate verifiable randomness (e.g., VRF) for stronger guarantees.
 - **Owner-controlled parameters** – Only the contract owner may tune validator counts, reward and slashing percentages, burn settings, timing windows, and recipient addresses via `onlyOwner` functions such as [`setValidatorConfig`](contracts/AGIJobManagerv1.sol#L1385-L1440) and [`setBurnConfig`](contracts/AGIJobManagerv1.sol#L1289-L1299); each change emits a corresponding `*Updated` event.
-- **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1188-L1222), [`getJobValidators`](contracts/AGIJobManagerv1.sol#L1225-L1232), and [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1235-L1242) expose job and validator details for front‑end integrations without traversing storage mappings.
+- **User-friendly getters** – [`getJobInfo`](contracts/AGIJobManagerv1.sol#L1246-L1278) and [`getSelectedValidators`](contracts/AGIJobManagerv1.sol#L1283-L1290) expose job and validator details for front‑end integrations without traversing storage mappings.
 
 **Setup checklist**
 
