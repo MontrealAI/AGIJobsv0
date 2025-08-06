@@ -315,6 +315,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event JobExpired(
         uint256 indexed jobId,
         address indexed employer,
+        address indexed cancelledBy,
         JobStatus status
     );
     event JobCancelled(uint256 indexed jobId);
@@ -461,6 +462,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @dev Thrown when attempting to cancel before a job expires.
     error JobNotExpired();
+
+    /// @dev Thrown when attempting to cancel an already cancelled job.
+    error JobAlreadyCancelled();
 
     /// @dev Thrown when a job is not in the expected open state.
     error JobNotOpen();
@@ -1663,7 +1667,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         jobExists(_jobId)
     {
         Job storage job = jobs[_jobId];
-        if (msg.sender != job.employer) revert Unauthorized();
+        if (job.status == JobStatus.Cancelled) revert JobAlreadyCancelled();
         if (job.status != JobStatus.Open || job.assignedAgent == address(0))
             revert InvalidJobState();
         if (block.timestamp <= job.assignedAt + job.duration)
@@ -1674,7 +1678,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             agentActiveJobs[job.assignedAgent] -= 1;
         }
         agiToken.safeTransfer(job.employer, job.payout);
-        emit JobExpired(_jobId, job.employer, JobStatus.Cancelled);
+        emit JobExpired(_jobId, job.employer, msg.sender, JobStatus.Cancelled);
     }
 
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
