@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("AGIJobManagerV1 payouts", function () {
-    async function deployFixture(burnPct = 1000, useMerkle = false) {
+    async function deployFixture(burnPct = 1000, useMerkle = false, stakeAgent = true) {
     const [owner, employer, agent, validator, validator2, validator3] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
@@ -57,6 +57,13 @@ describe("AGIJobManagerV1 payouts", function () {
       await manager.addAdditionalValidator(validator3.address);
     }
     await manager.setValidatorsPerJob(3);
+
+    if (stakeAgent) {
+      const stakeAmount = ethers.parseEther("100");
+      await token.mint(agent.address, stakeAmount);
+      await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+      await manager.connect(agent).stakeAgent(stakeAmount);
+    }
 
     return { token, manager, owner, employer, agent, validator, validator2, validator3, proof };
   }
@@ -984,6 +991,70 @@ describe("AGIJobManagerV1 payouts", function () {
     await expect(
       manager.connect(validator).withdrawStake(stakeAmount)
     ).not.to.be.reverted;
+  });
+
+  it("requires agent to stake before applying for a job", async function () {
+    const { token, manager, employer, agent } = await deployFixture(1000, false, false);
+    const payout = ethers.parseEther("1");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    await expect(
+      manager.connect(agent).applyForJob(0, "", [])
+    ).to.be.revertedWithCustomError(manager, "AgentStakeRequired");
+    const stakeAmount = ethers.parseEther("10");
+    await token.mint(agent.address, stakeAmount);
+    await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+    await manager.connect(agent).stakeAgent(stakeAmount);
+    await expect(manager.connect(agent).applyForJob(0, "", []))
+      .to.emit(manager, "JobApplied")
+      .withArgs(0, agent.address);
+  });
+
+  it("allows agents to stake and withdraw", async function () {
+    const { token, manager, agent } = await deployFixture(1000, false, false);
+    const stakeAmount = ethers.parseEther("10");
+    await token.mint(agent.address, stakeAmount);
+    await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+    await expect(manager.connect(agent).stakeAgent(stakeAmount))
+      .to.emit(manager, "AgentStakeDeposited")
+      .withArgs(agent.address, stakeAmount);
+    await expect(manager.connect(agent).withdrawAgentStake(stakeAmount))
+      .to.emit(manager, "AgentStakeWithdrawn")
+      .withArgs(agent.address, stakeAmount);
+  });
+
+  it("slashes agent stake when employer wins dispute", async function () {
+    const { token, manager, owner, employer, agent, validator } = await deployFixture(1000, false, false);
+    await manager.setRequiredValidatorApprovals(1);
+    await manager.setRequiredValidatorDisapprovals(1);
+    await manager.setSlashingPercentage(5000);
+    const stakeAmount = ethers.parseEther("100");
+    await token.mint(agent.address, stakeAmount);
+    await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+    await manager.connect(agent).stakeAgent(stakeAmount);
+    const payout = ethers.parseEther("100");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    await manager.connect(agent).applyForJob(0, "", []);
+    await manager.connect(agent).requestJobCompletion(0, "result");
+    const salt = ethers.id("agentSlash");
+    const commitment = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, 0, false, salt]
+    );
+    await manager
+      .connect(validator)
+      .commitValidation(0, commitment, "", []);
+    await time.increase(1001);
+    await manager.connect(validator).revealValidation(0, false, salt);
+    await time.increase(1000);
+    await manager.connect(validator).disapproveJob(0, "", []);
+    await manager.addModerator(owner.address);
+    await manager.resolveDispute(0, 1);
+    const expectedSlash = (stakeAmount * 5000n) / 10000n;
+    expect(await manager.agentStake(agent.address)).to.equal(
+      stakeAmount - expectedSlash
+    );
   });
 
   describe("dispute timing", function () {

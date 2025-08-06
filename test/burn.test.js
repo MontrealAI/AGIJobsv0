@@ -41,6 +41,11 @@ async function deployFixture(burnPct = 1000) {
   await manager.addAdditionalValidator(validator.address);
   await manager.setValidatorsPerJob(1);
 
+  const stakeAmount = ethers.parseEther("100");
+  await token.mint(agent.address, stakeAmount);
+  await token.connect(agent).approve(await manager.getAddress(), stakeAmount);
+  await manager.connect(agent).stakeAgent(stakeAmount);
+
   return { token, manager, owner, employer, agent, validator };
 }
 
