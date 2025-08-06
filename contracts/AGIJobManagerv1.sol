@@ -199,6 +199,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public revealDuration;
     /// @notice Waiting period after completion request before validators may vote.
     uint256 public reviewWindow;
+    /// @notice Grace period after the reveal phase before stalled jobs can be resolved.
+    uint256 public resolveGracePeriod;
     /// @notice Additional entropy for validator selection; owner-settable.
     bytes32 public validatorSelectionSeed;
 
@@ -313,6 +315,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
+    event ResolveGracePeriodUpdated(uint256 newGracePeriod);
     event JobFinalizedAndBurned(
         uint256 indexed jobId,
         address indexed agent,
@@ -328,6 +331,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         JobStatus status
     );
     event JobCancelled(uint256 indexed jobId);
+    event StalledJobResolved(
+        uint256 indexed jobId,
+        address indexed resolver,
+        bool agentPaid
+    );
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -521,6 +529,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when validation is attempted during the reveal phase.
     error RevealPhaseActive();
 
+    /// @dev Thrown when attempting to resolve a job before the grace period ends.
+    error GracePeriodActive();
+
     /// @dev Thrown when disputing before required windows have elapsed.
     error PrematureDispute();
 
@@ -617,6 +628,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         revealDuration = 1 hours;
         // Ensure the initial review window accommodates both phases.
         reviewWindow = commitDuration + revealDuration;
+        resolveGracePeriod = 1 hours;
         validatorSelectionSeed = blockhash(block.number - 1);
     }
 
@@ -891,7 +903,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         _addValidatorApprovedJob(msg.sender, _jobId);
         emit JobValidated(_jobId, msg.sender);
         if (job.validatorApprovals >= requiredValidatorApprovals) {
-            _finalizeJobAndBurn(_jobId);
+            _finalizeJobAndBurn(_jobId, false);
         }
     }
 
@@ -960,6 +972,30 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit JobDisputed(_jobId, msg.sender, JobStatus.Disputed);
     }
 
+    /// @notice Resolve a job that has stalled after commit and reveal phases.
+    /// @param _jobId Identifier of the job to resolve.
+    /// @dev Anyone may call this after `resolveGracePeriod` has elapsed.
+    function resolveStalledJob(uint256 _jobId)
+        external
+        whenNotPaused
+        nonReentrant
+        jobExists(_jobId)
+    {
+        Job storage job = jobs[_jobId];
+        if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
+        if (
+            block.timestamp <=
+            job.validationStart + commitDuration + revealDuration + resolveGracePeriod
+        ) revert GracePeriodActive();
+        if (job.validatorApprovals > job.validatorDisapprovals) {
+            _finalizeJobAndBurn(_jobId, true);
+            emit StalledJobResolved(_jobId, msg.sender, true);
+        } else {
+            _resolveEmployerWin(_jobId);
+            emit StalledJobResolved(_jobId, msg.sender, false);
+        }
+    }
+
     function resolveDispute(uint256 _jobId, DisputeOutcome outcome)
         external
         nonReentrant
@@ -969,7 +1005,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         Job storage job = jobs[_jobId];
         if (job.status != JobStatus.Disputed) revert InvalidJobState();
         if (outcome == DisputeOutcome.AgentWin) {
-            _finalizeJobAndBurn(_jobId);
+            _finalizeJobAndBurn(_jobId, false);
         } else if (outcome == DisputeOutcome.EmployerWin) {
             _resolveEmployerWin(_jobId);
         }
@@ -1541,6 +1577,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit ReviewWindowUpdated(newWindow);
     }
 
+    /// @notice Update the grace period after which stalled jobs may be resolved.
+    /// @param newGracePeriod Duration in seconds following the reveal phase.
+    function setResolveGracePeriod(uint256 newGracePeriod) external onlyOwner {
+        if (newGracePeriod == 0) revert InvalidDuration();
+        resolveGracePeriod = newGracePeriod;
+        emit ResolveGracePeriodUpdated(newGracePeriod);
+    }
+
     /// @notice Atomically update validator incentive parameters.
     /// @param rewardPercentage Portion of job payout allocated to correct validators (basis points).
     /// @param reputationPercentage Share of agent reputation granted to correct validators (basis points).
@@ -1795,7 +1839,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     /// @notice Finalize a job, distribute payouts, burn tokens and mint the completion NFT.
     /// @dev Invoked when the last validator approval or dispute resolution finalizes a job.
-    function _finalizeJobAndBurn(uint256 _jobId) internal jobExists(_jobId) {
+    /// @param bypassApprovalRequirement If true, skips the minimum approval check.
+    function _finalizeJobAndBurn(uint256 _jobId, bool bypassApprovalRequirement)
+        internal
+        jobExists(_jobId)
+    {
         Job storage job = jobs[_jobId];
         if (job.status == JobStatus.Completed) revert JobAlreadyFinalized();
         // Disallow payout without an explicit completion request
@@ -1805,6 +1853,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         ) revert CompletionNotRequested();
         // Ensure burning and payouts occur only after the job meets validation requirements
         if (
+            !bypassApprovalRequirement &&
             job.status != JobStatus.Disputed &&
             job.validatorApprovals < requiredValidatorApprovals
         ) revert JobNotValidated();
