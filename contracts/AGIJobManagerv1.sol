@@ -181,12 +181,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public constant BURN_PERCENTAGE = 500;
     /// @notice Maximum portion of escrow rewarded for cancelling an expired job (10% = 1000 bps).
     uint256 public constant MAX_CANCEL_REWARD_PERCENTAGE = 1000;
+    /// @notice Maximum portion of escrow rewarded for resolving a stalled job (10% = 1000 bps).
+    uint256 public constant MAX_RESOLVE_REWARD_PERCENTAGE = 1000;
     /// @notice Destination for burned tokens. Owner may update if needed.
     address public burnAddress = BURN_ADDRESS;
     /// @notice Portion of a job's payout (in basis points) to destroy on completion.
     uint256 public burnPercentage = BURN_PERCENTAGE;
     /// @notice Portion of escrow awarded to the caller of `cancelExpiredJob`.
     uint256 public cancelRewardPercentage = 100; // 1%
+    /// @notice Portion of escrow awarded to the caller of `resolveStalledJob`.
+    uint256 public resolveRewardPercentage = 100; // 1%
     /// @notice Recipient of slashed validator stakes when no correct votes exist.
     address public slashedStakeRecipient;
     /// @notice Denominator used for percentage calculations (100% = 10_000).
@@ -403,6 +407,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event BurnPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the cancel reward percentage is updated.
     event CancelRewardPercentageUpdated(uint256 newPercentage);
+    /// @notice Emitted when the resolve reward percentage is updated.
+    event ResolveRewardPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validation reward percentage is updated.
     event ValidationRewardPercentageUpdated(uint256 newPercentage);
     /// @notice Emitted when the validator reputation percentage is updated.
@@ -997,6 +1003,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             block.timestamp <=
             job.validationStart + commitDuration + revealDuration + resolveGracePeriod
         ) revert GracePeriodActive();
+        uint256 reward =
+            (job.payout * resolveRewardPercentage) / PERCENTAGE_DENOMINATOR;
+        if (reward > 0) {
+            job.payout -= reward;
+            totalJobEscrow -= reward;
+            agiToken.safeTransfer(msg.sender, reward);
+        }
         if (job.validatorApprovals > job.validatorDisapprovals) {
             _finalizeJobAndBurn(_jobId, true);
             emit StalledJobResolved(_jobId, msg.sender, true);
@@ -1463,6 +1476,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @return burnPct Portion of a job payout destroyed on completion.
     /// @return validationRewardPct Portion of a job payout allocated to correct validators.
     /// @return cancelRewardPct Share of escrow granted to the caller of `cancelExpiredJob`.
+    /// @return resolveRewardPct Share of escrow granted to the caller of `resolveStalledJob`.
     /// @return burnAddr Destination address for burned tokens.
     function getPayoutConfig()
         external
@@ -1471,6 +1485,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 burnPct,
             uint256 validationRewardPct,
             uint256 cancelRewardPct,
+            uint256 resolveRewardPct,
             address burnAddr
         )
     {
@@ -1478,6 +1493,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             burnPercentage,
             validationRewardPercentage,
             cancelRewardPercentage,
+            resolveRewardPercentage,
             burnAddress
         );
     }
@@ -1530,6 +1546,14 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (newPercentage > MAX_CANCEL_REWARD_PERCENTAGE) revert InvalidPercentage();
         cancelRewardPercentage = newPercentage;
         emit CancelRewardPercentageUpdated(newPercentage);
+    }
+
+    /// @notice Update the reward percentage granted to the caller of `resolveStalledJob`.
+    /// @param newPercentage Portion of escrow awarded for resolving a stalled job in basis points.
+    function setResolveRewardPercentage(uint256 newPercentage) external onlyOwner {
+        if (newPercentage > MAX_RESOLVE_REWARD_PERCENTAGE) revert InvalidPercentage();
+        resolveRewardPercentage = newPercentage;
+        emit ResolveRewardPercentageUpdated(newPercentage);
     }
 
     /// @notice Atomically update burn address and percentage.
