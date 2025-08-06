@@ -50,6 +50,66 @@ Use a block explorer like Etherscan to interact with the contract—no coding re
 
 For detailed examples and code snippets, see the [Quick Start](#quick-start).
 
+## Using AGIJobManager v1 on Etherscan
+
+> **Important:** Always verify the contract address on at least two explorers and through official AGI.eth channels before interacting. Call [`acceptTerms`](contracts/AGIJobManagerv1.sol#L689) once per address with the IPFS hash of the terms of service and monitor `*Updated` events for configuration changes.
+
+### Employers
+
+1. Confirm the AGIJobManager v1 address on [Etherscan](https://etherscan.io/) and a secondary explorer.
+2. In **Read Contract**, look up `reviewWindow()`, `validatorsPerJob()`, and other getters to understand current timing and validation parameters.
+3. In **Write Contract**, use `createJob` to post work and escrow funds. Record the `JobCreated` event to obtain the job ID.
+4. Track `JobApplied`, `ValidationCommitted`, and `JobFinalizedAndBurned` events to monitor progress.
+
+### Agents
+
+1. Verify the contract address and call `acceptTerms` with the IPFS hash of the terms.
+2. Check `agentStakeRequirement()`, `agentStakePercentage()`, and `minAgentReputation()` in the **Read Contract** tab to ensure eligibility.
+3. Stake via `stakeAgent` if needed, then `applyForJob` with the job ID.
+4. After work is complete, call `requestJobCompletion` with an IPFS hash or URL and watch for `ValidatorsSelected` and `JobFinalizedAndBurned` events.
+
+### Validators
+
+1. Verify the contract address and accept terms.
+2. Use **Read Contract** to check `stakeRequirement()`, `minValidatorReputation()`, `commitDuration()`, and `revealDuration()` before staking.
+3. Stake AGI with `stake` and wait to be selected.
+4. **Commit:** Off‑chain, compute `commitHash = keccak256(abi.encode(jobId, approve, salt))` using any Keccak‑256 tool (e.g., Node, ethers.js). Example: `node -e "console.log(require('ethers').solidityPackedKeccak256(['uint256','bool','bytes32'], [JOB_ID,true,'0xSALT']))"`. Call `commitValidation(jobId, commitHash)` during the commit window.
+5. **Reveal:** After the commit window ends, call `revealValidation(jobId, approve, salt)` using the same `approve` flag and secret `salt`.
+6. Finalize with `validateJob` or `disapproveJob` after the review window and monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
+
+### Owner Configuration Summary
+
+| Parameter | Setter | Purpose |
+| --- | --- | --- |
+| `burnPercentage` | `setBurnPercentage(uint256)` | Portion of payout burned on finalization |
+| `burnAddress` | `setBurnAddress(address)` | Destination for burned tokens |
+| `validationRewardPercentage` | `setValidationRewardPercentage(uint256)` | Payout share awarded to correct validators |
+| `validatorReputationPercentage` | `setValidatorReputationPercentage(uint256)` | Portion of agent reputation granted to correct validators |
+| `cancelRewardPercentage` | `setCancelRewardPercentage(uint256)` | Share of escrow paid to caller when cancelling expired jobs |
+| `slashedStakeRecipient` | `setSlashedStakeRecipient(address)` | Recipient of slashed stake if no validator votes correctly |
+| `stakeRequirement` | `setStakeRequirement(uint256)` | Minimum validator stake |
+| `agentStakeRequirement` | `setAgentStakeRequirement(uint256)` | Minimum agent stake |
+| `agentStakePercentage` | `setAgentStakePercentage(uint256)` | Portion of payout required as agent stake |
+| `validatorSlashingPercentage` | `setValidatorSlashingPercentage(uint256)` | Stake slashed from incorrect validators |
+| `agentSlashingPercentage` | `setAgentSlashingPercentage(uint256)` | Stake slashed from agents on failure or dispute |
+| `minValidatorReputation` | `setMinValidatorReputation(uint256)` | Minimum validator reputation |
+| `minAgentReputation` | `setMinAgentReputation(uint256)` | Minimum agent reputation |
+| `validatorsPerJob` | `setValidatorsPerJob(uint256)` | Number of validators drawn per job |
+| `validatorSelectionSeed` | `setValidatorSelectionSeed(bytes32)` | Extra entropy for validator selection |
+| `commitDuration` | `setCommitDuration(uint256)` | Length of commit phase (seconds) |
+| `revealDuration` | `setRevealDuration(uint256)` | Length of reveal phase (seconds) |
+| `reviewWindow` | `setReviewWindow(uint256)` | Delay before validators vote |
+| `resolveGracePeriod` | `setResolveGracePeriod(uint256)` | Time before anyone may resolve a stalled job |
+| `requiredValidatorApprovals` | `setRequiredValidatorApprovals(uint256)` | Approvals needed to finalize |
+| `requiredValidatorDisapprovals` | `setRequiredValidatorDisapprovals(uint256)` | Disapprovals needed to reject |
+| `premiumReputationThreshold` | `setPremiumReputationThreshold(uint256)` | Reputation needed for premium tier |
+| `maxJobPayout` | `setMaxJobPayout(uint256)` | Maximum allowed job payout |
+| `jobDurationLimit` | `setJobDurationLimit(uint256)` | Maximum job duration |
+| `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
+| `maxValidatorPoolSize` | `setMaxValidatorPoolSize(uint256)` | Cap on validator pool size |
+
+Review `*Updated` events after any call to confirm changes on-chain.
+
 ## Disclaimer
 
 - Verify every address independently before sending transactions. Cross-check on multiple block explorers (e.g., Etherscan, Blockscout) and official channels.
