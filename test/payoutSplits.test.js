@@ -120,6 +120,17 @@ describe("payout split validation", function () {
     expect(updated.burnAddr).to.equal(newBurnAddr);
   });
 
+  it("allows owner to atomically update payout settings", async function () {
+    const { manager } = await deployFixture();
+    const newBurnAddr = ethers.Wallet.createRandom().address;
+    await manager.setPayoutConfig(newBurnAddr, 700, 300, 200);
+    const cfg = await manager.getPayoutConfig();
+    expect(cfg.burnPct).to.equal(700n);
+    expect(cfg.validationRewardPct).to.equal(300n);
+    expect(cfg.cancelRewardPct).to.equal(200n);
+    expect(cfg.burnAddr).to.equal(newBurnAddr);
+  });
+
   it("previews payout splits and agent stake requirements", async function () {
     const { manager } = await deployFixture();
     // preview payout for 10,000 units
@@ -139,5 +150,11 @@ describe("payout split validation", function () {
     expect(cfg.slashPct).to.equal(200n);
     expect(cfg.minRep).to.equal(0n);
     expect(cfg.blacklistThresh).to.equal(3n);
+
+    const fullPreview = await manager.previewJobParameters(2000);
+    expect(fullPreview.requiredStake).to.equal(200n);
+    expect(fullPreview.burnAmount).to.equal(100n);
+    expect(fullPreview.validatorReward).to.equal(160n);
+    expect(fullPreview.agentAmount).to.equal(1740n);
   });
 });
