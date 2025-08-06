@@ -46,4 +46,36 @@ describe("AGIJobManagerV1 AGI types", function () {
       "AGITypeNotFound"
     );
   });
+
+  it("handles malicious NFT balanceOf revert", async function () {
+    const { manager } = await deploy();
+    const [agent] = await ethers.getSigners();
+
+    const Mal = await ethers.getContractFactory("MaliciousERC721");
+    const mal = await Mal.deploy();
+    await mal.waitForDeployment();
+
+    const NFT = await ethers.getContractFactory("MockERC721");
+    const nft = await NFT.deploy();
+    await nft.waitForDeployment();
+    await nft.mint(agent.address);
+
+    await manager.addAGIType(await mal.getAddress(), 1000);
+    await manager.addAGIType(await nft.getAddress(), 500);
+
+    expect(await manager.getHighestPayoutPercentage(agent.address)).to.equal(500);
+  });
+
+  it("enforces AGI type cap", async function () {
+    const { manager } = await deploy();
+    const max = Number(await manager.MAX_AGI_TYPES());
+
+    for (let i = 0; i < max; i++) {
+      await manager.addAGIType(ethers.Wallet.createRandom().address, 100);
+    }
+
+    await expect(
+      manager.addAGIType(ethers.Wallet.createRandom().address, 100)
+    ).to.be.revertedWithCustomError(manager, "MaxAGITypesReached");
+  });
 });
