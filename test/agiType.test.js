@@ -70,9 +70,17 @@ describe("AGIJobManagerV1 AGI types", function () {
     expect(await manager.getHighestPayoutPercentage(agent.address)).to.equal(500);
   });
 
+  it("updates max AGI types", async function () {
+    const { manager } = await deploy();
+    await expect(manager.setMaxAGITypes(100))
+      .to.emit(manager, "MaxAGITypesUpdated")
+      .withArgs(50n, 100n);
+    expect(await manager.maxAGITypes()).to.equal(100n);
+  });
+
   it("enforces AGI type cap", async function () {
     const { manager } = await deploy();
-    const max = Number(await manager.MAX_AGI_TYPES());
+    const max = Number(await manager.maxAGITypes());
 
     for (let i = 0; i < max; i++) {
       await manager.addAGIType(ethers.Wallet.createRandom().address, 100);

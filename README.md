@@ -114,6 +114,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `jobDurationLimit` | `setJobDurationLimit(uint256)` | Maximum job duration |
 | `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
 | `maxValidatorPoolSize` | `setMaxValidatorPoolSize(uint256)` | Cap on validator pool size |
+| `maxAGITypes` | `setMaxAGITypes(uint256)` | Maximum allowed AGI types |
 | `AGI token address` | `updateAGITokenAddress(address)` | Replace the $AGI token used for payments |
 | `baseURI` | `setBaseURI(string)` | Prefix for NFT metadata |
 
