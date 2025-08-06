@@ -316,6 +316,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ReviewWindowUpdated(uint256 newWindow);
     event ResolveGracePeriodUpdated(uint256 newGracePeriod);
+    /// @notice Emitted when all timing parameters are updated in a single call.
+    event TimingConfigUpdated(
+        uint256 commitWindow,
+        uint256 revealWindow,
+        uint256 reviewWindow,
+        uint256 resolveGracePeriod
+    );
     event JobFinalizedAndBurned(
         uint256 indexed jobId,
         address indexed agent,
@@ -1401,6 +1408,58 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         return validatorPool;
     }
 
+    /// @notice Retrieve timing configuration for validation phases.
+    /// @return commitWindow Length of the commit phase in seconds.
+    /// @return revealWindow Length of the reveal phase in seconds.
+    /// @return reviewWin Mandatory waiting period before validators may vote.
+    /// @return gracePeriod Additional time after reveal before jobs can be force-resolved.
+    function getTimingConfig()
+        external
+        view
+        returns (
+            uint256 commitWindow,
+            uint256 revealWindow,
+            uint256 reviewWin,
+            uint256 gracePeriod
+        )
+    {
+        return (commitDuration, revealDuration, reviewWindow, resolveGracePeriod);
+    }
+
+    /// @notice Retrieve validator incentive parameters in a single call.
+    /// @dev Helps non-technical users inspect system settings via block explorers.
+    function getValidatorConfig()
+        external
+        view
+        returns (
+            uint256 rewardPercentage,
+            uint256 reputationPercentage,
+            uint256 stakeReq,
+            uint256 validatorSlashPercentage,
+            uint256 agentSlashPercentage,
+            uint256 minValidatorRep,
+            uint256 minAgentRep,
+            uint256 approvals,
+            uint256 disapprovals,
+            uint256 validatorsCount,
+            address slashRecipient
+        )
+    {
+        return (
+            validationRewardPercentage,
+            validatorReputationPercentage,
+            stakeRequirement,
+            validatorSlashingPercentage,
+            agentSlashingPercentage,
+            minValidatorReputation,
+            minAgentReputation,
+            requiredValidatorApprovals,
+            requiredValidatorDisapprovals,
+            validatorsPerJob,
+            slashedStakeRecipient
+        );
+    }
+
     function _validatePayoutSplits(
         uint256 _burnPercentage,
         uint256 _validationRewardPercentage
@@ -1593,6 +1652,28 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (newGracePeriod == 0) revert InvalidDuration();
         resolveGracePeriod = newGracePeriod;
         emit ResolveGracePeriodUpdated(newGracePeriod);
+    }
+
+    /// @notice Atomically update all timing parameters for validation phases.
+    /// @param commitWindow Length of the commit phase in seconds; must be greater than zero.
+    /// @param revealWindow Length of the reveal phase in seconds; must be greater than zero.
+    /// @param reviewWin Mandatory waiting period before validators may vote; must be at least commit + reveal.
+    /// @param gracePeriod Duration after the reveal phase before stalled jobs can be resolved; must be greater than zero.
+    function setTimingConfig(
+        uint256 commitWindow,
+        uint256 revealWindow,
+        uint256 reviewWin,
+        uint256 gracePeriod
+    ) external onlyOwner {
+        if (commitWindow == 0 || revealWindow == 0 || gracePeriod == 0)
+            revert InvalidDuration();
+        if (reviewWin < commitWindow + revealWindow)
+            revert WindowBelowCommitReveal();
+        commitDuration = commitWindow;
+        revealDuration = revealWindow;
+        reviewWindow = reviewWin;
+        resolveGracePeriod = gracePeriod;
+        emit TimingConfigUpdated(commitWindow, revealWindow, reviewWin, gracePeriod);
     }
 
     /// @notice Atomically update validator incentive parameters.

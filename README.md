@@ -186,6 +186,8 @@ functions control validation incentives, burn behavior, and system limits.
 | `setCommitDuration(uint256 secs)` | Adjust commit phase length without changing reveal. | `300`–`3600` seconds |
 | `setRevealDuration(uint256 secs)` | Adjust reveal phase length without changing commit. | `300`–`3600` seconds |
 | `setReviewWindow(uint256 secs)` | Waiting period before validators vote. | ≥ commit + reveal, typically `3600`–`86400` |
+| `setResolveGracePeriod(uint256 secs)` | Time after reveal before anyone may resolve a stalled job. | `300`–`3600` seconds |
+| `setTimingConfig(uint256 commit, uint256 reveal, uint256 review, uint256 grace)` | Update all timing parameters atomically. | see above |
 | `addAdditionalValidator(address validator)` | Manually whitelist a validator outside the Merkle allowlist; emits `AdditionalValidatorAdded`. | non-zero address |
 | `removeAdditionalValidator(address validator)` | Remove a validator from the manual allowlist; emits `ValidatorRemoved`. | previously added address |
 | `addAdditionalAgent(address agent)` | Manually whitelist an agent; emits `AdditionalAgentAdded`. | non-zero address |
@@ -197,6 +199,7 @@ Convenience functions:
 
 - `setBurnConfig(address addr, uint256 bps)` atomically updates burn address and percentage and reverts if burn plus validator reward exceed 100%.
 - `setValidatorConfig(...)` adjusts reward, reputation, staking, slashing, and timing in one call.
+- `getTimingConfig()` and `getValidatorConfig()` let anyone inspect current timing and incentive parameters in a single read call.
 
 ### Example: Updating Burn and Validator Settings with a Block Explorer
 
