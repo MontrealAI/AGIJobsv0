@@ -450,6 +450,9 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @dev Thrown when a validator submits more than one commitment.
     error AlreadyCommitted();
 
+    /// @dev Thrown when an empty commitment is supplied.
+    error InvalidCommitment();
+
     /// @dev Thrown when a validator tries to reveal twice.
     error AlreadyRevealed();
 
@@ -781,6 +784,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
         if (block.timestamp > job.validationStart + commitDuration)
             revert CommitPhaseOver();
+        if (commitment == bytes32(0)) revert InvalidCommitment();
         if (job.commitments[msg.sender] != bytes32(0)) revert AlreadyCommitted();
         job.commitments[msg.sender] = commitment;
         job.committed[msg.sender] = true;
