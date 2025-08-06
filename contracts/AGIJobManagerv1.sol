@@ -441,7 +441,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 stakeSlashed
     );
     event ValidatorPayout(address indexed validator, uint256 amount);
-    event LeftoverTransferred(address indexed recipient, uint256 amount);
     event ValidatorSkipped(
         uint256 indexed jobId,
         address indexed validator,
@@ -1159,8 +1158,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 leftover =
                 (validatorPayoutTotal - distributedValidator) +
                 (totalSlashed - distributedSlashed);
+            // Any remainder from division is granted to the first correct validator
+            // to ensure all slashed stake and reward pool are fully distributed.
             for (uint256 i; i < correctValidatorCount; ) {
                 uint256 reward = validatorPayout + slashedReward;
+                if (i == 0 && leftover > 0) {
+                    reward += leftover;
+                }
                 if (reward > 0) {
                     agiToken.safeTransfer(correctValidators[i], reward);
                     emit ValidatorPayout(correctValidators[i], reward);
@@ -1168,10 +1172,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 unchecked {
                     ++i;
                 }
-            }
-            if (leftover > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                emit LeftoverTransferred(slashedStakeRecipient, leftover);
             }
         }
 
@@ -2317,8 +2317,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 agiToken.safeTransfer(slashedStakeRecipient, totalSlashed);
             }
         } else {
+            // Remainder from division is added to the first correct validator's payout
+            // so the entire reward pool and slashed stake are distributed.
             for (uint256 i; i < correctValidatorCount; ) {
                 uint256 reward = validatorPayout + slashedReward;
+                if (i == 0 && leftover > 0) {
+                    reward += leftover;
+                }
                 if (reward > 0) {
                     agiToken.safeTransfer(approvedValidators[i], reward);
                     emit ValidatorPayout(approvedValidators[i], reward);
@@ -2326,10 +2331,6 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                 unchecked {
                     ++i;
                 }
-            }
-            if (leftover > 0) {
-                agiToken.safeTransfer(slashedStakeRecipient, leftover);
-                emit LeftoverTransferred(slashedStakeRecipient, leftover);
             }
         }
 
