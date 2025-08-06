@@ -141,6 +141,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public requiredValidatorApprovals = 3;
     uint256 public requiredValidatorDisapprovals = 3;
     uint256 public premiumReputationThreshold = 10000;
+    uint256 public maxReputation = 88888;
     uint256 public validationRewardPercentage = 800;
     uint256 public validatorReputationPercentage = 800;
     /// @notice Maximum portion of a job's payout (in basis points) that can be
@@ -404,6 +405,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event RequiredValidatorApprovalsUpdated(uint256 newApprovals);
     event RequiredValidatorDisapprovalsUpdated(uint256 newDisapprovals);
     event PremiumReputationThresholdUpdated(uint256 newThreshold);
+    event MaxReputationUpdated(uint256 newMaxReputation);
     event MaxJobPayoutUpdated(uint256 newMaxPayout);
     event JobDurationLimitUpdated(uint256 newLimit);
     event TermsAndConditionsIpfsHashUpdated(string newHash);
@@ -1372,6 +1374,12 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         emit PremiumReputationThresholdUpdated(_threshold);
     }
 
+    function setMaxReputation(uint256 _max) external onlyOwner {
+        if (_max == 0) revert InvalidParameters();
+        maxReputation = _max;
+        emit MaxReputationUpdated(_max);
+    }
+
     function setMaxJobPayout(uint256 _maxPayout) external onlyOwner {
         maxJobPayout = _maxPayout;
         emit MaxJobPayoutUpdated(_maxPayout);
@@ -2155,11 +2163,11 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         uint256 newReputation = currentReputation + _points;
 
         // Apply diminishing return: soft at low, strong near max
-        uint256 diminishingFactor = 1 + ((newReputation * newReputation) / (88888 * 88888));
+        uint256 diminishingFactor = 1 + ((newReputation * newReputation) / (maxReputation * maxReputation));
         uint256 diminishedReputation = newReputation / diminishingFactor;
 
-        if (diminishedReputation > 88888) {
-            reputation[_user] = 88888;
+        if (diminishedReputation > maxReputation) {
+            reputation[_user] = maxReputation;
         } else {
             reputation[_user] = diminishedReputation;
         }
