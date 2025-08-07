@@ -21,7 +21,11 @@ contract ValidationModule is IValidationModule, Ownable {
     uint256 public revealDuration;
     uint256 public reviewWindow;
     uint256 public resolveGracePeriod;
-    uint256 public validatorsPerJob;
+    uint256 public validatorsPerJob; // default fallback
+
+    // payout-based validator count tiers
+    uint256[] public payoutTiers;
+    uint256[] public tierValidatorCounts;
 
     // pool of available validators
     address[] public validatorPool;
@@ -41,12 +45,15 @@ contract ValidationModule is IValidationModule, Ownable {
     mapping(uint256 => mapping(address => bool)) public votes;
 
     event ValidatorsUpdated(address[] validators);
+    event ValidatorTiersUpdated(uint256[] payoutTiers, uint256[] counts);
 
     constructor(IJobRegistry _jobRegistry, IStakeManager _stakeManager, address owner)
         Ownable(owner)
     {
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
+        validatorStakePercentage = 10;
+        validatorSlashingPercentage = 50;
     }
 
     /// @notice Update list of validators eligible for selection.
@@ -58,14 +65,16 @@ contract ValidationModule is IValidationModule, Ownable {
     function selectValidators(uint256 jobId) external override returns (address[] memory) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
-        require(validatorPool.length >= validatorsPerJob, "insufficient validators");
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        uint256 count = _validatorCount(job.reward);
+        require(validatorPool.length >= count, "insufficient validators");
 
         address[] memory pool = validatorPool;
-        address[] memory selected = new address[](validatorsPerJob);
+        address[] memory selected = new address[](count);
         uint256 rand = uint256(keccak256(abi.encode(block.prevrandao, jobId)));
         uint256 n = pool.length;
 
-        for (uint256 i; i < validatorsPerJob; i++) {
+        for (uint256 i; i < count; i++) {
             rand = uint256(keccak256(abi.encode(rand, i)));
             uint256 idx = rand % n;
             selected[i] = pool[idx];
@@ -151,6 +160,27 @@ contract ValidationModule is IValidationModule, Ownable {
         resolveGracePeriod = _resolveGracePeriod;
         validatorsPerJob = _validatorsPerJob;
         emit ParametersUpdated();
+    }
+
+    function setValidatorTiers(
+        uint256[] calldata _payoutTiers,
+        uint256[] calldata _counts
+    ) external onlyOwner {
+        require(_payoutTiers.length == _counts.length, "length");
+        payoutTiers = _payoutTiers;
+        tierValidatorCounts = _counts;
+        emit ValidatorTiersUpdated(_payoutTiers, _counts);
+    }
+
+    function _validatorCount(uint256 payout) internal view returns (uint256 count) {
+        count = validatorsPerJob;
+        for (uint256 i; i < payoutTiers.length; i++) {
+            if (payout >= payoutTiers[i]) {
+                count = tierValidatorCounts[i];
+            } else {
+                break;
+            }
+        }
     }
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
