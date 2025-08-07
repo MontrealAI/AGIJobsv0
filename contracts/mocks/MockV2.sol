@@ -6,54 +6,42 @@ import "../v2/interfaces/IJobRegistry.sol";
 import "../v2/interfaces/IReputationEngine.sol";
 
 contract MockStakeManager is IStakeManager {
-    mapping(address => uint256) private _validatorStakes;
-    mapping(address => uint256) private _agentStakes;
-    mapping(address => uint256) private _lockedValidator;
-    mapping(address => uint256) private _lockedAgent;
+    mapping(address => mapping(Role => uint256)) private _stakes;
+    mapping(address => mapping(Role => uint256)) private _locked;
 
-    function setValidatorStake(address v, uint256 amount) external {
-        _validatorStakes[v] = amount;
-    }
-
-    function setAgentStake(address a, uint256 amount) external {
-        _agentStakes[a] = amount;
+    function setStake(address user, Role role, uint256 amount) external {
+        _stakes[user][role] = amount;
     }
 
     function depositStake(Role, uint256) external override {}
     function withdrawStake(Role, uint256) external override {}
 
     function lockStake(address user, Role role, uint256 amount) external override {
-        if (role == Role.Agent) {
-            require(_agentStakes[user] >= amount, "agent");
-            _lockedAgent[user] += amount;
-        } else {
-            require(_validatorStakes[user] >= amount, "validator");
-            _lockedValidator[user] += amount;
+        require(_stakes[user][role] >= amount, "stake");
+        _locked[user][role] += amount;
+    }
+
+    function slash(address user, Role role, uint256 amount, address) external override {
+        uint256 st = _stakes[user][role];
+        require(st >= amount, "stake");
+        _stakes[user][role] = st - amount;
+        uint256 l = _locked[user][role];
+        if (l >= amount) {
+            _locked[user][role] = l - amount;
         }
     }
 
-    function slash(address user, uint256 amount, address) external override {
-        if (_validatorStakes[user] >= amount) {
-            _validatorStakes[user] -= amount;
-        } else if (_agentStakes[user] >= amount) {
-            _agentStakes[user] -= amount;
-        }
+    function stakeOf(address user, Role role) external view override returns (uint256) {
+        return _stakes[user][role];
     }
 
-    function agentStake(address agent) external view override returns (uint256) {
-        return _agentStakes[agent];
-    }
-
-    function validatorStake(address validator) external view override returns (uint256) {
-        return _validatorStakes[validator];
-    }
-
-    function lockedAgentStake(address agent) external view override returns (uint256) {
-        return _lockedAgent[agent];
-    }
-
-    function lockedValidatorStake(address validator) external view override returns (uint256) {
-        return _lockedValidator[validator];
+    function lockedStakeOf(address user, Role role)
+        external
+        view
+        override
+        returns (uint256)
+    {
+        return _locked[user][role];
     }
 
     function setToken(address) external override {}

@@ -40,9 +40,9 @@ describe("ValidationModule V2", function () {
       .setParameters(0, 0, 0, 50, 60, 60, 0, 0, 2);
 
     // validator stakes and pool
-    await stakeManager.setValidatorStake(v1.address, ethers.parseEther("100"));
-    await stakeManager.setValidatorStake(v2.address, ethers.parseEther("50"));
-    await stakeManager.setValidatorStake(v3.address, ethers.parseEther("10"));
+    await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther("10"));
 
     await validation
       .connect(owner)
@@ -157,7 +157,7 @@ describe("ValidationModule V2", function () {
     expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
     for (const addr of selected) {
-      const stake = await stakeManager.validatorStake(addr);
+      const stake = await stakeManager.stakeOf(addr, 1);
       const expectedStake =
         addr.toLowerCase() === v1.address.toLowerCase()
           ? ethers.parseEther("100")
@@ -199,8 +199,8 @@ describe("ValidationModule V2", function () {
         .commitValidation(1, commit2)
     ).wait();
     await advance(61);
-    const stake0 = await stakeManager.validatorStake(selected[0]);
-    const stake1 = await stakeManager.validatorStake(selected[1]);
+    const stake0 = await stakeManager.stakeOf(selected[0], 1);
+    const stake1 = await stakeManager.stakeOf(selected[1], 1);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
       .revealValidation(1, true, salt1);
@@ -212,7 +212,7 @@ describe("ValidationModule V2", function () {
     const slashed = stake0 >= stake1 ? selected[1] : selected[0];
     const winner = slashed === selected[0] ? selected[1] : selected[0];
     const slashedStakeBefore = stake0 >= stake1 ? stake1 : stake0;
-    expect(await stakeManager.validatorStake(slashed)).to.equal(
+    expect(await stakeManager.stakeOf(slashed, 1)).to.equal(
       slashedStakeBefore / 2n
     );
     expect(await reputation.reputationOf(winner)).to.equal(1n);

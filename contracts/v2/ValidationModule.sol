@@ -95,7 +95,7 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 m;
 
         for (uint256 i; i < n; ++i) {
-            uint256 stake = stakeManager.validatorStake(pool[i]);
+            uint256 stake = stakeManager.stakeOf(pool[i], IStakeManager.Role.Validator);
             if (stake >= validatorStakeRequirement) {
                 stakes[m] = stake;
                 pool[m] = pool[i];
@@ -189,7 +189,12 @@ contract ValidationModule is IValidationModule, Ownable {
             uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
             if (!revealed[jobId][val] || votes[jobId][val] != success) {
                 if (slashAmount > 0) {
-                    stakeManager.slash(val, slashAmount, job.employer);
+                    stakeManager.slash(
+                        val,
+                        IStakeManager.Role.Validator,
+                        slashAmount,
+                        job.employer
+                    );
                 }
                 if (address(reputationEngine) != address(0)) {
                     reputationEngine.subtractReputation(val, 1);

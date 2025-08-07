@@ -16,7 +16,8 @@ interface IStakeManager {
         address indexed user,
         Role indexed role,
         uint256 amount,
-        address indexed recipient
+        address indexed employer,
+        address treasury
     );
     event TokenUpdated(address token);
     event ParametersUpdated();
@@ -24,12 +25,10 @@ interface IStakeManager {
     function depositStake(Role role, uint256 amount) external;
     function withdrawStake(Role role, uint256 amount) external;
     function lockStake(address user, Role role, uint256 amount) external;
-    function slash(address user, uint256 amount, address recipient) external;
+    function slash(address user, Role role, uint256 amount, address employer) external;
 
-    function agentStake(address agent) external view returns (uint256);
-    function validatorStake(address validator) external view returns (uint256);
-    function lockedAgentStake(address agent) external view returns (uint256);
-    function lockedValidatorStake(address validator) external view returns (uint256);
+    function stakeOf(address user, Role role) external view returns (uint256);
+    function lockedStakeOf(address user, Role role) external view returns (uint256);
 
     /// @notice Owner functions
     function setToken(address token) external;
