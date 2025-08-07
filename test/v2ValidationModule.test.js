@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("ValidationModule V2", function () {
   let owner, employer, v1, v2, v3;
-  let validation, stakeManager, jobRegistry;
+  let validation, stakeManager, jobRegistry, reputation;
   const coder = ethers.AbiCoder.defaultAbiCoder();
 
   beforeEach(async () => {
@@ -17,6 +17,10 @@ describe("ValidationModule V2", function () {
     jobRegistry = await JobMock.deploy();
     await jobRegistry.waitForDeployment();
 
+    const RepMock = await ethers.getContractFactory("MockReputationEngine");
+    reputation = await RepMock.deploy();
+    await reputation.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
@@ -26,6 +30,9 @@ describe("ValidationModule V2", function () {
       owner.address
     );
     await validation.waitForDeployment();
+    await validation
+      .connect(owner)
+      .setReputationEngine(await reputation.getAddress());
 
     // set parameters: commit 60s, reveal 60s, validators per job 2
     await validation
@@ -89,6 +96,8 @@ describe("ValidationModule V2", function () {
     expect(await stakeManager.validatorStake(v2.address)).to.equal(
       ethers.parseEther("50")
     );
+    expect(await reputation.reputationOf(v1.address)).to.equal(1n);
+    expect(await reputation.reputationOf(v2.address)).to.equal(1n);
   });
 
   it("slashes validator voting against majority", async () => {
@@ -111,5 +120,7 @@ describe("ValidationModule V2", function () {
     expect(await stakeManager.validatorStake(v2.address)).to.equal(
       ethers.parseEther("25")
     );
+    expect(await reputation.reputationOf(v1.address)).to.equal(1n);
+    expect(await reputation.reputationOf(v2.address)).to.equal(0n);
   });
 });

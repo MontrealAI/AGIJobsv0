@@ -5,12 +5,14 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal validation for jobs.
 contract ValidationModule is IValidationModule, Ownable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
+    IReputationEngine public reputationEngine;
 
     // configuration
     uint256 public validatorStakeRequirement;
@@ -47,6 +49,7 @@ contract ValidationModule is IValidationModule, Ownable {
 
     event ValidatorsUpdated(address[] validators);
     event ValidatorTiersUpdated(uint256[] payoutTiers, uint256[] counts);
+    event ReputationEngineUpdated(address engine);
 
     constructor(IJobRegistry _jobRegistry, IStakeManager _stakeManager, address owner)
         Ownable(owner)
@@ -61,6 +64,12 @@ contract ValidationModule is IValidationModule, Ownable {
     function setValidatorPool(address[] calldata validators) external onlyOwner {
         validatorPool = validators;
         emit ValidatorsUpdated(validators);
+    }
+
+    /// @notice Update the reputation engine used for validator feedback.
+    function setReputationEngine(IReputationEngine engine) external onlyOwner {
+        reputationEngine = engine;
+        emit ReputationEngineUpdated(address(engine));
     }
 
     function selectValidators(uint256 jobId) external override returns (address[] memory) {
@@ -140,6 +149,11 @@ contract ValidationModule is IValidationModule, Ownable {
                 if (slashAmount > 0) {
                     stakeManager.slash(val, slashAmount, job.employer);
                 }
+                if (address(reputationEngine) != address(0)) {
+                    reputationEngine.subtractReputation(val, 1);
+                }
+            } else if (address(reputationEngine) != address(0)) {
+                reputationEngine.addReputation(val, 1);
             }
         }
 
