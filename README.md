@@ -460,7 +460,7 @@ All addresses should be independently verified before use.
 
 ### Modular v2 Architecture
 
-The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Every contract inherits `Ownable`, letting the owner (or future governance) tune parameters without redeploying the whole system.
+The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules interact only via interface addresses recorded in the JobRegistry, keeping storage separate and contracts upgrade‑free. Every contract inherits `Ownable`, letting the owner (or future governance) tune parameters without redeploying the whole system.
 
 | Module | Responsibility |
 | --- | --- |
@@ -471,7 +471,7 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `ReputationEngine` | Track reputation, apply penalties, maintain blacklists. |
 | `CertificateNFT` | Mint ERC‑721 certificates for completed jobs. |
 
-See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics.
+See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration.
 
 ## Versions
 

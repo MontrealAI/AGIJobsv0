@@ -1,6 +1,6 @@
 # AGIJobManager v2 Architecture
 
-AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules with single responsibilities. Every module inherits `Ownable`, ensuring only the contract owner can tune parameters or perform privileged actions. The design emphasises gas efficiency, governance composability and game-theoretic soundness while remaining simple enough for non‑technical users to invoke through block explorers such as Etherscan.
+AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules with single responsibilities. Each module is deployed once and interacts with others only through minimal interfaces so storage layouts remain isolated. Every module inherits `Ownable`, ensuring only the contract owner can tune parameters or perform privileged actions. The design emphasises gas efficiency, governance composability and game-theoretic soundness while remaining simple enough for non‑technical users to invoke through block explorers such as Etherscan.
 
 ## Modules
 - **JobRegistry** – posts jobs, escrows payouts and tracks lifecycle state.
