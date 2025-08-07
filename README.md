@@ -93,11 +93,11 @@ Use a block explorer like Etherscan—no coding required. Always verify contract
 ### Validators
 1. During the commit window, call `commitValidation(jobId, commitHash)` on `ValidationModule`.
 2. After the commit window ends, call `revealValidation(jobId, approve, salt)`.
-3. Once the reveal period and review window pass, anyone may call `finalize(jobId)` on `JobRegistry`. If votes diverge, parties may escalate by calling `raiseDispute(jobId)` on `DisputeModule`.
+3. Once the reveal period and review window pass, anyone may call `finalize(jobId)` on `JobRegistry`. If votes diverge, the agent may escalate by calling `dispute(jobId)` on `JobRegistry` and paying the appeal fee.
 
 ### Disputes
-1. Agents or employers escalate a contested job via `raiseDispute(jobId)` on `DisputeModule`.
-2. A moderator or jury resolves the case with `resolve(jobId, employerWins)`, after which the owner calls `resolveDispute(jobId, success)` on `JobRegistry` to update state.
+1. Agents escalate a contested job by calling `dispute(jobId)` on `JobRegistry` with the required fee.
+2. A moderator or jury resolves the case with `resolve(jobId, employerWins)`, which notifies `JobRegistry` to update state.
 
 ## Using AGIJobManager v1 on Etherscan
 

@@ -48,8 +48,8 @@ interface IJobRegistry {
     // core job flow
     function createJob(address agent) external returns (uint256 jobId);
     function requestJobCompletion(uint256 jobId) external;
-    function dispute(uint256 jobId) external;
-    function resolveDispute(uint256 jobId, bool success) external;
+    function dispute(uint256 jobId) external payable;
+    function resolveDispute(uint256 jobId, bool employerWins) external;
     function finalize(uint256 jobId) external;
 
     // view helper

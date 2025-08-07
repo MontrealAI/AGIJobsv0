@@ -2,11 +2,12 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("JobRegistry integration", function () {
-  let token, stakeManager, rep, validation, nft, registry;
+  let token, stakeManager, rep, validation, nft, registry, dispute;
   let owner, employer, agent;
 
   const reward = 100;
   const stake = 200;
+  const appealFee = 10;
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
@@ -30,12 +31,18 @@ describe("JobRegistry integration", function () {
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
     registry = await Registry.deploy(owner.address);
+    const Dispute = await ethers.getContractFactory(
+      "contracts/v2/DisputeModule.sol:DisputeModule"
+    );
+    dispute = await Dispute.deploy(await registry.getAddress(), owner.address);
 
     await registry.connect(owner).setValidationModule(await validation.getAddress());
     await registry.connect(owner).setStakeManager(await stakeManager.getAddress());
     await registry.connect(owner).setReputationEngine(await rep.getAddress());
     await registry.connect(owner).setCertificateNFT(await nft.getAddress());
     await registry.connect(owner).setJobParameters(reward, stake);
+    await registry.connect(owner).setDisputeModule(await dispute.getAddress());
+    await dispute.connect(owner).setAppealParameters(appealFee, 0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
     await rep.connect(owner).setPenaltyThreshold(1);
@@ -68,8 +75,8 @@ describe("JobRegistry integration", function () {
     await validation.connect(owner).setOutcome(1, false); // colluding validator
     await registry.connect(employer).createJob(agent.address);
     await registry.connect(agent).requestJobCompletion(1);
-    await registry.connect(agent).dispute(1);
-    await registry.connect(owner).resolveDispute(1, true);
+    await registry.connect(agent).dispute(1, { value: appealFee });
+    await dispute.connect(owner).resolve(1, false);
     await registry.finalize(1);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
@@ -84,8 +91,8 @@ describe("JobRegistry integration", function () {
     await validation.connect(owner).setOutcome(1, false);
     await registry.connect(employer).createJob(agent.address);
     await registry.connect(agent).requestJobCompletion(1);
-    await registry.connect(agent).dispute(1);
-    await registry.connect(owner).resolveDispute(1, false);
+    await registry.connect(agent).dispute(1, { value: appealFee });
+    await dispute.connect(owner).resolve(1, true);
     await registry.finalize(1);
 
     expect(await token.balanceOf(agent.address)).to.equal(800);
