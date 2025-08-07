@@ -26,6 +26,7 @@ The modular design separates concerns across dedicated contracts:
 - [StakeManager](contracts/StakeManager.sol) – holds deposits, pays rewards, and slashes stake when necessary.
 - [ReputationEngine](contracts/ReputationEngine.sol) – tracks reputation scores for employers and agents.
 - [ValidationModule](contracts/ValidationModule.sol) – supplies validation outcomes for submitted work.
+- [DisputeModule](docs/architecture-v2.md#modules) – optional appeal layer for moderator or jury decisions.
 - [CertificateNFT](contracts/CertificateNFT.sol) – mints ERC721 certificates upon successful completion.
 
 ```mermaid
@@ -33,6 +34,8 @@ graph TD
     JobRegistry --> ValidationModule
     JobRegistry --> StakeManager
     JobRegistry --> ReputationEngine
+    JobRegistry --> DisputeModule
+    ValidationModule --> DisputeModule
     JobRegistry --> CertificateNFT
 ```
 
@@ -40,7 +43,7 @@ Legacy sequence diagrams appear in [docs/architecture.md](docs/architecture.md);
 
 ### AGIJobManager v2
 
-The forthcoming v2 release splits responsibilities across immutable modules—JobRegistry, ValidationModule, StakeManager, ReputationEngine and CertificateNFT. Each module is `Ownable` so only the contract owner may adjust parameters, and interfaces remain minimal to keep Etherscan usage straightforward. Incentive settings such as burn rate, stake ratios and slashing percentages are all updated through owner‑only functions, preserving governance control while keeping the surface area small for non‑technical users. Interface definitions live in [contracts/v2/interfaces](contracts/v2/interfaces) and architectural diagrams, including a Hamiltonian view of incentives, in [docs/architecture-v2.md](docs/architecture-v2.md).
+The forthcoming v2 release splits responsibilities across immutable modules—JobRegistry, ValidationModule, StakeManager, ReputationEngine, DisputeModule and CertificateNFT. Each module is `Ownable` so only the contract owner may adjust parameters, and interfaces remain minimal to keep Etherscan usage straightforward. Incentive settings such as burn rate, stake ratios and slashing percentages are all updated through owner‑only functions, preserving governance control while keeping the surface area small for non‑technical users. Interface definitions live in [contracts/v2/interfaces](contracts/v2/interfaces) and architectural diagrams, including a Hamiltonian view of incentives, in [docs/architecture-v2.md](docs/architecture-v2.md).
 
 Key owner-configurable entry points include:
 
@@ -49,6 +52,7 @@ Key owner-configurable entry points include:
 - `StakeManager.setStakeParameters(...)` and `setToken(token)`
 - `ReputationEngine.setCaller(module, allowed)` and `setThresholds(agent, validator)`
 - `CertificateNFT.setBaseURI(uri)`
+- `DisputeModule.setAppealParameters(appealFee, jurySize)`
 
 These functions can all be invoked directly through block explorers, enabling non‑technical governance while retaining immutable code.
 
@@ -69,8 +73,13 @@ Use a block explorer like Etherscan—no coding required. Always verify contract
 3. If a result is disputed, invoke `dispute(jobId)`; otherwise wait for the job to be finalized and your stake released.
 
 ### Validators
-1. Validators or designated moderators set outcomes on `ValidationModule` through `setOutcome(jobId, success)`.
-2. Anyone may call `validate(jobId)` to view the preset result and `finalize(jobId)` on `JobRegistry` to settle the job.
+1. During the commit window, call `commitValidation(jobId, commitHash)` on `ValidationModule`.
+2. After the commit window ends, call `revealValidation(jobId, approve, salt)`.
+3. Once the reveal period and review window pass, anyone may call `finalize(jobId)` on `JobRegistry`. If votes diverge, parties may escalate by calling `raiseDispute(jobId)` on `DisputeModule`.
+
+### Disputes
+1. Agents or employers escalate a contested job via `raiseDispute(jobId)` on `DisputeModule`.
+2. A moderator or jury resolves the case with `resolve(jobId, employerWins)`, after which the owner calls `resolveDispute(jobId, success)` on `JobRegistry` to update state.
 
 ## Using AGIJobManager v1 on Etherscan
 
@@ -151,18 +160,22 @@ Review `*Updated` events after any call to confirm changes on-chain.
 - `setReputationEngine(address engine)` – set the reputation engine contract.
 - `setStakeManager(address manager)` – set the staking contract.
 - `setCertificateNFT(address nft)` – set the certificate NFT contract.
+- `setDisputeModule(address module)` – set the dispute module contract.
 
 ### StakeManager
 - `setToken(address token)` – update the ERC20 token used for staking and rewards. Default is the $AGI token.
 
 ### ValidationModule
-- `setOutcome(uint256 jobId, bool success)` – preset the validation result for a job. `success` is `true` or `false`.
+- `setParameters(...)` – configure stake ratios, reward/penalty rates, timing windows and validators per job.
 
 ### ReputationEngine
 - `setCaller(address caller, bool allowed)` – authorize modules that may adjust reputation (e.g., JobRegistry). `allowed` should be `true` or `false`.
 
 ### CertificateNFT
 - `setBaseURI(string uri)` – configure the base token URI for minted certificates. Leave empty for none.
+
+### DisputeModule
+- `setAppealParameters(uint256 appealFee, uint256 jurySize)` – tune appeal fees and jury size.
 
 ## Validator Selection Randomness
 
