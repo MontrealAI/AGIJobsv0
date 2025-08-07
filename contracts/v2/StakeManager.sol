@@ -59,6 +59,22 @@ contract StakeManager is Ownable {
         emit TokenUpdated(address(newToken));
     }
 
+    function agentStake(address agent) external view returns (uint256) {
+        return agentStakes[agent];
+    }
+
+    function validatorStake(address validator) external view returns (uint256) {
+        return validatorStakes[validator];
+    }
+
+    function lockedAgentStake(address agent) external view returns (uint256) {
+        return lockedAgentStakes[agent];
+    }
+
+    function lockedValidatorStake(address validator) external view returns (uint256) {
+        return lockedValidatorStakes[validator];
+    }
+
     function depositAgentStake(address agent, uint256 amount) external {
         require(agent == msg.sender, "self");
         token.safeTransferFrom(msg.sender, address(this), amount);

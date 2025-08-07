@@ -8,6 +8,8 @@ import "../v2/interfaces/IReputationEngine.sol";
 contract MockStakeManager is IStakeManager {
     mapping(address => uint256) private _validatorStakes;
     mapping(address => uint256) private _agentStakes;
+    mapping(address => uint256) private _lockedValidator;
+    mapping(address => uint256) private _lockedAgent;
 
     function setValidatorStake(address v, uint256 amount) external {
         _validatorStakes[v] = amount;
@@ -17,9 +19,18 @@ contract MockStakeManager is IStakeManager {
         _agentStakes[a] = amount;
     }
 
-    function depositAgentStake(address, uint256) external override {}
-    function depositValidatorStake(address, uint256) external override {}
-    function withdrawStake(uint256) external override {}
+    function depositStake(Role, uint256) external override {}
+    function withdrawStake(Role, uint256) external override {}
+
+    function lockStake(address user, Role role, uint256 amount) external override {
+        if (role == Role.Agent) {
+            require(_agentStakes[user] >= amount, "agent");
+            _lockedAgent[user] += amount;
+        } else {
+            require(_validatorStakes[user] >= amount, "validator");
+            _lockedValidator[user] += amount;
+        }
+    }
 
     function slash(address user, uint256 amount, address) external override {
         if (_validatorStakes[user] >= amount) {
@@ -37,10 +48,17 @@ contract MockStakeManager is IStakeManager {
         return _validatorStakes[validator];
     }
 
+    function lockedAgentStake(address agent) external view override returns (uint256) {
+        return _lockedAgent[agent];
+    }
+
+    function lockedValidatorStake(address validator) external view override returns (uint256) {
+        return _lockedValidator[validator];
+    }
+
     function setToken(address) external override {}
 
     function setStakeParameters(
-        uint256,
         uint256,
         uint256,
         uint256

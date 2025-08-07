@@ -29,8 +29,8 @@ describe("StakeManager", function () {
     await token.connect(validator).approve(await stakeManager.getAddress(), 400);
     await stakeManager.connect(validator).depositStake(Role.Validator, 400);
 
-    expect(await stakeManager.agentStakes(agent.address)).to.equal(500);
-    expect(await stakeManager.validatorStakes(validator.address)).to.equal(400);
+    expect(await stakeManager.agentStake(agent.address)).to.equal(500);
+    expect(await stakeManager.validatorStake(validator.address)).to.equal(400);
 
     await stakeManager
       .connect(owner)
@@ -39,20 +39,22 @@ describe("StakeManager", function () {
       .connect(owner)
       .lockStake(validator.address, Role.Validator, 100);
 
-    expect(await stakeManager.lockedAgentStakes(agent.address)).to.equal(200);
-    expect(await stakeManager.lockedValidatorStakes(validator.address)).to.equal(100);
+    expect(await stakeManager.lockedAgentStake(agent.address)).to.equal(200);
+    expect(await stakeManager.lockedValidatorStake(validator.address)).to.equal(
+      100
+    );
 
     await expect(
       stakeManager.connect(agent).withdrawStake(Role.Agent, 400)
     ).to.be.revertedWith("insufficient stake");
     await stakeManager.connect(agent).withdrawStake(Role.Agent, 300);
-    expect(await stakeManager.agentStakes(agent.address)).to.equal(200);
+    expect(await stakeManager.agentStake(agent.address)).to.equal(200);
 
     await stakeManager
       .connect(owner)
       .slashStake(agent.address, Role.Agent, 100, employer.address);
-    expect(await stakeManager.agentStakes(agent.address)).to.equal(100);
-    expect(await stakeManager.lockedAgentStakes(agent.address)).to.equal(100);
+    expect(await stakeManager.agentStake(agent.address)).to.equal(100);
+    expect(await stakeManager.lockedAgentStake(agent.address)).to.equal(100);
     expect(await token.balanceOf(employer.address)).to.equal(1050);
   });
 
@@ -62,6 +64,19 @@ describe("StakeManager", function () {
     await expect(
       stakeManager.connect(agent).lockStake(agent.address, Role.Agent, 50)
     ).to.be.revertedWith("not authorized");
+  });
+
+  it("allows only owner to update stake parameters", async () => {
+    await expect(
+      stakeManager.connect(agent).setStakeParameters(30, 20, 60)
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      "OwnableUnauthorizedAccount"
+    );
+    await stakeManager.connect(owner).setStakeParameters(30, 20, 60);
+    expect(await stakeManager.agentStakePercentage()).to.equal(30);
+    expect(await stakeManager.validatorStakePercentage()).to.equal(20);
+    expect(await stakeManager.validatorSlashingPercentage()).to.equal(60);
   });
 });
 
