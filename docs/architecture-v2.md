@@ -166,6 +166,18 @@ We can sketch a simplified Hamiltonian
 
 where \(s_i\) represents stake lost by misbehaving participants and \(r_j\) denotes rewards for correct actions. The owner adjusts coefficients through setter functions, shaping the potential landscape so that the minimal free energy occurs when agents, validators and employers follow the protocol. Deviations raise \(H\), matching game‑theoretic expectations that dishonest strategies carry higher expected cost than cooperative ones.
 
+### Incentive Flow Diagram
+```mermaid
+graph LR
+    Agent -- stake --> StakeManager
+    Validator -- stake --> StakeManager
+    StakeManager -- reward --> Agent
+    StakeManager -- reward --> Validator
+    StakeManager -- slash --> Employer
+    StakeManager -- slash --> Treasury
+```
+The flow highlights how collateral enters the system and where it is routed on success or failure. Rewards are paid out of escrow while slashed stakes are split between the employer and treasury, ensuring misbehaviour carries an immediate, quantifiable cost.
+
 ## Interfaces
 Reference Solidity interfaces are provided in `contracts/v2/interfaces` for integration and future implementation.
 
