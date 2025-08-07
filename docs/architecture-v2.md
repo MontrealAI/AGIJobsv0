@@ -105,13 +105,14 @@ interface IReputationEngine {
 }
 
 interface IStakeManager {
-    function depositAgentStake(address agent, uint256 amount) external;
-    function depositValidatorStake(address validator, uint256 amount) external;
+    enum Role { Agent, Validator }
+    function depositStake(Role role, uint256 amount) external;
+    function withdrawStake(Role role, uint256 amount) external;
+    function lockStake(address user, Role role, uint256 amount) external;
     function slash(address user, uint256 amount, address recipient) external;
     function setStakeParameters(
-        uint256 agentStakeRequirement,
-        uint256 validatorStakeRequirement,
-        uint256 agentSlashingPercentage,
+        uint256 agentStakePercentage,
+        uint256 validatorStakePercentage,
         uint256 validatorSlashingPercentage
     ) external;
 }
