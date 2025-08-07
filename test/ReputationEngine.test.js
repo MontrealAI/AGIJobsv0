@@ -2,35 +2,42 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("ReputationEngine", function () {
-  let engine, owner, caller, user;
+  let engine, owner, agentCaller, validatorCaller, user;
 
   beforeEach(async () => {
-    [owner, caller, user] = await ethers.getSigners();
+    [owner, agentCaller, validatorCaller, user] = await ethers.getSigners();
     const Engine = await ethers.getContractFactory("ReputationEngine");
     engine = await Engine.deploy(owner.address);
+    await engine.waitForDeployment();
+
+    // Role enum: 1 = Agent, 2 = Validator
+    await engine.connect(owner).setCaller(agentCaller.address, 1);
+    await engine.connect(owner).setCaller(validatorCaller.address, 2);
+    await engine.connect(owner).setAgentThreshold(5);
+    await engine.connect(owner).setValidatorThreshold(5);
   });
 
-  it("updates reputation and tracks penalties", async () => {
-    await engine.connect(owner).setCaller(caller.address, true);
-    await engine.connect(owner).setPenaltyThreshold(2);
+  it("tracks agent reputation and blacklists below threshold", async () => {
+    await engine.connect(agentCaller).addReputation(user.address, 10);
+    expect(await engine.reputationOf(user.address, 1)).to.equal(10);
 
-    await engine.connect(caller).addReputation(user.address, 5);
-    expect(await engine.reputationOf(user.address)).to.equal(5);
+    await engine.connect(agentCaller).subtractReputation(user.address, 6);
+    expect(await engine.reputationOf(user.address, 1)).to.equal(4);
+    expect(await engine.isBlacklisted(user.address, 1)).to.equal(true);
+  });
 
-    await engine.connect(caller).subtractReputation(user.address, 3);
-    expect(await engine.reputationOf(user.address)).to.equal(2);
-    expect(await engine.penaltyCount(user.address)).to.equal(1);
-    expect(await engine.isBlacklisted(user.address)).to.equal(false);
+  it("tracks validator reputation separately", async () => {
+    await engine.connect(validatorCaller).addReputation(user.address, 3);
+    expect(await engine.reputationOf(user.address, 2)).to.equal(3);
 
-    await engine.connect(caller).subtractReputation(user.address, 5);
-    expect(await engine.reputationOf(user.address)).to.equal(0);
-    expect(await engine.penaltyCount(user.address)).to.equal(2);
-    expect(await engine.isBlacklisted(user.address)).to.equal(true);
+    await engine.connect(validatorCaller).subtractReputation(user.address, 4);
+    expect(await engine.reputationOf(user.address, 2)).to.equal(0);
+    expect(await engine.isBlacklisted(user.address, 2)).to.equal(true);
   });
 
   it("reverts for unauthorized callers", async () => {
     await expect(
-      engine.connect(caller).addReputation(user.address, 1)
+      engine.connect(user).addReputation(user.address, 1)
     ).to.be.revertedWith("not authorized");
   });
 });
