@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import "../v2/interfaces/IStakeManager.sol";
 import "../v2/interfaces/IJobRegistry.sol";
@@ -70,11 +70,13 @@ contract MockJobRegistry is IJobRegistry {
     function setCertificateNFT(address) external override {}
     function setDisputeModule(address) external override {}
     function setJobParameters(uint256, uint256) external override {}
-    function createJob(address) external override returns (uint256) {return 0;}
-    function requestJobCompletion(uint256) external override {}
+    function createJob() external override returns (uint256) {return 0;}
+    function applyForJob(uint256) external override {}
+    function completeJob(uint256) external override {}
     function dispute(uint256) external payable override {}
     function resolveDispute(uint256, bool) external override {}
     function finalize(uint256) external override {}
+    function cancelJob(uint256) external override {}
 }
 
 contract MockReputationEngine is IReputationEngine {

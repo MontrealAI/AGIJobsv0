@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 /// @title IJobRegistry
 /// @notice Interface for orchestrating job lifecycles and module coordination
 interface IJobRegistry {
-    enum Status { None, Created, Completed, Disputed, Finalized }
+    enum Status {
+        None,
+        Created,
+        Applied,
+        Completed,
+        Disputed,
+        Finalized,
+        Cancelled
+    }
 
     struct Job {
         address employer;
@@ -30,9 +38,8 @@ interface IJobRegistry {
         uint256 reward,
         uint256 stake
     );
-    event CompletionRequested(uint256 indexed jobId, bool success);
-    event JobDisputed(uint256 indexed jobId);
     event JobFinalized(uint256 indexed jobId, bool success);
+    event JobCancelled(uint256 indexed jobId);
     event JobParametersUpdated(uint256 reward, uint256 stake);
 
     // owner wiring of modules
@@ -46,11 +53,13 @@ interface IJobRegistry {
     function setJobParameters(uint256 reward, uint256 stake) external;
 
     // core job flow
-    function createJob(address agent) external returns (uint256 jobId);
-    function requestJobCompletion(uint256 jobId) external;
+    function createJob() external returns (uint256 jobId);
+    function applyForJob(uint256 jobId) external;
+    function completeJob(uint256 jobId) external;
     function dispute(uint256 jobId) external payable;
     function resolveDispute(uint256 jobId, bool employerWins) external;
     function finalize(uint256 jobId) external;
+    function cancelJob(uint256 jobId) external;
 
     // view helper
     function jobs(uint256 jobId) external view returns (Job memory);
