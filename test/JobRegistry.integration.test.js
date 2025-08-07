@@ -14,7 +14,9 @@ describe("JobRegistry integration", function () {
     token = await Token.deploy();
     const StakeManager = await ethers.getContractFactory("StakeManager");
     stakeManager = await StakeManager.deploy(await token.getAddress(), owner.address);
-    const Validation = await ethers.getContractFactory("ValidationModule");
+    const Validation = await ethers.getContractFactory(
+      "contracts/ValidationModule.sol:ValidationModule"
+    );
     validation = await Validation.deploy(owner.address);
     const Rep = await ethers.getContractFactory("ReputationEngine");
     rep = await Rep.deploy(owner.address);
