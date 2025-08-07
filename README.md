@@ -62,6 +62,8 @@ Legacy sequence diagrams appear in [docs/architecture.md](docs/architecture.md);
 
  The forthcoming v2 release splits responsibilities across immutable modules—JobRegistry, ValidationModule, StakeManager, ReputationEngine, DisputeModule and CertificateNFT. Validator committees reach majority decisions with dissenters able to escalate through the DisputeModule, and slashing percentages exceed potential rewards so cheating is irrational. Each module is `Ownable` so only the contract owner may adjust parameters, and interfaces remain minimal to keep Etherscan usage straightforward. Incentive settings such as burn rate, stake ratios and slashing percentages are all updated through owner‑only functions, preserving governance control while keeping the surface area small for non‑technical users. Interface definitions live in [contracts/v2/interfaces](contracts/v2/interfaces) and architectural diagrams, including a Hamiltonian view of incentives, in [docs/architecture-v2.md](docs/architecture-v2.md).
 
+An end‑to‑end incentive flow chart mapping stakes, rewards and slashing destinations appears in [docs/architecture-v2.md#incentive-flow-diagram](docs/architecture-v2.md#incentive-flow-diagram).
+
 Key owner-configurable entry points include:
 
 - `JobRegistry.setJobParameters(reward, stake)`
