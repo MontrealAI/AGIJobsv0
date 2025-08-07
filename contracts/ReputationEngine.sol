@@ -4,77 +4,111 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title ReputationEngine
-/// @notice Tracks participant reputation, penalties and blacklist status.
+/// @notice Tracks reputation for agents and validators with blacklist support.
 contract ReputationEngine is Ownable {
-    /// @dev mapping of user => reputation score
-    mapping(address => uint256) private _reputation;
+    enum Role { None, Agent, Validator }
 
-    /// @dev number of penalties applied to a user
-    mapping(address => uint256) public penaltyCount;
+    /// @dev reputation score per role
+    mapping(address => uint256) private _agentReputation;
+    mapping(address => uint256) private _validatorReputation;
 
-    /// @dev mapping of user => blacklist status
-    mapping(address => bool) public blacklisted;
+    /// @dev blacklist status per role
+    mapping(address => bool) public agentBlacklisted;
+    mapping(address => bool) public validatorBlacklisted;
 
-    /// @dev authorised callers that may update reputation
-    mapping(address => bool) public callers;
+    /// @dev authorised callers mapped to the role they may update
+    mapping(address => Role) public callers;
 
-    /// @notice penalty threshold after which a user is blacklisted
-    uint256 public penaltyThreshold;
+    /// @notice minimum reputation before a user is blacklisted
+    uint256 public agentThreshold;
+    uint256 public validatorThreshold;
 
-    event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
-    event CallerAuthorized(address indexed caller, bool allowed);
-    event PenaltyThresholdUpdated(uint256 newThreshold);
-    event BlacklistUpdated(address indexed user, bool status);
+    event ReputationUpdated(address indexed user, Role indexed role, int256 delta, uint256 newScore);
+    event BlacklistUpdated(address indexed user, Role indexed role, bool status);
+    event CallerAuthorized(address indexed caller, Role role);
+    event AgentThresholdUpdated(uint256 newThreshold);
+    event ValidatorThresholdUpdated(uint256 newThreshold);
 
     constructor(address owner) Ownable(owner) {}
 
-    modifier onlyCaller() {
-        require(callers[msg.sender], "not authorized");
-        _;
+    /// @notice Authorize a caller and assign its role.
+    function setCaller(address caller, Role role) external onlyOwner {
+        callers[caller] = role;
+        emit CallerAuthorized(caller, role);
     }
 
-    /// @notice Authorize or revoke a caller that can update reputation.
-    function setCaller(address caller, bool allowed) external onlyOwner {
-        callers[caller] = allowed;
-        emit CallerAuthorized(caller, allowed);
+    /// @notice Set the reputation threshold for agents.
+    function setAgentThreshold(uint256 threshold) external onlyOwner {
+        agentThreshold = threshold;
+        emit AgentThresholdUpdated(threshold);
     }
 
-    /// @notice Set the penalty threshold that triggers blacklisting.
-    function setPenaltyThreshold(uint256 threshold) external onlyOwner {
-        penaltyThreshold = threshold;
-        emit PenaltyThresholdUpdated(threshold);
+    /// @notice Set the reputation threshold for validators.
+    function setValidatorThreshold(uint256 threshold) external onlyOwner {
+        validatorThreshold = threshold;
+        emit ValidatorThresholdUpdated(threshold);
     }
 
-    /// @notice Increase reputation for a user.
-    function addReputation(address user, uint256 amount) external onlyCaller {
-        uint256 newScore = _reputation[user] + amount;
-        _reputation[user] = newScore;
-        emit ReputationUpdated(user, int256(amount), newScore);
-    }
+    /// @notice Increase reputation for the caller's role.
+    function addReputation(address user, uint256 amount) external {
+        Role role = callers[msg.sender];
+        require(role != Role.None, "not authorized");
 
-    /// @notice Decrease reputation for a user and track penalties.
-    function subtractReputation(address user, uint256 amount) external onlyCaller {
-        uint256 current = _reputation[user];
-        uint256 newScore = current > amount ? current - amount : 0;
-        _reputation[user] = newScore;
-
-        penaltyCount[user] += 1;
-        emit ReputationUpdated(user, -int256(amount), newScore);
-
-        if (!blacklisted[user] && penaltyThreshold > 0 && penaltyCount[user] >= penaltyThreshold) {
-            blacklisted[user] = true;
-            emit BlacklistUpdated(user, true);
+        if (role == Role.Agent) {
+            uint256 newScore = _agentReputation[user] + amount;
+            _agentReputation[user] = newScore;
+            emit ReputationUpdated(user, role, int256(amount), newScore);
+        } else if (role == Role.Validator) {
+            uint256 newScore = _validatorReputation[user] + amount;
+            _validatorReputation[user] = newScore;
+            emit ReputationUpdated(user, role, int256(amount), newScore);
         }
     }
 
-    /// @notice Retrieve a user's reputation score.
-    function reputationOf(address user) external view returns (uint256) {
-        return _reputation[user];
+    /// @notice Decrease reputation for the caller's role.
+    function subtractReputation(address user, uint256 amount) external {
+        Role role = callers[msg.sender];
+        require(role != Role.None, "not authorized");
+
+        if (role == Role.Agent) {
+            uint256 current = _agentReputation[user];
+            uint256 newScore = current > amount ? current - amount : 0;
+            _agentReputation[user] = newScore;
+            emit ReputationUpdated(user, role, -int256(amount), newScore);
+            if (!agentBlacklisted[user] && newScore < agentThreshold) {
+                agentBlacklisted[user] = true;
+                emit BlacklistUpdated(user, role, true);
+            }
+        } else if (role == Role.Validator) {
+            uint256 current = _validatorReputation[user];
+            uint256 newScore = current > amount ? current - amount : 0;
+            _validatorReputation[user] = newScore;
+            emit ReputationUpdated(user, role, -int256(amount), newScore);
+            if (!validatorBlacklisted[user] && newScore < validatorThreshold) {
+                validatorBlacklisted[user] = true;
+                emit BlacklistUpdated(user, role, true);
+            }
+        }
     }
 
-    /// @notice Check if a user is blacklisted.
-    function isBlacklisted(address user) external view returns (bool) {
-        return blacklisted[user];
+    /// @notice Retrieve reputation score for a user and role.
+    function reputationOf(address user, Role role) external view returns (uint256) {
+        if (role == Role.Agent) {
+            return _agentReputation[user];
+        } else if (role == Role.Validator) {
+            return _validatorReputation[user];
+        }
+        return 0;
+    }
+
+    /// @notice Check blacklist status for a user and role.
+    function isBlacklisted(address user, Role role) external view returns (bool) {
+        if (role == Role.Agent) {
+            return agentBlacklisted[user];
+        } else if (role == Role.Validator) {
+            return validatorBlacklisted[user];
+        }
+        return false;
     }
 }
 
