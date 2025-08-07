@@ -498,6 +498,15 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `ReputationEngine` | Track reputation, apply penalties, maintain blacklists. |
 | `CertificateNFT` | Mint ERC‑721 certificates for completed jobs. |
 
+| Module | Key owner controls |
+| --- | --- |
+| `JobRegistry` | `setModules`, `setJobParameters` |
+| `ValidationModule` | `setParameters` |
+| `StakeManager` | `setStakeParameters`, `setToken` |
+| `ReputationEngine` | `setCaller`, `setThresholds` |
+| `DisputeModule` | `setAppealParameters` |
+| `CertificateNFT` | `setBaseURI` |
+
 ```mermaid
 graph TD
     Employer -->|createJob| JobRegistry
