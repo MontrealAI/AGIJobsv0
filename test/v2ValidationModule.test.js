@@ -65,43 +65,112 @@ describe("ValidationModule V2", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
-  it("selects validators by highest stake", async () => {
-    const selected = await validation.selectValidators.staticCall(1);
-    await validation.selectValidators(1);
-    expect(selected).to.deep.equal([v1.address, v2.address]);
+  it("selects deterministic stake-weighted validators", async () => {
+    const tx = await validation.selectValidators(1);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    );
+    const selected = event.args[1];
+
+    const prevBlock = await ethers.provider.getBlock(receipt.blockNumber - 1);
+    const blockHash = prevBlock.hash;
+
+    const pool = [v1.address, v2.address, v3.address];
+    const stakes = [
+      ethers.parseEther("100"),
+      ethers.parseEther("50"),
+      ethers.parseEther("10"),
+    ];
+
+    let seed = ethers.keccak256(
+      ethers.solidityPacked(
+        ["bytes32", "uint256", "bytes32"],
+        [blockHash, 1n, ethers.ZeroHash]
+      )
+    );
+    let total = stakes.reduce((a, b) => a + b, 0n);
+    const expected = [];
+    const remainingPool = [...pool];
+    const remainingStakes = [...stakes];
+    for (let i = 0; i < 2; i++) {
+      seed = ethers.keccak256(
+        ethers.solidityPacked(["bytes32", "uint256"], [seed, BigInt(i)])
+      );
+      const r = BigInt(seed) % total;
+      let cum = 0n;
+      let idx = 0;
+      for (; idx < remainingPool.length; idx++) {
+        cum += remainingStakes[idx];
+        if (r < cum) break;
+      }
+      expected.push(remainingPool[idx]);
+      total -= remainingStakes[idx];
+      remainingPool.splice(idx, 1);
+      remainingStakes.splice(idx, 1);
+    }
+
+    expect(selected).to.deep.equal(expected);
   });
 
   it("does not slash honest validators", async () => {
-    await validation.selectValidators(1);
+    const tx = await validation.selectValidators(1);
+    const receipt = await tx.wait();
+    const selected = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    ).args[1];
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
-    const coder = ethers.AbiCoder.defaultAbiCoder();
     const commit1 = ethers.keccak256(
       coder.encode(["bool", "bytes32"], [true, salt1])
     );
     const commit2 = ethers.keccak256(
       coder.encode(["bool", "bytes32"], [true, salt2])
     );
-    await (await validation.connect(v1).commitValidation(1, commit1)).wait();
-    await (await validation.connect(v2).commitValidation(1, commit2)).wait();
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
+    await (
+      await validation
+        .connect(signerMap[selected[0].toLowerCase()])
+        .commitValidation(1, commit1)
+    ).wait();
+    await (
+      await validation
+        .connect(signerMap[selected[1].toLowerCase()])
+        .commitValidation(1, commit2)
+    ).wait();
     await advance(61);
-    await validation.connect(v1).revealValidation(1, true, salt1);
-    await validation.connect(v2).revealValidation(1, true, salt2);
+    await validation
+      .connect(signerMap[selected[0].toLowerCase()])
+      .revealValidation(1, true, salt1);
+    await validation
+      .connect(signerMap[selected[1].toLowerCase()])
+      .revealValidation(1, true, salt2);
     await advance(61);
     expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
-    expect(await stakeManager.validatorStake(v1.address)).to.equal(
-      ethers.parseEther("100")
-    );
-    expect(await stakeManager.validatorStake(v2.address)).to.equal(
-      ethers.parseEther("50")
-    );
-    expect(await reputation.reputationOf(v1.address)).to.equal(1n);
-    expect(await reputation.reputationOf(v2.address)).to.equal(1n);
+    for (const addr of selected) {
+      const stake = await stakeManager.validatorStake(addr);
+      const expectedStake =
+        addr.toLowerCase() === v1.address.toLowerCase()
+          ? ethers.parseEther("100")
+          : addr.toLowerCase() === v2.address.toLowerCase()
+          ? ethers.parseEther("50")
+          : ethers.parseEther("10");
+      expect(stake).to.equal(expectedStake);
+      expect(await reputation.reputationOf(addr)).to.equal(1n);
+    }
   });
 
   it("slashes validator voting against majority", async () => {
-    await validation.selectValidators(1);
+    const tx = await validation.selectValidators(1);
+    const receipt = await tx.wait();
+    const selected = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    ).args[1];
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
     const commit1 = ethers.keccak256(
@@ -110,17 +179,39 @@ describe("ValidationModule V2", function () {
     const commit2 = ethers.keccak256(
       coder.encode(["bool", "bytes32"], [false, salt2])
     );
-    await (await validation.connect(v1).commitValidation(1, commit1)).wait();
-    await (await validation.connect(v2).commitValidation(1, commit2)).wait();
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
+    await (
+      await validation
+        .connect(signerMap[selected[0].toLowerCase()])
+        .commitValidation(1, commit1)
+    ).wait();
+    await (
+      await validation
+        .connect(signerMap[selected[1].toLowerCase()])
+        .commitValidation(1, commit2)
+    ).wait();
     await advance(61);
-    await validation.connect(v1).revealValidation(1, true, salt1);
-    await validation.connect(v2).revealValidation(1, false, salt2);
+    await validation
+      .connect(signerMap[selected[0].toLowerCase()])
+      .revealValidation(1, true, salt1);
+    await validation
+      .connect(signerMap[selected[1].toLowerCase()])
+      .revealValidation(1, false, salt2);
     await advance(61);
     await validation.finalize(1);
-    expect(await stakeManager.validatorStake(v2.address)).to.equal(
-      ethers.parseEther("25")
-    );
-    expect(await reputation.reputationOf(v1.address)).to.equal(1n);
-    expect(await reputation.reputationOf(v2.address)).to.equal(0n);
+    const slashed = selected[1];
+    const stake =
+      slashed.toLowerCase() === v1.address.toLowerCase()
+        ? ethers.parseEther("100")
+        : slashed.toLowerCase() === v2.address.toLowerCase()
+        ? ethers.parseEther("50")
+        : ethers.parseEther("10");
+    expect(await stakeManager.validatorStake(slashed)).to.equal(stake / 2n);
+    expect(await reputation.reputationOf(selected[0])).to.equal(1n);
+    expect(await reputation.reputationOf(slashed)).to.equal(0n);
   });
 });
