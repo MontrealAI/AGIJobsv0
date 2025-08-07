@@ -49,6 +49,7 @@ contract MockStakeManager is IStakeManager {
     function setStakeParameters(
         uint256,
         uint256,
+        uint256,
         uint256
     ) external override {}
 }

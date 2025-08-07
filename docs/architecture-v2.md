@@ -110,11 +110,12 @@ interface IStakeManager {
     enum Role { Agent, Validator }
     function depositStake(Role role, uint256 amount) external;
     function withdrawStake(Role role, uint256 amount) external;
-    function lockStake(address user, Role role, uint256 amount) external;
-    function slash(address user, uint256 amount, address recipient) external;
+    function lockStake(address user, Role role, uint256 payout) external;
+    function slash(address user, Role role, uint256 payout, address employer) external;
     function setStakeParameters(
         uint256 agentStakePercentage,
         uint256 validatorStakePercentage,
+        uint256 agentSlashingPercentage,
         uint256 validatorSlashingPercentage
     ) external;
 }
