@@ -4,7 +4,8 @@ AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules wi
 
 ## Modules
 - **JobRegistry** – posts jobs, escrows payouts and tracks lifecycle state.
-- **ValidationModule** – selects validators, orchestrates commit‑reveal voting and returns final outcomes.
+- **ValidationModule** – selects validators, orchestrates commit‑reveal voting and returns preliminary outcomes.
+- **DisputeModule** – optional appeal layer where moderators or a larger validator jury render final decisions.
 - **StakeManager** – escrows validator and agent collateral, releases rewards and executes slashing.
 - **ReputationEngine** – updates reputation scores and blacklists misbehaving agents or validators.
 - **CertificateNFT** – mints ERC‑721 proof of completion to employers.
@@ -18,6 +19,8 @@ graph TD
     JobRegistry -->|selectValidators| ValidationModule
     ValidationModule -->|stake checks| StakeManager
     ValidationModule -->|rep updates| ReputationEngine
+    ValidationModule -->|escalate| DisputeModule
+    DisputeModule -->|final ruling| JobRegistry
     JobRegistry -->|mint| CertificateNFT
     StakeManager -->|payout/penalties| Agent
     StakeManager -->|rewards| Validator
@@ -31,6 +34,7 @@ sequenceDiagram
     participant Val as Validator
     participant JR as JobRegistry
     participant VM as ValidationModule
+    participant DM as DisputeModule
     participant SM as StakeManager
     participant RE as ReputationEngine
 
@@ -39,7 +43,8 @@ sequenceDiagram
     Ag->>JR: requestJobCompletion
     JR->>VM: selectValidators
     Val->>VM: commit+reveal vote
-    VM->>JR: finalize outcome
+    VM->>DM: dispute? (optional)
+    DM->>JR: final outcome
     JR->>SM: distribute payout
     SM->>Ag: net reward
     SM->>Val: validation reward
@@ -77,6 +82,12 @@ interface IValidationModule {
     ) external;
 }
 
+interface IDisputeModule {
+    function raiseDispute(uint256 jobId) external;
+    function resolve(uint256 jobId, bool employerWins) external;
+    function setAppealParameters(uint256 appealFee, uint256 jurySize) external;
+}
+
 interface IReputationEngine {
     function addReputation(address user, uint256 amount) external;
     function subtractReputation(address user, uint256 amount) external;
@@ -101,12 +112,14 @@ These interfaces favour explicit, single-purpose methods, keeping gas costs pred
 
 ## User Experience
 Non‑technical employers, agents and validators can call these methods directly through Etherscan's read and write tabs. Every parameter uses human‑readable units (wei for token amounts and seconds for timing) so that wallets and explorers can display values without custom tooling. No external subscription or Chainlink VRF is required; validator selection relies on commit‑reveal randomness seeded by the owner.
+If a result is contested, employers or agents invoke the DisputeModule's `raiseDispute` through the explorer and a moderator or expanded validator jury finalises the job.
 
 ## Incentive Refinements
 - Validator stake scales with job value; majority approval finalises after a grace period while minority can trigger an appeal round with a larger validator set.
 - Slashing percentages exceed potential rewards so dishonest behaviour is an energy‑costly deviation.
 - Employers receive a share of slashed agent stake on any failure, aligning interests.
 - Sole dissenters that reveal incorrect votes incur extra penalties, discouraging extortion.
+- A dedicated DisputeModule coordinates appeals and moderator input, ensuring collusion requires prohibitive stake.
 - Parameters (burn rates, stake ratios, validator counts) are tunable by the owner to keep the Nash equilibrium at honest participation.
 
 ## Statistical‑Physics View

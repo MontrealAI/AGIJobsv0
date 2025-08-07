@@ -444,6 +444,10 @@ contains two smart‑contract generations:
 
 All addresses should be independently verified before use.
 
+### Modular v2 Architecture
+
+The upcoming v2 release splits the system into immutable modules—`JobRegistry`, `ValidationModule`, `DisputeModule`, `StakeManager`, `ReputationEngine` and `CertificateNFT`. Each contract has a single responsibility, is controlled by the owner through minimal setter functions, and can be interacted with directly via block explorers. Diagrammatic overviews and interface definitions live in [docs/architecture-v2.md](docs/architecture-v2.md).
+
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
