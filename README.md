@@ -508,6 +508,15 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setBaseURI` |
 
+| Module | Interface / Key functions |
+| --- | --- |
+| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize` |
+| `ValidationModule` | [`IValidationModule`](contracts/v2/interfaces/IValidationModule.sol) – `selectValidators`, `commitValidation`, `revealValidation`, `finalize`, `appeal` |
+| `StakeManager` | [`IStakeManager`](contracts/v2/interfaces/IStakeManager.sol) – `depositStake`, `withdrawStake`, `lockStake`, `slash`, `stakeOf` |
+| `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `isBlacklisted` |
+| `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
+| `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mintCertificate` |
+
 ```mermaid
 graph TD
     Employer -->|createJob| JobRegistry
