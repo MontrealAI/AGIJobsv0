@@ -36,12 +36,15 @@ describe("JobRegistry integration", function () {
     );
     dispute = await Dispute.deploy(await registry.getAddress(), owner.address);
 
-    await registry.connect(owner).setValidationModule(await validation.getAddress());
-    await registry.connect(owner).setStakeManager(await stakeManager.getAddress());
-    await registry.connect(owner).setReputationEngine(await rep.getAddress());
-    await registry.connect(owner).setCertificateNFT(await nft.getAddress());
-    await registry.connect(owner).setJobParameters(reward, stake);
-    await registry.connect(owner).setDisputeModule(await dispute.getAddress());
+    await registry
+      .connect(owner)
+      .setModules(
+        await validation.getAddress(),
+        await stakeManager.getAddress(),
+        await rep.getAddress(),
+        await dispute.getAddress(),
+        await nft.getAddress()
+      );
     await dispute.connect(owner).setAppealParameters(appealFee, 0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
@@ -58,10 +61,12 @@ describe("JobRegistry integration", function () {
 
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await validation.connect(owner).setOutcome(1, true);
-    await registry.connect(employer).createJob(agent.address);
-    await registry.connect(agent).requestJobCompletion(1);
-    await registry.finalize(1);
+    await registry.connect(employer).createJob(reward);
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId);
+    await validation.connect(owner).setOutcome(jobId, true);
+    await registry.connect(agent).completeJob(jobId);
+    await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputationOf(agent.address)).to.equal(1);
@@ -72,12 +77,14 @@ describe("JobRegistry integration", function () {
 
   it("handles collusion resolved by dispute", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await validation.connect(owner).setOutcome(1, false); // colluding validator
-    await registry.connect(employer).createJob(agent.address);
-    await registry.connect(agent).requestJobCompletion(1);
-    await registry.connect(agent).dispute(1, { value: appealFee });
-    await dispute.connect(owner).resolve(1, false);
-    await registry.finalize(1);
+    await registry.connect(employer).createJob(reward);
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId);
+    await validation.connect(owner).setOutcome(jobId, false); // colluding validator
+    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).dispute(jobId, { value: appealFee });
+    await dispute.connect(owner).resolve(jobId, false);
+    await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputationOf(agent.address)).to.equal(1);
@@ -88,15 +95,17 @@ describe("JobRegistry integration", function () {
 
   it("slashes stake when dispute fails", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await validation.connect(owner).setOutcome(1, false);
-    await registry.connect(employer).createJob(agent.address);
-    await registry.connect(agent).requestJobCompletion(1);
-    await registry.connect(agent).dispute(1, { value: appealFee });
-    await dispute.connect(owner).resolve(1, true);
-    await registry.finalize(1);
+    await registry.connect(employer).createJob(reward);
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId);
+    await validation.connect(owner).setOutcome(jobId, false);
+    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).dispute(jobId, { value: appealFee });
+    await dispute.connect(owner).resolve(jobId, true);
+    await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(800);
-    expect(await token.balanceOf(employer.address)).to.equal(1200);
+    expect(await token.balanceOf(employer.address)).to.equal(1100);
     expect(await rep.reputationOf(agent.address)).to.equal(0);
     expect(await rep.penaltyCount(agent.address)).to.equal(1);
     expect(await rep.isBlacklisted(agent.address)).to.equal(true);

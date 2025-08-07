@@ -175,11 +175,7 @@ Review `*Updated` events after any call to confirm changes on-chain.
 ## Module Owner Configuration
 
 ### JobRegistry
-- `setValidationModule(address module)` – link the validation module (non-zero address).
-- `setReputationEngine(address engine)` – set the reputation engine contract.
-- `setStakeManager(address manager)` – set the staking contract.
-- `setCertificateNFT(address nft)` – set the certificate NFT contract.
-- `setDisputeModule(address module)` – set the dispute module contract.
+- `setModules(address validation, address stakeMgr, address reputation, address dispute, address certNFT)` – wire up external modules used for validation, staking, reputation, disputes and certificates.
 
 ### StakeManager
 - `setToken(address token)` – update the ERC20 token used for staking and rewards. Default is the $AGI token.

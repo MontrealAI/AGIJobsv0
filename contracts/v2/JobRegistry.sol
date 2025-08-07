@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -7,176 +7,149 @@ interface IValidationModule {
     function validate(uint256 jobId) external view returns (bool);
 }
 
-interface IReputationEngine {
-    function addReputation(address user, uint256 amount) external;
-    function subtractReputation(address user, uint256 amount) external;
-}
-
 interface IStakeManager {
     function lockReward(address from, uint256 amount) external;
     function payReward(address to, uint256 amount) external;
     function slash(address user, address recipient, uint256 amount) external;
     function releaseStake(address user, uint256 amount) external;
-    function stakes(address user) external view returns (uint256);
 }
 
-interface ICertificateNFT {
-    function mintCertificate(
-        address to,
-        uint256 jobId,
-        string calldata uri
-    ) external returns (uint256);
+interface IReputationEngine {
+    function addReputation(address user, uint256 amount) external;
+    function subtractReputation(address user, uint256 amount) external;
 }
 
 interface IDisputeModule {
     function raiseDispute(uint256 jobId) external payable;
-    function resolve(uint256 jobId, bool employerWins) external;
+}
+
+interface ICertificateNFT {
+    function mintCertificate(address to, uint256 jobId, string calldata uri)
+        external
+        returns (uint256);
 }
 
 /// @title JobRegistry
-/// @notice Orchestrates job lifecycle and coordinates with external modules.
+/// @notice Minimal registry coordinating job lifecycle and external modules.
 contract JobRegistry is Ownable {
-    enum Status { None, Created, Completed, Disputed, Finalized }
+    enum State { None, Created, Applied, Completed, Disputed, Finalized }
 
     struct Job {
-        address employer;
         address agent;
+        address employer;
         uint256 reward;
-        uint256 stake;
-        bool success;
-        Status status;
+        State state;
     }
 
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
+    mapping(uint256 => bool) public jobSuccess;
 
-    IValidationModule public validationModule;
-    IReputationEngine public reputationEngine;
-    IStakeManager public stakeManager;
-    ICertificateNFT public certificateNFT;
+    IValidationModule public validation;
+    IStakeManager public stakeMgr;
+    IReputationEngine public reputation;
     IDisputeModule public disputeModule;
+    ICertificateNFT public certNFT;
 
-    uint256 public jobReward;
-    uint256 public jobStake;
-
-    event ValidationModuleUpdated(address module);
-    event ReputationEngineUpdated(address engine);
-    event StakeManagerUpdated(address manager);
-    event CertificateNFTUpdated(address nft);
-    event DisputeModuleUpdated(address module);
-    event JobParametersUpdated(uint256 reward, uint256 stake);
-
-    event JobCreated(
-        uint256 indexed jobId,
-        address indexed employer,
-        address indexed agent,
-        uint256 reward,
-        uint256 stake
-    );
-    event CompletionRequested(uint256 indexed jobId, bool success);
+    event JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward);
+    event JobCompleted(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
-    event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event JobFinalized(uint256 indexed jobId, bool success);
 
     constructor(address owner) Ownable(owner) {}
 
-    function setValidationModule(IValidationModule module) external onlyOwner {
-        validationModule = module;
-        emit ValidationModuleUpdated(address(module));
+    function setModules(
+        IValidationModule _validation,
+        IStakeManager _stakeMgr,
+        IReputationEngine _reputation,
+        IDisputeModule _dispute,
+        ICertificateNFT _certNFT
+    ) external onlyOwner {
+        validation = _validation;
+        stakeMgr = _stakeMgr;
+        reputation = _reputation;
+        disputeModule = _dispute;
+        certNFT = _certNFT;
     }
 
-    function setReputationEngine(IReputationEngine engine) external onlyOwner {
-        reputationEngine = engine;
-        emit ReputationEngineUpdated(address(engine));
-    }
-
-    function setStakeManager(IStakeManager manager) external onlyOwner {
-        stakeManager = manager;
-        emit StakeManagerUpdated(address(manager));
-    }
-
-    function setCertificateNFT(ICertificateNFT nft) external onlyOwner {
-        certificateNFT = nft;
-        emit CertificateNFTUpdated(address(nft));
-    }
-
-    function setDisputeModule(IDisputeModule module) external onlyOwner {
-        disputeModule = module;
-        emit DisputeModuleUpdated(address(module));
-    }
-
-    function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
-        jobReward = reward;
-        jobStake = stake;
-        emit JobParametersUpdated(reward, stake);
-    }
-
-    /// @notice Create a new job using owner-set reward and stake parameters.
-    function createJob(address agent) external returns (uint256 jobId) {
-        require(jobReward > 0 && jobStake > 0, "params not set");
-        require(stakeManager.stakes(agent) >= jobStake, "stake missing");
+    function createJob(uint256 reward) external returns (uint256 jobId) {
         jobId = ++nextJobId;
         jobs[jobId] = Job({
+            agent: address(0),
             employer: msg.sender,
-            agent: agent,
-            reward: jobReward,
-            stake: jobStake,
-            success: false,
-            status: Status.Created
+            reward: reward,
+            state: State.Created
         });
-        stakeManager.lockReward(msg.sender, jobReward);
-        emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake);
+        if (address(stakeMgr) != address(0)) {
+            stakeMgr.lockReward(msg.sender, reward);
+        }
+        emit JobCreated(jobId, msg.sender, reward);
     }
 
-    /// @notice Agent requests job completion; validation outcome stored.
-    function requestJobCompletion(uint256 jobId) external {
+    function applyForJob(uint256 jobId) external {
         Job storage job = jobs[jobId];
-        require(job.status == Status.Created, "invalid status");
-        require(msg.sender == job.agent, "only agent");
-        bool outcome = validationModule.validate(jobId);
-        job.success = outcome;
-        job.status = Status.Completed;
-        emit CompletionRequested(jobId, outcome);
+        require(job.state == State.Created, "not open");
+        job.agent = msg.sender;
+        job.state = State.Applied;
     }
 
-    /// @notice Agent disputes a failed job outcome.
+    function completeJob(uint256 jobId) external {
+        Job storage job = jobs[jobId];
+        require(job.state == State.Applied, "invalid state");
+        require(msg.sender == job.agent, "only agent");
+        bool success = validation.validate(jobId);
+        jobSuccess[jobId] = success;
+        job.state = State.Completed;
+        emit JobCompleted(jobId, success);
+    }
+
     function dispute(uint256 jobId) external payable {
         Job storage job = jobs[jobId];
-        require(job.status == Status.Completed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent, "only agent");
-        job.status = Status.Disputed;
+        require(job.state == State.Completed, "not completed");
+        require(!jobSuccess[jobId], "already successful");
+        require(msg.sender == job.agent || msg.sender == job.employer, "not participant");
+        job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
             disputeModule.raiseDispute{value: msg.value}(jobId);
+        } else {
+            require(msg.value == 0, "fee unused");
         }
         emit JobDisputed(jobId);
     }
 
-    /// @notice Called by DisputeModule to record final outcome.
     function resolveDispute(uint256 jobId, bool employerWins) external {
-        require(msg.sender == address(disputeModule), "only dispute module");
+        require(msg.sender == address(disputeModule), "only dispute");
         Job storage job = jobs[jobId];
-        require(job.status == Status.Disputed, "no dispute");
-        job.success = !employerWins;
-        job.status = Status.Completed;
-        emit DisputeResolved(jobId, employerWins);
+        require(job.state == State.Disputed, "not disputed");
+        jobSuccess[jobId] = !employerWins;
+        job.state = State.Completed;
     }
 
-    /// @notice Finalize a job and trigger payouts and reputation changes.
     function finalize(uint256 jobId) external {
         Job storage job = jobs[jobId];
-        require(job.status == Status.Completed, "not ready");
-        job.status = Status.Finalized;
-        if (job.success) {
-            stakeManager.payReward(job.agent, job.reward);
-            stakeManager.releaseStake(job.agent, job.stake);
-            reputationEngine.addReputation(job.agent, 1);
-            certificateNFT.mintCertificate(job.agent, jobId, "");
+        require(job.state == State.Completed, "not ready");
+        job.state = State.Finalized;
+        if (jobSuccess[jobId]) {
+            if (address(stakeMgr) != address(0)) {
+                stakeMgr.payReward(job.agent, job.reward);
+                stakeMgr.releaseStake(job.agent, job.reward * 2);
+            }
+            if (address(reputation) != address(0)) {
+                reputation.addReputation(job.agent, 1);
+            }
+            if (address(certNFT) != address(0)) {
+                certNFT.mintCertificate(job.agent, jobId, "");
+            }
         } else {
-            stakeManager.payReward(job.employer, job.reward);
-            stakeManager.slash(job.agent, job.employer, job.stake);
-            reputationEngine.subtractReputation(job.agent, 1);
+            if (address(stakeMgr) != address(0)) {
+                stakeMgr.payReward(job.employer, job.reward);
+                stakeMgr.slash(job.agent, job.employer, job.reward);
+            }
+            if (address(reputation) != address(0)) {
+                reputation.subtractReputation(job.agent, 1);
+            }
         }
-        emit JobFinalized(jobId, job.success);
+        emit JobFinalized(jobId, jobSuccess[jobId]);
     }
 }
 
