@@ -487,7 +487,7 @@ All addresses should be independently verified before use.
 
 ### Modular v2 Architecture
 
-The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules are deployed as **stand‑alone contracts** and wired together only through the addresses stored in `JobRegistry`, preserving storage isolation and making the system upgrade‑free. Every module inherits `Ownable`, ensuring that only the owner (or future governance) can adjust parameters. These owner‑only setters—such as stake ratios, timing windows or reputation thresholds—are callable through the explorer **Write** tabs, keeping administration approachable for non‑technical operators while remaining fully transparent on‑chain.
+The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules are deployed as **stand‑alone contracts** and wired together only through the addresses stored in `JobRegistry`, preserving storage isolation and making the system upgrade‑free. `JobRegistry` lets the owner swap module addresses, enabling governance to upgrade components individually without redeploying the entire suite. Every module inherits `Ownable`, ensuring that only the owner (or future governance) can adjust parameters. These owner‑only setters—such as stake ratios, timing windows or reputation thresholds—are callable through the explorer **Write** tabs, keeping administration approachable for non‑technical operators while remaining fully transparent on‑chain.
 
 | Module | Responsibility |
 | --- | --- |

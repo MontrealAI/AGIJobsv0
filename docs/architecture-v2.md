@@ -126,18 +126,18 @@ interface ICertificateNFT {
 ```
 
 ## Governance and Owner Controls
-Each module exposes minimal `onlyOwner` setters so governance can tune economics without redeploying code. Typical controls include:
+Each module exposes minimal `onlyOwner` setters so governance can tune economics without redeploying code. Because `JobRegistry` can update the addresses of its companion modules, new implementations may be introduced piecemeal while existing state remains untouched, enabling governance composability.
 
-- **JobRegistry** – `setModules` wiring validation, reputation, stake manager, dispute and certificate NFT contracts.
-- **ValidationModule** – `setParameters` for stake ratios, rewards, slashing and timing.
-- **DisputeModule** – `setAppealParameters` and moderator address.
-- **StakeManager** – `setStakeParameters` and `setToken`.
-- **ReputationEngine** – `setCaller` and `setThresholds` for agent/validator reputation.
-- **CertificateNFT** – `setBaseURI` for metadata.
+| Module | Key owner functions | Purpose |
+| --- | --- | --- |
+| JobRegistry | `setValidationModule`, `setReputationEngine`, `setStakeManager`, `setCertificateNFT`, `setDisputeModule`, `setJobParameters` | Wire module addresses and set per‑job rewards/stake |
+| ValidationModule | `setParameters` | Adjust stake ratios, rewards, slashing and timing windows |
+| DisputeModule | `setAppealParameters` | Configure appeal fees, jury size and moderator address |
+| StakeManager | `setStakeParameters`, `setToken` | Tune minimum stakes/slashing and switch staking token |
+| ReputationEngine | `setCaller`, `setThresholds` | Authorise callers and set agent/validator reputation floors |
+| CertificateNFT | `setBaseURI` | Update metadata base URI |
 
-All setters are accessible through block‑explorer interfaces, keeping administration intuitive for non‑technical owners while preserving contract immutability.
-
-These interfaces favour explicit, single-purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.
+All setters are accessible through block‑explorer interfaces, keeping administration intuitive for non‑technical owners while preserving contract immutability. These interfaces favour explicit, single‑purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.
 
 ## User Experience
 Non‑technical employers, agents and validators can call these methods directly through Etherscan's read and write tabs. Every parameter uses human‑readable units (wei for token amounts and seconds for timing) so that wallets and explorers can display values without custom tooling. No external subscription or Chainlink VRF is required; validator selection relies on commit‑reveal randomness seeded by the owner.
