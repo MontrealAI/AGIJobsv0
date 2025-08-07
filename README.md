@@ -16,41 +16,45 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.21; includes an automatic token burn on final validation via the `JobFinalizedAndBurned` event and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
+ 
+## Architecture
 
-## Getting Started for Non‑Technical Users
+The modular design separates concerns across dedicated contracts:
 
-Use a block explorer like Etherscan to interact with the contract—no coding required. Confirm the [AGIJobManager address](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract) on multiple explorers before sending transactions.
+- [JobRegistry](contracts/JobRegistry.sol) – orchestrates job lifecycle and coordinates with external modules.
+- [StakeManager](contracts/StakeManager.sol) – holds deposits, pays rewards, and slashes stake when necessary.
+- [ReputationEngine](contracts/ReputationEngine.sol) – tracks reputation scores for employers and agents.
+- [ValidationModule](contracts/ValidationModule.sol) – supplies validation outcomes for submitted work.
+- [CertificateNFT](contracts/CertificateNFT.sol) – mints ERC721 certificates upon successful completion.
+
+```mermaid
+graph TD
+    JobRegistry --> ValidationModule
+    JobRegistry --> StakeManager
+    JobRegistry --> ReputationEngine
+    JobRegistry --> CertificateNFT
+```
+
+See [docs/architecture.md](docs/architecture.md) for sequence diagrams of job and dispute flows.
+
+## Etherscan Walk-throughs
+
+Use a block explorer like Etherscan—no coding required. Always verify contract addresses on multiple explorers before interacting.
 
 ### Employers
-
-1. Open the **Write Contract** tab and expand `createJob` to post a task with escrowed payout.
-2. Monitor the job; if the agent misses the deadline, anyone can call `cancelExpiredJob` to refund the employer (minus a small reward to the caller), so keep an eye on the timer.
+1. Open the **Write Contract** tab of `JobRegistry` and connect your wallet.
+2. Call `createJob(agent, reward, stake)` to post a task. `reward` and `stake` are specified in wei (typical range 1–1000 AGI).
+3. Share the emitted `JobCreated` event with the agent to communicate the job ID.
+4. After completion, the owner finalizes the job via `finalize(jobId)` to trigger payouts.
 
 ### Agents
-
-1. Connect your wallet on the same page.
-2. Call `acceptTerms` with the IPFS hash of the terms of service and
-   re-accept if a `TermsVersionUpdated` event is emitted.
-3. Ensure your reputation meets `minAgentReputation`, then use `applyForJob` with the job ID.
-4. After finishing work, call `requestJobCompletion` with an IPFS hash or URL.
+1. Stake AGI on `StakeManager` with `depositStake(amount)` (commonly 10–1000 AGI).
+2. Once hired, call `completeJob(jobId)` on `JobRegistry` to submit work.
+3. If a result is disputed, invoke `dispute(jobId)`; otherwise wait for the job to be finalized and your stake released.
 
 ### Validators
-
-1. Call `acceptTerms` with the IPFS hash of the terms of service and
-   re-accept whenever `TermsVersionUpdated` is emitted.
-2. Deposit stake through `stake` to join the pool.
-3. View the current validator roster via `getValidatorPool` in the **Read Contract** tab.
-4. During the commit phase call `commitValidation`, then `revealValidation` in the reveal phase.
-5. Finalize with `validateJob` or `disapproveJob`.
-
-#### Example Write Functions
-
-- [createJob](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
-- [stake](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
-- [commitValidation](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
-- [revealValidation](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract)
-
-For detailed examples and code snippets, see the [Quick Start](#quick-start).
+1. Validators or designated moderators set outcomes on `ValidationModule` through `setOutcome(jobId, success)`.
+2. Anyone may call `validate(jobId)` to view the preset result and `finalize(jobId)` on `JobRegistry` to settle the job.
 
 ## Using AGIJobManager v1 on Etherscan
 
@@ -123,6 +127,26 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `baseURI` | `setBaseURI(string)` | Prefix for NFT metadata |
 
 Review `*Updated` events after any call to confirm changes on-chain.
+
+## Module Owner Configuration
+
+### JobRegistry
+- `setValidationModule(address module)` – link the validation module (non-zero address).
+- `setReputationEngine(address engine)` – set the reputation engine contract.
+- `setStakeManager(address manager)` – set the staking contract.
+- `setCertificateNFT(address nft)` – set the certificate NFT contract.
+
+### StakeManager
+- `setToken(address token)` – update the ERC20 token used for staking and rewards. Default is the $AGI token.
+
+### ValidationModule
+- `setOutcome(uint256 jobId, bool success)` – preset the validation result for a job. `success` is `true` or `false`.
+
+### ReputationEngine
+- `setCaller(address caller, bool allowed)` – authorize modules that may adjust reputation (e.g., JobRegistry). `allowed` should be `true` or `false`.
+
+### CertificateNFT
+- `setBaseURI(string uri)` – configure the base token URI for minted certificates. Leave empty for none.
 
 ## Validator Selection Randomness
 
@@ -1132,6 +1156,8 @@ Please report security issues responsibly. Contact **security@agi.network** or o
 ## References
 
 - Explore the [AGIJobs NFT collection](https://opensea.io/collection/agijobs), showcasing job NFTs minted from completed tasks in this ecosystem. Each token represents delivered work and illustrates how job outputs become tradable assets.
+
+- **AGIJobManager v2 contracts** – addresses will be published here once the upgraded suite is live.
 
 - [AGI.eth](https://agi.eth.limo) – official resources and updates from the AGI ecosystem.
 - [Ethereum Name Service (ENS)](https://ens.domains/) – decentralized naming for wallets and contracts.
