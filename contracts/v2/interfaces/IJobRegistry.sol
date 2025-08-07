@@ -2,27 +2,50 @@
 pragma solidity ^0.8.21;
 
 /// @title IJobRegistry
-/// @notice Interface for the JobRegistry module responsible for job lifecycle management
+/// @notice Interface for orchestrating job lifecycles and module coordination
 interface IJobRegistry {
-    enum JobState { Open, Assigned, InReview, Finalized, Disputed }
+    enum Status { None, Created, Completed, Disputed, Finalized }
 
     struct Job {
         address employer;
         address agent;
-        uint256 payout;
-        uint256 deadline;
-        JobState state;
+        uint256 reward;
+        uint256 stake;
+        bool success;
+        Status status;
     }
 
-    event JobCreated(uint256 indexed jobId, address indexed employer, uint256 payout, uint256 deadline);
-    event JobAssigned(uint256 indexed jobId, address indexed agent);
-    event JobCompletionRequested(uint256 indexed jobId, string resultURI);
+    // module configuration
+    event ValidationModuleUpdated(address module);
+    event ReputationEngineUpdated(address engine);
+    event StakeManagerUpdated(address manager);
+    event CertificateNFTUpdated(address nft);
+
+    // job lifecycle
+    event JobCreated(
+        uint256 indexed jobId,
+        address indexed employer,
+        address indexed agent,
+        uint256 reward,
+        uint256 stake
+    );
+    event JobCompleted(uint256 indexed jobId, bool success);
+    event JobDisputed(uint256 indexed jobId);
     event JobFinalized(uint256 indexed jobId, bool success);
 
-    function createJob(uint256 payout, uint256 duration, string calldata metadata) external returns (uint256 jobId);
-    function applyForJob(uint256 jobId) external;
-    function requestJobCompletion(uint256 jobId, string calldata resultURI) external;
-    function finalizeJob(uint256 jobId) external;
-    function disputeJob(uint256 jobId) external;
-}
+    // owner wiring of modules
+    function setValidationModule(address module) external;
+    function setReputationEngine(address engine) external;
+    function setStakeManager(address manager) external;
+    function setCertificateNFT(address nft) external;
 
+    // core job flow
+    function createJob(address agent, uint256 reward, uint256 stake) external returns (uint256 jobId);
+    function completeJob(uint256 jobId) external;
+    function dispute(uint256 jobId) external;
+    function resolveDispute(uint256 jobId, bool success) external;
+    function finalize(uint256 jobId) external;
+
+    // view helper
+    function jobs(uint256 jobId) external view returns (Job memory);
+}
