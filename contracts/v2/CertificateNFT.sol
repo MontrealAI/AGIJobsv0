@@ -41,6 +41,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         if (bytes(uri).length != 0) {
             _tokenURIs[tokenId] = uri;
         }
+        emit CertificateMinted(to, jobId);
     }
 
     function _baseURI() internal view override returns (string memory) {

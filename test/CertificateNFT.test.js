@@ -15,9 +15,11 @@ describe("CertificateNFT", function () {
   it("mints certificates", async () => {
     await nft.connect(owner).setBaseURI("ipfs://base/");
     await nft.connect(owner).setJobRegistry(owner.address);
-    await nft
-      .connect(owner)
-      .mintCertificate(user.address, 1, "");
+    await expect(
+      nft.connect(owner).mintCertificate(user.address, 1, "")
+    )
+      .to.emit(nft, "CertificateMinted")
+      .withArgs(user.address, 1);
     expect(await nft.ownerOf(1)).to.equal(user.address);
     expect(await nft.tokenURI(1)).to.equal("ipfs://base/1");
   });

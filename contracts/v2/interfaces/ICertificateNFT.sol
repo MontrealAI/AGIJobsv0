@@ -5,6 +5,7 @@ pragma solidity ^0.8.21;
 /// @notice Interface for minting non-fungible job completion certificates
 interface ICertificateNFT {
     event BaseURIUpdated(string uri);
+    event CertificateMinted(address indexed to, uint256 indexed jobId);
 
     function mintCertificate(
         address to,
