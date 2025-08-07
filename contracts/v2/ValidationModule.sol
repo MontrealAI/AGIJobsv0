@@ -43,6 +43,7 @@ contract ValidationModule is IValidationModule, Ownable {
     mapping(uint256 => mapping(address => bytes32)) public commitments;
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
+    mapping(uint256 => mapping(address => uint256)) public validatorStakes;
 
     event ValidatorsUpdated(address[] validators);
     event ValidatorTiersUpdated(uint256[] payoutTiers, uint256[] counts);
@@ -70,16 +71,20 @@ contract ValidationModule is IValidationModule, Ownable {
         require(validatorPool.length >= count, "insufficient validators");
 
         address[] memory pool = validatorPool;
-        address[] memory selected = new address[](count);
-        uint256 rand = uint256(keccak256(abi.encode(block.prevrandao, jobId)));
         uint256 n = pool.length;
+        // sort validators by stake descending
+        for (uint256 i; i < n; i++) {
+            for (uint256 j = i + 1; j < n; j++) {
+                if (stakeManager.validatorStake(pool[j]) > stakeManager.validatorStake(pool[i])) {
+                    (pool[i], pool[j]) = (pool[j], pool[i]);
+                }
+            }
+        }
 
+        address[] memory selected = new address[](count);
         for (uint256 i; i < count; i++) {
-            rand = uint256(keccak256(abi.encode(rand, i)));
-            uint256 idx = rand % n;
-            selected[i] = pool[idx];
-            pool[idx] = pool[n - 1];
-            n--;
+            selected[i] = pool[i];
+            validatorStakes[jobId][pool[i]] = stakeManager.validatorStake(pool[i]);
         }
 
         r.validators = selected;
@@ -109,9 +114,11 @@ contract ValidationModule is IValidationModule, Ownable {
         require(!revealed[jobId][msg.sender], "already revealed");
         require(keccak256(abi.encode(approve, salt)) == commitHash, "invalid reveal");
 
+        uint256 stake = validatorStakes[jobId][msg.sender];
+        require(stake > 0, "stake");
         revealed[jobId][msg.sender] = true;
         votes[jobId][msg.sender] = approve;
-        if (approve) r.approvals++; else r.rejections++;
+        if (approve) r.approvals += stake; else r.rejections += stake;
 
         emit ValidationRevealed(jobId, msg.sender, approve);
     }
@@ -123,18 +130,19 @@ contract ValidationModule is IValidationModule, Ownable {
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
 
+        success = r.approvals >= r.rejections;
+
         for (uint256 i; i < r.validators.length; i++) {
             address val = r.validators[i];
-            if (!revealed[jobId][val]) {
-                uint256 stake = stakeManager.validatorStake(val);
-                uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
+            uint256 stake = validatorStakes[jobId][val];
+            uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
+            if (!revealed[jobId][val] || votes[jobId][val] != success) {
                 if (slashAmount > 0) {
                     stakeManager.slash(val, slashAmount, job.employer);
                 }
             }
         }
 
-        success = r.approvals >= r.rejections;
         r.finalized = true;
         return success;
     }
