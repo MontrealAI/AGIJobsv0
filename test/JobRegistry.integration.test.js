@@ -22,7 +22,9 @@ describe("JobRegistry integration", function () {
     rep = await Rep.deploy(owner.address);
     const NFT = await ethers.getContractFactory("CertificateNFT");
     nft = await NFT.deploy("Cert", "CERT", owner.address);
-    const Registry = await ethers.getContractFactory("JobRegistry");
+    const Registry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
     registry = await Registry.deploy(owner.address);
 
     await registry.connect(owner).setValidationModule(await validation.getAddress());
@@ -44,7 +46,7 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await validation.connect(owner).setOutcome(1, true);
     await registry.connect(employer).createJob(agent.address, reward, stake);
-    await registry.connect(agent).completeJob(1);
+    await registry.connect(agent).requestJobCompletion(1);
     await registry.finalize(1);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
@@ -56,7 +58,7 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await validation.connect(owner).setOutcome(1, false); // colluding validator
     await registry.connect(employer).createJob(agent.address, reward, stake);
-    await registry.connect(agent).completeJob(1);
+    await registry.connect(agent).requestJobCompletion(1);
     await registry.connect(agent).dispute(1);
     await registry.connect(owner).resolveDispute(1, true);
     await registry.finalize(1);
@@ -70,7 +72,7 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await validation.connect(owner).setOutcome(1, false);
     await registry.connect(employer).createJob(agent.address, reward, stake);
-    await registry.connect(agent).completeJob(1);
+    await registry.connect(agent).requestJobCompletion(1);
     await registry.connect(agent).dispute(1);
     await registry.connect(owner).resolveDispute(1, false);
     await registry.finalize(1);
