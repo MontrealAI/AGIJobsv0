@@ -27,6 +27,7 @@ contract DisputeModule is IDisputeModule, Ownable {
 
     mapping(uint256 => address payable) public appellants;
     mapping(uint256 => uint256) public bonds;
+    mapping(uint256 => address[]) public juries;
 
     constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
         jobRegistry = _jobRegistry;
@@ -52,15 +53,21 @@ contract DisputeModule is IDisputeModule, Ownable {
 
     /// @inheritdoc IDisputeModule
     function raiseDispute(uint256 jobId) external payable override {
-        require(msg.sender == address(jobRegistry), "registry only");
         require(msg.value == appealFee, "fee");
         require(bonds[jobId] == 0, "disputed");
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        appellants[jobId] = payable(job.agent);
+        address appellant = msg.sender == address(jobRegistry)
+            ? job.agent
+            : tx.origin;
+        appellants[jobId] = payable(appellant);
         bonds[jobId] = msg.value;
 
-        emit DisputeRaised(jobId, job.agent);
+        if (jurySize > 0) {
+            juries[jobId] = new address[](jurySize);
+        }
+
+        emit DisputeRaised(jobId, appellant);
     }
 
     modifier onlyArbiter() {
