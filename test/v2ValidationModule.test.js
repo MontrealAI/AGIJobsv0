@@ -105,9 +105,13 @@ describe("ValidationModule V2", function () {
         if (r < cum) break;
       }
       expected.push(remainingPool[idx]);
-      total -= remainingStakes[idx];
-      remainingPool.splice(idx, 1);
-      remainingStakes.splice(idx, 1);
+      const removedStake = remainingStakes[idx];
+      total -= removedStake;
+      const last = remainingPool.length - 1;
+      remainingPool[idx] = remainingPool[last];
+      remainingStakes[idx] = remainingStakes[last];
+      remainingPool.pop();
+      remainingStakes.pop();
     }
 
     expect(selected).to.deep.equal(expected);
