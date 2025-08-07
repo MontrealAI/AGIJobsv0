@@ -4,10 +4,10 @@ const { ethers } = require("hardhat");
 const Role = { Agent: 0, Validator: 1 };
 
 describe("StakeManager", function () {
-  let token, stakeManager, owner, employer, agent, validator;
+  let token, stakeManager, owner, treasury, employer, agent, validator;
 
   beforeEach(async () => {
-    [owner, employer, agent, validator] = await ethers.getSigners();
+    [owner, treasury, employer, agent, validator] = await ethers.getSigners();
     const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
     await token.mint(agent.address, 1000);
@@ -18,9 +18,9 @@ describe("StakeManager", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
+      treasury.address,
       owner.address
     );
-    await stakeManager.connect(owner).setCaller(owner.address, true);
   });
 
   it("tracks stakes per role and supports locking and slashing", async () => {
@@ -29,8 +29,10 @@ describe("StakeManager", function () {
     await token.connect(validator).approve(await stakeManager.getAddress(), 400);
     await stakeManager.connect(validator).depositStake(Role.Validator, 400);
 
-    expect(await stakeManager.agentStake(agent.address)).to.equal(500);
-    expect(await stakeManager.validatorStake(validator.address)).to.equal(400);
+    expect(await stakeManager.stakeOf(agent.address, Role.Agent)).to.equal(500);
+    expect(await stakeManager.stakeOf(validator.address, Role.Validator)).to.equal(
+      400
+    );
 
     await stakeManager
       .connect(owner)
@@ -39,34 +41,31 @@ describe("StakeManager", function () {
       .connect(owner)
       .lockStake(validator.address, Role.Validator, 100);
 
-    expect(await stakeManager.lockedAgentStake(agent.address)).to.equal(200);
-    expect(await stakeManager.lockedValidatorStake(validator.address)).to.equal(
-      100
+    expect(await stakeManager.lockedStakeOf(agent.address, Role.Agent)).to.equal(
+      200
     );
+    expect(
+      await stakeManager.lockedStakeOf(validator.address, Role.Validator)
+    ).to.equal(100);
 
     await expect(
       stakeManager.connect(agent).withdrawStake(Role.Agent, 400)
     ).to.be.revertedWith("insufficient stake");
     await stakeManager.connect(agent).withdrawStake(Role.Agent, 300);
-    expect(await stakeManager.agentStake(agent.address)).to.equal(200);
+    expect(await stakeManager.stakeOf(agent.address, Role.Agent)).to.equal(200);
 
     await stakeManager
       .connect(owner)
-      .slashStake(agent.address, Role.Agent, 100, employer.address);
-    expect(await stakeManager.agentStake(agent.address)).to.equal(100);
-    expect(await stakeManager.lockedAgentStake(agent.address)).to.equal(100);
+      .slash(agent.address, Role.Agent, 100, employer.address);
+    expect(await stakeManager.stakeOf(agent.address, Role.Agent)).to.equal(100);
+    expect(await stakeManager.lockedStakeOf(agent.address, Role.Agent)).to.equal(
+      100
+    );
     expect(await token.balanceOf(employer.address)).to.equal(1050);
+    expect(await token.balanceOf(treasury.address)).to.equal(50);
   });
 
-  it("restricts stake operations to authorized callers", async () => {
-    await token.connect(agent).approve(await stakeManager.getAddress(), 100);
-    await stakeManager.connect(agent).depositStake(Role.Agent, 100);
-    await expect(
-      stakeManager.connect(agent).lockStake(agent.address, Role.Agent, 50)
-    ).to.be.revertedWith("not authorized");
-  });
-
-  it("allows only owner to update stake parameters", async () => {
+  it("restricts parameter updates to owner", async () => {
     await expect(
       stakeManager.connect(agent).setStakeParameters(30, 20, 60)
     ).to.be.revertedWithCustomError(
@@ -77,6 +76,18 @@ describe("StakeManager", function () {
     expect(await stakeManager.agentStakePercentage()).to.equal(30);
     expect(await stakeManager.validatorStakePercentage()).to.equal(20);
     expect(await stakeManager.validatorSlashingPercentage()).to.equal(60);
+
+    const Token2 = await ethers.getContractFactory("MockERC20");
+    const token2 = await Token2.deploy();
+    await expect(
+      stakeManager.connect(agent).setToken(await token2.getAddress())
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      "OwnableUnauthorizedAccount"
+    );
+    await stakeManager.connect(owner).setToken(await token2.getAddress());
+    expect(await stakeManager.token()).to.equal(await token2.getAddress());
   });
 });
+
 
