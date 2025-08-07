@@ -37,6 +37,11 @@ graph TD
 
 See [docs/architecture.md](docs/architecture.md) for sequence diagrams of job and dispute flows.
 
+### AGIJobManager v2
+
+The forthcoming v2 release formalises these contracts into standalone modules such as JobRegistry, ValidationModule, StakeManager, ReputationEngine and CertificateNFT. It adds dynamic validator counts, stronger slashing and optional appeal rounds to harden incentives. Interface stubs live in [contracts/v2/interfaces](contracts/v2/interfaces), and design diagrams are in [docs/architecture-v2.md](docs/architecture-v2.md).
+
+
 ## Etherscan Walk-throughs
 
 Use a block explorer like Etherscan—no coding required. Always verify contract addresses on multiple explorers before interacting.
