@@ -53,7 +53,7 @@ describe("StakeManager", function () {
       .slashStake(agent.address, Role.Agent, 100, employer.address);
     expect(await stakeManager.agentStakes(agent.address)).to.equal(100);
     expect(await stakeManager.lockedAgentStakes(agent.address)).to.equal(100);
-    expect(await token.balanceOf(employer.address)).to.equal(1100);
+    expect(await token.balanceOf(employer.address)).to.equal(1050);
   });
 
   it("restricts stake operations to authorized callers", async () => {

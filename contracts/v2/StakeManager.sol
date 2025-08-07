@@ -19,6 +19,11 @@ contract StakeManager is Ownable {
     mapping(address => uint256) public lockedAgentStakes;
     mapping(address => uint256) public lockedValidatorStakes;
 
+    // percentage settings
+    uint256 public agentStakePercentage = 20; // 20% of payout
+    uint256 public validatorStakePercentage = 10; // 10% of payout
+    uint256 public validatorSlashingPercentage = 50; // 50% of stake
+
     mapping(address => bool) public callers;
 
     event TokenUpdated(address token);
@@ -32,6 +37,7 @@ contract StakeManager is Ownable {
         uint256 amount,
         address indexed recipient
     );
+    event ParametersUpdated();
 
     constructor(IERC20 _token, address owner) Ownable(owner) {
         token = _token;
@@ -53,14 +59,29 @@ contract StakeManager is Ownable {
         emit TokenUpdated(address(newToken));
     }
 
+    function depositAgentStake(address agent, uint256 amount) external {
+        require(agent == msg.sender, "self");
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        agentStakes[msg.sender] += amount;
+        emit StakeDeposited(msg.sender, Role.Agent, amount);
+    }
+
+    function depositValidatorStake(address validator, uint256 amount) external {
+        require(validator == msg.sender, "self");
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        validatorStakes[msg.sender] += amount;
+        emit StakeDeposited(msg.sender, Role.Validator, amount);
+    }
+
     function depositStake(Role role, uint256 amount) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
         if (role == Role.Agent) {
             agentStakes[msg.sender] += amount;
+            emit StakeDeposited(msg.sender, Role.Agent, amount);
         } else {
             validatorStakes[msg.sender] += amount;
+            emit StakeDeposited(msg.sender, Role.Validator, amount);
         }
-        emit StakeDeposited(msg.sender, role, amount);
     }
 
     function withdrawStake(Role role, uint256 amount) external {
@@ -68,13 +89,16 @@ contract StakeManager is Ownable {
             uint256 available = agentStakes[msg.sender] - lockedAgentStakes[msg.sender];
             require(available >= amount, "insufficient stake");
             agentStakes[msg.sender] -= amount;
+            token.safeTransfer(msg.sender, amount);
+            emit StakeWithdrawn(msg.sender, Role.Agent, amount);
         } else {
-            uint256 available = validatorStakes[msg.sender] - lockedValidatorStakes[msg.sender];
+            uint256 available =
+                validatorStakes[msg.sender] - lockedValidatorStakes[msg.sender];
             require(available >= amount, "insufficient stake");
             validatorStakes[msg.sender] -= amount;
+            token.safeTransfer(msg.sender, amount);
+            emit StakeWithdrawn(msg.sender, Role.Validator, amount);
         }
-        token.safeTransfer(msg.sender, amount);
-        emit StakeWithdrawn(msg.sender, role, amount);
     }
 
     function lockStake(address user, Role role, uint256 amount) external onlyCaller {
@@ -90,21 +114,46 @@ contract StakeManager is Ownable {
         emit StakeLocked(user, role, amount);
     }
 
-    function slashStake(address user, Role role, uint256 amount, address recipient)
-        external
-        onlyCaller
-    {
+    function slashStake(
+        address user,
+        Role role,
+        uint256 amount,
+        address recipient
+    ) public onlyCaller {
         if (role == Role.Agent) {
             require(lockedAgentStakes[user] >= amount, "insufficient locked");
             lockedAgentStakes[user] -= amount;
             agentStakes[user] -= amount;
+            uint256 employerPortion = amount / 2;
+            token.safeTransfer(recipient, employerPortion);
+            emit StakeSlashed(user, Role.Agent, amount, recipient);
         } else {
             require(lockedValidatorStakes[user] >= amount, "insufficient locked");
             lockedValidatorStakes[user] -= amount;
             validatorStakes[user] -= amount;
+            token.safeTransfer(recipient, amount);
+            emit StakeSlashed(user, Role.Validator, amount, recipient);
         }
-        token.safeTransfer(recipient, amount);
-        emit StakeSlashed(user, role, amount, recipient);
     }
+
+    function slash(address user, uint256 amount, address recipient) external onlyCaller {
+        if (lockedAgentStakes[user] >= amount) {
+            slashStake(user, Role.Agent, amount, recipient);
+        } else {
+            slashStake(user, Role.Validator, amount, recipient);
+        }
+    }
+
+    function setStakeParameters(
+        uint256 _agentStakePct,
+        uint256 _validatorStakePct,
+        uint256 _validatorSlashPct
+    ) external onlyOwner {
+        agentStakePercentage = _agentStakePct;
+        validatorStakePercentage = _validatorStakePct;
+        validatorSlashingPercentage = _validatorSlashPct;
+        emit ParametersUpdated();
+    }
+
 }
 
