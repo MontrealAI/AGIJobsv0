@@ -22,7 +22,9 @@ describe("JobRegistry integration", function () {
     validation = await Validation.deploy(owner.address);
     const Rep = await ethers.getContractFactory("ReputationEngine");
     rep = await Rep.deploy(owner.address);
-    const NFT = await ethers.getContractFactory("CertificateNFT");
+    const NFT = await ethers.getContractFactory(
+      "contracts/v2/CertificateNFT.sol:CertificateNFT"
+    );
     nft = await NFT.deploy("Cert", "CERT", owner.address);
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
@@ -33,6 +35,7 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setStakeManager(await stakeManager.getAddress());
     await registry.connect(owner).setReputationEngine(await rep.getAddress());
     await registry.connect(owner).setCertificateNFT(await nft.getAddress());
+    await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
     await stakeManager.connect(owner).transferOwnership(await registry.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
