@@ -512,6 +512,13 @@ graph TD
 
 See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration. A step‑by‑step development outline is available in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
+#### Incentive Design
+
+- Validators finalise jobs by majority after a review window; minorities may escalate to the `DisputeModule` for an appeal.
+- Slashing percentages exceed potential rewards so dishonest behaviour has negative expected value.
+- Employers receive a share of slashed agent stake on failures, aligning incentives across roles.
+- Commit–reveal randomness combined with owner‑tuned parameters keeps the Gibbs free energy lowest at honest participation.
+
 ## Versions
 
 - **v0 – Legacy:** Immutable code deployed at [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
