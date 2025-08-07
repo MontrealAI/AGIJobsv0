@@ -45,6 +45,9 @@ describe("JobRegistry integration", function () {
         await dispute.getAddress(),
         await nft.getAddress()
       );
+    await registry
+      .connect(owner)
+      .setJobParameters(reward, stake);
     await dispute.connect(owner).setAppealParameters(appealFee, 0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
@@ -61,7 +64,7 @@ describe("JobRegistry integration", function () {
 
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward);
+    await registry.connect(employer).createJob();
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, true);
@@ -77,7 +80,7 @@ describe("JobRegistry integration", function () {
 
   it("handles collusion resolved by dispute", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward);
+    await registry.connect(employer).createJob();
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false); // colluding validator
@@ -95,7 +98,7 @@ describe("JobRegistry integration", function () {
 
   it("slashes stake when dispute fails", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward);
+    await registry.connect(employer).createJob();
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false);
@@ -105,11 +108,21 @@ describe("JobRegistry integration", function () {
     await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(800);
-    expect(await token.balanceOf(employer.address)).to.equal(1100);
+    expect(await token.balanceOf(employer.address)).to.equal(1200);
     expect(await rep.reputationOf(agent.address)).to.equal(0);
     expect(await rep.penaltyCount(agent.address)).to.equal(1);
     expect(await rep.isBlacklisted(agent.address)).to.equal(true);
     expect(await nft.balanceOf(agent.address)).to.equal(0);
+  });
+
+  it("allows employer to cancel before completion", async () => {
+    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await registry.connect(employer).createJob();
+    const jobId = 1;
+    await registry.connect(employer).cancelJob(jobId);
+    const job = await registry.jobs(jobId);
+    expect(job.state).to.equal(6); // Cancelled enum value
+    expect(await token.balanceOf(employer.address)).to.equal(1000);
   });
 });
 
