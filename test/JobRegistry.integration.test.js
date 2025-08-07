@@ -35,6 +35,7 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setStakeManager(await stakeManager.getAddress());
     await registry.connect(owner).setReputationEngine(await rep.getAddress());
     await registry.connect(owner).setCertificateNFT(await nft.getAddress());
+    await registry.connect(owner).setJobParameters(reward, stake);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
     await stakeManager.connect(owner).transferOwnership(await registry.getAddress());
@@ -50,7 +51,7 @@ describe("JobRegistry integration", function () {
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await validation.connect(owner).setOutcome(1, true);
-    await registry.connect(employer).createJob(agent.address, reward, stake);
+    await registry.connect(employer).createJob(agent.address);
     await registry.connect(agent).requestJobCompletion(1);
     await registry.finalize(1);
 
@@ -62,7 +63,7 @@ describe("JobRegistry integration", function () {
   it("handles collusion resolved by dispute", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await validation.connect(owner).setOutcome(1, false); // colluding validator
-    await registry.connect(employer).createJob(agent.address, reward, stake);
+    await registry.connect(employer).createJob(agent.address);
     await registry.connect(agent).requestJobCompletion(1);
     await registry.connect(agent).dispute(1);
     await registry.connect(owner).resolveDispute(1, true);
@@ -76,7 +77,7 @@ describe("JobRegistry integration", function () {
   it("slashes stake when dispute fails", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await validation.connect(owner).setOutcome(1, false);
-    await registry.connect(employer).createJob(agent.address, reward, stake);
+    await registry.connect(employer).createJob(agent.address);
     await registry.connect(agent).requestJobCompletion(1);
     await registry.connect(agent).dispute(1);
     await registry.connect(owner).resolveDispute(1, false);

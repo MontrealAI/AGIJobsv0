@@ -56,11 +56,15 @@ contract JobRegistry is Ownable {
     ICertificateNFT public certificateNFT;
     IDisputeModule public disputeModule;
 
+    uint256 public jobReward;
+    uint256 public jobStake;
+
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
     event DisputeModuleUpdated(address module);
+    event JobParametersUpdated(uint256 reward, uint256 stake);
 
     event JobCreated(
         uint256 indexed jobId,
@@ -100,23 +104,27 @@ contract JobRegistry is Ownable {
         emit DisputeModuleUpdated(address(module));
     }
 
-    /// @notice Create a new job.
-    function createJob(address agent, uint256 reward, uint256 stake)
-        external
-        returns (uint256 jobId)
-    {
-        require(stakeManager.stakes(agent) >= stake, "stake missing");
+    function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
+        jobReward = reward;
+        jobStake = stake;
+        emit JobParametersUpdated(reward, stake);
+    }
+
+    /// @notice Create a new job using owner-set reward and stake parameters.
+    function createJob(address agent) external returns (uint256 jobId) {
+        require(jobReward > 0 && jobStake > 0, "params not set");
+        require(stakeManager.stakes(agent) >= jobStake, "stake missing");
         jobId = ++nextJobId;
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: agent,
-            reward: reward,
-            stake: stake,
+            reward: jobReward,
+            stake: jobStake,
             success: false,
             status: Status.Created
         });
-        stakeManager.lockReward(msg.sender, reward);
-        emit JobCreated(jobId, msg.sender, agent, reward, stake);
+        stakeManager.lockReward(msg.sender, jobReward);
+        emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake);
     }
 
     /// @notice Agent requests job completion; validation outcome stored.

@@ -63,8 +63,8 @@ contract MockJobRegistry is IJobRegistry {
     function setCertificateNFT(address) external override {}
     function setDisputeModule(address) external override {}
     function setJobParameters(uint256, uint256) external override {}
-    function createJob(address, uint256, uint256) external override returns (uint256) {return 0;}
-    function completeJob(uint256) external override {}
+    function createJob(address) external override returns (uint256) {return 0;}
+    function requestJobCompletion(uint256) external override {}
     function dispute(uint256) external override {}
     function resolveDispute(uint256, bool) external override {}
     function finalize(uint256) external override {}

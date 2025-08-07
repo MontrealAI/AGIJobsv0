@@ -13,7 +13,7 @@ Each component is immutable once deployed yet configurable by the owner through 
 
 | Module | Core responsibility | Owner‑controllable parameters |
 | --- | --- | --- |
-| JobRegistry | job postings, escrow, lifecycle management | maximum payout, job duration limits, expiration rewards |
+| JobRegistry | job postings, escrow, lifecycle management | job reward, required agent stake |
 | ValidationModule | validator selection, commit‑reveal voting, tallying | stake ratios, reward/penalty rates, timing windows, validators per job |
 | DisputeModule | optional appeal and moderator decisions | appeal fee, jury size, moderator address |
 | StakeManager | custody of validator/agent collateral and slashing | minimum stakes, slashing percentages, reward recipients |
@@ -68,11 +68,9 @@ Key Solidity interfaces live in [`contracts/v2/interfaces`](../contracts/v2/inte
 
 ```solidity
 interface IJobRegistry {
-    function createJob(address agent, uint256 reward, uint256 stake)
-        external
-        returns (uint256 jobId);
+    function createJob(address agent) external returns (uint256 jobId);
     function finalize(uint256 jobId) external;
-    function setJobParameters(uint256 maxJobPayout, uint256 jobDurationLimit) external;
+    function setJobParameters(uint256 reward, uint256 stake) external;
 }
 
 interface IValidationModule {
