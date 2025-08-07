@@ -7,12 +7,14 @@ interface IValidationModule {
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
     event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);
+    event ValidationAppealed(uint256 indexed jobId, address indexed caller);
     event ParametersUpdated();
 
     function selectValidators(uint256 jobId) external returns (address[] memory);
     function commitValidation(uint256 jobId, bytes32 commitHash) external;
     function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
     function finalize(uint256 jobId) external returns (bool success);
+    function appeal(uint256 jobId) external payable;
 
     /// @notice Owner configuration for stake and timing parameters
     /// @dev Only callable by contract owner

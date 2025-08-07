@@ -6,6 +6,7 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal validation for jobs.
@@ -13,6 +14,7 @@ contract ValidationModule is IValidationModule, Ownable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
+    IDisputeModule public disputeModule;
 
     // configuration
     uint256 public validatorStakeRequirement;
@@ -49,10 +51,12 @@ contract ValidationModule is IValidationModule, Ownable {
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
+    mapping(uint256 => bool) public appealed;
 
     event ValidatorsUpdated(address[] validators);
     event ValidatorTiersUpdated(uint256[] payoutTiers, uint256[] counts);
     event ReputationEngineUpdated(address engine);
+    event DisputeModuleUpdated(address module);
     event ValidatorSelectionSeedUpdated(bytes32 newSeed);
 
     constructor(IJobRegistry _jobRegistry, IStakeManager _stakeManager, address owner)
@@ -76,6 +80,12 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ReputationEngineUpdated(address(engine));
     }
 
+    /// @notice Update the dispute module used for appeals.
+    function setDisputeModule(IDisputeModule module) external onlyOwner {
+        disputeModule = module;
+        emit DisputeModuleUpdated(address(module));
+    }
+
     /// @notice Update the entropy seed used in validator selection.
     function setValidatorSelectionSeed(bytes32 seed) external onlyOwner {
         validatorSelectionSeed = seed;
@@ -96,7 +106,11 @@ contract ValidationModule is IValidationModule, Ownable {
 
         for (uint256 i; i < n; ++i) {
             uint256 stake = stakeManager.stakeOf(pool[i], IStakeManager.Role.Validator);
-            if (stake >= validatorStakeRequirement) {
+            bool allowed = stake >= validatorStakeRequirement;
+            if (allowed && address(reputationEngine) != address(0)) {
+                allowed = !reputationEngine.isBlacklisted(pool[i]);
+            }
+            if (allowed) {
                 stakes[m] = stake;
                 pool[m] = pool[i];
                 totalStake += stake;
@@ -178,6 +192,12 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(!r.finalized, "finalized");
         require(block.timestamp > r.revealDeadline, "reveal pending");
+        if (resolveGracePeriod != 0) {
+            require(
+                block.timestamp <= r.revealDeadline + resolveGracePeriod,
+                "grace passed"
+            );
+        }
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
 
@@ -206,6 +226,24 @@ contract ValidationModule is IValidationModule, Ownable {
 
         r.finalized = true;
         return success;
+    }
+
+    function appeal(uint256 jobId) external payable override {
+        Round storage r = rounds[jobId];
+        require(r.finalized, "not finalized");
+        require(!appealed[jobId], "appealed");
+        require(
+            reviewWindow == 0 ||
+                block.timestamp <= r.revealDeadline + reviewWindow,
+            "window closed"
+        );
+        appealed[jobId] = true;
+        if (address(disputeModule) != address(0)) {
+            disputeModule.raiseDispute{value: msg.value}(jobId);
+        } else {
+            require(msg.value == 0, "fee unused");
+        }
+        emit ValidationAppealed(jobId, msg.sender);
     }
 
     function setParameters(
