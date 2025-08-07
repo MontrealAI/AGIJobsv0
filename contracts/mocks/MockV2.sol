@@ -99,5 +99,7 @@ contract MockReputationEngine is IReputationEngine {
 
     function setCaller(address, bool) external override {}
 
+    function setRole(address, uint8) external override {}
+
     function setThresholds(uint256, uint256) external override {}
 }

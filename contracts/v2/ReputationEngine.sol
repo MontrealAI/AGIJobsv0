@@ -4,23 +4,19 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 
-/// @title ReputationEngine
-/// @notice Tracks participant reputation with diminishing growth and automatic blacklisting.
+/// @title ReputationEngineV2
+/// @notice Tracks reputation for agents and validators with role-based thresholds
 contract ReputationEngineV2 is IReputationEngine, Ownable {
-    /// @notice Maximum reputation a user can achieve.
-    uint256 public maxReputation = 88888;
+    uint8 public constant ROLE_AGENT = 0;
+    uint8 public constant ROLE_VALIDATOR = 1;
 
-    mapping(address => uint256) private _reputations;
-    mapping(address => uint256) public penaltyCount;
+    mapping(address => uint256) private _reputation;
     mapping(address => bool) public blacklisted;
-
     mapping(address => bool) public callers;
+    mapping(address => uint8) public roles;
 
-    uint256 public agentBlacklistThreshold;
-    uint256 public validatorBlacklistThreshold;
-
-    event BlacklistUpdated(address indexed user, bool status);
-    event MaxReputationUpdated(uint256 newMax);
+    uint256 public agentThreshold;
+    uint256 public validatorThreshold;
 
     constructor(address owner) Ownable(owner) {}
 
@@ -29,76 +25,53 @@ contract ReputationEngineV2 is IReputationEngine, Ownable {
         _;
     }
 
-    /// @notice Authorize or revoke a caller that can update reputation.
     function setCaller(address caller, bool allowed) external override onlyOwner {
         callers[caller] = allowed;
-        emit CallerSet(caller, allowed);
     }
 
-    /// @notice Update penalty thresholds for agents and validators.
-    function setThresholds(uint256 agentThreshold, uint256 validatorThreshold)
-        external
-        override
-        onlyOwner
-    {
-        agentBlacklistThreshold = agentThreshold;
-        validatorBlacklistThreshold = validatorThreshold;
-        emit ThresholdsUpdated(agentThreshold, validatorThreshold);
+    function setRole(address user, uint8 role) external override onlyOwner {
+        roles[user] = role;
     }
 
-    /// @notice Update the maximum reputation cap.
-    function setMaxReputation(uint256 newMax) external onlyOwner {
-        maxReputation = newMax;
-        emit MaxReputationUpdated(newMax);
+    function setThresholds(uint256 agent, uint256 validator) external override onlyOwner {
+        agentThreshold = agent;
+        validatorThreshold = validator;
     }
 
-    /// @inheritdoc IReputationEngine
     function addReputation(address user, uint256 amount) external override onlyCaller {
-        uint256 current = _reputations[user];
-        uint256 increased = current + amount;
-        uint256 diminishingFactor = 1 + ((increased * increased) / (maxReputation * maxReputation));
-        uint256 newScore = increased / diminishingFactor;
-        if (newScore > maxReputation) {
-            newScore = maxReputation;
+        uint256 newScore = _reputation[user] + amount;
+        _reputation[user] = newScore;
+        emit ReputationChanged(user, int256(amount), newScore);
+
+        uint256 threshold = _thresholdFor(user);
+        if (blacklisted[user] && newScore >= threshold) {
+            blacklisted[user] = false;
+            emit BlacklistUpdated(user, false);
         }
-        _reputations[user] = newScore;
-        emit ReputationUpdated(user, int256(amount), newScore);
     }
 
-    /// @inheritdoc IReputationEngine
-    function subtractReputation(address user, uint256 amount)
-        external
-        override
-        onlyCaller
-    {
-        uint256 current = _reputations[user];
+    function subtractReputation(address user, uint256 amount) external override onlyCaller {
+        uint256 current = _reputation[user];
         uint256 newScore = current > amount ? current - amount : 0;
-        _reputations[user] = newScore;
+        _reputation[user] = newScore;
+        emit ReputationChanged(user, -int256(amount), newScore);
 
-        penaltyCount[user] += 1;
-        emit ReputationUpdated(user, -int256(amount), newScore);
-
-        uint256 threshold = agentBlacklistThreshold;
-        if (
-            validatorBlacklistThreshold != 0 &&
-            (threshold == 0 || validatorBlacklistThreshold < threshold)
-        ) {
-            threshold = validatorBlacklistThreshold;
-        }
-        if (!blacklisted[user] && threshold > 0 && penaltyCount[user] >= threshold) {
+        uint256 threshold = _thresholdFor(user);
+        if (!blacklisted[user] && newScore < threshold) {
             blacklisted[user] = true;
             emit BlacklistUpdated(user, true);
         }
     }
 
-    /// @inheritdoc IReputationEngine
     function reputationOf(address user) external view override returns (uint256) {
-        return _reputations[user];
+        return _reputation[user];
     }
 
-    /// @inheritdoc IReputationEngine
     function isBlacklisted(address user) external view override returns (bool) {
         return blacklisted[user];
     }
-}
 
+    function _thresholdFor(address user) internal view returns (uint256) {
+        return roles[user] == ROLE_VALIDATOR ? validatorThreshold : agentThreshold;
+    }
+}
