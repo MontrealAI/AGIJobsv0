@@ -1,6 +1,6 @@
 # AGIJobManager v2 Architecture
 
-AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules with single responsibilities. Each module is `Ownable` so that only the contract owner can update parameters or perform privileged actions. The design emphasises gas efficiency, governance composability and game-theoretic soundness.
+AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules with single responsibilities. Every module inherits `Ownable`, ensuring only the contract owner can tune parameters or perform privileged actions. The design emphasises gas efficiency, governance composability and game-theoretic soundness while remaining simple enough for non‑technical users to invoke through block explorers such as Etherscan.
 
 ## Modules
 - **JobRegistry** – posts jobs, escrows payouts and tracks lifecycle state.
@@ -8,6 +8,7 @@ AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules wi
 - **StakeManager** – escrows validator and agent collateral, releases rewards and executes slashing.
 - **ReputationEngine** – updates reputation scores and blacklists misbehaving agents or validators.
 - **CertificateNFT** – mints ERC‑721 proof of completion to employers.
+Each component is immutable once deployed yet configurable by the owner through minimal setter functions, enabling governance upgrades without redeploying the entire suite.
 
 ## Module Interactions
 ```mermaid
@@ -46,6 +47,40 @@ sequenceDiagram
     RE-->>Val: reputation update
 ```
 
+## Interface Summary
+Key Solidity interfaces live in [`contracts/v2/interfaces`](../contracts/v2/interfaces) and capture the responsibilities of each module. Examples:
+
+```solidity
+interface IJobRegistry {
+    function createJob(address agent, uint256 reward, uint256 stake)
+        external
+        returns (uint256 jobId);
+    function finalize(uint256 jobId) external;
+}
+
+interface IValidationModule {
+    function selectValidators(uint256 jobId) external returns (address[] memory);
+    function commitValidation(uint256 jobId, bytes32 commitHash) external;
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
+    function finalize(uint256 jobId) external returns (bool success);
+}
+
+interface IReputationEngine {
+    function addReputation(address user, uint256 amount) external;
+    function subtractReputation(address user, uint256 amount) external;
+}
+
+interface IStakeManager {
+    function depositStake(uint256 amount) external;
+    function slash(address user, uint256 amount, address recipient) external;
+}
+```
+
+These interfaces favour explicit, single-purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.
+
+## User Experience
+Non‑technical employers, agents and validators can call these methods directly through Etherscan's read and write tabs. Every parameter uses human‑readable units (wei for token amounts and seconds for timing) so that wallets and explorers can display values without custom tooling. No external subscription or Chainlink VRF is required; validator selection relies on commit‑reveal randomness seeded by the owner.
+
 ## Incentive Refinements
 - Validator stake scales with job value; majority approval finalises after a grace period while minority can trigger an appeal round with a larger validator set.
 - Slashing percentages exceed potential rewards so dishonest behaviour is an energy‑costly deviation.
@@ -54,7 +89,7 @@ sequenceDiagram
 - Parameters (burn rates, stake ratios, validator counts) are tunable by the owner to keep the Nash equilibrium at honest participation.
 
 ## Statistical‑Physics View
-The protocol behaves like a system seeking minimum free energy. Honest completion is the ground state: any actor attempting to cheat must input additional "energy" in the form of higher expected stake loss, making dishonest equilibria unstable.
+The protocol behaves like a system seeking minimum Gibbs free energy. Honest completion is the ground state in this Hamiltonian system: any actor attempting to cheat must input additional "energy"—manifested as higher expected stake loss—which drives the system back toward the stable equilibrium.
 
 ## Interfaces
 Reference Solidity interfaces are provided in `contracts/v2/interfaces` for integration and future implementation.
