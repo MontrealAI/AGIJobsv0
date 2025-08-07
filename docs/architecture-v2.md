@@ -119,6 +119,18 @@ interface IStakeManager {
 }
 ```
 
+## Governance and Owner Controls
+Each module exposes minimal `onlyOwner` setters so governance can tune economics without redeploying code. Typical controls include:
+
+- **JobRegistry** – `setValidationModule`, `setReputationEngine`, `setStakeManager`, `setCertificateNFT`, `setJobParameters`.
+- **ValidationModule** – `setParameters` for stake ratios, rewards, slashing and timing.
+- **DisputeModule** – `setAppealParameters` and moderator address.
+- **StakeManager** – `setStakeParameters` and `setToken`.
+- **ReputationEngine** – `setCaller` and `setThresholds` for agent/validator reputation.
+- **CertificateNFT** – `setBaseURI` for metadata.
+
+All setters are accessible through block‑explorer interfaces, keeping administration intuitive for non‑technical owners while preserving contract immutability.
+
 These interfaces favour explicit, single-purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.
 
 ## User Experience
