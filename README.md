@@ -122,10 +122,44 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 
 Review `*Updated` events after any call to confirm changes on-chain.
 
-To lessen predictability in validator selection, the contract owner should
-periodically call `setValidatorSelectionSeed` with a fresh random value.
-Each draw mixes the prior block hash, the beacon's `prevrandao`, the job ID,
-and this seed.
+## Validator Selection Randomness
+
+Validator selection combines the previous block hash, `block.prevrandao`, the
+job ID, and an owner-supplied `validatorSelectionSeed`. This pseudo-random
+mechanism makes prediction harder but is not cryptographically secure—miners or
+sequencers can nudge block data and slightly bias which validators are chosen.
+
+### Rotating the Seed
+
+To reduce predictability, owners should refresh the seed regularly:
+
+1. Generate a new 32-byte value (e.g., `openssl rand -hex 32`).
+2. On a block explorer's **Write** tab, connect the owner wallet.
+3. Call `setValidatorSelectionSeed` with `0x` plus the random hex.
+4. Submit the transaction and wait for confirmation.
+5. Verify the `ValidatorSelectionSeedUpdated` event in the receipt.
+6. Repeat periodically, such as before large job batches.
+
+### Commit Hash Example
+
+During the commit phase, validators submit a hash of their vote:
+
+```
+commitHash = keccak256(abi.encode(jobId, approve, salt))
+```
+
+- **Browser:** Use any Keccak-256 tool to compute the hash and paste the result
+  into `commitValidation` on a block explorer.
+- **CLI:**
+
+  ```bash
+  node -e "const {solidityPackedKeccak256}=require('ethers'); const salt='0x'+require('crypto').randomBytes(32).toString('hex'); console.log('salt', salt); console.log('commit', solidityPackedKeccak256(['uint256','bool','bytes32'], [1, true, salt]));"
+  # send the transaction with Foundry's cast
+  cast send $AGI_JOB_MANAGER "commitValidation(uint256,bytes32,string,bytes32[])" 1 0xCOMMIT "" [] --from $VALIDATOR
+  ```
+
+  Use the printed `commit` value in `commitValidation(jobId, commitHash)` and
+  reveal later with the same `salt`.
 
 ## Disclaimer
 
