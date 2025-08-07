@@ -84,7 +84,7 @@ contract MockJobRegistry is IJobRegistry {
     function setJobParameters(uint256, uint256) external override {}
     function createJob(address) external override returns (uint256) {return 0;}
     function requestJobCompletion(uint256) external override {}
-    function dispute(uint256) external override {}
+    function dispute(uint256) external payable override {}
     function resolveDispute(uint256, bool) external override {}
     function finalize(uint256) external override {}
 }

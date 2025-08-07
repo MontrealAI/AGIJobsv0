@@ -4,61 +4,50 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
-import {IValidationModule} from "./interfaces/IValidationModule.sol";
 
 /// @title DisputeModule
-/// @notice Handles appeals with an optional validator jury and bond mechanism.
+/// @notice Handles appeals with a simple bond mechanism and moderator resolution.
 contract DisputeModule is IDisputeModule, Ownable {
     IJobRegistry public jobRegistry;
-    IValidationModule public validationModule;
 
-    uint256 public appealBond;
-    uint256 public jurySize;
+    uint256 public appealFee;
 
     mapping(uint256 => address payable) public appellants;
     mapping(uint256 => uint256) public bonds;
 
-    constructor(IJobRegistry _jobRegistry, IValidationModule _validationModule, address owner)
-        Ownable(owner)
-    {
+    constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
         jobRegistry = _jobRegistry;
-        validationModule = _validationModule;
     }
 
     /// @inheritdoc IDisputeModule
-    function setAppealParameters(uint256 appealFee, uint256 _jurySize) external onlyOwner {
-        appealBond = appealFee;
-        jurySize = _jurySize;
+    function setAppealParameters(uint256 fee, uint256 /*_jurySize*/ ) external onlyOwner {
+        appealFee = fee;
         emit AppealParametersUpdated();
     }
 
     /// @inheritdoc IDisputeModule
     function raiseDispute(uint256 jobId) external payable override {
-        require(msg.value == appealBond, "bond");
+        require(msg.sender == address(jobRegistry), "registry only");
+        require(msg.value == appealFee, "fee");
         require(bonds[jobId] == 0, "disputed");
 
-        appellants[jobId] = payable(msg.sender);
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        appellants[jobId] = payable(job.agent);
         bonds[jobId] = msg.value;
 
-        address[] memory jury = validationModule.selectValidators(jobId);
-        require(jury.length >= jurySize, "jury");
-
-        emit DisputeRaised(jobId, msg.sender);
+        emit DisputeRaised(jobId, job.agent);
     }
 
     /// @inheritdoc IDisputeModule
-    function resolve(uint256 jobId, bool employerWins) external override {
-        require(msg.sender == address(jobRegistry), "registry");
+    function resolve(uint256 jobId, bool employerWins) external override onlyOwner {
         uint256 bond = bonds[jobId];
         require(bond > 0, "no bond");
 
-        address payable recipient;
-        if (employerWins) {
-            IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-            recipient = payable(job.employer);
-        } else {
-            recipient = appellants[jobId];
-        }
+        address payable recipient = employerWins
+            ? payable(jobRegistry.jobs(jobId).employer)
+            : appellants[jobId];
+
+        jobRegistry.resolveDispute(jobId, employerWins);
 
         delete bonds[jobId];
         delete appellants[jobId];

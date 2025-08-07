@@ -29,7 +29,7 @@ interface ICertificateNFT {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId) external;
+    function raiseDispute(uint256 jobId) external payable;
     function resolve(uint256 jobId, bool employerWins) external;
 }
 
@@ -75,6 +75,7 @@ contract JobRegistry is Ownable {
     );
     event CompletionRequested(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event JobFinalized(uint256 indexed jobId, bool success);
 
     constructor(address owner) Ownable(owner) {}
@@ -139,26 +140,25 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Agent disputes a failed job outcome.
-    function dispute(uint256 jobId) external {
+    function dispute(uint256 jobId) external payable {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId);
+            disputeModule.raiseDispute{value: msg.value}(jobId);
         }
         emit JobDisputed(jobId);
     }
 
-    /// @notice Owner resolves a dispute, setting the final outcome.
-    function resolveDispute(uint256 jobId, bool success) external onlyOwner {
+    /// @notice Called by DisputeModule to record final outcome.
+    function resolveDispute(uint256 jobId, bool employerWins) external {
+        require(msg.sender == address(disputeModule), "only dispute module");
         Job storage job = jobs[jobId];
         require(job.status == Status.Disputed, "no dispute");
-        job.success = success;
+        job.success = !employerWins;
         job.status = Status.Completed;
-        if (address(disputeModule) != address(0)) {
-            disputeModule.resolve(jobId, !success);
-        }
+        emit DisputeResolved(jobId, employerWins);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
