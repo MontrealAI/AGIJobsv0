@@ -3,6 +3,7 @@ pragma solidity ^0.8.21;
 
 import "../v2/interfaces/IStakeManager.sol";
 import "../v2/interfaces/IJobRegistry.sol";
+import "../v2/interfaces/IReputationEngine.sol";
 
 contract MockStakeManager is IStakeManager {
     mapping(address => uint256) private _validatorStakes;
@@ -68,4 +69,29 @@ contract MockJobRegistry is IJobRegistry {
     function dispute(uint256) external override {}
     function resolveDispute(uint256, bool) external override {}
     function finalize(uint256) external override {}
+}
+
+contract MockReputationEngine is IReputationEngine {
+    mapping(address => uint256) private _rep;
+
+    function addReputation(address user, uint256 amount) external override {
+        _rep[user] += amount;
+    }
+
+    function subtractReputation(address user, uint256 amount) external override {
+        uint256 rep = _rep[user];
+        _rep[user] = rep > amount ? rep - amount : 0;
+    }
+
+    function reputationOf(address user) external view override returns (uint256) {
+        return _rep[user];
+    }
+
+    function isBlacklisted(address) external pure override returns (bool) {
+        return false;
+    }
+
+    function setCaller(address, bool) external override {}
+
+    function setThresholds(uint256, uint256) external override {}
 }
