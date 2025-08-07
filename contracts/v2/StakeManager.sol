@@ -19,7 +19,8 @@ contract StakeManager is IStakeManager, Ownable, ReentrancyGuard {
     // percentage settings
     uint256 public agentStakePercentage = 20; // 20% of payout
     uint256 public validatorStakePercentage = 10; // 10% of payout
-    uint256 public validatorSlashingPercentage = 50; // 50% of stake
+    uint256 public agentSlashingPercentage = 50; // 50% of locked stake
+    uint256 public validatorSlashingPercentage = 50; // 50% of locked stake
 
     // user => role => amount
     mapping(address => mapping(Role => uint256)) private _stakes;
@@ -41,10 +42,12 @@ contract StakeManager is IStakeManager, Ownable, ReentrancyGuard {
     function setStakeParameters(
         uint256 _agentStakePct,
         uint256 _validatorStakePct,
+        uint256 _agentSlashPct,
         uint256 _validatorSlashPct
     ) external onlyOwner {
         agentStakePercentage = _agentStakePct;
         validatorStakePercentage = _validatorStakePct;
+        agentSlashingPercentage = _agentSlashPct;
         validatorSlashingPercentage = _validatorSlashPct;
         emit ParametersUpdated();
     }
@@ -65,32 +68,43 @@ contract StakeManager is IStakeManager, Ownable, ReentrancyGuard {
         emit StakeWithdrawn(msg.sender, role, amount);
     }
 
-    /// @notice Lock stake for a user and role
-    function lockStake(address user, Role role, uint256 amount)
+    /// @notice Lock stake for a user and role based on payout
+    function lockStake(address user, Role role, uint256 payout)
         external
         onlyOwner
         nonReentrant
     {
+        uint256 pct =
+            role == Role.Agent ? agentStakePercentage : validatorStakePercentage;
+        uint256 required = (payout * pct) / 100;
         uint256 available = _stakes[user][role] - _locked[user][role];
-        require(available >= amount, "insufficient stake");
-        _locked[user][role] += amount;
-        emit StakeLocked(user, role, amount);
+        require(available >= required, "insufficient stake");
+        _locked[user][role] += required;
+        emit StakeLocked(user, role, required);
     }
 
     /// @notice Slash locked stake and distribute to employer and treasury
     function slash(
         address user,
         Role role,
-        uint256 amount,
+        uint256 payout,
         address employer
     ) external onlyOwner nonReentrant {
-        require(_locked[user][role] >= amount, "insufficient locked");
-        _locked[user][role] -= amount;
-        _stakes[user][role] -= amount;
-        uint256 half = amount / 2;
-        token.safeTransfer(employer, half);
-        token.safeTransfer(treasury, amount - half);
-        emit StakeSlashed(user, role, amount, employer, treasury);
+        uint256 stakePct =
+            role == Role.Agent ? agentStakePercentage : validatorStakePercentage;
+        uint256 slashPct =
+            role == Role.Agent
+                ? agentSlashingPercentage
+                : validatorSlashingPercentage;
+        uint256 required = (payout * stakePct) / 100;
+        require(_locked[user][role] >= required, "insufficient locked");
+        _locked[user][role] -= required;
+        uint256 penalty = (required * slashPct) / 100;
+        _stakes[user][role] -= penalty;
+        uint256 employerShare = penalty / 2;
+        token.safeTransfer(employer, employerShare);
+        token.safeTransfer(treasury, penalty - employerShare);
+        emit StakeSlashed(user, role, penalty, employer, treasury);
     }
 
     /// @notice Get total stake for a user and role

@@ -35,6 +35,7 @@ interface IStakeManager {
     function setStakeParameters(
         uint256 agentStakePercentage,
         uint256 validatorStakePercentage,
+        uint256 agentSlashingPercentage,
         uint256 validatorSlashingPercentage
     ) external;
 }
