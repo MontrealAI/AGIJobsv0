@@ -8,8 +8,8 @@ interface IValidationModule {
 }
 
 interface IReputationEngine {
-    function increaseReputation(address user, uint256 amount) external;
-    function decreaseReputation(address user, uint256 amount) external;
+    function addReputation(address user, uint256 amount) external;
+    function subtractReputation(address user, uint256 amount) external;
 }
 
 interface IStakeManager {
@@ -169,12 +169,12 @@ contract JobRegistry is Ownable {
         if (job.success) {
             stakeManager.payReward(job.agent, job.reward);
             stakeManager.releaseStake(job.agent, job.stake);
-            reputationEngine.increaseReputation(job.agent, 1);
+            reputationEngine.addReputation(job.agent, 1);
             certificateNFT.mintCertificate(job.agent, jobId, "");
         } else {
             stakeManager.payReward(job.employer, job.reward);
             stakeManager.slash(job.agent, job.employer, job.stake);
-            reputationEngine.decreaseReputation(job.agent, 1);
+            reputationEngine.subtractReputation(job.agent, 1);
         }
         emit JobFinalized(jobId, job.success);
     }
