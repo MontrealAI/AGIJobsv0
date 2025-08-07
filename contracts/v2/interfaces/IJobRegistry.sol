@@ -20,6 +20,7 @@ interface IJobRegistry {
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
+    event DisputeModuleUpdated(address module);
 
     // job lifecycle
     event JobCreated(
@@ -39,6 +40,7 @@ interface IJobRegistry {
     function setReputationEngine(address engine) external;
     function setStakeManager(address manager) external;
     function setCertificateNFT(address nft) external;
+    function setDisputeModule(address module) external;
 
     /// @notice Owner configuration of job limits
     function setJobParameters(uint256 maxJobPayout, uint256 jobDurationLimit) external;

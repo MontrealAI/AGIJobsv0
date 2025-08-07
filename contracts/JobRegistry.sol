@@ -24,6 +24,11 @@ interface ICertificateNFT {
     function mint(address to) external returns (uint256);
 }
 
+interface IDisputeModule {
+    function raiseDispute(uint256 jobId) external;
+    function resolve(uint256 jobId, bool employerWins) external;
+}
+
 /// @title JobRegistry
 /// @notice Orchestrates job lifecycle and coordinates with external modules.
 contract JobRegistry is Ownable {
@@ -45,11 +50,13 @@ contract JobRegistry is Ownable {
     IReputationEngine public reputationEngine;
     IStakeManager public stakeManager;
     ICertificateNFT public certificateNFT;
+    IDisputeModule public disputeModule;
 
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
+    event DisputeModuleUpdated(address module);
 
     event JobCreated(
         uint256 indexed jobId,
@@ -82,6 +89,11 @@ contract JobRegistry is Ownable {
     function setCertificateNFT(ICertificateNFT nft) external onlyOwner {
         certificateNFT = nft;
         emit CertificateNFTUpdated(address(nft));
+    }
+
+    function setDisputeModule(IDisputeModule module) external onlyOwner {
+        disputeModule = module;
+        emit DisputeModuleUpdated(address(module));
     }
 
     /// @notice Create a new job.
@@ -120,6 +132,9 @@ contract JobRegistry is Ownable {
         require(job.status == Status.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
         job.status = Status.Disputed;
+        if (address(disputeModule) != address(0)) {
+            disputeModule.raiseDispute(jobId);
+        }
         emit JobDisputed(jobId);
     }
 
@@ -129,6 +144,9 @@ contract JobRegistry is Ownable {
         require(job.status == Status.Disputed, "no dispute");
         job.success = success;
         job.status = Status.Completed;
+        if (address(disputeModule) != address(0)) {
+            disputeModule.resolve(jobId, !success);
+        }
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
