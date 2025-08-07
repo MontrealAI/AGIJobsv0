@@ -6,7 +6,9 @@ describe("ValidationModule", function () {
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
-    const ValidationModule = await ethers.getContractFactory("ValidationModule");
+    const ValidationModule = await ethers.getContractFactory(
+      "contracts/ValidationModule.sol:ValidationModule"
+    );
     validation = await ValidationModule.deploy(owner.address);
   });
 
