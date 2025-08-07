@@ -487,7 +487,7 @@ All addresses should be independently verified before use.
 
 ### Modular v2 Architecture
 
-The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules interact only via interface addresses recorded in the JobRegistry, keeping storage separate and contracts upgrade‑free. Every contract inherits `Ownable`, letting the owner (or future governance) tune parameters without redeploying the whole system.
+The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules are deployed as **stand‑alone contracts** and wired together only through the addresses stored in `JobRegistry`, preserving storage isolation and making the system upgrade‑free. Every module inherits `Ownable`, ensuring that only the owner (or future governance) can adjust parameters. These owner‑only setters—such as stake ratios, timing windows or reputation thresholds—are callable through the explorer **Write** tabs, keeping administration approachable for non‑technical operators while remaining fully transparent on‑chain.
 
 | Module | Responsibility |
 | --- | --- |
@@ -510,7 +510,7 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
-See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration.
+See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration. A step‑by‑step development outline is available in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
 ## Versions
 

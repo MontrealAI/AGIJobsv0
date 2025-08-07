@@ -22,6 +22,8 @@ Each component is immutable once deployed yet configurable by the owner through 
 
 Every module inherits `Ownable`, so only the contract owner (or future governance authority) may adjust these parameters.
 
+All public methods accept plain `uint256` values (wei and seconds) so they can be invoked directly from a block explorer without custom tooling. Owners configure modules by calling the published setter functions in Etherscan's **Write** tab, while agents and validators use the corresponding read/write interfaces for routine actions.
+
 ## Module Interactions
 ```mermaid
 graph TD
