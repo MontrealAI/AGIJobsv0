@@ -12,7 +12,9 @@ describe("JobRegistry integration", function () {
     [owner, employer, agent] = await ethers.getSigners();
     const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
-    const StakeManager = await ethers.getContractFactory("StakeManager");
+    const StakeManager = await ethers.getContractFactory(
+      "contracts/StakeManager.sol:StakeManager"
+    );
     stakeManager = await StakeManager.deploy(await token.getAddress(), owner.address);
     const Validation = await ethers.getContractFactory(
       "contracts/ValidationModule.sol:ValidationModule"
