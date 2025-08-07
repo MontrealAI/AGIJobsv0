@@ -446,7 +446,18 @@ All addresses should be independently verified before use.
 
 ### Modular v2 Architecture
 
-The upcoming v2 release splits the system into immutable modules—`JobRegistry`, `ValidationModule`, `DisputeModule`, `StakeManager`, `ReputationEngine` and `CertificateNFT`. Each contract has a single responsibility, is controlled by the owner through minimal setter functions, and can be interacted with directly via block explorers. Diagrammatic overviews and interface definitions live in [docs/architecture-v2.md](docs/architecture-v2.md).
+The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Every contract inherits `Ownable`, letting the owner (or future governance) tune parameters without redeploying the whole system.
+
+| Module | Responsibility |
+| --- | --- |
+| `JobRegistry` | Post jobs, escrow payouts, manage lifecycle. |
+| `ValidationModule` | Select validators, run commit‑reveal voting, return provisional outcomes. |
+| `DisputeModule` | Coordinate appeals and moderator or jury decisions. |
+| `StakeManager` | Hold validator/agent collateral, release rewards, execute slashing. |
+| `ReputationEngine` | Track reputation, apply penalties, maintain blacklists. |
+| `CertificateNFT` | Mint ERC‑721 certificates for completed jobs. |
+
+See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics.
 
 ## Versions
 
