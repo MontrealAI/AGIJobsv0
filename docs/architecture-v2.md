@@ -56,6 +56,7 @@ interface IJobRegistry {
         external
         returns (uint256 jobId);
     function finalize(uint256 jobId) external;
+    function setJobParameters(uint256 maxJobPayout, uint256 jobDurationLimit) external;
 }
 
 interface IValidationModule {
@@ -63,16 +64,36 @@ interface IValidationModule {
     function commitValidation(uint256 jobId, bytes32 commitHash) external;
     function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
     function finalize(uint256 jobId) external returns (bool success);
+    function setParameters(
+        uint256 validatorStakeRequirement,
+        uint256 validatorStakePercentage,
+        uint256 validatorRewardPercentage,
+        uint256 validatorSlashingPercentage,
+        uint256 commitDuration,
+        uint256 revealDuration,
+        uint256 reviewWindow,
+        uint256 resolveGracePeriod,
+        uint256 validatorsPerJob
+    ) external;
 }
 
 interface IReputationEngine {
     function addReputation(address user, uint256 amount) external;
     function subtractReputation(address user, uint256 amount) external;
+    function setCaller(address caller, bool allowed) external;
+    function setThresholds(uint256 agentThreshold, uint256 validatorThreshold) external;
 }
 
 interface IStakeManager {
-    function depositStake(uint256 amount) external;
+    function depositAgentStake(address agent, uint256 amount) external;
+    function depositValidatorStake(address validator, uint256 amount) external;
     function slash(address user, uint256 amount, address recipient) external;
+    function setStakeParameters(
+        uint256 agentStakeRequirement,
+        uint256 validatorStakeRequirement,
+        uint256 agentSlashingPercentage,
+        uint256 validatorSlashingPercentage
+    ) external;
 }
 ```
 
@@ -100,3 +121,10 @@ where \(s_i\) represents stake lost by misbehaving participants and \(r_j\) deno
 
 ## Interfaces
 Reference Solidity interfaces are provided in `contracts/v2/interfaces` for integration and future implementation.
+
+## Solidity Structure Recommendations
+- Prefer immutable module addresses and minimal storage writes for gas efficiency.
+- Use `uint256` for amounts and timestamps and pack related structs to reduce storage slots.
+- Isolate permissioned setters with `onlyOwner` modifiers and emit update events for every configuration change.
+- Avoid external libraries requiring subscriptions; commit‑reveal randomness keeps the system trust-minimised.
+- Separate state-changing logic from read-only helpers to simplify audits and Etherscan interactions.

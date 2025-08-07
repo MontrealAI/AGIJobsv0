@@ -32,12 +32,16 @@ interface IJobRegistry {
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
     event JobFinalized(uint256 indexed jobId, bool success);
+    event JobParametersUpdated();
 
     // owner wiring of modules
     function setValidationModule(address module) external;
     function setReputationEngine(address engine) external;
     function setStakeManager(address manager) external;
     function setCertificateNFT(address nft) external;
+
+    /// @notice Owner configuration of job limits
+    function setJobParameters(uint256 maxJobPayout, uint256 jobDurationLimit) external;
 
     // core job flow
     function createJob(address agent, uint256 reward, uint256 stake) external returns (uint256 jobId);
