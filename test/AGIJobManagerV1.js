@@ -62,6 +62,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator3).acceptTerms("ipfs://terms");
     await manager.connect(employer).acceptTerms("ipfs://terms");
     await manager.setValidatorsPerJob(3);
+    await manager.setValidatorBlacklistThreshold(1000);
 
     if (stakeAgent) {
       const stakeAmount = ethers.parseEther("100");

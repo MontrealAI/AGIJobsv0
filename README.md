@@ -80,7 +80,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 3. Stake AGI with `stake` and wait to be selected.
 4. **Commit:** Off‑chain, compute `commitHash = keccak256(abi.encode(jobId, approve, salt))` using any Keccak‑256 tool (e.g., Node, ethers.js). Example: `node -e "console.log(require('ethers').solidityPackedKeccak256(['uint256','bool','bytes32'], [JOB_ID,true,'0xSALT']))"`. Call `commitValidation(jobId, commitHash)` during the commit window.
 5. **Reveal:** After the commit window ends, call `revealValidation(jobId, approve, salt)` using the same `approve` flag and secret `salt`.
-6. Finalize with `validateJob` or `disapproveJob` after the review window; correct validators split the reserved reward and any slashed stakes up to the `maxSlashedRewardPercentage` cap (excess goes to `slashedStakeRecipient`). Monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
+6. Finalize with `validateJob` or `disapproveJob` after the review window; correct validators split the reserved reward and any slashed stakes up to the `maxSlashedRewardPercentage` cap (excess goes to `slashedStakeRecipient`). Repeated incorrect or missed votes increase `validatorPenaltyCount`; reaching the owner‑set `validatorBlacklistThreshold` automatically blacklists the validator. Owners may restore participation with `clearValidatorBlacklist`. Monitor `ValidationCommitted`, `ValidationRevealed`, and `JobFinalizedAndBurned` events.
 
 ### Owner Configuration Summary
 
@@ -116,6 +116,7 @@ For detailed examples and code snippets, see the [Quick Start](#quick-start).
 | `maxJobPayout` | `setMaxJobPayout(uint256)` | Maximum allowed job payout |
 | `jobDurationLimit` | `setJobDurationLimit(uint256)` | Maximum job duration |
 | `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
+| `validatorBlacklistThreshold` | `setValidatorBlacklistThreshold(uint256)` | Penalties before automatic validator blacklist |
 | `maxValidatorPoolSize` | `setMaxValidatorPoolSize(uint256)` | Cap on validator pool size |
 | `maxAGITypes` | `setMaxAGITypes(uint256)` | Maximum allowed AGI types |
 | `AGI token address` | `updateAGITokenAddress(address)` | Replace the $AGI token used for payments |
