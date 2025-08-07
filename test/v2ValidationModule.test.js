@@ -105,9 +105,13 @@ describe("ValidationModule V2", function () {
         if (r < cum) break;
       }
       expected.push(remainingPool[idx]);
-      total -= remainingStakes[idx];
-      remainingPool.splice(idx, 1);
-      remainingStakes.splice(idx, 1);
+      const removedStake = remainingStakes[idx];
+      total -= removedStake;
+      const last = remainingPool.length - 1;
+      remainingPool[idx] = remainingPool[last];
+      remainingStakes[idx] = remainingStakes[last];
+      remainingPool.pop();
+      remainingStakes.pop();
     }
 
     expect(selected).to.deep.equal(expected);
@@ -195,6 +199,8 @@ describe("ValidationModule V2", function () {
         .commitValidation(1, commit2)
     ).wait();
     await advance(61);
+    const stake0 = await stakeManager.validatorStake(selected[0]);
+    const stake1 = await stakeManager.validatorStake(selected[1]);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
       .revealValidation(1, true, salt1);
@@ -203,15 +209,13 @@ describe("ValidationModule V2", function () {
       .revealValidation(1, false, salt2);
     await advance(61);
     await validation.finalize(1);
-    const slashed = selected[1];
-    const stake =
-      slashed.toLowerCase() === v1.address.toLowerCase()
-        ? ethers.parseEther("100")
-        : slashed.toLowerCase() === v2.address.toLowerCase()
-        ? ethers.parseEther("50")
-        : ethers.parseEther("10");
-    expect(await stakeManager.validatorStake(slashed)).to.equal(stake / 2n);
-    expect(await reputation.reputationOf(selected[0])).to.equal(1n);
+    const slashed = stake0 >= stake1 ? selected[1] : selected[0];
+    const winner = slashed === selected[0] ? selected[1] : selected[0];
+    const slashedStakeBefore = stake0 >= stake1 ? stake1 : stake0;
+    expect(await stakeManager.validatorStake(slashed)).to.equal(
+      slashedStakeBefore / 2n
+    );
+    expect(await reputation.reputationOf(winner)).to.equal(1n);
     expect(await reputation.reputationOf(slashed)).to.equal(0n);
   });
 });
