@@ -146,7 +146,7 @@ To reduce predictability, owners should refresh the seed regularly:
 During the commit phase, validators submit a hash of their vote:
 
 ```
-commitHash = keccak256(abi.encode(jobId, approve, salt))
+commitHash = keccak256(abi.encodePacked(validatorAddress, jobId, approve, salt))
 ```
 
 - **Browser:** Use any Keccak-256 tool to compute the hash and paste the result
@@ -154,13 +154,14 @@ commitHash = keccak256(abi.encode(jobId, approve, salt))
 - **CLI:**
 
   ```bash
-  node -e "const {solidityPackedKeccak256}=require('ethers'); const salt='0x'+require('crypto').randomBytes(32).toString('hex'); console.log('salt', salt); console.log('commit', solidityPackedKeccak256(['uint256','bool','bytes32'], [1, true, salt]));"
+  node -e "const {solidityPackedKeccak256}=require('ethers'); const salt='0x'+require('crypto').randomBytes(32).toString('hex'); console.log('salt', salt); console.log('commit', solidityPackedKeccak256(['address','uint256','bool','bytes32'], ['0xVALIDATOR', 1, true, salt]));"
   # send the transaction with Foundry's cast
   cast send $AGI_JOB_MANAGER "commitValidation(uint256,bytes32,string,bytes32[])" 1 0xCOMMIT "" [] --from $VALIDATOR
   ```
 
   Use the printed `commit` value in `commitValidation(jobId, commitHash)` and
-  reveal later with the same `salt`.
+  reveal later with the same `salt`. Validators must re-run the hash if the
+  sending address changes.
 
 ## Disclaimer
 
