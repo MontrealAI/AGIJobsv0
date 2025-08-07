@@ -81,7 +81,7 @@ Use a block explorer like Etherscan—no coding required. Always verify contract
 
 ### Employers
 1. Open the **Write Contract** tab of `JobRegistry` and connect your wallet.
-2. Call `createJob(agent, reward, stake)` to post a task. `reward` and `stake` are specified in wei (typical range 1–1000 AGI).
+2. Ensure the owner has set `reward` and `stake` via `setJobParameters`. Call `createJob(agent)` to post a task using those values.
 3. Share the emitted `JobCreated` event with the agent to communicate the job ID.
 4. After completion, the owner finalizes the job via `finalize(jobId)` to trigger payouts.
 

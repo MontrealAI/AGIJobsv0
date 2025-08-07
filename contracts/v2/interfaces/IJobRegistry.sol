@@ -30,10 +30,10 @@ interface IJobRegistry {
         uint256 reward,
         uint256 stake
     );
-    event JobCompleted(uint256 indexed jobId, bool success);
+    event CompletionRequested(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
     event JobFinalized(uint256 indexed jobId, bool success);
-    event JobParametersUpdated();
+    event JobParametersUpdated(uint256 reward, uint256 stake);
 
     // owner wiring of modules
     function setValidationModule(address module) external;
@@ -43,11 +43,11 @@ interface IJobRegistry {
     function setDisputeModule(address module) external;
 
     /// @notice Owner configuration of job limits
-    function setJobParameters(uint256 maxJobPayout, uint256 jobDurationLimit) external;
+    function setJobParameters(uint256 reward, uint256 stake) external;
 
     // core job flow
-    function createJob(address agent, uint256 reward, uint256 stake) external returns (uint256 jobId);
-    function completeJob(uint256 jobId) external;
+    function createJob(address agent) external returns (uint256 jobId);
+    function requestJobCompletion(uint256 jobId) external;
     function dispute(uint256 jobId) external;
     function resolveDispute(uint256 jobId, bool success) external;
     function finalize(uint256 jobId) external;
