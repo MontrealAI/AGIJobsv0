@@ -91,5 +91,12 @@ Non‑technical employers, agents and validators can call these methods directly
 ## Statistical‑Physics View
 The protocol behaves like a system seeking minimum Gibbs free energy. Honest completion is the ground state in this Hamiltonian system: any actor attempting to cheat must input additional "energy"—manifested as higher expected stake loss—which drives the system back toward the stable equilibrium.
 
+### Hamiltonian and Game Theory
+We can sketch a simplified Hamiltonian
+
+\[ H = \sum_i s_i - \sum_j r_j \]
+
+where \(s_i\) represents stake lost by misbehaving participants and \(r_j\) denotes rewards for correct actions. The owner adjusts coefficients through setter functions, shaping the potential landscape so that the minimal free energy occurs when agents, validators and employers follow the protocol. Deviations raise \(H\), matching game‑theoretic expectations that dishonest strategies carry higher expected cost than cooperative ones.
+
 ## Interfaces
 Reference Solidity interfaces are provided in `contracts/v2/interfaces` for integration and future implementation.
