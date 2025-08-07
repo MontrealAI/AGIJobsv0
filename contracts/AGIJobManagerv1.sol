@@ -201,6 +201,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     uint256 public constant PERCENTAGE_DENOMINATOR = 10_000;
     /// @notice Number of penalties before an agent is automatically blacklisted.
     uint256 public agentBlacklistThreshold = 3;
+    /// @notice Number of penalties before a validator is automatically blacklisted.
+    uint256 public validatorBlacklistThreshold = 3;
     /// @notice Duration of the commit phase for validator votes.
     /// @dev Defaults to 1 hour and may be updated by the owner.
     uint256 public commitDuration;
@@ -274,6 +276,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     mapping(address => uint256) public agentActiveJobs;
     /// @notice Count of penalties incurred by each agent.
     mapping(address => uint256) public agentPenaltyCount;
+    /// @notice Count of penalties incurred by each validator.
+    mapping(address => uint256) public validatorPenaltyCount;
     mapping(address => uint256) public pendingCommits;
     mapping(address => bool) public moderators;
     mapping(address => bool) public additionalValidators;
@@ -455,7 +459,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     event MinValidatorReputationUpdated(uint256 newMinimum);
     event MinAgentReputationUpdated(uint256 newMinimum);
     event AgentBlacklistThresholdUpdated(uint256 newThreshold);
+    event ValidatorBlacklistThresholdUpdated(uint256 newThreshold);
     event StakeSlashed(address indexed validator, uint256 amount);
+    event ValidatorPenalized(
+        address indexed validator,
+        uint256 reputationPenalty,
+        uint256 stakeSlashed
+    );
     event AgentPenalized(
         address indexed agent,
         uint256 reputationPenalty,
@@ -1296,6 +1306,20 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
                     validator,
                     validatorReputationChange
                 );
+                validatorPenaltyCount[validator] += 1;
+                emit ValidatorPenalized(
+                    validator,
+                    validatorReputationChange,
+                    slashAmount
+                );
+                if (
+                    validatorPenaltyCount[validator] >=
+                        validatorBlacklistThreshold &&
+                    !blacklistedValidators[validator]
+                ) {
+                    blacklistedValidators[validator] = true;
+                    emit ValidatorBlacklisted(validator, true);
+                }
                 if (!(committed && revealed)) {
                     emit ValidatorSkipped(
                         _jobId,
@@ -1349,6 +1373,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         blacklistedAgents[_agent] = false;
         agentPenaltyCount[_agent] = 0;
         emit AgentBlacklisted(_agent, false);
+    }
+
+    /// @notice Remove a validator from the blacklist and reset their penalty count.
+    function clearValidatorBlacklist(address _validator) external onlyOwner {
+        blacklistedValidators[_validator] = false;
+        validatorPenaltyCount[_validator] = 0;
+        emit ValidatorBlacklisted(_validator, false);
     }
 
     function delistJob(uint256 _jobId)
@@ -1595,7 +1626,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             uint256 approvals,
             uint256 disapprovals,
             uint256 validatorsCount,
-            address slashRecipient
+            address slashRecipient,
+            uint256 blacklistThresh
         )
     {
         return (
@@ -1611,7 +1643,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
             requiredValidatorApprovals,
             requiredValidatorDisapprovals,
             validatorsPerJob,
-            slashedStakeRecipient
+            slashedStakeRecipient,
+            validatorBlacklistThreshold
         );
     }
 
@@ -1985,6 +2018,16 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     function setAgentBlacklistThreshold(uint256 newThreshold) external onlyOwner {
         agentBlacklistThreshold = newThreshold;
         emit AgentBlacklistThresholdUpdated(newThreshold);
+    }
+
+    /// @notice Update the penalty threshold for validator auto-blacklisting.
+    /// @param newThreshold Number of penalties before a validator is blacklisted.
+    function setValidatorBlacklistThreshold(uint256 newThreshold)
+        external
+        onlyOwner
+    {
+        validatorBlacklistThreshold = newThreshold;
+        emit ValidatorBlacklistThresholdUpdated(newThreshold);
     }
 
     function setValidatorsPerJob(uint256 count) external onlyOwner {
