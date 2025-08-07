@@ -60,6 +60,7 @@ describe("AGIJobManagerV1 payouts", function () {
     await manager.connect(validator).acceptTerms("ipfs://terms");
     await manager.connect(validator2).acceptTerms("ipfs://terms");
     await manager.connect(validator3).acceptTerms("ipfs://terms");
+    await manager.connect(employer).acceptTerms("ipfs://terms");
     await manager.setValidatorsPerJob(3);
 
     if (stakeAgent) {

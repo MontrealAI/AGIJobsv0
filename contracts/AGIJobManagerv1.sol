@@ -792,6 +792,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         whenNotPaused
         jobExists(_jobId)
     {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         Job storage job = jobs[_jobId];
         if (msg.sender != job.assignedAgent) revert Unauthorized();
         if (block.timestamp > job.assignedAt + job.duration)
@@ -890,6 +892,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (
             !(
                 _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
@@ -926,6 +930,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         Job storage job = jobs[_jobId];
         if (!job.isSelectedValidator[msg.sender]) revert ValidatorNotSelected();
         if (job.status != JobStatus.CompletionRequested) revert InvalidJobState();
@@ -957,6 +963,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (
             !(
                 _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
@@ -1001,6 +1009,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (
             !(
                 _verifyOwnership(msg.sender, subdomain, proof, clubRootNode) ||
@@ -1041,6 +1051,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
         nonReentrant
         jobExists(_jobId)
     {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         Job storage job = jobs[_jobId];
         if (
             (msg.sender != job.assignedAgent && msg.sender != job.employer) ||
@@ -2713,6 +2725,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     }
 
     function withdrawStake(uint256 amount) external nonReentrant {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (amount == 0 || amount > validatorStake[msg.sender]) revert InvalidAmount();
         if (
             validatorApprovedJobs[msg.sender].length != 0 ||
@@ -2744,6 +2758,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     /// @notice Withdraw staked $AGI for agents.
     /// @param amount Quantity of tokens to withdraw.
     function withdrawAgentStake(uint256 amount) external nonReentrant {
+        if (acceptedTermsVersion[msg.sender] != termsVersion)
+            revert TermsNotAccepted();
         if (amount == 0 || amount > agentStake[msg.sender]) revert InvalidAmount();
         if (agentActiveJobs[msg.sender] != 0) revert PendingOrDisputedJob();
         agentStake[msg.sender] -= amount;
