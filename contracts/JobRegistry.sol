@@ -21,7 +21,11 @@ interface IStakeManager {
 }
 
 interface ICertificateNFT {
-    function mint(address to) external returns (uint256);
+    function mintCertificate(
+        address to,
+        uint256 jobId,
+        string calldata uri
+    ) external returns (uint256);
 }
 
 interface IDisputeModule {
@@ -158,7 +162,7 @@ contract JobRegistry is Ownable {
             stakeManager.payReward(job.agent, job.reward);
             stakeManager.releaseStake(job.agent, job.stake);
             reputationEngine.addReputation(job.agent, 1);
-            certificateNFT.mint(job.agent);
+            certificateNFT.mintCertificate(job.agent, jobId, "");
         } else {
             stakeManager.payReward(job.employer, job.reward);
             stakeManager.slash(job.agent, job.employer, job.stake);
