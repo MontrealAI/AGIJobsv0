@@ -10,16 +10,28 @@ describe("ReputationEngine", function () {
     engine = await Engine.deploy(owner.address);
   });
 
-  it("updates reputation by authorized caller", async () => {
+  it("updates reputation and tracks penalties", async () => {
     await engine.connect(owner).setCaller(caller.address, true);
-    await engine.connect(caller).increaseReputation(user.address, 5);
-    expect(await engine.reputation(user.address)).to.equal(5);
-    await engine.connect(caller).decreaseReputation(user.address, 2);
-    expect(await engine.reputation(user.address)).to.equal(3);
+    await engine.connect(owner).setPenaltyThreshold(2);
+
+    await engine.connect(caller).addReputation(user.address, 5);
+    expect(await engine.reputationOf(user.address)).to.equal(5);
+
+    await engine.connect(caller).subtractReputation(user.address, 3);
+    expect(await engine.reputationOf(user.address)).to.equal(2);
+    expect(await engine.penaltyCount(user.address)).to.equal(1);
+    expect(await engine.isBlacklisted(user.address)).to.equal(false);
+
+    await engine.connect(caller).subtractReputation(user.address, 5);
+    expect(await engine.reputationOf(user.address)).to.equal(0);
+    expect(await engine.penaltyCount(user.address)).to.equal(2);
+    expect(await engine.isBlacklisted(user.address)).to.equal(true);
   });
 
   it("reverts for unauthorized callers", async () => {
-    await expect(engine.connect(caller).increaseReputation(user.address, 1)).to.be.revertedWith("not authorized");
+    await expect(
+      engine.connect(caller).addReputation(user.address, 1)
+    ).to.be.revertedWith("not authorized");
   });
 });
 
