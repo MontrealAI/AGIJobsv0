@@ -57,7 +57,7 @@ The forthcoming v2 release splits responsibilities across immutable modules—Jo
 
 Key owner-configurable entry points include:
 
-- `JobRegistry.setJobParameters(maxJobPayout, jobDurationLimit)`
+- `JobRegistry.setJobParameters(reward, stake)`
 - `ValidationModule.setParameters(...)` for stake, reward and timing settings
 - `StakeManager.setStakeParameters(...)` and `setToken(token)`
 - `ReputationEngine.setCaller(module, allowed)` and `setThresholds(agent, validator)`
@@ -79,6 +79,12 @@ Honesty yields the best payoff for every role, making truthful behavior the domi
 ## Etherscan Walk-throughs
 
 Use a block explorer like Etherscan—no coding required. Always verify contract addresses on multiple explorers before interacting.
+
+### Owner
+1. Connect the owner wallet to `JobRegistry` in the **Write Contract** tab on Etherscan.
+2. Call `setModules(validation, stakeMgr, reputation, dispute, certNFT)` to wire external modules.
+3. Invoke `setJobParameters(reward, stake)` to define the default payout and required agent stake.
+4. Each module exposes its own `onlyOwner` setters—use their Write tabs (e.g., `StakeManager.setToken`, `ValidationModule.setOutcome`, `ReputationEngine.setPenaltyThreshold`) to tune economics.
 
 ### Employers
 1. Open the **Write Contract** tab of `JobRegistry` and connect your wallet.
