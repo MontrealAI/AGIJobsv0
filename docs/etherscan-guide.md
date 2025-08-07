@@ -37,6 +37,12 @@ graph TD
 3. During validation, send hashed votes with **commitVote**.
 4. Reveal decisions using **revealVote** before the window closes.
 
+### Moderators
+1. Watch for **DisputeRaised** events on the `DisputeModule`.
+2. In **Write Contract**, connect the moderator wallet.
+3. Call **resolve(jobId, employerWins)** to finalize the dispute.
+4. Verify the transaction emits **DisputeResolved** and the corresponding `JobRegistry` event.
+
 ## Parameter Glossary
 
 | Parameter | Description |

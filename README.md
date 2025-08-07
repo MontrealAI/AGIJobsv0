@@ -18,7 +18,11 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v2 Architecture](docs/architecture-v2.md) – modular design with incentive analysis and interface definitions.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
- 
+
+## AGI Token
+
+The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D`. Cross‑verify this address on Etherscan and Blockscout before transferring or staking tokens. Consult the [Safety Checklist](#safety-checklist) for operational best practices.
+
 ## Architecture
 
 The modular design separates concerns across dedicated contracts:
@@ -41,12 +45,14 @@ The modular design separates concerns across dedicated contracts:
 
 ```mermaid
 graph TD
-    JobRegistry --> ValidationModule
-    JobRegistry --> StakeManager
-    JobRegistry --> ReputationEngine
-    JobRegistry --> DisputeModule
-    ValidationModule --> DisputeModule
-    JobRegistry --> CertificateNFT
+    Employer -->|createJob| JobRegistry
+    Agent -->|apply/submit| JobRegistry
+    JobRegistry -->|selectValidators| ValidationModule
+    ValidationModule -->|stake| StakeManager
+    ValidationModule -->|reputation| ReputationEngine
+    ValidationModule -->|dispute?| DisputeModule
+    DisputeModule -->|final ruling| JobRegistry
+    JobRegistry -->|mint| CertificateNFT
 ```
 
 Legacy sequence diagrams appear in [docs/architecture.md](docs/architecture.md); the modular v2 design, interfaces and incentive model are detailed in [docs/architecture-v2.md](docs/architecture-v2.md).
@@ -66,45 +72,44 @@ Key owner-configurable entry points include:
 
 These functions can all be invoked directly through block explorers, enabling non‑technical governance while retaining immutable code.
 
-### Incentive Rationale (simplified)
+### Incentive Model & Statistical‑Physics Analogy
+
+The protocol’s economics are tuned so that honest behavior minimises each participant’s expected loss. Slashing percentages exceed potential rewards and the commit‑reveal process injects entropy, making dishonest strategies energetically costly. In thermodynamic terms the system seeks the minimum free energy \(G = H - T S\): stake losses raise the enthalpy \(H\), commit‑reveal randomness increases entropy \(S\), and owner‑set parameters act as the temperature \(T\) controlling the equilibrium.
 
 | Validator \\ Agent | Honest | Cheat |
 | --- | --- | --- |
 | **Honest** | Agent paid, validator rewarded | Validator slashed |
 | **Cheat** | Agent slashed, validator rewarded | Both slashed; dispute escalated |
 
-Honesty yields the best payoff for every role, making truthful behavior the dominant strategy and the lowest “energy” state of the system.
+Honesty therefore represents the ground state of the system.
 
 
 ## Etherscan Walk-throughs
 
-Use a block explorer like Etherscan—no coding required. Always verify contract addresses on multiple explorers before interacting.
-
-### Owner
-1. Connect the owner wallet to `JobRegistry` in the **Write Contract** tab on Etherscan.
-2. Call `setModules(validation, stakeMgr, reputation, dispute, certNFT)` to wire external modules.
-3. Invoke `setJobParameters(reward, stake)` to define the default payout and required agent stake.
-4. Each module exposes its own `onlyOwner` setters—use their Write tabs (e.g., `StakeManager.setToken`, `ValidationModule.setOutcome`, `ReputationEngine.setPenaltyThreshold`) to tune economics.
+Use a block explorer like Etherscan—no coding required. Always verify addresses on at least two explorers before sending transactions.
 
 ### Employers
 1. Open the **Write Contract** tab of `JobRegistry` and connect your wallet.
-2. Ensure the owner has set `reward` and `stake` via `setJobParameters`. Call `createJob(agent)` to post a task using those values.
-3. Share the emitted `JobCreated` event with the agent to communicate the job ID.
-4. After completion, the owner finalizes the job via `finalize(jobId)` to trigger payouts.
+2. Call `createJob(agent)` with the agreed payout and escrowed AGI.
+3. Share the `JobCreated` event with the agent to communicate the job ID.
+4. When work is finished, call `finalize(jobId)` or `cancelExpiredJob(jobId)` as appropriate.
 
 ### Agents
-1. Stake AGI on `StakeManager` with `depositStake(amount)` (commonly 10–1000 AGI).
-2. Once hired, call `completeJob(jobId)` on `JobRegistry` to submit work.
-3. If a result is disputed, invoke `dispute(jobId)`; otherwise wait for the job to be finalized and your stake released.
+1. Stake AGI via `StakeManager.depositStake(amount)`.
+2. Apply using `JobRegistry.applyForJob(jobId)` and, once hired, submit work with `submitWork(jobId, details)`.
+3. Call `requestJobCompletion(jobId, evidence)` to trigger validation.
+4. If validators reject the result, escalate with `DisputeModule.raiseDispute(jobId)`.
 
 ### Validators
-1. During the commit window, call `commitValidation(jobId, commitHash)` on `ValidationModule`.
-2. After the commit window ends, call `revealValidation(jobId, approve, salt)`.
-3. Once the reveal period and review window pass, anyone may call `finalize(jobId)` on `JobRegistry`. If votes diverge, the agent may escalate by calling `dispute(jobId)` on `JobRegistry` and paying the appeal fee.
+1. Lock the required stake on `StakeManager` using `depositStake`.
+2. When selected, send a hashed vote with `ValidationModule.commitValidation(jobId, commitHash)`.
+3. After the commit window, reveal the vote using `ValidationModule.revealValidation(jobId, approve, salt)`.
+4. Once the review window passes, anyone may call `JobRegistry.finalize(jobId)`; correct validators receive rewards while incorrect ones are slashed.
 
-### Disputes
-1. Agents escalate a contested job by calling `dispute(jobId)` on `JobRegistry` with the required fee.
-2. A moderator or jury resolves the case with `resolve(jobId, employerWins)`, which notifies `JobRegistry` to update state.
+### Moderators
+1. Monitor `DisputeModule` for `DisputeRaised` events.
+2. In the **Write Contract** tab, connect the moderator wallet and call `resolve(jobId, employerWins)`.
+3. Confirm the transaction emits `DisputeResolved` and the corresponding `JobResolved` event in `JobRegistry`.
 
 ## Using AGIJobManager v1 on Etherscan
 
@@ -249,6 +254,7 @@ commitHash = keccak256(abi.encodePacked(validatorAddress, jobId, approve, salt))
 
 Follow these steps before trusting any address or artifact:
 
+- Confirm the $AGI token address `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D` on at least two explorers.
 - Verify contract and token addresses on at least two explorers (e.g., Etherscan and Blockscout).
 - Ensure the verified source code matches the compiled bytecode.
 - Exercise new code on public testnets prior to mainnet usage.
