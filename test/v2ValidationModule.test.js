@@ -202,16 +202,17 @@ describe("ValidationModule V2", function () {
       .connect(signerMap[selected[1].toLowerCase()])
       .revealValidation(1, false, salt2);
     await advance(61);
+    const stake0Before = await stakeManager.validatorStake(selected[0]);
+    const stake1Before = await stakeManager.validatorStake(selected[1]);
     await validation.finalize(1);
-    const slashed = selected[1];
-    const stake =
-      slashed.toLowerCase() === v1.address.toLowerCase()
-        ? ethers.parseEther("100")
-        : slashed.toLowerCase() === v2.address.toLowerCase()
-        ? ethers.parseEther("50")
-        : ethers.parseEther("10");
-    expect(await stakeManager.validatorStake(slashed)).to.equal(stake / 2n);
-    expect(await reputation.reputationOf(selected[0])).to.equal(1n);
-    expect(await reputation.reputationOf(slashed)).to.equal(0n);
+    const stake0After = await stakeManager.validatorStake(selected[0]);
+    const stake1After = await stakeManager.validatorStake(selected[1]);
+    const majority = stake0Before >= stake1Before ? selected[0] : selected[1];
+    const minority = stake0Before >= stake1Before ? selected[1] : selected[0];
+    const minorityStakeBefore = stake0Before >= stake1Before ? stake1Before : stake0Before;
+    const minorityStakeAfter = stake0Before >= stake1Before ? stake1After : stake0After;
+    expect(minorityStakeAfter).to.equal(minorityStakeBefore / 2n);
+    expect(await reputation.reputationOf(majority)).to.equal(1n);
+    expect(await reputation.reputationOf(minority)).to.equal(0n);
   });
 });
