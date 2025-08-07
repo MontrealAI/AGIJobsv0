@@ -19,20 +19,20 @@ describe("DisputeModule", function () {
     await dispute.connect(owner).setModerator(moderator.address);
   });
 
-  async function raise(jobId, agentAddr) {
+  async function raise(jobId, agentSigner) {
     await jobRegistry.setJob(jobId, {
-      agent: agentAddr,
+      agent: agentSigner.address,
       employer: employer.address,
       reward: 0,
       state: 0,
     });
-    await jobRegistry.raise(await dispute.getAddress(), jobId, {
-      value: appealFee,
-    });
+    await jobRegistry
+      .connect(agentSigner)
+      .raise(await dispute.getAddress(), jobId, { value: appealFee });
   }
 
   it("pays bond to employer when they win", async () => {
-    await raise(1, agent.address);
+    await raise(1, agent);
     expect(await dispute.bonds(1)).to.equal(appealFee);
     const before = await ethers.provider.getBalance(employer.address);
     await dispute.connect(moderator).resolve(1, true);
@@ -41,7 +41,7 @@ describe("DisputeModule", function () {
   });
 
   it("returns bond to agent when employer loses", async () => {
-    await raise(2, agent.address);
+    await raise(2, agent);
     expect(await dispute.bonds(2)).to.equal(appealFee);
     const before = await ethers.provider.getBalance(agent.address);
     await dispute.connect(moderator).resolve(2, false);
