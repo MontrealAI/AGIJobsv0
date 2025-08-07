@@ -32,6 +32,9 @@ contract ValidationModule is IValidationModule, Ownable {
     // pool of available validators
     address[] public validatorPool;
 
+    // additional entropy for validator selection
+    bytes32 public validatorSelectionSeed;
+
     struct Round {
         address[] validators;
         uint256 commitDeadline;
@@ -50,6 +53,7 @@ contract ValidationModule is IValidationModule, Ownable {
     event ValidatorsUpdated(address[] validators);
     event ValidatorTiersUpdated(uint256[] payoutTiers, uint256[] counts);
     event ReputationEngineUpdated(address engine);
+    event ValidatorSelectionSeedUpdated(bytes32 newSeed);
 
     constructor(IJobRegistry _jobRegistry, IStakeManager _stakeManager, address owner)
         Ownable(owner)
@@ -72,28 +76,66 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ReputationEngineUpdated(address(engine));
     }
 
+    /// @notice Update the entropy seed used in validator selection.
+    function setValidatorSelectionSeed(bytes32 seed) external onlyOwner {
+        validatorSelectionSeed = seed;
+        emit ValidatorSelectionSeedUpdated(seed);
+    }
+
     function selectValidators(uint256 jobId) external override returns (address[] memory) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 count = _validatorCount(job.reward);
-        require(validatorPool.length >= count, "insufficient validators");
 
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
-        // sort validators by stake descending
-        for (uint256 i; i < n; i++) {
-            for (uint256 j = i + 1; j < n; j++) {
-                if (stakeManager.validatorStake(pool[j]) > stakeManager.validatorStake(pool[i])) {
-                    (pool[i], pool[j]) = (pool[j], pool[i]);
-                }
+        uint256[] memory stakes = new uint256[](n);
+        uint256 totalStake;
+        uint256 m;
+
+        for (uint256 i; i < n; ++i) {
+            uint256 stake = stakeManager.validatorStake(pool[i]);
+            if (stake >= validatorStakeRequirement) {
+                stakes[m] = stake;
+                pool[m] = pool[i];
+                totalStake += stake;
+                m++;
             }
         }
 
+        require(m >= count, "insufficient validators");
+
+        bytes32 seed = keccak256(
+            abi.encodePacked(
+                blockhash(block.number - 1),
+                jobId,
+                validatorSelectionSeed
+            )
+        );
+
         address[] memory selected = new address[](count);
-        for (uint256 i; i < count; i++) {
-            selected[i] = pool[i];
-            validatorStakes[jobId][pool[i]] = stakeManager.validatorStake(pool[i]);
+        uint256 remaining = m;
+        for (uint256 i; i < count; ++i) {
+            seed = keccak256(abi.encodePacked(seed, i));
+            uint256 rnum = uint256(seed) % totalStake;
+            uint256 cumulative;
+            uint256 idx;
+            for (uint256 j; j < remaining; ++j) {
+                cumulative += stakes[j];
+                if (rnum < cumulative) {
+                    idx = j;
+                    break;
+                }
+            }
+            address val = pool[idx];
+            selected[i] = val;
+            validatorStakes[jobId][val] = stakes[idx];
+
+            totalStake -= stakes[idx];
+            pool[idx] = pool[remaining - 1];
+            stakes[idx] = stakes[remaining - 1];
+            remaining--;
         }
 
         r.validators = selected;
