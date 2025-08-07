@@ -22,18 +22,32 @@ contract DisputeModule is IDisputeModule, Ownable {
     IJobRegistry public jobRegistry;
 
     uint256 public appealFee;
+    uint256 public jurySize;
+    address public moderator;
 
     mapping(uint256 => address payable) public appellants;
     mapping(uint256 => uint256) public bonds;
 
     constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
         jobRegistry = _jobRegistry;
+        moderator = owner;
     }
 
     /// @inheritdoc IDisputeModule
-    function setAppealParameters(uint256 fee, uint256 /*_jurySize*/ ) external onlyOwner {
+    function setAppealParameters(uint256 fee, uint256 _jurySize)
+        external
+        override
+        onlyOwner
+    {
         appealFee = fee;
+        jurySize = _jurySize;
         emit AppealParametersUpdated();
+    }
+
+    /// @inheritdoc IDisputeModule
+    function setModerator(address _moderator) external override onlyOwner {
+        moderator = _moderator;
+        emit ModeratorUpdated(_moderator);
     }
 
     /// @inheritdoc IDisputeModule
@@ -49,8 +63,13 @@ contract DisputeModule is IDisputeModule, Ownable {
         emit DisputeRaised(jobId, job.agent);
     }
 
+    modifier onlyArbiter() {
+        require(msg.sender == owner() || msg.sender == moderator, "not authorized");
+        _;
+    }
+
     /// @inheritdoc IDisputeModule
-    function resolve(uint256 jobId, bool employerWins) external override onlyOwner {
+    function resolve(uint256 jobId, bool employerWins) external override onlyArbiter {
         uint256 bond = bonds[jobId];
         require(bond > 0, "no bond");
 
