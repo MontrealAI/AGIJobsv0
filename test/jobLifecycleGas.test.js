@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const { loadFixture, time } = require("@nomicfoundation/hardhat-network-helpers");
 
 async function deployFixture() {
@@ -63,6 +63,10 @@ async function deployFixture() {
 
 describe("Job lifecycle and gas constraints", function () {
   const maxGas = 1000000n;
+
+  after(async () => {
+    await network.provider.send("hardhat_reset");
+  });
 
   describe("happy path job completion", function () {
     it("handles varied payouts and stakes within gas limits", async function () {
