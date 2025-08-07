@@ -1393,7 +1393,38 @@ describe("AGIJobManagerV1 payouts", function () {
       ).to.be.revertedWithCustomError(manager, "PendingCommitments");
     });
 
-    it("exposes address and info helpers", async function () {
+  it("reverts commit when validator stake percentage increases", async function () {
+    const { token, manager, employer, agent, validator, validator2, validator3 } = await deployFixture();
+    await manager.setValidatorsPerJob(1);
+    await manager.removeAdditionalValidator(validator2.address);
+    await manager.removeAdditionalValidator(validator3.address);
+
+    const stakeAmount = ethers.parseEther("20");
+    await token.mint(validator.address, stakeAmount);
+    await token.connect(validator).approve(await manager.getAddress(), stakeAmount);
+    await manager.connect(validator).stake(stakeAmount);
+
+    const payout = ethers.parseEther("100");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1000, "details");
+    const jobId = 0;
+    await manager.connect(agent).applyForJob(jobId, "", []);
+    await manager.connect(agent).requestJobCompletion(jobId, "result");
+
+    await manager.setValidatorStakePercentage(5000);
+    const salt = ethers.id("vstake");
+    const commitment = ethers.solidityPackedKeccak256([
+      "address",
+      "uint256",
+      "bool",
+      "bytes32",
+    ], [validator.address, jobId, true, salt]);
+    await expect(
+      manager.connect(validator).commitValidation(jobId, commitment, "", [])
+    ).to.be.revertedWithCustomError(manager, "InsufficientStake");
+  });
+
+  it("exposes address and info helpers", async function () {
       const { manager, owner } = await deployFixture();
       const [tokenAddr, , , ensAddr, wrapperAddr, ownerAddr] = await manager.getAddresses();
       expect(ownerAddr).to.equal(owner.address);

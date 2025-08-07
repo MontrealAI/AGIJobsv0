@@ -120,6 +120,14 @@ describe("payout split validation", function () {
     expect(updated.burnAddr).to.equal(newBurnAddr);
   });
 
+  it("computes required validator stake", async function () {
+    const { manager } = await deployFixture();
+    await manager.setStakeRequirement(100);
+    await manager.setValidatorStakePercentage(2000);
+    const stakeNeeded = await manager.computeRequiredValidatorStake(2000);
+    expect(stakeNeeded).to.equal(400n); // max(100, 20% of payout)
+  });
+
   it("allows owner to atomically update payout settings", async function () {
     const { manager } = await deployFixture();
     const newBurnAddr = ethers.Wallet.createRandom().address;
