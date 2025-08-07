@@ -176,3 +176,11 @@ Reference Solidity interfaces are provided in `contracts/v2/interfaces` for inte
 - Separate state-changing logic from read-only helpers to simplify audits and Etherscan interactions.
 - Use custom errors instead of revert strings to save deployment and runtime gas.
 - Where arithmetic is already bounds-checked, wrap operations in `unchecked` blocks for marginal savings.
+
+### Additional Gas Optimization Tips
+
+- Mark functions `external` when they are not called internally.
+- Prefer `calldata` for array parameters to avoid unnecessary copies.
+- Enable the Solidity optimizer with high `runs` to reduce bytecode size.
+- Group related storage writes to minimise `SSTORE` operations.
+- Declare configuration constants as `immutable` or `constant` to cut storage reads.
