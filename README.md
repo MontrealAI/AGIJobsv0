@@ -29,6 +29,15 @@ The modular design separates concerns across dedicated contracts:
 - [DisputeModule](docs/architecture-v2.md#modules) – optional appeal layer for moderator or jury decisions.
 - [CertificateNFT](contracts/CertificateNFT.sol) – mints ERC721 certificates upon successful completion.
 
+| Module | Core responsibility | Key interactions |
+| --- | --- | --- |
+| JobRegistry | job postings, escrow, lifecycle management | ValidationModule, StakeManager, ReputationEngine, CertificateNFT, DisputeModule |
+| ValidationModule | validator selection, commit–reveal voting, slashing | StakeManager, ReputationEngine, DisputeModule |
+| StakeManager | custody of stakes and payouts | JobRegistry, ValidationModule |
+| ReputationEngine | reputation scores and blacklists | JobRegistry, ValidationModule |
+| CertificateNFT | ERC‑721 proof of completion | JobRegistry |
+| DisputeModule | appeal and moderator decisions | JobRegistry, ValidationModule |
+
 ```mermaid
 graph TD
     JobRegistry --> ValidationModule
@@ -55,6 +64,15 @@ Key owner-configurable entry points include:
 - `DisputeModule.setAppealParameters(appealFee, jurySize)`
 
 These functions can all be invoked directly through block explorers, enabling non‑technical governance while retaining immutable code.
+
+### Incentive Rationale (simplified)
+
+| Validator \\ Agent | Honest | Cheat |
+| --- | --- | --- |
+| **Honest** | Agent paid, validator rewarded | Validator slashed |
+| **Cheat** | Agent slashed, validator rewarded | Both slashed; dispute escalated |
+
+Honesty yields the best payoff for every role, making truthful behavior the dominant strategy and the lowest “energy” state of the system.
 
 
 ## Etherscan Walk-throughs
