@@ -11,6 +11,7 @@ interface IStakeManager {
     function lockReward(address from, uint256 amount) external;
     function payReward(address to, uint256 amount) external;
     function slash(address user, address recipient, uint256 amount) external;
+    function releaseStake(address user, uint256 amount) external;
 }
 
 interface IReputationEngine {
@@ -19,7 +20,7 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId) external;
+    function raiseDispute(uint256 jobId) external payable;
 }
 
 interface ICertificateNFT {
@@ -102,16 +103,26 @@ contract JobRegistry is Ownable {
         emit JobCompleted(jobId, success);
     }
 
-    function dispute(uint256 jobId) external {
+    function dispute(uint256 jobId) external payable {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not completed");
         require(!jobSuccess[jobId], "already successful");
         require(msg.sender == job.agent || msg.sender == job.employer, "not participant");
         job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId);
+            disputeModule.raiseDispute{value: msg.value}(jobId);
+        } else {
+            require(msg.value == 0, "fee unused");
         }
         emit JobDisputed(jobId);
+    }
+
+    function resolveDispute(uint256 jobId, bool employerWins) external {
+        require(msg.sender == address(disputeModule), "only dispute");
+        Job storage job = jobs[jobId];
+        require(job.state == State.Disputed, "not disputed");
+        jobSuccess[jobId] = !employerWins;
+        job.state = State.Completed;
     }
 
     function finalize(uint256 jobId) external {
@@ -121,6 +132,7 @@ contract JobRegistry is Ownable {
         if (jobSuccess[jobId]) {
             if (address(stakeMgr) != address(0)) {
                 stakeMgr.payReward(job.agent, job.reward);
+                stakeMgr.releaseStake(job.agent, job.reward * 2);
             }
             if (address(reputation) != address(0)) {
                 reputation.addReputation(job.agent, 1);

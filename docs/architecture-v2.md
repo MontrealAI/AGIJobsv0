@@ -26,7 +26,7 @@ Every module inherits `Ownable`, so only the contract owner (or future governanc
 ```mermaid
 graph TD
     Employer -->|createJob| JobRegistry
-    Agent -->|apply/requestCompletion| JobRegistry
+    Agent -->|apply/complete| JobRegistry
     JobRegistry -->|selectValidators| ValidationModule
     ValidationModule -->|stake checks| StakeManager
     ValidationModule -->|rep updates| ReputationEngine
@@ -126,7 +126,7 @@ interface ICertificateNFT {
 ## Governance and Owner Controls
 Each module exposes minimal `onlyOwner` setters so governance can tune economics without redeploying code. Typical controls include:
 
-- **JobRegistry** – `setValidationModule`, `setReputationEngine`, `setStakeManager`, `setCertificateNFT`, `setJobParameters`.
+- **JobRegistry** – `setModules` wiring validation, reputation, stake manager, dispute and certificate NFT contracts.
 - **ValidationModule** – `setParameters` for stake ratios, rewards, slashing and timing.
 - **DisputeModule** – `setAppealParameters` and moderator address.
 - **StakeManager** – `setStakeParameters` and `setToken`.

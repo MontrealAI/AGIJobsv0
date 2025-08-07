@@ -3,7 +3,18 @@ pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
-import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+
+interface IJobRegistry {
+    struct Job {
+        address agent;
+        address employer;
+        uint256 reward;
+        uint8 state;
+    }
+
+    function jobs(uint256 jobId) external view returns (Job memory);
+    function resolveDispute(uint256 jobId, bool employerWins) external;
+}
 
 /// @title DisputeModule
 /// @notice Handles appeals with a simple bond mechanism and moderator resolution.
