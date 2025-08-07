@@ -117,6 +117,11 @@ interface IStakeManager {
         uint256 validatorSlashingPercentage
     ) external;
 }
+
+interface ICertificateNFT {
+    function mint(address to, string memory uri) external returns (uint256 tokenId);
+    function setBaseURI(string memory newBaseURI) external;
+}
 ```
 
 ## Governance and Owner Controls
@@ -168,3 +173,5 @@ Reference Solidity interfaces are provided in `contracts/v2/interfaces` for inte
 - Isolate permissioned setters with `onlyOwner` modifiers and emit update events for every configuration change.
 - Avoid external libraries requiring subscriptions; commit‑reveal randomness keeps the system trust-minimised.
 - Separate state-changing logic from read-only helpers to simplify audits and Etherscan interactions.
+- Use custom errors instead of revert strings to save deployment and runtime gas.
+- Where arithmetic is already bounds-checked, wrap operations in `unchecked` blocks for marginal savings.

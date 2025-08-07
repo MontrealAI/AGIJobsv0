@@ -489,6 +489,18 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `ReputationEngine` | Track reputation, apply penalties, maintain blacklists. |
 | `CertificateNFT` | Mint ERC‑721 certificates for completed jobs. |
 
+```mermaid
+graph TD
+    Employer -->|createJob| JobRegistry
+    Agent -->|apply/submit| JobRegistry
+    JobRegistry -->|selectValidators| ValidationModule
+    ValidationModule -->|stake| StakeManager
+    ValidationModule -->|reputation| ReputationEngine
+    ValidationModule -->|dispute?| DisputeModule
+    DisputeModule -->|final ruling| JobRegistry
+    JobRegistry -->|mint| CertificateNFT
+```
+
 See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration.
 
 ## Versions
