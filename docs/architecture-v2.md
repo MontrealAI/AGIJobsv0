@@ -11,6 +11,17 @@ AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules wi
 - **CertificateNFT** – mints ERC‑721 proof of completion to employers.
 Each component is immutable once deployed yet configurable by the owner through minimal setter functions, enabling governance upgrades without redeploying the entire suite.
 
+| Module | Core responsibility | Owner‑controllable parameters |
+| --- | --- | --- |
+| JobRegistry | job postings, escrow, lifecycle management | maximum payout, job duration limits, expiration rewards |
+| ValidationModule | validator selection, commit‑reveal voting, tallying | stake ratios, reward/penalty rates, timing windows, validators per job |
+| DisputeModule | optional appeal and moderator decisions | appeal fee, jury size, moderator address |
+| StakeManager | custody of validator/agent collateral and slashing | minimum stakes, slashing percentages, reward recipients |
+| ReputationEngine | reputation tracking and blacklist enforcement | reputation thresholds, authorised caller list |
+| CertificateNFT | ERC‑721 proof of completion | base URI |
+
+Every module inherits `Ownable`, so only the contract owner (or future governance authority) may adjust these parameters.
+
 ## Module Interactions
 ```mermaid
 graph TD
@@ -123,7 +134,11 @@ If a result is contested, employers or agents invoke the DisputeModule's `raiseD
 - Parameters (burn rates, stake ratios, validator counts) are tunable by the owner to keep the Nash equilibrium at honest participation.
 
 ## Statistical‑Physics View
-The protocol behaves like a system seeking minimum Gibbs free energy. Honest completion is the ground state in this Hamiltonian system: any actor attempting to cheat must input additional "energy"—manifested as higher expected stake loss—which drives the system back toward the stable equilibrium.
+The protocol behaves like a system seeking minimum Gibbs free energy. Honest completion is the ground state in this Hamiltonian system: any actor attempting to cheat must input additional "energy"—manifested as higher expected stake loss—which drives the system back toward the stable equilibrium. Using the thermodynamic analogue
+
+\[ G = H - T S \]
+
+slashing raises the system's enthalpy \(H\) while the commit‑reveal process injects entropy \(S\). Owner‑tuned parameters act as the temperature \(T\), weighting how much randomness counterbalances potential gains from deviation. When parameters are calibrated so that \(G\) is minimised at honest behaviour, rational participants naturally settle into that state.
 
 ### Hamiltonian and Game Theory
 We can sketch a simplified Hamiltonian
