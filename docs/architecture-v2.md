@@ -123,12 +123,13 @@ interface IStakeManager {
     function withdrawStake(Role role, uint256 amount) external;
     function lockStake(address user, Role role, uint256 payout) external;
     function slash(address user, Role role, uint256 payout, address employer) external;
-    function setStakeParameters(
-        uint256 agentStakePercentage,
-        uint256 validatorStakePercentage,
-        uint256 agentSlashingPercentage,
-        uint256 validatorSlashingPercentage
+    function setToken(address token) external;
+    function setMinStake(uint256 minStake) external;
+    function setSlashingPercentages(
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct
     ) external;
+    function setTreasury(address treasury) external;
 }
 
 interface ICertificateNFT {
@@ -144,7 +145,7 @@ Each module exposes minimal `onlyOwner` setters so governance can tune economics
 | JobRegistry | `setValidationModule`, `setReputationEngine`, `setStakeManager`, `setCertificateNFT`, `setDisputeModule`, `setJobParameters` | Wire module addresses and set per‑job rewards/stake |
 | ValidationModule | `setParameters` | Adjust stake ratios, rewards, slashing and timing windows |
 | DisputeModule | `setAppealParameters` | Configure appeal fees, jury size and moderator address |
-| StakeManager | `setStakeParameters`, `setToken` | Tune minimum stakes/slashing and switch staking token |
+| StakeManager | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury` | Tune minimum stake, slashing shares and treasury |
 | ReputationEngine | `setCaller`, `setThreshold`, `setBlacklist` | Authorise callers, set reputation floors, manage blacklist |
 | CertificateNFT | `setJobRegistry` | Configure authorized JobRegistry |
 
