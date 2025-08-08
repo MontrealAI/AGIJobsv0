@@ -26,35 +26,36 @@ describe("StakeManager", function () {
   it("handles staking, job escrow and slashing", async () => {
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await expect(
-      stakeManager.connect(user).depositStake(200)
-    ).to.emit(stakeManager, "StakeDeposited").withArgs(user.address, 200);
+      stakeManager.connect(user).depositStake(0, 200)
+    ).to.emit(stakeManager, "StakeDeposited").withArgs(user.address, 0, 200);
 
-    expect(await stakeManager.stakes(user.address)).to.equal(200n);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(200n);
 
-    await stakeManager.connect(user).withdrawStake(50);
-    expect(await stakeManager.stakes(user.address)).to.equal(150n);
+    await stakeManager.connect(user).withdrawStake(0, 50);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(150n);
 
     const jobId = ethers.encodeBytes32String("job1");
     await token.connect(employer).approve(await stakeManager.getAddress(), 300);
     await stakeManager
       .connect(owner)
-      .lockReward(jobId, employer.address, 300);
+      .lockJobFunds(jobId, employer.address, 300);
 
     await expect(
-      stakeManager.connect(owner).releaseReward(jobId, user.address, 200)
-    ).to.emit(stakeManager, "RewardReleased").withArgs(jobId, user.address, 200);
+      stakeManager.connect(owner).releaseJobFunds(jobId, user.address, 200)
+    ).to.emit(stakeManager, "JobFundsReleased").withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 
     await expect(
-      stakeManager.connect(owner).slash(user.address, 100, employer.address)
+      stakeManager.connect(owner).slash(user.address, 0, 100, employer.address)
     ).to.emit(stakeManager, "StakeSlashed").withArgs(
       user.address,
+      0,
       employer.address,
       treasury.address,
       50,
       50
     );
-    expect(await stakeManager.stakes(user.address)).to.equal(50n);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
     expect(await token.balanceOf(treasury.address)).to.equal(50n);
   });
