@@ -1,0 +1,124 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.23;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
+
+/// @title DisputeModule
+/// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
+contract DisputeModule is Ownable {
+    IJobRegistry public jobRegistry;
+
+    /// @notice Fee required to initiate a dispute.
+    uint256 public appealFee;
+
+    /// @notice Time that must elapse before a dispute can be resolved.
+    uint256 public disputeWindow;
+
+    /// @notice Optional moderator address that can resolve disputes.
+    address public moderator;
+
+    struct Dispute {
+        address claimant;
+        string evidence;
+        uint256 raisedAt;
+        bool resolved;
+    }
+
+    /// @dev Tracks active disputes by jobId.
+    mapping(uint256 => Dispute) public disputes;
+    /// @dev Bonds posted by disputing parties.
+    mapping(uint256 => uint256) public bonds;
+
+    event DisputeRaised(uint256 indexed jobId, address indexed caller, string evidence);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    event ModeratorUpdated(address moderator);
+    event AppealFeeUpdated(uint256 fee);
+    event DisputeWindowUpdated(uint256 window);
+
+    constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
+        jobRegistry = _jobRegistry;
+        moderator = owner;
+    }
+
+    /// @notice Modifier restricting calls to the owner or moderator.
+    modifier onlyArbiter() {
+        require(msg.sender == owner() || msg.sender == moderator, "not authorized");
+        _;
+    }
+
+    /// @notice Set the moderator address.
+    function setModerator(address _moderator) external onlyOwner {
+        moderator = _moderator;
+        emit ModeratorUpdated(_moderator);
+    }
+
+    /// @notice Configure the appeal fee.
+    function setAppealFee(uint256 fee) external onlyOwner {
+        appealFee = fee;
+        emit AppealFeeUpdated(fee);
+    }
+
+    /// @notice Configure the dispute resolution window.
+    function setDisputeWindow(uint256 window) external onlyOwner {
+        disputeWindow = window;
+        emit DisputeWindowUpdated(window);
+    }
+
+    /// @notice Raise a dispute by posting the appeal fee and providing evidence.
+    /// @param jobId Identifier of the job being disputed.
+    /// @param evidence Supporting evidence for the dispute.
+    function raiseDispute(uint256 jobId, string calldata evidence) external payable {
+        require(msg.value == appealFee, "fee");
+
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        require(msg.sender == job.employer || msg.sender == job.agent, "not participant");
+
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt == 0, "disputed");
+
+        disputes[jobId] = Dispute({
+            claimant: msg.sender,
+            evidence: evidence,
+            raisedAt: block.timestamp,
+            resolved: false
+        });
+        bonds[jobId] = msg.value;
+
+        emit DisputeRaised(jobId, msg.sender, evidence);
+    }
+
+    /// @notice Resolve an existing dispute after the dispute window elapses.
+    /// The outcome is determined by a simple pseudorandom coin flip to emulate
+    /// a moderator or jury decision.
+    function resolveDispute(uint256 jobId) external onlyArbiter {
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt != 0 && !d.resolved, "no dispute");
+        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+
+        bool employerWins = _decideOutcome(jobId);
+        address payable recipient = employerWins
+            ? payable(jobRegistry.jobs(jobId).employer)
+            : payable(jobRegistry.jobs(jobId).agent);
+
+        d.resolved = true;
+        uint256 bond = bonds[jobId];
+        delete disputes[jobId];
+        delete bonds[jobId];
+
+        jobRegistry.resolveDispute(jobId, employerWins);
+
+        if (bond > 0) {
+            (bool ok, ) = recipient.call{value: bond}("");
+            require(ok, "transfer");
+        }
+
+        emit DisputeResolved(jobId, employerWins);
+    }
+
+    /// @dev Determine dispute outcome. Uses blockhash for a pseudorandom coin flip.
+    function _decideOutcome(uint256 jobId) internal view returns (bool) {
+        return uint256(blockhash(block.number - 1) ^ bytes32(jobId)) % 2 == 0;
+    }
+}
+
