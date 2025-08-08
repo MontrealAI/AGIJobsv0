@@ -48,35 +48,6 @@ contract ValidationModule is IValidationModule, Ownable {
     event ReputationEngineUpdated(address engine);
     event ValidatorSelectionSeedUpdated(bytes32 newSeed);
 
-    /// @notice Error thrown when validators already selected
-    error AlreadySelected();
-    /// @notice Error thrown when not enough validators are available
-    error InsufficientValidators();
-    /// @notice Error thrown when commit phase is closed
-    error CommitClosed();
-    /// @notice Error thrown when caller is not a chosen validator
-    error NotValidator();
-    /// @notice Error thrown when vote already committed
-    error AlreadyCommitted();
-    /// @notice Error thrown when commit phase still active
-    error CommitPhase();
-    /// @notice Error thrown when reveal phase is closed
-    error RevealClosed();
-    /// @notice Error thrown when no prior commitment exists
-    error NoCommit();
-    /// @notice Error thrown when vote already revealed
-    error AlreadyRevealed();
-    /// @notice Error thrown when reveal data does not match commitment
-    error InvalidReveal();
-    /// @notice Error thrown when validator has no stake
-    error NoStake();
-    /// @notice Error thrown when results already tallied
-    error AlreadyTallied();
-    /// @notice Error thrown when reveal window still active
-    error RevealPending();
-    /// @notice Error thrown when parameter array lengths mismatch
-    error LengthMismatch();
-
     constructor(
         IJobRegistry _jobRegistry,
         IStakeManager _stakeManager,
@@ -176,7 +147,7 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function commitVote(uint256 jobId, bytes32 commitHash) external override {
         Round storage r = rounds[jobId];
-        if (r.commitDeadline == 0 || block.timestamp > r.commitDeadline) revert CommitClosed();
+        if (r.commitDeadline == 0 || block.timestamp > r.commitDeadline) revert CommitPhaseClosed();
         if (!_isValidator(jobId, msg.sender)) revert NotValidator();
         if (commitments[jobId][msg.sender] != bytes32(0)) revert AlreadyCommitted();
 
@@ -187,8 +158,8 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function revealVote(uint256 jobId, bool approve, bytes32 salt) external override {
         Round storage r = rounds[jobId];
-        if (block.timestamp <= r.commitDeadline) revert CommitPhase();
-        if (block.timestamp > r.revealDeadline) revert RevealClosed();
+        if (block.timestamp <= r.commitDeadline) revert CommitPhaseOpen();
+        if (block.timestamp > r.revealDeadline) revert RevealPhaseClosed();
         bytes32 commitHash = commitments[jobId][msg.sender];
         if (commitHash == bytes32(0)) revert NoCommit();
         if (revealed[jobId][msg.sender]) revert AlreadyRevealed();

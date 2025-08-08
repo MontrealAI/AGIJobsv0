@@ -47,19 +47,6 @@ contract DisputeModule is IDisputeModule, Ownable {
     /// @dev Amount of bond posted for each job appeal.
     mapping(uint256 => uint256) public bonds;
 
-    /// @notice Error thrown when provided fee is incorrect
-    error IncorrectFee();
-    /// @notice Error thrown when a job has already been appealed
-    error AlreadyAppealed();
-    /// @notice Error thrown when caller is neither employer nor agent
-    error NotParticipant();
-    /// @notice Error thrown when caller is not owner, moderator or jury
-    error NotAuthorized();
-    /// @notice Error thrown when no bond exists for a job
-    error NoBond();
-    /// @notice Error thrown when bond transfer fails
-    error TransferFailed();
-
     constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
         jobRegistry = _jobRegistry;
         moderator = owner;

@@ -30,15 +30,6 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
 
     event StakeReleased(address indexed user, Role indexed role, uint256 amount);
 
-    /// @notice Error thrown when amount is zero
-    error AmountZero();
-    /// @notice Error thrown when stake available is insufficient
-    error InsufficientStake();
-    /// @notice Error thrown when amount is below minimum stake requirement
-    error BelowMinimum();
-    /// @notice Error thrown when locked stake is insufficient
-    error LockedStake();
-
     constructor(IERC20 _token, address owner) Ownable(owner) {
         token = _token;
         emit TokenUpdated(address(_token));
@@ -104,7 +95,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
     {
         uint256 minStake =
             role == Role.Agent ? agentMinStake : validatorMinStake;
-        if (amount < minStake) revert BelowMinimum();
+        if (amount < minStake) revert BelowMinimumStake();
         uint256 available = _stakes[user][role] - _locked[user][role];
         if (available < amount) revert InsufficientStake();
         _locked[user][role] += amount;
@@ -117,7 +108,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         onlyOwner
         nonReentrant
     {
-        if (_locked[user][role] < amount) revert LockedStake();
+        if (_locked[user][role] < amount) revert InsufficientLockedStake();
         _locked[user][role] -= amount;
         emit StakeReleased(user, role, amount);
     }
@@ -134,7 +125,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         onlyOwner
         nonReentrant
     {
-        if (_locked[user][role] < amount) revert LockedStake();
+        if (_locked[user][role] < amount) revert InsufficientLockedStake();
         _locked[user][role] -= amount;
 
         uint256 pct = role == Role.Agent
