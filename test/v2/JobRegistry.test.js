@@ -25,9 +25,9 @@ describe("JobRegistry integration", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     rep = await Rep.deploy(owner.address);
-      const NFT = await ethers.getContractFactory(
-        "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
-      );
+    const NFT = await ethers.getContractFactory(
+      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    );
     nft = await NFT.deploy("Cert", "CERT", owner.address);
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
@@ -66,12 +66,20 @@ describe("JobRegistry integration", function () {
 
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob();
+    await expect(registry.connect(employer).createJob())
+      .to.emit(registry, "JobCreated")
+      .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake);
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
+    await expect(registry.connect(agent).applyForJob(jobId))
+      .to.emit(registry, "AgentApplied")
+      .withArgs(jobId, agent.address);
     await validation.connect(owner).setOutcome(jobId, true);
-    await registry.connect(agent).submit(jobId);
-    await registry.finalize(jobId);
+    await expect(registry.connect(agent).submit(jobId))
+      .to.emit(registry, "JobSubmitted")
+      .withArgs(jobId, true);
+    await expect(registry.finalize(jobId))
+      .to.emit(registry, "JobFinalized")
+      .withArgs(jobId, true);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputation(agent.address)).to.equal(1);
@@ -86,8 +94,14 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false); // colluding validator
     await registry.connect(agent).submit(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, false);
+    await expect(
+      registry.connect(agent).dispute(jobId, { value: appealFee })
+    )
+      .to.emit(registry, "DisputeRaised")
+      .withArgs(jobId, agent.address);
+    await expect(dispute.connect(owner).resolve(jobId, false))
+      .to.emit(registry, "JobFinalized")
+      .withArgs(jobId, true);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputation(agent.address)).to.equal(1);
@@ -102,8 +116,14 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false);
     await registry.connect(agent).submit(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, true);
+    await expect(
+      registry.connect(agent).dispute(jobId, { value: appealFee })
+    )
+      .to.emit(registry, "DisputeRaised")
+      .withArgs(jobId, agent.address);
+    await expect(dispute.connect(owner).resolve(jobId, true))
+      .to.emit(registry, "JobFinalized")
+      .withArgs(jobId, false);
 
     expect(await token.balanceOf(agent.address)).to.equal(800);
     expect(await token.balanceOf(employer.address)).to.equal(1200);
@@ -116,10 +136,58 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await registry.connect(employer).createJob();
     const jobId = 1;
-    await registry.connect(employer).cancelJob(jobId);
+    await expect(registry.connect(employer).cancelJob(jobId))
+      .to.emit(registry, "JobCancelled")
+      .withArgs(jobId);
     const job = await registry.jobs(jobId);
     expect(job.state).to.equal(6); // Cancelled enum value
     expect(await token.balanceOf(employer.address)).to.equal(1000);
+  });
+
+  it("enforces owner-only controls", async () => {
+    await expect(
+      registry
+        .connect(employer)
+        .setModules(
+          await validation.getAddress(),
+          await stakeManager.getAddress(),
+          await rep.getAddress(),
+          await dispute.getAddress(),
+          await nft.getAddress()
+        )
+    ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+
+    await expect(
+      registry.connect(agent).setJobParameters(1, 1)
+    ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+
+    await expect(
+      dispute.connect(agent).setAppealFee(1)
+    ).to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount");
+  });
+
+  it("emits events when setting modules", async () => {
+    await expect(
+      registry
+        .connect(owner)
+        .setModules(
+          await validation.getAddress(),
+          await stakeManager.getAddress(),
+          await rep.getAddress(),
+          await dispute.getAddress(),
+          await nft.getAddress()
+        )
+    )
+      .to.emit(registry, "ValidationModuleUpdated")
+      .withArgs(await validation.getAddress())
+      .and.to.emit(registry, "StakeManagerUpdated")
+      .withArgs(await stakeManager.getAddress())
+      .and.to.emit(registry, "ReputationEngineUpdated")
+      .withArgs(await rep.getAddress())
+      .and.to.emit(registry, "DisputeModuleUpdated")
+      .withArgs(await dispute.getAddress())
+      .and.to.emit(registry, "CertificateNFTUpdated")
+      .withArgs(await nft.getAddress());
   });
 });
 
