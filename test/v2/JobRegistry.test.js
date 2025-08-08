@@ -21,7 +21,9 @@ describe("JobRegistry integration", function () {
       "contracts/ValidationModule.sol:ValidationModule"
     );
     validation = await Validation.deploy(owner.address);
-    const Rep = await ethers.getContractFactory("ReputationEngine");
+    const Rep = await ethers.getContractFactory(
+      "contracts/ReputationEngine.sol:ReputationEngine"
+    );
     rep = await Rep.deploy(owner.address);
     const NFT = await ethers.getContractFactory(
       "contracts/v2/CertificateNFT.sol:CertificateNFT"
