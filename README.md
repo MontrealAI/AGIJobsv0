@@ -94,6 +94,17 @@ The forthcoming v2 release splits responsibilities across immutable modules. Eac
 - **DisputeModule** – optional appeal layer for contested outcomes.
 - **CertificateNFT** – mints ERC‑721 certificates proving completion.
 
+Owner‑only setter functions keep governance simple while preserving immutability. The table below highlights each module's primary responsibility and the configuration knobs available to the contract owner.
+
+| Module | Responsibility | Key owner controls |
+| --- | --- | --- |
+| JobRegistry | job postings, escrow, lifecycle management | `setModules`, `setJobParameters` |
+| ValidationModule | validator selection and voting | `setParameters` |
+| StakeManager | custody of stakes and slashing | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury` |
+| ReputationEngine | reputation scores and blacklist | `setCaller`, `setThreshold`, `setBlacklist` |
+| DisputeModule | appeal and final ruling | `setAppealParameters` |
+| CertificateNFT | ERC‑721 certificate minting | `setJobRegistry` |
+
 Validator committees reach majority decisions with dissenters able to escalate through the DisputeModule, and slashing percentages exceed potential rewards so cheating is irrational. Interfaces remain minimal to keep Etherscan usage straightforward, and incentive settings such as burn rate, stake ratios and slashing percentages are updated through owner‑only functions. Interface definitions live in [contracts/v2/interfaces](contracts/v2/interfaces) and architectural diagrams—including a Hamiltonian view of incentives—in [docs/architecture-v2.md](docs/architecture-v2.md).
 
 Key incentive refinements include:
