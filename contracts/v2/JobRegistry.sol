@@ -21,7 +21,7 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId) external payable;
+    function appeal(uint256 jobId) external payable;
     function resolve(uint256 jobId, bool employerWins) external;
 }
 
@@ -200,7 +200,7 @@ contract JobRegistry is Ownable {
         require(msg.sender == job.agent, "only agent");
         job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute{value: msg.value}(jobId);
+            disputeModule.appeal{value: msg.value}(jobId);
         } else {
             require(msg.value == 0, "fee unused");
         }

@@ -15,7 +15,7 @@ describe("DisputeModule", function () {
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     dispute = await Dispute.deploy(await jobRegistry.getAddress(), owner.address);
-    await dispute.connect(owner).setAppealParameters(appealFee, 0);
+    await dispute.connect(owner).setAppealFee(appealFee);
     await dispute.connect(owner).setModerator(moderator.address);
   });
 
@@ -24,11 +24,12 @@ describe("DisputeModule", function () {
       agent: agentSigner.address,
       employer: employer.address,
       reward: 0,
+      stake: 0,
       state: 0,
     });
     await jobRegistry
       .connect(agentSigner)
-      .raise(await dispute.getAddress(), jobId, { value: appealFee });
+      .appeal(await dispute.getAddress(), jobId, { value: appealFee });
   }
 
   it("pays bond to employer when they win", async () => {
