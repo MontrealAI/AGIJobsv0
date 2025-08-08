@@ -22,7 +22,7 @@ describe("JobRegistry integration", function () {
     );
     validation = await Validation.deploy(owner.address);
     const Rep = await ethers.getContractFactory(
-      "contracts/ReputationEngine.sol:ReputationEngine"
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     rep = await Rep.deploy(owner.address);
       const NFT = await ethers.getContractFactory(
@@ -52,8 +52,8 @@ describe("JobRegistry integration", function () {
       .setJobParameters(reward, stake);
     await dispute.connect(owner).setAppealParameters(appealFee, 0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
-    await rep.connect(owner).setCaller(await registry.getAddress(), 1);
-    await rep.connect(owner).setAgentThreshold(1);
+    await rep.connect(owner).setModule(await registry.getAddress(), true);
+    await rep.connect(owner).setThresholds(1, 0);
     await stakeManager.connect(owner).transferOwnership(await registry.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
 
@@ -74,8 +74,8 @@ describe("JobRegistry integration", function () {
     await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
-    expect(await rep.reputationOf(agent.address, 1)).to.equal(1);
-    expect(await rep.isBlacklisted(agent.address, 1)).to.equal(false);
+    expect(await rep.reputation(agent.address)).to.equal(1);
+    expect(await rep.blacklist(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
 
@@ -91,8 +91,8 @@ describe("JobRegistry integration", function () {
     await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
-    expect(await rep.reputationOf(agent.address, 1)).to.equal(1);
-    expect(await rep.isBlacklisted(agent.address, 1)).to.equal(false);
+    expect(await rep.reputation(agent.address)).to.equal(1);
+    expect(await rep.blacklist(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
 
@@ -109,8 +109,8 @@ describe("JobRegistry integration", function () {
 
     expect(await token.balanceOf(agent.address)).to.equal(800);
     expect(await token.balanceOf(employer.address)).to.equal(1200);
-    expect(await rep.reputationOf(agent.address, 1)).to.equal(0);
-    expect(await rep.isBlacklisted(agent.address, 1)).to.equal(true);
+    expect(await rep.reputation(agent.address)).to.equal(0);
+    expect(await rep.blacklist(agent.address)).to.equal(true);
     expect(await nft.balanceOf(agent.address)).to.equal(0);
   });
 
