@@ -82,17 +82,20 @@ contract DisputeModule is IDisputeModule, Ownable {
     /// @notice Post the appeal fee to escalate a disputed job
     /// @param jobId Identifier of the job in the JobRegistry
     function appeal(uint256 jobId) external payable override {
-        require(msg.value == appealFee, "fee");
-        require(bonds[jobId] == 0, "appealed");
+        if (msg.value != appealFee) {
+            revert IncorrectAppealFee(appealFee, msg.value);
+        }
+        if (bonds[jobId] != 0) {
+            revert AlreadyAppealed(jobId);
+        }
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         address caller = msg.sender == address(jobRegistry)
             ? job.agent
             : msg.sender;
-        require(
-            caller == job.agent || caller == job.employer,
-            "not participant"
-        );
+        if (caller != job.agent && caller != job.employer) {
+            revert NotParticipant(caller);
+        }
 
         appellants[jobId] = payable(caller);
         bonds[jobId] = msg.value;
@@ -106,10 +109,13 @@ contract DisputeModule is IDisputeModule, Ownable {
 
     /// @dev Restrict resolution to owner or designated moderator/jury address
     modifier onlyArbiter() {
-        require(
-            msg.sender == owner() || msg.sender == moderator || msg.sender == jury,
-            "not authorized"
-        );
+        if (
+            msg.sender != owner() &&
+            msg.sender != moderator &&
+            msg.sender != jury
+        ) {
+            revert NotArbiter(msg.sender);
+        }
         _;
     }
 
@@ -123,7 +129,9 @@ contract DisputeModule is IDisputeModule, Ownable {
         onlyArbiter
     {
         uint256 bond = bonds[jobId];
-        require(bond > 0, "no bond");
+        if (bond == 0) {
+            revert NoAppealBond(jobId);
+        }
 
         // Determine bond recipient
         address payable recipient = employerWins
