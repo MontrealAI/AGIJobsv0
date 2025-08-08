@@ -7,7 +7,7 @@ describe("CertificateNFT", function () {
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
     const NFT = await ethers.getContractFactory(
-      "contracts/v2/CertificateNFT.sol:CertificateNFT"
+      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );
     nft = await NFT.deploy("Cert", "CERT", owner.address);
   });
@@ -22,6 +22,13 @@ describe("CertificateNFT", function () {
       .withArgs(user.address, 1);
     expect(await nft.ownerOf(1)).to.equal(user.address);
     expect(await nft.tokenURI(1)).to.equal("ipfs://base/1");
+  });
+
+  it("allows owner to update token URI", async () => {
+    await nft.connect(owner).setJobRegistry(owner.address);
+    await nft.connect(owner).mintCertificate(user.address, 1, "ipfs://old");
+    await nft.connect(owner).updateTokenURI(1, "ipfs://new");
+    expect(await nft.tokenURI(1)).to.equal("ipfs://new");
   });
 });
 
