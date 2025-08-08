@@ -38,9 +38,9 @@ interface IJobRegistry {
         uint256 reward,
         uint256 stake
     );
+    event AgentApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
-    event JobCancelled(uint256 indexed jobId);
-    event JobParametersUpdated(uint256 reward, uint256 stake);
 
     // owner wiring of modules
     function setValidationModule(address module) external;
@@ -55,7 +55,7 @@ interface IJobRegistry {
     // core job flow
     function createJob() external returns (uint256 jobId);
     function applyForJob(uint256 jobId) external;
-    function completeJob(uint256 jobId) external;
+    function submit(uint256 jobId) external;
     function dispute(uint256 jobId) external payable;
     function resolveDispute(uint256 jobId, bool employerWins) external;
     function finalize(uint256 jobId) external;
