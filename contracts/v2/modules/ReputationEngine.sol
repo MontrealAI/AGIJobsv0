@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -40,6 +40,12 @@ contract ReputationEngine is Ownable {
         agentThreshold = agent;
         validatorThreshold = validator;
         emit ThresholdsUpdated(agent, validator);
+    }
+
+    /// @notice Owner can manually override blacklist status for a user and role.
+    function setBlacklist(address user, Role role, bool status) external onlyOwner {
+        _blacklisted[user][role] = status;
+        emit BlacklistUpdated(user, role, status);
     }
 
     /// @notice Increase reputation for the caller's role.

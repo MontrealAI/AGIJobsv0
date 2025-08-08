@@ -96,7 +96,7 @@ contract MockReputationEngine is IReputationEngine {
         return _rep[user];
     }
 
-    function blacklist(address) external pure override returns (bool) {
+    function isBlacklisted(address) external pure override returns (bool) {
         return false;
     }
 
@@ -105,4 +105,6 @@ contract MockReputationEngine is IReputationEngine {
     function setRole(address, uint8) external override {}
 
     function setThresholds(uint256, uint256) external override {}
+
+    function setBlacklist(address, bool) external override {}
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
@@ -77,13 +77,19 @@ contract ReputationEngine is IReputationEngine, Ownable {
         }
     }
 
+    /// @notice Manually set blacklist status for a user.
+    function setBlacklist(address user, bool status) external override onlyOwner {
+        _blacklisted[user] = status;
+        emit BlacklistUpdated(user, status);
+    }
+
     /// @notice Get reputation score for a user.
     function reputation(address user) external view override returns (uint256) {
         return _reputation[user];
     }
 
     /// @notice Check blacklist status for a user.
-    function blacklist(address user) external view override returns (bool) {
+    function isBlacklisted(address user) external view override returns (bool) {
         return _blacklisted[user];
     }
 

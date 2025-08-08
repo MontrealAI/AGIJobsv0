@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -92,7 +92,7 @@ contract ValidationModule is IValidationModule, Ownable {
         for (uint256 i; i < n; ++i) {
             uint256 stake = stakeManager.stakeOf(pool[i], IStakeManager.Role.Validator);
             if (address(reputationEngine) != address(0)) {
-                if (reputationEngine.blacklist(pool[i])) continue;
+                if (reputationEngine.isBlacklisted(pool[i])) continue;
             }
             if (stake > 0) {
                 stakes[m] = stake;
