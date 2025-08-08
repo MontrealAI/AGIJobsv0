@@ -32,6 +32,10 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
 6. **Deployment Prep**
    - Freeze compiler versions and verify bytecode locally.
    - Generate deployment scripts that record module addresses for `JobRegistry` wiring.
+7. **Tax Responsibility & Owner Neutrality**
+   - Confirm modules never route funds or fees to the owner account.
+   - Document in NatSpec that employers, agents and validators handle all tax reporting.
+   - Provide explorer instructions so non‑technical users can review owner‑only parameters on Etherscan.
 
 ## Deliverables
 - Verified Solidity contracts under `contracts/v2`.
