@@ -11,6 +11,7 @@ async function main() {
   );
   const stake = await Stake.deploy(
     await token.getAddress(),
+    deployer.address,
     deployer.address
   );
 
