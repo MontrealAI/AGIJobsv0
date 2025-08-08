@@ -525,18 +525,30 @@ Convenience functions:
 
 ## Overview
 
-AGIJob Manager orchestrates trustless labor markets for autonomous agents. When a job is validated and its NFT is minted, a configurable portion of the escrowed payout is burned. The project
-contains two smart‑contract generations:
+AGIJob Manager orchestrates trustless labor markets for autonomous agents. When a job is validated and its NFT is minted, a configurable portion of the escrowed payout is burned. The project contains two smart‑contract generations and a third modular release in progress:
 
-- **v0** – the immutable mainnet release, permanently deployed at
-  [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
+- **v0** – immutable mainnet release at [0x0178…ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477).
 - **v1** – an in‑development upgrade tracking best practices and modern tooling.
+- **v2** – a modular architecture composed of standalone contracts wired through `JobRegistry`.
 
-All addresses should be independently verified before use.
+All addresses should be independently verified before use. For interface diagrams see [docs/architecture-v2.md](docs/architecture-v2.md) and for the build roadmap consult [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
-### Modular v2 Architecture
+```mermaid
+sequenceDiagram
+    participant Emp as Employer
+    participant Ag as Agent
+    participant Val as Validator
+    participant JR as JobRegistry
+    Emp->>JR: createJob
+    Ag->>JR: applyForJob
+    JR->>Val: selectValidators
+    Val->>JR: commit + reveal
+    JR-->>Ag: payout
+```
 
-The upcoming v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules are deployed as **stand‑alone contracts** and wired together only through the addresses stored in `JobRegistry`, preserving storage isolation and making the system upgrade‑free. `JobRegistry` lets the owner swap module addresses, enabling governance to upgrade components individually without redeploying the entire suite. Every module inherits `Ownable`, ensuring that only the owner (or future governance) can adjust parameters. These owner‑only setters—such as stake ratios, timing windows or reputation thresholds—are callable through the explorer **Write** tabs, keeping administration approachable for non‑technical operators while remaining fully transparent on‑chain.
+## Modular v2 Architecture
+
+The v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules are deployed as **stand‑alone contracts** and wired together only through the addresses stored in `JobRegistry`, preserving storage isolation and making the system upgrade‑free. `JobRegistry` lets the owner swap module addresses, enabling governance to upgrade components individually without redeploying the entire suite. Every module inherits `Ownable`, ensuring that only the owner (or future governance) can adjust parameters. These owner‑only setters—such as stake ratios, timing windows or reputation thresholds—are callable through the explorer **Write** tabs, keeping administration approachable for non‑technical operators while remaining fully transparent on‑chain.
 
 | Module | Responsibility |
 | --- | --- |
@@ -569,12 +581,12 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 
 | Module | Address | Role |
 | --- | --- | --- |
-| `JobRegistry` | *TBD* | Posts jobs, escrows payouts, tracks lifecycle |
-| `ValidationModule` | *TBD* | Selects validators and runs commit‑reveal voting |
-| `StakeManager` | *TBD* | Custodies collateral and executes slashing |
-| `ReputationEngine` | *TBD* | Updates reputation scores and applies penalties |
-| `DisputeModule` | *TBD* | Handles appeals and renders final rulings |
-| `CertificateNFT` | *TBD* | Mints ERC‑721 certificates for completed jobs |
+| `JobRegistry` | `0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0` | Posts jobs, escrows payouts, tracks lifecycle |
+| `ValidationModule` | `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9` | Selects validators and runs commit‑reveal voting |
+| `StakeManager` | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` | Custodies collateral and executes slashing |
+| `ReputationEngine` | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` | Updates reputation scores and applies penalties |
+| `DisputeModule` | `0x0165878A594ca255338adfa4d48449f69242Eb8F` | Handles appeals and renders final rulings |
+| `CertificateNFT` | `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707` | Mints ERC‑721 certificates for completed jobs |
 
 ```mermaid
 graph TD
@@ -588,15 +600,33 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
-See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams and interface definitions. Incentive rationale for v1 lives in [docs/incentive-analysis-v1.md](docs/incentive-analysis-v1.md). Interfaces reside in [`contracts/v2/interfaces`](contracts/v2/interfaces); step‑by‑step explorer instructions are in [docs/etherscan-guide.md](docs/etherscan-guide.md) and the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
+### Quick Etherscan Guide
 
-#### Incentive Design
+- Verify each module address above on at least two explorers.
+- In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
+- Confirm emitted events to ensure configuration changes took effect.
+ 
+For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md).
+
+See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and interface definitions; the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
+
+## Incentive Design
 
 - Validators finalise jobs by majority after a review window; minorities may escalate to the `DisputeModule` for an appeal.
 - Slashing percentages exceed potential rewards so dishonest behaviour has negative expected value.
 - Employers receive a share of slashed agent stake on failures, aligning incentives across roles.
 - Commit–reveal randomness combined with owner‑tuned parameters keeps the Gibbs free energy lowest at honest participation, mirroring a Hamiltonian system where slashing raises enthalpy and randomness adds entropy so the stable state is honest behaviour.
 - For the economic rationale behind these settings, see [docs/incentive-analysis-v1.md](docs/incentive-analysis-v1.md).
+
+```mermaid
+graph LR
+    Agent -- stake --> StakeManager
+    Validator -- stake --> StakeManager
+    StakeManager -- reward --> Agent
+    StakeManager -- reward --> Validator
+    StakeManager -- slash --> Employer
+    StakeManager -- slash --> Treasury
+```
 
 ## Versions
 
