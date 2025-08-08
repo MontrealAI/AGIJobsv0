@@ -33,10 +33,10 @@ describe("ReputationEngine", function () {
     );
   });
 
-  it("allows owner to manually set blacklist status", async () => {
-    await engine.connect(owner).setBlacklist(user.address, true);
+  it("allows authorized caller to manually set blacklist status", async () => {
+    await engine.connect(caller).blacklist(user.address, true);
     expect(await engine.isBlacklisted(user.address)).to.equal(true);
-    await engine.connect(owner).setBlacklist(user.address, false);
+    await engine.connect(caller).blacklist(user.address, false);
     expect(await engine.isBlacklisted(user.address)).to.equal(false);
   });
 });
