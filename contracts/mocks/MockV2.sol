@@ -83,24 +83,24 @@ contract MockJobRegistry is IJobRegistry {
 contract MockReputationEngine is IReputationEngine {
     mapping(address => uint256) private _rep;
 
-    function addReputation(address user, uint256 amount) external override {
+    function add(address user, uint256 amount) external override {
         _rep[user] += amount;
     }
 
-    function subtractReputation(address user, uint256 amount) external override {
+    function subtract(address user, uint256 amount) external override {
         uint256 rep = _rep[user];
         _rep[user] = rep > amount ? rep - amount : 0;
     }
 
-    function reputationOf(address user) external view override returns (uint256) {
+    function reputation(address user) external view override returns (uint256) {
         return _rep[user];
     }
 
-    function isBlacklisted(address) external pure override returns (bool) {
+    function blacklist(address) external pure override returns (bool) {
         return false;
     }
 
-    function setCaller(address, bool) external override {}
+    function setModule(address, bool) external override {}
 
     function setRole(address, uint8) external override {}
 

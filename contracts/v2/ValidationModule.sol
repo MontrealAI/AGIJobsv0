@@ -92,7 +92,7 @@ contract ValidationModule is IValidationModule, Ownable {
         for (uint256 i; i < n; ++i) {
             uint256 stake = stakeManager.stakeOf(pool[i], IStakeManager.Role.Validator);
             if (address(reputationEngine) != address(0)) {
-                if (reputationEngine.isBlacklisted(pool[i])) continue;
+                if (reputationEngine.blacklist(pool[i])) continue;
             }
             if (stake > 0) {
                 stakes[m] = stake;
@@ -195,10 +195,10 @@ contract ValidationModule is IValidationModule, Ownable {
                     );
                 }
                 if (address(reputationEngine) != address(0)) {
-                    reputationEngine.subtractReputation(val, 1);
+                    reputationEngine.subtract(val, 1);
                 }
             } else if (address(reputationEngine) != address(0)) {
-                reputationEngine.addReputation(val, 1);
+                reputationEngine.add(val, 1);
             }
         }
 
