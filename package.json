@@ -17,6 +17,7 @@
     "@openzeppelin/contracts": "^5.4.0",
     "eslint": "^9.32.0",
     "hardhat": "^2.26.1",
+    "hardhat-gas-reporter": "^2.3.0",
     "solhint": "^6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
