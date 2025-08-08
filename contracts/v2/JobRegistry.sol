@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -83,8 +83,11 @@ contract JobRegistry is Ownable {
         uint256 reward,
         uint256 stake
     );
+    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event WorkSubmitted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
+    event DisputeRaised(uint256 indexed jobId, address indexed caller);
 
     constructor(address owner) Ownable(owner) {}
 
@@ -172,20 +175,26 @@ contract JobRegistry is Ownable {
         }
         job.agent = msg.sender;
         job.state = State.Applied;
+        emit JobApplied(jobId, msg.sender);
     }
 
     /// @notice Agent submits job result; validation outcome stored.
-    function completeJob(uint256 jobId) external {
+    function submitWork(uint256 jobId) public {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
         job.state = State.Completed;
+        emit WorkSubmitted(jobId, outcome);
+    }
+
+    function completeJob(uint256 jobId) external {
+        submitWork(jobId);
     }
 
     /// @notice Agent disputes a failed job outcome.
-    function dispute(uint256 jobId) external payable {
+    function raiseDispute(uint256 jobId) public payable {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
@@ -195,6 +204,11 @@ contract JobRegistry is Ownable {
         } else {
             require(msg.value == 0, "fee unused");
         }
+        emit DisputeRaised(jobId, msg.sender);
+    }
+
+    function dispute(uint256 jobId) external payable {
+        raiseDispute(jobId);
     }
 
     /// @notice Owner resolves a dispute, setting the final outcome.
