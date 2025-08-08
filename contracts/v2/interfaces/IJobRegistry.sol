@@ -23,6 +23,21 @@ interface IJobRegistry {
         Status status;
     }
 
+    /// @dev Reverts when job creation parameters have not been configured
+    error JobParametersUnset();
+
+    /// @dev Reverts when referencing a job that does not exist
+    error InvalidJob(uint256 jobId);
+
+    /// @dev Reverts when an operation is invoked by a non-employer
+    error OnlyEmployer(address caller);
+
+    /// @dev Reverts when an operation is invoked by a non-agent
+    error OnlyAgent(address caller);
+
+    /// @dev Reverts when a job is in an unexpected status
+    error InvalidStatus(Status expected, Status actual);
+
     // module configuration
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
@@ -43,24 +58,74 @@ interface IJobRegistry {
     event JobFinalized(uint256 indexed jobId, bool success);
 
     // owner wiring of modules
+
+    /// @notice Set the validation module responsible for job verification
+    /// @param module Address of the validation module contract
     function setValidationModule(address module) external;
+
+    /// @notice Set the reputation engine used to track participant scores
+    /// @param engine Address of the reputation engine contract
     function setReputationEngine(address engine) external;
+
+    /// @notice Set the stake manager contract used for collateral accounting
+    /// @param manager Address of the stake manager contract
     function setStakeManager(address manager) external;
+
+    /// @notice Set the certificate NFT contract used to mint completion tokens
+    /// @param nft Address of the certificate NFT contract
     function setCertificateNFT(address nft) external;
+
+    /// @notice Set the dispute module contract handling appeals
+    /// @param module Address of the dispute module contract
     function setDisputeModule(address module) external;
 
     /// @notice Owner configuration of job limits
+    /// @param reward Reward paid upon successful job completion
+    /// @param stake Stake required from the agent to accept a job
     function setJobParameters(uint256 reward, uint256 stake) external;
 
     // core job flow
+
+    /// @notice Create a new job with the preset reward and stake parameters
+    /// @return jobId Identifier of the newly created job
+    /// @dev Reverts with {JobParametersUnset} if parameters have not been set
     function createJob() external returns (uint256 jobId);
+
+    /// @notice Agent expresses interest in a job
+    /// @param jobId Identifier of the job to apply for
+    /// @dev Reverts with {InvalidStatus} if job is not open for applications
     function applyForJob(uint256 jobId) external;
+
+    /// @notice Agent submits the result of a job for validation
+    /// @param jobId Identifier of the job being submitted
+    /// @dev Reverts with {InvalidStatus} or {OnlyAgent} accordingly
     function submit(uint256 jobId) external;
+
+    /// @notice Raise a dispute for a completed job
+    /// @param jobId Identifier of the disputed job
+    /// @dev Reverts with {InvalidStatus} or {OnlyAgent}
     function dispute(uint256 jobId) external payable;
+
+    /// @notice Resolve a dispute and record the final outcome
+    /// @param jobId Identifier of the disputed job
+    /// @param employerWins True if the employer wins the dispute
+    /// @dev Reverts with {InvalidJob} if the job does not exist
     function resolveDispute(uint256 jobId, bool employerWins) external;
+
+    /// @notice Finalise a job after dispute resolution or successful validation
+    /// @param jobId Identifier of the job to finalise
+    /// @dev Reverts with {InvalidStatus} if job is not ready for finalisation
     function finalize(uint256 jobId) external;
+
+    /// @notice Employer cancels a job before an agent is selected
+    /// @param jobId Identifier of the job to cancel
+    /// @dev Reverts with {OnlyEmployer} or {InvalidStatus}
     function cancelJob(uint256 jobId) external;
 
     // view helper
+
+    /// @notice Retrieve information for a given job
+    /// @param jobId Identifier of the job to query
+    /// @return Job The job struct containing all job details
     function jobs(uint256 jobId) external view returns (Job memory);
 }
