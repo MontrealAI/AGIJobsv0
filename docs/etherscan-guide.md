@@ -46,8 +46,8 @@ graph TD
 ### Validators
 1. Navigate to the contract and connect a validator wallet.
 2. Stake required AGI via **stake**.
-3. During validation, send hashed votes with **commitVote**.
-4. Reveal decisions using **revealVote** before the window closes.
+3. During validation, send hashed votes with **commitValidation**.
+4. Reveal decisions using **revealValidation** before the window closes.
 
 ### Disputers
 1. Open the `DisputeModule` address on Etherscan.
