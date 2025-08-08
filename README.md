@@ -561,7 +561,7 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
-See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration. A step‑by‑step development outline is available in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
+See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration. Step‑by‑step explorer instructions are in [docs/etherscan-guide.md](docs/etherscan-guide.md), and the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
 #### Incentive Design
 
