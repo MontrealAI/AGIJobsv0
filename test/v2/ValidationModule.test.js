@@ -165,7 +165,7 @@ describe("ValidationModule V2", function () {
           ? ethers.parseEther("50")
           : ethers.parseEther("10");
       expect(stake).to.equal(expectedStake);
-      expect(await reputation.reputationOf(addr)).to.equal(1n);
+      expect(await reputation.reputation(addr)).to.equal(1n);
     }
   });
 
@@ -215,7 +215,7 @@ describe("ValidationModule V2", function () {
     expect(await stakeManager.stakeOf(slashed, 1)).to.equal(
       slashedStakeBefore / 2n
     );
-    expect(await reputation.reputationOf(winner)).to.equal(1n);
-    expect(await reputation.reputationOf(slashed)).to.equal(0n);
+    expect(await reputation.reputation(winner)).to.equal(1n);
+    expect(await reputation.reputation(slashed)).to.equal(0n);
   });
 });

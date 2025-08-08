@@ -16,8 +16,8 @@ interface IStakeManager {
 }
 
 interface IReputationEngine {
-    function addReputation(address user, uint256 amount) external;
-    function subtractReputation(address user, uint256 amount) external;
+    function add(address user, uint256 amount) external;
+    function subtract(address user, uint256 amount) external;
 }
 
 interface IDisputeModule {
@@ -235,7 +235,7 @@ contract JobRegistry is Ownable {
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                reputationEngine.addReputation(job.agent, 1);
+                reputationEngine.add(job.agent, 1);
             }
             if (address(certificateNFT) != address(0)) {
                 certificateNFT.mintCertificate(job.agent, jobId, "");
@@ -250,7 +250,7 @@ contract JobRegistry is Ownable {
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                reputationEngine.subtractReputation(job.agent, 1);
+                reputationEngine.subtract(job.agent, 1);
             }
         }
         emit JobFinalized(jobId, job.success);
