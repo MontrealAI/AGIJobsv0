@@ -15,7 +15,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - `JobRegistry`: job lifecycle, wiring module addresses, owner configuration.
    - `ValidationModule`: pseudo‑random selection, commit‑reveal voting, outcome reporting.
    - `StakeManager`: token custody, slashing, reward release.
-   - `ReputationEngine`: reputation tracking and threshold enforcement.
+   - `ReputationEngine`: reputation tracking, threshold enforcement, owner-managed blacklist.
    - `DisputeModule`: optional appeal flow and final ruling.
    - `CertificateNFT`: ERC‑721 minting with owner‑settable base URI.
 3. **Incentive Calibration**

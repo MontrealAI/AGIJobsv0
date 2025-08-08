@@ -83,7 +83,7 @@ describe("JobRegistry integration", function () {
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputation(agent.address)).to.equal(1);
-    expect(await rep.blacklist(agent.address)).to.equal(false);
+    expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
 
@@ -105,7 +105,7 @@ describe("JobRegistry integration", function () {
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputation(agent.address)).to.equal(1);
-    expect(await rep.blacklist(agent.address)).to.equal(false);
+    expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
 
@@ -128,7 +128,7 @@ describe("JobRegistry integration", function () {
     expect(await token.balanceOf(agent.address)).to.equal(800);
     expect(await token.balanceOf(employer.address)).to.equal(1200);
     expect(await rep.reputation(agent.address)).to.equal(0);
-    expect(await rep.blacklist(agent.address)).to.equal(true);
+    expect(await rep.isBlacklisted(agent.address)).to.equal(true);
     expect(await nft.balanceOf(agent.address)).to.equal(0);
   });
 

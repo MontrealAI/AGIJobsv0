@@ -102,8 +102,10 @@ interface IDisputeModule {
 interface IReputationEngine {
     function addReputation(address user, uint256 amount) external;
     function subtractReputation(address user, uint256 amount) external;
+    function isBlacklisted(address user) external view returns (bool);
     function setCaller(address caller, bool allowed) external;
     function setThresholds(uint256 agentThreshold, uint256 validatorThreshold) external;
+    function setBlacklist(address user, bool status) external;
 }
 
 interface IStakeManager {
@@ -134,7 +136,7 @@ Each module exposes minimal `onlyOwner` setters so governance can tune economics
 | ValidationModule | `setParameters` | Adjust stake ratios, rewards, slashing and timing windows |
 | DisputeModule | `setAppealParameters` | Configure appeal fees, jury size and moderator address |
 | StakeManager | `setStakeParameters`, `setToken` | Tune minimum stakes/slashing and switch staking token |
-| ReputationEngine | `setCaller`, `setThresholds` | Authorise callers and set agent/validator reputation floors |
+| ReputationEngine | `setCaller`, `setThresholds`, `setBlacklist` | Authorise callers, set reputation floors, manage blacklist |
 | CertificateNFT | `setJobRegistry` | Configure authorized JobRegistry |
 
 All setters are accessible through block‑explorer interfaces, keeping administration intuitive for non‑technical owners while preserving contract immutability. These interfaces favour explicit, single‑purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.

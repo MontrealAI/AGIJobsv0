@@ -114,7 +114,7 @@ Key owner-configurable entry points include:
 - `JobRegistry.setJobParameters(reward, stake)`
 - `ValidationModule.setParameters(...)` for stake, reward and timing settings
 - `StakeManager.setStakeParameters(...)` and `setToken(token)`
-- `ReputationEngine.setCaller(module, allowed)` and `setThresholds(agent, validator)`
+- `ReputationEngine.setCaller(module, allowed)`, `setThresholds(agent, validator)` and `setBlacklist(user, status)`
 - `CertificateNFT.setBaseURI(uri)`
 - `DisputeModule.setAppealParameters(appealFee, jurySize)`
 
@@ -551,7 +551,7 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `JobRegistry` | `setModules`, `setJobParameters` |
 | `ValidationModule` | `setParameters` |
 | `StakeManager` | `setStakeParameters`, `setToken` |
-| `ReputationEngine` | `setCaller`, `setThresholds` |
+| `ReputationEngine` | `setCaller`, `setThresholds`, `setBlacklist` |
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setJobRegistry` |
 
@@ -560,7 +560,7 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize` |
 | `ValidationModule` | [`IValidationModule`](contracts/v2/interfaces/IValidationModule.sol) – `selectValidators`, `commitValidation`, `revealValidation`, `finalize`, `appeal` |
 | `StakeManager` | [`IStakeManager`](contracts/v2/interfaces/IStakeManager.sol) – `depositStake`, `withdrawStake`, `lockStake`, `slash`, `stakeOf` |
-| `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `isBlacklisted` |
+| `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
 | `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mint` |
 

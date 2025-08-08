@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.25;
 
 /// @title IDisputeModule
 /// @notice Interface for raising and resolving disputes or appeals

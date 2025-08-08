@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.25;
 
 /// @title IStakeManager
 /// @notice Interface for handling token collateral for agents and validators
