@@ -151,6 +151,12 @@ Each module exposes minimal `onlyOwner` setters so governance can tune economics
 
 All setters are accessible through block‑explorer interfaces, keeping administration intuitive for non‑technical owners while preserving contract immutability. These interfaces favour explicit, single‑purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.
 
+### Token Integration
+
+- Staking and rewards default to the $AGI token at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D`.
+- Owners may swap to a new ERC‑20 by calling `StakeManager.setToken(address)`.
+- `JobRegistry.setModules` lets the owner replace companion modules individually while existing job state remains untouched.
+
 ## User Experience
 Non‑technical employers, agents and validators can call these methods directly through Etherscan's read and write tabs. Every parameter uses human‑readable units (wei for token amounts and seconds for timing) so that wallets and explorers can display values without custom tooling. No external subscription or Chainlink VRF is required; validator selection relies on commit‑reveal randomness seeded by the owner.
 If a result is contested, employers or agents invoke the DisputeModule's `raiseDispute` through the explorer and a moderator or expanded validator jury finalises the job.

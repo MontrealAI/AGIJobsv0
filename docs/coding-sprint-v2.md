@@ -14,7 +14,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
 2. **Module Implementation**
    - `JobRegistry`: job lifecycle, wiring module addresses, owner configuration.
    - `ValidationModule`: pseudo‑random selection, commit‑reveal voting, outcome reporting.
-   - `StakeManager`: token custody, slashing, reward release.
+   - `StakeManager`: token custody, slashing, reward release; defaults to $AGI at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D` and exposes `setToken` for owner swaps.
    - `ReputationEngine`: reputation tracking, threshold enforcement, owner-managed blacklist.
    - `DisputeModule`: optional appeal flow and final ruling.
    - `CertificateNFT`: ERC‑721 minting with owner‑settable base URI.
