@@ -144,6 +144,8 @@ All setters are accessible through block‑explorer interfaces, keeping administ
 Non‑technical employers, agents and validators can call these methods directly through Etherscan's read and write tabs. Every parameter uses human‑readable units (wei for token amounts and seconds for timing) so that wallets and explorers can display values without custom tooling. No external subscription or Chainlink VRF is required; validator selection relies on commit‑reveal randomness seeded by the owner.
 If a result is contested, employers or agents invoke the DisputeModule's `raiseDispute` through the explorer and a moderator or expanded validator jury finalises the job.
 
+For detailed explorer walk-throughs see [docs/etherscan-guide.md](etherscan-guide.md).
+
 ## Incentive Refinements
 - Validator stake scales with job value; majority approval finalises after a grace period while minority can trigger an appeal round with a larger validator set.
 - Slashing percentages exceed potential rewards so dishonest behaviour is an energy‑costly deviation.
