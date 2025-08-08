@@ -87,6 +87,33 @@ contract JobRegistry is Ownable {
     event JobCancelled(uint256 indexed jobId);
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
 
+    /// @notice Error thrown when module address is zero
+    error InvalidModuleAddress();
+    /// @notice Error thrown when job parameters are not set
+    error ParamsNotSet();
+    /// @notice Error thrown when job is not open for applications
+    error NotOpen();
+    /// @notice Error thrown when caller lacks required stake
+    error StakeMissing();
+    /// @notice Error thrown when job is in invalid state
+    error InvalidState();
+    /// @notice Error thrown when caller is not the assigned agent
+    error OnlyAgent();
+    /// @notice Error thrown when dispute cannot be raised
+    error CannotDispute();
+    /// @notice Error thrown when message value should be zero
+    error FeeUnused();
+    /// @notice Error thrown when caller is not dispute module
+    error OnlyDisputeModule();
+    /// @notice Error thrown when no dispute exists
+    error NoDispute();
+    /// @notice Error thrown when job is not ready for finalization
+    error NotReady();
+    /// @notice Error thrown when job cannot be cancelled
+    error CannotCancel();
+    /// @notice Error thrown when caller is not the employer
+    error OnlyEmployer();
+
     constructor(address owner) Ownable(owner) {}
 
     // ---------------------------------------------------------------------
@@ -99,11 +126,9 @@ contract JobRegistry is Ownable {
         IDisputeModule _dispute,
         ICertificateNFT _certNFT
     ) external onlyOwner {
-        require(address(_validation) != address(0), "validation");
-        require(address(_stakeMgr) != address(0), "stake");
-        require(address(_reputation) != address(0), "reputation");
-        require(address(_dispute) != address(0), "dispute");
-        require(address(_certNFT) != address(0), "nft");
+        if (address(_validation) == address(0) || address(_stakeMgr) == address(0) ||
+            address(_reputation) == address(0) || address(_dispute) == address(0) ||
+            address(_certNFT) == address(0)) revert InvalidModuleAddress();
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -127,7 +152,7 @@ contract JobRegistry is Ownable {
     // Job lifecycle
     // ---------------------------------------------------------------------
     function createJob() external returns (uint256 jobId) {
-        require(jobReward > 0 || jobStake > 0, "params not set");
+        if (jobReward == 0 && jobStake == 0) revert ParamsNotSet();
         jobId = ++nextJobId;
         jobs[jobId] = Job({
             employer: msg.sender,
@@ -151,12 +176,11 @@ contract JobRegistry is Ownable {
 
     function applyForJob(uint256 jobId) external {
         Job storage job = jobs[jobId];
-        require(job.state == State.Created, "not open");
+        if (job.state != State.Created) revert NotOpen();
         if (job.stake > 0 && address(stakeManager) != address(0)) {
-            require(
-                stakeManager.stakes(msg.sender) >= uint256(job.stake),
-                "stake missing"
-            );
+            if (stakeManager.stakes(msg.sender) < uint256(job.stake)) {
+                revert StakeMissing();
+            }
         }
         job.agent = msg.sender;
         job.state = State.Applied;
@@ -166,28 +190,24 @@ contract JobRegistry is Ownable {
     /// @notice Agent submits job result; validation outcome stored.
     function submit(uint256 jobId) public {
         Job storage job = jobs[jobId];
-        require(job.state == State.Applied, "invalid state");
-        require(msg.sender == job.agent, "only agent");
+        if (job.state != State.Applied) revert InvalidState();
+        if (msg.sender != job.agent) revert OnlyAgent();
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
         job.state = State.Completed;
         emit JobSubmitted(jobId, outcome);
     }
 
-    function completeJob(uint256 jobId) external {
-        submit(jobId);
-    }
-
     /// @notice Agent disputes a failed job outcome.
     function raiseDispute(uint256 jobId) public payable {
         Job storage job = jobs[jobId];
-        require(job.state == State.Completed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent, "only agent");
+        if (job.state != State.Completed || job.success) revert CannotDispute();
+        if (msg.sender != job.agent) revert OnlyAgent();
         job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
             disputeModule.appeal{value: msg.value}(jobId);
         } else {
-            require(msg.value == 0, "fee unused");
+            if (msg.value != 0) revert FeeUnused();
         }
         emit DisputeRaised(jobId, msg.sender);
     }
@@ -198,9 +218,9 @@ contract JobRegistry is Ownable {
 
     /// @notice Owner resolves a dispute, setting the final outcome.
     function resolveDispute(uint256 jobId, bool employerWins) external {
-        require(msg.sender == address(disputeModule), "only dispute");
+        if (msg.sender != address(disputeModule)) revert OnlyDisputeModule();
         Job storage job = jobs[jobId];
-        require(job.state == State.Disputed, "no dispute");
+        if (job.state != State.Disputed) revert NoDispute();
         job.success = !employerWins;
         job.state = State.Completed;
     }
@@ -208,7 +228,7 @@ contract JobRegistry is Ownable {
     /// @notice Finalize a job and trigger payouts and reputation changes.
     function finalize(uint256 jobId) external {
         Job storage job = jobs[jobId];
-        require(job.state == State.Completed, "not ready");
+        if (job.state != State.Completed) revert NotReady();
         job.state = State.Finalized;
         if (job.success) {
             if (address(stakeManager) != address(0)) {
@@ -248,11 +268,8 @@ contract JobRegistry is Ownable {
     /// @notice Cancel a job before completion and refund the employer.
     function cancelJob(uint256 jobId) external {
         Job storage job = jobs[jobId];
-        require(
-            job.state == State.Created || job.state == State.Applied,
-            "cannot cancel"
-        );
-        require(msg.sender == job.employer, "only employer");
+        if (job.state != State.Created && job.state != State.Applied) revert CannotCancel();
+        if (msg.sender != job.employer) revert OnlyEmployer();
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             stakeManager.payReward(job.employer, uint256(job.reward));

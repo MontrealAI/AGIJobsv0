@@ -60,30 +60,30 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
     // ------------------------ staking logic -------------------------
 
     /// @notice Deposit stake for the caller for a specific role.
-    function deposit(Role role, uint256 amount) public nonReentrant {
-        require(amount > 0, "amount");
+    function _deposit(Role role, uint256 amount) internal {
+        if (amount == 0) revert AmountZero();
         _stakes[msg.sender][role] += amount;
         token.safeTransferFrom(msg.sender, address(this), amount);
         emit StakeDeposited(msg.sender, role, amount);
     }
 
     /// @inheritdoc IStakeManager
-    function depositStake(Role role, uint256 amount) external override {
-        deposit(role, amount);
+    function depositStake(Role role, uint256 amount) external override nonReentrant {
+        _deposit(role, amount);
     }
 
     /// @notice Withdraw available stake for the caller.
-    function withdraw(Role role, uint256 amount) public nonReentrant {
+    function _withdraw(Role role, uint256 amount) internal {
         uint256 available = _stakes[msg.sender][role] - _locked[msg.sender][role];
-        require(available >= amount, "insufficient stake");
+        if (available < amount) revert InsufficientStake();
         _stakes[msg.sender][role] -= amount;
         token.safeTransfer(msg.sender, amount);
         emit StakeWithdrawn(msg.sender, role, amount);
     }
 
     /// @inheritdoc IStakeManager
-    function withdrawStake(Role role, uint256 amount) external override {
-        withdraw(role, amount);
+    function withdrawStake(Role role, uint256 amount) external override nonReentrant {
+        _withdraw(role, amount);
     }
 
     /// @notice Lock stake of a user for a role.
@@ -95,9 +95,9 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
     {
         uint256 minStake =
             role == Role.Agent ? agentMinStake : validatorMinStake;
-        require(amount >= minStake, "below min");
+        if (amount < minStake) revert BelowMinimumStake();
         uint256 available = _stakes[user][role] - _locked[user][role];
-        require(available >= amount, "insufficient");
+        if (available < amount) revert InsufficientStake();
         _locked[user][role] += amount;
         emit StakeLocked(user, role, amount);
     }
@@ -108,7 +108,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         onlyOwner
         nonReentrant
     {
-        require(_locked[user][role] >= amount, "locked");
+        if (_locked[user][role] < amount) revert InsufficientLockedStake();
         _locked[user][role] -= amount;
         emit StakeReleased(user, role, amount);
     }
@@ -125,7 +125,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         onlyOwner
         nonReentrant
     {
-        require(_locked[user][role] >= amount, "locked");
+        if (_locked[user][role] < amount) revert InsufficientLockedStake();
         _locked[user][role] -= amount;
 
         uint256 pct = role == Role.Agent

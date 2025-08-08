@@ -16,15 +16,19 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         Ownable(owner_)
     {}
 
+    /// @dev Restricts calls to the configured JobRegistry
     modifier onlyJobRegistry() {
-        require(msg.sender == jobRegistry, "only JobRegistry");
+        if (msg.sender != jobRegistry) revert NotJobRegistry();
         _;
     }
 
+    /// @notice Set the JobRegistry allowed to mint certificates
+    /// @param registry Address of the JobRegistry contract
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
     }
 
+    /// @inheritdoc ICertificateNFT
     function mint(
         address to,
         uint256 jobId,
@@ -38,6 +42,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         emit CertificateMinted(to, jobId);
     }
 
+    /// @inheritdoc ERC721
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
         return _tokenURIs[tokenId];

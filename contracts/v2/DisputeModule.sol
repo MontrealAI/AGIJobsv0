@@ -70,6 +70,7 @@ contract DisputeModule is IDisputeModule, Ownable {
     }
 
     /// @notice Configure the appeal bond required to escalate a job
+    /// @param fee New appeal fee amount
     function setAppealFee(uint256 fee) external override onlyOwner {
         appealFee = fee;
         emit AppealFeeUpdated(fee);
@@ -82,17 +83,12 @@ contract DisputeModule is IDisputeModule, Ownable {
     /// @notice Post the appeal fee to escalate a disputed job
     /// @param jobId Identifier of the job in the JobRegistry
     function appeal(uint256 jobId) external payable override {
-        require(msg.value == appealFee, "fee");
-        require(bonds[jobId] == 0, "appealed");
+        if (msg.value != appealFee) revert IncorrectFee();
+        if (bonds[jobId] != 0) revert AlreadyAppealed();
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address caller = msg.sender == address(jobRegistry)
-            ? job.agent
-            : msg.sender;
-        require(
-            caller == job.agent || caller == job.employer,
-            "not participant"
-        );
+        address caller = msg.sender == address(jobRegistry) ? job.agent : msg.sender;
+        if (caller != job.agent && caller != job.employer) revert NotParticipant();
 
         appellants[jobId] = payable(caller);
         bonds[jobId] = msg.value;
@@ -106,10 +102,9 @@ contract DisputeModule is IDisputeModule, Ownable {
 
     /// @dev Restrict resolution to owner or designated moderator/jury address
     modifier onlyArbiter() {
-        require(
-            msg.sender == owner() || msg.sender == moderator || msg.sender == jury,
-            "not authorized"
-        );
+        if (msg.sender != owner() && msg.sender != moderator && msg.sender != jury) {
+            revert NotAuthorized();
+        }
         _;
     }
 
@@ -123,7 +118,7 @@ contract DisputeModule is IDisputeModule, Ownable {
         onlyArbiter
     {
         uint256 bond = bonds[jobId];
-        require(bond > 0, "no bond");
+        if (bond == 0) revert NoBond();
 
         // Determine bond recipient
         address payable recipient = employerWins
@@ -139,7 +134,7 @@ contract DisputeModule is IDisputeModule, Ownable {
         delete appellants[jobId];
 
         (bool ok, ) = recipient.call{value: bond}("");
-        require(ok, "transfer failed");
+        if (!ok) revert TransferFailed();
 
         emit AppealResolved(jobId, employerWins);
     }
