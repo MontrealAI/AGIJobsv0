@@ -9,7 +9,10 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 /// @notice ERC721 certificate minted upon successful job completion.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     address public jobRegistry;
+    string private baseTokenURI;
     mapping(uint256 => string) private _tokenURIs;
+
+    event BaseURIUpdated(string newURI);
 
     constructor(string memory name_, string memory symbol_, address owner_)
         ERC721(name_, symbol_)
@@ -25,22 +28,35 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         jobRegistry = registry;
     }
 
+    function setBaseURI(string calldata uri) external onlyOwner {
+        baseTokenURI = uri;
+        emit BaseURIUpdated(uri);
+    }
+
     function mint(
         address to,
         uint256 jobId,
         string calldata uri
     ) external onlyJobRegistry returns (uint256 tokenId) {
+        require(bytes(uri).length != 0, "empty uri");
         tokenId = jobId;
         _safeMint(to, tokenId);
-        if (bytes(uri).length != 0) {
-            _tokenURIs[tokenId] = uri;
-        }
+        _tokenURIs[tokenId] = uri;
         emit CertificateMinted(to, jobId);
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseTokenURI;
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        return _tokenURIs[tokenId];
+        string memory custom = _tokenURIs[tokenId];
+        string memory base = _baseURI();
+        if (bytes(base).length != 0) {
+            return string.concat(base, custom);
+        }
+        return custom;
     }
 }
 
