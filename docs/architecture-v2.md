@@ -153,6 +153,17 @@ For detailed explorer walk-throughs see [docs/etherscan-guide.md](etherscan-guid
 - A dedicated DisputeModule coordinates appeals and moderator input, ensuring collusion requires prohibitive stake.
 - Parameters (burn rates, stake ratios, validator counts) are tunable by the owner to keep the Nash equilibrium at honest participation.
 
+### Dynamic Validator Committees
+Validator count expands with job value to raise collusion costs. An owner‑set schedule maps payout tiers to committee sizes:
+
+| Job payout (AGI) | Validators |
+| --- | --- |
+| < 1,000 | 3 |
+| 1,000–10,000 | 5 |
+| > 10,000 | 7 |
+
+Jobs default to majority rule; ties resolve to success unless appealed. Adjusting the tiers is an owner‑only action via `ValidationModule.setParameters`, keeping validator entropy proportional to value at risk.
+
 ## Statistical‑Physics View
 The protocol behaves like a system seeking minimum Gibbs free energy. Honest completion is the ground state in this Hamiltonian system: any actor attempting to cheat must input additional "energy"—manifested as higher expected stake loss—which drives the system back toward the stable equilibrium. Using the thermodynamic analogue
 
