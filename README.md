@@ -79,6 +79,7 @@ Legacy sequence diagrams appear in [docs/architecture.md](docs/architecture.md);
 Key incentive refinements include:
 
 - Majority validator approval finalises jobs while minorities can appeal via the DisputeModule.
+- Validator committee size scales with job payout (e.g. 3 for <1k AGI, 5 for 1k–10k, 7 for >10k), raising collusion costs and configurable via owner parameters.
 - Slashing percentages exceed potential gains and a share of slashed agent stake returns to the employer.
 - Lone validators who misvote or fail to reveal suffer amplified penalties, deterring extortion attempts.
 - Commit–reveal randomness and owner‑set seeds inject entropy, making validator selection hard to game.
