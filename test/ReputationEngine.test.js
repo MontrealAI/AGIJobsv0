@@ -4,9 +4,11 @@ const { ethers } = require("hardhat");
 describe("ReputationEngine", function () {
   let engine, owner, agentCaller, validatorCaller, user;
 
-  beforeEach(async () => {
-    [owner, agentCaller, validatorCaller, user] = await ethers.getSigners();
-    const Engine = await ethers.getContractFactory("ReputationEngine");
+    beforeEach(async () => {
+      [owner, agentCaller, validatorCaller, user] = await ethers.getSigners();
+      const Engine = await ethers.getContractFactory(
+        "contracts/ReputationEngine.sol:ReputationEngine"
+      );
     engine = await Engine.deploy(owner.address);
     await engine.waitForDeployment();
 
