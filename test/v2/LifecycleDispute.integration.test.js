@@ -81,7 +81,7 @@ describe("Job lifecycle with disputes", function () {
   it("rewards agent when dispute resolves in their favor", async () => {
     const jobId = await startJob();
     await validation.connect(owner).setOutcome(jobId, false);
-    await registry.connect(agent).submit(jobId);
+    await registry.connect(agent).completeJob(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, false);
 
@@ -94,7 +94,7 @@ describe("Job lifecycle with disputes", function () {
   it("slashes agent and reduces reputation when dispute is lost", async () => {
     const jobId = await startJob();
     await validation.connect(owner).setOutcome(jobId, false);
-    await registry.connect(agent).submit(jobId);
+    await registry.connect(agent).completeJob(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, true);
 
