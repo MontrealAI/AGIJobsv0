@@ -1364,6 +1364,9 @@ npx eslint .
 ## The Economy of AGI
 How jobs, reputation, and value circulate within the AGI ecosystem. Read the expanded discussion in [docs/economy-of-agi.md](docs/economy-of-agi.md).
 
+## Tax Obligations
+All taxes arising from job transactions are the responsibility of the parties exchanging value. Employers account for capital gains or losses on burned tokens, agents and validators treat tokens received as income, and passive holders incur no tax until they dispose of their own tokens. The smart contract and its deploying corporation never collect fees or hold user funds and therefore remain tax‑exempt in every jurisdiction. See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown.
+
 ## Legal & Regulatory
 Explains the utility-token nature of $AGI and related considerations. See [docs/legal-regulatory.md](docs/legal-regulatory.md) for full details.
 
