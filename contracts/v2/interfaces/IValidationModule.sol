@@ -2,32 +2,22 @@
 pragma solidity ^0.8.21;
 
 /// @title IValidationModule
-/// @notice Interface for validator selection, commit-reveal voting, and outcome resolution
+/// @notice Interface for validator selection and commit-reveal voting
 interface IValidationModule {
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
-    event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
-    event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);
-    event ValidationAppealed(uint256 indexed jobId, address indexed caller);
+    event VoteCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
+    event VoteRevealed(uint256 indexed jobId, address indexed validator, bool approve);
     event ParametersUpdated();
 
     function selectValidators(uint256 jobId) external returns (address[] memory);
-    function commitValidation(uint256 jobId, bytes32 commitHash) external;
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
-    function finalize(uint256 jobId) external returns (bool success);
-    function appeal(uint256 jobId) external payable;
+    function commitVote(uint256 jobId, bytes32 commitHash) external;
+    function revealVote(uint256 jobId, bool approve, bytes32 salt) external;
+    function tally(uint256 jobId) external returns (bool success);
 
-    /// @notice Owner configuration for stake and timing parameters
-    /// @dev Only callable by contract owner
+    /// @notice Owner configuration for timing and committee size
     function setParameters(
-        uint256 validatorStakeRequirement,
-        uint256 validatorStakePercentage,
-        uint256 validatorRewardPercentage,
-        uint256 validatorSlashingPercentage,
-        uint256 commitDuration,
-        uint256 revealDuration,
-        uint256 reviewWindow,
-        uint256 resolveGracePeriod,
+        uint256 commitWindow,
+        uint256 revealWindow,
         uint256 validatorsPerJob
     ) external;
 }
-
