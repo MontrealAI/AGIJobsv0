@@ -21,29 +21,29 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
-## Local v2 Deployment Addresses
+## Module Responsibilities & Deployed Addresses
 
-| Contract | Address |
-| --- | --- |
-| JobRegistry | 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 |
-| ValidationModule | 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 |
-| StakeManager | 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 |
-| ReputationEngine | 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 |
-| DisputeModule | 0x0165878A594ca255338adfa4d48449f69242Eb8F |
-| CertificateNFT | 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 |
+| Module | Responsibility | Local Address |
+| --- | --- | --- |
+| JobRegistry | job lifecycle and escrow | 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 |
+| ValidationModule | commit–reveal validator voting | 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 |
+| StakeManager | custody of stakes and payouts | 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 |
+| ReputationEngine | tracks reputation and blacklists | 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 |
+| DisputeModule | optional appeal layer | 0x0165878A594ca255338adfa4d48449f69242Eb8F |
+| CertificateNFT | issues completion NFTs | 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 |
 
-## Quick Start (Etherscan)
+## Etherscan Walk-through
 
-The flow below shows how each role interacts with the v2 modules using a block explorer. All functions are available in the **Write** tab and accept human‑readable `uint256` values (wei for tokens, seconds for timing).
+Interact with the deployment directly from a block explorer using the **Write** tab:
 
-1. **Owner** wires modules with `JobRegistry.setModules(...)` and configures parameters via each module’s `set...` functions.
+1. **Owner** wires modules with `JobRegistry.setModules(...)` and tunes parameters via owner-only `set...` functions.
 2. **Agents and validators** stake $AGI through `StakeManager.depositStake`.
-3. **Employer** posts work by calling `JobRegistry.createJob`, which escrows the reward.
-4. **Agent** claims the job with `JobRegistry.applyForJob` and later submits the result via `JobRegistry.completeJob`.
-5. **Selected validators** commit and reveal votes using `ValidationModule.commitVote` then `revealVote`.
-6. After the reveal window, anyone may call `ValidationModule.tally`; subsequently `JobRegistry.finalize` releases rewards or `raiseDispute` escalates to the `DisputeModule`.
+3. **Employer** posts work with `JobRegistry.createJob`, escrowing the reward.
+4. **Agent** applies using `JobRegistry.applyForJob` and submits results via `JobRegistry.completeJob`.
+5. **Validators** commit and reveal votes through `ValidationModule.commitVote` and `revealVote`.
+6. After reveal, anyone may call `ValidationModule.tally`; `JobRegistry.finalize` releases rewards or `raiseDispute` escalates to `DisputeModule`.
 
-These steps can be followed entirely through a browser without custom tooling.
+No custom tooling is required—everything happens in the browser.
 
 ## AGI Token
 
@@ -121,7 +121,9 @@ graph LR
 
 A more detailed incentive flow chart appears in [docs/architecture-v2.md#incentive-flow-diagram](docs/architecture-v2.md#incentive-flow-diagram).
 
-Key owner-configurable entry points include:
+### Owner Controls
+
+Each module exposes owner-only functions for updating parameters:
 
 - `JobRegistry.setJobParameters(reward, stake)`
 - `ValidationModule.setParameters(...)` for stake, reward and timing settings
@@ -130,11 +132,11 @@ Key owner-configurable entry points include:
 - `CertificateNFT.setBaseURI(uri)`
 - `DisputeModule.setAppealParameters(appealFee, jurySize)`
 
-These functions can all be invoked directly through block explorers, enabling non‑technical governance while retaining immutable code.
+These calls can be made directly on Etherscan, giving non‑technical governors fine‑grained control without redeploying contracts.
 
-### Incentive Model & Statistical‑Physics Analogy
+### Incentive Model & Gibbs Free Energy Analogy
 
-The protocol’s economics are tuned so that honest behavior minimises each participant’s expected loss. Slashing percentages exceed potential rewards and the commit‑reveal process injects entropy, making dishonest strategies energetically costly. In thermodynamic terms the system seeks the minimum free energy \(G = H - T S\): stake losses raise the enthalpy \(H\), commit‑reveal randomness increases entropy \(S\), and owner‑set parameters act as the temperature \(T\) controlling the equilibrium.
+The protocol’s economics are tuned so that honest behaviour minimises each participant’s expected loss. Slashing percentages exceed potential rewards while the commit‑reveal process injects entropy, making dishonest strategies energetically costly. In thermodynamic terms the network tends toward the minimum Gibbs free energy \(G = H - T S\): stake losses raise the enthalpy \(H\), commit‑reveal randomness increases entropy \(S\), and owner‑set parameters serve as the temperature \(T\) that steers equilibrium.
 
 | Validator \\ Agent | Honest | Cheat |
 | --- | --- | --- |
@@ -144,7 +146,7 @@ The protocol’s economics are tuned so that honest behavior minimises each part
 Honesty therefore represents the ground state of the system.
 
 
-## Etherscan Walk-throughs
+## Role-Specific Etherscan Walk-throughs
 
 Use a block explorer like Etherscan—no coding required. Always verify addresses on at least two explorers before sending transactions.
 
