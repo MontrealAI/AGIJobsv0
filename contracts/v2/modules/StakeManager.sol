@@ -6,11 +6,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IStakeManager} from "../interfaces/IStakeManager.sol";
+import {IStakeManagerModule} from "../interfaces/IStakeManagerModule.sol";
 
 /// @title StakeManager (module)
 /// @notice Minimal stake escrow with role based accounting and slashing.
-contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
+contract StakeManager is Ownable, ReentrancyGuard, IStakeManagerModule {
     using SafeERC20 for IERC20;
 
     IERC20 public token; // staking token
@@ -67,7 +67,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         emit StakeDeposited(msg.sender, role, amount);
     }
 
-    /// @inheritdoc IStakeManager
+    /// @inheritdoc IStakeManagerModule
     function depositStake(Role role, uint256 amount) external override {
         deposit(role, amount);
     }
@@ -81,7 +81,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         emit StakeWithdrawn(msg.sender, role, amount);
     }
 
-    /// @inheritdoc IStakeManager
+    /// @inheritdoc IStakeManagerModule
     function withdrawStake(Role role, uint256 amount) external override {
         withdraw(role, amount);
     }
@@ -143,7 +143,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
 
     // ------------------------- view helpers -------------------------
 
-    /// @inheritdoc IStakeManager
+      /// @inheritdoc IStakeManagerModule
     function stakeOf(address user, Role role)
         external
         view
@@ -153,7 +153,7 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         return _stakes[user][role];
     }
 
-    /// @inheritdoc IStakeManager
+      /// @inheritdoc IStakeManagerModule
     function lockedStakeOf(address user, Role role)
         external
         view

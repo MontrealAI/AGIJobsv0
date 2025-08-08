@@ -2,57 +2,18 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-
-interface IValidationModule {
-    function validate(uint256 jobId) external view returns (bool);
-}
-
-interface IStakeManager {
-    function lockReward(address from, uint256 amount) external;
-    function payReward(address to, uint256 amount) external;
-    function slash(address user, address recipient, uint256 amount) external;
-    function releaseStake(address user, uint256 amount) external;
-    function stakes(address user) external view returns (uint256);
-}
-
-interface IReputationEngine {
-    function add(address user, uint256 amount) external;
-    function subtract(address user, uint256 amount) external;
-}
-
-interface IDisputeModule {
-    function appeal(uint256 jobId) external payable;
-    function resolve(uint256 jobId, bool employerWins) external;
-}
-
-interface ICertificateNFT {
-    function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
-}
+import {IValidationModule} from "./interfaces/IValidationModule.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
+import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
+import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 
 /// @title JobRegistry
 /// @notice Minimal registry coordinating job lifecycle and external modules.
-contract JobRegistry is Ownable {
-    enum State {
-        None,
-        Created,
-        Applied,
-        Completed,
-        Disputed,
-        Finalized,
-        Cancelled
-    }
-
-    struct Job {
-        address employer;
-        address agent;
-        uint128 reward;
-        uint96 stake;
-        State state;
-        bool success;
-    }
-
+contract JobRegistry is Ownable, IJobRegistry {
     uint256 public nextJobId;
-    mapping(uint256 => Job) public jobs;
+    mapping(uint256 => IJobRegistry.Job) private _jobs;
 
     IValidationModule public validationModule;
     IStakeManager public stakeManager;
@@ -63,31 +24,16 @@ contract JobRegistry is Ownable {
     uint128 public jobReward;
     uint96 public jobStake;
 
-    // module configuration events
-    event ValidationModuleUpdated(address module);
-    event StakeManagerUpdated(address manager);
-    event ReputationEngineUpdated(address engine);
-    event DisputeModuleUpdated(address module);
-    event CertificateNFTUpdated(address nft);
-
-    // job parameter template event
-    event JobParametersUpdated(uint256 reward, uint256 stake);
-
-    // job lifecycle events
-    event JobCreated(
-        uint256 indexed jobId,
-        address indexed employer,
-        address indexed agent,
-        uint256 reward,
-        uint256 stake
-    );
-    event AgentApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, bool success);
-    event JobFinalized(uint256 indexed jobId, bool success);
+    // additional events not defined in interface
     event JobCancelled(uint256 indexed jobId);
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
 
     constructor(address owner) Ownable(owner) {}
+
+    /// @inheritdoc IJobRegistry
+    function jobs(uint256 jobId) external view override returns (IJobRegistry.Job memory) {
+        return _jobs[jobId];
+    }
 
     // ---------------------------------------------------------------------
     // Owner configuration
@@ -98,7 +44,7 @@ contract JobRegistry is Ownable {
         IReputationEngine _reputation,
         IDisputeModule _dispute,
         ICertificateNFT _certNFT
-    ) external onlyOwner {
+    ) external override onlyOwner {
         require(address(_validation) != address(0), "validation");
         require(address(_stakeMgr) != address(0), "stake");
         require(address(_reputation) != address(0), "reputation");
@@ -117,7 +63,7 @@ contract JobRegistry is Ownable {
         emit CertificateNFTUpdated(address(_certNFT));
     }
 
-    function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
+    function setJobParameters(uint256 reward, uint256 stake) external override onlyOwner {
         jobReward = uint128(reward);
         jobStake = uint96(stake);
         emit JobParametersUpdated(reward, stake);
@@ -126,15 +72,15 @@ contract JobRegistry is Ownable {
     // ---------------------------------------------------------------------
     // Job lifecycle
     // ---------------------------------------------------------------------
-    function createJob() external returns (uint256 jobId) {
+    function createJob() external override returns (uint256 jobId) {
         require(jobReward > 0 || jobStake > 0, "params not set");
         jobId = ++nextJobId;
-        jobs[jobId] = Job({
+        _jobs[jobId] = IJobRegistry.Job({
             employer: msg.sender,
             agent: address(0),
             reward: jobReward,
             stake: jobStake,
-            state: State.Created,
+            state: IJobRegistry.State.Created,
             success: false
         });
         if (address(stakeManager) != address(0) && jobReward > 0) {
@@ -149,9 +95,9 @@ contract JobRegistry is Ownable {
         );
     }
 
-    function applyForJob(uint256 jobId) external {
-        Job storage job = jobs[jobId];
-        require(job.state == State.Created, "not open");
+    function applyForJob(uint256 jobId) external override {
+        IJobRegistry.Job storage job = _jobs[jobId];
+        require(job.state == IJobRegistry.State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             require(
                 stakeManager.stakes(msg.sender) >= uint256(job.stake),
@@ -159,18 +105,18 @@ contract JobRegistry is Ownable {
             );
         }
         job.agent = msg.sender;
-        job.state = State.Applied;
+        job.state = IJobRegistry.State.Applied;
         emit AgentApplied(jobId, msg.sender);
     }
 
     /// @notice Agent submits job result; validation outcome stored.
-    function submit(uint256 jobId) public {
-        Job storage job = jobs[jobId];
-        require(job.state == State.Applied, "invalid state");
+    function submit(uint256 jobId) public override {
+        IJobRegistry.Job storage job = _jobs[jobId];
+        require(job.state == IJobRegistry.State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
-        job.state = State.Completed;
+        job.state = IJobRegistry.State.Completed;
         emit JobSubmitted(jobId, outcome);
     }
 
@@ -180,10 +126,10 @@ contract JobRegistry is Ownable {
 
     /// @notice Agent disputes a failed job outcome.
     function raiseDispute(uint256 jobId) public payable {
-        Job storage job = jobs[jobId];
-        require(job.state == State.Completed && !job.success, "cannot dispute");
+        IJobRegistry.Job storage job = _jobs[jobId];
+        require(job.state == IJobRegistry.State.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
-        job.state = State.Disputed;
+        job.state = IJobRegistry.State.Disputed;
         if (address(disputeModule) != address(0)) {
             disputeModule.appeal{value: msg.value}(jobId);
         } else {
@@ -192,24 +138,24 @@ contract JobRegistry is Ownable {
         emit DisputeRaised(jobId, msg.sender);
     }
 
-    function dispute(uint256 jobId) external payable {
+    function dispute(uint256 jobId) external payable override {
         raiseDispute(jobId);
     }
 
     /// @notice Owner resolves a dispute, setting the final outcome.
-    function resolveDispute(uint256 jobId, bool employerWins) external {
+    function resolveDispute(uint256 jobId, bool employerWins) external override {
         require(msg.sender == address(disputeModule), "only dispute");
-        Job storage job = jobs[jobId];
-        require(job.state == State.Disputed, "no dispute");
+        IJobRegistry.Job storage job = _jobs[jobId];
+        require(job.state == IJobRegistry.State.Disputed, "no dispute");
         job.success = !employerWins;
-        job.state = State.Completed;
+        job.state = IJobRegistry.State.Completed;
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
-    function finalize(uint256 jobId) external {
-        Job storage job = jobs[jobId];
-        require(job.state == State.Completed, "not ready");
-        job.state = State.Finalized;
+    function finalize(uint256 jobId) external override {
+        IJobRegistry.Job storage job = _jobs[jobId];
+        require(job.state == IJobRegistry.State.Completed, "not ready");
+        job.state = IJobRegistry.State.Finalized;
         if (job.success) {
             if (address(stakeManager) != address(0)) {
                 if (job.reward > 0) {
@@ -246,14 +192,14 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Cancel a job before completion and refund the employer.
-    function cancelJob(uint256 jobId) external {
-        Job storage job = jobs[jobId];
+    function cancelJob(uint256 jobId) external override {
+        IJobRegistry.Job storage job = _jobs[jobId];
         require(
-            job.state == State.Created || job.state == State.Applied,
+            job.state == IJobRegistry.State.Created || job.state == IJobRegistry.State.Applied,
             "cannot cancel"
         );
         require(msg.sender == job.employer, "only employer");
-        job.state = State.Cancelled;
+        job.state = IJobRegistry.State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             stakeManager.payReward(job.employer, uint256(job.reward));
         }

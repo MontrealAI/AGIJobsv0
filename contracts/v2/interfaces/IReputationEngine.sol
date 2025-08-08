@@ -6,6 +6,8 @@ pragma solidity ^0.8.25;
 interface IReputationEngine {
     event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
     event Blacklisted(address indexed user, bool status);
+    event CallerUpdated(address indexed caller, bool allowed);
+    event ThresholdUpdated(uint256 newThreshold);
 
     function add(address user, uint256 amount) external;
     function subtract(address user, uint256 amount) external;

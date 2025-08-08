@@ -21,8 +21,11 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         _;
     }
 
+    event JobRegistryUpdated(address registry);
+
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
+        emit JobRegistryUpdated(registry);
     }
 
     function mint(
