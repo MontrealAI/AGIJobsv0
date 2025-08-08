@@ -86,6 +86,7 @@ contract JobRegistry is Ownable {
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
 
     constructor(address owner) Ownable(owner) {}
 
@@ -203,6 +204,7 @@ contract JobRegistry is Ownable {
         require(job.state == State.Disputed, "no dispute");
         job.success = !employerWins;
         job.state = State.Completed;
+        emit DisputeResolved(jobId, employerWins);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
