@@ -630,6 +630,21 @@ graph TD
 - In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
 - Confirm emitted events to ensure configuration changes took effect.
  
+Role-based quick steps:
+
+**Employers**
+1. Post work through JobRegistry `createJob(reward, uri)` after approving AGI.
+2. Once validation succeeds, call `finalize(jobId)` to pay the agent.
+
+**Agents**
+1. Stake tokens in StakeManager via `depositStake(amount)`.
+2. Join a task with JobRegistry `applyForJob(jobId)` and submit results using `completeJob(jobId, data)`.
+
+**Validators**
+1. Stake via StakeManager, then watch for selection.
+2. Cast a commit with ValidationModule `commitValidation(jobId, hash)` and later reveal via `revealValidation(jobId, approve, salt)`.
+3. If a vote period lapses without resolution, anyone may call `finalize(jobId)` on the ValidationModule.
+
 For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
 See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and interface definitions; the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
