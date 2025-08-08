@@ -125,7 +125,7 @@ Key owner-configurable entry points include:
 
 - `JobRegistry.setJobParameters(reward, stake)`
 - `ValidationModule.setParameters(...)` for stake, reward and timing settings
-- `StakeManager.setStakeParameters(...)` and `setToken(token)`
+- `StakeManager.setToken(token)`, `setMinStake(amount)`, `setSlashingPercentages(empPct, treasPct)`, `setTreasury(addr)`
 - `ReputationEngine.setCaller(caller, allowed)`, `setThreshold(threshold)` and `setBlacklist(user, status)`
 - `CertificateNFT.setBaseURI(uri)`
 - `DisputeModule.setAppealParameters(appealFee, jurySize)`
@@ -574,7 +574,7 @@ The v2 release decomposes the marketplace into a suite of immutable modules, eac
 | --- | --- |
 | `JobRegistry` | `setModules`, `setJobParameters` |
 | `ValidationModule` | `setParameters` |
-| `StakeManager` | `setStakeParameters`, `setToken` |
+| `StakeManager` | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury` |
 | `ReputationEngine` | `setCaller`, `setThreshold`, `setBlacklist` |
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setJobRegistry` |

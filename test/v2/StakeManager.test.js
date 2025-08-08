@@ -18,9 +18,9 @@ describe("StakeManager", function () {
       owner.address,
       treasury.address
     );
-    await stakeManager
-      .connect(owner)
-      .setStakeParameters(0, 50, 50, treasury.address);
+    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setSlashingPercentages(50, 50);
+    await stakeManager.connect(owner).setTreasury(treasury.address);
   });
 
   it("handles staking, job escrow and slashing", async () => {
@@ -38,11 +38,11 @@ describe("StakeManager", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), 300);
     await stakeManager
       .connect(owner)
-      .lockPayout(jobId, employer.address, 300);
+      .lockReward(jobId, employer.address, 300);
 
     await expect(
-      stakeManager.connect(owner).releasePayout(jobId, user.address, 200)
-    ).to.emit(stakeManager, "PayoutReleased").withArgs(jobId, user.address, 200);
+      stakeManager.connect(owner).releaseReward(jobId, user.address, 200)
+    ).to.emit(stakeManager, "RewardReleased").withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 
     await expect(
