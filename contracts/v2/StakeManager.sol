@@ -2,123 +2,76 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {IStakeManager} from "./interfaces/IStakeManager.sol";
-
 /// @title StakeManager
-/// @notice Handles staking for agents and validators with role-based locking and slashing
-contract StakeManager is IStakeManager, Ownable, ReentrancyGuard {
+/// @notice Minimal staking and escrow contract for job payouts
+contract StakeManager is Ownable {
     using SafeERC20 for IERC20;
 
+    /// @notice ERC20 token used for staking and payouts
     IERC20 public token;
-    address public treasury;
 
-    // percentage settings
-    uint256 public agentStakePercentage = 20; // 20% of payout
-    uint256 public validatorStakePercentage = 10; // 10% of payout
-    uint256 public agentSlashingPercentage = 50; // 50% of locked stake
-    uint256 public validatorSlashingPercentage = 50; // 50% of locked stake
+    /// @notice Amount staked by each user
+    mapping(address => uint256) public stakes;
 
-    // user => role => amount
-    mapping(address => mapping(Role => uint256)) private _stakes;
-    mapping(address => mapping(Role => uint256)) private _locked;
+    /// @notice Emitted when a user deposits stake
+    event StakeDeposited(address indexed user, uint256 amount);
 
-    constructor(IERC20 _token, address _treasury, address owner) Ownable(owner) {
+    /// @notice Emitted when a user withdraws stake
+    event StakeWithdrawn(address indexed user, uint256 amount);
+
+    /// @notice Emitted when job funds are released
+    event FundsReleased(address indexed to, uint256 amount);
+
+    /// @notice Emitted when stake is slashed
+    event StakeSlashed(address indexed user, address indexed recipient, uint256 amount);
+
+    /// @notice Initialize contract with token and owner
+    constructor(IERC20 _token, address owner) Ownable(owner) {
         token = _token;
-        treasury = _treasury;
-        emit TokenUpdated(address(_token));
     }
 
-    /// @notice Update the ERC20 token used for staking and rewards
-    function setToken(address newToken) external onlyOwner {
-        token = IERC20(newToken);
-        emit TokenUpdated(newToken);
+    /// @notice Update the ERC20 token used for staking and payouts
+    function setToken(IERC20 newToken) external onlyOwner {
+        token = newToken;
     }
 
-    /// @notice Update stake and slashing parameters
-    function setStakeParameters(
-        uint256 _agentStakePct,
-        uint256 _validatorStakePct,
-        uint256 _agentSlashPct,
-        uint256 _validatorSlashPct
-    ) external onlyOwner {
-        agentStakePercentage = _agentStakePct;
-        validatorStakePercentage = _validatorStakePct;
-        agentSlashingPercentage = _agentSlashPct;
-        validatorSlashingPercentage = _validatorSlashPct;
-        emit ParametersUpdated();
-    }
-
-    /// @notice Deposit stake for the caller under a specific role
-    function depositStake(Role role, uint256 amount) external nonReentrant {
+    /// @notice Deposit stake for the caller
+    function depositStake(uint256 amount) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        _stakes[msg.sender][role] += amount;
-        emit StakeDeposited(msg.sender, role, amount);
+        stakes[msg.sender] += amount;
+        emit StakeDeposited(msg.sender, amount);
     }
 
     /// @notice Withdraw stake for the caller
-    function withdrawStake(Role role, uint256 amount) external nonReentrant {
-        uint256 available = _stakes[msg.sender][role] - _locked[msg.sender][role];
-        require(available >= amount, "insufficient stake");
-        _stakes[msg.sender][role] -= amount;
+    function withdrawStake(uint256 amount) external {
+        uint256 staked = stakes[msg.sender];
+        require(staked >= amount, "insufficient stake");
+        stakes[msg.sender] = staked - amount;
         token.safeTransfer(msg.sender, amount);
-        emit StakeWithdrawn(msg.sender, role, amount);
+        emit StakeWithdrawn(msg.sender, amount);
     }
 
-    /// @notice Lock stake for a user and role based on payout
-    function lockStake(address user, Role role, uint256 payout)
-        external
-        onlyOwner
-        nonReentrant
-    {
-        uint256 pct =
-            role == Role.Agent ? agentStakePercentage : validatorStakePercentage;
-        uint256 required = (payout * pct) / 100;
-        uint256 available = _stakes[user][role] - _locked[user][role];
-        require(available >= required, "insufficient stake");
-        _locked[user][role] += required;
-        emit StakeLocked(user, role, required);
+    /// @notice Lock job funds from an employer
+    function lockJobFunds(address from, uint256 amount) external onlyOwner {
+        token.safeTransferFrom(from, address(this), amount);
     }
 
-    /// @notice Slash locked stake and distribute to employer and treasury
-    function slash(
-        address user,
-        Role role,
-        uint256 payout,
-        address employer
-    ) external onlyOwner nonReentrant {
-        uint256 stakePct =
-            role == Role.Agent ? agentStakePercentage : validatorStakePercentage;
-        uint256 slashPct =
-            role == Role.Agent
-                ? agentSlashingPercentage
-                : validatorSlashingPercentage;
-        uint256 required = (payout * stakePct) / 100;
-        require(_locked[user][role] >= required, "insufficient locked");
-        _locked[user][role] -= required;
-        uint256 penalty = (required * slashPct) / 100;
-        _stakes[user][role] -= penalty;
-        uint256 employerShare = penalty / 2;
-        token.safeTransfer(employer, employerShare);
-        token.safeTransfer(treasury, penalty - employerShare);
-        emit StakeSlashed(user, role, penalty, employer, treasury);
+    /// @notice Release locked job funds to a recipient
+    function releaseJobFunds(address to, uint256 amount) external onlyOwner {
+        token.safeTransfer(to, amount);
+        emit FundsReleased(to, amount);
     }
 
-    /// @notice Get total stake for a user and role
-    function stakeOf(address user, Role role) external view returns (uint256) {
-        return _stakes[user][role];
-    }
-
-    /// @notice Get locked stake for a user and role
-    function lockedStakeOf(address user, Role role)
-        external
-        view
-        returns (uint256)
-    {
-        return _locked[user][role];
+    /// @notice Slash stake from a user and send to a recipient
+    function slash(address user, address recipient, uint256 amount) external onlyOwner {
+        uint256 staked = stakes[user];
+        require(staked >= amount, "insufficient stake");
+        stakes[user] = staked - amount;
+        token.safeTransfer(recipient, amount);
+        emit StakeSlashed(user, recipient, amount);
     }
 }
 
