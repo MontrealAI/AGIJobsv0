@@ -45,10 +45,10 @@ contract JobRegistry is Ownable {
     struct Job {
         address employer;
         address agent;
-        uint256 reward;
-        uint256 stake;
-        bool success;
+        uint128 reward;
+        uint96 stake;
         State state;
+        bool success;
     }
 
     uint256 public nextJobId;
@@ -60,8 +60,8 @@ contract JobRegistry is Ownable {
     IDisputeModule public disputeModule;
     ICertificateNFT public certificateNFT;
 
-    uint256 public jobReward;
-    uint256 public jobStake;
+    uint128 public jobReward;
+    uint96 public jobStake;
 
     // module configuration events
     event ValidationModuleUpdated(address module);
@@ -92,31 +92,6 @@ contract JobRegistry is Ownable {
     // ---------------------------------------------------------------------
     // Owner configuration
     // ---------------------------------------------------------------------
-    function setValidationModule(IValidationModule module) external onlyOwner {
-        validationModule = module;
-        emit ValidationModuleUpdated(address(module));
-    }
-
-    function setStakeManager(IStakeManager manager) external onlyOwner {
-        stakeManager = manager;
-        emit StakeManagerUpdated(address(manager));
-    }
-
-    function setReputationEngine(IReputationEngine engine) external onlyOwner {
-        reputationEngine = engine;
-        emit ReputationEngineUpdated(address(engine));
-    }
-
-    function setDisputeModule(IDisputeModule module) external onlyOwner {
-        disputeModule = module;
-        emit DisputeModuleUpdated(address(module));
-    }
-
-    function setCertificateNFT(ICertificateNFT nft) external onlyOwner {
-        certificateNFT = nft;
-        emit CertificateNFTUpdated(address(nft));
-    }
-
     function setModules(
         IValidationModule _validation,
         IStakeManager _stakeMgr,
@@ -124,6 +99,12 @@ contract JobRegistry is Ownable {
         IDisputeModule _dispute,
         ICertificateNFT _certNFT
     ) external onlyOwner {
+        require(address(_validation) != address(0), "validation");
+        require(address(_stakeMgr) != address(0), "stake");
+        require(address(_reputation) != address(0), "reputation");
+        require(address(_dispute) != address(0), "dispute");
+        require(address(_certNFT) != address(0), "nft");
+
         validationModule = _validation;
         stakeManager = _stakeMgr;
         reputationEngine = _reputation;
@@ -137,8 +118,8 @@ contract JobRegistry is Ownable {
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
-        jobReward = reward;
-        jobStake = stake;
+        jobReward = uint128(reward);
+        jobStake = uint96(stake);
         emit JobParametersUpdated(reward, stake);
     }
 
@@ -153,13 +134,19 @@ contract JobRegistry is Ownable {
             agent: address(0),
             reward: jobReward,
             stake: jobStake,
-            success: false,
-            state: State.Created
+            state: State.Created,
+            success: false
         });
         if (address(stakeManager) != address(0) && jobReward > 0) {
-            stakeManager.lockReward(msg.sender, jobReward);
+            stakeManager.lockReward(msg.sender, uint256(jobReward));
         }
-        emit JobCreated(jobId, msg.sender, address(0), jobReward, jobStake);
+        emit JobCreated(
+            jobId,
+            msg.sender,
+            address(0),
+            uint256(jobReward),
+            uint256(jobStake)
+        );
     }
 
     function applyForJob(uint256 jobId) external {
@@ -167,7 +154,7 @@ contract JobRegistry is Ownable {
         require(job.state == State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             require(
-                stakeManager.stakes(msg.sender) >= job.stake,
+                stakeManager.stakes(msg.sender) >= uint256(job.stake),
                 "stake missing"
             );
         }
@@ -226,10 +213,10 @@ contract JobRegistry is Ownable {
         if (job.success) {
             if (address(stakeManager) != address(0)) {
                 if (job.reward > 0) {
-                    stakeManager.payReward(job.agent, job.reward);
+                    stakeManager.payReward(job.agent, uint256(job.reward));
                 }
                 if (job.stake > 0) {
-                    stakeManager.releaseStake(job.agent, job.stake);
+                    stakeManager.releaseStake(job.agent, uint256(job.stake));
                 }
             }
             if (address(reputationEngine) != address(0)) {
@@ -241,10 +228,14 @@ contract JobRegistry is Ownable {
         } else {
             if (address(stakeManager) != address(0)) {
                 if (job.reward > 0) {
-                    stakeManager.payReward(job.employer, job.reward);
+                    stakeManager.payReward(job.employer, uint256(job.reward));
                 }
                 if (job.stake > 0) {
-                    stakeManager.slash(job.agent, job.employer, job.stake);
+                    stakeManager.slash(
+                        job.agent,
+                        job.employer,
+                        uint256(job.stake)
+                    );
                 }
             }
             if (address(reputationEngine) != address(0)) {
@@ -264,7 +255,7 @@ contract JobRegistry is Ownable {
         require(msg.sender == job.employer, "only employer");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
-            stakeManager.payReward(job.employer, job.reward);
+            stakeManager.payReward(job.employer, uint256(job.reward));
         }
         emit JobCancelled(jobId);
     }
