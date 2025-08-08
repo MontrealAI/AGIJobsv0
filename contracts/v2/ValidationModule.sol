@@ -48,6 +48,35 @@ contract ValidationModule is IValidationModule, Ownable {
     event ReputationEngineUpdated(address engine);
     event ValidatorSelectionSeedUpdated(bytes32 newSeed);
 
+    /// @notice Error thrown when validators already selected
+    error AlreadySelected();
+    /// @notice Error thrown when not enough validators are available
+    error InsufficientValidators();
+    /// @notice Error thrown when commit phase is closed
+    error CommitClosed();
+    /// @notice Error thrown when caller is not a chosen validator
+    error NotValidator();
+    /// @notice Error thrown when vote already committed
+    error AlreadyCommitted();
+    /// @notice Error thrown when commit phase still active
+    error CommitPhase();
+    /// @notice Error thrown when reveal phase is closed
+    error RevealClosed();
+    /// @notice Error thrown when no prior commitment exists
+    error NoCommit();
+    /// @notice Error thrown when vote already revealed
+    error AlreadyRevealed();
+    /// @notice Error thrown when reveal data does not match commitment
+    error InvalidReveal();
+    /// @notice Error thrown when validator has no stake
+    error NoStake();
+    /// @notice Error thrown when results already tallied
+    error AlreadyTallied();
+    /// @notice Error thrown when reveal window still active
+    error RevealPending();
+    /// @notice Error thrown when parameter array lengths mismatch
+    error LengthMismatch();
+
     constructor(
         IJobRegistry _jobRegistry,
         IStakeManager _stakeManager,
@@ -82,11 +111,11 @@ contract ValidationModule is IValidationModule, Ownable {
         returns (address[] memory selected)
     {
         Round storage r = rounds[jobId];
-        require(r.validators.length == 0, "already selected");
+        if (r.validators.length != 0) revert AlreadySelected();
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 count = _validatorCount(job.reward);
-        require(count > 0, "validators");
+        if (count == 0) revert InsufficientValidators();
 
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
@@ -106,7 +135,7 @@ contract ValidationModule is IValidationModule, Ownable {
                 m++;
             }
         }
-        require(m >= count, "insufficient validators");
+        if (m < count) revert InsufficientValidators();
 
         bytes32 seed = keccak256(
             abi.encodePacked(blockhash(block.number - 1), jobId, validatorSelectionSeed)
@@ -147,12 +176,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function commitVote(uint256 jobId, bytes32 commitHash) external override {
         Round storage r = rounds[jobId];
-        require(
-            r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
-            "commit closed"
-        );
-        require(_isValidator(jobId, msg.sender), "not validator");
-        require(commitments[jobId][msg.sender] == bytes32(0), "already committed");
+        if (r.commitDeadline == 0 || block.timestamp > r.commitDeadline) revert CommitClosed();
+        if (!_isValidator(jobId, msg.sender)) revert NotValidator();
+        if (commitments[jobId][msg.sender] != bytes32(0)) revert AlreadyCommitted();
 
         commitments[jobId][msg.sender] = commitHash;
         emit VoteCommitted(jobId, msg.sender, commitHash);
@@ -161,15 +187,15 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function revealVote(uint256 jobId, bool approve, bytes32 salt) external override {
         Round storage r = rounds[jobId];
-        require(block.timestamp > r.commitDeadline, "commit phase");
-        require(block.timestamp <= r.revealDeadline, "reveal closed");
+        if (block.timestamp <= r.commitDeadline) revert CommitPhase();
+        if (block.timestamp > r.revealDeadline) revert RevealClosed();
         bytes32 commitHash = commitments[jobId][msg.sender];
-        require(commitHash != bytes32(0), "no commit");
-        require(!revealed[jobId][msg.sender], "already revealed");
-        require(keccak256(abi.encode(approve, salt)) == commitHash, "invalid reveal");
+        if (commitHash == bytes32(0)) revert NoCommit();
+        if (revealed[jobId][msg.sender]) revert AlreadyRevealed();
+        if (keccak256(abi.encode(approve, salt)) != commitHash) revert InvalidReveal();
 
         uint256 stake = validatorStakes[jobId][msg.sender];
-        require(stake > 0, "stake");
+        if (stake == 0) revert NoStake();
         revealed[jobId][msg.sender] = true;
         votes[jobId][msg.sender] = approve;
         if (approve) r.approvals += stake; else r.rejections += stake;
@@ -180,8 +206,8 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function tally(uint256 jobId) external override returns (bool success) {
         Round storage r = rounds[jobId];
-        require(!r.tallied, "tallied");
-        require(block.timestamp > r.revealDeadline, "reveal pending");
+        if (r.tallied) revert AlreadyTallied();
+        if (block.timestamp <= r.revealDeadline) revert RevealPending();
 
         success = r.approvals >= r.rejections;
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
@@ -218,10 +244,7 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256[] calldata _rewardTiers,
         uint256[] calldata _validatorsPerTier
     ) external override onlyOwner {
-        require(
-            _rewardTiers.length == _validatorsPerTier.length,
-            "length mismatch"
-        );
+        if (_rewardTiers.length != _validatorsPerTier.length) revert LengthMismatch();
         commitWindow = _commitWindow;
         revealWindow = _revealWindow;
 

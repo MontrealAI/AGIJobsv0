@@ -42,6 +42,15 @@ contract StakeManager is Ownable {
     );
     event PayoutReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
 
+    /// @notice Error thrown when total slashing percentage exceeds 100
+    error InvalidPercentage();
+    /// @notice Error thrown when amount is zero
+    error AmountZero();
+    /// @notice Error thrown when stake is insufficient
+    error InsufficientStake();
+    /// @notice Error thrown when escrow balance is insufficient
+    error InsufficientEscrow();
+
     constructor(IERC20 _token, address owner, address _treasury) Ownable(owner) {
         token = _token;
         treasury = _treasury;
@@ -51,19 +60,20 @@ contract StakeManager is Ownable {
     // owner functions
     // ---------------------------------------------------------------
 
-    /// @notice update the staking/payout token
+    /// @notice Update the staking/payout token
+    /// @param newToken Address of the new ERC20 token
     function setToken(IERC20 newToken) external onlyOwner {
         token = newToken;
     }
 
-    /// @notice set staking parameters and slashing percentages
+    /// @notice Set staking parameters and slashing percentages
     function setStakeParameters(
         uint256 _minStake,
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
         address _treasury
     ) external onlyOwner {
-        require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
+        if (_employerSlashPct + _treasurySlashPct > 100) revert InvalidPercentage();
         minStake = _minStake;
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
@@ -74,19 +84,21 @@ contract StakeManager is Ownable {
     // staking logic
     // ---------------------------------------------------------------
 
-    /// @notice deposit stake for caller
+    /// @notice Deposit stake for caller
+    /// @param amount Amount to deposit
     function depositStake(uint256 amount) external {
-        require(amount > 0, "amount");
+        if (amount == 0) revert AmountZero();
         uint256 newStake = stakes[msg.sender] + amount;
         stakes[msg.sender] = newStake;
         token.safeTransferFrom(msg.sender, address(this), amount);
         emit StakeDeposited(msg.sender, amount);
     }
 
-    /// @notice withdraw available stake
+    /// @notice Withdraw available stake
+    /// @param amount Amount to withdraw
     function withdrawStake(uint256 amount) external {
         uint256 staked = stakes[msg.sender];
-        require(staked >= amount, "stake");
+        if (staked < amount) revert InsufficientStake();
         stakes[msg.sender] = staked - amount;
         token.safeTransfer(msg.sender, amount);
         emit StakeWithdrawn(msg.sender, amount);
@@ -96,7 +108,7 @@ contract StakeManager is Ownable {
     // job escrow logic
     // ---------------------------------------------------------------
 
-    /// @notice lock payout for a job from an employer
+    /// @notice Lock payout for a job from an employer
     function lockPayout(bytes32 jobId, address from, uint256 amount)
         external
         onlyOwner
@@ -105,13 +117,13 @@ contract StakeManager is Ownable {
         jobEscrows[jobId] += amount;
     }
 
-    /// @notice release locked payout to recipient
+    /// @notice Release locked payout to recipient
     function releasePayout(bytes32 jobId, address to, uint256 amount)
         external
         onlyOwner
     {
         uint256 escrow = jobEscrows[jobId];
-        require(escrow >= amount, "escrow");
+        if (escrow < amount) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - amount;
         token.safeTransfer(to, amount);
         emit PayoutReleased(jobId, to, amount);
@@ -121,10 +133,10 @@ contract StakeManager is Ownable {
     // slashing logic
     // ---------------------------------------------------------------
 
-    /// @notice slash stake from a user and distribute shares
+    /// @notice Slash stake from a user and distribute shares
     function slash(address user, uint256 amount, address employer) external onlyOwner {
         uint256 staked = stakes[user];
-        require(staked >= amount, "stake");
+        if (staked < amount) revert InsufficientStake();
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
