@@ -666,7 +666,7 @@ See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and
 - Slashing percentages exceed potential rewards so dishonest behaviour has negative expected value.
 - Employers receive a share of slashed agent stake on failures, aligning incentives across roles.
 - Commit–reveal randomness combined with owner‑tuned parameters keeps the Gibbs free energy lowest at honest participation, mirroring a Hamiltonian system where slashing raises enthalpy and randomness adds entropy so the stable state is honest behaviour.
-- For the economic rationale behind these settings, see [docs/incentive-analysis-v1.md](docs/incentive-analysis-v1.md).
+- For an expanded rationale, see [docs/incentive-analysis-v2.md](docs/incentive-analysis-v2.md).
 
 ```mermaid
 graph LR
