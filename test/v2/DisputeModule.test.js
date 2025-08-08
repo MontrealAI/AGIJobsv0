@@ -2,11 +2,11 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("DisputeModule", function () {
-  let dispute, jobRegistry, owner, employer, agent, moderator;
+  let dispute, jobRegistry, owner, employer, agent, moderator, jury;
   const appealFee = 10n;
 
   beforeEach(async () => {
-    [owner, employer, agent, moderator] = await ethers.getSigners();
+    [owner, employer, agent, moderator, jury] = await ethers.getSigners();
     const RegistryStub = await ethers.getContractFactory(
       "contracts/mocks/DisputeRegistryStub.sol:DisputeRegistryStub"
     );
@@ -17,6 +17,7 @@ describe("DisputeModule", function () {
     dispute = await Dispute.deploy(await jobRegistry.getAddress(), owner.address);
     await dispute.connect(owner).setAppealFee(appealFee);
     await dispute.connect(owner).setModerator(moderator.address);
+    await dispute.connect(owner).setJury(jury.address);
   });
 
   async function raise(jobId, agentSigner) {
@@ -32,7 +33,7 @@ describe("DisputeModule", function () {
       .appeal(await dispute.getAddress(), jobId, { value: appealFee });
   }
 
-  it("pays bond to employer when they win", async () => {
+  it("pays bond to employer when moderator rules for them", async () => {
     await raise(1, agent);
     expect(await dispute.bonds(1)).to.equal(appealFee);
     const before = await ethers.provider.getBalance(employer.address);
@@ -41,11 +42,11 @@ describe("DisputeModule", function () {
     expect(after - before).to.equal(appealFee);
   });
 
-  it("returns bond to agent when employer loses", async () => {
+  it("returns bond to agent when jury rejects employer claim", async () => {
     await raise(2, agent);
     expect(await dispute.bonds(2)).to.equal(appealFee);
     const before = await ethers.provider.getBalance(agent.address);
-    await dispute.connect(moderator).resolve(2, false);
+    await dispute.connect(jury).resolve(2, false);
     const after = await ethers.provider.getBalance(agent.address);
     expect(after - before).to.equal(appealFee);
   });

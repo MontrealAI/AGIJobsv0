@@ -8,6 +8,7 @@ interface IDisputeModule {
     event AppealResolved(uint256 indexed jobId, bool employerWins);
     event AppealFeeUpdated(uint256 fee);
     event ModeratorUpdated(address moderator);
+    event JuryUpdated(address jury);
 
     function appeal(uint256 jobId) external payable;
     function resolve(uint256 jobId, bool employerWins) external;
@@ -19,4 +20,8 @@ interface IDisputeModule {
     /// @notice Owner configuration for dispute moderator
     /// @dev Only callable by contract owner
     function setModerator(address moderator) external;
+
+    /// @notice Owner configuration for dispute jury
+    /// @dev Only callable by contract owner
+    function setJury(address jury) external;
 }
