@@ -1,4 +1,6 @@
 import { ethers } from "hardhat";
+import { writeFileSync } from "fs";
+import { join } from "path";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -63,12 +65,33 @@ async function main() {
   await nft.transferOwnership(await registry.getAddress());
   await dispute.setAppealFee(10);
 
-  console.log("JobRegistry deployed to:", await registry.getAddress());
-  console.log("ValidationModule:", await validation.getAddress());
-  console.log("StakeManager:", await stake.getAddress());
-  console.log("ReputationEngine:", await reputation.getAddress());
-  console.log("DisputeModule:", await dispute.getAddress());
-  console.log("CertificateNFT:", await nft.getAddress());
+  const addresses = {
+    jobRegistry: await registry.getAddress(),
+    validationModule: await validation.getAddress(),
+    stakeManager: await stake.getAddress(),
+    reputationEngine: await reputation.getAddress(),
+    disputeModule: await dispute.getAddress(),
+    certificateNFT: await nft.getAddress(),
+    token: await token.getAddress(),
+  };
+
+  console.log("JobRegistry deployed to:", addresses.jobRegistry);
+  console.log("ValidationModule:", addresses.validationModule);
+  console.log("StakeManager:", addresses.stakeManager);
+  console.log("ReputationEngine:", addresses.reputationEngine);
+  console.log("DisputeModule:", addresses.disputeModule);
+  console.log("CertificateNFT:", addresses.certificateNFT);
+
+  const doc = `# Deployment Addresses\n\n` +
+    `- JobRegistry: ${addresses.jobRegistry}\n` +
+    `- ValidationModule: ${addresses.validationModule}\n` +
+    `- StakeManager: ${addresses.stakeManager}\n` +
+    `- ReputationEngine: ${addresses.reputationEngine}\n` +
+    `- DisputeModule: ${addresses.disputeModule}\n` +
+    `- CertificateNFT: ${addresses.certificateNFT}\n` +
+    `- MockERC20: ${addresses.token}\n`;
+
+  writeFileSync(join(__dirname, "..", "docs", "deployment-addresses.md"), doc);
 }
 
 main().catch((error) => {
