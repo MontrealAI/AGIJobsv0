@@ -74,8 +74,8 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "AgentApplied")
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setOutcome(jobId, true);
-    await expect(registry.connect(agent).submit(jobId))
-      .to.emit(registry, "JobSubmitted")
+    await expect(registry.connect(agent).completeJob(jobId))
+      .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true);
     await expect(registry.finalize(jobId))
       .to.emit(registry, "JobFinalized")
@@ -93,7 +93,7 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false); // colluding validator
-    await registry.connect(agent).submit(jobId);
+    await registry.connect(agent).completeJob(jobId);
     await expect(
       registry.connect(agent).dispute(jobId, { value: appealFee })
     )
@@ -115,7 +115,7 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false);
-    await registry.connect(agent).submit(jobId);
+    await registry.connect(agent).completeJob(jobId);
     await expect(
       registry.connect(agent).dispute(jobId, { value: appealFee })
     )

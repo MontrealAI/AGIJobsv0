@@ -54,7 +54,7 @@ interface IJobRegistry {
         uint256 stake
     );
     event AgentApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, bool success);
+    event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
 
     // owner wiring of modules
@@ -96,10 +96,10 @@ interface IJobRegistry {
     /// @dev Reverts with {InvalidStatus} if job is not open for applications
     function applyForJob(uint256 jobId) external;
 
-    /// @notice Agent submits the result of a job for validation
-    /// @param jobId Identifier of the job being submitted
+    /// @notice Agent completes the job and triggers validation
+    /// @param jobId Identifier of the job being completed
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent} accordingly
-    function submit(uint256 jobId) external;
+    function completeJob(uint256 jobId) external;
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job

@@ -82,7 +82,7 @@ contract JobRegistry is Ownable {
         uint256 stake
     );
     event AgentApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, bool success);
+    event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
@@ -164,19 +164,15 @@ contract JobRegistry is Ownable {
         emit AgentApplied(jobId, msg.sender);
     }
 
-    /// @notice Agent submits job result; validation outcome stored.
-    function submit(uint256 jobId) public {
+    /// @notice Agent completes the job; validation outcome stored.
+    function completeJob(uint256 jobId) public {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
         job.state = State.Completed;
-        emit JobSubmitted(jobId, outcome);
-    }
-
-    function completeJob(uint256 jobId) external {
-        submit(jobId);
+        emit JobCompleted(jobId, outcome);
     }
 
     /// @notice Agent disputes a failed job outcome.
