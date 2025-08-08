@@ -1,0 +1,108 @@
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+
+describe("Job lifecycle with disputes", function () {
+  let token, stakeManager, rep, validation, nft, registry, dispute;
+  let owner, employer, agent;
+
+  const reward = 100;
+  const stake = 200;
+  const appealFee = 10;
+
+  beforeEach(async () => {
+    [owner, employer, agent] = await ethers.getSigners();
+
+    const Token = await ethers.getContractFactory("MockERC20");
+    token = await Token.deploy();
+
+    const StakeManager = await ethers.getContractFactory(
+      "contracts/StakeManager.sol:StakeManager"
+    );
+    stakeManager = await StakeManager.deploy(
+      await token.getAddress(),
+      owner.address
+    );
+
+    const Validation = await ethers.getContractFactory(
+      "contracts/ValidationModule.sol:ValidationModule"
+    );
+    validation = await Validation.deploy(owner.address);
+
+    const Rep = await ethers.getContractFactory(
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    );
+    rep = await Rep.deploy(owner.address);
+
+    const NFT = await ethers.getContractFactory(
+      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    );
+    nft = await NFT.deploy("Cert", "CERT", owner.address);
+
+    const Registry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    registry = await Registry.deploy(owner.address);
+
+    const Dispute = await ethers.getContractFactory(
+      "contracts/v2/DisputeModule.sol:DisputeModule"
+    );
+    dispute = await Dispute.deploy(await registry.getAddress(), owner.address);
+
+    await registry.connect(owner).setModules(
+      await validation.getAddress(),
+      await stakeManager.getAddress(),
+      await rep.getAddress(),
+      await dispute.getAddress(),
+      await nft.getAddress()
+    );
+    await registry.connect(owner).setJobParameters(reward, stake);
+    await dispute.connect(owner).setAppealFee(appealFee);
+    await nft.connect(owner).setJobRegistry(await registry.getAddress());
+    await rep.connect(owner).setCaller(await registry.getAddress(), true);
+    await rep.connect(owner).setThreshold(1);
+    await stakeManager.connect(owner).transferOwnership(await registry.getAddress());
+    await nft.connect(owner).transferOwnership(await registry.getAddress());
+
+    await token.mint(employer.address, 1000);
+    await token.mint(agent.address, 1000);
+
+    await token.connect(agent).approve(await stakeManager.getAddress(), stake);
+    await stakeManager.connect(agent).depositStake(stake);
+    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+  });
+
+  async function startJob() {
+    await registry.connect(employer).createJob();
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId);
+    return jobId;
+  }
+
+  it("rewards agent when dispute resolves in their favor", async () => {
+    const jobId = await startJob();
+    await validation.connect(owner).setOutcome(jobId, false);
+    await registry.connect(agent).submit(jobId);
+    await registry.connect(agent).dispute(jobId, { value: appealFee });
+    await dispute.connect(owner).resolve(jobId, false);
+
+    expect(await token.balanceOf(agent.address)).to.equal(1100n);
+    expect(await rep.reputation(agent.address)).to.equal(1);
+    expect(await rep.isBlacklisted(agent.address)).to.equal(false);
+    expect(await nft.balanceOf(agent.address)).to.equal(1n);
+  });
+
+  it("slashes agent and reduces reputation when dispute is lost", async () => {
+    const jobId = await startJob();
+    await validation.connect(owner).setOutcome(jobId, false);
+    await registry.connect(agent).submit(jobId);
+    await registry.connect(agent).dispute(jobId, { value: appealFee });
+    await dispute.connect(owner).resolve(jobId, true);
+
+    expect(await token.balanceOf(agent.address)).to.equal(800n);
+    expect(await token.balanceOf(employer.address)).to.equal(1200n);
+    expect(await rep.reputation(agent.address)).to.equal(0);
+    expect(await rep.isBlacklisted(agent.address)).to.equal(true);
+    expect(await nft.balanceOf(agent.address)).to.equal(0n);
+  });
+});
+

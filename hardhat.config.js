@@ -1,4 +1,5 @@
 require('@nomicfoundation/hardhat-toolbox');
+require('hardhat-gas-reporter');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -16,5 +17,10 @@ module.exports = {
     hardhat: {
       allowUnlimitedContractSize: true
     }
+  },
+  gasReporter: {
+    enabled: true,
+    currency: 'USD',
+    showTimeSpent: true,
   }
 };
