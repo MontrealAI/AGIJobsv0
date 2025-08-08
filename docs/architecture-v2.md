@@ -70,8 +70,17 @@ Key Solidity interfaces live in [`contracts/v2/interfaces`](../contracts/v2/inte
 
 ```solidity
 interface IJobRegistry {
-    function createJob(address agent) external returns (uint256 jobId);
+    function createJob(uint256 reward, string calldata uri) external returns (uint256 jobId);
+    function applyForJob(uint256 jobId) external;
+    function completeJob(uint256 jobId, bytes calldata result) external;
     function finalize(uint256 jobId) external;
+    function setModules(
+        address validation,
+        address reputation,
+        address stake,
+        address dispute,
+        address cert
+    ) external;
     function setJobParameters(uint256 reward, uint256 stake) external;
 }
 

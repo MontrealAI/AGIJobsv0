@@ -83,6 +83,7 @@ Key incentive refinements include:
 - Slashing percentages exceed potential gains and a share of slashed agent stake returns to the employer.
 - Lone validators who misvote or fail to reveal suffer amplified penalties, deterring extortion attempts.
 - Commit–reveal randomness and owner‑set seeds inject entropy, making validator selection hard to game.
+- Validator selection relies solely on on‑chain entropy; no Chainlink VRF or subscription services are required.
 
 #### Module interface paths
 
@@ -500,7 +501,7 @@ functions control validation incentives, burn behavior, and system limits.
 | `removeAdditionalAgent(address agent)` | Remove an agent from the manual allowlist; emits `AdditionalAgentRemoved`. | previously added address |
 | `updateAGITokenAddress(address addr)` | Switch to a new $AGI token contract if ever required. | non-zero address |
 
-The current implementation relies on on-chain entropy for validator selection. For stronger guarantees against manipulation, integrate a verifiable randomness oracle such as Chainlink VRF in a future deployment.
+Validator selection mixes owner‑supplied seeds with on‑chain entropy and purposely avoids any subscription‑based randomness services. No Chainlink VRF is required.
 
 Convenience functions:
 
