@@ -38,6 +38,9 @@ contract DisputeModule is IDisputeModule, Ownable {
     ///         validator committee address.
     address public moderator;
 
+    /// @notice Optional jury address that may also resolve disputes.
+    address public jury;
+
     /// @dev Tracks who appealed a particular job.
     mapping(uint256 => address payable) public appellants;
 
@@ -47,6 +50,7 @@ contract DisputeModule is IDisputeModule, Ownable {
     constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
         jobRegistry = _jobRegistry;
         moderator = owner;
+        jury = owner;
     }
 
     // ---------------------------------------------------------------------
@@ -57,6 +61,12 @@ contract DisputeModule is IDisputeModule, Ownable {
     function setModerator(address _moderator) external override onlyOwner {
         moderator = _moderator;
         emit ModeratorUpdated(_moderator);
+    }
+
+    /// @notice Set the jury allowed to resolve disputes alongside the owner
+    function setJury(address _jury) external override onlyOwner {
+        jury = _jury;
+        emit JuryUpdated(_jury);
     }
 
     /// @notice Configure the appeal bond required to escalate a job
@@ -94,10 +104,10 @@ contract DisputeModule is IDisputeModule, Ownable {
     // Resolution
     // ---------------------------------------------------------------------
 
-    /// @dev Restrict resolution to owner or designated moderator address
+    /// @dev Restrict resolution to owner or designated moderator/jury address
     modifier onlyArbiter() {
         require(
-            msg.sender == owner() || msg.sender == moderator,
+            msg.sender == owner() || msg.sender == moderator || msg.sender == jury,
             "not authorized"
         );
         _;
