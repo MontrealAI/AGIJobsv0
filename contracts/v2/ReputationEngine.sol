@@ -32,8 +32,9 @@ contract ReputationEngine is Ownable {
         threshold = newThreshold;
     }
 
-    /// @notice Manually set blacklist status for a user.
-    function setBlacklist(address user, bool status) external onlyOwner {
+    /// @notice Update blacklist status for a user.
+    /// @dev Only authorised modules may call this function.
+    function blacklist(address user, bool status) external onlyCaller {
         _blacklisted[user] = status;
         emit Blacklisted(user, status);
     }
