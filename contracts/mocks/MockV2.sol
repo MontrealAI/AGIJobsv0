@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import "../v2/interfaces/IStakeManagerModule.sol";
 import "../v2/interfaces/IStakeManager.sol";
 import "../v2/interfaces/IJobRegistry.sol";
 import "../v2/interfaces/IReputationEngine.sol";
+import "../v2/interfaces/IValidationModule.sol";
+import "../v2/interfaces/IDisputeModule.sol";
+import "../v2/interfaces/ICertificateNFT.sol";
 
-contract MockStakeManager is IStakeManager {
+contract MockStakeManager is IStakeManagerModule {
     mapping(address => mapping(Role => uint256)) private _stakes;
     mapping(address => mapping(Role => uint256)) private _locked;
 
@@ -65,11 +69,14 @@ contract MockJobRegistry is IJobRegistry {
         return _jobs[jobId];
     }
 
-    function setValidationModule(address) external override {}
-    function setReputationEngine(address) external override {}
-    function setStakeManager(address) external override {}
-    function setCertificateNFT(address) external override {}
-    function setDisputeModule(address) external override {}
+    function setModules(
+        IValidationModule,
+        IStakeManager,
+        IReputationEngine,
+        IDisputeModule,
+        ICertificateNFT
+    ) external override {}
+
     function setJobParameters(uint256, uint256) external override {}
     function createJob() external override returns (uint256) {return 0;}
     function applyForJob(uint256) external override {}

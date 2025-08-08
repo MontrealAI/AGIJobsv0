@@ -4,7 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
-import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IStakeManagerModule as IStakeManager} from "./interfaces/IStakeManagerModule.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 
 /// @title ValidationModule
@@ -209,6 +209,13 @@ contract ValidationModule is IValidationModule, Ownable {
 
         r.tallied = true;
         return success;
+    }
+
+    /// @inheritdoc IValidationModule
+    function validate(uint256 jobId) external view override returns (bool) {
+        Round storage r = rounds[jobId];
+        require(r.tallied, "not tallied");
+        return r.approvals >= r.rejections;
     }
 
     /// @inheritdoc IValidationModule

@@ -13,6 +13,7 @@ interface IValidationModule {
     function commitVote(uint256 jobId, bytes32 commitHash) external;
     function revealVote(uint256 jobId, bool approve, bytes32 salt) external;
     function tally(uint256 jobId) external returns (bool success);
+    function validate(uint256 jobId) external view returns (bool);
 
     /// @notice Owner configuration for timing and validator tiers
     function setParameters(

@@ -3,8 +3,14 @@ pragma solidity ^0.8.25;
 
 /// @title IJobRegistry
 /// @notice Interface for orchestrating job lifecycles and module coordination
+import {IValidationModule} from "./IValidationModule.sol";
+import {IStakeManager} from "./IStakeManager.sol";
+import {IReputationEngine} from "./IReputationEngine.sol";
+import {IDisputeModule} from "./IDisputeModule.sol";
+import {ICertificateNFT} from "./ICertificateNFT.sol";
+
 interface IJobRegistry {
-    enum Status {
+    enum State {
         None,
         Created,
         Applied,
@@ -17,10 +23,10 @@ interface IJobRegistry {
     struct Job {
         address employer;
         address agent;
-        uint256 reward;
-        uint256 stake;
+        uint128 reward;
+        uint96 stake;
+        State state;
         bool success;
-        Status status;
     }
 
     // module configuration
@@ -41,13 +47,16 @@ interface IJobRegistry {
     event AgentApplied(uint256 indexed jobId, address indexed agent);
     event JobSubmitted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
+    event JobParametersUpdated(uint256 reward, uint256 stake);
 
     // owner wiring of modules
-    function setValidationModule(address module) external;
-    function setReputationEngine(address engine) external;
-    function setStakeManager(address manager) external;
-    function setCertificateNFT(address nft) external;
-    function setDisputeModule(address module) external;
+    function setModules(
+        IValidationModule validation,
+        IStakeManager stakeManager,
+        IReputationEngine reputation,
+        IDisputeModule dispute,
+        ICertificateNFT certNFT
+    ) external;
 
     /// @notice Owner configuration of job limits
     function setJobParameters(uint256 reward, uint256 stake) external;
