@@ -70,7 +70,7 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, true);
-    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).submit(jobId);
     await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
@@ -85,7 +85,7 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false); // colluding validator
-    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).submit(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, false);
     await registry.finalize(jobId);
@@ -102,7 +102,7 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setOutcome(jobId, false);
-    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).submit(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, true);
     await registry.finalize(jobId);

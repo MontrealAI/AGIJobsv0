@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -83,8 +83,8 @@ contract JobRegistry is Ownable {
         uint256 reward,
         uint256 stake
     );
-    event JobApplied(uint256 indexed jobId, address indexed agent);
-    event WorkSubmitted(uint256 indexed jobId, bool success);
+    event AgentApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
@@ -175,22 +175,22 @@ contract JobRegistry is Ownable {
         }
         job.agent = msg.sender;
         job.state = State.Applied;
-        emit JobApplied(jobId, msg.sender);
+        emit AgentApplied(jobId, msg.sender);
     }
 
     /// @notice Agent submits job result; validation outcome stored.
-    function submitWork(uint256 jobId) public {
+    function submit(uint256 jobId) public {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
         job.state = State.Completed;
-        emit WorkSubmitted(jobId, outcome);
+        emit JobSubmitted(jobId, outcome);
     }
 
     function completeJob(uint256 jobId) external {
-        submitWork(jobId);
+        submit(jobId);
     }
 
     /// @notice Agent disputes a failed job outcome.
