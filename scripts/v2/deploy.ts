@@ -60,7 +60,7 @@ async function main() {
   await nft.setJobRegistry(await registry.getAddress());
   await stake.transferOwnership(await registry.getAddress());
   await nft.transferOwnership(await registry.getAddress());
-  await dispute.setAppealParameters(10, 0);
+  await dispute.setAppealFee(10);
 
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());

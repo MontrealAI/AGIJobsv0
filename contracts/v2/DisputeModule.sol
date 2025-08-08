@@ -1,98 +1,138 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 
+/// @notice Minimal interface for the JobRegistry used by the dispute module
 interface IJobRegistry {
     struct Job {
         address agent;
         address employer;
         uint256 reward;
+        uint256 stake;
         uint8 state;
     }
 
     function jobs(uint256 jobId) external view returns (Job memory);
     function resolveDispute(uint256 jobId, bool employerWins) external;
+    function finalize(uint256 jobId) external;
 }
 
 /// @title DisputeModule
-/// @notice Handles appeals with a simple bond mechanism and moderator resolution.
+/// @notice Simple appeal layer with bond posting and moderator/jury resolution
+/// @dev The owner or an appointed moderator finalises disputes. Bonds are paid
+///      to the winning party. When a dispute is resolved the module calls back
+///      into the JobRegistry which in turn distributes funds and slashes stakes
+///      through the StakeManager.
 contract DisputeModule is IDisputeModule, Ownable {
+    /// @notice Registry managing the underlying jobs
     IJobRegistry public jobRegistry;
 
+    /// @notice Fee that must accompany an appeal. Acts as a bond returned to
+    ///         the winner of the dispute.
     uint256 public appealFee;
-    uint256 public jurySize;
+
+    /// @notice Optional moderator address allowed to resolve disputes in
+    ///         addition to the contract owner. This can be a multisig or a
+    ///         validator committee address.
     address public moderator;
 
+    /// @dev Tracks who appealed a particular job.
     mapping(uint256 => address payable) public appellants;
+
+    /// @dev Amount of bond posted for each job appeal.
     mapping(uint256 => uint256) public bonds;
-    mapping(uint256 => address[]) public juries;
 
     constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
         jobRegistry = _jobRegistry;
         moderator = owner;
     }
 
-    /// @inheritdoc IDisputeModule
-    function setAppealParameters(uint256 fee, uint256 _jurySize)
-        external
-        override
-        onlyOwner
-    {
-        appealFee = fee;
-        jurySize = _jurySize;
-        emit AppealParametersUpdated();
-    }
+    // ---------------------------------------------------------------------
+    // Owner configuration
+    // ---------------------------------------------------------------------
 
-    /// @inheritdoc IDisputeModule
+    /// @notice Set the moderator allowed to resolve disputes alongside the owner
     function setModerator(address _moderator) external override onlyOwner {
         moderator = _moderator;
         emit ModeratorUpdated(_moderator);
     }
 
-    /// @inheritdoc IDisputeModule
-    function raiseDispute(uint256 jobId) external payable override {
-        require(msg.value == appealFee, "fee");
-        require(bonds[jobId] == 0, "disputed");
-
-        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address appellant = msg.sender == address(jobRegistry)
-            ? job.agent
-            : tx.origin;
-        appellants[jobId] = payable(appellant);
-        bonds[jobId] = msg.value;
-
-        if (jurySize > 0) {
-            juries[jobId] = new address[](jurySize);
-        }
-
-        emit DisputeRaised(jobId, appellant);
+    /// @notice Configure the appeal bond required to escalate a job
+    function setAppealFee(uint256 fee) external override onlyOwner {
+        appealFee = fee;
+        emit AppealFeeUpdated(fee);
     }
 
+    // ---------------------------------------------------------------------
+    // Appeals
+    // ---------------------------------------------------------------------
+
+    /// @notice Post the appeal fee to escalate a disputed job
+    /// @param jobId Identifier of the job in the JobRegistry
+    function appeal(uint256 jobId) external payable override {
+        require(msg.value == appealFee, "fee");
+        require(bonds[jobId] == 0, "appealed");
+
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        address caller = msg.sender == address(jobRegistry)
+            ? job.agent
+            : msg.sender;
+        require(
+            caller == job.agent || caller == job.employer,
+            "not participant"
+        );
+
+        appellants[jobId] = payable(caller);
+        bonds[jobId] = msg.value;
+
+        emit AppealRaised(jobId, caller);
+    }
+
+    // ---------------------------------------------------------------------
+    // Resolution
+    // ---------------------------------------------------------------------
+
+    /// @dev Restrict resolution to owner or designated moderator address
     modifier onlyArbiter() {
-        require(msg.sender == owner() || msg.sender == moderator, "not authorized");
+        require(
+            msg.sender == owner() || msg.sender == moderator,
+            "not authorized"
+        );
         _;
     }
 
-    /// @inheritdoc IDisputeModule
-    function resolve(uint256 jobId, bool employerWins) external override onlyArbiter {
+    /// @notice Resolve an appealed job and finalise the associated registry
+    ///         outcome. The appeal bond is paid to the prevailing party.
+    /// @param jobId Identifier of the job being appealed
+    /// @param employerWins True if the employer wins the dispute
+    function resolve(uint256 jobId, bool employerWins)
+        external
+        override
+        onlyArbiter
+    {
         uint256 bond = bonds[jobId];
         require(bond > 0, "no bond");
 
+        // Determine bond recipient
         address payable recipient = employerWins
             ? payable(jobRegistry.jobs(jobId).employer)
             : appellants[jobId];
 
+        // Inform the registry of the final ruling and trigger settlement
         jobRegistry.resolveDispute(jobId, employerWins);
+        jobRegistry.finalize(jobId);
 
+        // Clean up state before transferring
         delete bonds[jobId];
         delete appellants[jobId];
 
         (bool ok, ) = recipient.call{value: bond}("");
-        require(ok, "transfer");
+        require(ok, "transfer failed");
 
-        emit DisputeResolved(jobId, employerWins);
+        emit AppealResolved(jobId, employerWins);
     }
 }
+
 

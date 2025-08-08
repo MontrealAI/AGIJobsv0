@@ -50,7 +50,7 @@ describe("JobRegistry integration", function () {
     await registry
       .connect(owner)
       .setJobParameters(reward, stake);
-    await dispute.connect(owner).setAppealParameters(appealFee, 0);
+    await dispute.connect(owner).setAppealFee(appealFee);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setModule(await registry.getAddress(), true);
     await rep.connect(owner).setThresholds(1, 0);
@@ -88,7 +88,6 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).submit(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, false);
-    await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(1100);
     expect(await rep.reputation(agent.address)).to.equal(1);
@@ -105,7 +104,6 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).submit(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, true);
-    await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(800);
     expect(await token.balanceOf(employer.address)).to.equal(1200);

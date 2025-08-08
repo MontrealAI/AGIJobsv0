@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 import "../v2/interfaces/IDisputeModule.sol";
 
@@ -9,6 +9,7 @@ contract DisputeRegistryStub {
         address agent;
         address employer;
         uint256 reward;
+        uint256 stake;
         uint8 state;
     }
 
@@ -20,7 +21,9 @@ contract DisputeRegistryStub {
 
     function resolveDispute(uint256, bool) external {}
 
-    function raise(address module, uint256 jobId) external payable {
-        IDisputeModule(module).raiseDispute{value: msg.value}(jobId);
+    function finalize(uint256) external {}
+
+    function appeal(address module, uint256 jobId) external payable {
+        IDisputeModule(module).appeal{value: msg.value}(jobId);
     }
 }

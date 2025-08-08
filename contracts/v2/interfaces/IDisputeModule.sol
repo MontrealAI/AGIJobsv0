@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.23;
 
 /// @title IDisputeModule
 /// @notice Interface for raising and resolving disputes or appeals
 interface IDisputeModule {
-    event DisputeRaised(uint256 indexed jobId, address indexed caller);
-    event DisputeResolved(uint256 indexed jobId, bool employerWins);
-    event AppealParametersUpdated();
+    event AppealRaised(uint256 indexed jobId, address indexed caller);
+    event AppealResolved(uint256 indexed jobId, bool employerWins);
+    event AppealFeeUpdated(uint256 fee);
     event ModeratorUpdated(address moderator);
 
-    function raiseDispute(uint256 jobId) external payable;
+    function appeal(uint256 jobId) external payable;
     function resolve(uint256 jobId, bool employerWins) external;
 
     /// @notice Owner configuration for appeal economics
     /// @dev Only callable by contract owner
-    function setAppealParameters(uint256 appealFee, uint256 jurySize) external;
+    function setAppealFee(uint256 fee) external;
 
     /// @notice Owner configuration for dispute moderator
     /// @dev Only callable by contract owner
