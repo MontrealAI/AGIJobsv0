@@ -21,6 +21,17 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
+## Local v2 Deployment Addresses
+
+| Contract | Address |
+| --- | --- |
+| JobRegistry | 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 |
+| ValidationModule | 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 |
+| StakeManager | 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 |
+| ReputationEngine | 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 |
+| DisputeModule | 0x0165878A594ca255338adfa4d48449f69242Eb8F |
+| CertificateNFT | 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 |
+
 ## Quick Start (Etherscan)
 
 The flow below shows how each role interacts with the v2 modules using a block explorer. All functions are available in the **Write** tab and accept human‑readable `uint256` values (wei for tokens, seconds for timing).
