@@ -81,7 +81,6 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
 
-        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 count = validatorsPerJob;
 
         address[] memory pool = validatorPool;
@@ -105,7 +104,7 @@ contract ValidationModule is IValidationModule, Ownable {
         require(m >= count, "insufficient validators");
 
         bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), validatorSelectionSeed, jobId)
+            abi.encodePacked(blockhash(block.number - 1), jobId, validatorSelectionSeed)
         );
 
         selected = new address[](count);
