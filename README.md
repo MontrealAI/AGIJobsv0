@@ -40,7 +40,7 @@ Interact with the deployment directly from a block explorer using the **Write** 
 2. **Agents and validators** stake $AGI through `StakeManager.depositStake`.
 3. **Employer** posts work with `JobRegistry.createJob`, escrowing the reward.
 4. **Agent** applies using `JobRegistry.applyForJob` and submits results via `JobRegistry.completeJob`.
-5. **Validators** commit and reveal votes through `ValidationModule.commitVote` and `revealVote`.
+5. **Validators** commit and reveal votes through `ValidationModule.commitValidation` and `revealValidation`.
 6. After reveal, anyone may call `ValidationModule.tally`; `JobRegistry.finalize` releases rewards or `raiseDispute` escalates to `DisputeModule`.
 
 No custom tooling is required—everything happens in the browser.

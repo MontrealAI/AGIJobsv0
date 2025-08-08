@@ -2,10 +2,10 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {IValidationModule} from "./interfaces/IValidationModule.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -18,16 +18,16 @@ contract ValidationModule is IValidationModule, Ownable {
     uint256 public commitWindow;
     uint256 public revealWindow;
 
-    // payout thresholds and validator counts per tier
-    uint256[] public rewardTiers;
-    uint256[] public validatorsPerTier;
+    // validator bounds per job
+    uint256 public minValidators;
+    uint256 public maxValidators;
 
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
 
-    // pool of validators and entropy seed for selection
+    // pool of validators and randomness seed for selection
     address[] public validatorPool;
-    bytes32 public validatorSelectionSeed;
+    bytes32 public randomnessSeed;
 
     struct Round {
         address[] validators;
@@ -46,7 +46,9 @@ contract ValidationModule is IValidationModule, Ownable {
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
-    event ValidatorSelectionSeedUpdated(bytes32 newSeed);
+    event RandomnessSeedUpdated(bytes32 newSeed);
+    event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
+    event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
 
     constructor(
         IJobRegistry _jobRegistry,
@@ -69,24 +71,35 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ReputationEngineUpdated(address(engine));
     }
 
-    /// @notice Update the entropy seed used in validator selection.
-    function setValidatorSelectionSeed(bytes32 seed) external onlyOwner {
-        validatorSelectionSeed = seed;
-        emit ValidatorSelectionSeedUpdated(seed);
+    /// @notice Update the randomness seed used in validator selection.
+    function setRandomnessSeed(bytes32 seed) external override onlyOwner {
+        randomnessSeed = seed;
+        emit RandomnessSeedUpdated(seed);
+    }
+
+    /// @notice Update the commit and reveal windows.
+    function setCommitRevealWindows(uint256 commitDur, uint256 revealDur)
+        external
+        override
+        onlyOwner
+    {
+        commitWindow = commitDur;
+        revealWindow = revealDur;
+        emit TimingUpdated(commitDur, revealDur);
+    }
+
+    /// @notice Set minimum and maximum validators per round.
+    function setValidatorBounds(uint256 minVals, uint256 maxVals) external override onlyOwner {
+        require(minVals > 0 && maxVals >= minVals, "bounds");
+        minValidators = minVals;
+        maxValidators = maxVals;
+        emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
     /// @inheritdoc IValidationModule
-    function selectValidators(uint256 jobId)
-        external
-        override
-        returns (address[] memory selected)
-    {
+    function selectValidators(uint256 jobId) external override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
-
-        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        uint256 count = _validatorCount(job.reward);
-        require(count > 0, "validators");
 
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
@@ -106,10 +119,12 @@ contract ValidationModule is IValidationModule, Ownable {
                 m++;
             }
         }
-        require(m >= count, "insufficient validators");
+
+        require(m >= minValidators, "insufficient validators");
+        uint256 count = m < maxValidators ? m : maxValidators;
 
         bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), jobId, validatorSelectionSeed)
+            abi.encodePacked(blockhash(block.number - 1), jobId, randomnessSeed)
         );
 
         selected = new address[](count);
@@ -144,8 +159,8 @@ contract ValidationModule is IValidationModule, Ownable {
         return selected;
     }
 
-    /// @inheritdoc IValidationModule
-    function commitVote(uint256 jobId, bytes32 commitHash) external override {
+    /// @notice Commit a validation hash for a job.
+    function commitValidation(uint256 jobId, bytes32 commitHash) public override {
         Round storage r = rounds[jobId];
         require(
             r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
@@ -158,8 +173,8 @@ contract ValidationModule is IValidationModule, Ownable {
         emit VoteCommitted(jobId, msg.sender, commitHash);
     }
 
-    /// @inheritdoc IValidationModule
-    function revealVote(uint256 jobId, bool approve, bytes32 salt) external override {
+    /// @notice Reveal a previously committed validation vote.
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt) public override {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
@@ -177,7 +192,17 @@ contract ValidationModule is IValidationModule, Ownable {
         emit VoteRevealed(jobId, msg.sender, approve);
     }
 
-    /// @inheritdoc IValidationModule
+    /// @notice Backwards-compatible wrapper for commitValidation.
+    function commitVote(uint256 jobId, bytes32 commitHash) external {
+        commitValidation(jobId, commitHash);
+    }
+
+    /// @notice Backwards-compatible wrapper for revealValidation.
+    function revealVote(uint256 jobId, bool approve, bytes32 salt) external {
+        revealValidation(jobId, approve, salt);
+    }
+
+    /// @notice Tally revealed votes and apply slashing/rewards.
     function tally(uint256 jobId) external override returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
@@ -209,40 +234,6 @@ contract ValidationModule is IValidationModule, Ownable {
 
         r.tallied = true;
         return success;
-    }
-
-    /// @inheritdoc IValidationModule
-    function setParameters(
-        uint256 _commitWindow,
-        uint256 _revealWindow,
-        uint256[] calldata _rewardTiers,
-        uint256[] calldata _validatorsPerTier
-    ) external override onlyOwner {
-        require(
-            _rewardTiers.length == _validatorsPerTier.length,
-            "length mismatch"
-        );
-        commitWindow = _commitWindow;
-        revealWindow = _revealWindow;
-
-        delete rewardTiers;
-        delete validatorsPerTier;
-        for (uint256 i; i < _rewardTiers.length; ++i) {
-            rewardTiers.push(_rewardTiers[i]);
-            validatorsPerTier.push(_validatorsPerTier[i]);
-        }
-
-        emit ParametersUpdated();
-    }
-
-    function _validatorCount(uint256 reward) internal view returns (uint256 count) {
-        uint256 len = rewardTiers.length;
-        for (uint256 i; i < len; ++i) {
-            if (reward < rewardTiers[i]) {
-                return validatorsPerTier[i];
-            }
-        }
-        return len == 0 ? 0 : validatorsPerTier[len - 1];
     }
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {

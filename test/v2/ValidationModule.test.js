@@ -34,10 +34,9 @@ describe("ValidationModule V2", function () {
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
 
-    // set parameters: commit 60s, reveal 60s, one tier giving 2 validators
-    await validation
-      .connect(owner)
-      .setParameters(60, 60, [1], [2]);
+    // set timing and validator bounds
+    await validation.connect(owner).setCommitRevealWindows(60, 60);
+    await validation.connect(owner).setValidatorBounds(2, 2);
 
     // validator stakes and pool
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
@@ -139,20 +138,20 @@ describe("ValidationModule V2", function () {
     await (
       await validation
         .connect(signerMap[selected[0].toLowerCase()])
-        .commitVote(1, commit1)
+        .commitValidation(1, commit1)
     ).wait();
     await (
       await validation
         .connect(signerMap[selected[1].toLowerCase()])
-        .commitVote(1, commit2)
+        .commitValidation(1, commit2)
     ).wait();
     await advance(61);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .revealVote(1, true, salt1);
+      .revealValidation(1, true, salt1);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .revealVote(1, true, salt2);
+      .revealValidation(1, true, salt2);
     await advance(61);
     expect(await validation.tally.staticCall(1)).to.equal(true);
     await validation.tally(1);
@@ -191,22 +190,22 @@ describe("ValidationModule V2", function () {
     await (
       await validation
         .connect(signerMap[selected[0].toLowerCase()])
-        .commitVote(1, commit1)
+        .commitValidation(1, commit1)
     ).wait();
     await (
       await validation
         .connect(signerMap[selected[1].toLowerCase()])
-        .commitVote(1, commit2)
+        .commitValidation(1, commit2)
     ).wait();
     await advance(61);
     const stake0 = await stakeManager.stakeOf(selected[0], 1);
     const stake1 = await stakeManager.stakeOf(selected[1], 1);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .revealVote(1, true, salt1);
+      .revealValidation(1, true, salt1);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .revealVote(1, false, salt2);
+      .revealValidation(1, false, salt2);
     await advance(61);
     await validation.tally(1);
     const slashed = stake0 >= stake1 ? selected[1] : selected[0];
