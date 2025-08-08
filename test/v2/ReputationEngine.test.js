@@ -10,9 +10,8 @@ describe("ReputationEngine", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     engine = await Engine.deploy(owner.address);
-    await engine.connect(owner).setModule(caller.address, true);
-    await engine.connect(owner).setThresholds(2, 1);
-    await engine.connect(owner).setRole(user.address, 0); // agent role
+    await engine.connect(owner).setCaller(caller.address, true);
+    await engine.connect(owner).setThreshold(2);
   });
 
   it("applies reputation gains and decay with blacklisting", async () => {

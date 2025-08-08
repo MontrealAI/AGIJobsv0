@@ -2,99 +2,75 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 
 /// @title ReputationEngine
-/// @notice Tracks reputation for agents and validators with role-based thresholds
-///         and blacklist support. Only authorized modules may mutate state.
-contract ReputationEngine is IReputationEngine, Ownable {
-    uint8 public constant ROLE_AGENT = 0;
-    uint8 public constant ROLE_VALIDATOR = 1;
-
-    mapping(address => uint256) private _reputation;
+/// @notice Tracks reputation scores with blacklist enforcement.
+/// Only authorised callers may update scores.
+contract ReputationEngine is Ownable {
+    mapping(address => uint256) private _scores;
     mapping(address => bool) private _blacklisted;
-    mapping(address => bool) public modules;
-    mapping(address => uint8) public roles;
+    mapping(address => bool) public callers;
+    uint256 public threshold;
 
-    uint256 public agentThreshold;
-    uint256 public validatorThreshold;
+    event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
+    event Blacklisted(address indexed user, bool status);
 
     constructor(address owner) Ownable(owner) {}
 
-    modifier onlyModule() {
-        require(modules[msg.sender], "not authorized");
+    modifier onlyCaller() {
+        require(callers[msg.sender], "not authorized");
         _;
     }
 
-    /// @notice Authorize or revoke a module address.
-    function setModule(address module, bool allowed) external override onlyOwner {
-        modules[module] = allowed;
+    /// @notice Authorize or revoke a caller.
+    function setCaller(address caller, bool allowed) external onlyOwner {
+        callers[caller] = allowed;
     }
 
-    /// @notice Assign a role to a user. 0 = Agent, 1 = Validator.
-    function setRole(address user, uint8 role) external override onlyOwner {
-        roles[user] = role;
+    /// @notice Set reputation threshold for automatic blacklisting.
+    function setThreshold(uint256 newThreshold) external onlyOwner {
+        threshold = newThreshold;
     }
 
-    /// @inheritdoc IReputationEngine
-    function setThresholds(uint256 agent, uint256 validator)
-        external
-        override
-        onlyOwner
-    {
-        agentThreshold = agent;
-        validatorThreshold = validator;
+    /// @notice Manually set blacklist status for a user.
+    function setBlacklist(address user, bool status) external onlyOwner {
+        _blacklisted[user] = status;
+        emit Blacklisted(user, status);
     }
 
     /// @notice Increase reputation for a user.
-    function add(address user, uint256 amount) external override onlyModule {
-        uint256 newScore = _reputation[user] + amount;
-        _reputation[user] = newScore;
+    function add(address user, uint256 amount) external onlyCaller {
+        uint256 newScore = _scores[user] + amount;
+        _scores[user] = newScore;
         emit ReputationChanged(user, int256(amount), newScore);
 
-        uint256 threshold = _thresholdFor(user);
         if (_blacklisted[user] && newScore >= threshold) {
             _blacklisted[user] = false;
-            emit BlacklistUpdated(user, false);
+            emit Blacklisted(user, false);
         }
     }
 
     /// @notice Decrease reputation for a user.
-    function subtract(address user, uint256 amount)
-        external
-        override
-        onlyModule
-    {
-        uint256 current = _reputation[user];
+    function subtract(address user, uint256 amount) external onlyCaller {
+        uint256 current = _scores[user];
         uint256 newScore = current > amount ? current - amount : 0;
-        _reputation[user] = newScore;
+        _scores[user] = newScore;
         emit ReputationChanged(user, -int256(amount), newScore);
 
-        uint256 threshold = _thresholdFor(user);
         if (!_blacklisted[user] && newScore < threshold) {
             _blacklisted[user] = true;
-            emit BlacklistUpdated(user, true);
+            emit Blacklisted(user, true);
         }
     }
 
-    /// @notice Manually set blacklist status for a user.
-    function setBlacklist(address user, bool status) external override onlyOwner {
-        _blacklisted[user] = status;
-        emit BlacklistUpdated(user, status);
-    }
-
     /// @notice Get reputation score for a user.
-    function reputation(address user) external view override returns (uint256) {
-        return _reputation[user];
+    function reputation(address user) external view returns (uint256) {
+        return _scores[user];
     }
 
     /// @notice Check blacklist status for a user.
-    function isBlacklisted(address user) external view override returns (bool) {
+    function isBlacklisted(address user) external view returns (bool) {
         return _blacklisted[user];
-    }
-
-    function _thresholdFor(address user) internal view returns (uint256) {
-        return roles[user] == ROLE_VALIDATOR ? validatorThreshold : agentThreshold;
     }
 }
 
