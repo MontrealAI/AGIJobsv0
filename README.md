@@ -573,7 +573,7 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
-See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface definitions, and incentive analysis grounded in game theory and statistical physics; the interfaces live in [`contracts/v2/interfaces`](contracts/v2/interfaces) for integration. Step‑by‑step explorer instructions are in [docs/etherscan-guide.md](docs/etherscan-guide.md), and the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
+See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams and interface definitions. Incentive rationale for v1 lives in [docs/incentive-analysis-v1.md](docs/incentive-analysis-v1.md). Interfaces reside in [`contracts/v2/interfaces`](contracts/v2/interfaces); step‑by‑step explorer instructions are in [docs/etherscan-guide.md](docs/etherscan-guide.md) and the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
 #### Incentive Design
 
@@ -581,6 +581,7 @@ See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface d
 - Slashing percentages exceed potential rewards so dishonest behaviour has negative expected value.
 - Employers receive a share of slashed agent stake on failures, aligning incentives across roles.
 - Commit–reveal randomness combined with owner‑tuned parameters keeps the Gibbs free energy lowest at honest participation, mirroring a Hamiltonian system where slashing raises enthalpy and randomness adds entropy so the stable state is honest behaviour.
+- For the economic rationale behind these settings, see [docs/incentive-analysis-v1.md](docs/incentive-analysis-v1.md).
 
 ## Versions
 
