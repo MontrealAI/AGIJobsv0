@@ -34,10 +34,10 @@ describe("ValidationModule V2", function () {
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
 
-    // set parameters: commit 60s, reveal 60s, validators per job 2
+    // set parameters: commit 60s, reveal 60s, one tier giving 2 validators
     await validation
       .connect(owner)
-      .setParameters(60, 60, 2);
+      .setParameters(60, 60, [1], [2]);
 
     // validator stakes and pool
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));

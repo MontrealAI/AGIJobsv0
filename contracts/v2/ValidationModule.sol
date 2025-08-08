@@ -17,7 +17,10 @@ contract ValidationModule is IValidationModule, Ownable {
     // timing configuration
     uint256 public commitWindow;
     uint256 public revealWindow;
-    uint256 public validatorsPerJob;
+
+    // payout thresholds and validator counts per tier
+    uint256[] public rewardTiers;
+    uint256[] public validatorsPerTier;
 
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
@@ -81,7 +84,9 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
 
-        uint256 count = validatorsPerJob;
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        uint256 count = _validatorCount(job.reward);
+        require(count > 0, "validators");
 
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
@@ -210,12 +215,34 @@ contract ValidationModule is IValidationModule, Ownable {
     function setParameters(
         uint256 _commitWindow,
         uint256 _revealWindow,
-        uint256 _validatorsPerJob
+        uint256[] calldata _rewardTiers,
+        uint256[] calldata _validatorsPerTier
     ) external override onlyOwner {
+        require(
+            _rewardTiers.length == _validatorsPerTier.length,
+            "length mismatch"
+        );
         commitWindow = _commitWindow;
         revealWindow = _revealWindow;
-        validatorsPerJob = _validatorsPerJob;
+
+        delete rewardTiers;
+        delete validatorsPerTier;
+        for (uint256 i; i < _rewardTiers.length; ++i) {
+            rewardTiers.push(_rewardTiers[i]);
+            validatorsPerTier.push(_validatorsPerTier[i]);
+        }
+
         emit ParametersUpdated();
+    }
+
+    function _validatorCount(uint256 reward) internal view returns (uint256 count) {
+        uint256 len = rewardTiers.length;
+        for (uint256 i; i < len; ++i) {
+            if (reward < rewardTiers[i]) {
+                return validatorsPerTier[i];
+            }
+        }
+        return len == 0 ? 0 : validatorsPerTier[len - 1];
     }
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {

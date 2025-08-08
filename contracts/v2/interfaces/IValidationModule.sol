@@ -14,10 +14,11 @@ interface IValidationModule {
     function revealVote(uint256 jobId, bool approve, bytes32 salt) external;
     function tally(uint256 jobId) external returns (bool success);
 
-    /// @notice Owner configuration for timing and committee size
+    /// @notice Owner configuration for timing and validator tiers
     function setParameters(
         uint256 commitWindow,
         uint256 revealWindow,
-        uint256 validatorsPerJob
+        uint256[] calldata rewardTiers,
+        uint256[] calldata validatorsPerTier
     ) external;
 }
