@@ -549,6 +549,17 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
 | `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mintCertificate` |
 
+#### Module Addresses & Roles
+
+| Module | Address | Role |
+| --- | --- | --- |
+| `JobRegistry` | *TBD* | Posts jobs, escrows payouts, tracks lifecycle |
+| `ValidationModule` | *TBD* | Selects validators and runs commit‑reveal voting |
+| `StakeManager` | *TBD* | Custodies collateral and executes slashing |
+| `ReputationEngine` | *TBD* | Updates reputation scores and applies penalties |
+| `DisputeModule` | *TBD* | Handles appeals and renders final rulings |
+| `CertificateNFT` | *TBD* | Mints ERC‑721 certificates for completed jobs |
+
 ```mermaid
 graph TD
     Employer -->|createJob| JobRegistry
@@ -568,7 +579,7 @@ See [docs/architecture-v2.md](docs/architecture-v2.md) for diagrams, interface d
 - Validators finalise jobs by majority after a review window; minorities may escalate to the `DisputeModule` for an appeal.
 - Slashing percentages exceed potential rewards so dishonest behaviour has negative expected value.
 - Employers receive a share of slashed agent stake on failures, aligning incentives across roles.
-- Commit–reveal randomness combined with owner‑tuned parameters keeps the Gibbs free energy lowest at honest participation.
+- Commit–reveal randomness combined with owner‑tuned parameters keeps the Gibbs free energy lowest at honest participation, mirroring a Hamiltonian system where slashing raises enthalpy and randomness adds entropy so the stable state is honest behaviour.
 
 ## Versions
 
@@ -1230,6 +1241,7 @@ Run the test suite with either Hardhat or Foundry:
 ```bash
 npx hardhat test
 forge test
+REPORT_GAS=true npx hardhat test # gas usage report
 ```
 
 ## Linting
