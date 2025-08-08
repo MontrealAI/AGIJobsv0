@@ -579,6 +579,10 @@ The v2 release decomposes the marketplace into a suite of immutable modules, eac
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setJobRegistry` |
 
+### Token Integration
+
+Staking and rewards use the $AGI token at [0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D). The owner can swap in a new ERC‑20 with `StakeManager.setToken(address)`, and `JobRegistry.setModules` permits replacing companion modules without migrating job state.
+
 | Module | Interface / Key functions |
 | --- | --- |
 | `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize` |
