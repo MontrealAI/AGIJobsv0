@@ -538,7 +538,7 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `StakeManager` | `setStakeParameters`, `setToken` |
 | `ReputationEngine` | `setCaller`, `setThresholds` |
 | `DisputeModule` | `setAppealParameters` |
-| `CertificateNFT` | `setBaseURI` |
+| `CertificateNFT` | `setJobRegistry` |
 
 | Module | Interface / Key functions |
 | --- | --- |
@@ -547,7 +547,7 @@ The upcoming v2 release decomposes the marketplace into a suite of immutable mod
 | `StakeManager` | [`IStakeManager`](contracts/v2/interfaces/IStakeManager.sol) – `depositStake`, `withdrawStake`, `lockStake`, `slash`, `stakeOf` |
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `isBlacklisted` |
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
-| `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mintCertificate` |
+| `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mint` |
 
 #### Module Addresses & Roles
 
