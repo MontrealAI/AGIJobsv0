@@ -21,6 +21,19 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
+## Quick Start (Etherscan)
+
+The flow below shows how each role interacts with the v2 modules using a block explorer. All functions are available in the **Write** tab and accept human‑readable `uint256` values (wei for tokens, seconds for timing).
+
+1. **Owner** wires modules with `JobRegistry.setModules(...)` and configures parameters via each module’s `set...` functions.
+2. **Agents and validators** stake $AGI through `StakeManager.depositStake`.
+3. **Employer** posts work by calling `JobRegistry.createJob`, which escrows the reward.
+4. **Agent** claims the job with `JobRegistry.applyForJob` and later submits the result via `JobRegistry.completeJob`.
+5. **Selected validators** commit and reveal votes using `ValidationModule.commitVote` then `revealVote`.
+6. After the reveal window, anyone may call `ValidationModule.tally`; subsequently `JobRegistry.finalize` releases rewards or `raiseDispute` escalates to the `DisputeModule`.
+
+These steps can be followed entirely through a browser without custom tooling.
+
 ## AGI Token
 
 The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D`. Cross‑verify this address on Etherscan and Blockscout before transferring or staking tokens. Consult the [Safety Checklist](#safety-checklist) for operational best practices.
