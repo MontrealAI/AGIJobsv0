@@ -121,8 +121,7 @@ interface IStakeManager {
 }
 
 interface ICertificateNFT {
-    function mint(address to, string memory uri) external returns (uint256 tokenId);
-    function setBaseURI(string memory newBaseURI) external;
+    function mint(address to, uint256 jobId, string memory uri) external returns (uint256 tokenId);
 }
 ```
 
@@ -136,7 +135,7 @@ Each module exposes minimal `onlyOwner` setters so governance can tune economics
 | DisputeModule | `setAppealParameters` | Configure appeal fees, jury size and moderator address |
 | StakeManager | `setStakeParameters`, `setToken` | Tune minimum stakes/slashing and switch staking token |
 | ReputationEngine | `setCaller`, `setThresholds` | Authorise callers and set agent/validator reputation floors |
-| CertificateNFT | `setBaseURI` | Update metadata base URI |
+| CertificateNFT | `setJobRegistry` | Configure authorized JobRegistry |
 
 All setters are accessible through block‑explorer interfaces, keeping administration intuitive for non‑technical owners while preserving contract immutability. These interfaces favour explicit, single‑purpose methods, keeping gas costs predictable and allowing front‑end or Etherscan interactions to remain intuitive.
 

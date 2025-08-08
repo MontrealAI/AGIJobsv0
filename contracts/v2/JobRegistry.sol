@@ -26,9 +26,7 @@ interface IDisputeModule {
 }
 
 interface ICertificateNFT {
-    function mintCertificate(address to, uint256 jobId, string calldata uri)
-        external
-        returns (uint256);
+    function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
 }
 
 /// @title JobRegistry
@@ -238,7 +236,7 @@ contract JobRegistry is Ownable {
                 reputationEngine.add(job.agent, 1);
             }
             if (address(certificateNFT) != address(0)) {
-                certificateNFT.mintCertificate(job.agent, jobId, "");
+                certificateNFT.mint(job.agent, jobId, "");
             }
         } else {
             if (address(stakeManager) != address(0)) {
