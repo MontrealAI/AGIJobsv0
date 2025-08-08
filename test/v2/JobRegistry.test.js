@@ -52,8 +52,8 @@ describe("JobRegistry integration", function () {
       .setJobParameters(reward, stake);
     await dispute.connect(owner).setAppealFee(appealFee);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
-    await rep.connect(owner).setModule(await registry.getAddress(), true);
-    await rep.connect(owner).setThresholds(1, 0);
+    await rep.connect(owner).setCaller(await registry.getAddress(), true);
+    await rep.connect(owner).setThreshold(1);
     await stakeManager.connect(owner).transferOwnership(await registry.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
 

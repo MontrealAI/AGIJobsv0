@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
 /// @notice Interface for tracking and updating participant reputation scores
 interface IReputationEngine {
     event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
-    event BlacklistUpdated(address indexed user, bool status);
+    event Blacklisted(address indexed user, bool status);
 
     function add(address user, uint256 amount) external;
     function subtract(address user, uint256 amount) external;
@@ -13,9 +13,8 @@ interface IReputationEngine {
     function isBlacklisted(address user) external view returns (bool);
 
     /// @notice Owner functions
-    function setModule(address module, bool allowed) external;
-    function setRole(address user, uint8 role) external;
-    function setThresholds(uint256 agentThreshold, uint256 validatorThreshold) external;
+    function setCaller(address caller, bool allowed) external;
+    function setThreshold(uint256 newThreshold) external;
     function setBlacklist(address user, bool status) external;
 }
 

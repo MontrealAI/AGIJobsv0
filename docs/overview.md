@@ -37,7 +37,7 @@ graph TD
 | ValidationModule | `setParameters` | Tune validator counts, stake ratios, rewards and slashing. |
 | DisputeModule | `setAppealParameters` | Configure appeal fees and moderator/jury settings. |
 | StakeManager | `setStakeParameters`, `setToken` | Adjust stakes, slashing and staking token. |
-| ReputationEngine | `setCaller`, `setThresholds`, `setBlacklist` | Authorise callers, set reputation floors, manage blacklist. |
+| ReputationEngine | `setCaller`, `setThreshold`, `setBlacklist` | Authorise callers, set reputation floors, manage blacklist. |
 | CertificateNFT | `setJobRegistry` | Authorise the registry allowed to mint. |
 
 ## Incentive Mechanics

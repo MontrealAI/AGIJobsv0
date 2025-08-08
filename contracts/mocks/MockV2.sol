@@ -100,11 +100,9 @@ contract MockReputationEngine is IReputationEngine {
         return false;
     }
 
-    function setModule(address, bool) external override {}
+    function setCaller(address, bool) external override {}
 
-    function setRole(address, uint8) external override {}
-
-    function setThresholds(uint256, uint256) external override {}
+    function setThreshold(uint256) external override {}
 
     function setBlacklist(address, bool) external override {}
 }
