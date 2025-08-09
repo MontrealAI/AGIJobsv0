@@ -1,6 +1,6 @@
 # Tax Obligations in the AGI Job Platform Ecosystem
 
-The AGI Jobs protocol routes all tax duties to the participants who exchange value and none to the contract owner. The smart contract is inert code: it never charges fees, holds revenue, or transfers tokens to the deploying corporation. Consequently the platform and its owner have no taxable events in any jurisdiction. The dedicated [`TaxPolicy`](../contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain by storing a canonical policy URI and returning a plain‑text acknowledgement so non‑technical users can confirm the disclaimer through explorers like Etherscan.
+The AGI Jobs protocol routes all tax duties to the participants who exchange value and none to the contract owner. The smart contract is inert code: it never charges fees, holds revenue, or transfers tokens to the deploying corporation. Consequently the platform and its owner have no taxable events in any jurisdiction. The dedicated [`TaxPolicy`](../contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain by storing a canonical policy URI and returning a plain‑text acknowledgement—"AGI Employers, Agents, and Validators handle all taxes; the contract and owner are tax-exempt"—so non‑technical users can confirm the disclaimer through explorers like Etherscan.
 
 ## Employers
 - Provide the token escrow that funds jobs.

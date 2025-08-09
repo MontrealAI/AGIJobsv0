@@ -7,8 +7,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @notice Stores a canonical tax policy URI and acknowledgement helper.
 /// @dev Contract owner alone may update the policy URI. The contract never holds
 /// funds and exists solely to provide an on-chain reference for off-chain tax
-/// responsibilities. Participants remain fully responsible for their own tax
-/// obligations; the contract and its owner are tax-exempt.
+/// responsibilities. AGI Employers, AGI Agents, and Validators remain fully
+/// responsible for their own tax obligations; the contract and its owner are
+/// always tax‑exempt.
 contract TaxPolicy is Ownable {
     /// @notice Off-chain document describing tax responsibilities.
     string public policyURI;
@@ -29,9 +30,10 @@ contract TaxPolicy is Ownable {
     }
 
     /// @notice Returns a human-readable disclaimer for explorers like Etherscan.
-    /// @return disclaimer Text confirming participants bear all tax duties.
+    /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
     function acknowledge() external pure returns (string memory disclaimer) {
-        return "Participants are solely responsible for taxes; contract owner is exempt.";
+        return
+            "AGI Employers, Agents, and Validators handle all taxes; the contract and owner are tax-exempt.";
     }
 }
 

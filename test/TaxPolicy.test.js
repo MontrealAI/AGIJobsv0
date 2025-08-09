@@ -29,7 +29,7 @@ describe("TaxPolicy", function () {
   it("returns acknowledgement string", async () => {
     const msg = await tax.acknowledge();
     expect(msg).to.equal(
-      "Participants are solely responsible for taxes; contract owner is exempt."
+      "AGI Employers, Agents, and Validators handle all taxes; the contract and owner are tax-exempt."
     );
   });
 });

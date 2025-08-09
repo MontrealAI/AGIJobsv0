@@ -1370,13 +1370,13 @@ npx eslint .
 How jobs, reputation, and value circulate within the AGI ecosystem. Read the expanded discussion in [docs/economy-of-agi.md](docs/economy-of-agi.md).
 
 ## Tax Obligations
-All taxes arising from job transactions are borne solely by the participants exchanging value:
+All taxes arising from job transactions fall exclusively on the parties exchanging value:
 
-- **Employers** calculate gains or losses on tokens that are burned or paid out.
-- **Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
+- **AGI Employers** calculate gains or losses on tokens that are burned or paid out.
+- **AGI Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
 - **Passive holders** have no tax impact until they dispose of their own tokens.
 
-The protocol’s contracts and the corporation that deployed them are always tax‑exempt. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The `TaxPolicy` contract stores an owner‑editable URI pointing to the current off‑chain policy and exposes an `acknowledge()` helper for explorers like Etherscan.
+The protocol’s smart contracts and the corporation that deployed them are always tax‑exempt in every jurisdiction. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and offers an `acknowledge()` helper that non‑technical users can call through Etherscan to view the on‑chain disclaimer.
 
 See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown of responsibilities.
 
