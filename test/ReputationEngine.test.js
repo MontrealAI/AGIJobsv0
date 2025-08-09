@@ -4,8 +4,8 @@ const { ethers } = require("hardhat");
 describe("ReputationEngine", function () {
   let engine, owner, agentCaller, validatorCaller, user;
 
-    beforeEach(async () => {
-      [owner, agentCaller, validatorCaller, user] = await ethers.getSigners();
+  beforeEach(async () => {
+    [owner, agentCaller, validatorCaller, user] = await ethers.getSigners();
       const Engine = await ethers.getContractFactory(
         "contracts/ReputationEngine.sol:ReputationEngine"
       );
@@ -41,6 +41,25 @@ describe("ReputationEngine", function () {
     await expect(
       engine.connect(user).addReputation(user.address, 1)
     ).to.be.revertedWith("not authorized");
+  });
+
+  it("allows only owner to configure", async () => {
+    await expect(
+      engine.connect(agentCaller).setCaller(user.address, 1)
+    )
+      .to.be.revertedWithCustomError(
+        engine,
+        "OwnableUnauthorizedAccount"
+      )
+      .withArgs(agentCaller.address);
+
+    await expect(engine.connect(agentCaller).setAgentThreshold(1))
+      .to.be.revertedWithCustomError(engine, "OwnableUnauthorizedAccount")
+      .withArgs(agentCaller.address);
+
+    await expect(engine.connect(agentCaller).setValidatorThreshold(1))
+      .to.be.revertedWithCustomError(engine, "OwnableUnauthorizedAccount")
+      .withArgs(agentCaller.address);
   });
 });
 

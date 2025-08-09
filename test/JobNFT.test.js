@@ -21,6 +21,18 @@ describe("JobNFT", function () {
       .withArgs("ipfs://");
   });
 
+  it("allows only owner to set job registry", async function () {
+    const { nft, jobRegistry, user } = await deployFixture();
+    await expect(
+      nft.connect(jobRegistry).setJobRegistry(user.address)
+    )
+      .to.be.revertedWithCustomError(nft, "OwnableUnauthorizedAccount")
+      .withArgs(jobRegistry.address);
+    await expect(nft.setJobRegistry(user.address))
+      .to.emit(nft, "JobRegistryUpdated")
+      .withArgs(user.address);
+  });
+
   it("mints and burns only via JobRegistry", async function () {
     const { nft, jobRegistry, user } = await deployFixture();
     await expect(nft.connect(user).mint(user.address, "job1.json"))
