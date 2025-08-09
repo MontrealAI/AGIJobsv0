@@ -19,6 +19,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v2 Architecture](docs/architecture-v2.md) – modular design with incentive analysis and interface definitions.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
+- [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails` and `isTaxExempt()` helpers for explorer users.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -101,8 +102,8 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 
 - Employers, agents, and validators bear every tax obligation.
 - Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing.
-- Smart contracts and the deploying corporation are tax‑exempt worldwide; `isTaxExempt()` on each module proves it.
-- Verify the policy on Etherscan by reading `taxPolicyDetails`, then calling `acknowledgeTaxPolicy`, and confirming `isTaxExempt`.
+- Smart contracts and the deploying corporation are tax‑exempt worldwide; `isTaxExempt()` on each module (viewable via explorer **Read Contract** tabs) proves it.
+- Verify the policy on Etherscan by reading `taxPolicyDetails` (acknowledgement + URI), then calling `acknowledgeTaxPolicy`, and confirming `isTaxExempt()`.
 - The owner updates text or URI via `setPolicyURI`/`setAcknowledgement` and enforces a new `taxPolicyVersion` with `bumpTaxPolicyVersion`.
 
 All taxes in the AGI Jobs ecosystem fall solely on AGI Employers, AGI Agents, and Validators who exchange value. The smart contract suite and the deploying corporation are perpetually exempt from any direct, indirect, or theoretical tax liability in every jurisdiction—including the United States, Canada, and the European Union—because no revenue, fees, or asset disposals ever accrue to the infrastructure:

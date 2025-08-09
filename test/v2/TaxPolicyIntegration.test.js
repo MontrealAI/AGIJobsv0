@@ -66,4 +66,13 @@ describe("JobRegistry tax policy integration", function () {
       .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
       .withArgs(user.address);
   });
+
+  it("blocks non-owner from bumping version", async () => {
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await expect(
+      registry.connect(user).bumpTaxPolicyVersion()
+    )
+      .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
+      .withArgs(user.address);
+  });
 });
