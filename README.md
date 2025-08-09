@@ -776,6 +776,19 @@ sequenceDiagram
 
 The v2 release decomposes the marketplace into a suite of immutable modules, each exposed through concise interfaces so non‑technical users can trigger calls from explorers like Etherscan. Modules are deployed as **stand‑alone contracts** and wired together only through the addresses stored in `JobRegistry`, preserving storage isolation and making the system upgrade‑free. `JobRegistry` lets the owner swap module addresses, enabling governance to upgrade components individually without redeploying the entire suite. Every module inherits `Ownable`, ensuring that only the owner (or future governance) can adjust parameters. These owner‑only setters—such as stake ratios, timing windows or reputation thresholds—are callable through the explorer **Write** tabs, keeping administration approachable for non‑technical operators while remaining fully transparent on‑chain.
 
+```mermaid
+graph LR
+  JobRegistry --> StakeManager
+  JobRegistry --> ValidationModule
+  JobRegistry --> ReputationEngine
+  JobRegistry --> DisputeModule
+  JobRegistry --> CertificateNFT
+  ValidationModule --> StakeManager
+  ValidationModule --> ReputationEngine
+  ValidationModule --> DisputeModule
+  DisputeModule --> StakeManager
+```
+
 Validator committees expand with job value and settle outcomes by majority after a commit–reveal process. `StakeManager` enforces slashing percentages that exceed any potential reward and routes a share of penalties back to the employer, making honest participation the rational strategy. All economic and timing parameters are owner‑configurable, so modules remain immutable yet fully governable.
 
 | Module | Responsibility |
@@ -807,6 +820,17 @@ Validator committees expand with job value and settle outcomes by majority after
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
 | `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mint` |
 | `TaxPolicy` | – `policyURI`, `acknowledgement`, `setPolicyURI`, `setAcknowledgement`, `setPolicy`, `acknowledge` |
+
+```solidity
+// Minimal StakeManager interface
+interface IStakeManager {
+    function depositStake(uint256 amount) external;
+    function lockReward(address from, uint256 amount) external;
+    function payReward(address to, uint256 amount) external;
+    function slash(address offender, address beneficiary, uint256 amount) external;
+    function setToken(address newToken) external;
+}
+```
 
 #### Module Addresses & Roles
 
