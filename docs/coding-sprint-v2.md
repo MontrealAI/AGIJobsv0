@@ -6,6 +6,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
 - Implement immutable, ownable modules for job coordination, validation, staking, reputation, disputes and certificate NFTs.
 - Optimise for gas efficiency and composability while keeping explorer interactions simple for non‑technical users.
 - Align incentives so honest behaviour is the dominant strategy for agents, validators and employers.
+- Publish an on-chain tax disclaimer that leaves all liabilities with employers, agents and validators while the owner remains exempt.
 
 ## Tasks
 1. **Interface Stabilisation**
@@ -34,6 +35,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - Generate deployment scripts that record module addresses for `JobRegistry` wiring.
 7. **Tax Responsibility & Owner Neutrality**
    - Confirm modules never route funds or fees to the owner account.
+   - Wire `TaxPolicy` into `JobRegistry` so the owner can update a canonical policy URI and expose `taxAcknowledgement()`/`taxPolicyURI()`.
    - Document in NatSpec that employers, agents and validators handle all tax reporting.
    - Provide explorer instructions so non‑technical users can review owner‑only parameters on Etherscan.
 

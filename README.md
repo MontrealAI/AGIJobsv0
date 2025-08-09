@@ -597,7 +597,7 @@ Validator committees expand with job value and settle outcomes by majority after
 
 | Module | Key owner controls |
 | --- | --- |
-| `JobRegistry` | `setModules`, `setJobParameters` |
+| `JobRegistry` | `setModules`, `setJobParameters`, `setTaxPolicy` |
 | `ValidationModule` | `setParameters` |
 | `StakeManager` | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury` |
 | `ReputationEngine` | `setCaller`, `setThreshold`, `setBlacklist` |
@@ -607,7 +607,7 @@ Validator committees expand with job value and settle outcomes by majority after
 
 | Module | Interface / Key functions |
 | --- | --- |
-| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize` |
+| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize`, `taxAcknowledgement`, `taxPolicyURI` |
 | `ValidationModule` | [`IValidationModule`](contracts/v2/interfaces/IValidationModule.sol) – `selectValidators`, `commitValidation`, `revealValidation`, `finalize`, `appeal` |
 | `StakeManager` | [`IStakeManager`](contracts/v2/interfaces/IStakeManager.sol) – `depositStake`, `withdrawStake`, `lockStake`, `slash`, `stakeOf` |
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
@@ -645,6 +645,7 @@ graph TD
 - In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
 - Confirm emitted events to ensure configuration changes took effect.
 - `TaxPolicy` exposes `policyURI()` and `acknowledge()` under the **Read** tab so participants can view the disclaimer; only the owner may update the URI via `setPolicyURI()` in **Write**.
+- `JobRegistry` mirrors the disclaimer with `taxAcknowledgement()` and `taxPolicyURI()` for easy discovery on explorers.
  
 Role-based quick steps:
 
@@ -1376,7 +1377,7 @@ All taxes arising from job transactions fall exclusively on the parties exchangi
 - **AGI Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
 - **Passive holders** have no tax impact until they dispose of their own tokens.
 
-The protocol’s smart contracts and the corporation that deployed them are always tax‑exempt in every jurisdiction. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and offers an `acknowledge()` helper that non‑technical users can call through Etherscan to view the on‑chain disclaimer.
+The protocol’s smart contracts and the corporation that deployed them are always tax‑exempt in every jurisdiction. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and offers an `acknowledge()` helper that non‑technical users can call through Etherscan to view the on‑chain disclaimer. `JobRegistry` surfaces the same text and URI through `taxAcknowledgement()` and `taxPolicyURI()` so explorers can display it without manual lookups.
 
 See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown of responsibilities.
 
