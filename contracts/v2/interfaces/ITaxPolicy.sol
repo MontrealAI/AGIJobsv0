@@ -19,4 +19,8 @@ interface ITaxPolicy {
         external
         view
         returns (string memory ack, string memory uri);
+
+    /// @notice Indicates that the contract and its owner hold no tax liability.
+    /// @return Always true; the infrastructure is perpetually tax‑exempt.
+    function isTaxExempt() external pure returns (bool);
 }

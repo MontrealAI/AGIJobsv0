@@ -76,6 +76,12 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         uri = policyURI;
     }
 
+    /// @notice Confirms the contract and its owner are perpetually tax‑exempt.
+    /// @return True, signalling that no tax liability can ever accrue here.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     /// @dev Rejects any incoming ether.
     receive() external payable {
         revert("TaxPolicy: no ether");
