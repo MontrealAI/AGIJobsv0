@@ -14,10 +14,10 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 /// infrastructure and its owner remain perpetually exempt.
 contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Off-chain document describing tax responsibilities.
-    string public policyURI;
+    string private _policyURI;
 
     /// @notice Plain-text disclaimer accessible from explorers like Etherscan.
-    string public acknowledgement;
+    string private _acknowledgement;
 
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
@@ -28,8 +28,8 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     constructor(address owner_, string memory uri, string memory ack)
         Ownable(owner_)
     {
-        policyURI = uri;
-        acknowledgement = ack;
+        _policyURI = uri;
+        _acknowledgement = ack;
         emit TaxPolicyURIUpdated(uri);
         emit AcknowledgementUpdated(ack);
     }
@@ -37,14 +37,14 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Updates the off-chain policy URI.
     /// @param uri New URI pointing to policy text (e.g., IPFS hash).
     function setPolicyURI(string calldata uri) external onlyOwner {
-        policyURI = uri;
+        _policyURI = uri;
         emit TaxPolicyURIUpdated(uri);
     }
 
     /// @notice Updates the acknowledgement text returned on-chain.
     /// @param text Human-readable disclaimer for participants.
     function setAcknowledgement(string calldata text) external onlyOwner {
-        acknowledgement = text;
+        _acknowledgement = text;
         emit AcknowledgementUpdated(text);
     }
 
@@ -52,8 +52,8 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @param uri New URI pointing to the policy text.
     /// @param text Human-readable disclaimer for participants.
     function setPolicy(string calldata uri, string calldata text) external onlyOwner {
-        policyURI = uri;
-        acknowledgement = text;
+        _policyURI = uri;
+        _acknowledgement = text;
         emit TaxPolicyURIUpdated(uri);
         emit AcknowledgementUpdated(text);
     }
@@ -61,7 +61,13 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Returns a human-readable disclaimer confirming tax obligations.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
     function acknowledge() external view returns (string memory disclaimer) {
-        return acknowledgement;
+        return _acknowledgement;
+    }
+
+    /// @notice Returns the URI pointing to the canonical policy document.
+    /// @return uri Off-chain document location (e.g., IPFS hash).
+    function policyURI() external view returns (string memory uri) {
+        return _policyURI;
     }
 
     /// @notice Convenience helper returning both acknowledgement and policy URI.
@@ -72,8 +78,8 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         view
         returns (string memory ack, string memory uri)
     {
-        ack = acknowledgement;
-        uri = policyURI;
+        ack = _acknowledgement;
+        uri = _policyURI;
     }
 
     /// @notice Confirms the contract and its owner are perpetually tax‑exempt.
