@@ -5,6 +5,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title ReputationEngine (module)
 /// @notice Tracks reputation per role and enforces thresholds with blacklist support.
+/// @dev Holds no funds and rejects ether so neither the contract nor its owner
+///      ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable {
     enum Role {
         Agent,
@@ -97,6 +99,20 @@ contract ReputationEngine is Ownable {
 
     function _isAuthorized(Role role) internal pure returns (bool) {
         return role == Role.Agent || role == Role.Validator;
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert("ReputationEngine: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("ReputationEngine: no ether");
     }
 }
 
