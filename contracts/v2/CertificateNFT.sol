@@ -13,6 +13,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     mapping(uint256 => string) private _tokenURIs;
 
     event BaseURIUpdated(string newURI);
+    event JobRegistryUpdated(address registry);
 
     constructor(string memory name_, string memory symbol_, address owner_)
         ERC721(name_, symbol_)
@@ -20,12 +21,13 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     {}
 
     modifier onlyJobRegistry() {
-        require(msg.sender == jobRegistry, "only JobRegistry");
+        if (msg.sender != jobRegistry) revert NotJobRegistry(msg.sender);
         _;
     }
 
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
+        emit JobRegistryUpdated(registry);
     }
 
     function setBaseURI(string calldata uri) external onlyOwner {
@@ -38,8 +40,9 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         uint256 jobId,
         string calldata uri
     ) external onlyJobRegistry returns (uint256 tokenId) {
-        require(bytes(uri).length != 0, "empty uri");
+        if (bytes(uri).length == 0) revert EmptyURI();
         tokenId = jobId;
+        if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(jobId);
         _safeMint(to, tokenId);
         _tokenURIs[tokenId] = uri;
         emit CertificateMinted(to, jobId);
