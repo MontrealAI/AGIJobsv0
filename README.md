@@ -22,6 +22,8 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
+> **Tax Neutral Infrastructure:** Every module rejects unsolicited ether and exposes an `isTaxExempt()` helper so users on explorers like Etherscan can confirm that only employers, agents, and validators carry tax duties while the contracts and deploying corporation remain perpetually exempt.
+
 ## System Overview
 
 ### Architecture
