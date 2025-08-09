@@ -14,9 +14,15 @@ contract DisputeRegistryStub {
     }
 
     mapping(uint256 => Job) public jobs;
+    uint256 public taxPolicyVersion = 1;
+    mapping(address => uint256) public taxAcknowledgedVersion;
 
     function setJob(uint256 id, Job calldata job) external {
         jobs[id] = job;
+    }
+
+    function acknowledge(address user) external {
+        taxAcknowledgedVersion[user] = taxPolicyVersion;
     }
 
     function resolveDispute(uint256, bool) external {}

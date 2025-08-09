@@ -17,6 +17,8 @@ interface IJobRegistry {
     function jobs(uint256 jobId) external view returns (Job memory);
     function resolveDispute(uint256 jobId, bool employerWins) external;
     function finalize(uint256 jobId) external;
+    function taxPolicyVersion() external view returns (uint256);
+    function taxAcknowledgedVersion(address user) external view returns (uint256);
 }
 
 /// @title DisputeModule
@@ -30,6 +32,8 @@ interface IJobRegistry {
 contract DisputeModule is IDisputeModule, Ownable {
     /// @notice Registry managing the underlying jobs
     IJobRegistry public jobRegistry;
+
+    event JobRegistryUpdated(address registry);
 
     /// @notice Fee that must accompany an appeal. Acts as a bond returned to
     ///         the winner of the dispute.
@@ -77,6 +81,13 @@ contract DisputeModule is IDisputeModule, Ownable {
         emit AppealFeeUpdated(fee);
     }
 
+    /// @notice Set the job registry reference
+    function setJobRegistry(IJobRegistry _jobRegistry) external onlyOwner {
+        require(address(_jobRegistry) != address(0), "registry");
+        jobRegistry = _jobRegistry;
+        emit JobRegistryUpdated(address(_jobRegistry));
+    }
+
     // ---------------------------------------------------------------------
     // Appeals
     // ---------------------------------------------------------------------
@@ -97,6 +108,13 @@ contract DisputeModule is IDisputeModule, Ownable {
             : msg.sender;
         if (caller != job.agent && caller != job.employer) {
             revert NotParticipant(caller);
+        }
+
+        if (
+            jobRegistry.taxAcknowledgedVersion(caller) !=
+            jobRegistry.taxPolicyVersion()
+        ) {
+            revert("acknowledge tax policy");
         }
 
         appellants[jobId] = payable(caller);
