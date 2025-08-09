@@ -20,6 +20,12 @@ interface ITaxPolicy {
         view
         returns (string memory ack, string memory uri);
 
+    /// @notice Current version number of the policy text.
+    function policyVersion() external view returns (uint256);
+
+    /// @notice Increments the policy version without changing text or URI.
+    function bumpPolicyVersion() external;
+
     /// @notice Indicates that the contract and its owner hold no tax liability.
     /// @return Always true; the infrastructure is perpetually tax‑exempt.
     function isTaxExempt() external pure returns (bool);

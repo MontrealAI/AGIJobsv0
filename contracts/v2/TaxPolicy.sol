@@ -19,33 +19,45 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Plain-text disclaimer accessible from explorers like Etherscan.
     string private _acknowledgement;
 
+    /// @notice Incrementing version for the current policy text.
+    uint256 private _version;
+
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
 
     /// @notice Emitted when the acknowledgement text is updated.
     event AcknowledgementUpdated(string text);
 
+    /// @notice Emitted whenever the policy version changes.
+    event PolicyVersionUpdated(uint256 version);
+
     constructor(address owner_, string memory uri, string memory ack)
         Ownable(owner_)
     {
         _policyURI = uri;
         _acknowledgement = ack;
+        _version = 1;
         emit TaxPolicyURIUpdated(uri);
         emit AcknowledgementUpdated(ack);
+        emit PolicyVersionUpdated(1);
     }
 
     /// @notice Updates the off-chain policy URI.
     /// @param uri New URI pointing to policy text (e.g., IPFS hash).
     function setPolicyURI(string calldata uri) external onlyOwner {
         _policyURI = uri;
+        _version += 1;
         emit TaxPolicyURIUpdated(uri);
+        emit PolicyVersionUpdated(_version);
     }
 
     /// @notice Updates the acknowledgement text returned on-chain.
     /// @param text Human-readable disclaimer for participants.
     function setAcknowledgement(string calldata text) external onlyOwner {
         _acknowledgement = text;
+        _version += 1;
         emit AcknowledgementUpdated(text);
+        emit PolicyVersionUpdated(_version);
     }
 
     /// @notice Atomically updates both the policy URI and acknowledgement text.
@@ -54,8 +66,10 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     function setPolicy(string calldata uri, string calldata text) external onlyOwner {
         _policyURI = uri;
         _acknowledgement = text;
+        _version += 1;
         emit TaxPolicyURIUpdated(uri);
         emit AcknowledgementUpdated(text);
+        emit PolicyVersionUpdated(_version);
     }
 
     /// @notice Returns a human-readable disclaimer confirming tax obligations.
@@ -80,6 +94,17 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     {
         ack = _acknowledgement;
         uri = _policyURI;
+    }
+
+    /// @notice Returns the current policy version.
+    function policyVersion() external view returns (uint256) {
+        return _version;
+    }
+
+    /// @notice Bumps the policy version without changing text or URI.
+    function bumpPolicyVersion() external onlyOwner {
+        _version += 1;
+        emit PolicyVersionUpdated(_version);
     }
 
     /// @notice Confirms the contract and its owner are perpetually tax‑exempt.
