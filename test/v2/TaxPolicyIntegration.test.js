@@ -13,7 +13,7 @@ describe("JobRegistry tax policy integration", function () {
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    policy = await Policy.deploy(owner.address, "ipfs://policy");
+    policy = await Policy.deploy(owner.address, "ipfs://policy", "ack");
   });
 
   it("allows owner to set policy and expose acknowledgement", async () => {
@@ -26,6 +26,12 @@ describe("JobRegistry tax policy integration", function () {
       await policy.acknowledge()
     );
     expect(await registry.taxPolicyURI()).to.equal("ipfs://policy");
+    let details = await registry.taxPolicyDetails();
+    expect(details[0]).to.equal("ack");
+    expect(details[1]).to.equal("ipfs://policy");
+    await policy.connect(owner).setAcknowledgement("new ack");
+    details = await registry.taxPolicyDetails();
+    expect(details[0]).to.equal("new ack");
   });
 
   it("blocks non-owner from setting policy", async () => {

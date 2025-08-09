@@ -9,7 +9,11 @@ describe("TaxPolicy", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    tax = await Factory.deploy(owner.address, "ipfs://initial");
+    tax = await Factory.deploy(
+      owner.address,
+      "ipfs://initial",
+      "initial ack"
+    );
     await tax.waitForDeployment();
   });
 
@@ -26,11 +30,22 @@ describe("TaxPolicy", function () {
       .withArgs(user.address);
   });
 
+  it("allows owner to update acknowledgement", async () => {
+    await tax.connect(owner).setAcknowledgement("updated ack");
+    expect(await tax.acknowledge()).to.equal("updated ack");
+  });
+
+  it("blocks non-owner acknowledgement updates", async () => {
+    await expect(
+      tax.connect(user).setAcknowledgement("x")
+    )
+      .to.be.revertedWithCustomError(tax, "OwnableUnauthorizedAccount")
+      .withArgs(user.address);
+  });
+
   it("returns acknowledgement string", async () => {
     const msg = await tax.acknowledge();
-    expect(msg).to.equal(
-      "AGI Employers, Agents, and Validators handle all taxes; the contract and owner are tax-exempt."
-    );
+    expect(msg).to.equal("initial ack");
   });
 });
 
