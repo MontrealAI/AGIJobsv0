@@ -53,6 +53,10 @@ contract StakeManager is Ownable {
     );
     event JobFundsLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event JobFundsReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event TokenUpdated(address indexed newToken);
+    event MinStakeUpdated(uint256 minStake);
+    event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event TreasuryUpdated(address indexed treasury);
 
     constructor(IERC20 _token, address owner, address _treasury) Ownable(owner) {
         token = _token;
@@ -66,11 +70,13 @@ contract StakeManager is Ownable {
     /// @notice update the staking/payout token
     function setToken(IERC20 newToken) external onlyOwner {
         token = newToken;
+        emit TokenUpdated(address(newToken));
     }
 
     /// @notice update the minimum stake required
     function setMinStake(uint256 _minStake) external onlyOwner {
         minStake = _minStake;
+        emit MinStakeUpdated(_minStake);
     }
 
     /// @notice update slashing percentage splits
@@ -81,11 +87,13 @@ contract StakeManager is Ownable {
         require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
+        emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
     }
 
     /// @notice update treasury recipient address
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     // ---------------------------------------------------------------
