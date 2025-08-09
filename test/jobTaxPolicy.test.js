@@ -51,4 +51,15 @@ describe("JobRegistry tax policy integration", function () {
       .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
       .withArgs(other.address);
   });
+
+  it("rejects policies that do not confirm tax exemption", async () => {
+    const Bad = await ethers.getContractFactory(
+      "contracts/mocks/BadTaxPolicy.sol:BadTaxPolicy"
+    );
+    const bad = await Bad.deploy();
+    await bad.waitForDeployment();
+    await expect(
+      registry.connect(owner).setTaxPolicy(await bad.getAddress())
+    ).to.be.revertedWith("not tax exempt");
+  });
 });

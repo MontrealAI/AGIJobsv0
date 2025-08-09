@@ -777,30 +777,6 @@ For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md)
 
 See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and interface definitions; the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
-## Tax Obligations
-
-- Employers, agents, and validators are solely responsible for any taxes on rewards, slashes, or transfers.
-- The smart contracts and owner never accrue tax liabilities, reject unsolicited ETH, and hold no custody.
-- Participants must call `acknowledgeTaxPolicy()` once before invoking other `JobRegistry` functions.
-
-The canonical policy document referenced by `policyURI` is published off-chain at [docs/tax-obligations.md](docs/tax-obligations.md).
-
-### Etherscan instructions
-
-**Owner: update policy**
-
-1. Visit the deployed `TaxPolicy` contract on a block explorer.
-2. Open the **Write Contract** tab and connect the owner wallet.
-3. Call `setPolicyURI` and `setAcknowledgement` (or `setPolicy` to update both) with the new values.
-4. Submit the transaction and confirm the update events.
-
-**Users: acknowledge policy**
-
-1. Navigate to the `JobRegistry` contract on the explorer.
-2. In the **Write Contract** tab, connect your wallet.
-3. Call `acknowledgeTaxPolicy()` once; the receipt confirms `TaxPolicyAcknowledged`.
-4. After acknowledgement, other `JobRegistry` functions become available.
-
 ## Incentive Design
 
 - Validators finalise jobs by majority after a review window; minorities may escalate to the `DisputeModule` for an appeal.
