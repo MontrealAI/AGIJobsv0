@@ -24,7 +24,9 @@ interface IJobRegistry {
 /// @dev The owner or an appointed moderator finalises disputes. Bonds are paid
 ///      to the winning party. When a dispute is resolved the module calls back
 ///      into the JobRegistry which in turn distributes funds and slashes stakes
-///      through the StakeManager.
+///      through the StakeManager. Only the `appeal` function accepts ether; all
+///      other transfers are rejected so the contract and owner remain tax
+///      neutral.
 contract DisputeModule is IDisputeModule, Ownable {
     /// @notice Registry managing the underlying jobs
     IJobRegistry public jobRegistry;
@@ -150,6 +152,20 @@ contract DisputeModule is IDisputeModule, Ownable {
         require(ok, "transfer failed");
 
         emit AppealResolved(jobId, employerWins);
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers; only `appeal` may receive funds.
+    receive() external payable {
+        revert("DisputeModule: no direct ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("DisputeModule: no direct ether");
     }
 }
 

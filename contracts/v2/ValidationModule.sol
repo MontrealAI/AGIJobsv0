@@ -9,6 +9,8 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
+/// @dev Holds no ether and keeps the owner and contract tax neutral; only
+///      participating validators and job parties bear tax obligations.
 contract ValidationModule is IValidationModule, Ownable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
@@ -242,6 +244,20 @@ contract ValidationModule is IValidationModule, Ownable {
             if (list[i] == val) return true;
         }
         return false;
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Prevent accidental ETH deposits; the module never holds funds.
+    receive() external payable {
+        revert("ValidationModule: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("ValidationModule: no ether");
     }
 }
 
