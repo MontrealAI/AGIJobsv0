@@ -13,7 +13,7 @@ Each component is immutable once deployed yet configurable by the owner through 
 
 ### Token Configuration
 
-`StakeManager` holds the address of the ERC‑20 used for all payments, staking and appeal fees.  The owner may replace this token at any time via `setToken` without redeploying the rest of the system.  The default deployment references the $AGIALPHA token at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe`, which operates with **6 decimals**.  All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000` for 100 AGIALPHA).  Modules do not assume a specific decimal count, preserving compatibility with future currencies.
+`StakeManager` holds the address of the ERC‑20 used for all payments, staking and appeal fees. The owner may replace this token at any time via `setToken` without redeploying the rest of the system. The default deployment references the $AGIALPHA token at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe`, which operates with **6 decimals**. All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000` for 100 AGIALPHA). Modules do not assume a specific decimal count, preserving compatibility with future currencies. The `DisputeModule` pulls its `appealFee` from `StakeManager`, so dispute resolution also uses the selected ERC‑20.
 
 | Module | Core responsibility | Owner‑controllable parameters |
 | --- | --- | --- |
@@ -27,6 +27,13 @@ Each component is immutable once deployed yet configurable by the owner through 
 Every module inherits `Ownable`, so only the contract owner (or future governance authority) may adjust these parameters.
 
 All public methods accept plain `uint256` values (wei and seconds) so they can be invoked directly from a block explorer without custom tooling. Owners configure modules by calling the published setter functions in Etherscan's **Write** tab, while agents and validators use the corresponding read/write interfaces for routine actions.
+
+### Owner Controls & Explorer Usability
+
+- Every setter is gated by `onlyOwner`, ensuring a single governance address (or multisig) tunes parameters.
+- `JobRegistry` can re‑point to replacement modules via `setModules`, enabling upgrades without migrating state.
+- Functions use primitive types and include NatSpec comments so Etherscan displays human‑readable names and prompts.
+- `StakeManager.setToken` lets the owner swap the payment currency—including dispute fees—without redeploying other contracts.
 
 ## Module Interactions
 ```mermaid

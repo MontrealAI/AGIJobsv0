@@ -44,6 +44,7 @@ Each module inherits `Ownable` so only the contract owner can update parameters.
 - Adjust stakes, reward rates, timing windows, and reputation thresholds via owner‑only setters; every change emits a dedicated event.
 - Swap the payment token at any time using `StakeManager.setToken(newToken)`.
 - Transfer ownership to a multisig or timelock for added security.
+- Public functions accept primitive types and include NatSpec comments so owners can administer modules directly through Etherscan's **Write Contract** tab without scripts.
 
 ### Using $AGIALPHA (6 decimals)
 
