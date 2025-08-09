@@ -593,6 +593,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `StakeManager` | Hold validator/agent collateral, release rewards, execute slashing. |
 | `ReputationEngine` | Track reputation, apply penalties, maintain blacklists. |
 | `CertificateNFT` | Mint ERC‑721 certificates for completed jobs. |
+| `TaxPolicy` | Publish tax disclaimer and canonical policy URI. |
 
 | Module | Key owner controls |
 | --- | --- |
@@ -602,6 +603,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | `setCaller`, `setThreshold`, `setBlacklist` |
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setJobRegistry` |
+| `TaxPolicy` | `setPolicyURI` |
 
 | Module | Interface / Key functions |
 | --- | --- |
@@ -611,6 +613,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
 | `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mint` |
+| `TaxPolicy` | – `policyURI`, `setPolicyURI`, `acknowledge` |
 
 #### Module Addresses & Roles
 
@@ -622,6 +625,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` | Updates reputation scores and applies penalties |
 | `DisputeModule` | `0x0165878A594ca255338adfa4d48449f69242Eb8F` | Handles appeals and renders final rulings |
 | `CertificateNFT` | `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707` | Mints ERC‑721 certificates for completed jobs |
+| `TaxPolicy` | `0x0000000000000000000000000000000000000000` | Stores tax disclaimer URI and acknowledgement helper |
 
 ```mermaid
 graph TD
@@ -640,6 +644,7 @@ graph TD
 - Verify each module address above on at least two explorers.
 - In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
 - Confirm emitted events to ensure configuration changes took effect.
+- `TaxPolicy` exposes `policyURI()` and `acknowledge()` under the **Read** tab so participants can view the disclaimer; only the owner may update the URI via `setPolicyURI()` in **Write**.
  
 Role-based quick steps:
 
@@ -1365,7 +1370,15 @@ npx eslint .
 How jobs, reputation, and value circulate within the AGI ecosystem. Read the expanded discussion in [docs/economy-of-agi.md](docs/economy-of-agi.md).
 
 ## Tax Obligations
-All taxes arising from job transactions are the responsibility of the parties exchanging value. Employers account for capital gains or losses on burned tokens, agents and validators treat tokens received as income, and passive holders incur no tax until they dispose of their own tokens. The smart contract and its deploying corporation never collect fees or hold user funds and therefore remain tax‑exempt in every jurisdiction. See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown.
+All taxes arising from job transactions are borne solely by the participants exchanging value:
+
+- **Employers** calculate gains or losses on tokens that are burned or paid out.
+- **Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
+- **Passive holders** have no tax impact until they dispose of their own tokens.
+
+The protocol’s contracts and the corporation that deployed them are always tax‑exempt. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The `TaxPolicy` contract stores an owner‑editable URI pointing to the current off‑chain policy and exposes an `acknowledge()` helper for explorers like Etherscan.
+
+See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown of responsibilities.
 
 ## Legal & Regulatory
 Explains the utility-token nature of $AGI and related considerations. See [docs/legal-regulatory.md](docs/legal-regulatory.md) for full details.

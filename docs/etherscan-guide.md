@@ -13,6 +13,7 @@
 | ReputationEngine | *TBD* | Updates reputation scores and applies penalties |
 | DisputeModule | *TBD* | Handles appeals and renders final rulings |
 | CertificateNFT | *TBD* | Mints ERC‑721 certificates for completed jobs |
+| TaxPolicy | *TBD* | Stores tax disclaimer URI and acknowledgement helper |
 
 > Addresses will be published after deployment. Always verify each on multiple explorers before interacting.
 
@@ -48,6 +49,11 @@ graph TD
 2. Stake required AGI via **stake**.
 3. During validation, send hashed votes with **commitValidation**.
 4. Reveal decisions using **revealValidation** before the window closes.
+
+### Tax Policy
+1. Open the `TaxPolicy` address in Etherscan.
+2. Under **Read Contract**, call **acknowledge** to view the disclaimer or **policyURI** for the canonical document.
+3. Only the owner may update the URI via **setPolicyURI** in **Write Contract**.
 
 ### Disputers
 1. Open the `DisputeModule` address on Etherscan.
