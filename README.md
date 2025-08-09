@@ -60,7 +60,7 @@ graph TD
 
 ### Interaction Flow
 
-1. Employers, agents, and validators call `JobRegistry.acknowledgeTaxPolicy` to accept the tax disclaimer.
+1. Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing.
 2. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
 3. Agents stake and apply; one agent submits work with `completeJob`.
 4. `ValidationModule` picks validators who commit and reveal votes.
@@ -83,7 +83,7 @@ graph TD
 Interact with the deployment directly from a block explorer using the **Write** tab:
 
 1. **Owner** wires modules with `JobRegistry.setModules(...)` and tunes parameters via owner-only `set...` functions.
-2. **Agents and validators** stake $AGI through `StakeManager.depositStake`.
+2. **Agents and validators** acknowledge the tax policy then stake $AGI through `StakeManager.depositStake(role, amount)`.
 3. **Employer** posts work with `JobRegistry.createJob`, escrowing the reward.
 4. **Agent** applies using `JobRegistry.applyForJob` and submits results via `JobRegistry.completeJob`.
 5. **Validators** commit and reveal votes through `ValidationModule.commitValidation` and `revealValidation`.
@@ -100,6 +100,7 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 **Summary**
 
 - Employers, agents, and validators bear every tax obligation.
+- Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing.
 - Smart contracts and the deploying corporation are tax‑exempt worldwide; `isTaxExempt()` on each module proves it.
 - Verify the policy on Etherscan by reading `taxPolicyDetails`, then calling `acknowledgeTaxPolicy`, and confirming `isTaxExempt`.
 - The owner updates text or URI via `setPolicyURI`/`setAcknowledgement` and enforces a new `taxPolicyVersion` with `bumpTaxPolicyVersion`.
@@ -293,16 +294,23 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 4. When work is finished, call `finalize(jobId)` or `cancelExpiredJob(jobId)` as appropriate.
 
 ### Agents
-1. Stake AGI via `StakeManager.depositStake(amount)`.
-2. Apply using `JobRegistry.applyForJob(jobId)` and, once hired, submit work with `submitWork(jobId, details)`.
-3. Call `requestJobCompletion(jobId, evidence)` to trigger validation.
-4. If validators reject the result, escalate with `DisputeModule.raiseDispute(jobId)`.
+1. On `JobRegistry`, call `acknowledgeTaxPolicy()` and confirm `isTaxExempt()` to verify the contract and owner are tax‑neutral.
+2. In `StakeManager` **Read Contract**, check `isTaxExempt()` then stake AGI with `depositStake(0, amount)` (role `0` = Agent).
+3. Apply using `JobRegistry.applyForJob(jobId)` and, once hired, submit work with `submitWork(jobId, details)`.
+4. Call `requestJobCompletion(jobId, evidence)` to trigger validation.
+5. If validators reject the result, open the `DisputeModule`, confirm `isTaxExempt()`, and escalate by calling `JobRegistry.dispute(jobId)` with the appeal fee.
 
 ### Validators
-1. Lock the required stake on `StakeManager` using `depositStake`.
-2. When selected, send a hashed vote with `ValidationModule.commitValidation(jobId, commitHash)`.
-3. After the commit window, reveal the vote using `ValidationModule.revealValidation(jobId, approve, salt)`.
-4. Once the review window passes, anyone may call `JobRegistry.finalize(jobId)`; correct validators receive rewards while incorrect ones are slashed.
+1. On `JobRegistry`, call `acknowledgeTaxPolicy()` and confirm `isTaxExempt()`.
+2. In `StakeManager` **Read Contract**, verify `isTaxExempt()` then lock the required stake with `depositStake(1, amount)` (role `1` = Validator).
+3. When selected, confirm `ValidationModule.isTaxExempt()` and send a hashed vote with `commitValidation(jobId, commitHash)`.
+4. After the commit window, reveal the vote using `revealValidation(jobId, approve, salt)`.
+5. Once the review window passes, anyone may call `JobRegistry.finalize(jobId)`; correct validators receive rewards while incorrect ones are slashed.
+
+### Appeals
+1. After a failed job outcome, ensure you have acknowledged the tax policy and confirmed `JobRegistry.isTaxExempt()` and `DisputeModule.isTaxExempt()`.
+2. In `JobRegistry` **Write Contract**, invoke `dispute(jobId)` with the required `appealFee`; the registry forwards to `DisputeModule.appeal(jobId)`.
+3. Track `DisputeRaised` and `DisputeResolved` events on both contracts to follow the appeal.
 
 ### Moderators
 1. Monitor `DisputeModule` for `DisputeRaised` events.
@@ -758,28 +766,41 @@ graph TD
 ### Quick Etherscan Guide
 
 - Verify each module address above on at least two explorers.
-- In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
-- Confirm emitted events to ensure configuration changes took effect.
-- To review the tax disclaimer:
-  1. Open the `TaxPolicy` contract address.
-  2. In **Read Contract**, call `acknowledgement` (or `acknowledge`) and `policyURI`.
-  3. `JobRegistry` surfaces the same values via `taxPolicyDetails`, `taxAcknowledgement`, and `taxPolicyURI`.
-- Only the owner may update the policy via `setPolicyURI`, `setAcknowledgement`, or `setPolicy` in **Write Contract**.
- 
+- The contracts and their owner are globally tax‑exempt; call `isTaxExempt()` on any module to confirm. Employers, agents, and validators shoulder all tax duties.
+- Before staking, voting, or appealing:
+  1. Open `JobRegistry` in **Read Contract** and call `taxPolicyDetails`.
+  2. Switch to **Write Contract** and execute `acknowledgeTaxPolicy`.
+  3. Back in **Read Contract**, confirm `isTaxExempt()` returns `true`.
+
+**depositStake**
+1. Open `StakeManager` **Read Contract** and confirm `isTaxExempt()`.
+2. In **Write Contract**, call `depositStake(role, amount)` (role `0` = Agent, `1` = Validator).
+
+**commitValidation / revealValidation**
+1. On `ValidationModule` **Read Contract**, check `isTaxExempt()`.
+2. During the commit window, call `commitValidation(jobId, commitHash)`.
+3. When the reveal window opens, call `revealValidation(jobId, approve, salt)`.
+
+**appeal**
+1. Confirm `isTaxExempt()` on both `JobRegistry` and `DisputeModule`.
+2. In `JobRegistry` **Write Contract**, call `dispute(jobId)` with the required appeal fee; the registry forwards to `DisputeModule.appeal(jobId)`.
+
 Role-based quick steps:
 
 **Employers**
-1. Post work through JobRegistry `createJob(reward, uri)` after approving AGI.
+1. Acknowledge the tax policy as above, then post work through JobRegistry `createJob(reward, uri)` after approving AGI.
 2. Once validation succeeds, call `finalize(jobId)` to pay the agent.
 
 **Agents**
-1. Stake tokens in StakeManager via `depositStake(amount)`.
-2. Join a task with JobRegistry `applyForJob(jobId)` and submit results using `completeJob(jobId, data)`.
+1. Acknowledge the tax policy and confirm exemptions.
+2. Stake tokens in StakeManager via `depositStake(0, amount)`.
+3. Join a task with JobRegistry `applyForJob(jobId)` and submit results using `completeJob(jobId, data)`.
 
 **Validators**
-1. Stake via StakeManager, then watch for selection.
-2. Cast a commit with ValidationModule `commitValidation(jobId, hash)` and later reveal via `revealValidation(jobId, approve, salt)`.
-3. If a vote period lapses without resolution, anyone may call `finalize(jobId)` on the ValidationModule.
+1. Acknowledge the tax policy and confirm exemptions.
+2. Stake via StakeManager using `depositStake(1, amount)`.
+3. Cast a commit with ValidationModule `commitValidation(jobId, hash)` and later reveal via `revealValidation(jobId, approve, salt)`.
+4. If a vote period lapses without resolution, anyone may call `finalize(jobId)` on the ValidationModule.
 
 For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
