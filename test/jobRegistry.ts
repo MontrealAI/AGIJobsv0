@@ -44,7 +44,7 @@ describe("JobRegistry tax policy gating", function () {
       registry.connect(employer).acknowledgeTaxPolicy()
     )
       .to.emit(registry, "TaxAcknowledged")
-      .withArgs(employer.address, 1);
+      .withArgs(employer.address, 1, "ack");
 
     await expect(
       registry.connect(employer).createJob()
@@ -58,7 +58,7 @@ describe("JobRegistry tax policy gating", function () {
       registry.connect(agent).acknowledgeTaxPolicy()
     )
       .to.emit(registry, "TaxAcknowledged")
-      .withArgs(agent.address, 1);
+      .withArgs(agent.address, 1, "ack");
 
     await expect(
       registry.connect(agent).applyForJob(1)

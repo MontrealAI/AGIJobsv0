@@ -34,23 +34,23 @@ graph TD
 
 ## Role-based Instructions
 
-Before performing any on-chain action, employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` and verify `isTaxExempt()`—all taxes fall on participants while the contracts and owner remain globally exempt.
+Before performing any on-chain action, employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` and verify `isTaxExempt()`—all taxes fall on participants while the contracts and owner remain globally exempt. The `acknowledgeTaxPolicy` transaction emits `TaxAcknowledged(user, version, acknowledgement)` so the accepted disclaimer text is permanently recorded on-chain.
 
 ### Employers
 1. Open the `JobRegistry` address on Etherscan.
-2. In **Write Contract**, connect an employer wallet and execute **acknowledgeTaxPolicy**.
+2. In **Write Contract**, connect an employer wallet and execute **acknowledgeTaxPolicy**, then review the `TaxAcknowledged` event log for the disclaimer text.
 3. In **Read Contract**, confirm **isTaxExempt()** returns `true`.
 4. Call **createJob** with job parameters and escrowed token amount.
 5. Monitor **JobCreated** events to confirm posting.
 
 ### Agents
-1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**.
+1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Check the emitted `TaxAcknowledged` event for the recorded disclaimer.
 2. Open `StakeManager`; in **Read Contract** confirm **isTaxExempt()**, then stake with **depositStake(0, amount)** (role `0` = Agent).
 3. Use **applyForJob** and **completeJob** as needed.
 4. Call **requestJobCompletion** when work is ready for validation.
 
 ### Validators
-1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**.
+1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Inspect the `TaxAcknowledged` event log for the acknowledgement text.
 2. Stake required AGI via **StakeManager.depositStake(1, amount)** after confirming **StakeManager.isTaxExempt()**.
 3. During validation, open `ValidationModule`, confirm **isTaxExempt()**, and send hashed votes with **commitValidation(jobId, commitHash)**.
 4. Reveal decisions using **revealValidation(jobId, approve, salt)** before the window closes.
@@ -62,7 +62,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 1. Open [`JobRegistry` on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#readContract).
 2. In **Read Contract**, call **taxPolicyDetails** to view the canonical policy URI and acknowledgement text. *(Example screenshot: [taxPolicyDetails](https://via.placeholder.com/650x150?text=taxPolicyDetails))*
 3. Still under **Read Contract**, call **isTaxExempt** and confirm it returns `true`.
-4. Switch to **Write Contract**, connect your wallet, and execute **acknowledgeTaxPolicy**.
+4. Switch to **Write Contract**, connect your wallet, and execute **acknowledgeTaxPolicy**. The transaction log will show `TaxAcknowledged(user, version, acknowledgement)` with the disclaimer you accepted.
 5. Back in **Read Contract**, call **taxAcknowledgedVersion(address)** to ensure it matches **taxPolicyVersion**.
 
 #### Owner: update the policy

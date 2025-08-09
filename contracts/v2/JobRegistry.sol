@@ -100,10 +100,18 @@ contract JobRegistry is Ownable {
     event TaxPolicyUpdated(address policy, uint256 version);
     /// @notice Emitted when a participant acknowledges the tax policy, placing
     /// full tax responsibility on the caller while the contract owner remains
-    /// exempt.
+    /// exempt. The acknowledgement text is included in the event so explorers
+    /// like Etherscan can surface the exact disclaimer the participant
+    /// accepted.
     /// @param user Address of the acknowledging participant.
     /// @param version Tax policy version that was acknowledged.
-    event TaxAcknowledged(address indexed user, uint256 version);
+    /// @param acknowledgement Human‑readable disclaimer confirming the caller
+    ///        bears all tax liability.
+    event TaxAcknowledged(
+        address indexed user,
+        uint256 version,
+        string acknowledgement
+    );
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -205,13 +213,16 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Acknowledge the current tax policy.
-    /// @dev Calls the policy contract to retrieve the disclaimer, then marks
-    /// the caller as having accepted full tax responsibility.
-    function acknowledgeTaxPolicy() external {
+    /// @dev Retrieves the acknowledgement text from the `TaxPolicy` contract
+    /// and emits it for off-chain visibility so participants have an on-chain
+    /// record of the exact disclaimer accepted.
+    /// @return ack Human‑readable disclaimer confirming the caller bears all
+    /// tax responsibility.
+    function acknowledgeTaxPolicy() external returns (string memory ack) {
         require(address(taxPolicy) != address(0), "policy");
-        taxPolicy.acknowledge();
+        ack = taxPolicy.acknowledge();
         taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
-        emit TaxAcknowledged(msg.sender, taxPolicyVersion);
+        emit TaxAcknowledged(msg.sender, taxPolicyVersion, ack);
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {

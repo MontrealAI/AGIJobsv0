@@ -4,7 +4,7 @@
 
 - Employers, agents, and validators shoulder all tax liability.
 - The smart contracts and deploying corporation remain tax‑exempt everywhere, confirmed by `isTaxExempt()`.
-- Verify the policy on Etherscan: read `taxPolicyDetails`, acknowledge via `acknowledgeTaxPolicy`, and check `isTaxExempt`.
+- Verify the policy on Etherscan: read `taxPolicyDetails`, acknowledge via `acknowledgeTaxPolicy` (which emits `TaxAcknowledged(user, version, acknowledgement)`), and check `isTaxExempt`.
 - The owner edits the policy text or URI with `setPolicyURI`/`setAcknowledgement`, tracks changes via `policyVersion`, and bumps `taxPolicyVersion` using `bumpTaxPolicyVersion`.
 
 The AGI Jobs protocol routes all tax duties to the participants who exchange value and none to the contract owner. The smart contract is inert code: it never charges fees, holds revenue, or transfers tokens to the deploying corporation. Consequently the platform and its owner have no taxable events in any jurisdiction and remain exempt from direct, indirect, or theoretical taxes. This neutrality holds globally—United States, Canada, the European Union, and beyond—because the infrastructure never realises income or disposes of assets. The dedicated [`TaxPolicy`](../contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain by storing both a canonical policy URI **and** a human‑readable acknowledgement string—each controlled solely by the owner—so non‑technical users can confirm the disclaimer through explorers like Etherscan. Call `policyDetails` to fetch both fields at once, `acknowledgement` (or `acknowledge`) and `policyURI` individually on the `TaxPolicy` contract, or `taxPolicyDetails` on `JobRegistry`. `policyVersion` reveals the current version and `bumpPolicyVersion` increments it without altering text. `isTaxExempt()` on both contracts returns `true` for additional assurance. Only the owner can update these values via `setPolicyURI`, `setAcknowledgement`, `setPolicy`, or `bumpPolicyVersion`; unauthorized calls revert.
@@ -16,7 +16,7 @@ All other core modules—`StakeManager`, `ValidationModule`, `ReputationEngine`,
 
 1. Open the `JobRegistry` address on Etherscan.
 2. Under **Read Contract**, call `taxPolicyDetails` to view the current policy text and URI and check `taxPolicyVersion` against `TaxPolicy.policyVersion`.
-3. Switch to **Write Contract** and call `acknowledgeTaxPolicy` to accept the active version.
+3. Switch to **Write Contract** and call `acknowledgeTaxPolicy` to accept the active version. The transaction emits `TaxAcknowledged(user, version, acknowledgement)` containing the disclaimer text.
 4. Back under **Read Contract**, verify `isTaxExempt` returns `true` and that `taxAcknowledgedVersion(address)` matches `taxPolicyVersion`.
 5. Owners can update the text or URI via `setPolicyURI`, `setAcknowledgement`, `setPolicy`, or `bumpPolicyVersion` on `TaxPolicy`, then enforce a new acknowledgement by calling `bumpTaxPolicyVersion` on `JobRegistry`.
 

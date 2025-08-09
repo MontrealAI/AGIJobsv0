@@ -39,7 +39,7 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(registry, "TaxAcknowledged")
-      .withArgs(user.address, 1);
+      .withArgs(user.address, 1, "ack");
     expect(await registry.taxAcknowledgedVersion(user.address)).to.equal(1);
   });
 
@@ -53,7 +53,7 @@ describe("JobRegistry tax policy integration", function () {
     ).to.be.revertedWith("acknowledge tax policy");
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(registry, "TaxAcknowledged")
-      .withArgs(user.address, 2);
+      .withArgs(user.address, 2, "ack");
     await expect(registry.connect(user).createJob())
       .to.emit(registry, "JobCreated")
       .withArgs(1, user.address, ethers.ZeroAddress, 1, 0);
