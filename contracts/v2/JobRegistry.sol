@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 interface IValidationModule {
     function validate(uint256 jobId) external view returns (bool);
@@ -27,11 +28,6 @@ interface IDisputeModule {
 
 interface ICertificateNFT {
     function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
-}
-
-interface ITaxPolicy {
-    function acknowledge() external view returns (string memory);
-    function policyURI() external view returns (string memory);
 }
 
 /// @title JobRegistry

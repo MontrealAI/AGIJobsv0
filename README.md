@@ -59,6 +59,17 @@ All tax duties in the AGI Jobs ecosystem fall solely on the participants who exc
 
 The smart contracts and the corporation that deployed them never collect fees, hold funds, or realise gains. Consequently the infrastructure and its owner remain tax‑exempt in every jurisdiction. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain; non‑technical users can call `acknowledge()` on Etherscan to read the latest disclaimer. Only the owner may update the policy URI or message via `setPolicyURI`, `setAcknowledgement`, or the atomic `setPolicy` function.
 
+### Checking the tax disclaimer on Etherscan
+
+Non‑technical participants can verify the policy directly in a browser:
+
+1. Open the `TaxPolicy` contract address on a block explorer such as Etherscan.
+2. Under **Read Contract**, call `acknowledge()` to display the disclaimer or `policyURI()` for the canonical off‑chain document.
+3. Alternatively, read `taxPolicyDetails()` on the `JobRegistry` to fetch both values in a single call.
+4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`.
+
+The contracts and their owner remain perpetually tax‑exempt.
+
 ## Architecture
 
 The modular design separates concerns across dedicated contracts:
