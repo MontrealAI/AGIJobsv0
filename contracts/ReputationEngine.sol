@@ -110,5 +110,18 @@ contract ReputationEngine is Ownable {
         }
         return false;
     }
+
+    /// @notice Confirms the contract and owner remain tax-exempt.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    receive() external payable {
+        revert("ReputationEngine: no ether");
+    }
+
+    fallback() external payable {
+        revert("ReputationEngine: no ether");
+    }
 }
 

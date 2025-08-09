@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
+import {IJobRegistryTax} from "../interfaces/IJobRegistryTax.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
@@ -43,6 +44,18 @@ contract DisputeModule is Ownable {
         moderator = owner;
     }
 
+    modifier requiresTaxAcknowledgement() {
+        IJobRegistryTax registry = IJobRegistryTax(address(jobRegistry));
+        if (msg.sender != owner()) {
+            require(
+                registry.taxAcknowledgedVersion(msg.sender) ==
+                    registry.taxPolicyVersion(),
+                "acknowledge tax policy"
+            );
+        }
+        _;
+    }
+
     /// @notice Modifier restricting calls to the owner or moderator.
     modifier onlyArbiter() {
         require(msg.sender == owner() || msg.sender == moderator, "not authorized");
@@ -70,11 +83,18 @@ contract DisputeModule is Ownable {
     /// @notice Raise a dispute by posting the appeal fee and providing evidence.
     /// @param jobId Identifier of the job being disputed.
     /// @param evidence Supporting evidence for the dispute.
-    function raiseDispute(uint256 jobId, string calldata evidence) external payable {
+    function raiseDispute(uint256 jobId, string calldata evidence)
+        external
+        payable
+        requiresTaxAcknowledgement
+    {
         require(msg.value == appealFee, "fee");
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        require(msg.sender == job.employer || msg.sender == job.agent, "not participant");
+        require(
+            msg.sender == job.employer || msg.sender == job.agent,
+            "not participant"
+        );
 
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
@@ -134,12 +154,12 @@ contract DisputeModule is Ownable {
 
     /// @dev Reject direct ETH transfers that are not dispute bonds.
     receive() external payable {
-        revert("DisputeModule: no direct ether");
+        revert("DisputeModule: no ether");
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("DisputeModule: no direct ether");
+        revert("DisputeModule: no ether");
     }
 }
 

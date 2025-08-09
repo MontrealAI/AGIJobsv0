@@ -22,5 +22,18 @@ contract ValidationModule is Ownable {
     function validate(uint256 jobId) external view returns (bool) {
         return outcomes[jobId];
     }
+
+    /// @notice Confirms the contract and owner are tax-exempt.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    receive() external payable {
+        revert("ValidationModule: no ether");
+    }
+
+    fallback() external payable {
+        revert("ValidationModule: no ether");
+    }
 }
 

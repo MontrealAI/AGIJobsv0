@@ -66,5 +66,18 @@ contract CertificateNFT is ERC721, Ownable {
         }
         return super.tokenURI(tokenId);
     }
+
+    /// @notice Confirms the contract and owner are tax-exempt.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    receive() external payable {
+        revert("CertificateNFT: no ether");
+    }
+
+    fallback() external payable {
+        revert("CertificateNFT: no ether");
+    }
 }
 
