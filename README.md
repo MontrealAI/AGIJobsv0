@@ -100,7 +100,7 @@ All tax duties in the AGI Jobs ecosystem fall solely on the participants who exc
 - **Validators** report any reward tokens as income.
 - **Passive token holders** have no tax impact until they dispose of their own tokens.
 
-The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated.
+The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. This exemption is permanent: no contract function or policy update can create a taxable event for the owner or the deployed code. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated. See [tax-obligations.md](docs/tax-obligations.md) for additional context.
 
 ### Checking the tax disclaimer on Etherscan
 
@@ -110,6 +110,36 @@ Non‑technical participants can verify the policy directly in a browser:
 2. Under **Read Contract**, call `acknowledgement` (or `acknowledge`) to display the disclaimer and `policyURI` for the canonical document.
 3. Alternatively, read `taxPolicyDetails` on the `JobRegistry` to fetch both values in a single call.
 4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`.
+
+### Owner checklist: updating the policy via Etherscan
+
+Owners can update the disclaimer text or URI without affecting the platform's tax‑exempt status:
+
+1. Open the `TaxPolicy` contract on Etherscan and switch to **Write Contract**.
+2. Connect the owner wallet.
+3. Call `setPolicyURI` to change the document, `setAcknowledgement` to change the message, or `setPolicy` to update both at once.
+4. Verify the transaction and confirm the new values under **Read Contract**.
+
+### Read/Write Contract quick guide
+
+Employers, agents, and validators interact with the system through standard explorer tabs:
+
+**Employers**
+1. Open the `JobRegistry` address.
+2. In **Write Contract**, connect the employer wallet and call `createJob` with the job parameters and escrowed tokens.
+3. Monitor `JobCreated` events and job details under **Read Contract**.
+
+**Agents**
+1. Visit the same `JobRegistry` address.
+2. In **Write Contract**, connect the agent wallet and use `applyForJob`, `submitWork`, and `requestJobCompletion`.
+3. Track job status via **Read Contract** calls like `getJob`.
+
+**Validators**
+1. Navigate to the `ValidationModule` address.
+2. Stake tokens and participate in voting via **Write Contract** functions such as `stake`, `commitValidation`, and `revealValidation`.
+3. Check assignments and results in **Read Contract**.
+
+See [etherscan-guide.md](docs/etherscan-guide.md) for detailed explorer instructions.
 
 All core modules—`JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule`, and `TaxPolicy`—revert on direct ETH transfers so the infrastructure never holds funds. The contracts and their owner therefore remain perpetually tax‑exempt.
 
