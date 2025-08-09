@@ -6,11 +6,12 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 /// @title TaxPolicy
 /// @notice Stores canonical tax policy metadata and acknowledgement text.
-/// @dev Contract owner alone may update the policy URI or acknowledgement.
-/// The contract never accepts ether and exists solely to provide an on-chain
-/// reference for off-chain tax responsibilities. AGI Employers, AGI Agents, and
-/// Validators remain fully responsible for their own tax obligations; the
-/// contract and its owner are always tax-exempt.
+/// @dev The owner may update the policy URI or acknowledgement, but neither the
+/// contract nor the deploying corporation ever accrues direct, indirect, or
+/// theoretical tax liability in any jurisdiction. It accepts no ether and
+/// provides only an on-chain pointer for off-chain responsibilities. AGI
+/// Employers, AGI Agents, and Validators bear all tax obligations while the
+/// infrastructure and its owner remain perpetually exempt.
 contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Off-chain document describing tax responsibilities.
     string public policyURI;
