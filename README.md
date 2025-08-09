@@ -107,7 +107,7 @@ The smart contracts and the corporation that deployed them:
 - **Provide a free service.** With no consideration exchanged, no sales/VAT/GST obligations arise.
 - **Remain tax‑neutral worldwide.** No direct, indirect, or theoretical liability can emerge because the owner realises no income and does not dispose of assets.
 
-This guarantee is enforced on‑chain through the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract, which stores a canonical policy URI and acknowledgement string. Every update function is gated by `onlyOwner`, ensuring that only the owner may revise the policy and that such updates never create a taxable event. See [tax-obligations.md](docs/tax-obligations.md) for a summary, and consult [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the full jurisdictional rationale.
+These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. `JobRegistry` mirrors the same strings through `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the disclaimer in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
 
 ### Checking the tax disclaimer on Etherscan
 
