@@ -24,6 +24,26 @@ describe("StakeManager", function () {
   });
 
   it("handles staking, job escrow and slashing", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await expect(
       stakeManager.connect(user).depositStake(0, 200)
@@ -58,6 +78,47 @@ describe("StakeManager", function () {
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
     expect(await token.balanceOf(treasury.address)).to.equal(50n);
+  });
+
+  it("enforces tax acknowledgement for staking operations", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+
+    await expect(
+      stakeManager.connect(user).depositStake(0, 100)
+    ).to.be.revertedWith("acknowledge tax policy");
+
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await expect(
+      stakeManager.connect(user).depositStake(0, 100)
+    ).to.emit(stakeManager, "StakeDeposited");
+
+    await jobRegistry.connect(owner).bumpTaxPolicyVersion();
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 50)
+    ).to.be.revertedWith("acknowledge tax policy");
+
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 50)
+    ).to.emit(stakeManager, "StakeWithdrawn").withArgs(user.address, 0, 50);
   });
 
   it("restricts token updates to owner", async () => {

@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -25,6 +26,9 @@ contract StakeManager is Ownable {
 
     /// @notice address receiving the treasury share of slashed stake
     address public treasury;
+
+    /// @notice JobRegistry contract tracking tax policy acknowledgements
+    IJobRegistryTax public jobRegistry;
 
     /// @notice minimum required stake
     uint256 public minStake;
@@ -57,6 +61,7 @@ contract StakeManager is Ownable {
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
+    event JobRegistryUpdated(address indexed registry);
 
     constructor(IERC20 _token, address owner, address _treasury) Ownable(owner) {
         token = _token;
@@ -96,12 +101,32 @@ contract StakeManager is Ownable {
         emit TreasuryUpdated(_treasury);
     }
 
+    /// @notice set the JobRegistry used for tax acknowledgement tracking
+    function setJobRegistry(IJobRegistryTax _jobRegistry) external onlyOwner {
+        jobRegistry = _jobRegistry;
+        emit JobRegistryUpdated(address(_jobRegistry));
+    }
+
     // ---------------------------------------------------------------
     // staking logic
     // ---------------------------------------------------------------
 
+    /// @notice require caller to acknowledge current tax policy
+    modifier requiresTaxAcknowledgement() {
+        if (msg.sender != owner()) {
+            address registry = address(jobRegistry);
+            require(registry != address(0), "job registry");
+            require(
+                jobRegistry.taxAcknowledgedVersion(msg.sender) ==
+                    jobRegistry.taxPolicyVersion(),
+                "acknowledge tax policy"
+            );
+        }
+        _;
+    }
+
     /// @notice deposit stake for caller for a specific role
-    function depositStake(Role role, uint256 amount) external {
+    function depositStake(Role role, uint256 amount) external requiresTaxAcknowledgement {
         require(amount > 0, "amount");
         uint256 newStake = stakes[msg.sender][role] + amount;
         require(newStake >= minStake, "min stake");
@@ -111,7 +136,7 @@ contract StakeManager is Ownable {
     }
 
     /// @notice withdraw available stake for a specific role
-    function withdrawStake(Role role, uint256 amount) external {
+    function withdrawStake(Role role, uint256 amount) external requiresTaxAcknowledgement {
         uint256 staked = stakes[msg.sender][role];
         require(staked >= amount, "stake");
         uint256 newStake = staked - amount;
