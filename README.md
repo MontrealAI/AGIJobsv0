@@ -87,7 +87,7 @@ graph TD
 
 ### Incentive Summary
 
-- Agents and validators must stake $AGI; dishonest behaviour is slashed.
+- Agents and validators must stake $AGIALPHA; dishonest behaviour is slashed.
 - Correct validators share rewards while employers receive a portion of slashed stakes.
 - Burn and stake parameters make cheating unprofitable, keeping honest participation in equilibrium.
 
@@ -187,7 +187,7 @@ Structure guidelines:
 Interact with the deployment directly from a block explorer using the **Write** tab:
 
 1. **Owner** wires modules with `JobRegistry.setModules(...)` and tunes parameters via owner-only `set...` functions.
-2. **Agents and validators** acknowledge the tax policy then stake $AGI through `StakeManager.depositStake(role, amount)`.
+2. **Agents and validators** acknowledge the tax policy then stake $AGIALPHA through `StakeManager.depositStake(role, amount)`.
 3. **Employer** posts work with `JobRegistry.createJob`, escrowing the reward.
 4. **Agent** applies using `JobRegistry.applyForJob` and submits results via `JobRegistry.completeJob`.
 5. **Validators** commit and reveal votes through `ValidationModule.commitValidation` and `revealValidation`.
