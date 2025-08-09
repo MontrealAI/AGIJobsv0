@@ -6,6 +6,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @title ReputationEngine
 /// @notice Tracks reputation scores with blacklist enforcement.
 /// Only authorised callers may update scores.
+/// @dev Holds no funds and rejects ether so neither the contract nor the
+///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable {
     mapping(address => uint256) private _scores;
     mapping(address => bool) private _blacklisted;
@@ -76,6 +78,20 @@ contract ReputationEngine is Ownable {
     /// @notice Check blacklist status for a user.
     function isBlacklisted(address user) external view returns (bool) {
         return _blacklisted[user];
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert("ReputationEngine: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("ReputationEngine: no ether");
     }
 }
 
