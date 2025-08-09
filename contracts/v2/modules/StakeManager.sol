@@ -10,6 +10,8 @@ import {IStakeManager} from "../interfaces/IStakeManager.sol";
 
 /// @title StakeManager (module)
 /// @notice Minimal stake escrow with role based accounting and slashing.
+/// @dev Only participants bear any tax obligations; this contract remains
+/// tax neutral and rejects any direct ETH transfers.
 contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
     using SafeERC20 for IERC20;
 
@@ -161,6 +163,19 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         returns (uint256)
     {
         return _locked[user][role];
+    }
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert("StakeManager: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("StakeManager: no ether");
     }
 }
 

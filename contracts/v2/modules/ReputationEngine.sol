@@ -5,8 +5,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title ReputationEngine (module)
 /// @notice Tracks reputation per role and enforces thresholds with blacklist support.
-/// @dev Holds no funds and rejects ether so neither the contract nor its owner
-///      ever custodies assets or incurs tax liabilities.
+/// @dev Only participants bear any tax obligations; the contract holds no funds
+///      and rejects ether.
 contract ReputationEngine is Ownable {
     enum Role {
         Agent,
