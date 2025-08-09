@@ -100,7 +100,7 @@ All tax duties in the AGI Jobs ecosystem fall solely on the participants who exc
 - **Validators** report any reward tokens as income.
 - **Passive token holders** have no tax impact until they dispose of their own tokens.
 
-The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. This exemption is permanent: no contract function or policy update can create a taxable event for the owner or the deployed code. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated. See [tax-obligations.md](docs/tax-obligations.md) for additional context.
+The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. This exemption is permanent: no contract function or policy update can create a taxable event for the owner or the deployed code. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated. All update functions are `onlyOwner`, so unauthorized calls revert. See [tax-obligations.md](docs/tax-obligations.md) for additional context.
 
 ### Checking the tax disclaimer on Etherscan
 
@@ -109,7 +109,7 @@ Non‑technical participants can verify the policy directly in a browser:
 1. Open the `TaxPolicy` contract address on a block explorer such as Etherscan.
 2. Under **Read Contract**, call `acknowledgement` (or `acknowledge`) to display the disclaimer and `policyURI` for the canonical document.
 3. Alternatively, read `taxPolicyDetails` on the `JobRegistry` to fetch both values in a single call.
-4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`.
+4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; calls from any other address revert.
 
 ### Owner checklist: updating the policy via Etherscan
 
@@ -1466,17 +1466,6 @@ npx eslint .
 
 ## The Economy of AGI
 How jobs, reputation, and value circulate within the AGI ecosystem. Read the expanded discussion in [docs/economy-of-agi.md](docs/economy-of-agi.md).
-
-## Tax Obligations
-All taxes arising from job transactions fall exclusively on the parties exchanging value:
-
-- **AGI Employers** calculate gains or losses on tokens that are burned or paid out.
-- **AGI Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
-- **Passive holders** have no tax impact until they dispose of their own tokens.
-
-The protocol’s smart contracts and the corporation that deployed them are perpetually tax‑exempt across all jurisdictions. They never collect fees, hold tokens, or take custody of funds, leaving no direct, indirect, or even theoretical tax liability for the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and an owner‑editable acknowledgement string. Non‑technical users can confirm the disclaimer directly on Etherscan by calling `acknowledgement()`/`acknowledge()` on the `TaxPolicy` contract or `taxPolicyDetails()` on `JobRegistry`. Only the owner may update the URI with `setPolicyURI()`, the message with `setAcknowledgement()`, or both with `setPolicy()`.
-
-See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown of responsibilities.
 
 ## Legal & Regulatory
 Explains the utility-token nature of $AGI and related considerations. See [docs/legal-regulatory.md](docs/legal-regulatory.md) for full details.
