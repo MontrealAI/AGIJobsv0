@@ -4,6 +4,8 @@
 - AGIJobManager v0: [Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) | [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
 - $AGI Token: [Etherscan](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code) | [Blockscout](https://eth.blockscout.com/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D?tab=contract)
 
+> **Tax Note:** The contracts and their owner are globally tax‑exempt; employers, agents, and validators shoulder all tax duties. Each module exposes `isTaxExempt()` for verification.
+
 ## Module Addresses & Roles
 | Module | Address | Role |
 | --- | --- | --- |
@@ -32,26 +34,29 @@ graph TD
 
 ## Role-based Instructions
 
+Before performing any on-chain action, employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` and verify `isTaxExempt()`—all taxes fall on participants while the contracts and owner remain globally exempt.
+
 ### Employers
-1. Open the AGIJobManager v0 address on Etherscan.
-2. In **Write Contract**, connect an employer wallet.
-3. Call **createJob** with job parameters and escrowed token amount.
-4. Monitor **JobCreated** events to confirm posting.
+1. Open the `JobRegistry` address on Etherscan.
+2. In **Write Contract**, connect an employer wallet and execute **acknowledgeTaxPolicy**.
+3. In **Read Contract**, confirm **isTaxExempt()** returns `true`.
+4. Call **createJob** with job parameters and escrowed token amount.
+5. Monitor **JobCreated** events to confirm posting.
 
 ### Agents
-1. Visit the same contract address.
-2. Under **Write Contract**, connect your agent wallet.
-3. Use **applyForJob** and **submitWork** as needed.
+1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**.
+2. Open `StakeManager`; in **Read Contract** confirm **isTaxExempt()**, then stake with **depositStake(0, amount)** (role `0` = Agent).
+3. Use **applyForJob** and **completeJob** as needed.
 4. Call **requestJobCompletion** when work is ready for validation.
 
 ### Validators
-1. Navigate to the contract and connect a validator wallet.
-2. Stake required AGI via **stake**.
-3. During validation, send hashed votes with **commitValidation**.
-4. Reveal decisions using **revealValidation** before the window closes.
+1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**.
+2. Stake required AGI via **StakeManager.depositStake(1, amount)** after confirming **StakeManager.isTaxExempt()**.
+3. During validation, open `ValidationModule`, confirm **isTaxExempt()**, and send hashed votes with **commitValidation(jobId, commitHash)**.
+4. Reveal decisions using **revealValidation(jobId, approve, salt)** before the window closes.
 
 ### Tax Policy
-The `TaxPolicy` contract is informational only: it never holds funds and imposes no tax liability on the infrastructure or its owner. Employers, agents, and validators bear every tax duty while the contracts and deploying corporation remain exempt in all jurisdictions.
+The `TaxPolicy` contract is informational only: it never holds funds and imposes no tax liability on the infrastructure or its owner. The contracts and owner are globally tax‑exempt while employers, agents, and validators shoulder all tax duties and must acknowledge the policy before staking, voting, or appealing.
 
 **Etherscan steps**
 
@@ -62,10 +67,9 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 5. Owners update the text or URI via **setPolicyURI**, **setAcknowledgement**, or **setPolicy** on `TaxPolicy`, then call **bumpTaxPolicyVersion** on `JobRegistry` to require fresh acknowledgements.
 
 ### Disputers
-1. Open the `DisputeModule` address on Etherscan.
-2. In **Write Contract**, connect your wallet.
-3. Call **raiseDispute(jobId)** to escalate a contested job.
-4. After the ruling, verify **DisputeResolved** in the `DisputeModule` and `JobRegistry` event logs.
+1. Ensure you've acknowledged the tax policy and confirmed **isTaxExempt()** on both `JobRegistry` and `DisputeModule`.
+2. In `JobRegistry` **Write Contract**, call **dispute(jobId)** with the required `appealFee`; the registry forwards to `DisputeModule.appeal(jobId)`.
+3. After the ruling, verify **DisputeResolved** in the `DisputeModule` and `JobRegistry` event logs.
 
 ## Parameter Glossary
 
