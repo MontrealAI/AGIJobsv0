@@ -96,3 +96,18 @@ currencies via `setToken(newToken)` without redeploying other modules.  All amou
 All public methods use simple data types so employers, agents and validators can interact through Etherscan's **Write** tab.
 Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-agialpha.md](deployment-agialpha.md).
 
+## Governance & Composability
+- Every module inherits `Ownable`; only the contract owner or its designated multisig can adjust parameters.
+- `JobRegistry.setModules` lets the owner swap in new `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`,
+  or `CertificateNFT` addresses without migrating state.
+- Each setter emits a dedicated event (`ModuleUpdated`, `ParameterUpdated`, etc.), giving off‑chain governance a verifiable
+  audit trail.
+
+## Game‑Theoretic Incentives
+- Agent and validator stakes create an energy cost for deviation; expected slashing exceeds any short‑term gain.
+- The commit–reveal scheme, combined with random validator selection, raises the entropy term so collusion is statistically
+  disfavoured.
+- `ReputationEngine` reinforces cooperation by reducing future earnings for misbehaving addresses and blacklisting chronic
+  offenders.
+- Appeals require a token fee via `DisputeModule`, ensuring that only disputes with positive expected value are raised.
+

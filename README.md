@@ -21,6 +21,8 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [Modular Architecture & Interfaces](docs/modular-architecture-v2.md) – contract separation with interface snippets and gas tips.
 - [v2 Module & Interface Reference](docs/v2-module-interface-reference.md) – condensed module graph, core interfaces, and gas/incentive notes.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
+- [Production-Scale AGIJobs Platform Sprint Plan](docs/ProductionScaleAGIJobsPlatformSprintPlanv0.md) – background research and
+  architectural rationale behind the modular design.
 - [Deployment Guide for $AGIALPHA](docs/deployment-agialpha.md) – non-technical walkthrough for deploying and configuring the suite with the 6‑decimal token.
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
