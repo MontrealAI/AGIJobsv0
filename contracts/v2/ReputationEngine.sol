@@ -14,6 +14,8 @@ contract ReputationEngine is Ownable {
 
     event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
     event Blacklisted(address indexed user, bool status);
+    event CallerUpdated(address indexed caller, bool allowed);
+    event ThresholdUpdated(uint256 newThreshold);
 
     constructor(address owner) Ownable(owner) {}
 
@@ -25,11 +27,13 @@ contract ReputationEngine is Ownable {
     /// @notice Authorize or revoke a caller.
     function setCaller(address caller, bool allowed) external onlyOwner {
         callers[caller] = allowed;
+        emit CallerUpdated(caller, allowed);
     }
 
     /// @notice Set reputation threshold for automatic blacklisting.
     function setThreshold(uint256 newThreshold) external onlyOwner {
         threshold = newThreshold;
+        emit ThresholdUpdated(newThreshold);
     }
 
     /// @notice Update blacklist status for a user.
