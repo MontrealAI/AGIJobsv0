@@ -48,6 +48,12 @@ describe("TaxPolicy", function () {
     expect(msg).to.equal("initial ack");
   });
 
+  it("returns policy details tuple", async () => {
+    const [ack, uri] = await tax.policyDetails();
+    expect(ack).to.equal("initial ack");
+    expect(uri).to.equal("ipfs://initial");
+  });
+
   it("allows owner to update URI and acknowledgement atomically", async () => {
     await tax.connect(owner).setPolicy("ipfs://u", "msg");
     expect(await tax.policyURI()).to.equal("ipfs://u");

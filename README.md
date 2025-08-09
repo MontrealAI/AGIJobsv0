@@ -107,8 +107,8 @@ The smart contracts and the corporation that deployed them never collect fees, a
 Non‑technical participants can verify the policy directly in a browser:
 
 1. Open the `TaxPolicy` contract address on a block explorer such as Etherscan.
-2. Under **Read Contract**, call `acknowledgement` (or `acknowledge`) to display the disclaimer and `policyURI` for the canonical document.
-3. Alternatively, read `taxPolicyDetails` on the `JobRegistry` to fetch both values in a single call.
+2. Under **Read Contract**, call `policyDetails` to retrieve both the disclaimer and canonical document URI, or call `acknowledgement`/`acknowledge` and `policyURI` individually.
+3. `JobRegistry` exposes the same values via `taxPolicyDetails` for one-call access.
 4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; calls from any other address revert.
 
 ### Owner checklist: updating the policy via Etherscan

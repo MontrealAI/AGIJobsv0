@@ -34,6 +34,12 @@ describe("JobRegistry tax policy integration", function () {
     expect(uri).to.equal("ipfs://policy");
   });
 
+  it("policy contract exposes combined details", async () => {
+    const [ack, uri] = await policy.policyDetails();
+    expect(ack).to.equal("ack");
+    expect(uri).to.equal("ipfs://policy");
+  });
+
   it("non-owner cannot set policy", async () => {
     await expect(
       registry.connect(other).setTaxPolicy(await policy.getAddress())
