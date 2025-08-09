@@ -34,10 +34,12 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - Freeze compiler versions and verify bytecode locally.
    - Generate deployment scripts that record module addresses for `JobRegistry` wiring.
 7. **Tax Responsibility & Owner Neutrality**
-   - Ensure no module ever routes tokens or fees to the owner; the contracts and deploying corporation must remain revenue‑free and tax‑exempt worldwide.
-   - Wire the owner‑controlled `TaxPolicy` into `JobRegistry` and surface `taxPolicyDetails()` so explorers can display the canonical acknowledgement and policy URI.
+   - Ensure no module ever routes tokens or fees to the owner; the contracts and deploying corporation must remain revenue-free and tax-exempt worldwide.
+   - Require participants to call `acknowledgeTaxPolicy` before interacting with `JobRegistry`, tracking acknowledgements per address.
+   - Wire the owner-controlled `TaxPolicy` into `JobRegistry` and surface `taxPolicyDetails()` so explorers can display the canonical acknowledgement and policy URI.
+   - Guarantee only the owner can update the policy via `setPolicyURI`, `setAcknowledgement`, `setPolicy`, or `bumpTaxPolicyVersion`; unauthorized calls revert.
    - Describe in NatSpec and README that all tax obligations rest solely with AGI Employers, Agents, and Validators; the infrastructure bears no direct, indirect, or theoretical liability.
-   - Provide step‑by‑step Etherscan instructions so non‑technical users can view the disclaimer via `acknowledgement`/`acknowledge` and so the owner can update it with `setPolicyURI`/`setAcknowledgement`.
+   - Provide step-by-step Etherscan instructions so non-technical users can view the disclaimer via `acknowledgement`/`acknowledge` and so the owner can update it with `setPolicyURI`/`setAcknowledgement`.
 
 ## Deliverables
 - Verified Solidity contracts under `contracts/v2`.
