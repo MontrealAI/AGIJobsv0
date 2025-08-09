@@ -71,14 +71,14 @@ graph TD
 
 ## Module Responsibilities & Deployed Addresses
 
-| Module | Responsibility | Local Address |
-| --- | --- | --- |
-| JobRegistry | job lifecycle and escrow | 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 |
-| ValidationModule | commit–reveal validator voting | 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 |
-| StakeManager | custody of stakes and payouts | 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 |
-| ReputationEngine | tracks reputation and blacklists | 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 |
-| DisputeModule | optional appeal layer | 0x0165878A594ca255338adfa4d48449f69242Eb8F |
-| CertificateNFT | issues completion NFTs | 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 |
+| Module | Responsibility | Key owner controls | Local address |
+| --- | --- | --- | --- |
+| JobRegistry | job lifecycle and escrow | `setModules`, `setJobParameters`, `setTaxPolicy` | 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 |
+| ValidationModule | commit–reveal validator voting | `setParameters` | 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 |
+| StakeManager | custody of stakes and payouts | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury` | 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 |
+| ReputationEngine | tracks reputation and blacklists | `setCaller`, `setThreshold`, `setBlacklist` | 0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9 |
+| DisputeModule | optional appeal layer | `setAppealParameters` | 0x0165878A594ca255338adfa4d48449f69242Eb8F |
+| CertificateNFT | issues completion NFTs | `setJobRegistry` | 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 |
 
 ## Etherscan Walk-through
 
