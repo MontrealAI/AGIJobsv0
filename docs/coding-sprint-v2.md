@@ -34,10 +34,10 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - Freeze compiler versions and verify bytecode locally.
    - Generate deployment scripts that record module addresses for `JobRegistry` wiring.
 7. **Tax Responsibility & Owner Neutrality**
-   - Confirm modules never route funds or fees to the owner account.
-   - Wire `TaxPolicy` into `JobRegistry` so the owner can update a canonical policy URI and expose `taxAcknowledgement()`/`taxPolicyURI()`.
-   - Document in NatSpec that employers, agents and validators handle all tax reporting.
-   - Provide explorer instructions so non‑technical users can review owner‑only parameters on Etherscan.
+   - Ensure no module ever routes tokens or fees to the owner; the contracts and deploying corporation must remain revenue‑free and tax‑exempt worldwide.
+   - Wire the owner‑controlled `TaxPolicy` into `JobRegistry` and surface `taxPolicyDetails()` so explorers can display the canonical acknowledgement and policy URI.
+   - Describe in NatSpec and README that all tax obligations rest solely with AGI Employers, Agents, and Validators; the infrastructure bears no direct, indirect, or theoretical liability.
+   - Provide step‑by‑step Etherscan instructions so non‑technical users can view the disclaimer via `acknowledgement`/`acknowledge` and so the owner can update it with `setPolicyURI`/`setAcknowledgement`.
 
 ## Deliverables
 - Verified Solidity contracts under `contracts/v2`.
