@@ -141,6 +141,19 @@ contract JobRegistry is Ownable {
         return taxPolicy.policyURI();
     }
 
+    /// @notice Convenience helper returning both acknowledgement and URI.
+    /// @return ack Plain-text disclaimer confirming tax responsibilities.
+    /// @return uri Off-chain document location (e.g., IPFS hash).
+    function taxPolicyDetails()
+        external
+        view
+        returns (string memory ack, string memory uri)
+    {
+        if (address(taxPolicy) == address(0)) return ("", "");
+        ack = taxPolicy.acknowledge();
+        uri = taxPolicy.policyURI();
+    }
+
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
         jobReward = uint128(reward);
         jobStake = uint96(stake);

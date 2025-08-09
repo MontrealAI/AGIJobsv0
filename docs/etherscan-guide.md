@@ -52,8 +52,9 @@ graph TD
 
 ### Tax Policy
 1. Open the `TaxPolicy` address in Etherscan.
-2. Under **Read Contract**, call **acknowledge** to view the disclaimer or **policyURI** for the canonical document.
-3. Only the owner may update the URI via **setPolicyURI** in **Write Contract**.
+2. Under **Read Contract**, call **acknowledgement** or **acknowledge** to view the disclaimer, or **policyURI** for the canonical document.
+3. `JobRegistry` exposes both fields via **taxPolicyDetails** for one-call access.
+4. Only the owner may update the URI with **setPolicyURI** or the message with **setAcknowledgement** in **Write Contract**.
 
 ### Disputers
 1. Open the `DisputeModule` address on Etherscan.

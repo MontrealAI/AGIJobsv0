@@ -593,7 +593,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `StakeManager` | Hold validator/agent collateral, release rewards, execute slashing. |
 | `ReputationEngine` | Track reputation, apply penalties, maintain blacklists. |
 | `CertificateNFT` | Mint ERC‑721 certificates for completed jobs. |
-| `TaxPolicy` | Publish tax disclaimer and canonical policy URI. |
+| `TaxPolicy` | Publish tax disclaimer and canonical policy URI/acknowledgement. |
 
 | Module | Key owner controls |
 | --- | --- |
@@ -603,7 +603,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | `setCaller`, `setThreshold`, `setBlacklist` |
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setJobRegistry` |
-| `TaxPolicy` | `setPolicyURI` |
+| `TaxPolicy` | `setPolicyURI`, `setAcknowledgement` |
 
 | Module | Interface / Key functions |
 | --- | --- |
@@ -613,7 +613,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
 | `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mint` |
-| `TaxPolicy` | – `policyURI`, `setPolicyURI`, `acknowledge` |
+| `TaxPolicy` | – `policyURI`, `acknowledgement`, `setPolicyURI`, `setAcknowledgement`, `acknowledge` |
 
 #### Module Addresses & Roles
 
@@ -644,7 +644,7 @@ graph TD
 - Verify each module address above on at least two explorers.
 - In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
 - Confirm emitted events to ensure configuration changes took effect.
-- `TaxPolicy` exposes `policyURI()` and `acknowledge()` under the **Read** tab so participants can view the disclaimer; only the owner may update the URI via `setPolicyURI()` in **Write**.
+- `TaxPolicy` exposes `policyURI()`, `acknowledgement()`, and `acknowledge()` under the **Read** tab so participants can view the disclaimer; only the owner may update the URI via `setPolicyURI()` or the message via `setAcknowledgement()` in **Write**. `JobRegistry` mirrors both fields through `taxPolicyDetails()` for one-call discovery on explorers.
 - `JobRegistry` mirrors the disclaimer with `taxAcknowledgement()` and `taxPolicyURI()` for easy discovery on explorers.
  
 Role-based quick steps:
@@ -1377,7 +1377,7 @@ All taxes arising from job transactions fall exclusively on the parties exchangi
 - **AGI Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
 - **Passive holders** have no tax impact until they dispose of their own tokens.
 
-The protocol’s smart contracts and the corporation that deployed them are always tax‑exempt in every jurisdiction. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and offers an `acknowledge()` helper that non‑technical users can call through Etherscan to view the on‑chain disclaimer. `JobRegistry` surfaces the same text and URI through `taxAcknowledgement()` and `taxPolicyURI()` so explorers can display it without manual lookups.
+The protocol’s smart contracts and the corporation that deployed them are always tax‑exempt in every jurisdiction. They never collect fees, hold tokens, or take custody of funds, so no direct, indirect, or implied tax liability attaches to the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and an owner‑editable acknowledgement string that non‑technical users can call through Etherscan via `acknowledgement()` or `acknowledge()`. `JobRegistry` surfaces the same text and URI through `taxAcknowledgement()`, `taxPolicyURI()`, and the combined `taxPolicyDetails()` helper so explorers can display it without manual lookups.
 
 See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown of responsibilities.
 
