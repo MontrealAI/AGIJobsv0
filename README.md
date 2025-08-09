@@ -49,6 +49,16 @@ No custom tooling is required—everything happens in the browser.
 
 The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D`. Cross‑verify this address on Etherscan and Blockscout before transferring or staking tokens. Consult the [Safety Checklist](#safety-checklist) for operational best practices.
 
+## Tax Obligations & Disclaimer
+
+All tax duties in the AGI Jobs ecosystem fall solely on the participants who exchange value:
+
+- **Employers** treat burned tokens as an asset disposal and report any resulting gains or losses.
+- **Agents** report tokens received for completed work as income and later capital gains or losses when they dispose of them.
+- **Validators** report any reward tokens as income.
+
+The smart contracts and the corporation that deployed them never collect fees, hold funds, or realise gains. Consequently the infrastructure and its owner remain tax‑exempt in every jurisdiction. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain; non‑technical users can call `acknowledge()` on Etherscan to read the latest disclaimer. Only the owner may update the policy URI or message via `setPolicyURI`, `setAcknowledgement`, or the atomic `setPolicy` function.
+
 ## Architecture
 
 The modular design separates concerns across dedicated contracts:
@@ -603,7 +613,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | `setCaller`, `setThreshold`, `setBlacklist` |
 | `DisputeModule` | `setAppealParameters` |
 | `CertificateNFT` | `setJobRegistry` |
-| `TaxPolicy` | `setPolicyURI`, `setAcknowledgement` |
+| `TaxPolicy` | `setPolicyURI`, `setAcknowledgement`, `setPolicy` |
 
 | Module | Interface / Key functions |
 | --- | --- |
@@ -613,7 +623,7 @@ Validator committees expand with job value and settle outcomes by majority after
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
 | `DisputeModule` | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) – `raiseDispute`, `resolve` |
 | `CertificateNFT` | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) – `mint` |
-| `TaxPolicy` | – `policyURI`, `acknowledgement`, `setPolicyURI`, `setAcknowledgement`, `acknowledge` |
+| `TaxPolicy` | – `policyURI`, `acknowledgement`, `setPolicyURI`, `setAcknowledgement`, `setPolicy`, `acknowledge` |
 
 #### Module Addresses & Roles
 
@@ -644,7 +654,7 @@ graph TD
 - Verify each module address above on at least two explorers.
 - In Etherscan's **Write Contract** tab, connect your wallet and invoke the desired function.
 - Confirm emitted events to ensure configuration changes took effect.
-- `TaxPolicy` exposes `policyURI()`, `acknowledgement()`, and `acknowledge()` under the **Read** tab so participants can view the disclaimer; only the owner may update the URI via `setPolicyURI()` or the message via `setAcknowledgement()` in **Write**. `JobRegistry` mirrors both fields through `taxPolicyDetails()` for one-call discovery on explorers.
+- `TaxPolicy` exposes `policyURI()`, `acknowledgement()`, and `acknowledge()` under the **Read** tab so participants can view the disclaimer; only the owner may update the URI via `setPolicyURI()`, the message via `setAcknowledgement()`, or both at once via `setPolicy()` in **Write**. `JobRegistry` mirrors both fields through `taxPolicyDetails()` for one-call discovery on explorers.
 - `JobRegistry` mirrors the disclaimer with `taxAcknowledgement()` and `taxPolicyURI()` for easy discovery on explorers.
  
 Role-based quick steps:
@@ -1377,7 +1387,7 @@ All taxes arising from job transactions fall exclusively on the parties exchangi
 - **AGI Agents and validators** treat received tokens as income and later report any capital gains when those tokens are sold.
 - **Passive holders** have no tax impact until they dispose of their own tokens.
 
-The protocol’s smart contracts and the corporation that deployed them are perpetually tax‑exempt across all jurisdictions. They never collect fees, hold tokens, or take custody of funds, leaving no direct, indirect, or even theoretical tax liability for the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and an owner‑editable acknowledgement string. Non‑technical users can confirm the disclaimer directly on Etherscan by calling `acknowledgement()`/`acknowledge()` on the `TaxPolicy` contract or `taxPolicyDetails()` on `JobRegistry`. Only the owner may update the URI with `setPolicyURI()` or the message with `setAcknowledgement()`.
+The protocol’s smart contracts and the corporation that deployed them are perpetually tax‑exempt across all jurisdictions. They never collect fees, hold tokens, or take custody of funds, leaving no direct, indirect, or even theoretical tax liability for the infrastructure. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract stores a canonical policy URI and an owner‑editable acknowledgement string. Non‑technical users can confirm the disclaimer directly on Etherscan by calling `acknowledgement()`/`acknowledge()` on the `TaxPolicy` contract or `taxPolicyDetails()` on `JobRegistry`. Only the owner may update the URI with `setPolicyURI()`, the message with `setAcknowledgement()`, or both with `setPolicy()`.
 
 See [docs/tax-obligations.md](docs/tax-obligations.md) for a detailed breakdown of responsibilities.
 
