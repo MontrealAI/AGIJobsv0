@@ -97,6 +97,13 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 
 ## Tax Obligations & Disclaimer
 
+**Summary**
+
+- Employers, agents, and validators bear every tax obligation.
+- Smart contracts and the deploying corporation are tax‑exempt worldwide; `isTaxExempt()` on each module proves it.
+- Verify the policy on Etherscan by reading `taxPolicyDetails`, then calling `acknowledgeTaxPolicy`, and confirming `isTaxExempt`.
+- The owner updates text or URI via `setPolicyURI`/`setAcknowledgement` and enforces a new `taxPolicyVersion` with `bumpTaxPolicyVersion`.
+
 All taxes in the AGI Jobs ecosystem fall solely on AGI Employers, AGI Agents, and Validators who exchange value. The smart contract suite and the deploying corporation are perpetually exempt from any direct, indirect, or theoretical tax liability in every jurisdiction—including the United States, Canada, and the European Union—because no revenue, fees, or asset disposals ever accrue to the infrastructure:
 
 - **Employers** fund jobs and supply the tokens that may be burned. Burning is a disposal of property, so employers calculate any capital gain or loss on the burned amount. Tokens paid to agents may be deductible business expenses.
@@ -120,10 +127,11 @@ For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.s
 
 Non‑technical participants can verify the policy directly in a browser:
 
-1. Open the `TaxPolicy`, `JobRegistry`, or any core module address on a block explorer such as Etherscan.
-2. Under **Read Contract**, call `policyDetails` to retrieve both the disclaimer and canonical document URI, or call `acknowledgement`/`acknowledge` and `policyURI` individually. `isTaxExempt` on each module confirms the infrastructure's perpetual tax immunity.
-3. `JobRegistry` exposes the same values via `taxPolicyDetails` and reveals the active `taxPolicyVersion` so users can confirm whether they have acknowledged the latest revision through `taxAcknowledgedVersion(address)`.
-4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; calls from any other address revert.
+1. Open the `JobRegistry` address on a block explorer such as Etherscan.
+2. Under **Read Contract**, call `taxPolicyDetails` to view the current disclaimer text and canonical URI.
+3. Switch to **Write Contract** and call `acknowledgeTaxPolicy` to record acceptance of the active `taxPolicyVersion`.
+4. Back in **Read Contract**, confirm `isTaxExempt` returns `true` and check `taxAcknowledgedVersion(address)` against `taxPolicyVersion`.
+5. Only the contract owner can change the policy via `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert.
 
 ### Owner checklist: updating the policy via Etherscan
 
