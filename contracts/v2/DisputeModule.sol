@@ -59,6 +59,20 @@ contract DisputeModule is IDisputeModule, Ownable {
         jury = owner;
     }
 
+    /// @notice Ensure participant has acknowledged current tax policy.
+    modifier requiresTaxAcknowledgement(uint256 jobId) {
+        address caller = msg.sender;
+        if (caller == address(jobRegistry)) {
+            caller = jobRegistry.jobs(jobId).agent;
+        }
+        require(
+            jobRegistry.taxAcknowledgedVersion(caller) ==
+                jobRegistry.taxPolicyVersion(),
+            "acknowledge tax policy"
+        );
+        _;
+    }
+
     // ---------------------------------------------------------------------
     // Owner configuration
     // ---------------------------------------------------------------------
@@ -94,7 +108,12 @@ contract DisputeModule is IDisputeModule, Ownable {
 
     /// @notice Post the appeal fee to escalate a disputed job
     /// @param jobId Identifier of the job in the JobRegistry
-    function appeal(uint256 jobId) external payable override {
+    function appeal(uint256 jobId)
+        external
+        payable
+        override
+        requiresTaxAcknowledgement(jobId)
+    {
         if (msg.value != appealFee) {
             revert IncorrectAppealFee(appealFee, msg.value);
         }
@@ -108,13 +127,6 @@ contract DisputeModule is IDisputeModule, Ownable {
             : msg.sender;
         if (caller != job.agent && caller != job.employer) {
             revert NotParticipant(caller);
-        }
-
-        if (
-            jobRegistry.taxAcknowledgedVersion(caller) !=
-            jobRegistry.taxPolicyVersion()
-        ) {
-            revert("acknowledge tax policy");
         }
 
         appellants[jobId] = payable(caller);
@@ -184,12 +196,12 @@ contract DisputeModule is IDisputeModule, Ownable {
 
     /// @dev Reject direct ETH transfers; only `appeal` may receive funds.
     receive() external payable {
-        revert("DisputeModule: no direct ether");
+        revert("DisputeModule: no ether");
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("DisputeModule: no direct ether");
+        revert("DisputeModule: no ether");
     }
 }
 

@@ -19,7 +19,7 @@ describe("DisputeModule ether rejection", function () {
   it("reverts on direct ether transfer", async () => {
     await expect(
       owner.sendTransaction({ to: await dispute.getAddress(), value: 1 })
-    ).to.be.revertedWith("DisputeModule: no direct ether");
+    ).to.be.revertedWith("DisputeModule: no ether");
   });
 
   it("reverts on unknown calldata with value", async () => {
@@ -29,7 +29,7 @@ describe("DisputeModule ether rejection", function () {
         data: "0x12345678",
         value: 1,
       })
-    ).to.be.revertedWith("DisputeModule: no direct ether");
+    ).to.be.revertedWith("DisputeModule: no ether");
   });
 
   it("reports tax exemption", async () => {

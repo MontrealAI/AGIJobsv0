@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IJobRegistryTax} from "./v2/interfaces/IJobRegistryTax.sol";
 
 /// @title StakeManager
 /// @notice Handles staking and reward transfers for the job system.
@@ -11,10 +12,12 @@ contract StakeManager is Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public token;
+    IJobRegistryTax public jobRegistry;
 
     mapping(address => uint256) public stakes;
 
     event TokenUpdated(address token);
+    event JobRegistryUpdated(address registry);
     event StakeDeposited(address indexed user, uint256 amount);
     event StakeWithdrawn(address indexed user, uint256 amount);
     event RewardLocked(address indexed from, uint256 amount);
@@ -26,6 +29,25 @@ contract StakeManager is Ownable {
         emit TokenUpdated(address(_token));
     }
 
+    /// @notice Set the JobRegistry used for tax acknowledgement tracking.
+    function setJobRegistry(IJobRegistryTax registry) external onlyOwner {
+        jobRegistry = registry;
+        emit JobRegistryUpdated(address(registry));
+    }
+
+    modifier requiresTaxAcknowledgement() {
+        if (msg.sender != owner()) {
+            address registry = address(jobRegistry);
+            require(registry != address(0), "job registry");
+            require(
+                jobRegistry.taxAcknowledgedVersion(msg.sender) ==
+                    jobRegistry.taxPolicyVersion(),
+                "acknowledge tax policy"
+            );
+        }
+        _;
+    }
+
     /// @notice Update the ERC20 token used for staking and rewards.
     function setToken(IERC20 newToken) external onlyOwner {
         token = newToken;
@@ -33,14 +55,14 @@ contract StakeManager is Ownable {
     }
 
     /// @notice Deposit stake for the caller.
-    function depositStake(uint256 amount) external {
+    function depositStake(uint256 amount) external requiresTaxAcknowledgement {
         token.safeTransferFrom(msg.sender, address(this), amount);
         stakes[msg.sender] += amount;
         emit StakeDeposited(msg.sender, amount);
     }
 
     /// @notice Withdraw stake for the caller.
-    function withdrawStake(uint256 amount) external {
+    function withdrawStake(uint256 amount) external requiresTaxAcknowledgement {
         uint256 staked = stakes[msg.sender];
         require(staked >= amount, "insufficient stake");
         stakes[msg.sender] = staked - amount;
@@ -76,6 +98,19 @@ contract StakeManager is Ownable {
         stakes[user] = staked - amount;
         token.safeTransfer(user, amount);
         emit StakeWithdrawn(user, amount);
+    }
+
+    /// @notice Confirms the contract and owner remain tax-exempt.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    receive() external payable {
+        revert("StakeManager: no ether");
+    }
+
+    fallback() external payable {
+        revert("StakeManager: no ether");
     }
 }
 
