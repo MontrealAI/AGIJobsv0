@@ -93,7 +93,7 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 
 ## Tax Obligations & Disclaimer
 
-All taxes in the AGI Jobs ecosystem fall solely on the parties exchanging value while the infrastructure and its owner remain perpetually tax‑exempt:
+All taxes in the AGI Jobs ecosystem fall solely on AGI Employers, AGI Agents, and Validators who exchange value. The smart contract suite and the deploying corporation are perpetually exempt from any direct, indirect, or theoretical tax liability in every jurisdiction:
 
 - **Employers** fund jobs and supply the tokens that may be burned. Burning is a disposal of property, so employers calculate any capital gain or loss on the burned amount. Tokens paid to agents may be deductible business expenses.
 - **Agents** receive tokens as compensation. The fair‑market value at receipt is ordinary income and becomes the cost basis for later capital gain or loss calculations. Burned tokens never belong to the agent and carry no tax impact.
