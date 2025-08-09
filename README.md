@@ -93,14 +93,20 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 
 ## Tax Obligations & Disclaimer
 
-All tax duties in the AGI Jobs ecosystem fall solely on the participants who exchange value:
+All taxes in the AGI Jobs ecosystem fall solely on the parties exchanging value while the infrastructure and its owner remain perpetually tax‑exempt:
 
-- **Employers** treat burned tokens as an asset disposal and report any resulting gains or losses.
-- **Agents** report tokens received for completed work as income and later capital gains or losses when they dispose of them.
-- **Validators** report any reward tokens as income.
-- **Passive token holders** have no tax impact until they dispose of their own tokens.
+- **Employers** fund jobs and supply the tokens that may be burned. Burning is a disposal of property, so employers calculate any capital gain or loss on the burned amount. Tokens paid to agents may be deductible business expenses.
+- **Agents** receive tokens as compensation. The fair‑market value at receipt is ordinary income and becomes the cost basis for later capital gain or loss calculations. Burned tokens never belong to the agent and carry no tax impact.
+- **Validators** are taxed only on rewards they actually receive. Validators without rewards incur no tax from their participation.
+- **Passive token holders** experience no tax consequence from others’ burns or payouts until they dispose of their own tokens.
 
-The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. This exemption is permanent: no contract function or policy update can create a taxable event for the owner or the deployed code. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated. All update functions are `onlyOwner`, so unauthorized calls revert. See [tax-obligations.md](docs/tax-obligations.md) for additional context.
+The smart contracts and the corporation that deployed them:
+
+- **Collect no fees and never custody tokens.** All core modules reject stray ether so no value ever accrues on‑chain to the infrastructure.
+- **Provide a free service.** With no consideration exchanged, no sales/VAT/GST obligations arise.
+- **Remain tax‑neutral worldwide.** No direct, indirect, or theoretical liability can emerge because the owner realises no income and does not dispose of assets.
+
+This guarantee is enforced on‑chain through the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract, which stores a canonical policy URI and acknowledgement string. Every update function is gated by `onlyOwner`, ensuring that only the owner may revise the policy and that such updates never create a taxable event. See [tax-obligations.md](docs/tax-obligations.md) for further detail.
 
 ### Checking the tax disclaimer on Etherscan
 
