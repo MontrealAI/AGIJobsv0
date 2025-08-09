@@ -32,6 +32,7 @@ describe("JobRegistry tax policy integration", function () {
     await policy.connect(owner).setAcknowledgement("new ack");
     details = await registry.taxPolicyDetails();
     expect(details[0]).to.equal("new ack");
+    expect(await policy.isTaxExempt()).to.equal(true);
   });
 
   it("tracks user acknowledgement", async () => {

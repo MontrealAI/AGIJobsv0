@@ -70,6 +70,10 @@ describe("TaxPolicy", function () {
       .withArgs(user.address);
   });
 
+  it("confirms the contract and owner are tax-exempt", async () => {
+    expect(await tax.isTaxExempt()).to.equal(true);
+  });
+
   it("reverts on direct ether transfers", async () => {
     await expect(
       owner.sendTransaction({ to: await tax.getAddress(), value: 1 })

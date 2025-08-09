@@ -111,6 +111,8 @@ The smart contracts and the corporation that deployed them:
 
 These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. Each update or explicit version bump triggers an incrementing `taxPolicyVersion` in [`JobRegistry`](contracts/v2/JobRegistry.sol) and forces all non‑owner participants to re‑acknowledge the disclaimer. Acknowledgements are tracked per user through `taxAcknowledgedVersion`. The owner can require a fresh acknowledgement without changing the policy address by calling `bumpTaxPolicyVersion`. `JobRegistry` mirrors the current disclaimer via `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the message in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
 
+For easy verification on block explorers, `TaxPolicy` exposes `isTaxExempt()` which always returns `true`, signalling that neither the contract nor its owner can ever accrue tax liability.
+
 ### Checking the tax disclaimer on Etherscan
 
 Non‑technical participants can verify the policy directly in a browser:
