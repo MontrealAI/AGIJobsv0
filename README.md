@@ -38,6 +38,13 @@ The platform’s v2 release decomposes coordination into immutable, single‑pur
 
 Each module inherits `Ownable` so only the contract owner can update parameters. Upgrades occur by deploying a replacement module and repointing `JobRegistry.setModules`, preserving governance composability while keeping every contract immutable.
 
+### Owner Controls & Upgradeability
+
+- Deploy replacement modules and update their addresses through `JobRegistry.setModules(...)`.
+- Adjust stakes, reward rates, timing windows, and reputation thresholds via owner‑only setters; every change emits a dedicated event.
+- Swap the payment token at any time using `StakeManager.setToken(newToken)`.
+- Transfer ownership to a multisig or timelock for added security.
+
 ### Using $AGIALPHA (6 decimals)
 
 The v2 contracts treat the payment token as an owner‑configurable parameter. By default the `StakeManager` points to the $AGIALPHA ERC‑20 at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe` (6 decimals).
@@ -137,6 +144,29 @@ interface IStakeManager {
     function payReward(address to, uint256 amount) external;
     function slash(address offender, address beneficiary, uint256 amount) external;
     function setToken(address newToken) external;
+}
+
+interface IValidationModule {
+    event ValidatorsSelected(uint256 jobId, address[] validators);
+    function commitValidation(uint256 jobId, bytes32 commitHash) external;
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
+    function tally(uint256 jobId) external returns (bool success);
+    function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow) external;
+}
+
+interface IReputationEngine {
+    event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
+    function add(address user, uint256 amount) external;
+    function subtract(address user, uint256 amount) external;
+    function reputation(address user) external view returns (uint256);
+    function setCaller(address caller, bool allowed) external;
+}
+
+interface IDisputeModule {
+    event AppealRaised(uint256 indexed jobId, address indexed caller);
+    function appeal(uint256 jobId) external payable;
+    function resolve(uint256 jobId, bool employerWins) external;
+    function setAppealFee(uint256 fee) external;
 }
 ```
 
