@@ -21,6 +21,48 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
+## System Overview
+
+### Architecture
+
+```mermaid
+graph TD
+    Employer -->|createJob| JobRegistry
+    Agent -->|apply/submit| JobRegistry
+    JobRegistry -->|selectValidators| ValidationModule
+    ValidationModule -->|stake| StakeManager
+    ValidationModule -->|reputation| ReputationEngine
+    ValidationModule -->|dispute?| DisputeModule
+    DisputeModule -->|final ruling| JobRegistry
+    JobRegistry -->|mint| CertificateNFT
+```
+
+### Incentive Summary
+
+- Agents and validators must stake $AGI; dishonest behaviour is slashed.
+- Correct validators share rewards while employers receive a portion of slashed stakes.
+- Burn and stake parameters make cheating unprofitable, keeping honest participation in equilibrium.
+
+### Key Parameters
+
+| Parameter | Description |
+| --- | --- |
+| `commitWindow` | Seconds allowed for validators to submit hashed votes. |
+| `revealWindow` | Seconds validators have to reveal votes. |
+| `reviewWindow` | Delay before validation begins. |
+| `resolveGracePeriod` | Buffer after reveal before anyone can resolve a stalled job. |
+| `burnPercentage` | Portion of payout burned on job finalisation (basis points). |
+| `validationRewardPercentage` | Share of payout granted to correct validators. |
+| `cancelRewardPercentage` | Share awarded to the caller when cancelling expired jobs. |
+
+### Interaction Flow
+
+1. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
+2. Agents stake and apply; one agent submits work with `completeJob`.
+3. `ValidationModule` picks validators who commit and reveal votes.
+4. `JobRegistry.finalize` pays the agent and validators or allows `DisputeModule` appeal.
+5. On success, `CertificateNFT` mints proof of completion.
+
 ## Module Responsibilities & Deployed Addresses
 
 | Module | Responsibility | Local Address |
