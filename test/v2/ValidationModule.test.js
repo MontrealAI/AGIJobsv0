@@ -217,4 +217,44 @@ describe("ValidationModule V2", function () {
     expect(await reputation.reputation(winner)).to.equal(1n);
     expect(await reputation.reputation(slashed)).to.equal(0n);
   });
+
+  it("enforces tax acknowledgement for commit and reveal", async () => {
+    await jobRegistry.setTaxPolicyVersion(1);
+    const tx = await validation.selectValidators(1);
+    const receipt = await tx.wait();
+    const selected = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    ).args[1];
+
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
+    const val = signerMap[selected[0].toLowerCase()];
+    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const commit = ethers.keccak256(
+      coder.encode(["bool", "bytes32"], [true, salt])
+    );
+
+    await expect(
+      validation.connect(val).commitValidation(1, commit)
+    ).to.be.revertedWith("acknowledge tax policy");
+
+    await jobRegistry.connect(val).acknowledgeTaxPolicy();
+    await expect(
+      validation.connect(val).commitValidation(1, commit)
+    ).to.emit(validation, "VoteCommitted");
+
+    await advance(61);
+    await jobRegistry.setTaxPolicyVersion(2);
+    await expect(
+      validation.connect(val).revealValidation(1, true, salt)
+    ).to.be.revertedWith("acknowledge tax policy");
+
+    await jobRegistry.connect(val).acknowledgeTaxPolicy();
+    await expect(
+      validation.connect(val).revealValidation(1, true, salt)
+    ).to.emit(validation, "VoteRevealed");
+  });
 });

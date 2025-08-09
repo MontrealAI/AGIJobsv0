@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -51,6 +52,20 @@ contract ValidationModule is IValidationModule, Ownable {
     event RandomnessSeedUpdated(bytes32 newSeed);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
+
+    /// @notice Require caller to acknowledge current tax policy via JobRegistry.
+    modifier requiresTaxAcknowledgement() {
+        if (msg.sender != owner()) {
+            address registry = address(jobRegistry);
+            require(registry != address(0), "job registry");
+            IJobRegistryTax j = IJobRegistryTax(registry);
+            require(
+                j.taxAcknowledgedVersion(msg.sender) == j.taxPolicyVersion(),
+                "acknowledge tax policy"
+            );
+        }
+        _;
+    }
 
     constructor(
         IJobRegistry _jobRegistry,
@@ -162,7 +177,11 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Commit a validation hash for a job.
-    function commitValidation(uint256 jobId, bytes32 commitHash) public override {
+    function commitValidation(uint256 jobId, bytes32 commitHash)
+        public
+        override
+        requiresTaxAcknowledgement
+    {
         Round storage r = rounds[jobId];
         require(
             r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
@@ -176,7 +195,11 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Reveal a previously committed validation vote.
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt) public override {
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt)
+        public
+        override
+        requiresTaxAcknowledgement
+    {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
@@ -195,12 +218,18 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Backwards-compatible wrapper for commitValidation.
-    function commitVote(uint256 jobId, bytes32 commitHash) external {
+    function commitVote(uint256 jobId, bytes32 commitHash)
+        external
+        requiresTaxAcknowledgement
+    {
         commitValidation(jobId, commitHash);
     }
 
     /// @notice Backwards-compatible wrapper for revealValidation.
-    function revealVote(uint256 jobId, bool approve, bytes32 salt) external {
+    function revealVote(uint256 jobId, bool approve, bytes32 salt)
+        external
+        requiresTaxAcknowledgement
+    {
         revealValidation(jobId, approve, salt);
     }
 
