@@ -31,7 +31,10 @@ interface ICertificateNFT {
 }
 
 /// @title JobRegistry
-/// @notice Minimal registry coordinating job lifecycle and external modules.
+/// @notice Coordinates job lifecycle and external modules.
+/// @dev Tax obligations never accrue to this registry or its owner. All
+/// liabilities remain with employers, agents, and validators as expressed by
+/// the owner‑controlled `TaxPolicy` reference.
 contract JobRegistry is Ownable {
     enum State {
         None,
@@ -121,17 +124,22 @@ contract JobRegistry is Ownable {
         emit CertificateNFTUpdated(address(_certNFT));
     }
 
+    /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
+    /// @dev Only callable by the owner; the policy address cannot be zero.
     function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
         require(address(_policy) != address(0), "policy");
         taxPolicy = _policy;
         emit TaxPolicyUpdated(address(_policy));
     }
 
+    /// @notice Returns the on-chain acknowledgement string stating that all
+    /// taxes are the responsibility of employers, agents, and validators.
     function taxAcknowledgement() external view returns (string memory) {
         if (address(taxPolicy) == address(0)) return "";
         return taxPolicy.acknowledge();
     }
 
+    /// @notice Returns the URI pointing to the full off-chain tax policy.
     function taxPolicyURI() external view returns (string memory) {
         if (address(taxPolicy) == address(0)) return "";
         return taxPolicy.policyURI();
