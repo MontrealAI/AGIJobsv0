@@ -58,7 +58,7 @@ All tax duties in the AGI Jobs ecosystem fall solely on the participants who exc
 - **Validators** report any reward tokens as income.
 - **Passive token holders** have no tax impact until they dispose of their own tokens.
 
-The smart contracts and the corporation that deployed them never collect fees, hold funds, or realise gains. Consequently the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the sole place the disclaimer may be updated.
+The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated.
 
 ### Checking the tax disclaimer on Etherscan
 
@@ -69,7 +69,7 @@ Non‑technical participants can verify the policy directly in a browser:
 3. Alternatively, read `taxPolicyDetails` on the `JobRegistry` to fetch both values in a single call.
 4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`.
 
-The contracts and their owner remain perpetually tax‑exempt.
+Both `JobRegistry` and `TaxPolicy` revert on direct ETH transfers, ensuring the contracts never take custody of funds. The contracts and their owner therefore remain perpetually tax‑exempt.
 
 ## Architecture
 
