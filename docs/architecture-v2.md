@@ -11,6 +11,10 @@ AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules wi
 - **CertificateNFT** – mints ERC‑721 proof of completion to employers.
 Each component is immutable once deployed yet configurable by the owner through minimal setter functions, enabling governance upgrades without redeploying the entire suite.
 
+### Token Configuration
+
+`StakeManager` holds the address of the ERC‑20 used for all payments, staking and appeal fees.  The owner may replace this token at any time via `setToken` without redeploying the rest of the system.  The default deployment references the $AGIALPHA token at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe`, which operates with **6 decimals**.  All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000` for 100 AGIALPHA).  Modules do not assume a specific decimal count, preserving compatibility with future currencies.
+
 | Module | Core responsibility | Owner‑controllable parameters |
 | --- | --- | --- |
 | JobRegistry | job postings, escrow, lifecycle management | job reward, required agent stake |

@@ -36,6 +36,8 @@ The v2 contracts treat the payment token as an owner‑configurable parameter. B
 
 Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
+For a full step‑by‑step deployment walkthrough using $AGIALPHA, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
 > **Tax Neutral Infrastructure:** Every module rejects unsolicited ether and exposes an `isTaxExempt()` helper so users on explorers like Etherscan can confirm that only employers, agents, and validators carry tax duties while the contracts and deploying corporation remain perpetually exempt.
