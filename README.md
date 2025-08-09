@@ -35,8 +35,9 @@ The v2 contracts treat the payment token as an owner‑configurable parameter. B
 2. Wire modules via `JobRegistry.setModules` and adjust stake or fee parameters to 6‑decimal units (e.g. `100_000000` for 100 tokens).
 3. Employers and agents `approve` the `StakeManager` to spend $AGIALPHA, then use `createJob` or `depositStake` normally.
 4. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
+5. All owner and user actions can be performed in a browser through Etherscan's **Write Contract** tab – connect a wallet, enter the primitive arguments, and submit the transaction.
 
-Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
+Each module is deployed once and remains immutable; the owner upgrades components by deploying a replacement and repointing `JobRegistry.setModules` or other owner‑only setters. Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
 For a full step‑by‑step deployment walkthrough using $AGIALPHA, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 
