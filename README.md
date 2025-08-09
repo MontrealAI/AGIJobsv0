@@ -12,6 +12,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobs NFT Collection on OpenSea](https://opensea.io/collection/agijobs) – confirm the collection contract on a block explorer before trading.
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code) / [Blockscout](https://eth.blockscout.com/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D?tab=contract) – cross-verify the token address before transacting.
+- [$AGIALPHA token contract on Etherscan](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe#code) – verify this 6‑decimal token on-chain before using it for staking or payments.
 - [Etherscan Interaction Guide](docs/etherscan-guide.md) – module diagram, deployed addresses, role-based instructions, and verification checklist.
 - [Project Overview](docs/overview.md) – architecture diagram, module summaries, governance table, incentive mechanics, deployment addresses, and quick start.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
@@ -21,6 +22,19 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
+
+### Using $AGIALPHA (6 decimals)
+
+The v2 contracts treat the payment token as an owner‑configurable parameter. By default the `StakeManager` points to the $AGIALPHA ERC‑20 at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe` (6 decimals).
+
+**Deployment steps**
+
+1. Deploy `StakeManager` with the $AGIALPHA address, or call `setToken` after deployment to switch tokens.
+2. Wire modules via `JobRegistry.setModules` and adjust stake or fee parameters to 6‑decimal units (e.g. `100_000000` for 100 tokens).
+3. Employers and agents `approve` the `StakeManager` to spend $AGIALPHA, then use `createJob` or `depositStake` normally.
+4. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
+
+Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
