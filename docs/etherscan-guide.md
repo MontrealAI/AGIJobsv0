@@ -58,13 +58,20 @@ Before performing any on-chain action, employers, agents, and validators must ca
 ### Tax Policy
 The `TaxPolicy` contract is informational only: it never holds funds and imposes no tax liability on the infrastructure or its owner. The contracts and owner are globally tax‑exempt while employers, agents, and validators shoulder all tax duties and must acknowledge the policy before staking, voting, or appealing.
 
-**Etherscan steps**
+#### Participants: verify and acknowledge
+1. Open [`JobRegistry` on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#readContract).
+2. In **Read Contract**, call **taxPolicyDetails** to view the canonical policy URI and acknowledgement text. *(Example screenshot: [taxPolicyDetails](https://via.placeholder.com/650x150?text=taxPolicyDetails))*
+3. Still under **Read Contract**, call **isTaxExempt** and confirm it returns `true`.
+4. Switch to **Write Contract**, connect your wallet, and execute **acknowledgeTaxPolicy**.
+5. Back in **Read Contract**, call **taxAcknowledgedVersion(address)** to ensure it matches **taxPolicyVersion**.
 
-1. Open the `JobRegistry` address in Etherscan.
-2. Under **Read Contract**, call **taxPolicyDetails** to fetch the current disclaimer text and canonical URI.
-3. Switch to **Write Contract** and execute **acknowledgeTaxPolicy** to record acceptance of the active policy.
-4. Return to **Read Contract** and call **isTaxExempt** to confirm the contract's perpetual exemption and **taxAcknowledgedVersion(address)** to ensure you accepted the latest **taxPolicyVersion**.
-5. Owners update the text or URI via **setPolicyURI**, **setAcknowledgement**, or **setPolicy** on `TaxPolicy`, then call **bumpTaxPolicyVersion** on `JobRegistry` to require fresh acknowledgements.
+#### Owner: update the policy
+1. Open the `TaxPolicy` contract at its deployment address (replace `<TaxPolicyAddress>`): [Etherscan](https://etherscan.io/address/0x0000000000000000000000000000000000000000#writeContract).
+2. In **Write Contract**, connect the multisig/owner wallet.
+3. Call **setPolicyURI(newURI)** to change only the policy document.
+4. Call **setAcknowledgement(newMessage)** to revise the acknowledgement text.
+5. Call **setPolicy(newURI, newMessage)** to update both fields in one transaction.
+6. After any update, open [`JobRegistry` on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract) and call **bumpTaxPolicyVersion** so participants must re‑acknowledge.
 
 ### Disputers
 1. Ensure you've acknowledged the tax policy and confirmed **isTaxExempt()** on both `JobRegistry` and `DisputeModule`.
