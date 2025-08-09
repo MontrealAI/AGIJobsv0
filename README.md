@@ -18,6 +18,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.21; includes an automatic token burn on final validation via the `JobFinalizedAndBurned` event and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 - [AGIJobManager v2 Architecture](docs/architecture-v2.md) – modular design with incentive analysis and interface definitions.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
+- [Tax Obligations Overview](docs/tax-obligations.md) – detailed breakdown of participant duties and permanent owner exemption.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -100,7 +101,7 @@ All tax duties in the AGI Jobs ecosystem fall solely on the participants who exc
 - **Validators** report any reward tokens as income.
 - **Passive token holders** have no tax impact until they dispose of their own tokens.
 
-The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Stray transfers are rejected on‑chain, so the infrastructure and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. This exemption is permanent: no contract function or policy update can create a taxable event for the owner or the deployed code. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated. All update functions are `onlyOwner`, so unauthorized calls revert. See [tax-obligations.md](docs/tax-obligations.md) for additional context.
+The smart contracts and the corporation that deployed them never collect fees, accept ether, hold funds, or realise gains. Every module includes `receive` and `fallback` functions that revert, preventing accidental deposits and ensuring the infrastructure never holds assets. Consequently the platform and its owner remain tax‑exempt in every jurisdiction with zero direct, indirect, or theoretical liability. This exemption is permanent: no contract function or policy update can create a taxable event for the owner or the deployed code. The owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract anchors this principle on‑chain and is the only location where the disclaimer can be updated. All update functions are `onlyOwner`, so unauthorized calls revert. See [tax-obligations.md](docs/tax-obligations.md) for additional context.
 
 ### Checking the tax disclaimer on Etherscan
 
