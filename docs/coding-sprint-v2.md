@@ -6,6 +6,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
 - Implement immutable, ownable modules for job coordination, validation, staking, reputation, disputes and certificate NFTs.
 - Optimise for gas efficiency and composability while keeping explorer interactions simple for non‑technical users.
 - Align incentives so honest behaviour is the dominant strategy for agents, validators and employers.
+- Default to the $AGIALPHA token (6 decimals) for all payments, stakes and appeal fees while allowing the owner to swap tokens via `StakeManager.setToken`.
 - Publish an on-chain tax disclaimer that leaves all liabilities with employers, agents and validators while the owner remains exempt.
 
 ## Tasks
@@ -17,8 +18,9 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - `ValidationModule`: pseudo‑random selection, commit‑reveal voting, outcome reporting.
    - `StakeManager`: token custody, slashing, reward release.
    - `ReputationEngine`: reputation tracking, threshold enforcement, owner-managed blacklist.
-   - `DisputeModule`: optional appeal flow and final ruling.
+   - `DisputeModule`: optional appeal flow and final ruling with appeal fees paid in the configured ERC‑20.
    - `CertificateNFT`: ERC‑721 minting with owner‑settable base URI.
+   - Wire `StakeManager` into all modules and expose `setToken` so the owner can replace $AGIALPHA without redeploying.
 3. **Incentive Calibration**
    - Implement owner setters for stake ratios, rewards, slashing, timing windows and reputation thresholds.
    - Ensure slashing percentages exceed potential dishonest gains.
@@ -33,6 +35,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
 6. **Deployment Prep**
    - Freeze compiler versions and verify bytecode locally.
    - Generate deployment scripts that record module addresses for `JobRegistry` wiring.
+   - Document Etherscan-based deployment and configuration for non‑technical owners.
 7. **Tax Responsibility & Owner Neutrality**
    - Ensure no module ever routes tokens or fees to the owner; the contracts and deploying corporation must remain revenue-free and tax-exempt worldwide.
    - Require participants to call `acknowledgeTaxPolicy` before interacting with `JobRegistry`, tracking acknowledgements per address.
