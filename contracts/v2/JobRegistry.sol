@@ -29,6 +29,11 @@ interface ICertificateNFT {
     function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
 }
 
+interface ITaxPolicy {
+    function acknowledge() external view returns (string memory);
+    function policyURI() external view returns (string memory);
+}
+
 /// @title JobRegistry
 /// @notice Minimal registry coordinating job lifecycle and external modules.
 contract JobRegistry is Ownable {
@@ -59,6 +64,7 @@ contract JobRegistry is Ownable {
     IReputationEngine public reputationEngine;
     IDisputeModule public disputeModule;
     ICertificateNFT public certificateNFT;
+    ITaxPolicy public taxPolicy;
 
     uint128 public jobReward;
     uint96 public jobStake;
@@ -69,6 +75,7 @@ contract JobRegistry is Ownable {
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
+    event TaxPolicyUpdated(address policy);
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -116,6 +123,22 @@ contract JobRegistry is Ownable {
         emit ReputationEngineUpdated(address(_reputation));
         emit DisputeModuleUpdated(address(_dispute));
         emit CertificateNFTUpdated(address(_certNFT));
+    }
+
+    function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
+        require(address(_policy) != address(0), "policy");
+        taxPolicy = _policy;
+        emit TaxPolicyUpdated(address(_policy));
+    }
+
+    function taxAcknowledgement() external view returns (string memory) {
+        if (address(taxPolicy) == address(0)) return "";
+        return taxPolicy.acknowledge();
+    }
+
+    function taxPolicyURI() external view returns (string memory) {
+        if (address(taxPolicy) == address(0)) return "";
+        return taxPolicy.policyURI();
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
