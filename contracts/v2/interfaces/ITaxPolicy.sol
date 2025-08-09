@@ -11,4 +11,12 @@ interface ITaxPolicy {
     /// @notice Returns the URI pointing to the canonical policy document.
     /// @return uri Off-chain document location (e.g., IPFS hash).
     function policyURI() external view returns (string memory uri);
+
+    /// @notice Convenience helper returning both acknowledgement and policy URI.
+    /// @return ack Plain-text disclaimer confirming participant tax duties.
+    /// @return uri Off-chain document location.
+    function policyDetails()
+        external
+        view
+        returns (string memory ack, string memory uri);
 }

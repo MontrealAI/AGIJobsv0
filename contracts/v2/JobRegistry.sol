@@ -154,8 +154,7 @@ contract JobRegistry is Ownable {
         returns (string memory ack, string memory uri)
     {
         if (address(taxPolicy) == address(0)) return ("", "");
-        ack = taxPolicy.acknowledge();
-        uri = taxPolicy.policyURI();
+        (ack, uri) = taxPolicy.policyDetails();
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {

@@ -64,6 +64,18 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         return acknowledgement;
     }
 
+    /// @notice Convenience helper returning both acknowledgement and policy URI.
+    /// @return ack Plain-text disclaimer confirming participant tax duties.
+    /// @return uri Off-chain document location (e.g., IPFS hash).
+    function policyDetails()
+        external
+        view
+        returns (string memory ack, string memory uri)
+    {
+        ack = acknowledgement;
+        uri = policyURI;
+    }
+
     /// @dev Rejects any incoming ether.
     receive() external payable {
         revert("TaxPolicy: no ether");
