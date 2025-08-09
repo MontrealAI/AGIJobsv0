@@ -297,6 +297,21 @@ contract JobRegistry is Ownable {
         }
         emit JobCancelled(jobId);
     }
+
+    // ---------------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------------
+    /// @dev Prevent accidental ETH transfers; this registry never holds funds
+    /// and cannot accrue tax liabilities. All value flows through the
+    /// StakeManager or DisputeModule according to participant actions.
+    receive() external payable {
+        revert("JobRegistry: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("JobRegistry: no ether");
+    }
 }
 
 
