@@ -282,6 +282,16 @@ Each module exposes owner-only functions for updating parameters:
 
 These calls can be made directly on Etherscan, giving non‑technical governors fine‑grained control without redeploying contracts.
 
+### Upgrade Strategy
+
+All v2 modules are deployed as standalone, immutable contracts. If logic needs to change, a new module is deployed and wired in through an owner‑only setter on `JobRegistry` or the corresponding module. The procedure is:
+
+1. Deploy and verify the replacement contract on a block explorer.
+2. From the owner account, call `JobRegistry.setModules` or the relevant `set...` function with the new address.
+3. Confirm the `*Updated` event in the transaction logs.
+
+Existing state remains intact and calls immediately route to the new implementation, giving simple upgradability without proxy complexity.
+
 ### Incentive Model & Gibbs Free Energy Analogy
 
 The protocol’s economics are tuned so that honest behaviour minimises each participant’s expected loss. Slashing percentages exceed potential rewards while the commit‑reveal process injects entropy, making dishonest strategies energetically costly. In thermodynamic terms the network tends toward the minimum Gibbs free energy \(G = H - T S\): stake losses raise the enthalpy \(H\), commit‑reveal randomness increases entropy \(S\), and owner‑set parameters serve as the temperature \(T\) that steers equilibrium.
