@@ -66,9 +66,9 @@ contract DisputeModule is IDisputeModule, Ownable {
     }
 
     /// @notice Set the jury allowed to resolve disputes alongside the owner
-    function setJury(address _jury) external override onlyOwner {
+    function setAppealJury(address _jury) external override onlyOwner {
         jury = _jury;
-        emit JuryUpdated(_jury);
+        emit AppealJuryUpdated(_jury);
     }
 
     /// @notice Configure the appeal bond required to escalate a job
