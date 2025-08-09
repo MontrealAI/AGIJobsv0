@@ -7,6 +7,8 @@ import {ICertificateNFT} from "../interfaces/ICertificateNFT.sol";
 
 /// @title CertificateNFT (module)
 /// @notice ERC721 certificate minted upon successful job completion.
+/// @dev Holds no ether so neither the contract nor its owner ever custodies
+///      assets or incurs taxable obligations.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     address public jobRegistry;
     mapping(uint256 => string) private _tokenURIs;
@@ -41,6 +43,21 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
         return _tokenURIs[tokenId];
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract and its owner
+    /// free of taxable assets.
+    receive() external payable {
+        revert("CertificateNFT: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("CertificateNFT: no ether");
     }
 }
 

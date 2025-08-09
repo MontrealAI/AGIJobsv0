@@ -7,6 +7,8 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 
 /// @title CertificateNFT
 /// @notice ERC721 certificate minted upon successful job completion.
+/// @dev Holds no ether so neither the contract nor its owner ever custodies
+///      assets or accrues taxable exposure in any jurisdiction.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     address public jobRegistry;
     string private baseTokenURI;
@@ -60,6 +62,21 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
             return string.concat(base, custom);
         }
         return custom;
+    }
+
+    // ---------------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract and its owner
+    /// tax neutral.
+    receive() external payable {
+        revert("CertificateNFT: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("CertificateNFT: no ether");
     }
 }
 
