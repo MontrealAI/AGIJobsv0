@@ -18,6 +18,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.21; includes an automatic token burn on final validation via the `JobFinalizedAndBurned` event and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
 - [AGIJobManager v2 Architecture](docs/architecture-v2.md) – modular design with incentive analysis and interface definitions.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
+- [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -57,11 +58,12 @@ graph TD
 
 ### Interaction Flow
 
-1. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
-2. Agents stake and apply; one agent submits work with `completeJob`.
-3. `ValidationModule` picks validators who commit and reveal votes.
-4. `JobRegistry.finalize` pays the agent and validators or allows `DisputeModule` appeal.
-5. On success, `CertificateNFT` mints proof of completion.
+1. Employers, agents, and validators call `JobRegistry.acknowledgeTaxPolicy` to accept the tax disclaimer.
+2. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
+3. Agents stake and apply; one agent submits work with `completeJob`.
+4. `ValidationModule` picks validators who commit and reveal votes.
+5. `JobRegistry.finalize` pays the agent and validators or allows `DisputeModule` appeal.
+6. On success, `CertificateNFT` mints proof of completion.
 
 ## Module Responsibilities & Deployed Addresses
 
