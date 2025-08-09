@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Job lifecycle with disputes", function () {
-  let token, stakeManager, rep, validation, nft, registry, dispute;
+  let token, stakeManager, rep, validation, nft, registry, dispute, policy;
   let owner, employer, agent;
 
   const reward = 100;
@@ -47,6 +47,10 @@ describe("Job lifecycle with disputes", function () {
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     dispute = await Dispute.deploy(await registry.getAddress(), owner.address);
+    const Policy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    policy = await Policy.deploy(owner.address, "ipfs://policy", "ack");
 
     await registry.connect(owner).setModules(
       await validation.getAddress(),
@@ -62,6 +66,12 @@ describe("Job lifecycle with disputes", function () {
     await rep.connect(owner).setThreshold(1);
     await stakeManager.connect(owner).transferOwnership(await registry.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
+    await registry
+      .connect(owner)
+      .setTaxPolicy(await policy.getAddress());
+    await registry.connect(owner).acknowledgeTaxPolicy();
+    await registry.connect(employer).acknowledgeTaxPolicy();
+    await registry.connect(agent).acknowledgeTaxPolicy();
 
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);

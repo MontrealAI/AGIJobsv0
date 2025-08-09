@@ -34,6 +34,14 @@ describe("JobRegistry tax policy integration", function () {
     expect(details[0]).to.equal("new ack");
   });
 
+  it("tracks user acknowledgement", async () => {
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await expect(registry.connect(user).acknowledgeTaxPolicy())
+      .to.emit(registry, "TaxAcknowledged")
+      .withArgs(user.address);
+    expect(await registry.taxAcknowledged(user.address)).to.equal(true);
+  });
+
   it("blocks non-owner from setting policy", async () => {
     await expect(
       registry.connect(user).setTaxPolicy(await policy.getAddress())

@@ -65,6 +65,22 @@ contract JobRegistry is Ownable {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
 
+    /// @notice Tracks which participants acknowledged the tax policy.
+    /// @dev Mapping is public for off-chain auditability. The contract owner
+    /// is always exempt from any tax liabilities.
+    mapping(address => bool) public taxAcknowledged;
+
+    /// @dev Reusable gate enforcing tax acknowledgement for non-owner callers.
+    modifier requiresTaxAcknowledgement() {
+        if (msg.sender != owner()) {
+            require(
+                taxAcknowledged[msg.sender],
+                "acknowledge tax policy"
+            );
+        }
+        _;
+    }
+
     uint128 public jobReward;
     uint96 public jobStake;
 
@@ -75,6 +91,10 @@ contract JobRegistry is Ownable {
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
     event TaxPolicyUpdated(address policy);
+    /// @notice Emitted when a participant acknowledges the tax policy, placing
+    /// full tax responsibility on the caller while the contract owner remains
+    /// exempt.
+    event TaxAcknowledged(address user);
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -157,6 +177,16 @@ contract JobRegistry is Ownable {
         (ack, uri) = taxPolicy.policyDetails();
     }
 
+    /// @notice Acknowledge the current tax policy.
+    /// @dev Calls the policy contract to retrieve the disclaimer, then marks
+    /// the caller as having accepted full tax responsibility.
+    function acknowledgeTaxPolicy() external {
+        require(address(taxPolicy) != address(0), "policy");
+        taxPolicy.acknowledge();
+        taxAcknowledged[msg.sender] = true;
+        emit TaxAcknowledged(msg.sender);
+    }
+
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
         jobReward = uint128(reward);
         jobStake = uint96(stake);
@@ -166,7 +196,11 @@ contract JobRegistry is Ownable {
     // ---------------------------------------------------------------------
     // Job lifecycle
     // ---------------------------------------------------------------------
-    function createJob() external returns (uint256 jobId) {
+    function createJob()
+        external
+        requiresTaxAcknowledgement
+        returns (uint256 jobId)
+    {
         require(jobReward > 0 || jobStake > 0, "params not set");
         jobId = ++nextJobId;
         jobs[jobId] = Job({
@@ -189,7 +223,10 @@ contract JobRegistry is Ownable {
         );
     }
 
-    function applyForJob(uint256 jobId) external {
+    function applyForJob(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
@@ -204,7 +241,10 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Agent completes the job; validation outcome stored.
-    function completeJob(uint256 jobId) public {
+    function completeJob(uint256 jobId)
+        public
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
@@ -215,7 +255,11 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Agent disputes a failed job outcome.
-    function raiseDispute(uint256 jobId) public payable {
+    function raiseDispute(uint256 jobId)
+        public
+        payable
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
@@ -228,7 +272,11 @@ contract JobRegistry is Ownable {
         emit DisputeRaised(jobId, msg.sender);
     }
 
-    function dispute(uint256 jobId) external payable {
+    function dispute(uint256 jobId)
+        external
+        payable
+        requiresTaxAcknowledgement
+    {
         raiseDispute(jobId);
     }
 
@@ -243,7 +291,15 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
+    /// @dev The dispute module may call this without acknowledgement as it
+    ///      merely relays the arbiter's ruling and holds no tax liability.
     function finalize(uint256 jobId) external {
+        if (msg.sender != address(disputeModule) && msg.sender != owner()) {
+            require(
+                taxAcknowledged[msg.sender],
+                "acknowledge tax policy"
+            );
+        }
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
         job.state = State.Finalized;
@@ -283,7 +339,10 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Cancel a job before completion and refund the employer.
-    function cancelJob(uint256 jobId) external {
+    function cancelJob(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(
             job.state == State.Created || job.state == State.Applied,
