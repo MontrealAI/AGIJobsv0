@@ -79,3 +79,8 @@ Stakes form potential energy \(H\); commit–reveal voting injects entropy \(S\)
 ## Owner Control & Token Flexibility
 All setters are `onlyOwner`. `StakeManager.setToken` lets the owner swap the payment/staking token (default [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe), 6 decimals) without redeploying other modules. All amounts are supplied in base units (1 token = 1e6).
 
+## Governance Composability
+- Modules are immutable once deployed; to upgrade a component the owner deploys a new module and calls `JobRegistry.setModules` with the replacement address.
+- Parameter tweaks emit dedicated events (`ParameterUpdated`, `ModuleUpdated`) so off-chain tooling and multisigs can monitor governance moves.
+- Minimal, single-purpose setters keep Etherscan interactions straightforward for non-technical owners while ensuring clear on-chain audit trails.
+
