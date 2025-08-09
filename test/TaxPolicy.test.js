@@ -47,5 +47,25 @@ describe("TaxPolicy", function () {
     const msg = await tax.acknowledge();
     expect(msg).to.equal("initial ack");
   });
+
+  it("allows owner to update URI and acknowledgement atomically", async () => {
+    await tax.connect(owner).setPolicy("ipfs://u", "msg");
+    expect(await tax.policyURI()).to.equal("ipfs://u");
+    expect(await tax.acknowledge()).to.equal("msg");
+  });
+
+  it("rejects non-owner setPolicy calls", async () => {
+    await expect(
+      tax.connect(user).setPolicy("x", "y")
+    )
+      .to.be.revertedWithCustomError(tax, "OwnableUnauthorizedAccount")
+      .withArgs(user.address);
+  });
+
+  it("reverts on direct ether transfers", async () => {
+    await expect(
+      owner.sendTransaction({ to: await tax.getAddress(), value: 1 })
+    ).to.be.revertedWith("TaxPolicy: no ether");
+  });
 });
 

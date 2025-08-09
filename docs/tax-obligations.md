@@ -22,7 +22,7 @@ The AGI Jobs protocol routes all tax duties to the participants who exchange val
 - Do not mint, burn, or transfer tokens for themselves.
 - Provide infrastructure without consideration, so no sales/VAT/GST applies.
 - Therefore incur zero direct, indirect, or theoretical tax liability worldwide.
-- May update the `TaxPolicy` URI but remain tax‑exempt regardless of jurisdiction.
+ - May update the `TaxPolicy` URI and acknowledgement (individually or atomically) but remain tax‑exempt regardless of jurisdiction.
 
 ## Passive Token Holders
 - Passive holders unaffected by burns or job flows until they dispose of their own tokens.

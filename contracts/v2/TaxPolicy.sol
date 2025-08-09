@@ -6,7 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @title TaxPolicy
 /// @notice Stores canonical tax policy metadata and acknowledgement text.
 /// @dev Contract owner alone may update the policy URI or acknowledgement.
-/// The contract never holds funds and exists solely to provide an on-chain
+/// The contract never accepts ether and exists solely to provide an on-chain
 /// reference for off-chain tax responsibilities. AGI Employers, AGI Agents, and
 /// Validators remain fully responsible for their own tax obligations; the
 /// contract and its owner are always tax-exempt.
@@ -46,10 +46,30 @@ contract TaxPolicy is Ownable {
         emit AcknowledgementUpdated(text);
     }
 
+    /// @notice Atomically updates both the policy URI and acknowledgement text.
+    /// @param uri New URI pointing to the policy text.
+    /// @param text Human-readable disclaimer for participants.
+    function setPolicy(string calldata uri, string calldata text) external onlyOwner {
+        policyURI = uri;
+        acknowledgement = text;
+        emit TaxPolicyURIUpdated(uri);
+        emit AcknowledgementUpdated(text);
+    }
+
     /// @notice Returns a human-readable disclaimer confirming tax obligations.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
     function acknowledge() external view returns (string memory disclaimer) {
         return acknowledgement;
+    }
+
+    /// @dev Rejects any incoming ether.
+    receive() external payable {
+        revert("TaxPolicy: no ether");
+    }
+
+    /// @dev Rejects calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("TaxPolicy: no ether");
     }
 }
 
