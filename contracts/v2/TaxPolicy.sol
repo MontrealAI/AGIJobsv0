@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 /// @title TaxPolicy
 /// @notice Stores canonical tax policy metadata and acknowledgement text.
@@ -10,7 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// reference for off-chain tax responsibilities. AGI Employers, AGI Agents, and
 /// Validators remain fully responsible for their own tax obligations; the
 /// contract and its owner are always tax-exempt.
-contract TaxPolicy is Ownable {
+contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Off-chain document describing tax responsibilities.
     string public policyURI;
 
