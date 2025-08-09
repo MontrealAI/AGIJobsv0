@@ -7,6 +7,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
+/// @dev Holds only the staking token and rejects direct ether so neither the
+///      contract nor the owner ever custodies funds that could create tax
+///      liabilities. All taxes remain the responsibility of employers, agents
+///      and validators.
 contract StakeManager is Ownable {
     using SafeERC20 for IERC20;
 
@@ -161,6 +165,20 @@ contract StakeManager is Ownable {
         }
 
         emit StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare);
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert("StakeManager: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("StakeManager: no ether");
     }
 }
 

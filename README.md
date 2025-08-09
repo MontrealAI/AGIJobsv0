@@ -69,7 +69,7 @@ Non‑technical participants can verify the policy directly in a browser:
 3. Alternatively, read `taxPolicyDetails` on the `JobRegistry` to fetch both values in a single call.
 4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`.
 
-Both `JobRegistry` and `TaxPolicy` revert on direct ETH transfers, ensuring the contracts never take custody of funds. The contracts and their owner therefore remain perpetually tax‑exempt.
+All core modules—`JobRegistry`, `StakeManager`, `ValidationModule`, `DisputeModule`, and `TaxPolicy`—revert on direct ETH transfers so the infrastructure never holds funds. The contracts and their owner therefore remain perpetually tax‑exempt.
 
 ## Architecture
 
