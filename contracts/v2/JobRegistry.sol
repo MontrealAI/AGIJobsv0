@@ -74,9 +74,9 @@ contract JobRegistry is Ownable {
     mapping(address => uint256) public taxAcknowledgedVersion;
 
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
-    /// version for non-owner callers.
+    /// version for callers other than the owner or dispute module.
     modifier requiresTaxAcknowledgement() {
-        if (msg.sender != owner()) {
+        if (msg.sender != owner() && msg.sender != address(disputeModule)) {
             require(
                 taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
                 "acknowledge tax policy"
@@ -320,13 +320,7 @@ contract JobRegistry is Ownable {
     /// @notice Finalize a job and trigger payouts and reputation changes.
     /// @dev The dispute module may call this without acknowledgement as it
     ///      merely relays the arbiter's ruling and holds no tax liability.
-    function finalize(uint256 jobId) external {
-        if (msg.sender != address(disputeModule) && msg.sender != owner()) {
-            require(
-                taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
-                "acknowledge tax policy"
-            );
-        }
+    function finalize(uint256 jobId) external requiresTaxAcknowledgement {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
         job.state = State.Finalized;
