@@ -51,9 +51,11 @@ graph TD
 4. Reveal decisions using **revealValidation** before the window closes.
 
 ### Tax Policy
+The `TaxPolicy` contract is informational only: it never holds funds and imposes no tax liability on the infrastructure or its owner. All taxes remain with employers, agents, and validators.
+
 1. Open the `TaxPolicy` address in Etherscan.
-2. Under **Read Contract**, call **acknowledgement** or **acknowledge** to view the disclaimer, or **policyURI** for the canonical document.
-3. `JobRegistry` exposes both fields via **taxPolicyDetails** for one-call access.
+2. Under **Read Contract**, call **acknowledgement** or **acknowledge** to view the disclaimer stating that the contracts and deploying corporation are tax‑exempt worldwide, or **policyURI** for the canonical document.
+3. `JobRegistry` exposes the same text and URI via **taxPolicyDetails** for one-call access.
 4. Only the owner may update the URI with **setPolicyURI** or the message with **setAcknowledgement** in **Write Contract**.
 
 ### Disputers
