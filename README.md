@@ -105,6 +105,35 @@ graph TD
 | DisputeModule | optional appeal layer | [`IDisputeModule`](contracts/v2/interfaces/IDisputeModule.sol) | `setAppealParameters` | 0x0165878A594ca255338adfa4d48449f69242Eb8F |
 | CertificateNFT | issues completion NFTs | [`ICertificateNFT`](contracts/v2/interfaces/ICertificateNFT.sol) | `setJobRegistry` | 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707 |
 
+### Contract Interfaces & Solidity Tips
+
+Below are abbreviated interface snippets; see [docs/modular-architecture-v2.md](docs/modular-architecture-v2.md) for full definitions and gas notes.
+
+```solidity
+interface IJobRegistry {
+    event JobCreated(uint256 indexed jobId, address employer, uint256 reward);
+    function createJob(string calldata details, uint256 reward) external;
+    function setModules(address validation, address stake, address reputation, address dispute, address certificate) external;
+}
+
+interface IStakeManager {
+    event TokenUpdated(address newToken);
+    function depositStake(uint256 amount) external;
+    function lockReward(address from, uint256 amount) external;
+    function payReward(address to, uint256 amount) external;
+    function slash(address offender, address beneficiary, uint256 amount) external;
+    function setToken(address newToken) external;
+}
+```
+
+Structure guidelines:
+
+- Mark module addresses `immutable` and cache them locally during calls.
+- Prefer `uint64`/`uint128` for counters and timestamps to pack storage.
+- Use `external` + `calldata` on user functions and custom errors for gas savings.
+- Guard cross‑module calls with `nonReentrant` in `JobRegistry` and `StakeManager`.
+- Emit events for every parameter change to aid governance tracking.
+
 ## Etherscan Walk-through
 
 Interact with the deployment directly from a block explorer using the **Write** tab:
