@@ -21,6 +21,7 @@ describe("DisputeModule", function () {
   });
 
   async function raise(jobId, agentSigner) {
+    await jobRegistry.acknowledge(agentSigner.address);
     await jobRegistry.setJob(jobId, {
       agent: agentSigner.address,
       employer: employer.address,
@@ -49,5 +50,36 @@ describe("DisputeModule", function () {
     await dispute.connect(jury).resolve(2, false);
     const after = await ethers.provider.getBalance(agent.address);
     expect(after - before).to.equal(appealFee);
+  });
+
+  it("reverts when appellant has not acknowledged", async () => {
+    const jobId = 3;
+    await jobRegistry.setJob(jobId, {
+      agent: agent.address,
+      employer: employer.address,
+      reward: 0,
+      stake: 0,
+      state: 0,
+    });
+    await expect(
+      dispute.connect(agent).appeal(jobId, { value: appealFee })
+    ).to.be.revertedWith("acknowledge tax policy");
+  });
+
+  it("only allows owner to update registry", async () => {
+    const RegistryStub = await ethers.getContractFactory(
+      "contracts/mocks/DisputeRegistryStub.sol:DisputeRegistryStub"
+    );
+    const newReg = await RegistryStub.deploy();
+    await expect(
+      dispute.connect(owner).setJobRegistry(await newReg.getAddress())
+    )
+      .to.emit(dispute, "JobRegistryUpdated")
+      .withArgs(await newReg.getAddress());
+    await expect(
+      dispute.connect(agent).setJobRegistry(await newReg.getAddress())
+    ).to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount").withArgs(
+      agent.address
+    );
   });
 });
