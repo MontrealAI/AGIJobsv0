@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import "../v2/interfaces/IStakeManager.sol";
 import "../v2/interfaces/IJobRegistry.sol";
+import "../v2/interfaces/IJobRegistryTax.sol";
 import "../v2/interfaces/IReputationEngine.sol";
 
 contract MockStakeManager is IStakeManager {
@@ -54,8 +55,10 @@ contract MockStakeManager is IStakeManager {
     ) external override {}
 }
 
-contract MockJobRegistry is IJobRegistry {
+contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
     mapping(uint256 => Job) private _jobs;
+    uint256 public taxPolicyVersion;
+    mapping(address => uint256) public taxAcknowledgedVersion;
 
     function setJob(uint256 jobId, Job calldata job) external {
         _jobs[jobId] = job;
@@ -63,6 +66,14 @@ contract MockJobRegistry is IJobRegistry {
 
     function jobs(uint256 jobId) external view override returns (Job memory) {
         return _jobs[jobId];
+    }
+
+    function acknowledgeTaxPolicy() external {
+        taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
+    }
+
+    function setTaxPolicyVersion(uint256 version) external {
+        taxPolicyVersion = version;
     }
 
     function setValidationModule(address) external override {}
