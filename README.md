@@ -19,7 +19,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v2 Architecture](docs/architecture-v2.md) – modular design with incentive analysis and interface definitions.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
-- [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails` and `isTaxExempt()` helpers for explorer users.
+- [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers for explorer users.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
 
@@ -104,7 +104,7 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 - Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing.
 - Smart contracts and the deploying corporation are tax‑exempt worldwide; `isTaxExempt()` on each module (viewable via explorer **Read Contract** tabs) proves it.
 - Verify the policy on Etherscan by reading `taxPolicyDetails` (acknowledgement + URI), then calling `acknowledgeTaxPolicy`, and confirming `isTaxExempt()`.
-- The owner updates text or URI via `setPolicyURI`/`setAcknowledgement` and enforces a new `taxPolicyVersion` with `bumpTaxPolicyVersion`.
+- The owner updates text or URI via `setPolicyURI`/`setAcknowledgement`, tracks changes through `policyVersion`, and enforces a new `taxPolicyVersion` with `bumpTaxPolicyVersion`.
 
 All taxes in the AGI Jobs ecosystem fall solely on AGI Employers, AGI Agents, and Validators who exchange value. The smart contract suite and the deploying corporation are perpetually exempt from any direct, indirect, or theoretical tax liability in every jurisdiction—including the United States, Canada, and the European Union—because no revenue, fees, or asset disposals ever accrue to the infrastructure:
 
@@ -121,7 +121,7 @@ The smart contracts and the corporation that deployed them:
 - **Remain tax‑neutral worldwide.** No direct, indirect, or theoretical liability can emerge because the owner realises no income and does not dispose of assets.
 - **Expose on-chain proof of neutrality.** Every core module exposes an `isTaxExempt()` helper so explorers can verify that the contracts and owner remain outside any tax scope.
 
-These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. Each update or explicit version bump triggers an incrementing `taxPolicyVersion` in [`JobRegistry`](contracts/v2/JobRegistry.sol) and forces all non‑owner participants to re‑acknowledge the disclaimer. Acknowledgements are tracked per user through `taxAcknowledgedVersion`. The owner can require a fresh acknowledgement without changing the policy address by calling `bumpTaxPolicyVersion`. `JobRegistry` mirrors the current disclaimer via `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the message in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
+These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. Each update automatically increments the contract’s own `policyVersion`. The owner may also call `bumpPolicyVersion` to advance the counter without changing text. Whenever the version changes, the owner should bump the mirrored `taxPolicyVersion` in [`JobRegistry`](contracts/v2/JobRegistry.sol), forcing all non‑owner participants to re‑acknowledge the disclaimer. Acknowledgements are tracked per user through `taxAcknowledgedVersion`. `JobRegistry` mirrors the current disclaimer via `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the message in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
 
 For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.sol), [`JobRegistry`](contracts/v2/JobRegistry.sol), [`StakeManager`](contracts/v2/StakeManager.sol), [`ValidationModule`](contracts/v2/ValidationModule.sol), [`ReputationEngine`](contracts/v2/ReputationEngine.sol), [`DisputeModule`](contracts/v2/DisputeModule.sol), and [`CertificateNFT`](contracts/v2/CertificateNFT.sol) each expose `isTaxExempt()` which always returns `true`, signalling that neither these contracts nor the owner can ever accrue tax liability.
 
@@ -130,10 +130,10 @@ For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.s
 Non‑technical participants can verify the policy directly in a browser:
 
 1. Open the `JobRegistry` address on a block explorer such as Etherscan.
-2. Under **Read Contract**, call `taxPolicyDetails` to view the current disclaimer text and canonical URI.
+2. Under **Read Contract**, call `taxPolicyDetails` to view the current disclaimer text and canonical URI, and compare `taxPolicyVersion` with `TaxPolicy.policyVersion`.
 3. Switch to **Write Contract** and call `acknowledgeTaxPolicy` to record acceptance of the active `taxPolicyVersion`.
 4. Back in **Read Contract**, confirm `isTaxExempt` returns `true` and check `taxAcknowledgedVersion(address)` against `taxPolicyVersion`.
-5. Only the contract owner can change the policy via `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert.
+5. Only the contract owner can change the policy via `setPolicyURI`, `setAcknowledgement`, `setPolicy`, or `bumpPolicyVersion`; unauthorized calls revert.
 
 ### Owner checklist: updating the policy via Etherscan
 
@@ -141,8 +141,8 @@ Owners can update the disclaimer text or URI without affecting the platform's ta
 
 1. Open the `TaxPolicy` contract on Etherscan and switch to **Write Contract**.
 2. Connect the owner wallet.
-3. Call `setPolicyURI` to change the document, `setAcknowledgement` to change the message, or `setPolicy` to update both at once. If the policy text changes but the contract address remains the same, call `bumpTaxPolicyVersion` on `JobRegistry` so participants must re‑acknowledge.
-4. Verify the transaction and confirm the new values under **Read Contract**, then ensure `taxPolicyVersion` advanced on `JobRegistry`.
+3. Call `setPolicyURI` to change the document, `setAcknowledgement` to change the message, or `setPolicy` to update both at once. Each call increments `policyVersion`; the owner can also call `bumpPolicyVersion` to increment without changing text. After any increment, call `bumpTaxPolicyVersion` on `JobRegistry` so participants must re‑acknowledge.
+4. Verify the transaction and confirm the new values and `policyVersion` under **Read Contract**, then ensure `taxPolicyVersion` advanced on `JobRegistry`.
 
 ### Read/Write Contract quick guide
 

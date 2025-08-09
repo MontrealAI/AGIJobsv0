@@ -74,6 +74,18 @@ describe("TaxPolicy", function () {
     expect(await tax.isTaxExempt()).to.equal(true);
   });
 
+  it("tracks policy version bumps", async () => {
+    expect(await tax.policyVersion()).to.equal(1);
+    await tax.connect(owner).setPolicyURI("ipfs://new");
+    expect(await tax.policyVersion()).to.equal(2);
+    await tax.connect(owner).setAcknowledgement("new ack");
+    expect(await tax.policyVersion()).to.equal(3);
+    await tax.connect(owner).setPolicy("ipfs://u", "msg");
+    expect(await tax.policyVersion()).to.equal(4);
+    await tax.connect(owner).bumpPolicyVersion();
+    expect(await tax.policyVersion()).to.equal(5);
+  });
+
   it("reverts on direct ether transfers", async () => {
     await expect(
       owner.sendTransaction({ to: await tax.getAddress(), value: 1 })
