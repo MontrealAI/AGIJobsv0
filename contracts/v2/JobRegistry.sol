@@ -65,16 +65,20 @@ contract JobRegistry is Ownable {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
 
-    /// @notice Tracks which participants acknowledged the tax policy.
-    /// @dev Mapping is public for off-chain auditability. The contract owner
-    /// is always exempt from any tax liabilities.
-    mapping(address => bool) public taxAcknowledged;
+    /// @notice Current version of the tax policy. Participants must acknowledge
+    /// this version before interacting. The contract owner remains exempt.
+    uint256 public taxPolicyVersion;
 
-    /// @dev Reusable gate enforcing tax acknowledgement for non-owner callers.
+    /// @notice Tracks which policy version each participant acknowledged.
+    /// @dev Mapping is public for off-chain auditability.
+    mapping(address => uint256) public taxAcknowledgedVersion;
+
+    /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
+    /// version for non-owner callers.
     modifier requiresTaxAcknowledgement() {
         if (msg.sender != owner()) {
             require(
-                taxAcknowledged[msg.sender],
+                taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
                 "acknowledge tax policy"
             );
         }
@@ -90,11 +94,16 @@ contract JobRegistry is Ownable {
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
-    event TaxPolicyUpdated(address policy);
+    /// @notice Emitted when the tax policy reference or version changes.
+    /// @param policy Address of the TaxPolicy contract.
+    /// @param version Incrementing version participants must acknowledge.
+    event TaxPolicyUpdated(address policy, uint256 version);
     /// @notice Emitted when a participant acknowledges the tax policy, placing
     /// full tax responsibility on the caller while the contract owner remains
     /// exempt.
-    event TaxAcknowledged(address user);
+    /// @param user Address of the acknowledging participant.
+    /// @param version Tax policy version that was acknowledged.
+    event TaxAcknowledged(address indexed user, uint256 version);
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -144,12 +153,22 @@ contract JobRegistry is Ownable {
         emit CertificateNFTUpdated(address(_certNFT));
     }
 
-    /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
+    /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
+    /// bumps the policy version so participants must re-acknowledge.
     /// @dev Only callable by the owner; the policy address cannot be zero.
     function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
         require(address(_policy) != address(0), "policy");
         taxPolicy = _policy;
-        emit TaxPolicyUpdated(address(_policy));
+        taxPolicyVersion++;
+        emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
+    }
+
+    /// @notice Increments the tax policy version without changing the contract
+    /// address, requiring all participants to re-acknowledge.
+    function bumpTaxPolicyVersion() external onlyOwner {
+        require(address(taxPolicy) != address(0), "policy");
+        taxPolicyVersion++;
+        emit TaxPolicyUpdated(address(taxPolicy), taxPolicyVersion);
     }
 
     /// @notice Returns the on-chain acknowledgement string stating that all
@@ -183,8 +202,8 @@ contract JobRegistry is Ownable {
     function acknowledgeTaxPolicy() external {
         require(address(taxPolicy) != address(0), "policy");
         taxPolicy.acknowledge();
-        taxAcknowledged[msg.sender] = true;
-        emit TaxAcknowledged(msg.sender);
+        taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
+        emit TaxAcknowledged(msg.sender, taxPolicyVersion);
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
@@ -296,7 +315,7 @@ contract JobRegistry is Ownable {
     function finalize(uint256 jobId) external {
         if (msg.sender != address(disputeModule) && msg.sender != owner()) {
             require(
-                taxAcknowledged[msg.sender],
+                taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
                 "acknowledge tax policy"
             );
         }

@@ -21,7 +21,7 @@ describe("JobRegistry tax policy integration", function () {
       registry.connect(owner).setTaxPolicy(await policy.getAddress())
     )
       .to.emit(registry, "TaxPolicyUpdated")
-      .withArgs(await policy.getAddress());
+      .withArgs(await policy.getAddress(), 1);
     expect(await registry.taxAcknowledgement()).to.equal(
       await policy.acknowledge()
     );
@@ -38,8 +38,24 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(registry, "TaxAcknowledged")
-      .withArgs(user.address);
-    expect(await registry.taxAcknowledged(user.address)).to.equal(true);
+      .withArgs(user.address, 1);
+    expect(await registry.taxAcknowledgedVersion(user.address)).to.equal(1);
+  });
+
+  it("requires re-acknowledgement after version bump", async () => {
+    await registry.connect(owner).setJobParameters(1, 0);
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await registry.connect(user).acknowledgeTaxPolicy();
+    await registry.connect(owner).bumpTaxPolicyVersion();
+    await expect(
+      registry.connect(user).createJob()
+    ).to.be.revertedWith("acknowledge tax policy");
+    await expect(registry.connect(user).acknowledgeTaxPolicy())
+      .to.emit(registry, "TaxAcknowledged")
+      .withArgs(user.address, 2);
+    await expect(registry.connect(user).createJob())
+      .to.emit(registry, "JobCreated")
+      .withArgs(1, user.address, ethers.ZeroAddress, 1, 0);
   });
 
   it("blocks non-owner from setting policy", async () => {

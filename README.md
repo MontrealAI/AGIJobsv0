@@ -107,7 +107,7 @@ The smart contracts and the corporation that deployed them:
 - **Provide a free service.** With no consideration exchanged, no sales/VAT/GST obligations arise.
 - **Remain tax‑neutral worldwide.** No direct, indirect, or theoretical liability can emerge because the owner realises no income and does not dispose of assets.
 
-These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. `JobRegistry` mirrors the same strings through `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the disclaimer in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
+These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. Each update or explicit version bump triggers an incrementing `taxPolicyVersion` in [`JobRegistry`](contracts/v2/JobRegistry.sol) and forces all non‑owner participants to re‑acknowledge the disclaimer. Acknowledgements are tracked per user through `taxAcknowledgedVersion`. The owner can require a fresh acknowledgement without changing the policy address by calling `bumpTaxPolicyVersion`. `JobRegistry` mirrors the current disclaimer via `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the message in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
 
 ### Checking the tax disclaimer on Etherscan
 
@@ -115,7 +115,7 @@ Non‑technical participants can verify the policy directly in a browser:
 
 1. Open the `TaxPolicy` contract address on a block explorer such as Etherscan.
 2. Under **Read Contract**, call `policyDetails` to retrieve both the disclaimer and canonical document URI, or call `acknowledgement`/`acknowledge` and `policyURI` individually.
-3. `JobRegistry` exposes the same values via `taxPolicyDetails` for one-call access.
+3. `JobRegistry` exposes the same values via `taxPolicyDetails` and reveals the active `taxPolicyVersion` so users can confirm whether they have acknowledged the latest revision through `taxAcknowledgedVersion(address)`.
 4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; calls from any other address revert.
 
 ### Owner checklist: updating the policy via Etherscan
@@ -124,8 +124,8 @@ Owners can update the disclaimer text or URI without affecting the platform's ta
 
 1. Open the `TaxPolicy` contract on Etherscan and switch to **Write Contract**.
 2. Connect the owner wallet.
-3. Call `setPolicyURI` to change the document, `setAcknowledgement` to change the message, or `setPolicy` to update both at once.
-4. Verify the transaction and confirm the new values under **Read Contract**.
+3. Call `setPolicyURI` to change the document, `setAcknowledgement` to change the message, or `setPolicy` to update both at once. If the policy text changes but the contract address remains the same, call `bumpTaxPolicyVersion` on `JobRegistry` so participants must re‑acknowledge.
+4. Verify the transaction and confirm the new values under **Read Contract**, then ensure `taxPolicyVersion` advanced on `JobRegistry`.
 
 ### Read/Write Contract quick guide
 
@@ -708,7 +708,7 @@ Validator committees expand with job value and settle outcomes by majority after
 
 | Module | Interface / Key functions |
 | --- | --- |
-| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize`, `taxAcknowledgement`, `taxPolicyURI` |
+| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize`, `acknowledgeTaxPolicy`, `taxPolicyDetails`, `taxPolicyVersion` |
 | `ValidationModule` | [`IValidationModule`](contracts/v2/interfaces/IValidationModule.sol) – `selectValidators`, `commitValidation`, `revealValidation`, `finalize`, `appeal` |
 | `StakeManager` | [`IStakeManager`](contracts/v2/interfaces/IStakeManager.sol) – `depositStake`, `withdrawStake`, `lockStake`, `slash`, `stakeOf` |
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
