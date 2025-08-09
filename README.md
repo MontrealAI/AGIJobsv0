@@ -19,7 +19,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobManager v2 Architecture](docs/architecture-v2.md) – modular design with incentive analysis and interface definitions.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
-- [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers for explorer users.
+- [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
 
 > **Warning**: Links above are provided for reference only. Always validate contract addresses and metadata on multiple block explorers before interacting.
@@ -62,7 +62,7 @@ graph TD
 
 ### Interaction Flow
 
-1. Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing.
+1. Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing. The transaction emits `TaxAcknowledged(user, version, acknowledgement)` so the accepted disclaimer is permanently logged on‑chain.
 2. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
 3. Agents stake and apply; one agent submits work with `completeJob`.
 4. `ValidationModule` picks validators who commit and reveal votes.
@@ -102,9 +102,9 @@ The $AGI ERC‑20 token is deployed at `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f1
 **Summary**
 
 - Employers, agents, and validators bear every tax obligation.
-- Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing.
+- Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing; the call emits `TaxAcknowledged(user, version, acknowledgement)` as an immutable record of the disclaimer text.
 - Smart contracts and the deploying corporation are tax‑exempt worldwide; `isTaxExempt()` on each module (viewable via explorer **Read Contract** tabs) proves it.
-- Verify the policy on Etherscan by reading `taxPolicyDetails` (acknowledgement + URI), then calling `acknowledgeTaxPolicy`, and confirming `isTaxExempt()`.
+- Verify the policy on Etherscan by reading `taxPolicyDetails` (acknowledgement + URI), then calling `acknowledgeTaxPolicy` and reviewing the `TaxAcknowledged` event log, and finally confirming `isTaxExempt()`.
 - The owner updates text or URI via `setPolicyURI`/`setAcknowledgement`, tracks changes through `policyVersion`, and enforces a new `taxPolicyVersion` with `bumpTaxPolicyVersion`.
 
 All taxes in the AGI Jobs ecosystem fall solely on AGI Employers, AGI Agents, and Validators who exchange value. The smart contract suite and the deploying corporation are perpetually exempt from any direct, indirect, or theoretical tax liability in every jurisdiction—including the United States, Canada, and the European Union—because no revenue, fees, or asset disposals ever accrue to the infrastructure:
@@ -134,7 +134,7 @@ Non‑technical participants can verify the policy directly in a browser:
 
 1. Open the `JobRegistry` address on a block explorer such as Etherscan.
 2. Under **Read Contract**, call `taxPolicyDetails` to view the current disclaimer text and canonical URI, and compare `taxPolicyVersion` with `TaxPolicy.policyVersion`.
-3. Switch to **Write Contract** and call `acknowledgeTaxPolicy` to record acceptance of the active `taxPolicyVersion`.
+3. Switch to **Write Contract** and call `acknowledgeTaxPolicy` to record acceptance of the active `taxPolicyVersion`. The resulting transaction emits `TaxAcknowledged(user, version, acknowledgement)` containing the disclaimer text for easy verification in the event log.
 4. Back in **Read Contract**, confirm `isTaxExempt` returns `true` and check `taxAcknowledgedVersion(address)` against `taxPolicyVersion`.
 5. Only the contract owner can change the policy via `setPolicyURI`, `setAcknowledgement`, `setPolicy`, or `bumpPolicyVersion`; unauthorized calls revert.
 
