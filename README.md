@@ -39,7 +39,17 @@ The platform’s v2 release decomposes coordination into immutable, single‑pur
 - **DisputeModule** – optional appeal layer for contested jobs.
 - **CertificateNFT** – mints ERC‑721 completion certificates to employers.
 
-Each module inherits `Ownable` so only the contract owner can update parameters. Upgrades occur by deploying a replacement module and repointing `JobRegistry.setModules`, preserving governance composability while keeping every contract immutable.
+```mermaid
+graph LR
+  JobRegistry --> StakeManager
+  JobRegistry --> ValidationModule
+  JobRegistry --> ReputationEngine
+  JobRegistry --> DisputeModule
+  JobRegistry --> CertificateNFT
+  StakeManager --> Token[$AGIALPHA]
+```
+
+Each module inherits `Ownable` so only the contract owner can update parameters. Upgrades occur by deploying a replacement module and repointing `JobRegistry.setModules`, preserving governance composability while keeping every contract immutable. Full interface definitions and gas‑optimization tips live in [docs/v2-module-interface-reference.md](docs/v2-module-interface-reference.md).
 
 ### Owner Controls & Upgradeability
 
