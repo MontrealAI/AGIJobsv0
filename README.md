@@ -25,6 +25,19 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
 
+### Modular v2 Contract Suite
+
+The platform’s v2 release decomposes coordination into immutable, single‑purpose modules:
+
+- **JobRegistry** – posts jobs, escrows rewards, and routes calls to companion modules.
+- **ValidationModule** – runs commit–reveal voting and tallies preliminary outcomes.
+- **StakeManager** – holds stakes, escrows payouts, and executes slashing.
+- **ReputationEngine** – accrues or subtracts reputation and manages blacklists.
+- **DisputeModule** – optional appeal layer for contested jobs.
+- **CertificateNFT** – mints ERC‑721 completion certificates to employers.
+
+Each module inherits `Ownable` so only the contract owner can update parameters. Upgrades occur by deploying a replacement module and repointing `JobRegistry.setModules`, preserving governance composability while keeping every contract immutable.
+
 ### Using $AGIALPHA (6 decimals)
 
 The v2 contracts treat the payment token as an owner‑configurable parameter. By default the `StakeManager` points to the $AGIALPHA ERC‑20 at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe` (6 decimals).
