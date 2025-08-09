@@ -733,6 +733,10 @@ Validator committees expand with job value and settle outcomes by majority after
 | `CertificateNFT` | `setJobRegistry` |
 | `TaxPolicy` | `setPolicyURI`, `setAcknowledgement`, `setPolicy` |
 
+### Token Integration
+
+Staking and rewards use the $AGI token at [0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D). The owner can swap in a new ERC‑20 with `StakeManager.setToken(address)`, and `JobRegistry.setModules` permits replacing companion modules without migrating job state.
+
 | Module | Interface / Key functions |
 | --- | --- |
 | `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize`, `acknowledgeTaxPolicy`, `taxPolicyDetails`, `taxPolicyVersion` |
