@@ -154,6 +154,12 @@ contract DisputeModule is IDisputeModule, Ownable {
         emit AppealResolved(jobId, employerWins);
     }
 
+    /// @notice Confirms the module and its owner are perpetually tax-exempt.
+    /// @return Always true, indicating no tax liabilities can arise.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------

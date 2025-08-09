@@ -38,5 +38,9 @@ describe("ValidationModule ether rejection", function () {
       })
     ).to.be.revertedWith("ValidationModule: no ether");
   });
+
+  it("reports tax exemption", async () => {
+    expect(await validation.isTaxExempt()).to.equal(true);
+  });
 });
 

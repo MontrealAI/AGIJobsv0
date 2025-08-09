@@ -93,6 +93,12 @@ contract ReputationEngine is Ownable {
         return _blacklisted[user][role];
     }
 
+    /// @notice Confirms the module and its owner are tax-neutral.
+    /// @return Always true, indicating no tax liability can arise.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     function _thresholdFor(Role role) internal view returns (uint256) {
         return role == Role.Agent ? agentThreshold : validatorThreshold;
     }

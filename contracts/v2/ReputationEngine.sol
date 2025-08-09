@@ -80,6 +80,12 @@ contract ReputationEngine is Ownable {
         return _blacklisted[user];
     }
 
+    /// @notice Confirms the contract and its owner cannot incur tax obligations.
+    /// @return Always true, signalling perpetual tax exemption.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------

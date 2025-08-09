@@ -45,6 +45,12 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         return _tokenURIs[tokenId];
     }
 
+    /// @notice Confirms this NFT module and owner remain tax neutral.
+    /// @return Always true, indicating no tax liabilities can accrue.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------

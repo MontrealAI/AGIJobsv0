@@ -110,18 +110,18 @@ The smart contracts and the corporation that deployed them:
 - **Collect no fees and never custody tokens.** All core modules reject stray ether so no value ever accrues on‑chain to the infrastructure.
 - **Provide a free service.** With no consideration exchanged, no sales/VAT/GST obligations arise.
 - **Remain tax‑neutral worldwide.** No direct, indirect, or theoretical liability can emerge because the owner realises no income and does not dispose of assets.
-- **Expose on-chain proof of neutrality.** The `isTaxExempt()` helper on both `TaxPolicy` and `JobRegistry` lets anyone verify this status directly from Etherscan or similar explorers.
+- **Expose on-chain proof of neutrality.** Every core module exposes an `isTaxExempt()` helper so explorers can verify that the contracts and owner remain outside any tax scope.
 
 These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract. The owner alone may revise the canonical policy URI or acknowledgement text using `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; unauthorized calls revert. Each update or explicit version bump triggers an incrementing `taxPolicyVersion` in [`JobRegistry`](contracts/v2/JobRegistry.sol) and forces all non‑owner participants to re‑acknowledge the disclaimer. Acknowledgements are tracked per user through `taxAcknowledgedVersion`. The owner can require a fresh acknowledgement without changing the policy address by calling `bumpTaxPolicyVersion`. `JobRegistry` mirrors the current disclaimer via `taxAcknowledgement`, `taxPolicyURI`, and `taxPolicyDetails` so any participant can confirm the message in a single read. See [tax-obligations.md](docs/tax-obligations.md) for a broader discussion and [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the jurisdictional rationale.
 
-For easy verification on block explorers, both [`TaxPolicy`](contracts/v2/TaxPolicy.sol) and [`JobRegistry`](contracts/v2/JobRegistry.sol) expose `isTaxExempt()` which always returns `true`, signalling that neither contract nor the owner can ever accrue tax liability.
+For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.sol), [`JobRegistry`](contracts/v2/JobRegistry.sol), [`StakeManager`](contracts/v2/StakeManager.sol), [`ValidationModule`](contracts/v2/ValidationModule.sol), [`ReputationEngine`](contracts/v2/ReputationEngine.sol), [`DisputeModule`](contracts/v2/DisputeModule.sol), and [`CertificateNFT`](contracts/v2/CertificateNFT.sol) each expose `isTaxExempt()` which always returns `true`, signalling that neither these contracts nor the owner can ever accrue tax liability.
 
 ### Checking the tax disclaimer on Etherscan
 
 Non‑technical participants can verify the policy directly in a browser:
 
-1. Open the `TaxPolicy` or `JobRegistry` address on a block explorer such as Etherscan.
-2. Under **Read Contract**, call `policyDetails` to retrieve both the disclaimer and canonical document URI, or call `acknowledgement`/`acknowledge` and `policyURI` individually. `isTaxExempt` confirms the infrastructure's perpetual tax immunity.
+1. Open the `TaxPolicy`, `JobRegistry`, or any core module address on a block explorer such as Etherscan.
+2. Under **Read Contract**, call `policyDetails` to retrieve both the disclaimer and canonical document URI, or call `acknowledgement`/`acknowledge` and `policyURI` individually. `isTaxExempt` on each module confirms the infrastructure's perpetual tax immunity.
 3. `JobRegistry` exposes the same values via `taxPolicyDetails` and reveals the active `taxPolicyVersion` so users can confirm whether they have acknowledged the latest revision through `taxAcknowledgedVersion(address)`.
 4. Only the contract owner can change these fields via the **Write Contract** functions `setPolicyURI`, `setAcknowledgement`, or `setPolicy`; calls from any other address revert.
 

@@ -28,4 +28,8 @@ describe("JobRegistry ether rejection", function () {
       })
     ).to.be.revertedWith("JobRegistry: no ether");
   });
+
+  it("reports tax exemption", async () => {
+    expect(await registry.isTaxExempt()).to.equal(true);
+  });
 });

@@ -246,6 +246,12 @@ contract ValidationModule is IValidationModule, Ownable {
         return false;
     }
 
+    /// @notice Confirms the contract and its owner can never accrue tax obligations.
+    /// @return Always true to signal perpetual tax exemption.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------
