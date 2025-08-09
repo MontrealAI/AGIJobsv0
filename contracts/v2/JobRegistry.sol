@@ -171,6 +171,12 @@ contract JobRegistry is Ownable {
         emit TaxPolicyUpdated(address(taxPolicy), taxPolicyVersion);
     }
 
+    /// @notice Confirms this registry and its owner are perpetually tax‑exempt.
+    /// @return Always true; no tax liability can accrue here.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     /// @notice Returns the on-chain acknowledgement string stating that all
     /// taxes are the responsibility of employers, agents, and validators.
     function taxAcknowledgement() external view returns (string memory) {

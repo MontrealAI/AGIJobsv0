@@ -40,6 +40,10 @@ describe("JobRegistry tax policy integration", function () {
     expect(uri).to.equal("ipfs://policy");
   });
 
+  it("registry confirms tax exemption", async () => {
+    expect(await registry.isTaxExempt()).to.equal(true);
+  });
+
   it("non-owner cannot set policy", async () => {
     await expect(
       registry.connect(other).setTaxPolicy(await policy.getAddress())
