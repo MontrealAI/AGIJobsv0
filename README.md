@@ -48,6 +48,13 @@ graph TD
 - Correct validators share rewards while employers receive a portion of slashed stakes.
 - Burn and stake parameters make cheating unprofitable, keeping honest participation in equilibrium.
 
+#### Game theory & thermodynamic view
+
+- Validator committees scale with job value and decide by majority; minority voters can escalate to the `DisputeModule`.
+- Slashing percentages are set higher than any potential reward, so collusion has negative expected value.
+- Randomised commit–reveal selection injects entropy while stake-at-risk raises the system's enthalpy. With owner‑tuned parameters acting as temperature, honest behaviour minimises the Gibbs free energy \(G = H - T S\).
+- See [docs/incentive-analysis-v2.md](docs/incentive-analysis-v2.md) for a deeper Hamiltonian and Nash‑equilibrium analysis.
+
 ### Key Parameters
 
 | Parameter | Description |
