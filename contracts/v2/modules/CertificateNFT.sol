@@ -7,8 +7,8 @@ import {ICertificateNFT} from "../interfaces/ICertificateNFT.sol";
 
 /// @title CertificateNFT (module)
 /// @notice ERC721 certificate minted upon successful job completion.
-/// @dev Holds no ether so neither the contract nor its owner ever custodies
-///      assets or incurs taxable obligations.
+/// @dev Only participants bear any tax obligations; the contract holds no
+///      ether and rejects unsolicited transfers.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     address public jobRegistry;
     mapping(uint256 => string) private _tokenURIs;

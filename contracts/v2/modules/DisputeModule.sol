@@ -6,6 +6,8 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
+/// @dev Only participants bear any tax obligations; the module temporarily
+/// holds dispute bonds and rejects unsolicited ETH transfers.
 contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
 
@@ -119,6 +121,19 @@ contract DisputeModule is Ownable {
     /// @dev Determine dispute outcome. Uses blockhash for a pseudorandom coin flip.
     function _decideOutcome(uint256 jobId) internal view returns (bool) {
         return uint256(blockhash(block.number - 1) ^ bytes32(jobId)) % 2 == 0;
+    }
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers that are not dispute bonds.
+    receive() external payable {
+        revert("DisputeModule: no direct ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("DisputeModule: no direct ether");
     }
 }
 
