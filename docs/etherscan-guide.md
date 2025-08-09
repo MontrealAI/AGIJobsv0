@@ -51,12 +51,15 @@ graph TD
 4. Reveal decisions using **revealValidation** before the window closes.
 
 ### Tax Policy
-The `TaxPolicy` contract is informational only: it never holds funds and imposes no tax liability on the infrastructure or its owner. All taxes remain with employers, agents, and validators.
+The `TaxPolicy` contract is informational only: it never holds funds and imposes no tax liability on the infrastructure or its owner. Employers, agents, and validators bear every tax duty while the contracts and deploying corporation remain exempt in all jurisdictions.
 
-1. Open the `TaxPolicy` address in Etherscan.
-2. Under **Read Contract**, call **policyDetails** to return both the disclaimer and canonical document URI, or call **acknowledgement**/ **acknowledge** and **policyURI** individually.
-3. `JobRegistry` exposes the same text and URI via **taxPolicyDetails** and reveals the active **taxPolicyVersion**; participants can confirm their latest acknowledgement through **taxAcknowledgedVersion(address)**.
-4. Only the owner may update the URI with **setPolicyURI**, the message with **setAcknowledgement**, or both simultaneously with **setPolicy** in **Write Contract**. The owner can force a fresh acknowledgement without changing addresses by calling **bumpTaxPolicyVersion** on `JobRegistry`.
+**Etherscan steps**
+
+1. Open the `JobRegistry` address in Etherscan.
+2. Under **Read Contract**, call **taxPolicyDetails** to fetch the current disclaimer text and canonical URI.
+3. Switch to **Write Contract** and execute **acknowledgeTaxPolicy** to record acceptance of the active policy.
+4. Return to **Read Contract** and call **isTaxExempt** to confirm the contract's perpetual exemption and **taxAcknowledgedVersion(address)** to ensure you accepted the latest **taxPolicyVersion**.
+5. Owners update the text or URI via **setPolicyURI**, **setAcknowledgement**, or **setPolicy** on `TaxPolicy`, then call **bumpTaxPolicyVersion** on `JobRegistry` to require fresh acknowledgements.
 
 ### Disputers
 1. Open the `DisputeModule` address on Etherscan.
