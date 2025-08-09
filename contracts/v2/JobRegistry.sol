@@ -155,9 +155,11 @@ contract JobRegistry is Ownable {
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
     /// bumps the policy version so participants must re-acknowledge.
-    /// @dev Only callable by the owner; the policy address cannot be zero.
+    /// @dev Only callable by the owner; the policy address cannot be zero and
+    /// must explicitly report tax exemption.
     function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
         require(address(_policy) != address(0), "policy");
+        require(_policy.isTaxExempt(), "not tax exempt");
         taxPolicy = _policy;
         taxPolicyVersion++;
         emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
