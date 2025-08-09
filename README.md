@@ -99,6 +99,7 @@ All taxes in the AGI Jobs ecosystem fall solely on the parties exchanging value 
 - **Agents** receive tokens as compensation. The fair‑market value at receipt is ordinary income and becomes the cost basis for later capital gain or loss calculations. Burned tokens never belong to the agent and carry no tax impact.
 - **Validators** are taxed only on rewards they actually receive. Validators without rewards incur no tax from their participation.
 - **Passive token holders** experience no tax consequence from others’ burns or payouts until they dispose of their own tokens.
+- **All participants** must track their own transactions and consult qualified professionals; the platform provides no tax reporting services.
 
 The smart contracts and the corporation that deployed them:
 
@@ -106,7 +107,7 @@ The smart contracts and the corporation that deployed them:
 - **Provide a free service.** With no consideration exchanged, no sales/VAT/GST obligations arise.
 - **Remain tax‑neutral worldwide.** No direct, indirect, or theoretical liability can emerge because the owner realises no income and does not dispose of assets.
 
-This guarantee is enforced on‑chain through the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract, which stores a canonical policy URI and acknowledgement string. Every update function is gated by `onlyOwner`, ensuring that only the owner may revise the policy and that such updates never create a taxable event. See [tax-obligations.md](docs/tax-obligations.md) for further detail.
+This guarantee is enforced on‑chain through the owner‑controlled [`TaxPolicy`](contracts/v2/TaxPolicy.sol) contract, which stores a canonical policy URI and acknowledgement string. Every update function is gated by `onlyOwner`, ensuring that only the owner may revise the policy and that such updates never create a taxable event. See [tax-obligations.md](docs/tax-obligations.md) for a summary, and consult [TaxPolicyv0.md](docs/TaxPolicyv0.md) for the full jurisdictional rationale.
 
 ### Checking the tax disclaimer on Etherscan
 
