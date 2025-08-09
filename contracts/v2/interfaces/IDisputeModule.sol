@@ -23,7 +23,7 @@ interface IDisputeModule {
     event AppealResolved(uint256 indexed jobId, bool employerWins);
     event AppealFeeUpdated(uint256 fee);
     event ModeratorUpdated(address moderator);
-    event JuryUpdated(address jury);
+    event AppealJuryUpdated(address jury);
 
     /// @notice Escalate a job dispute by posting the appeal fee
     /// @param jobId Identifier of the disputed job
@@ -51,5 +51,5 @@ interface IDisputeModule {
     /// @notice Owner configuration for dispute jury
     /// @param jury Address allowed to resolve disputes alongside owner
     /// @dev Only callable by contract owner
-    function setJury(address jury) external;
+    function setAppealJury(address jury) external;
 }

@@ -17,7 +17,7 @@ describe("DisputeModule", function () {
     dispute = await Dispute.deploy(await jobRegistry.getAddress(), owner.address);
     await dispute.connect(owner).setAppealFee(appealFee);
     await dispute.connect(owner).setModerator(moderator.address);
-    await dispute.connect(owner).setJury(jury.address);
+    await dispute.connect(owner).setAppealJury(jury.address);
   });
 
   async function raise(jobId, agentSigner) {
