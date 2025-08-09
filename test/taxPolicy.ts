@@ -2,7 +2,9 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("TaxPolicy", function () {
-  let owner, user, tax;
+  let owner;
+  let user;
+  let tax;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
@@ -71,6 +73,16 @@ describe("TaxPolicy", function () {
   it("reverts on direct ether transfers", async () => {
     await expect(
       owner.sendTransaction({ to: await tax.getAddress(), value: 1 })
+    ).to.be.revertedWith("TaxPolicy: no ether");
+  });
+
+  it("rejects ether via fallback", async () => {
+    await expect(
+      owner.sendTransaction({
+        to: await tax.getAddress(),
+        value: 1,
+        data: "0x1234",
+      })
     ).to.be.revertedWith("TaxPolicy: no ether");
   });
 });
