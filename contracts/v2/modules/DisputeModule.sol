@@ -118,6 +118,12 @@ contract DisputeModule is Ownable {
         emit DisputeResolved(jobId, employerWins);
     }
 
+    /// @notice Confirms the module and its owner cannot accrue tax liabilities.
+    /// @return Always true, signalling perpetual tax exemption.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     /// @dev Determine dispute outcome. Uses blockhash for a pseudorandom coin flip.
     function _decideOutcome(uint256 jobId) internal view returns (bool) {
         return uint256(blockhash(block.number - 1) ^ bytes32(jobId)) % 2 == 0;

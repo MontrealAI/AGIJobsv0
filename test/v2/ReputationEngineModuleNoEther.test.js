@@ -28,4 +28,8 @@ describe("ReputationEngine module ether rejection", function () {
       })
     ).to.be.revertedWith("ReputationEngine: no ether");
   });
+
+  it("reports tax exemption", async () => {
+    expect(await engine.isTaxExempt()).to.equal(true);
+  });
 });

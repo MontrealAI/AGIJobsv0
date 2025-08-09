@@ -33,5 +33,9 @@ describe("StakeManager module ether rejection", function () {
       })
     ).to.be.revertedWith("StakeManager: no ether");
   });
+
+  it("reports tax exemption", async () => {
+    expect(await stakeManager.isTaxExempt()).to.equal(true);
+  });
 });
 

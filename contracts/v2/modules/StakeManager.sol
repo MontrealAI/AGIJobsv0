@@ -143,6 +143,12 @@ contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
         emit StakeSlashed(user, role, penalty, employer, address(0));
     }
 
+    /// @notice Confirms the module and owner are perpetually tax neutral.
+    /// @return Always true, signalling no tax obligations can accrue.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     // ------------------------- view helpers -------------------------
 
     /// @inheritdoc IStakeManager

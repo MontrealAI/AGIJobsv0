@@ -28,4 +28,8 @@ describe("CertificateNFT ether rejection", function () {
       })
     ).to.be.revertedWith("CertificateNFT: no ether");
   });
+
+  it("reports tax exemption", async () => {
+    expect(await nft.isTaxExempt()).to.equal(true);
+  });
 });

@@ -175,6 +175,12 @@ contract StakeManager is Ownable {
         emit StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare);
     }
 
+    /// @notice Confirms the contract and its owner can never incur tax liability.
+    /// @return Always true, signalling perpetual tax exemption.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------

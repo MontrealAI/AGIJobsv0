@@ -31,5 +31,9 @@ describe("DisputeModule module ether rejection", function () {
       })
     ).to.be.revertedWith("DisputeModule: no direct ether");
   });
+
+  it("reports tax exemption", async () => {
+    expect(await dispute.isTaxExempt()).to.equal(true);
+  });
 });
 
