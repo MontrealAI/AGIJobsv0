@@ -69,8 +69,56 @@ describe("StakeManager", function () {
       stakeManager,
       "OwnableUnauthorizedAccount"
     );
-    await stakeManager.connect(owner).setToken(await token2.getAddress());
+    await expect(
+      stakeManager.connect(owner).setToken(await token2.getAddress())
+    )
+      .to.emit(stakeManager, "TokenUpdated")
+      .withArgs(await token2.getAddress());
     expect(await stakeManager.token()).to.equal(await token2.getAddress());
+  });
+
+  it("restricts min stake updates to owner", async () => {
+    await expect(
+      stakeManager.connect(user).setMinStake(1)
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      "OwnableUnauthorizedAccount"
+    );
+    await expect(stakeManager.connect(owner).setMinStake(1))
+      .to.emit(stakeManager, "MinStakeUpdated")
+      .withArgs(1);
+    expect(await stakeManager.minStake()).to.equal(1n);
+  });
+
+  it("restricts slashing percentage updates to owner", async () => {
+    await expect(
+      stakeManager.connect(user).setSlashingPercentages(60, 30)
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      "OwnableUnauthorizedAccount"
+    );
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(60, 30)
+    )
+      .to.emit(stakeManager, "SlashingPercentagesUpdated")
+      .withArgs(60, 30);
+    expect(await stakeManager.employerSlashPct()).to.equal(60);
+    expect(await stakeManager.treasurySlashPct()).to.equal(30);
+  });
+
+  it("restricts treasury updates to owner", async () => {
+    await expect(
+      stakeManager.connect(user).setTreasury(user.address)
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      "OwnableUnauthorizedAccount"
+    );
+    await expect(
+      stakeManager.connect(owner).setTreasury(user.address)
+    )
+      .to.emit(stakeManager, "TreasuryUpdated")
+      .withArgs(user.address);
+    expect(await stakeManager.treasury()).to.equal(user.address);
   });
 });
 
