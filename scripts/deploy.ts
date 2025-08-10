@@ -61,7 +61,7 @@ async function main() {
   await reputation.setCaller(await registry.getAddress(), true);
   await reputation.setThreshold(1);
   await nft.setJobRegistry(await registry.getAddress());
-  await stake.transferOwnership(await registry.getAddress());
+  await stake.setJobRegistry(await registry.getAddress());
   await nft.transferOwnership(await registry.getAddress());
   await dispute.setAppealFee(10);
 

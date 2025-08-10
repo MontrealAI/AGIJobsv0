@@ -71,9 +71,6 @@ describe("Full system integration", function () {
       .connect(owner)
       .setJobRegistry(await registry.getAddress());
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
-    await stakeManager
-      .connect(owner)
-      .transferOwnership(await registry.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(owner).acknowledgeTaxPolicy();

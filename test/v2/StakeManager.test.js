@@ -54,19 +54,25 @@ describe("StakeManager", function () {
     await stakeManager.connect(user).withdrawStake(0, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(150n);
 
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
     const jobId = ethers.encodeBytes32String("job1");
     await token.connect(employer).approve(await stakeManager.getAddress(), 300);
     await stakeManager
-      .connect(owner)
+      .connect(registrySigner)
       .lockJobFunds(jobId, employer.address, 300);
 
     await expect(
-      stakeManager.connect(owner).releaseJobFunds(jobId, user.address, 200)
+      stakeManager.connect(registrySigner).releaseJobFunds(jobId, user.address, 200)
     ).to.emit(stakeManager, "JobFundsReleased").withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 
     await expect(
-      stakeManager.connect(owner).slash(user.address, 0, 100, employer.address)
+      stakeManager
+        .connect(registrySigner)
+        .slash(user.address, 0, 100, employer.address)
     ).to.emit(stakeManager, "StakeSlashed").withArgs(
       user.address,
       0,
@@ -185,11 +191,15 @@ describe("StakeManager", function () {
     expect(await stakeManager.stakes(user.address, 0)).to.equal(200n);
 
     // locking funds with old token fails
+    const registryAddr2 = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr2, "0x56BC75E2D63100000"]);
+    const registrySigner2 = await ethers.getImpersonatedSigner(registryAddr2);
+
     const jobId = ethers.encodeBytes32String("job1");
     await token.connect(employer).approve(await stakeManager.getAddress(), 100);
     await expect(
       stakeManager
-        .connect(owner)
+        .connect(registrySigner2)
         .lockJobFunds(jobId, employer.address, 100)
     )
       .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
@@ -201,11 +211,11 @@ describe("StakeManager", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), 100);
     await stakeManager
-      .connect(owner)
+      .connect(registrySigner2)
       .lockJobFunds(jobId, employer.address, 100);
     await expect(
       stakeManager
-        .connect(owner)
+        .connect(registrySigner2)
         .releaseJobFunds(jobId, user.address, 100)
     )
       .to.emit(stakeManager, "JobFundsReleased")
