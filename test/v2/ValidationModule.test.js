@@ -4,7 +4,6 @@ const { ethers } = require("hardhat");
 describe("ValidationModule V2", function () {
   let owner, employer, v1, v2, v3;
   let validation, stakeManager, jobRegistry, reputation;
-  const coder = ethers.AbiCoder.defaultAbiCoder();
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -124,11 +123,14 @@ describe("ValidationModule V2", function () {
     ).args[1];
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
-    const commit1 = ethers.keccak256(
-      coder.encode(["bool", "bytes32"], [true, salt1])
+    const nonce = await validation.jobNonce(1);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt1]
     );
-    const commit2 = ethers.keccak256(
-      coder.encode(["bool", "bytes32"], [true, salt2])
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt2]
     );
     const signerMap = {
       [v1.address.toLowerCase()]: v1,
@@ -176,11 +178,14 @@ describe("ValidationModule V2", function () {
     ).args[1];
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
-    const commit1 = ethers.keccak256(
-      coder.encode(["bool", "bytes32"], [true, salt1])
+    const nonce = await validation.jobNonce(1);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt1]
     );
-    const commit2 = ethers.keccak256(
-      coder.encode(["bool", "bytes32"], [false, salt2])
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, false, salt2]
     );
     const signerMap = {
       [v1.address.toLowerCase()]: v1,
@@ -218,6 +223,43 @@ describe("ValidationModule V2", function () {
     expect(await reputation.reputation(slashed)).to.equal(0n);
   });
 
+  it("rejects reveal with incorrect nonce", async () => {
+    const tx = await validation.selectValidators(1);
+    const receipt = await tx.wait();
+    const selected = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    ).args[1];
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
+    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const wrongNonce = (await validation.jobNonce(1)) + 1n;
+    const commit = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, wrongNonce, true, salt]
+    );
+    await (
+      await validation
+        .connect(signerMap[selected[0].toLowerCase()])
+        .commitValidation(1, commit)
+    ).wait();
+    await advance(61);
+    await expect(
+      validation
+        .connect(signerMap[selected[0].toLowerCase()])
+        .revealValidation(1, true, salt)
+    ).to.be.revertedWith("invalid reveal");
+  });
+
+  it("allows owner to reset job nonce", async () => {
+    await validation.selectValidators(1);
+    expect(await validation.jobNonce(1)).to.equal(1n);
+    await validation.connect(owner).resetJobNonce(1);
+    expect(await validation.jobNonce(1)).to.equal(0n);
+  });
+
   it("enforces tax acknowledgement for commit and reveal", async () => {
     await jobRegistry.setTaxPolicyVersion(1);
     const tx = await validation.selectValidators(1);
@@ -233,8 +275,10 @@ describe("ValidationModule V2", function () {
     };
     const val = signerMap[selected[0].toLowerCase()];
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit = ethers.keccak256(
-      coder.encode(["bool", "bytes32"], [true, salt])
+    const nonce = await validation.jobNonce(1);
+    const commit = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt]
     );
 
     await expect(

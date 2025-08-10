@@ -28,5 +28,7 @@ contract ValidationStub is IValidationModule {
     function setValidatorBounds(uint256, uint256) external {}
 
     function setRandomnessSeed(bytes32) external {}
+
+    function resetJobNonce(uint256) external {}
 }
 

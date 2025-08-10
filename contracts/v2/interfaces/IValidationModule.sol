@@ -37,5 +37,9 @@ interface IValidationModule {
 
     /// @notice Owner configuration for randomness seed
     function setRandomnessSeed(bytes32 seed) external;
+
+    /// @notice Reset the validation nonce for a job after it is finalized or disputed
+    /// @param jobId Identifier of the job
+    function resetJobNonce(uint256 jobId) external;
 }
 
