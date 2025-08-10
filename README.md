@@ -105,6 +105,7 @@ graph TD
     Agent -->|apply/submit| JobRegistry
     JobRegistry -->|selectValidators| ValidationModule
     ValidationModule -->|stake| StakeManager
+    StakeManager -->|escrow| AGIALPHA[$AGIALPHA Token]
     ValidationModule -->|reputation| ReputationEngine
     ValidationModule -->|dispute?| DisputeModule
     DisputeModule -->|final ruling| JobRegistry
@@ -116,6 +117,12 @@ graph TD
 - Agents and validators must stake $AGIALPHA; dishonest behaviour is slashed.
 - Correct validators share rewards while employers receive a portion of slashed stakes.
 - Burn and stake parameters make cheating unprofitable, keeping honest participation in equilibrium.
+
+### Economic Model
+
+- Stakes lock potential rewards and create downside for misbehaviour.
+- Slashing and dispute fees exceed any expected malicious gain.
+- Reputation increases after successes and declines on failures, influencing future selection.
 
 #### Game theory & thermodynamic view
 
@@ -210,16 +217,33 @@ Structure guidelines:
 
 ## Etherscan Walk-through
 
-Interact with the deployment directly from a block explorer using the **Write** tab:
+Interact with the deployment directly from a block explorer using the **Write** tab.
 
-1. **Owner** wires modules with `JobRegistry.setModules(...)` and tunes parameters via owner-only `set...` functions.
-2. **Agents and validators** acknowledge the tax policy then stake $AGIALPHA through `StakeManager.depositStake(role, amount)`.
-3. **Employer** posts work with `JobRegistry.createJob`, escrowing the reward.
-4. **Agent** applies using `JobRegistry.applyForJob` and submits results via `JobRegistry.completeJob`.
-5. **Validators** commit and reveal votes through `ValidationModule.commitValidation` and `revealValidation`.
-6. After reveal, anyone may call `ValidationModule.tally`; `JobRegistry.finalize` releases rewards or `raiseDispute` escalates to `DisputeModule`.
+### Job Posting
+1. Owner wires modules with `JobRegistry.setModules(...)` and tunes parameters via owner-only `set...` functions.
+2. Employer approves the `StakeManager` to pull rewards and calls `JobRegistry.createJob(details, reward)`.
+
+### Staking
+1. Agents and validators acknowledge the tax policy.
+2. Lock collateral by calling `StakeManager.depositStake(role, amount)`.
+
+### Validation
+1. Validators commit with `ValidationModule.commitValidation(jobId, commitHash)` during the commit window.
+2. Validators reveal using `ValidationModule.revealValidation(jobId, approve, salt)`.
+3. After reveals, anyone may call `ValidationModule.tally` and `JobRegistry.finalize` to release rewards.
+
+### Dispute
+1. If the outcome is contested, call `DisputeModule.raiseDispute(jobId, reason)`.
+2. Moderators resolve via `DisputeModule.resolveDispute(jobId, upheld)`; results flow back to `JobRegistry` for payout.
 
 No custom tooling is required—everything happens in the browser.
+
+## Security & Governance
+
+- Every mutable parameter and module pointer is guarded by `onlyOwner`.
+- Ownership may be transferred to a multisig wallet for decentralised control.
+- `Pausable` and `ReentrancyGuard` from OpenZeppelin protect against runaway state changes and reentrancy attacks.
+- Events such as `ModuleUpdated`, `TokenUpdated`, and `ParameterUpdated` provide an on-chain audit trail.
 
 ## AGI Token
 
@@ -851,11 +875,13 @@ The v2 release decomposes the marketplace into a suite of immutable modules, eac
 
 ```mermaid
 graph LR
+  AGIALPHA[$AGIALPHA Token]
   JobRegistry --> StakeManager
   JobRegistry --> ValidationModule
   JobRegistry --> ReputationEngine
   JobRegistry --> DisputeModule
   JobRegistry --> CertificateNFT
+  StakeManager --> AGIALPHA
   ValidationModule --> StakeManager
   ValidationModule --> ReputationEngine
   ValidationModule --> DisputeModule
@@ -863,6 +889,10 @@ graph LR
 ```
 
 Validator committees expand with job value and settle outcomes by majority after a commit–reveal process. `StakeManager` enforces slashing percentages that exceed any potential reward and routes a share of penalties back to the employer, making honest participation the rational strategy. All economic and timing parameters are owner‑configurable, so modules remain immutable yet fully governable.
+
+### Token Configuration
+
+The suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for staking and rewards. The owner may point `StakeManager` at a new token via `setToken(newToken)`; clients should scale amounts according to the token's decimals when switching.
 
 | Module | Responsibility |
 | --- | --- |
@@ -1672,6 +1702,14 @@ This project has not undergone a formal security audit. Before any production de
 - Use multisig or time-locked accounts for owner or moderator keys.
 
 Please report security issues responsibly. Contact **security@agi.network** or open a private issue so we can address vulnerabilities quickly.
+
+## Glossary / FAQ
+
+- **What is $AGIALPHA?** A 6‑decimal ERC‑20 token used for staking and rewards.
+- **Do I need special tools to interact?** No. All actions can be performed through block explorer "Write" tabs.
+- **What happens if validators disagree?** Anyone may raise a dispute and the `DisputeModule` resolves it.
+- **Can the token change?** Yes. The owner can update the staking token via `StakeManager.setToken`.
+- **What is slashing?** Removal of part of a stake as a penalty for dishonest behaviour.
 
 ## References
 
