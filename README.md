@@ -180,7 +180,7 @@ graph TD
 - **Algorithmic & reputational perks** – `JobRouter`, `DiscoveryModule` and the `ReputationEngine` grant stake‑weighted job routing priority, validator throughput and search visibility.
 - **Governance-aligned rewards** – staked operators vote on parameters and participating voters earn small bonus shares in the next `FeePool` epoch.
 - **Sybil & regulatory mitigation** – minimum stakes, slashing, appeal deposits, and owner‑tuned burns and blacklist thresholds keep operations pseudonymous while deterring sybil attacks.
-- **Pseudonymous value flows** – all transfers occur directly between wallets in $AGIALPHA, leaving operators tax-neutral and the owner revenue-free.
+- **Tax‑neutral pseudonymous value flows** – all transfers occur directly between wallets in $AGIALPHA with no off‑chain reporting, leaving operators tax‑neutral and the owner revenue‑free.
 - **Owner-controlled & Etherscan-friendly** – only the contract owner can adjust fees, burns, stake thresholds or even swap the token, and every action uses simple function calls suitable for Etherscan.
 
 ### Economic Model

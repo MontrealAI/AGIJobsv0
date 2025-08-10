@@ -6,6 +6,8 @@ This sprint adds revenue sharing and routing incentives to the v2 suite while pr
 - Implement smart‑contract revenue sharing for platform operators.
 - Introduce stake‑weighted job routing and discovery modules.
 - Align governance with rewards and embed sybil resistance.
+- Keep all value flows on‑chain in $AGIALPHA (6 decimals) and let the owner swap
+  the token or adjust parameters without redeploying contracts.
 
 ## Tasks
 1. **FeePool Contract**
