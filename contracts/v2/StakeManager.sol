@@ -49,6 +49,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
 
+    /// @notice Dispute module authorized to manage dispute fees
+    address public disputeModule;
+
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
     event StakeSlashed(
@@ -61,6 +64,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     );
     event JobFundsLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event JobFundsReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event DisputeFeeLocked(address indexed payer, uint256 amount);
+    event DisputeFeePaid(address indexed to, uint256 amount);
+    event DisputeModuleUpdated(address indexed module);
     event TokenUpdated(address indexed newToken);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
@@ -111,6 +117,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit JobRegistryUpdated(address(_jobRegistry));
     }
 
+    /// @notice set the dispute module authorized to manage dispute fees
+    function setDisputeModule(address module) external onlyOwner {
+        disputeModule = module;
+        emit DisputeModuleUpdated(module);
+    }
+
     // ---------------------------------------------------------------
     // staking logic
     // ---------------------------------------------------------------
@@ -126,6 +138,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
                 "acknowledge tax policy"
             );
         }
+        _;
+    }
+
+    modifier onlyDisputeModule() {
+        require(msg.sender == disputeModule, "only dispute");
         _;
     }
 
@@ -182,6 +199,30 @@ contract StakeManager is Ownable, ReentrancyGuard {
         jobEscrows[jobId] = escrow - amount;
         token.safeTransfer(to, amount);
         emit JobFundsReleased(jobId, to, amount);
+    }
+
+    // ---------------------------------------------------------------
+    // dispute fee logic
+    // ---------------------------------------------------------------
+
+    /// @notice lock the dispute fee from a payer
+    function lockDisputeFee(address payer, uint256 amount)
+        external
+        onlyDisputeModule
+        nonReentrant
+    {
+        token.safeTransferFrom(payer, address(this), amount);
+        emit DisputeFeeLocked(payer, amount);
+    }
+
+    /// @notice pay a locked dispute fee to the recipient
+    function payDisputeFee(address to, uint256 amount)
+        external
+        onlyDisputeModule
+        nonReentrant
+    {
+        token.safeTransfer(to, amount);
+        emit DisputeFeePaid(to, amount);
     }
 
     // ---------------------------------------------------------------

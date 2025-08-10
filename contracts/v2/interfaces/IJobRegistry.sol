@@ -79,6 +79,10 @@ interface IJobRegistry {
     /// @param module Address of the dispute module contract
     function setDisputeModule(address module) external;
 
+    /// @notice Retrieve the StakeManager contract handling collateral
+    /// @return Address of the StakeManager
+    function stakeManager() external view returns (address);
+
     /// @notice Owner configuration of job limits
     /// @param reward Reward paid upon successful job completion
     /// @param stake Stake required from the agent to accept a job

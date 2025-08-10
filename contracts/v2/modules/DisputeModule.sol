@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IJobRegistryTax} from "../interfaces/IJobRegistryTax.sol";
+import {IStakeManager} from "../interfaces/IStakeManager.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
@@ -12,7 +13,7 @@ import {IJobRegistryTax} from "../interfaces/IJobRegistryTax.sol";
 contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
 
-    /// @notice Fee required to initiate a dispute.
+    /// @notice Fee required to initiate a dispute, in token units (6 decimals).
     uint256 public appealFee;
 
     /// @notice Time that must elapse before a dispute can be resolved.
@@ -68,7 +69,7 @@ contract DisputeModule is Ownable {
         emit ModeratorUpdated(_moderator);
     }
 
-    /// @notice Configure the appeal fee.
+    /// @notice Configure the appeal fee in token units (6 decimals).
     function setAppealFee(uint256 fee) external onlyOwner {
         appealFee = fee;
         emit AppealFeeUpdated(fee);
@@ -85,11 +86,8 @@ contract DisputeModule is Ownable {
     /// @param evidence Supporting evidence for the dispute.
     function raiseDispute(uint256 jobId, string calldata evidence)
         external
-        payable
         requiresTaxAcknowledgement
     {
-        require(msg.value == appealFee, "fee");
-
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         require(
             msg.sender == job.employer || msg.sender == job.agent,
@@ -99,13 +97,18 @@ contract DisputeModule is Ownable {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
+        IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
+            msg.sender,
+            appealFee
+        );
+
         disputes[jobId] = Dispute({
             claimant: msg.sender,
             evidence: evidence,
             raisedAt: block.timestamp,
             resolved: false
         });
-        bonds[jobId] = msg.value;
+        bonds[jobId] = appealFee;
 
         emit DisputeRaised(jobId, msg.sender, evidence);
     }
@@ -131,8 +134,10 @@ contract DisputeModule is Ownable {
         jobRegistry.resolveDispute(jobId, employerWins);
 
         if (bond > 0) {
-            (bool ok, ) = recipient.call{value: bond}("");
-            require(ok, "transfer");
+            IStakeManager(jobRegistry.stakeManager()).payDisputeFee(
+                recipient,
+                bond
+            );
         }
 
         emit DisputeResolved(jobId, employerWins);
