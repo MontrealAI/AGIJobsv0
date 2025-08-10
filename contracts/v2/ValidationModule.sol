@@ -46,12 +46,14 @@ contract ValidationModule is IValidationModule, Ownable {
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
+    mapping(uint256 => uint256) public jobNonce;
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
     event RandomnessSeedUpdated(bytes32 newSeed);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
+    event JobNonceReset(uint256 indexed jobId);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
@@ -117,6 +119,7 @@ contract ValidationModule is IValidationModule, Ownable {
     function selectValidators(uint256 jobId) external override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
+        jobNonce[jobId] += 1;
 
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
@@ -206,7 +209,10 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32 commitHash = commitments[jobId][msg.sender];
         require(commitHash != bytes32(0), "no commit");
         require(!revealed[jobId][msg.sender], "already revealed");
-        require(keccak256(abi.encode(approve, salt)) == commitHash, "invalid reveal");
+        require(
+            keccak256(abi.encodePacked(jobId, jobNonce[jobId], approve, salt)) == commitHash,
+            "invalid reveal"
+        );
 
         uint256 stake = validatorStakes[jobId][msg.sender];
         require(stake > 0, "stake");
@@ -265,6 +271,14 @@ contract ValidationModule is IValidationModule, Ownable {
 
         r.tallied = true;
         return success;
+    }
+
+    /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
+    /// @param jobId Identifier of the job
+    function resetJobNonce(uint256 jobId) external override {
+        require(msg.sender == owner() || msg.sender == address(jobRegistry), "not authorized");
+        delete jobNonce[jobId];
+        emit JobNonceReset(jobId);
     }
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
