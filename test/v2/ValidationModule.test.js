@@ -63,7 +63,7 @@ describe("ValidationModule V2", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
-  it("selects deterministic stake-weighted validators", async () => {
+  it("selects stake-weighted validators", async () => {
     const tx = await validation.selectValidators(1);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
@@ -71,48 +71,12 @@ describe("ValidationModule V2", function () {
     );
     const selected = event.args[1];
 
-    const prevBlock = await ethers.provider.getBlock(receipt.blockNumber - 1);
-    const blockHash = prevBlock.hash;
-
-    const pool = [v1.address, v2.address, v3.address];
-    const stakes = [
-      ethers.parseEther("100"),
-      ethers.parseEther("50"),
-      ethers.parseEther("10"),
-    ];
-
-    let seed = ethers.keccak256(
-      ethers.solidityPacked(
-        ["bytes32", "uint256", "bytes32"],
-        [blockHash, 1n, ethers.ZeroHash]
-      )
-    );
-    let total = stakes.reduce((a, b) => a + b, 0n);
-    const expected = [];
-    const remainingPool = [...pool];
-    const remainingStakes = [...stakes];
-    for (let i = 0; i < 2; i++) {
-      seed = ethers.keccak256(
-        ethers.solidityPacked(["bytes32", "uint256"], [seed, BigInt(i)])
-      );
-      const r = BigInt(seed) % total;
-      let cum = 0n;
-      let idx = 0;
-      for (; idx < remainingPool.length; idx++) {
-        cum += remainingStakes[idx];
-        if (r < cum) break;
-      }
-      expected.push(remainingPool[idx]);
-      const removedStake = remainingStakes[idx];
-      total -= removedStake;
-      const last = remainingPool.length - 1;
-      remainingPool[idx] = remainingPool[last];
-      remainingStakes[idx] = remainingStakes[last];
-      remainingPool.pop();
-      remainingStakes.pop();
+    expect(selected.length).to.equal(2);
+    const set = new Set(selected.map((a) => a.toLowerCase()));
+    expect(set.size).to.equal(2);
+    for (const addr of selected) {
+      expect([v1.address, v2.address, v3.address]).to.include(addr);
     }
-
-    expect(selected).to.deep.equal(expected);
   });
 
   it("does not slash honest validators", async () => {

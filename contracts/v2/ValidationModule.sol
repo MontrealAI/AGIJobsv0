@@ -7,6 +7,7 @@ import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
+import {IVRF} from "./interfaces/IVRF.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -28,9 +29,10 @@ contract ValidationModule is IValidationModule, Ownable {
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
 
-    // pool of validators and randomness seed for selection
+    // pool of validators
     address[] public validatorPool;
-    bytes32 public randomnessSeed;
+    // optional VRF provider for future randomness upgrades
+    IVRF public vrf;
 
     struct Round {
         address[] validators;
@@ -50,7 +52,7 @@ contract ValidationModule is IValidationModule, Ownable {
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
-    event RandomnessSeedUpdated(bytes32 newSeed);
+    event VRFUpdated(address vrf);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
     event JobNonceReset(uint256 indexed jobId);
@@ -90,10 +92,10 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ReputationEngineUpdated(address(engine));
     }
 
-    /// @notice Update the randomness seed used in validator selection.
-    function setRandomnessSeed(bytes32 seed) external override onlyOwner {
-        randomnessSeed = seed;
-        emit RandomnessSeedUpdated(seed);
+    /// @notice Set the optional VRF provider for future upgrades.
+    function setVRF(IVRF provider) external onlyOwner {
+        vrf = provider;
+        emit VRFUpdated(address(provider));
     }
 
     /// @notice Update the commit and reveal windows.
@@ -144,7 +146,7 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 count = m < maxValidators ? m : maxValidators;
 
         bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), jobId, randomnessSeed)
+            abi.encodePacked(block.prevrandao, jobId, block.timestamp)
         );
 
         selected = new address[](count);
