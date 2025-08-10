@@ -44,7 +44,7 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     mapping(uint256 => Round) public rounds;
-    mapping(uint256 => mapping(address => bytes32)) public commitments;
+    mapping(uint256 => mapping(address => mapping(uint256 => bytes32))) public commitments;
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
@@ -193,9 +193,13 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        require(commitments[jobId][msg.sender] == bytes32(0), "already committed");
+        uint256 nonce = jobNonce[jobId];
+        require(
+            commitments[jobId][msg.sender][nonce] == bytes32(0),
+            "already committed"
+        );
 
-        commitments[jobId][msg.sender] = commitHash;
+        commitments[jobId][msg.sender][nonce] = commitHash;
         emit VoteCommitted(jobId, msg.sender, commitHash);
     }
 
@@ -208,11 +212,12 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        bytes32 commitHash = commitments[jobId][msg.sender];
+        uint256 nonce = jobNonce[jobId];
+        bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         require(commitHash != bytes32(0), "no commit");
         require(!revealed[jobId][msg.sender], "already revealed");
         require(
-            keccak256(abi.encodePacked(jobId, jobNonce[jobId], approve, salt)) == commitHash,
+            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) == commitHash,
             "invalid reveal"
         );
 
@@ -278,7 +283,20 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
     /// @param jobId Identifier of the job
     function resetJobNonce(uint256 jobId) external override {
-        require(msg.sender == owner() || msg.sender == address(jobRegistry), "not authorized");
+        require(
+            msg.sender == owner() || msg.sender == address(jobRegistry),
+            "not authorized"
+        );
+        uint256 nonce = jobNonce[jobId];
+        address[] storage vals = rounds[jobId].validators;
+        for (uint256 i; i < vals.length; ++i) {
+            address val = vals[i];
+            delete commitments[jobId][val][nonce];
+            delete revealed[jobId][val];
+            delete votes[jobId][val];
+            delete validatorStakes[jobId][val];
+        }
+        delete rounds[jobId];
         delete jobNonce[jobId];
         emit JobNonceReset(jobId);
     }

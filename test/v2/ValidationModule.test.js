@@ -217,11 +217,37 @@ describe("ValidationModule V2", function () {
     ).to.be.revertedWith("invalid reveal");
   });
 
-  it("allows owner to reset job nonce", async () => {
+  it("clears commitments when job nonce is reset", async () => {
+    await validation.connect(owner).setValidatorBounds(1, 1);
+    await validation.connect(owner).setValidatorPool([v1.address]);
+
     await validation.selectValidators(1);
-    expect(await validation.jobNonce(1)).to.equal(1n);
+    const nonce1 = await validation.jobNonce(1);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce1, true, salt]
+    );
+    await (await validation.connect(v1).commitValidation(1, commit1)).wait();
+
+    await expect(
+      validation.connect(v1).commitValidation(1, commit1)
+    ).to.be.revertedWith("already committed");
+
     await validation.connect(owner).resetJobNonce(1);
     expect(await validation.jobNonce(1)).to.equal(0n);
+
+    const tx = await validation.selectValidators(1);
+    await tx.wait();
+    const nonce2 = await validation.jobNonce(1);
+    expect(nonce2).to.equal(1n);
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce2, true, salt]
+    );
+    await expect(
+      validation.connect(v1).commitValidation(1, commit2)
+    ).to.not.be.reverted;
   });
 
   it("enforces tax acknowledgement for commit and reveal", async () => {
