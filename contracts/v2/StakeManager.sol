@@ -43,6 +43,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice percentage of slashed amount sent to treasury (out of 100)
     uint256 public treasurySlashPct;
 
+    /// @notice enforce employer+treasury percentages sum to 100 during slashing
+    bool public enforceSlashPercentSum100;
+
     /// @notice staked balance per user and role
     mapping(address => mapping(Role => uint256)) public stakes;
 
@@ -72,6 +75,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
     event JobRegistryUpdated(address indexed registry);
+    event SlashPercentSumEnforcementUpdated(bool enforced);
 
     constructor(IERC20 _token, address owner, address _treasury) Ownable(owner) {
         token = _token;
@@ -103,6 +107,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
+    }
+
+    /// @notice toggle enforcement that slashing percentages must sum to 100
+    function setSlashPercentSumEnforcement(bool enforced) external onlyOwner {
+        enforceSlashPercentSum100 = enforced;
+        emit SlashPercentSumEnforcementUpdated(enforced);
     }
 
     /// @notice update treasury recipient address
@@ -247,7 +257,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
         uint256 total = employerShare + treasuryShare;
 
-        stakes[user][role] = staked - total;
+        if (enforceSlashPercentSum100) {
+            require(total == amount, "pct");
+        }
+
+        stakes[user][role] = staked - amount;
 
         if (employerShare > 0) {
             token.safeTransfer(employer, employerShare);
