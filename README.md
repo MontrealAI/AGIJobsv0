@@ -1025,6 +1025,36 @@ Role-based quick steps:
 3. Cast a commit with ValidationModule `commitValidation(jobId, hash)` and later reveal via `revealValidation(jobId, approve, salt)`.
 4. If a vote period lapses without resolution, anyone may call `finalize(jobId)` on the ValidationModule.
 
+### Step-by-Step Job Flow via Etherscan
+
+Verified contract addresses:
+
+- [AGIJobManager v0](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
+- [$AGI Token](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code)
+
+1. **Post a Job**
+   - Open [JobRegistry `createJob`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) and connect an employer wallet.
+   - Fill `reward` and `uri`, then click **Write**.
+   - ![createJob screenshot](https://via.placeholder.com/650x300?text=createJob+Write+Contract)
+
+2. **Stake Tokens**
+   - Visit [StakeManager `depositStake`](https://etherscan.io/address/0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512#writeContract).
+   - After approving AGI, call `depositStake(role, amount)` (`0` = Agent, `1` = Validator).
+   - ![depositStake screenshot](https://via.placeholder.com/650x300?text=depositStake+Write+Contract)
+
+3. **Validate Work**
+   - During the commit window, go to [ValidationModule `commitValidation`](https://etherscan.io/address/0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9#writeContract) and submit `jobId` and `commitHash`.
+   - ![commitValidation screenshot](https://via.placeholder.com/650x300?text=commitValidation+Write+Contract)
+   - When the reveal window opens, call `revealValidation(jobId, approve, salt)` from the same tab.
+   - ![revealValidation screenshot](https://via.placeholder.com/650x300?text=revealValidation+Write+Contract)
+
+4. **Raise a Dispute**
+   - If validators disagree, open [JobRegistry `dispute`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) with the `jobId` and required appeal fee.
+   - The registry forwards the call to [DisputeModule `appeal`](https://etherscan.io/address/0x0165878A594ca255338adfa4d48449f69242Eb8F#writeContract) for final resolution.
+   - ![dispute screenshot](https://via.placeholder.com/650x300?text=dispute+Write+Contract)
+
+Review emitted events on each contract to confirm execution.
+
 For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
 See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and interface definitions; the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
