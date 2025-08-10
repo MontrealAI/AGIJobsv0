@@ -39,6 +39,7 @@ interface IJobRegistry {
     error InvalidStatus(Status expected, Status actual);
 
     // module configuration
+    event ModuleUpdated(string module, address newAddress);
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);

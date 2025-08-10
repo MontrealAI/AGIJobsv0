@@ -59,6 +59,7 @@ contract JobRegistry is Ownable {
     uint256 public jobReward;
     uint256 public jobStake;
 
+    event ModuleUpdated(string module, address newAddress);
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
@@ -82,26 +83,31 @@ contract JobRegistry is Ownable {
     function setValidationModule(IValidationModule module) external onlyOwner {
         validationModule = module;
         emit ValidationModuleUpdated(address(module));
+        emit ModuleUpdated("ValidationModule", address(module));
     }
 
     function setReputationEngine(IReputationEngine engine) external onlyOwner {
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
+        emit ModuleUpdated("ReputationEngine", address(engine));
     }
 
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
+        emit ModuleUpdated("StakeManager", address(manager));
     }
 
     function setCertificateNFT(ICertificateNFT nft) external onlyOwner {
         certificateNFT = nft;
         emit CertificateNFTUpdated(address(nft));
+        emit ModuleUpdated("CertificateNFT", address(nft));
     }
 
     function setDisputeModule(IDisputeModule module) external onlyOwner {
         disputeModule = module;
         emit DisputeModuleUpdated(address(module));
+        emit ModuleUpdated("DisputeModule", address(module));
     }
 
     function setModules(
@@ -117,10 +123,15 @@ contract JobRegistry is Ownable {
         certificateNFT = _certificateNFT;
         disputeModule = _disputeModule;
         emit ValidationModuleUpdated(address(_validationModule));
+        emit ModuleUpdated("ValidationModule", address(_validationModule));
         emit ReputationEngineUpdated(address(_reputationEngine));
+        emit ModuleUpdated("ReputationEngine", address(_reputationEngine));
         emit StakeManagerUpdated(address(_stakeManager));
+        emit ModuleUpdated("StakeManager", address(_stakeManager));
         emit CertificateNFTUpdated(address(_certificateNFT));
+        emit ModuleUpdated("CertificateNFT", address(_certificateNFT));
         emit DisputeModuleUpdated(address(_disputeModule));
+        emit ModuleUpdated("DisputeModule", address(_disputeModule));
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
