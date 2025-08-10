@@ -28,6 +28,25 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
 
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    Employer -->|createJob| JobRegistry
+    JobRegistry --> JobCreated((JobCreated))
+    Agent -->|applyForJob| JobRegistry
+    JobRegistry --> AgentApplied((AgentApplied))
+    JobRegistry -->|selectValidators| ValidationModule
+    ValidationModule --> ValidationCommitted((ValidationCommitted))
+    ValidationModule -->|stake| StakeManager
+    ValidationModule -->|reputation| ReputationEngine
+    ValidationModule -->|dispute| DisputeModule
+    DisputeModule --> DisputeResolved((DisputeResolved))
+    DisputeModule -->|finalRuling| JobRegistry
+    JobRegistry --> JobFinalized((JobFinalized))
+    JobRegistry -->|mint| CertificateNFT
+```
+
 ### Modular v2 Contract Suite
 
 The platform’s v2 release decomposes coordination into immutable, single‑purpose modules:
