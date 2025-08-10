@@ -51,6 +51,22 @@ graph LR
 
 Each module inherits `Ownable` so only the contract owner can update parameters. Upgrades occur by deploying a replacement module and repointing `JobRegistry.setModules`, preserving governance composability while keeping every contract immutable. Full interface definitions and gas‑optimization tips live in [docs/v2-module-interface-reference.md](docs/v2-module-interface-reference.md).
 
+#### Interface Snapshot
+```solidity
+interface IJobRegistry { function createJob(string calldata details, uint256 reward) external; }
+interface IStakeManager { function depositStake(uint256 amount) external; function setToken(address newToken) external; }
+interface IValidationModule { function commit(uint256 jobId, bytes32 hash) external; function reveal(uint256 jobId, bool verdict, bytes32 salt) external; }
+interface IReputationEngine { function addSuccess(address user, uint256 weight) external; }
+interface IDisputeModule { function raiseDispute(uint256 jobId, string calldata reason) external; }
+interface ICertificateNFT { function mintCertificate(address employer, uint256 jobId) external; }
+```
+
+#### Solidity Structure Tips
+- Mark module references `immutable` where possible and cache them in local variables.
+- Prefer `external` and `calldata` for user inputs; use custom errors instead of revert strings.
+- Pack related storage variables (e.g., `uint64` timestamps) to reduce slot usage.
+- Wrap arithmetic in `unchecked` when invariants guarantee no overflow.
+
 ### Owner Controls & Upgradeability
 
 - Deploy replacement modules and update their addresses through `JobRegistry.setModules(...)`.
