@@ -22,6 +22,8 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [Modular Architecture & Interfaces](docs/modular-architecture-v2.md) – contract separation with interface snippets and gas tips.
 - [v2 Module & Interface Reference](docs/v2-module-interface-reference.md) – condensed module graph, core interfaces, and gas/incentive notes.
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
+- [Incentive Mechanisms for $AGIALPHA](docs/incentive-mechanisms-agialpha.md) – revenue sharing, routing priority, governance rewards, and sybil mitigation.
+- [Coding Sprint: $AGIALPHA Incentive Modules](docs/coding-sprint-agialpha-incentives.md) – tasks for integrating fee pools and discovery incentives.
 - [Production-Scale AGIJobs Platform Sprint Plan](docs/ProductionScaleAGIJobsPlatformSprintPlanv0.md) – background research and
   architectural rationale behind the modular design.
 - [Deployment Guide for $AGIALPHA](docs/deployment-agialpha.md) – non-technical walkthrough for deploying and configuring the suite with the 6‑decimal token.
@@ -143,13 +145,12 @@ graph TD
 
 ### Incentive Summary
 
-- Agents and validators must stake $AGIALPHA; dishonest behaviour is slashed.
-- Correct validators share rewards while employers receive a portion of slashed stakes.
-- Burn and stake parameters make cheating unprofitable, keeping honest participation in equilibrium.
-- Platform operators that stake $AGIALPHA receive on-chain fee dividends from `FeePool` with no off-chain accounting.
-- Higher stake and reputation improve job-routing priority and validator access, granting discovery advantages.
-- Minimum stake requirements, reputation thresholds and tax-policy acknowledgements make Sybil attacks costly.
-- All rewards flow directly to wallets in $AGIALPHA, keeping the protocol pseudonymous and tax-neutral.
+- Agents and validators post $AGIALPHA collateral and are slashed for dishonest behaviour.
+- Protocol fees stream to staking operators through an on-chain `FeePool`, requiring no off-chain reporting.
+- Job routing and discovery modules prioritise platforms with higher stake and reputation, granting visibility and validator throughput advantages.
+- Governance uses token-weighted voting; active voters earn bonus shares from future `FeePool` epochs.
+- Minimum stake gates, configurable burns and reputation thresholds deter sybil attacks while keeping supply deflationary.
+- All value flows occur directly between pseudonymous wallets in $AGIALPHA, keeping operators tax-neutral and the owner revenue-free.
 
 ### Economic Model
 
