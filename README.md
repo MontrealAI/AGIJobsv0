@@ -30,6 +30,37 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
+ 
+## Quick Start: FeePool & JobRouter
+
+1. **Deploy & verify** – deploy `FeePool(token, stakeManager, rewardRole, owner)` and `JobRouter(stakeManager, reputationEngine, owner)`. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
+2. **Connect wallet** – from the **Write Contract** tab click **Connect to Web3**. Owners may initialize modules immediately after verification.
+3. **Initialize parameters**
+   - On `StakeManager`, call `setToken(token)` if the staking token differs from the constructor value.
+   - On `JobRegistry`, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)` followed by `setFeePool(feePool)` to enable revenue sharing.
+4. **Stake & register** – still in **Write Contract**, stake with `depositStake(role, amount)` on `StakeManager` (role `2` for platform operators). Amounts use 6‑decimal base units—`25_000000` stakes 25 tokens. Afterwards register the platform through `JobRouter.registerPlatform(operator)`.
+
+### Base‑Unit Conversions (6 decimals)
+
+```
+1 token   = 1_000_000
+0.5 token =   500_000
+25 tokens = 25_000000
+```
+
+### JSON‑RPC Decimal Check
+
+```bash
+curl -s -X POST https://mainnet.infura.io/v3/YOUR_KEY \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_call","params":[{"to":"TOKEN_ADDRESS","data":"0x313ce567"}, "latest"],"id":1}'
+# -> 0x...06 confirms 6 decimals
+```
+
+### Further Reading
+
+- [FeePool.sol](contracts/v2/FeePool.sol) – revenue sharing module · [tests](test/v2/FeePool.t.sol)
+- [JobRouter.sol](contracts/v2/modules/JobRouter.sol) – stake‑weighted routing · [tests](test/v2/JobRouter.t.sol)
 
 ## Architecture Diagram
 
