@@ -217,6 +217,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
+        require(
+            reward <= type(uint128).max && stake <= type(uint96).max,
+            "overflow"
+        );
         jobReward = uint128(reward);
         jobStake = uint96(stake);
         emit JobParametersUpdated(reward, stake);
