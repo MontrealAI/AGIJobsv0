@@ -1449,80 +1449,37 @@ private_key = "${PRIVATE_KEY}"
    ```
 4. **Deploy**
    ```bash
-   # Hardhat (deploys AGIJobManagerV1)
-   npx hardhat run scripts/deploy.ts --network sepolia
-
-   # Foundry
-   forge create contracts/AGIJobManagerv1.sol:AGIJobManagerV1 --rpc-url $API_URL --private-key $PRIVATE_KEY
+   # Hardhat (deploys modular v2 suite with a mock 6‑decimal token)
+   npx hardhat run scripts/v2/deploy.ts --network sepolia
    ```
-   Configure your preferred public test network such as [Ethereum Sepolia](https://sepolia.etherscan.io) (chain ID 11155111) or [Base Sepolia](https://sepolia.basescan.org) (chain ID 84532) in your Hardhat or Foundry configuration files.
+   The script deploys `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, and `TaxPolicy`, wiring them together. Modify the script or call `StakeManager.setToken` to point at an existing ERC‑20 such as [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe).
 
 5. **Verify on a block explorer**
    ```bash
-   npx hardhat verify --network sepolia <DEPLOYED_CONTRACT_ADDRESS>
+   npx hardhat verify --network sepolia <MODULE_ADDRESS> <constructor args>
    ```
-   Replace `<DEPLOYED_CONTRACT_ADDRESS>` with the address returned from deployment and ensure `ETHERSCAN_API_KEY` is set in your environment.
-
-#### Foundry
-
-```bash
-forge verify-contract <DEPLOYED_CONTRACT_ADDRESS> AGIJobManagerV1 --chain sepolia --etherscan-api-key $ETHERSCAN_API_KEY
-```
-
-Set the `ETHERSCAN_API_KEY` (or a network-specific variant such as `SEPOLIA_ETHERSCAN_API_KEY`) as described in the [Foundry verification documentation](https://book.getfoundry.sh/reference/forge/verify-contract) to allow Foundry to authenticate with the block explorer API.
+   Run once for each deployed module and ensure `ETHERSCAN_API_KEY` (or `SEPOLIA_ETHERSCAN_API_KEY`) is set in your environment. The script above prints the addresses in deployment order.
 
 6. **Stake & validate (example)**
    ```ts
-   await agiJobManager.stake(ethers.parseUnits("100", 18)); // deposit required stake
-   await agiJobManager.commitValidation(jobId, commitment, "", []);
-   await agiJobManager.revealValidation(jobId, true, salt);
-   await agiJobManager.validateJob(jobId); // cast a vote after the review window
-   await agiJobManager.withdrawStake(ethers.parseUnits("100", 18)); // withdraw after finalization
+   await stakeManager.depositStake(ethers.parseUnits("100", 6));
+   await validationModule.commit(jobId, commitmentHash);
+   await validationModule.reveal(jobId, true, salt);
+   await validationModule.finalize(jobId);
+   await stakeManager.withdrawStake(ethers.parseUnits("100", 6));
    ```
 
 ## Deployment
 
-The `scripts/deploy.ts` helper reads its configuration from environment variables. Define them before running the script:
+For a production deployment using $AGIALPHA (6 decimals):
 
-| Variable | Description |
-|----------|-------------|
-| `AGI_TOKEN_ADDRESS` | Address of the $AGI ERC‑20 token used for payments |
-| `BASE_IPFS_URL` | Base URI for job metadata stored on IPFS |
-| `ENS_ADDRESS` | ENS registry contract |
-| `NAME_WRAPPER_ADDRESS` | ENS NameWrapper contract address |
-| `CLUB_ROOT_NODE` | `bytes32` ENS node for AGI club names |
-| `AGENT_ROOT_NODE` | `bytes32` ENS node for agent subdomains |
-| `VALIDATOR_MERKLE_ROOT` | Merkle root governing validator allowlists |
-| `AGENT_MERKLE_ROOT` | Merkle root governing agent allowlists |
+1. Deploy `StakeManager` with the token address and owner address.
+2. Deploy `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, and `TaxPolicy`.
+3. Call `StakeManager.setJobRegistry` and `JobRegistry.setModules` to link them.
+4. Configure stakes, timing windows, and fees in base units of 1e6 via the owner‑only setter functions.
+5. Verify each module on Etherscan and record the addresses.
 
-Example (Sepolia):
-
-```bash
-export AGI_TOKEN_ADDRESS=0xYourAGIToken
-export BASE_IPFS_URL="ipfs://"
-export ENS_ADDRESS=0xYourENSRegistry
-export NAME_WRAPPER_ADDRESS=0xYourNameWrapper
-export CLUB_ROOT_NODE=0xYourClubRoot
-export AGENT_ROOT_NODE=0xYourAgentRoot
-export VALIDATOR_MERKLE_ROOT=0xValidatorRoot
-export AGENT_MERKLE_ROOT=0xAgentRoot
-npx hardhat run scripts/deploy.ts --network sepolia
-```
-
-After deployment the contract owner may adjust these values if needed:
-
-```ts
-await agiJobManager.setClubRootNode(0xNewClubRoot);
-await agiJobManager.setAgentRootNode(0xNewAgentRoot);
-await agiJobManager.setValidatorMerkleRoot(0xNewValidatorRoot);
-await agiJobManager.setAgentMerkleRoot(0xNewAgentMerkleRoot);
-await agiJobManager.setENS(0xNewEnsRegistry);
-await agiJobManager.setNameWrapper(0xNewNameWrapper);
-```
-
-Each setter emits a corresponding `*Updated` event for off‑chain tracking.
-
-Always deploy to a public test network first and independently verify the resulting address on at least one block explorer before handling real assets.
+A more detailed, non‑technical walkthrough is available in [docs/deployment-agialpha.md](docs/deployment-agialpha.md). Always deploy to a public test network first and verify contract addresses on multiple explorers before handling real assets.
 
 ### Deployed Contracts
 
