@@ -20,6 +20,19 @@ graph LR
   DisputeModule --> ReputationEngine
 ```
 
+## Module Responsibilities & Owner Controls
+
+| Module | Core responsibility | Owner abilities |
+| --- | --- | --- |
+| **JobRegistry** | canonical registry for job metadata and state transitions; routes calls to companion modules | swap module addresses with `setModules`, pause job creation, and adjust global settings |
+| **StakeManager** | holds escrowed rewards and participant stakes; executes payouts and slashing | change ERC‑20 token via `setToken`, tune minimum stakes and slashing percentages |
+| **ValidationModule** | selects validators and runs the commit‑reveal tally | update committee size and timing windows through `setParameters` |
+| **ReputationEngine** | accrues or subtracts reputation; enforces blacklists | alter reputation weights, thresholds and blacklist entries |
+| **DisputeModule** | optional appeal layer for contested jobs | set appeal fees and moderator/jury addresses |
+| **CertificateNFT** | mints ERC‑721 completion certificates | update base URI or registry address |
+
+All modules are deployed as **immutable** contracts. Governance upgrades occur by deploying a new module and pointing `JobRegistry` to the replacement. Every setter is protected by `onlyOwner`, enabling parameter updates without exposing control to external parties.
+
 ## Interfaces
 Example Solidity interfaces (Solidity ^0.8.20):
 ```solidity
@@ -82,9 +95,11 @@ interface ICertificateNFT {
 - Emit events for every parameter change to aid off‑chain governance tracking.
 
 ## Incentive & Physics Analogy
-Stakes create potential energy \(H\); commit‑reveal voting injects entropy \(S\).  Owner‑tuned parameters act as temperature
-\(T\), so the system seeks to minimise the Gibbs free energy \(G = H - T S\).  Honest behaviour is the ground state: any attempt
-to cheat raises expected stake loss, increasing \(H\) and making deviation economically unattractive.
+Stakes create the system's Hamiltonian \(H\), representing potential energy locked in collateral. Commit‑reveal voting injects
+entropy \(S\) by broadening the distribution of possible validator states. Owner‑tuned parameters act as temperature \(T\), so
+participants evolve toward the configuration that minimises the Gibbs free energy \(G = H - T S\). The Nash equilibrium aligns
+with this ground state: truthful behaviour minimises energy, while cheating raises expected stake loss, increasing \(H\) and
+rendering deviation economically unattractive.
 
 ## Token Configuration
 The `StakeManager` stores the ERC‑20 used for rewards, staking and dispute fees.  By default it references
@@ -110,4 +125,6 @@ Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-agia
 - `ReputationEngine` reinforces cooperation by reducing future earnings for misbehaving addresses and blacklisting chronic
   offenders.
 - Appeals require a token fee via `DisputeModule`, ensuring that only disputes with positive expected value are raised.
+- The equilibrium strategy profile is truthful participation: any unilateral deviation results in lower expected utility, meeting
+  Nash equilibrium conditions and keeping the protocol's free energy at a minimum.
 
