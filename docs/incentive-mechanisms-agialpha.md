@@ -24,5 +24,6 @@ This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting�
 ## 5. Owner Controls & User Experience
 - The contract owner may update fees, burn rates, stake thresholds, and even swap the token address via `StakeManager.setToken`.
 - All interactions rely on simple data types, enabling non‑technical users to operate entirely through Etherscan.
+- Reward flows never touch off‑chain accounts, keeping operators pseudonymous and outside traditional reporting regimes.
 
 These incentives encourage honest participation, amplify $AGIALPHA demand, and keep all flows pseudonymous and globally tax‑neutral.

@@ -151,6 +151,7 @@ graph TD
 - Governance uses token-weighted voting; active voters earn bonus shares from future `FeePool` epochs.
 - Minimum stake gates, configurable burns and reputation thresholds deter sybil attacks while keeping supply deflationary.
 - All value flows occur directly between pseudonymous wallets in $AGIALPHA, keeping operators tax-neutral and the owner revenue-free.
+- Every incentive parameter is adjustable only by the contract owner through on-chain setters, so a non-technical operator can tune fees, burns, and stake thresholds via Etherscan without redeploying.
 
 ### Economic Model
 
