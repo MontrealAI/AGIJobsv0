@@ -86,6 +86,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     uint96 public jobStake;
 
     // module configuration events
+    event ModuleUpdated(string module, address newAddress);
     event ValidationModuleUpdated(address module);
     event StakeManagerUpdated(address manager);
     event ReputationEngineUpdated(address engine);
@@ -152,10 +153,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         disputeModule = _dispute;
         certificateNFT = _certNFT;
         emit ValidationModuleUpdated(address(_validation));
+        emit ModuleUpdated("ValidationModule", address(_validation));
         emit StakeManagerUpdated(address(_stakeMgr));
+        emit ModuleUpdated("StakeManager", address(_stakeMgr));
         emit ReputationEngineUpdated(address(_reputation));
+        emit ModuleUpdated("ReputationEngine", address(_reputation));
         emit DisputeModuleUpdated(address(_dispute));
+        emit ModuleUpdated("DisputeModule", address(_dispute));
         emit CertificateNFTUpdated(address(_certNFT));
+        emit ModuleUpdated("CertificateNFT", address(_certNFT));
     }
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
@@ -168,6 +174,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         taxPolicy = _policy;
         taxPolicyVersion++;
         emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
+        emit ModuleUpdated("TaxPolicy", address(_policy));
     }
 
     /// @notice Increments the tax policy version without changing the contract
