@@ -24,28 +24,34 @@ contract MockStakeManager is IStakeManager {
     function slash(address, Role, uint256, address) external override {}
     function setSlashPercentSumEnforcement(bool) external override {}
 
-    mapping(address => uint256) public stakes;
-    uint256 public totalStakeAmount;
+    mapping(address => mapping(Role => uint256)) public stakes;
+    mapping(Role => uint256) public totalStakes;
 
-    function setStake(address user, uint256 amount) external {
-        totalStakeAmount = totalStakeAmount - stakes[user] + amount;
-        stakes[user] = amount;
+    function setStake(address user, Role role, uint256 amount) external {
+        totalStakes[role] = totalStakes[role] - stakes[user][role] + amount;
+        stakes[user][role] = amount;
     }
-    function stakeOf(address user, Role) external view override returns (uint256) {
-        return stakes[user];
+    function stakeOf(address user, Role role) external view override returns (uint256) {
+        return stakes[user][role];
     }
-    function totalStake(Role) external view override returns (uint256) {
-        return totalStakeAmount;
+    function totalStake(Role role) external view override returns (uint256) {
+        return totalStakes[role];
     }
 }
 
 contract MockReputationEngine is IReputationEngine {
     function add(address, uint256) external override {}
     function subtract(address, uint256) external override {}
-    function isBlacklisted(address) external view override returns (bool) { return false; }
     function setCaller(address, bool) external override {}
     function setThreshold(uint256) external override {}
-    function setBlacklist(address, bool) external override {}
+
+    mapping(address => bool) public blacklist;
+    function setBlacklist(address user, bool b) external override {
+        blacklist[user] = b;
+    }
+    function isBlacklisted(address user) external view override returns (bool) {
+        return blacklist[user];
+    }
 
     mapping(address => uint256) public reps;
     function setReputation(address user, uint256 amount) external {
@@ -75,8 +81,8 @@ contract JobRouterTest {
         repEngine = new MockReputationEngine();
         router = new JobRouter(stakeManager, repEngine, address(this));
         router.setMinStake(50);
-        stakeManager.setStake(platform1, 100);
-        stakeManager.setStake(platform2, 100);
+        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
+        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 100);
         repEngine.setReputation(platform1, 1);
         repEngine.setReputation(platform2, 3);
         router.registerPlatform(platform1);
@@ -96,11 +102,22 @@ contract JobRouterTest {
     }
 
     function testNoEligiblePlatforms() public {
-        stakeManager.setStake(platform1, 0);
-        stakeManager.setStake(platform2, 0);
+        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 0);
+        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 0);
         vm.prevrandao(bytes32(uint256(1)));
         address selected = router.selectPlatform(bytes32(uint256(1)));
         require(selected == address(0), "should return zero");
+    }
+
+    function testBlacklistBlocksRegistration() public {
+        repEngine.setBlacklist(platform1, true);
+        bool reverted;
+        try router.registerPlatform(platform1) {
+            reverted = false;
+        } catch {
+            reverted = true;
+        }
+        require(reverted, "should revert");
     }
 }
 

@@ -8,8 +8,8 @@ import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
 /// @title DiscoveryModule
 /// @notice Ranks registered platforms based on operator scores combining stake and reputation
 contract DiscoveryModule is Ownable {
-    IStakeManager public immutable stakeManager;
-    IReputationEngine public immutable reputationEngine;
+    IStakeManager public stakeManager;
+    IReputationEngine public reputationEngine;
 
     uint256 public minStake;
 
@@ -17,7 +17,10 @@ contract DiscoveryModule is Ownable {
     mapping(address => bool) public isPlatform;
 
     event PlatformRegistered(address indexed operator);
+    event PlatformDeregistered(address indexed operator);
     event MinStakeUpdated(uint256 minStake);
+    event StakeManagerUpdated(address indexed stakeManager);
+    event ReputationEngineUpdated(address indexed reputationEngine);
 
     constructor(
         IStakeManager _stakeManager,
@@ -31,11 +34,27 @@ contract DiscoveryModule is Ownable {
     /// @notice Register a platform if it meets the minimum stake requirement
     function registerPlatform(address operator) external {
         require(!isPlatform[operator], "registered");
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
+        require(!reputationEngine.isBlacklisted(operator), "blacklisted");
+        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
         require(stake >= minStake, "stake too low");
         isPlatform[operator] = true;
         platforms.push(operator);
         emit PlatformRegistered(operator);
+    }
+
+    /// @notice Deregister a platform
+    function deregisterPlatform(address operator) external onlyOwner {
+        if (!isPlatform[operator]) return;
+        isPlatform[operator] = false;
+        uint256 len = platforms.length;
+        for (uint256 i; i < len; i++) {
+            if (platforms[i] == operator) {
+                platforms[i] = platforms[len - 1];
+                platforms.pop();
+                break;
+            }
+        }
+        emit PlatformDeregistered(operator);
     }
 
     /// @notice Get top platforms ranked by operator score
@@ -54,7 +73,9 @@ contract DiscoveryModule is Ownable {
 
         for (uint256 i = 0; i < len; i++) {
             address p = platforms[i];
-            uint256 stake = stakeManager.stakeOf(p, IStakeManager.Role.Agent);
+            if (!isPlatform[p]) continue;
+            if (reputationEngine.isBlacklisted(p)) continue;
+            uint256 stake = stakeManager.stakeOf(p, IStakeManager.Role.Platform);
             if (stake < minStake) continue;
             uint256 score = reputationEngine.getOperatorScore(p);
             if (score == 0) continue;
@@ -95,6 +116,33 @@ contract DiscoveryModule is Ownable {
     function setMinStake(uint256 _minStake) external onlyOwner {
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
+    }
+
+    /// @notice Update StakeManager address
+    function setStakeManager(IStakeManager _stakeManager) external onlyOwner {
+        stakeManager = _stakeManager;
+        emit StakeManagerUpdated(address(_stakeManager));
+    }
+
+    /// @notice Update ReputationEngine address
+    function setReputationEngine(IReputationEngine _reputationEngine) external onlyOwner {
+        reputationEngine = _reputationEngine;
+        emit ReputationEngineUpdated(address(_reputationEngine));
+    }
+
+    /// @notice Confirms the contract and its owner can never incur tax liability.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert("DiscoveryModule: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("DiscoveryModule: no ether");
     }
 }
 

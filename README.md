@@ -992,6 +992,26 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
+### Deployment Guide (AGIJobsv0 with $AGIALPHA)
+
+$AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments, staking, rewards, and dispute fees. All modules allow the owner to update the token or parameters without redeploying contracts.
+
+1. **Deploy core modules** in the following order using any wallet or Etherscan `Write` tab:
+   - `StakeManager` – constructor takes the $AGIALPHA token and treasury address.
+   - `ReputationEngine` – pass your address as owner and later call `setCaller` for authorized modules.
+   - `FeePool`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `CertificateNFT`, `JobRouter`, and `DiscoveryModule` – use the previously deployed module addresses in their constructors.
+2. **Configure staking and rewards**
+   - On `StakeManager`, call `setMinStake`, `setSlashingPercentages`, and `setTreasury` as needed.
+   - On `FeePool`, call `setRewardRole(2)` to direct revenue to platform stakers and adjust `setBurnPct` if desired.
+3. **Wire modules together**
+   - In `JobRegistry`, call `setModules` with addresses of `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`, and `CertificateNFT`.
+   - In `ValidationModule`, set validator windows, pool, and connect the `ReputationEngine`.
+   - For discovery and routing benefits, register platform operators in `JobRouter` and `DiscoveryModule` once they have staked tokens (`Role 2 = Platform`).
+4. **Token flexibility**
+   - If a new payout token is needed, the owner may call `setToken` on `StakeManager`, `FeePool`, and any other module holding tokens. No redeployment is required.
+
+Once configured, all interaction—job creation, staking, validation, dispute resolution, and revenue claims—can be performed directly through Etherscan without any off‑chain reporting.
+
 ### Quick Etherscan Guide
 
 - Verify each module address above on at least two explorers.
@@ -1003,7 +1023,7 @@ graph TD
 
 **depositStake**
 1. Open `StakeManager` **Read Contract** and confirm `isTaxExempt()`.
-2. In **Write Contract**, call `depositStake(role, amount)` (role `0` = Agent, `1` = Validator).
+2. In **Write Contract**, call `depositStake(role, amount)` (role `0` = Agent, `1` = Validator, `2` = Platform).
 
 **commitValidation / revealValidation**
 1. On `ValidationModule` **Read Contract**, check `isTaxExempt()`.

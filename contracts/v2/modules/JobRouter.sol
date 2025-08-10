@@ -8,8 +8,8 @@ import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
 /// @title JobRouter
 /// @notice Routes jobs to registered platforms based on stake and reputation weighting
 contract JobRouter is Ownable {
-    IStakeManager public immutable stakeManager;
-    IReputationEngine public immutable reputationEngine;
+    IStakeManager public stakeManager;
+    IReputationEngine public reputationEngine;
 
     /// @notice minimum stake required for a platform to register and remain eligible
     uint256 public minStake;
@@ -26,9 +26,12 @@ contract JobRouter is Ownable {
     mapping(bytes32 => address) public routingHistory;
 
     event PlatformRegistered(address indexed operator);
+    event PlatformDeregistered(address indexed operator);
     event PlatformSelected(bytes32 indexed jobId, address indexed platform);
     event MinStakeUpdated(uint256 minStake);
     event StakeWeightingUpdated(uint256 stakeWeighting);
+    event StakeManagerUpdated(address indexed stakeManager);
+    event ReputationEngineUpdated(address indexed reputationEngine);
 
     constructor(IStakeManager _stakeManager, IReputationEngine _reputationEngine, address owner)
         Ownable(owner)
@@ -41,11 +44,28 @@ contract JobRouter is Ownable {
     /// @param operator Address of the platform operator
     function registerPlatform(address operator) external {
         require(!isPlatform[operator], "registered");
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
+        require(!reputationEngine.isBlacklisted(operator), "blacklisted");
+        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
         require(stake >= minStake, "stake too low");
         isPlatform[operator] = true;
         platforms.push(operator);
         emit PlatformRegistered(operator);
+    }
+
+    /// @notice Deregister a misbehaving platform
+    function deregisterPlatform(address operator) external onlyOwner {
+        if (!isPlatform[operator]) return;
+        isPlatform[operator] = false;
+        // remove from array
+        uint256 len = platforms.length;
+        for (uint256 i; i < len; i++) {
+            if (platforms[i] == operator) {
+                platforms[i] = platforms[len - 1];
+                platforms.pop();
+                break;
+            }
+        }
+        emit PlatformDeregistered(operator);
     }
 
     /// @notice Select a platform for a given jobId based on weighted randomness
@@ -58,7 +78,9 @@ contract JobRouter is Ownable {
 
         for (uint256 i = 0; i < len; i++) {
             address platform = platforms[i];
-            uint256 stake = stakeManager.stakeOf(platform, IStakeManager.Role.Agent);
+            if (!isPlatform[platform]) continue;
+            if (reputationEngine.isBlacklisted(platform)) continue;
+            uint256 stake = stakeManager.stakeOf(platform, IStakeManager.Role.Platform);
             uint256 rep = reputationEngine.reputation(platform);
             if (stake >= minStake && rep > 0) {
                 uint256 weight = (stake * stakeWeighting / 1e18) * rep;
@@ -98,6 +120,33 @@ contract JobRouter is Ownable {
     function setStakeWeighting(uint256 _stakeWeighting) external onlyOwner {
         stakeWeighting = _stakeWeighting;
         emit StakeWeightingUpdated(_stakeWeighting);
+    }
+
+    /// @notice Update StakeManager address
+    function setStakeManager(IStakeManager _stakeManager) external onlyOwner {
+        stakeManager = _stakeManager;
+        emit StakeManagerUpdated(address(_stakeManager));
+    }
+
+    /// @notice Update ReputationEngine address
+    function setReputationEngine(IReputationEngine _reputationEngine) external onlyOwner {
+        reputationEngine = _reputationEngine;
+        emit ReputationEngineUpdated(address(_reputationEngine));
+    }
+
+    /// @notice Confirms the contract and its owner can never incur tax liability.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert("JobRouter: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("JobRouter: no ether");
     }
 }
 
