@@ -26,9 +26,12 @@ Use the *Deploy* tab on each contract's Etherscan page. Confirm transactions thr
 ## 3. Configure Token Parameters
 The StakeManager already points to $AGIALPHA (6 decimals). To change tokens later, use `setToken(newToken)`.
 
-For stakes, rewards and fees enter values in base units:
+For stakes, rewards and fees enter values in base units (all amounts are scaled by `10**6`):
+- `1` token = `1_000_000`
 - `100` tokens = `100_000000`
 - `0.5` token = `500000`
+
+If interacting with an 18‑decimal token, divide values by `1e12` to convert to this 6‑decimal format; the division may truncate precision beyond six decimals.
 
 Update parameters as needed:
 - `StakeManager.setMinStake(minStake)`

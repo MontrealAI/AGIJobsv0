@@ -3,6 +3,10 @@ pragma solidity ^0.8.25;
 
 /// @title IStakeManager
 /// @notice Interface for handling token collateral for agents and validators
+/// @dev Amounts are expressed using 6‑decimal scaling (1 token = 1e6 units).
+///      For example `3` tokens should be provided as `3_000_000`. Contracts
+///      working with 18‑decimal tokens need to divide by `1e12` and may lose
+///      precision.
 interface IStakeManager {
     enum Role {
         Agent,

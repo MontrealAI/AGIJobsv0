@@ -77,7 +77,15 @@ interface ICertificateNFT { function mintCertificate(address employer, uint256 j
 
 ### Using $AGIALPHA (6 decimals)
 
-The v2 contracts treat the payment token as an owner‑configurable parameter. By default the `StakeManager` points to the $AGIALPHA ERC‑20 at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe` (6 decimals).
+The v2 contracts treat the payment token as an owner‑configurable parameter. By default the `StakeManager` points to the $AGIALPHA ERC‑20 at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe` (6 decimals). All token operations are scaled by `10**6`, so callers must convert whole values to base units before submitting transactions. For example:
+
+```
+1   token = 1_000_000
+0.1 token =   100_000
+5   tokens = 5_000_000
+```
+
+When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` to obtain 6‑decimal values; this downscaling can truncate precision beyond six decimals.
 
 **Deployment steps**
 

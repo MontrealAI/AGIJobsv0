@@ -11,7 +11,10 @@ import {IStakeManager} from "../interfaces/IStakeManager.sol";
 /// @title StakeManager (module)
 /// @notice Minimal stake escrow with role based accounting and slashing.
 /// @dev Only participants bear any tax obligations; this contract remains
-/// tax neutral and rejects any direct ETH transfers.
+///      tax neutral and rejects any direct ETH transfers. Token amounts use
+///      6‑decimal scaling (1 token = 1e6). For example `0.1` token should be
+///      passed as `100_000`. Integrations with 18‑decimal tokens must
+///      downscale by 1e12, potentially losing precision.
 contract StakeManager is Ownable, ReentrancyGuard, IStakeManager {
     using SafeERC20 for IERC20;
 

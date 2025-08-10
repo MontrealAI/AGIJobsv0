@@ -11,7 +11,10 @@ import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 /// @dev Holds only the staking token and rejects direct ether so neither the
 ///      contract nor the owner ever custodies funds that could create tax
 ///      liabilities. All taxes remain the responsibility of employers, agents
-///      and validators.
+///      and validators. All token amounts are scaled by 1e6 (6 decimals); for
+///      instance `2` tokens should be provided as `2_000_000`. Contracts that
+///      operate on 18‑decimal tokens must downscale by `1e12`, which may cause
+///      precision loss.
 contract StakeManager is Ownable {
     using SafeERC20 for IERC20;
 
