@@ -110,4 +110,12 @@ contract MockReputationEngine is IReputationEngine {
     function setThreshold(uint256) external override {}
 
     function setBlacklist(address, bool) external override {}
+
+    function getOperatorScore(address user) external view override returns (uint256) {
+        return _rep[user];
+    }
+
+    function setStakeManager(address) external override {}
+
+    function setScoringWeights(uint256, uint256) external override {}
 }
