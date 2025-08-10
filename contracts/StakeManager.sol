@@ -8,6 +8,10 @@ import {IJobRegistryTax} from "./v2/interfaces/IJobRegistryTax.sol";
 
 /// @title StakeManager
 /// @notice Handles staking and reward transfers for the job system.
+/// @dev All token operations use 6 decimal scaling (1 token = 1e6 units).
+///      Example: to stake 5 tokens pass `5_000_000`. Integrations with
+///      standard 18-decimal ERC-20s must downscale amounts by 1e12, which
+///      can introduce precision loss.
 contract StakeManager is Ownable {
     using SafeERC20 for IERC20;
 
