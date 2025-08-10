@@ -7,7 +7,8 @@ interface IStakeManager {
     /// @notice participant roles
     enum Role {
         Agent,
-        Validator
+        Validator,
+        Platform
     }
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
@@ -56,5 +57,8 @@ interface IStakeManager {
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);
+
+    /// @notice return aggregate stake for a role
+    function totalStake(Role role) external view returns (uint256);
 }
 

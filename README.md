@@ -112,8 +112,9 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 1. Deploy `StakeManager` with the $AGIALPHA address, or call `setToken` after deployment to switch tokens.
 2. Wire modules via `JobRegistry.setModules` and adjust stake or fee parameters to 6‑decimal units (e.g. `100_000000` for 100 tokens).
 3. Employers and agents `approve` the `StakeManager` to spend $AGIALPHA, then use `createJob` or `depositStake` normally.
-4. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
-5. All owner and user actions can be performed in a browser through Etherscan's **Write Contract** tab – connect a wallet, enter the primitive arguments, and submit the transaction.
+4. Platform operators stake under `Role.Platform` via `StakeManager.depositStake(2, amount)` and register their marketplace with `JobRouter.registerPlatform(operator)`. Staked operators share job fees through `FeePool` and can claim rewards with `claimRewards()`.
+5. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
+6. All owner and user actions can be performed in a browser through Etherscan's **Write Contract** tab – connect a wallet, enter the primitive arguments, and submit the transaction.
 
 Each module is deployed once and remains immutable; the owner upgrades components by deploying a replacement and repointing `JobRegistry.setModules` or other owner‑only setters. Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
