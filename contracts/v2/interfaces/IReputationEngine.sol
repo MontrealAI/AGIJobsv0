@@ -12,6 +12,8 @@ interface IReputationEngine {
 
     event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
     event Blacklisted(address indexed user, bool status);
+    event StakeManagerUpdated(address stakeManager);
+    event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
 
     /// @notice Increase a user's reputation score
     /// @param user Address whose reputation is increased
@@ -52,5 +54,19 @@ interface IReputationEngine {
     /// @param user Address to update
     /// @param status True to blacklist the user, false to remove
     function setBlacklist(address user, bool status) external;
+
+    /// @notice Retrieve combined operator score using stake and reputation
+    /// @param operator Address to query
+    /// @return Weighted score used for ranking
+    function getOperatorScore(address operator) external view returns (uint256);
+
+    /// @notice Set the StakeManager used for stake lookups
+    /// @param manager Address of the StakeManager contract
+    function setStakeManager(address manager) external;
+
+    /// @notice Update weighting factors for stake and reputation contributions
+    /// @param stakeWeight Weight applied to stake (scaled by 1e18)
+    /// @param reputationWeight Weight applied to reputation (scaled by 1e18)
+    function setScoringWeights(uint256 stakeWeight, uint256 reputationWeight) external;
 }
 

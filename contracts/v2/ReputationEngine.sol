@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title ReputationEngine
 /// @notice Tracks reputation scores with blacklist enforcement.
@@ -13,11 +14,16 @@ contract ReputationEngine is Ownable {
     mapping(address => bool) private _blacklisted;
     mapping(address => bool) public callers;
     uint256 public threshold;
+    IStakeManager public stakeManager;
+    uint256 public stakeWeight = 1e18;
+    uint256 public reputationWeight = 1e18;
 
     event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
     event Blacklisted(address indexed user, bool status);
     event CallerUpdated(address indexed caller, bool allowed);
     event ThresholdUpdated(uint256 newThreshold);
+    event StakeManagerUpdated(address stakeManager);
+    event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
 
     constructor(address owner) Ownable(owner) {}
 
@@ -30,6 +36,21 @@ contract ReputationEngine is Ownable {
     function setCaller(address caller, bool allowed) external onlyOwner {
         callers[caller] = allowed;
         emit CallerUpdated(caller, allowed);
+    }
+
+    /// @notice Set the StakeManager used for stake lookups.
+    function setStakeManager(IStakeManager manager) external onlyOwner {
+        stakeManager = manager;
+        emit StakeManagerUpdated(address(manager));
+    }
+
+    /// @notice Configure weighting factors for stake and reputation.
+    /// @param stakeW Weight applied to stake (scaled by 1e18)
+    /// @param repW Weight applied to reputation (scaled by 1e18)
+    function setScoringWeights(uint256 stakeW, uint256 repW) external onlyOwner {
+        stakeWeight = stakeW;
+        reputationWeight = repW;
+        emit ScoringWeightsUpdated(stakeW, repW);
     }
 
     /// @notice Set reputation threshold for automatic blacklisting.
@@ -78,6 +99,18 @@ contract ReputationEngine is Ownable {
     /// @notice Check blacklist status for a user.
     function isBlacklisted(address user) external view returns (bool) {
         return _blacklisted[user];
+    }
+
+    /// @notice Return the combined operator score based on stake and reputation.
+    /// @dev Blacklisted users score 0.
+    function getOperatorScore(address operator) external view returns (uint256) {
+        if (_blacklisted[operator]) return 0;
+        uint256 stake;
+        if (address(stakeManager) != address(0)) {
+            stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
+        }
+        uint256 rep = _scores[operator];
+        return ((stake * stakeWeight) + (rep * reputationWeight)) / 1e18;
     }
 
     /// @notice Confirms the contract and its owner cannot incur tax obligations.
