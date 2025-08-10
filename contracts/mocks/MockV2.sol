@@ -8,9 +8,11 @@ import "../v2/interfaces/IReputationEngine.sol";
 
 contract MockStakeManager is IStakeManager {
     mapping(address => mapping(Role => uint256)) private _stakes;
+    mapping(Role => uint256) public totalStakes;
     address public disputeModule;
 
     function setStake(address user, Role role, uint256 amount) external {
+        totalStakes[role] = totalStakes[role] - _stakes[user][role] + amount;
         _stakes[user][role] = amount;
     }
 
@@ -33,10 +35,15 @@ contract MockStakeManager is IStakeManager {
         uint256 st = _stakes[user][role];
         require(st >= amount, "stake");
         _stakes[user][role] = st - amount;
+        totalStakes[role] -= amount;
     }
 
     function stakeOf(address user, Role role) external view override returns (uint256) {
         return _stakes[user][role];
+    }
+
+    function totalStake(Role role) external view override returns (uint256) {
+        return totalStakes[role];
     }
 
     function setToken(address) external {}

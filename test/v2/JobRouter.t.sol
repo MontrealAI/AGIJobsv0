@@ -25,11 +25,17 @@ contract MockStakeManager is IStakeManager {
     function setSlashPercentSumEnforcement(bool) external override {}
 
     mapping(address => uint256) public stakes;
+    uint256 public totalStakeAmount;
+
     function setStake(address user, uint256 amount) external {
+        totalStakeAmount = totalStakeAmount - stakes[user] + amount;
         stakes[user] = amount;
     }
     function stakeOf(address user, Role) external view override returns (uint256) {
         return stakes[user];
+    }
+    function totalStake(Role) external view override returns (uint256) {
+        return totalStakeAmount;
     }
 }
 
@@ -48,6 +54,11 @@ contract MockReputationEngine is IReputationEngine {
     function reputation(address user) external view override returns (uint256) {
         return reps[user];
     }
+    function getOperatorScore(address user) external view override returns (uint256) {
+        return reps[user];
+    }
+    function setStakeManager(address) external override {}
+    function setScoringWeights(uint256, uint256) external override {}
 }
 
 contract JobRouterTest {

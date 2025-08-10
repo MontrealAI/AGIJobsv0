@@ -50,9 +50,11 @@ describe("StakeManager", function () {
     ).to.emit(stakeManager, "StakeDeposited").withArgs(user.address, 0, 200);
 
     expect(await stakeManager.stakes(user.address, 0)).to.equal(200n);
+    expect(await stakeManager.totalStake(0)).to.equal(200n);
 
     await stakeManager.connect(user).withdrawStake(0, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(150n);
+    expect(await stakeManager.totalStake(0)).to.equal(150n);
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
@@ -82,6 +84,7 @@ describe("StakeManager", function () {
       50
     );
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
+    expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
     expect(await token.balanceOf(treasury.address)).to.equal(50n);
   });

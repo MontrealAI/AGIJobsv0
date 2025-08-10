@@ -22,7 +22,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice participant roles
     enum Role {
         Agent,
-        Validator
+        Validator,
+        Platform
     }
 
     /// @notice ERC20 token used for staking and payouts
@@ -48,6 +49,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @notice staked balance per user and role
     mapping(address => mapping(Role => uint256)) public stakes;
+
+    /// @notice aggregate stake per role
+    mapping(Role => uint256) public totalStakes;
 
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
@@ -172,6 +176,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 newStake = stakes[msg.sender][role] + amount;
         require(newStake >= minStake, "min stake");
         stakes[msg.sender][role] = newStake;
+        totalStakes[role] += amount;
         token.safeTransferFrom(msg.sender, address(this), amount);
         emit StakeDeposited(msg.sender, role, amount);
     }
@@ -187,6 +192,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 newStake = staked - amount;
         require(newStake == 0 || newStake >= minStake, "min stake");
         stakes[msg.sender][role] = newStake;
+        totalStakes[role] -= amount;
         token.safeTransfer(msg.sender, amount);
         emit StakeWithdrawn(msg.sender, role, amount);
     }
@@ -262,6 +268,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         }
 
         stakes[user][role] = staked - amount;
+        totalStakes[role] -= amount;
 
         if (employerShare > 0) {
             token.safeTransfer(employer, employerShare);
@@ -276,6 +283,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice Return the total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256) {
         return stakes[user][role];
+    }
+
+    /// @notice Return total stake for a role
+    function totalStake(Role role) external view returns (uint256) {
+        return totalStakes[role];
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.

@@ -10,7 +10,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// @dev All token amounts use 6 decimals. Uses an accumulator scaled by 1e12
 ///      to avoid precision loss when dividing fees by total stake.
 interface IStakeManager {
-    enum Role { Agent, Validator }
+    enum Role {
+        Agent,
+        Validator,
+        Platform
+    }
 
     function stakeOf(address user, Role role) external view returns (uint256);
     function totalStake(Role role) external view returns (uint256);
@@ -25,8 +29,14 @@ contract FeePool is Ownable {
     /// @notice ERC20 token used for fees and rewards
     IERC20 public token;
 
-    /// @notice StakeManager tracking validator stakes
+    /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
+
+    /// @notice role whose stakers receive rewards
+    IStakeManager.Role public rewardRole;
+
+    /// @notice percentage of each fee burned (out of 100)
+    uint256 public burnPct;
 
     /// @notice cumulative fee per staked token scaled by ACCUMULATOR_SCALE
     uint256 public cumulativePerToken;
@@ -38,12 +48,18 @@ contract FeePool is Ownable {
     event RewardsClaimed(address indexed user, uint256 amount);
     event TokenUpdated(address indexed token);
     event StakeManagerUpdated(address indexed stakeManager);
+    event RewardRoleUpdated(IStakeManager.Role role);
+    event BurnPctUpdated(uint256 pct);
 
-    constructor(IERC20 _token, IStakeManager _stakeManager, address owner)
-        Ownable(owner)
-    {
+    constructor(
+        IERC20 _token,
+        IStakeManager _stakeManager,
+        IStakeManager.Role _role,
+        address owner
+    ) Ownable(owner) {
         token = _token;
         stakeManager = _stakeManager;
+        rewardRole = _role;
     }
 
     modifier onlyJobRegistry() {
@@ -54,16 +70,21 @@ contract FeePool is Ownable {
     /// @notice deposit job fee for distribution to stakers
     /// @param amount fee amount scaled to 6 decimals
     function depositFee(uint256 amount) external onlyJobRegistry {
-        uint256 total = stakeManager.totalStake(IStakeManager.Role.Validator);
+        uint256 total = stakeManager.totalStake(rewardRole);
         require(total > 0, "total stake");
-        cumulativePerToken += (amount * ACCUMULATOR_SCALE) / total;
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        emit FeeDeposited(msg.sender, amount);
+        uint256 burnAmount = (amount * burnPct) / 100;
+        uint256 distribute = amount - burnAmount;
+        cumulativePerToken += (distribute * ACCUMULATOR_SCALE) / total;
+        token.safeTransferFrom(msg.sender, address(this), distribute);
+        if (burnAmount > 0) {
+            token.safeTransferFrom(msg.sender, address(0), burnAmount);
+        }
+        emit FeeDeposited(msg.sender, distribute);
     }
 
     /// @notice claim accumulated rewards for caller
     function claimRewards() external {
-        uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Validator);
+        uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
         uint256 cumulative = (stake * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
         userCheckpoint[msg.sender] = cumulative;
@@ -81,6 +102,19 @@ contract FeePool is Ownable {
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
+    }
+
+    /// @notice update reward role used for distribution
+    function setRewardRole(IStakeManager.Role role) external onlyOwner {
+        rewardRole = role;
+        emit RewardRoleUpdated(role);
+    }
+
+    /// @notice update percentage of each fee to burn
+    function setBurnPct(uint256 pct) external onlyOwner {
+        require(pct <= 100, "pct");
+        burnPct = pct;
+        emit BurnPctUpdated(pct);
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
