@@ -10,6 +10,9 @@ contract MockStakeManager is IStakeManager {
     mapping(address => mapping(Role => uint256)) private _stakes;
     mapping(Role => uint256) public totalStakes;
     address public disputeModule;
+    address public override jobRegistry;
+
+    function setJobRegistry(address j) external { jobRegistry = j; }
 
     function setStake(address user, Role role, uint256 amount) external {
         totalStakes[role] = totalStakes[role] - _stakes[user][role] + amount;
