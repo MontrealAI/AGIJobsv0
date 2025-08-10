@@ -203,6 +203,11 @@ contract StakeManager is Ownable {
         emit StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare);
     }
 
+    /// @notice Return the total stake deposited by a user for a role
+    function stakeOf(address user, Role role) external view returns (uint256) {
+        return stakes[user][role];
+    }
+
     /// @notice Confirms the contract and its owner can never incur tax liability.
     /// @return Always true, signalling perpetual tax exemption.
     function isTaxExempt() external pure returns (bool) {

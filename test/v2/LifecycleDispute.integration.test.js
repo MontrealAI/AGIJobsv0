@@ -3,30 +3,32 @@ const { ethers } = require("hardhat");
 
 describe("Job lifecycle with disputes", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, policy;
-  let owner, employer, agent;
+  let owner, employer, agent, treasury;
 
   const reward = 100;
   const stake = 200;
   const appealFee = 10;
 
   beforeEach(async () => {
-    [owner, employer, agent] = await ethers.getSigners();
+    [owner, employer, agent, treasury] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/StakeManager.sol:StakeManager"
+      "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address
+      owner.address,
+      treasury.address
     );
+    await stakeManager.connect(owner).setSlashingPercentages(100, 0);
 
     const Validation = await ethers.getContractFactory(
-      "contracts/ValidationModule.sol:ValidationModule"
+      "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
     );
-    validation = await Validation.deploy(owner.address);
+    validation = await Validation.deploy();
 
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
@@ -80,7 +82,7 @@ describe("Job lifecycle with disputes", function () {
     await token.mint(agent.address, 1000);
 
     await token.connect(agent).approve(await stakeManager.getAddress(), stake);
-    await stakeManager.connect(agent).depositStake(stake);
+    await stakeManager.connect(agent).depositStake(0, stake);
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
   });
 
@@ -93,12 +95,12 @@ describe("Job lifecycle with disputes", function () {
 
   it("rewards agent when dispute resolves in their favor", async () => {
     const jobId = await startJob();
-    await validation.connect(owner).setOutcome(jobId, false);
+    await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, false);
 
-    expect(await token.balanceOf(agent.address)).to.equal(1100n);
+    expect(await token.balanceOf(agent.address)).to.equal(900n);
     expect(await rep.reputation(agent.address)).to.equal(1);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
@@ -106,7 +108,7 @@ describe("Job lifecycle with disputes", function () {
 
   it("slashes agent and reduces reputation when dispute is lost", async () => {
     const jobId = await startJob();
-    await validation.connect(owner).setOutcome(jobId, false);
+    await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
     await registry.connect(agent).dispute(jobId, { value: appealFee });
     await dispute.connect(owner).resolve(jobId, true);
