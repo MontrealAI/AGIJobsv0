@@ -22,6 +22,9 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Incrementing version for the current policy text.
     uint256 private _version;
 
+    /// @notice Tracks which addresses have acknowledged the policy.
+    mapping(address => bool) private _acknowledged;
+
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
 
@@ -30,6 +33,9 @@ contract TaxPolicy is Ownable, ITaxPolicy {
 
     /// @notice Emitted whenever the policy version changes.
     event PolicyVersionUpdated(uint256 version);
+
+    /// @notice Emitted when a user acknowledges the tax policy.
+    event PolicyAcknowledged(address indexed user);
 
     constructor(address owner_, string memory uri, string memory ack)
         Ownable(owner_)
@@ -72,15 +78,42 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         emit PolicyVersionUpdated(_version);
     }
 
-    /// @notice Returns a human-readable disclaimer confirming tax obligations.
+    /// @notice Record that the caller acknowledges the current tax policy.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
-    function acknowledge() external view returns (string memory disclaimer) {
+    function acknowledge(address user)
+        external
+        override
+        returns (string memory disclaimer)
+    {
+        _acknowledged[user] = true;
+        emit PolicyAcknowledged(user);
+        return _acknowledgement;
+    }
+
+    /// @notice Check if a user has acknowledged the policy.
+    function acknowledged(address user)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _acknowledged[user];
+    }
+
+    /// @notice Returns the acknowledgement text without recording acceptance.
+    /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
+    function acknowledgement()
+        external
+        view
+        override
+        returns (string memory disclaimer)
+    {
         return _acknowledgement;
     }
 
     /// @notice Returns the URI pointing to the canonical policy document.
     /// @return uri Off-chain document location (e.g., IPFS hash).
-    function policyURI() external view returns (string memory uri) {
+    function policyURI() external view override returns (string memory uri) {
         return _policyURI;
     }
 
@@ -90,6 +123,7 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     function policyDetails()
         external
         view
+        override
         returns (string memory ack, string memory uri)
     {
         ack = _acknowledgement;
@@ -97,19 +131,19 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     }
 
     /// @notice Returns the current policy version.
-    function policyVersion() external view returns (uint256) {
+    function policyVersion() external view override returns (uint256) {
         return _version;
     }
 
     /// @notice Bumps the policy version without changing text or URI.
-    function bumpPolicyVersion() external onlyOwner {
+    function bumpPolicyVersion() external override onlyOwner {
         _version += 1;
         emit PolicyVersionUpdated(_version);
     }
 
     /// @notice Confirms the contract and its owner are perpetually tax‑exempt.
     /// @return True, signalling that no tax liability can ever accrue here.
-    function isTaxExempt() external pure returns (bool) {
+    function isTaxExempt() external pure override returns (bool) {
         return true;
     }
 

@@ -6,12 +6,22 @@ import "../v2/interfaces/ITaxPolicy.sol";
 /// @dev Mock implementation that reports non-exempt status.
 contract BadTaxPolicy is ITaxPolicy {
     uint256 private _version;
+    mapping(address => bool) public acknowledgedUsers;
 
     constructor() {
         _version = 1;
     }
 
-    function acknowledge() external pure returns (string memory) {
+    function acknowledge(address user) external returns (string memory) {
+        acknowledgedUsers[user] = true;
+        return "bad";
+    }
+
+    function acknowledged(address user) external view returns (bool) {
+        return acknowledgedUsers[user];
+    }
+
+    function acknowledgement() external pure returns (string memory) {
         return "bad";
     }
 
