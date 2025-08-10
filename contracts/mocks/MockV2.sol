@@ -8,7 +8,6 @@ import "../v2/interfaces/IReputationEngine.sol";
 
 contract MockStakeManager is IStakeManager {
     mapping(address => mapping(Role => uint256)) private _stakes;
-    mapping(address => mapping(Role => uint256)) private _locked;
 
     function setStake(address user, Role role, uint256 amount) external {
         _stakes[user][role] = amount;
@@ -16,43 +15,23 @@ contract MockStakeManager is IStakeManager {
 
     function depositStake(Role, uint256) external override {}
     function withdrawStake(Role, uint256) external override {}
+    function lockJobFunds(bytes32, address, uint256) external override {}
+    function releaseJobFunds(bytes32, address, uint256) external override {}
 
-    function lockStake(address user, Role role, uint256 amount) external override {
-        require(_stakes[user][role] >= amount, "stake");
-        _locked[user][role] += amount;
-    }
-
-    function slash(address user, Role role, uint256 amount, address) external override {
+    function slash(address user, Role role, uint256 amount, address)
+        external
+        override
+    {
         uint256 st = _stakes[user][role];
         require(st >= amount, "stake");
         _stakes[user][role] = st - amount;
-        uint256 l = _locked[user][role];
-        if (l >= amount) {
-            _locked[user][role] = l - amount;
-        }
     }
 
     function stakeOf(address user, Role role) external view override returns (uint256) {
         return _stakes[user][role];
     }
 
-    function lockedStakeOf(address user, Role role)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return _locked[user][role];
-    }
-
-    function setToken(address) external override {}
-
-    function setStakeParameters(
-        uint256,
-        uint256,
-        uint256,
-        uint256
-    ) external override {}
+    function setToken(address) external {}
 }
 
 contract MockJobRegistry is IJobRegistry, IJobRegistryTax {

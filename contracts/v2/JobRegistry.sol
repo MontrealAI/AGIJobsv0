@@ -3,18 +3,8 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
-
-interface IValidationModule {
-    function validate(uint256 jobId) external view returns (bool);
-}
-
-interface IStakeManager {
-    function lockReward(address from, uint256 amount) external;
-    function payReward(address to, uint256 amount) external;
-    function slash(address user, address recipient, uint256 amount) external;
-    function releaseStake(address user, uint256 amount) external;
-    function stakes(address user) external view returns (uint256);
-}
+import {IValidationModule} from "./interfaces/IValidationModule.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 interface IReputationEngine {
     function add(address user, uint256 amount) external;
@@ -250,7 +240,7 @@ contract JobRegistry is Ownable {
             success: false
         });
         if (address(stakeManager) != address(0) && jobReward > 0) {
-            stakeManager.lockReward(msg.sender, uint256(jobReward));
+            stakeManager.lockJobFunds(bytes32(jobId), msg.sender, uint256(jobReward));
         }
         emit JobCreated(
             jobId,
@@ -269,7 +259,8 @@ contract JobRegistry is Ownable {
         require(job.state == State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             require(
-                stakeManager.stakes(msg.sender) >= uint256(job.stake),
+                stakeManager.stakeOf(msg.sender, IStakeManager.Role.Agent) >=
+                    uint256(job.stake),
                 "stake missing"
             );
         }
@@ -286,7 +277,7 @@ contract JobRegistry is Ownable {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
-        bool outcome = validationModule.validate(jobId);
+        bool outcome = validationModule.tally(jobId);
         job.success = outcome;
         job.state = State.Completed;
         emit JobCompleted(jobId, outcome);
@@ -335,14 +326,14 @@ contract JobRegistry is Ownable {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
         job.state = State.Finalized;
+        bytes32 jobKey = bytes32(jobId);
         if (job.success) {
-            if (address(stakeManager) != address(0)) {
-                if (job.reward > 0) {
-                    stakeManager.payReward(job.agent, uint256(job.reward));
-                }
-                if (job.stake > 0) {
-                    stakeManager.releaseStake(job.agent, uint256(job.stake));
-                }
+            if (address(stakeManager) != address(0) && job.reward > 0) {
+                stakeManager.releaseJobFunds(
+                    jobKey,
+                    job.agent,
+                    uint256(job.reward)
+                );
             }
             if (address(reputationEngine) != address(0)) {
                 reputationEngine.add(job.agent, 1);
@@ -353,13 +344,18 @@ contract JobRegistry is Ownable {
         } else {
             if (address(stakeManager) != address(0)) {
                 if (job.reward > 0) {
-                    stakeManager.payReward(job.employer, uint256(job.reward));
+                    stakeManager.releaseJobFunds(
+                        jobKey,
+                        job.employer,
+                        uint256(job.reward)
+                    );
                 }
                 if (job.stake > 0) {
                     stakeManager.slash(
                         job.agent,
-                        job.employer,
-                        uint256(job.stake)
+                        IStakeManager.Role.Agent,
+                        uint256(job.stake),
+                        job.employer
                     );
                 }
             }
@@ -383,7 +379,11 @@ contract JobRegistry is Ownable {
         require(msg.sender == job.employer, "only employer");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
-            stakeManager.payReward(job.employer, uint256(job.reward));
+            stakeManager.releaseJobFunds(
+                bytes32(jobId),
+                job.employer,
+                uint256(job.reward)
+            );
         }
         emit JobCancelled(jobId);
     }
