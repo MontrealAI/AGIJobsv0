@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
@@ -25,7 +26,7 @@ interface ICertificateNFT {
 /// @dev Tax obligations never accrue to this registry or its owner. All
 /// liabilities remain with employers, agents, and validators as expressed by
 /// the owner‑controlled `TaxPolicy` reference.
-contract JobRegistry is Ownable {
+contract JobRegistry is Ownable, ReentrancyGuard {
     enum State {
         None,
         Created,
@@ -227,6 +228,7 @@ contract JobRegistry is Ownable {
     function createJob()
         external
         requiresTaxAcknowledgement
+        nonReentrant
         returns (uint256 jobId)
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
@@ -322,7 +324,11 @@ contract JobRegistry is Ownable {
     /// @notice Finalize a job and trigger payouts and reputation changes.
     /// @dev The dispute module may call this without acknowledgement as it
     ///      merely relays the arbiter's ruling and holds no tax liability.
-    function finalize(uint256 jobId) external requiresTaxAcknowledgement {
+    function finalize(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
         job.state = State.Finalized;
