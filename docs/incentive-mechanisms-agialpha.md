@@ -19,6 +19,7 @@ This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting�
 ## 4. Sybil & Regulatory Mitigation
 - Minimum stake gates every platform deployment; failure or misconduct can slash this collateral.
 - A configurable burn percentage on each payout permanently removes tokens, countering sybil farms and increasing scarcity.
+- On-chain tax acknowledgements and blacklist thresholds are owner‑tuned, letting deployments adapt to local compliance signals while keeping addresses pseudonymous.
 - Because the protocol never takes custody or issues off‑chain payouts, there is no centralized revenue that would trigger reporting duties.
 
 ## 5. Owner Controls & User Experience
