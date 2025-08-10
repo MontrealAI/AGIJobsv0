@@ -170,7 +170,9 @@ describe("StakeManager", function () {
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await expect(
       stakeManager.connect(user).depositStake(0, 100)
-    ).to.be.revertedWith("ERC20: insufficient allowance");
+    )
+      .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
+      .withArgs(await stakeManager.getAddress(), 0n, 100n);
 
     // deposit using the new token
     await token2.mint(user.address, 200);
@@ -189,7 +191,9 @@ describe("StakeManager", function () {
       stakeManager
         .connect(owner)
         .lockJobFunds(jobId, employer.address, 100)
-    ).to.be.revertedWith("ERC20: insufficient allowance");
+    )
+      .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
+      .withArgs(await stakeManager.getAddress(), 0n, 100n);
 
     // lock and release using the new token
     await token2.mint(employer.address, 100);
