@@ -236,7 +236,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         returns (uint256 jobId)
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
-        jobId = ++nextJobId;
+        unchecked { nextJobId++; }
+        jobId = nextJobId;
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
