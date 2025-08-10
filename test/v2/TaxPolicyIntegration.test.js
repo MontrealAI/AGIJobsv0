@@ -23,7 +23,7 @@ describe("JobRegistry tax policy integration", function () {
       .to.emit(registry, "TaxPolicyUpdated")
       .withArgs(await policy.getAddress(), 1);
     expect(await registry.taxAcknowledgement()).to.equal(
-      await policy.acknowledge()
+      await policy.acknowledgement()
     );
     expect(await registry.taxPolicyURI()).to.equal("ipfs://policy");
     let details = await registry.taxPolicyDetails();
@@ -38,9 +38,12 @@ describe("JobRegistry tax policy integration", function () {
   it("tracks user acknowledgement", async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await expect(registry.connect(user).acknowledgeTaxPolicy())
-      .to.emit(registry, "TaxAcknowledged")
+      .to.emit(policy, "PolicyAcknowledged")
+      .withArgs(user.address)
+      .and.to.emit(registry, "TaxAcknowledged")
       .withArgs(user.address, 1, "ack");
     expect(await registry.taxAcknowledgedVersion(user.address)).to.equal(1);
+    expect(await policy.acknowledged(user.address)).to.equal(true);
   });
 
   it("requires re-acknowledgement after version bump", async () => {

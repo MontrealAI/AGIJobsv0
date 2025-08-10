@@ -72,6 +72,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
                 "acknowledge tax policy"
             );
+            if (address(taxPolicy) != address(0)) {
+                require(
+                    taxPolicy.acknowledged(msg.sender),
+                    "acknowledge tax policy"
+                );
+            }
         }
         _;
     }
@@ -182,7 +188,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// taxes are the responsibility of employers, agents, and validators.
     function taxAcknowledgement() external view returns (string memory) {
         if (address(taxPolicy) == address(0)) return "";
-        return taxPolicy.acknowledge();
+        return taxPolicy.acknowledgement();
     }
 
     /// @notice Returns the URI pointing to the full off-chain tax policy.
@@ -211,7 +217,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// tax responsibility.
     function acknowledgeTaxPolicy() external returns (string memory ack) {
         require(address(taxPolicy) != address(0), "policy");
-        ack = taxPolicy.acknowledge();
+        ack = taxPolicy.acknowledge(msg.sender);
         taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
         emit TaxAcknowledged(msg.sender, taxPolicyVersion, ack);
     }

@@ -34,7 +34,7 @@ describe("TaxPolicy", function () {
 
   it("allows owner to update acknowledgement", async () => {
     await tax.connect(owner).setAcknowledgement("updated ack");
-    expect(await tax.acknowledge()).to.equal("updated ack");
+    expect(await tax.acknowledgement()).to.equal("updated ack");
   });
 
   it("blocks non-owner acknowledgement updates", async () => {
@@ -46,7 +46,7 @@ describe("TaxPolicy", function () {
   });
 
   it("returns acknowledgement string", async () => {
-    const msg = await tax.acknowledge();
+    const msg = await tax.acknowledgement();
     expect(msg).to.equal("initial ack");
   });
 
@@ -59,7 +59,7 @@ describe("TaxPolicy", function () {
   it("allows owner to update URI and acknowledgement atomically", async () => {
     await tax.connect(owner).setPolicy("ipfs://u", "msg");
     expect(await tax.policyURI()).to.equal("ipfs://u");
-    expect(await tax.acknowledge()).to.equal("msg");
+    expect(await tax.acknowledgement()).to.equal("msg");
   });
 
   it("rejects non-owner setPolicy calls", async () => {
@@ -72,6 +72,13 @@ describe("TaxPolicy", function () {
 
   it("confirms the contract and owner are tax-exempt", async () => {
     expect(await tax.isTaxExempt()).to.equal(true);
+  });
+
+  it("records acknowledgement and emits event", async () => {
+    await expect(tax.connect(user).acknowledge(user.address))
+      .to.emit(tax, "PolicyAcknowledged")
+      .withArgs(user.address);
+    expect(await tax.acknowledged(user.address)).to.equal(true);
   });
 
   it("tracks policy version bumps", async () => {
