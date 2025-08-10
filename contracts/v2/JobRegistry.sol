@@ -6,6 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IFeePool} from "./interfaces/IFeePool.sol";
 
 interface IReputationEngine {
     function add(address user, uint256 amount) external;
@@ -42,6 +43,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         address agent;
         uint128 reward;
         uint96 stake;
+        uint32 feePct;
         State state;
         bool success;
     }
@@ -55,6 +57,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     IDisputeModule public disputeModule;
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
+    IFeePool public feePool;
 
     /// @notice Current version of the tax policy. Participants must acknowledge
     /// this version before interacting. The contract owner remains exempt.
@@ -84,6 +87,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     uint128 public jobReward;
     uint96 public jobStake;
+    uint256 public feePct;
 
     // module configuration events
     event ModuleUpdated(string module, address newAddress);
@@ -128,6 +132,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event JobCancelled(uint256 indexed jobId);
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    event FeePoolUpdated(address pool);
+    event FeePctUpdated(uint256 feePct);
 
     constructor(address owner) Ownable(owner) {}
 
@@ -162,6 +168,20 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("DisputeModule", address(_dispute));
         emit CertificateNFTUpdated(address(_certNFT));
         emit ModuleUpdated("CertificateNFT", address(_certNFT));
+    }
+
+    /// @notice update the FeePool contract used for revenue sharing
+    function setFeePool(IFeePool _feePool) external onlyOwner {
+        feePool = _feePool;
+        emit FeePoolUpdated(address(_feePool));
+        emit ModuleUpdated("FeePool", address(_feePool));
+    }
+
+    /// @notice update the percentage of each job reward taken as a protocol fee
+    function setFeePct(uint256 _feePct) external onlyOwner {
+        require(_feePct <= 100, "pct");
+        feePct = _feePct;
+        emit FeePctUpdated(_feePct);
     }
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
@@ -251,16 +271,23 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(jobReward > 0 || jobStake > 0, "params not set");
         unchecked { nextJobId++; }
         jobId = nextJobId;
+        uint32 feePctSnapshot = uint32(feePct);
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
             reward: jobReward,
             stake: jobStake,
+            feePct: feePctSnapshot,
             state: State.Created,
             success: false
         });
         if (address(stakeManager) != address(0) && jobReward > 0) {
-            stakeManager.lockJobFunds(bytes32(jobId), msg.sender, uint256(jobReward));
+            uint256 fee = (uint256(jobReward) * feePctSnapshot) / 100;
+            stakeManager.lockJobFunds(
+                bytes32(jobId),
+                msg.sender,
+                uint256(jobReward) + fee
+            );
         }
         emit JobCreated(
             jobId,
@@ -352,12 +379,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
         if (job.success) {
+            uint256 fee = 0;
+            if (address(feePool) != address(0) && job.reward > 0) {
+                fee = (uint256(job.reward) * job.feePct) / 100;
+                if (fee > 0) {
+                    stakeManager.releaseJobFunds(jobKey, address(feePool), fee);
+                    feePool.depositFee(fee);
+                }
+            }
             if (address(stakeManager) != address(0) && job.reward > 0) {
-                stakeManager.releaseJobFunds(
-                    jobKey,
-                    job.agent,
-                    uint256(job.reward)
-                );
+                stakeManager.releaseJobFunds(jobKey, job.agent, uint256(job.reward));
             }
             if (address(reputationEngine) != address(0)) {
                 reputationEngine.add(job.agent, 1);
@@ -367,11 +398,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             }
         } else {
             if (address(stakeManager) != address(0)) {
+                uint256 fee = (uint256(job.reward) * job.feePct) / 100;
                 if (job.reward > 0) {
                     stakeManager.releaseJobFunds(
                         jobKey,
                         job.employer,
-                        uint256(job.reward)
+                        uint256(job.reward) + fee
                     );
                 }
                 if (job.stake > 0) {
@@ -403,10 +435,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(msg.sender == job.employer, "only employer");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
+            uint256 fee = (uint256(job.reward) * job.feePct) / 100;
             stakeManager.releaseJobFunds(
                 bytes32(jobId),
                 job.employer,
-                uint256(job.reward)
+                uint256(job.reward) + fee
             );
         }
         emit JobCancelled(jobId);

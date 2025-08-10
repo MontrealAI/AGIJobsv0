@@ -59,11 +59,9 @@ contract FeePoolTest {
 
     function testDepositFee() public {
         setUp();
-        token.mint(jobRegistry, 1_000_000);
-        vm.startPrank(jobRegistry);
-        token.approve(address(feePool), 1_000_000);
+        token.mint(address(feePool), 1_000_000);
+        vm.prank(jobRegistry);
         feePool.depositFee(1_000_000);
-        vm.stopPrank();
         uint256 expected = 1_000_000 * feePool.ACCUMULATOR_SCALE() / 3_000_000;
         require(feePool.cumulativePerToken() == expected, "acc");
         require(token.balanceOf(address(feePool)) == 1_000_000, "bal");
@@ -71,11 +69,9 @@ contract FeePoolTest {
 
     function testClaimRewards() public {
         setUp();
-        token.mint(jobRegistry, 1_500_000);
-        vm.startPrank(jobRegistry);
-        token.approve(address(feePool), 1_500_000);
+        token.mint(address(feePool), 1_500_000);
+        vm.prank(jobRegistry);
         feePool.depositFee(1_500_000);
-        vm.stopPrank();
         vm.prank(alice);
         feePool.claimRewards();
         uint256 expected = 1_500_000 * 1_000_000 / 3_000_000;
@@ -87,11 +83,9 @@ contract FeePoolTest {
         TestToken token2 = new TestToken();
         vm.prank(address(this));
         feePool.setToken(token2);
-        token2.mint(jobRegistry, 1_000_000);
-        vm.startPrank(jobRegistry);
-        token2.approve(address(feePool), 1_000_000);
+        token2.mint(address(feePool), 1_000_000);
+        vm.prank(jobRegistry);
         feePool.depositFee(1_000_000);
-        vm.stopPrank();
         vm.prank(alice);
         feePool.claimRewards();
         require(token2.balanceOf(alice) == 333_333, "switch");
@@ -99,11 +93,9 @@ contract FeePoolTest {
 
     function testPrecisionSixDecimals() public {
         setUp();
-        token.mint(jobRegistry, 1_000_000);
-        vm.startPrank(jobRegistry);
-        token.approve(address(feePool), 1_000_000);
+        token.mint(address(feePool), 1_000_000);
+        vm.prank(jobRegistry);
         feePool.depositFee(1_000_000);
-        vm.stopPrank();
         vm.prank(alice);
         feePool.claimRewards();
         vm.prank(bob);
