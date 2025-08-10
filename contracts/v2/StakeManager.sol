@@ -32,7 +32,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     address public treasury;
 
     /// @notice JobRegistry contract tracking tax policy acknowledgements
-    IJobRegistryTax public jobRegistry;
+    address public jobRegistry;
 
     /// @notice minimum required stake
     uint256 public minStake;
@@ -112,9 +112,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice set the JobRegistry used for tax acknowledgement tracking
-    function setJobRegistry(IJobRegistryTax _jobRegistry) external onlyOwner {
+    function setJobRegistry(address _jobRegistry) external onlyOwner {
         jobRegistry = _jobRegistry;
-        emit JobRegistryUpdated(address(_jobRegistry));
+        emit JobRegistryUpdated(_jobRegistry);
     }
 
     /// @notice set the dispute module authorized to manage dispute fees
@@ -130,14 +130,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice require caller to acknowledge current tax policy
     modifier requiresTaxAcknowledgement() {
         if (msg.sender != owner()) {
-            address registry = address(jobRegistry);
+            address registry = jobRegistry;
             require(registry != address(0), "job registry");
+            IJobRegistryTax reg = IJobRegistryTax(registry);
             require(
-                jobRegistry.taxAcknowledgedVersion(msg.sender) ==
-                    jobRegistry.taxPolicyVersion(),
+                reg.taxAcknowledgedVersion(msg.sender) ==
+                    reg.taxPolicyVersion(),
                 "acknowledge tax policy"
             );
         }
+        _;
+    }
+
+    modifier onlyJobRegistry() {
+        require(msg.sender == jobRegistry, "only job registry");
         _;
     }
 
@@ -182,7 +188,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice lock job funds from an employer
     function lockJobFunds(bytes32 jobId, address from, uint256 amount)
         external
-        onlyOwner
+        onlyJobRegistry
     {
         token.safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
@@ -192,7 +198,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice release locked job funds to recipient
     function releaseJobFunds(bytes32 jobId, address to, uint256 amount)
         external
-        onlyOwner
+        onlyJobRegistry
     {
         uint256 escrow = jobEscrows[jobId];
         require(escrow >= amount, "escrow");
@@ -232,7 +238,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice slash stake from a user for a specific role and distribute shares
     function slash(address user, Role role, uint256 amount, address employer)
         external
-        onlyOwner
+        onlyJobRegistry
     {
         uint256 staked = stakes[user][role];
         require(staked >= amount, "stake");
