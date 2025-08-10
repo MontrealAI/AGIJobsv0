@@ -24,6 +24,8 @@ contract MockStakeManager is IStakeManager {
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
 
+    function setSlashPercentSumEnforcement(bool) external override {}
+
     function slash(address user, Role role, uint256 amount, address)
         external
         override

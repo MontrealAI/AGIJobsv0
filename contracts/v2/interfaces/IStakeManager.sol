@@ -25,6 +25,7 @@ interface IStakeManager {
     event DisputeModuleUpdated(address module);
     event TokenUpdated(address token);
     event ParametersUpdated();
+    event SlashPercentSumEnforcementUpdated(bool enforced);
 
     /// @notice deposit stake for caller for a specific role
     function depositStake(Role role, uint256 amount) external;
@@ -49,6 +50,9 @@ interface IStakeManager {
 
     /// @notice slash stake from a user for a specific role
     function slash(address user, Role role, uint256 amount, address employer) external;
+
+    /// @notice toggle enforcement requiring slashing percentages to sum to 100
+    function setSlashPercentSumEnforcement(bool enforced) external;
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);

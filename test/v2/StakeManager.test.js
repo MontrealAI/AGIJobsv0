@@ -257,6 +257,59 @@ describe("StakeManager", function () {
     expect(await stakeManager.treasurySlashPct()).to.equal(30);
   });
 
+  it("slashes full amount when percentages sum under 100", async () => {
+    await stakeManager.connect(owner).setSlashingPercentages(60, 20);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    await stakeManager
+      .connect(owner)
+      .slash(owner.address, 0, 100, employer.address);
+    expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
+    expect(await token.balanceOf(employer.address)).to.equal(1060n);
+    expect(await token.balanceOf(treasury.address)).to.equal(20n);
+    expect(
+      await token.balanceOf(await stakeManager.getAddress())
+    ).to.equal(20n);
+  });
+
+  it("slashes full amount when percentages sum to 100", async () => {
+    await stakeManager.connect(owner).setSlashingPercentages(70, 30);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    await stakeManager
+      .connect(owner)
+      .slash(owner.address, 0, 100, employer.address);
+    expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
+    expect(await token.balanceOf(employer.address)).to.equal(1070n);
+    expect(await token.balanceOf(treasury.address)).to.equal(30n);
+    expect(
+      await token.balanceOf(await stakeManager.getAddress())
+    ).to.equal(0n);
+  });
+
+  it("reverts when slashing percentages sum over 100", async () => {
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(60, 50)
+    ).to.be.revertedWith("pct");
+  });
+
+  it("can enforce percentage sum to 100", async () => {
+    await stakeManager.connect(owner).setSlashingPercentages(60, 20);
+    await stakeManager
+      .connect(owner)
+      .setSlashPercentSumEnforcement(true);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    await expect(
+      stakeManager
+        .connect(owner)
+        .slash(owner.address, 0, 100, employer.address)
+    ).to.be.revertedWith("pct");
+  });
+
   it("restricts treasury updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setTreasury(user.address)
