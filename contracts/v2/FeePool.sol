@@ -67,7 +67,11 @@ contract FeePool is Ownable {
         _;
     }
 
-    /// @notice deposit job fee for distribution to stakers
+    /// @notice account for newly received job fees
+    /// @dev assumes `amount` tokens have already been transferred to this
+    ///      contract (typically by `StakeManager.releaseJobFunds`). Only the
+    ///      `JobRegistry` may call this to keep accounting trustless while the
+    ///      registry itself never holds custody of user funds.
     /// @param amount fee amount scaled to 6 decimals
     function depositFee(uint256 amount) external onlyJobRegistry {
         uint256 total = stakeManager.totalStake(rewardRole);
@@ -75,9 +79,8 @@ contract FeePool is Ownable {
         uint256 burnAmount = (amount * burnPct) / 100;
         uint256 distribute = amount - burnAmount;
         cumulativePerToken += (distribute * ACCUMULATOR_SCALE) / total;
-        token.safeTransferFrom(msg.sender, address(this), distribute);
         if (burnAmount > 0) {
-            token.safeTransferFrom(msg.sender, address(0), burnAmount);
+            token.safeTransfer(address(0), burnAmount);
         }
         emit FeeDeposited(msg.sender, distribute);
     }

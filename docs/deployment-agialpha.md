@@ -8,20 +8,23 @@ This guide walks a non-technical owner through deploying and configuring the mod
 - Sufficient ETH for gas fees and $AGIALPHA for testing job flows.
 
 ## 1. Deploy the Modules
-1. **StakeManager** – constructor arguments `(tokenAddress, owner)`.
+1. **StakeManager** – constructor arguments `(tokenAddress, owner, treasury)`.
 2. **JobRegistry** – constructor argument `owner`.
 3. **ValidationModule** – constructor arguments `(jobRegistry, stakeManager, owner)`.
 4. **ReputationEngine** – constructor argument `owner`.
 5. **DisputeModule** – constructor arguments `(jobRegistry, stakeManager, reputationEngine, owner)`.
 6. **CertificateNFT** – constructor arguments `(name, symbol, owner)`.
-7. **TaxPolicy** – constructor argument `owner`.
+7. **FeePool** – constructor arguments `(token, stakeManager, rewardRole, owner)`; set `rewardRole` to `2` for platform operators.
+8. **TaxPolicy** – constructor argument `owner`.
+9. *(Optional)* **JobRouter** and **DiscoveryModule** for stake‑weighted routing and search.
 
 Use the *Deploy* tab on each contract's Etherscan page. Confirm transactions through your wallet.
 
 ## 2. Wire the Modules
 1. In **JobRegistry**, call `setModules(validation, stakeManager, reputation, dispute, certificate)`.
 2. In **StakeManager**, call `setJobRegistry(jobRegistry)`.
-3. In **JobRegistry**, call `setTaxPolicy(taxPolicy)` and optionally `bumpTaxPolicyVersion`.
+3. In **JobRegistry**, call `setFeePool(feePool)` then `setFeePct(pct)` to choose the percentage of each job reward routed to the pool.
+4. In **JobRegistry**, call `setTaxPolicy(taxPolicy)` and optionally `bumpTaxPolicyVersion`.
 
 ## 3. Configure Token Parameters
 The StakeManager already points to $AGIALPHA (6 decimals). To change tokens later, use `setToken(newToken)`.
@@ -38,9 +41,10 @@ Update parameters as needed:
 - `StakeManager.setSlashingPercentages(employerPct, treasuryPct)`
 - `ValidationModule.setParameters(...)`
 - `DisputeModule.setAppealFee(fee)` (denominated in $AGIALPHA)
+- `FeePool.setBurnPct(pct)` to automatically destroy a portion of each fee
 
 ## 4. Post a Job
-1. Employer approves $AGIALPHA to the StakeManager via the token's `approve` function.
+1. Employer approves $AGIALPHA to the StakeManager via the token's `approve` function. The approval must cover the reward plus the protocol fee (`reward * feePct / 100`).
 2. Employer calls `JobRegistry.acknowledgeTaxPolicy()` once per address.
 3. Employer calls `JobRegistry.createJob(uri, reward)` where `reward` is in base units.
 
@@ -52,7 +56,10 @@ Update parameters as needed:
 - After validation, anyone may call `JobRegistry.finalize(jobId)` to release escrowed $AGIALPHA.
 - If contested, raise an appeal with `DisputeModule.raiseDispute(jobId)`. Fees are charged in $AGIALPHA.
 
-## 7. Changing the Token
+## 7. Platform Operator Rewards
+Platform owners stake under `Role.Platform` via `StakeManager.depositStake(2, amount)`. As jobs finalize, `FeePool` receives the protocol fee and streams rewards. Operators claim with `FeePool.claimRewards()` directly through Etherscan.
+
+## 8. Changing the Token
 Only the owner may switch currencies: `StakeManager.setToken(newToken)`. Existing stakes and escrows remain untouched; new deposits and payouts use the updated token.
 
 ## Security Notes
