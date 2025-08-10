@@ -145,13 +145,12 @@ graph TD
 
 ### Incentive Summary
 
-- Agents and validators post $AGIALPHA collateral and are slashed for dishonest behaviour.
-- Protocol fees stream to staking operators through an on-chain `FeePool`, requiring no off-chain reporting.
-- Job routing and discovery modules prioritise platforms with higher stake and reputation, granting visibility and validator throughput advantages.
-- Governance uses token-weighted voting; active voters earn bonus shares from future `FeePool` epochs.
-- Minimum stake gates, configurable burns and reputation thresholds deter sybil attacks while keeping supply deflationary.
-- All value flows occur directly between pseudonymous wallets in $AGIALPHA, keeping operators tax-neutral and the owner revenue-free.
-- Every incentive parameter is adjustable only by the contract owner through on-chain setters, so a non-technical operator can tune fees, burns, and stake thresholds via Etherscan without redeploying.
+- **On-chain revenue sharing** – the `FeePool` redistributes protocol fees to platform operators in proportion to their staked $AGIALPHA so rewards require no off-chain reporting.
+- **Algorithmic & reputational perks** – `JobRouter`, `DiscoveryModule` and the `ReputationEngine` grant stake‑weighted job routing priority, validator throughput and search visibility.
+- **Governance-aligned rewards** – staked operators vote on parameters and participating voters earn small bonus shares in the next `FeePool` epoch.
+- **Sybil & regulatory mitigation** – minimum stakes, slashing, configurable burns and on-chain tax acknowledgements keep operations pseudonymous while deterring sybil attacks.
+- **Pseudonymous value flows** – all transfers occur directly between wallets in $AGIALPHA, leaving operators tax-neutral and the owner revenue-free.
+- **Owner-controlled & Etherscan-friendly** – only the contract owner can adjust fees, burns, stake thresholds or even swap the token, and every action uses simple function calls suitable for Etherscan.
 
 ### Economic Model
 
