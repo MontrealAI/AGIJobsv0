@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 
 /// @title StakeManager
@@ -15,7 +16,7 @@ import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 ///      instance `2` tokens should be provided as `2_000_000`. Contracts that
 ///      operate on 18‑decimal tokens must downscale by `1e12`, which may cause
 ///      precision loss.
-contract StakeManager is Ownable {
+contract StakeManager is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice participant roles
@@ -129,7 +130,11 @@ contract StakeManager is Ownable {
     }
 
     /// @notice deposit stake for caller for a specific role
-    function depositStake(Role role, uint256 amount) external requiresTaxAcknowledgement {
+    function depositStake(Role role, uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         require(amount > 0, "amount");
         uint256 newStake = stakes[msg.sender][role] + amount;
         require(newStake >= minStake, "min stake");
@@ -139,7 +144,11 @@ contract StakeManager is Ownable {
     }
 
     /// @notice withdraw available stake for a specific role
-    function withdrawStake(Role role, uint256 amount) external requiresTaxAcknowledgement {
+    function withdrawStake(Role role, uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         uint256 staked = stakes[msg.sender][role];
         require(staked >= amount, "stake");
         uint256 newStake = staked - amount;
