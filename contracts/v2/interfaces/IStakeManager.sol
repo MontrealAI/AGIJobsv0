@@ -20,6 +20,9 @@ interface IStakeManager {
         uint256 amount,
         address indexed employer
     );
+    event DisputeFeeLocked(address indexed payer, uint256 amount);
+    event DisputeFeePaid(address indexed to, uint256 amount);
+    event DisputeModuleUpdated(address module);
     event TokenUpdated(address token);
     event ParametersUpdated();
 
@@ -34,6 +37,15 @@ interface IStakeManager {
 
     /// @notice release locked job funds to recipient
     function releaseJobFunds(bytes32 jobId, address to, uint256 amount) external;
+
+    /// @notice set the dispute module authorized to manage dispute fees
+    function setDisputeModule(address module) external;
+
+    /// @notice lock a dispute fee from the payer
+    function lockDisputeFee(address payer, uint256 amount) external;
+
+    /// @notice pay out a locked dispute fee to the recipient
+    function payDisputeFee(address to, uint256 amount) external;
 
     /// @notice slash stake from a user for a specific role
     function slash(address user, Role role, uint256 amount, address employer) external;
