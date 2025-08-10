@@ -138,6 +138,86 @@ describe("StakeManager", function () {
     expect(await stakeManager.token()).to.equal(await token2.getAddress());
   });
 
+  it("uses new token for deposits and payouts after update", async () => {
+    const Token2 = await ethers.getContractFactory("MockERC20");
+    const token2 = await Token2.deploy();
+
+    // wire job registry so user can stake
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    // owner updates staking token
+    await stakeManager.connect(owner).setToken(await token2.getAddress());
+
+    // old token approvals have no effect
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await expect(
+      stakeManager.connect(user).depositStake(0, 100)
+    )
+      .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
+      .withArgs(await stakeManager.getAddress(), 0n, 100n);
+
+    // deposit using the new token
+    await token2.mint(user.address, 200);
+    await token2.connect(user).approve(await stakeManager.getAddress(), 200);
+    await expect(
+      stakeManager.connect(user).depositStake(0, 200)
+    )
+      .to.emit(stakeManager, "StakeDeposited")
+      .withArgs(user.address, 0, 200);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(200n);
+
+    // locking funds with old token fails
+    const jobId = ethers.encodeBytes32String("job1");
+    await token.connect(employer).approve(await stakeManager.getAddress(), 100);
+    await expect(
+      stakeManager
+        .connect(owner)
+        .lockJobFunds(jobId, employer.address, 100)
+    )
+      .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
+      .withArgs(await stakeManager.getAddress(), 0n, 100n);
+
+    // lock and release using the new token
+    await token2.mint(employer.address, 100);
+    await token2
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), 100);
+    await stakeManager
+      .connect(owner)
+      .lockJobFunds(jobId, employer.address, 100);
+    await expect(
+      stakeManager
+        .connect(owner)
+        .releaseJobFunds(jobId, user.address, 100)
+    )
+      .to.emit(stakeManager, "JobFundsReleased")
+      .withArgs(jobId, user.address, 100);
+
+    // balances reflect only the new token being used
+    expect(await token.balanceOf(user.address)).to.equal(1000n);
+    expect(await token2.balanceOf(user.address)).to.equal(100n);
+    expect(await token.balanceOf(employer.address)).to.equal(1000n);
+    expect(await token2.balanceOf(employer.address)).to.equal(0n);
+  });
+
   it("restricts min stake updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setMinStake(1)
