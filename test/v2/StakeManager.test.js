@@ -359,13 +359,14 @@ describe("StakeManager", function () {
 
     const lockDuration = 3600n;
     const current = BigInt(await time.latest());
+    const expectedUnlock = current + 1n + lockDuration;
     await expect(
       stakeManager
         .connect(registrySigner)
         .lockStake(user.address, 200, Number(lockDuration))
     )
       .to.emit(stakeManager, "StakeLocked")
-      .withArgs(user.address, 200n, current + lockDuration);
+      .withArgs(user.address, 200n, expectedUnlock);
 
     await expect(
       stakeManager.connect(user).withdrawStake(0, 1)
