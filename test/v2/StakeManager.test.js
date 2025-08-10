@@ -358,14 +358,14 @@ describe("StakeManager", function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const lockDuration = 3600n;
-    const current = await time.latest();
+    const current = BigInt(await time.latest());
     await expect(
       stakeManager
         .connect(registrySigner)
         .lockStake(user.address, 200, Number(lockDuration))
     )
       .to.emit(stakeManager, "StakeLocked")
-      .withArgs(user.address, 200, current + lockDuration);
+      .withArgs(user.address, 200n, current + lockDuration);
 
     await expect(
       stakeManager.connect(user).withdrawStake(0, 1)
@@ -377,9 +377,9 @@ describe("StakeManager", function () {
       stakeManager.connect(user).withdrawStake(0, 50)
     )
       .to.emit(stakeManager, "StakeUnlocked")
-      .withArgs(user.address, 200)
+      .withArgs(user.address, 200n)
       .and.to.emit(stakeManager, "StakeWithdrawn")
-      .withArgs(user.address, 0, 50);
+      .withArgs(user.address, 0, 50n);
   });
 
   it("allows slashing during active lock", async () => {
