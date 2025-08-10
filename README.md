@@ -13,6 +13,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [AGIJobs NFT contract on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) / [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts) – cross-check the address on multiple explorers before trading.
 - [$AGI token contract on Etherscan](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code) / [Blockscout](https://eth.blockscout.com/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D?tab=contract) – cross-verify the token address before transacting.
 - [$AGIALPHA token contract on Etherscan](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe#code) – verify this 6‑decimal token on-chain before using it for staking or payments.
+- [AGIALPHAToken source](contracts/v2/AGIALPHAToken.sol) – default 6‑decimal ERC‑20 with owner‑controlled mint and burn.
 - [Etherscan Interaction Guide](docs/etherscan-guide.md) – module diagram, deployed addresses, role-based instructions, and verification checklist.
 - [Project Overview](docs/overview.md) – architecture diagram, module summaries, governance table, incentive mechanics, deployment addresses, and quick start.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
@@ -144,6 +145,10 @@ graph TD
 - Agents and validators must stake $AGIALPHA; dishonest behaviour is slashed.
 - Correct validators share rewards while employers receive a portion of slashed stakes.
 - Burn and stake parameters make cheating unprofitable, keeping honest participation in equilibrium.
+- Platform operators that stake $AGIALPHA receive on-chain fee dividends from `FeePool` with no off-chain accounting.
+- Higher stake and reputation improve job-routing priority and validator access, granting discovery advantages.
+- Minimum stake requirements, reputation thresholds and tax-policy acknowledgements make Sybil attacks costly.
+- All rewards flow directly to wallets in $AGIALPHA, keeping the protocol pseudonymous and tax-neutral.
 
 ### Economic Model
 
