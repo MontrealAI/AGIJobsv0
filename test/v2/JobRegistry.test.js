@@ -104,6 +104,45 @@ describe("JobRegistry integration", function () {
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
 
+  it("distributes platform fee to stakers", async () => {
+    // set up fee pool rewarding platform stakers
+    const FeePool = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
+    const feePool = await FeePool.deploy(
+      await token.getAddress(),
+      await stakeManager.getAddress(),
+      2,
+      owner.address
+    );
+    await registry.connect(owner).setFeePool(await feePool.getAddress());
+    await registry.connect(owner).setFeePct(10); // 10%
+    await token.mint(owner.address, reward);
+    await token
+      .connect(owner)
+      .approve(await stakeManager.getAddress(), reward);
+    await stakeManager
+      .connect(owner)
+      .depositStake(2, reward); // owner is platform operator
+
+    // employer locks reward + fee
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward + reward / 10);
+    await registry.connect(employer).createJob();
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId);
+    await validation.connect(owner).setResult(true);
+    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(employer).finalize(jobId);
+
+    // platform operator should be able to claim fee
+    const before = await token.balanceOf(owner.address);
+    await feePool.connect(owner).claimRewards();
+    const after = await token.balanceOf(owner.address);
+    expect(after - before).to.equal(BigInt(reward / 10));
+  });
+
   it("handles collusion resolved by dispute", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await registry.connect(employer).createJob();
