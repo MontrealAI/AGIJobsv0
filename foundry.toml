@@ -1,0 +1,6 @@
+[profile.default]
+src = 'contracts/v2'
+test = 'test/v2'
+libs = ['lib', 'node_modules']
+remappings = ['@openzeppelin/contracts=node_modules/@openzeppelin/contracts']
+via_ir = true
