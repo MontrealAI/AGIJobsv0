@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryTax} from "./v2/interfaces/IJobRegistryTax.sol";
 
 /// @title StakeManager
@@ -12,7 +13,7 @@ import {IJobRegistryTax} from "./v2/interfaces/IJobRegistryTax.sol";
 ///      Example: to stake 5 tokens pass `5_000_000`. Integrations with
 ///      standard 18-decimal ERC-20s must downscale amounts by 1e12, which
 ///      can introduce precision loss.
-contract StakeManager is Ownable {
+contract StakeManager is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IERC20 public token;
@@ -59,14 +60,22 @@ contract StakeManager is Ownable {
     }
 
     /// @notice Deposit stake for the caller.
-    function depositStake(uint256 amount) external requiresTaxAcknowledgement {
+    function depositStake(uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         token.safeTransferFrom(msg.sender, address(this), amount);
         stakes[msg.sender] += amount;
         emit StakeDeposited(msg.sender, amount);
     }
 
     /// @notice Withdraw stake for the caller.
-    function withdrawStake(uint256 amount) external requiresTaxAcknowledgement {
+    function withdrawStake(uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         uint256 staked = stakes[msg.sender];
         require(staked >= amount, "insufficient stake");
         stakes[msg.sender] = staked - amount;
@@ -75,19 +84,31 @@ contract StakeManager is Ownable {
     }
 
     /// @notice Lock reward funds from an employer for a job.
-    function lockReward(address from, uint256 amount) external onlyOwner {
+    function lockReward(address from, uint256 amount)
+        external
+        onlyOwner
+        nonReentrant
+    {
         token.safeTransferFrom(from, address(this), amount);
         emit RewardLocked(from, amount);
     }
 
     /// @notice Pay job reward to the recipient.
-    function payReward(address to, uint256 amount) external onlyOwner {
+    function payReward(address to, uint256 amount)
+        external
+        onlyOwner
+        nonReentrant
+    {
         token.safeTransfer(to, amount);
         emit RewardPaid(to, amount);
     }
 
     /// @notice Slash stake from a user and send to a recipient.
-    function slash(address user, address recipient, uint256 amount) external onlyOwner {
+    function slash(address user, address recipient, uint256 amount)
+        external
+        onlyOwner
+        nonReentrant
+    {
         uint256 staked = stakes[user];
         require(staked >= amount, "insufficient stake");
         stakes[user] = staked - amount;
@@ -96,7 +117,11 @@ contract StakeManager is Ownable {
     }
 
     /// @notice Release stake back to a user (used on job completion).
-    function releaseStake(address user, uint256 amount) external onlyOwner {
+    function releaseStake(address user, uint256 amount)
+        external
+        onlyOwner
+        nonReentrant
+    {
         uint256 staked = stakes[user];
         require(staked >= amount, "insufficient stake");
         stakes[user] = staked - amount;
