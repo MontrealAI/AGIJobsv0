@@ -21,9 +21,10 @@ This sprint adds revenue sharing and routing incentives to the v2 suite while pr
 4. **DiscoveryModule**
    - Index platforms and expose a paginated list sorted by stake and reputation.
    - Include a stake badge for UI clients.
-5. **Governance Hooks**
+5. **Dispute & Governance Hooks**
    - Add token‑weighted voting using staked balances for configuration changes (e.g., fee rates).
    - Implement bonus distribution to participating voters in the next `FeePool` epoch.
+   - Denominate appeal deposits in $AGIALPHA via `DisputeModule.setAppealFee` and route slashed fees to the `FeePool` or burner.
 6. **Sybil Mitigations**
    - Enforce minimum stake for platform registration.
    - Add optional identity commitments or human‑check modules that can be toggled by the owner.
