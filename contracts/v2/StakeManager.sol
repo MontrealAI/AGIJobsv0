@@ -53,6 +53,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice aggregate stake per role
     mapping(Role => uint256) public totalStakes;
 
+    /// @notice minimum time-locked stake per user
+    mapping(address => uint256) public lockedStakes;
+
+    /// @notice unlock timestamp for a user's locked stake
+    mapping(address => uint64) public unlockTime;
+
+    /// @notice maximum total stake allowed per address
+    uint256 public maxStakePerAddress;
+
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
 
@@ -80,6 +89,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event TreasuryUpdated(address indexed treasury);
     event JobRegistryUpdated(address indexed registry);
     event SlashPercentSumEnforcementUpdated(bool enforced);
+    event MaxStakePerAddressUpdated(uint256 maxStake);
+    event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
+    event StakeUnlocked(address indexed user, uint256 amount);
 
     constructor(IERC20 _token, address owner, address _treasury) Ownable(owner) {
         token = _token;
@@ -137,6 +149,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit DisputeModuleUpdated(module);
     }
 
+    /// @notice set maximum total stake allowed per address (0 disables limit)
+    function setMaxStakePerAddress(uint256 maxStake) external onlyOwner {
+        maxStakePerAddress = maxStake;
+        emit MaxStakePerAddressUpdated(maxStake);
+    }
+
     // ---------------------------------------------------------------
     // staking logic
     // ---------------------------------------------------------------
@@ -166,6 +184,24 @@ contract StakeManager is Ownable, ReentrancyGuard {
         _;
     }
 
+    /// @notice lock a portion of a user's stake for a period of time
+    function lockStake(address user, uint256 amount, uint64 lockTime)
+        external
+        onlyJobRegistry
+    {
+        uint256 total =
+            stakes[user][Role.Agent] +
+            stakes[user][Role.Validator] +
+            stakes[user][Role.Platform];
+        require(total >= lockedStakes[user] + amount, "stake");
+        uint64 newUnlock = uint64(block.timestamp + lockTime);
+        if (newUnlock > unlockTime[user]) {
+            unlockTime[user] = newUnlock;
+        }
+        lockedStakes[user] += amount;
+        emit StakeLocked(user, amount, unlockTime[user]);
+    }
+
     /// @notice deposit stake for caller for a specific role
     function depositStake(Role role, uint256 amount)
         external
@@ -175,6 +211,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
         require(amount > 0, "amount");
         uint256 newStake = stakes[msg.sender][role] + amount;
         require(newStake >= minStake, "min stake");
+
+        if (maxStakePerAddress > 0) {
+            uint256 total =
+                stakes[msg.sender][Role.Agent] +
+                stakes[msg.sender][Role.Validator] +
+                stakes[msg.sender][Role.Platform] +
+                amount;
+            require(total <= maxStakePerAddress, "max stake");
+        }
+
         stakes[msg.sender][role] = newStake;
         totalStakes[role] += amount;
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -191,6 +237,24 @@ contract StakeManager is Ownable, ReentrancyGuard {
         require(staked >= amount, "stake");
         uint256 newStake = staked - amount;
         require(newStake == 0 || newStake >= minStake, "min stake");
+
+        uint256 locked = lockedStakes[msg.sender];
+        uint64 unlock = unlockTime[msg.sender];
+        uint256 totalStakeUser =
+            stakes[msg.sender][Role.Agent] +
+            stakes[msg.sender][Role.Validator] +
+            stakes[msg.sender][Role.Platform];
+        uint256 remaining = totalStakeUser - amount;
+        if (locked > 0) {
+            if (block.timestamp < unlock) {
+                require(remaining >= locked, "locked");
+            } else {
+                lockedStakes[msg.sender] = 0;
+                unlockTime[msg.sender] = 0;
+                emit StakeUnlocked(msg.sender, locked);
+            }
+        }
+
         stakes[msg.sender][role] = newStake;
         totalStakes[role] -= amount;
         token.safeTransfer(msg.sender, amount);
@@ -269,6 +333,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
         stakes[user][role] = staked - amount;
         totalStakes[role] -= amount;
+
+        uint256 locked = lockedStakes[user];
+        if (locked > 0) {
+            if (amount >= locked) {
+                lockedStakes[user] = 0;
+                unlockTime[user] = 0;
+                emit StakeUnlocked(user, locked);
+            } else {
+                lockedStakes[user] = locked - amount;
+            }
+        }
 
         if (employerShare > 0) {
             token.safeTransfer(employer, employerShare);

@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("StakeManager", function () {
   let token, stakeManager, owner, user, employer, treasury;
@@ -326,6 +327,104 @@ describe("StakeManager", function () {
       .to.emit(stakeManager, "TreasuryUpdated")
       .withArgs(user.address);
     expect(await stakeManager.treasury()).to.equal(user.address);
+  });
+
+  it("enforces stake locks and unlocks after expiry", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await stakeManager.connect(user).depositStake(0, 200);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    const lockDuration = 3600n;
+    const current = await time.latest();
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .lockStake(user.address, 200, Number(lockDuration))
+    )
+      .to.emit(stakeManager, "StakeLocked")
+      .withArgs(user.address, 200, current + lockDuration);
+
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 1)
+    ).to.be.revertedWith("locked");
+
+    await time.increase(lockDuration);
+
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 50)
+    )
+      .to.emit(stakeManager, "StakeUnlocked")
+      .withArgs(user.address, 200)
+      .and.to.emit(stakeManager, "StakeWithdrawn")
+      .withArgs(user.address, 0, 50);
+  });
+
+  it("allows slashing during active lock", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await stakeManager.connect(user).depositStake(0, 200);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await stakeManager
+      .connect(registrySigner)
+      .lockStake(user.address, 100, 3600);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .slash(user.address, 0, 100, employer.address)
+    )
+      .to.emit(stakeManager, "StakeSlashed")
+      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50)
+      .and.to.emit(stakeManager, "StakeUnlocked")
+      .withArgs(user.address, 100);
+
+    expect(await stakeManager.lockedStakes(user.address)).to.equal(0n);
   });
 });
 
