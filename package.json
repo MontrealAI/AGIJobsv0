@@ -21,5 +21,8 @@
     "solhint": "^6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@prb/math": "^4.0.1"
   }
 }

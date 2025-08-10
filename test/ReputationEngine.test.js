@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("ReputationEngine", function () {
   let engine, owner, agentCaller, validatorCaller, user;
@@ -60,6 +61,17 @@ describe("ReputationEngine", function () {
     await expect(engine.connect(agentCaller).setValidatorThreshold(1))
       .to.be.revertedWithCustomError(engine, "OwnableUnauthorizedAccount")
       .withArgs(agentCaller.address);
+  });
+
+  it("applies exponential decay over time", async () => {
+    const LN2 = 693147180559945309n; // ln(2) scaled by 1e18
+    await engine.connect(owner).setDecayConstant(LN2);
+    await engine.connect(agentCaller).addReputation(user.address, 100n);
+    await time.increase(1);
+    const rep = await engine.reputationOf(user.address, 1);
+    const expected = 50n;
+    const diff = rep > expected ? rep - expected : expected - rep;
+    expect(diff).to.be.lte(1n);
   });
 });
 
