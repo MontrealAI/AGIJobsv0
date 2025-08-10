@@ -4,22 +4,12 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
 /// @dev All token amounts use 6 decimals. Uses an accumulator scaled by 1e12
 ///      to avoid precision loss when dividing fees by total stake.
-interface IStakeManager {
-    enum Role {
-        Agent,
-        Validator,
-        Platform
-    }
-
-    function stakeOf(address user, Role role) external view returns (uint256);
-    function totalStake(Role role) external view returns (uint256);
-    function jobRegistry() external view returns (address);
-}
 
 contract FeePool is Ownable {
     using SafeERC20 for IERC20;

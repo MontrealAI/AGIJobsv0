@@ -26,6 +26,9 @@ contract MockStakeManager is IStakeManager {
 
     mapping(address => mapping(Role => uint256)) public stakes;
     mapping(Role => uint256) public totalStakes;
+    address public jobRegistryAddr;
+
+    function setJobRegistry(address j) external { jobRegistryAddr = j; }
 
     function setStake(address user, Role role, uint256 amount) external {
         totalStakes[role] = totalStakes[role] - stakes[user][role] + amount;
@@ -36,6 +39,9 @@ contract MockStakeManager is IStakeManager {
     }
     function totalStake(Role role) external view override returns (uint256) {
         return totalStakes[role];
+    }
+    function jobRegistry() external view override returns (address) {
+        return jobRegistryAddr;
     }
 }
 
