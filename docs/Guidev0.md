@@ -34,69 +34,62 @@ This guide walks you through setting up the AGI Jobs v2 smart contracts on Ether
 ---
 
 ```mermaid
-flowchart LR
-%% =========================
-%% AGI JOBS v2 — Etherscan Super-Guide (ASI Edition)
-%% =========================
+flowchart TB
+%% ============================================================
+%%  AGI JOBS v2 — ETHEREUM MAINNET VIA ETHERSCAN (ASI EDITION)
+%%  Iconic • Incredible • Vibrant • No-Code • Civilizational-Scale
+%% ============================================================
 
-%% --- Styles (neon, high-contrast) ---
-classDef hdr fill:#0b0f19,stroke:#94a3b8,stroke-width:2px,color:#e2e8f0,font-weight:bold
-classDef phase fill:#111827,stroke:#22d3ee,stroke-width:2px,color:#e5e7eb,font-weight:bold
-classDef step fill:#0ea5e9,stroke:#e2e8f0,stroke-width:1px,color:#0b1020
-classDef prim fill:#22c55e,stroke:#0ea5e9,stroke-width:1px,color:#03110a
-classDef warn fill:#f59e0b,stroke:#1f2937,stroke-width:1px,color:#1f1300
-classDef bad  fill:#ef4444,stroke:#1f2937,stroke-width:1px,color:#1b0a0a
-classDef info fill:#a78bfa,stroke:#e2e8f0,stroke-width:1px,color:#0f0b1a
-classDef edge stroke:#67e8f9,stroke-width:2px
+%% ---------- THEMES ----------
+classDef banner fill:#0b0f19,stroke:#60a5fa,color:#e5e7eb,stroke-width:2px,font-weight:bold
+classDef phase  fill:#0f172a,stroke:#22d3ee,color:#e2e8f0,stroke-width:2px,font-weight:bold
+classDef step   fill:#06b6d4,stroke:#f0f9ff,color:#031017,stroke-width:1px
+classDef prime  fill:#22c55e,stroke:#bbf7d0,color:#06210f,stroke-width:1px,font-weight:bold
+classDef warn   fill:#fde047,stroke:#713f12,color:#1a1603,stroke-width:1px
+classDef danger fill:#ef4444,stroke:#7f1d1d,color:#1f0a0a,stroke-width:1px
+classDef info   fill:#a78bfa,stroke:#ede9fe,color:#130f1a,stroke-width:1px
 
-%% =========================
-%% HEADER
-%% =========================
-subgraph H["🧠⚡ AGI Jobs v2 on Ethereum — Etherscan, No-Code, Civilization-Scale"]
+%% ---------- BANNER ----------
+subgraph B["🧠⚡ AGI JOBS v2 — Operate via Etherscan, No Code Required"]
 direction TB
-H1["💡 What you’ll do:
-• Deploy core contracts
-• Wire modules
-• Set parameters
-• Operate as Employer / Agent / Validator / Platform
-• Route fees & claim rewards
-"]:::hdr
+B1["What you’ll accomplish:
+• Deploy core modules on mainnet
+• Wire everything in minutes
+• Set economics safely
+• Run as Employer / Agent / Validator / Platform Operator
+• Route fees, claim rewards, scale to civilization"]:::banner
 end
 
-%% =========================
-%% PHASE 1 — PREREQUISITES
-%% =========================
-subgraph P1["🚀 PHASE 1 — Prerequisites"]
+%% ---------- PHASE 1 ----------
+subgraph P1["🚀 PHASE 1 — Prerequisites (Wallet & Token)"]
 direction TB
-P1a["🦊 Install & open MetaMask\n→ Network: Ethereum Mainnet"]:::step
-P1b["🔗 On Etherscan → Connect to Web3\n(you’ll sign popups confidently)"]:::step
-P1c["⛽ Fund ETH for gas"]:::step
-P1d["💠 Get $AGIALPHA (6 decimals)\nAdd as Custom Token in wallet"]:::step
-P1e["🧮 Amount format reminder\n10 AGIALPHA = 10_000000 base units"]:::info
+P1a["🦊 MetaMask on Ethereum Mainnet"]:::step
+P1b["🔗 Etherscan → Connect to Web3 (sign popups)"]:::step
+P1c["⛽ Hold ETH for gas"]:::step
+P1d["💠 Acquire $AGIALPHA & add as Custom Token"]:::step
+P1e["🧮 Remember: $AGIALPHA has 6 decimals
+• 10.0 = 10_000000
+• 0.5 = 500_000"]:::info
 end
 class P1 phase
 
-%% =========================
-%% PHASE 2 — DEPLOY MODULES
-%% =========================
-subgraph P2["🏗️ PHASE 2 — Deploy AGI Jobs v2 Modules (via Etherscan → ‘Deploy & Verify’)"]
+%% ---------- PHASE 2 ----------
+subgraph P2["🏗️ PHASE 2 — Deploy Modules (Etherscan → ‘Deploy & Verify’)"]
 direction TB
-D1["📦 StakeManager(token=$AGIALPHA, owner=you, treasury=you/DAO)"]:::step
-D2["📦 JobRegistry(owner=you)"]:::step
-D3["📦 ValidationModule(jobRegistry, stakeManager, owner=you)"]:::step
-D4["📦 ReputationEngine(owner=you)"]:::step
-D5["📦 DisputeModule(jobRegistry, stakeManager, reputationEngine, owner=you)  (optional)"]:::step
-D6["📦 CertificateNFT(name, symbol, owner=you)"]:::step
-D7["📦 FeePool(token=$AGIALPHA, stakeManager, rewardRole=2, owner=you)"]:::step
-D8["📦 TaxPolicy(owner=you)"]:::step
-D9["📦 JobRouter(stakeManager, reputationEngine, owner=you)  (optional)"]:::step
+D1["📦 StakeManager(token=$AGIALPHA, owner=YOU, treasury=YOU/DAO)"]:::step
+D2["📦 JobRegistry(owner=YOU)"]:::step
+D3["📦 ValidationModule(jobRegistry, stakeManager, owner=YOU)"]:::step
+D4["📦 ReputationEngine(owner=YOU)"]:::step
+D5["📦 DisputeModule(jobRegistry, stakeManager, reputationEngine, owner=YOU)  (optional)"]:::step
+D6["📦 CertificateNFT(name, symbol, owner=YOU)"]:::step
+D7["📦 FeePool(token=$AGIALPHA, stakeManager, rewardRole=2 (Platform), owner=YOU)"]:::step
+D8["📦 TaxPolicy(owner=YOU)"]:::step
+D9["📦 JobRouter(stakeManager, reputationEngine, owner=YOU)  (optional, multi‑platform)"]:::step
 end
 class P2 phase
 
-%% =========================
-%% PHASE 3 — LINK MODULES
-%% =========================
-subgraph P3["🔗 PHASE 3 — Wire the System (Write → Owner functions)"]
+%% ---------- PHASE 3 ----------
+subgraph P3["🔗 PHASE 3 — Wire Modules (Owner ‘Write’ calls)"]
 direction TB
 L1["JobRegistry.setModules(validation, stake, reputation, dispute, certificate)"]:::step
 L2["JobRegistry.setFeePool(feePool)"]:::step
@@ -110,130 +103,112 @@ L9["JobRouter link StakeManager & ReputationEngine  (if used)"]:::step
 end
 class P3 phase
 
-%% =========================
-%% PHASE 4 — PARAMETERS
-%% =========================
-subgraph P4["⚙️ PHASE 4 — Economic Parameters (owner)"]
+%% ---------- PHASE 4 ----------
+subgraph P4["⚙️ PHASE 4 — Set Economics (Owner)"]
 direction TB
 E1["StakeManager.setMinStake(min)"]:::step
 E2["StakeManager.setSlashingPercentages(employer%, treasury%)"]:::step
 E3["JobRegistry.setJobStake(requiredAgentStake)"]:::step
 E4["JobRegistry.setFeePct(protocolFee%)"]:::step
-E5["ValidationModule.setParameters(\nvalidatorsPerJob, commitSecs, revealSecs,\nvalidatorStakeReq, validatorReward%, validatorSlash%\n)"]:::step
+E5["ValidationModule.setParameters(
+validatorsPerJob, commitSecs, revealSecs,
+validatorStakeReq, validatorReward%, validatorSlash%)"]:::step
 E6["DisputeModule.setAppealFee(amount)  (if used)"]:::step
 E7["FeePool.setBurnPct(burn%)  (optional)"]:::step
-E8["PlatformRegistry/Router.setMinPlatformStake(amount)  (if present)"]:::step
+E8["Router/Registry.setMinPlatformStake(amount)  (if present)"]:::step
 end
 class P4 phase
 
-%% =========================
-%% PHASE 5 — OPERATE (4 ROLES)
-%% =========================
-subgraph P5["🎮 PHASE 5 — Operate the Network (No-Code, Etherscan ‘Write’)"]
+%% ---------- PHASE 5 ----------
+subgraph P5["🎮 PHASE 5 — Operate (Four Roles, Zero Code)"]
 direction LR
 
-%% Employer Lane
-subgraph R1["👔 Employer"]
+subgraph EMP["👔 Employer"]
 direction TB
-X1["1) Token approve → $AGIALPHA.approve(StakeManager, reward+fee)"]:::step
-X2["2) JobRegistry.createJob(reward, URI)"]:::step
-X3["3) JobCreated → reward escrowed"]:::prim
-X4["(Optional) cancel: JobRegistry.cancelJob(jobId) before agent applies"]:::warn
+X1["Approve: $AGIALPHA.approve(StakeManager, reward+fee)"]:::step
+X2["Post: JobRegistry.createJob(reward, URI)"]:::prime
+X3["Funds escrowed, job open"]:::info
+X4["(Optional) cancel before agent applies: JobRegistry.cancelJob(jobId)"]:::warn
 end
 
-%% Agent Lane
-subgraph R2["🛠️ Agent"]
+subgraph AGT["🛠️ Agent"]
 direction TB
-Y0["0) One-time: JobRegistry.acknowledgeTaxPolicy()"]:::info
-Y1["1) Stake → StakeManager.depositStake(role=0, amount)"]:::step
-Y2["2) Apply → JobRegistry.applyForJob(jobId)"]:::step
-Y3["3) Do work off-chain"]:::step
-Y4["4) Complete → JobRegistry.completeJob(jobId)"]:::step
+Y0["One‑time: JobRegistry.acknowledgeTaxPolicy()"]:::info
+Y1["Stake: StakeManager.depositStake(role=0, amount)"]:::step
+Y2["Apply: JobRegistry.applyForJob(jobId)"]:::prime
+Y3["Deliver off‑chain results"]:::step
+Y4["Complete: JobRegistry.completeJob(jobId)"]:::step
 end
 
-%% Validator Lane
-subgraph R3["🛡️ Validator"]
+subgraph VAL["🛡️ Validator"]
 direction TB
-Z0["0) One-time: JobRegistry.acknowledgeTaxPolicy()"]:::info
-Z1["1) Stake → StakeManager.depositStake(role=1, amount)"]:::step
-Z2["2) If selected: commit → Validation.commit(jobId, hash)"]:::step
-Z3["3) Reveal → Validation.reveal(jobId, approve, salt)"]:::step
+Z0["One‑time: JobRegistry.acknowledgeTaxPolicy()"]:::info
+Z1["Stake: StakeManager.depositStake(role=1, amount)"]:::step
+Z2["If selected → COMMIT: Validation.commit(jobId, hash)"]:::step
+Z3["Then REVEAL: Validation.reveal(jobId, approve, salt)"]:::step
 end
 
-%% Platform Operator Lane
-subgraph R4["🏦 Platform Operator"]
+subgraph PLO["🏦 Platform Operator"]
 direction TB
-W1["1) Stake → StakeManager.depositStake(role=2, amount)"]:::step
-W2["2) Register → JobRouter.registerPlatform(operator)  (or PlatformRegistry)"]:::step
-W3["3) Earn protocol fees via FeePool"]:::prim
-W4["4) claim → FeePool.claimRewards()  (anytime)"]:::step
+W1["Stake: StakeManager.depositStake(role=2, amount)"]:::step
+W2["Register: JobRouter.registerPlatform(operator)  (or PlatformRegistry)"]:::prime
+W3["Earn share of protocol fees via FeePool"]:::info
+W4["Claim anytime: FeePool.claimRewards()"]:::step
 end
 end
 class P5 phase
 
-%% =========================
-%% OUTCOME & FINALIZE
-%% =========================
-subgraph P6["✅ PHASE 6 — Outcome & Finalization"]
+%% ---------- PHASE 6 ----------
+subgraph P6["✅ PHASE 6 — Outcome, Finalize, Rewards"]
 direction TB
-O1{"Validation Outcome?"}:::warn
-O2["Finalize → JobRegistry.finalize(jobId)"]:::step
-S1["SUCCESS → Agent paid, validators rewarded,\nCertificateNFT.mint, Reputation++"]:::prim
-F1["FAILURE → Employer refunded,\nAgent stake slashed, Reputation--"]:::bad
-A1{"Appeal?"}:::warn
-A2["DisputeModule.raiseDispute(jobId)"]:::step
-A3["Resolve → uphold/overturn → then finalize"]:::step
+OQ{"Validators’ Verdict"}:::warn
+OK["Finalize: JobRegistry.finalize(jobId)"]:::step
+OS["SUCCESS → Agent paid, Validators rewarded,\nCertificateNFT minted, Reputation++"]:::prime
+OF["FAILURE → Employer refunded,\nAgent stake slashed, Reputation--"]:::danger
+DA{"Appeal?"}:::warn
+DR["DisputeModule.raiseDispute(jobId) → resolve → finalize"]:::step
 end
 class P6 phase
 
-%% =========================
-%% PHASE 7 — HEALTH CHECKS
-%% =========================
-subgraph P7["🛰️ PHASE 7 — Verify & Monitor (Read tabs)"]
+%% ---------- PHASE 7 ----------
+subgraph P7["🛰️ PHASE 7 — Verify, Monitor, Sleep Easy"]
 direction TB
-V1["JobRegistry.jobs(jobId)\n(state, employer, agent, reward, success)"]:::step
-V2["StakeManager.stakeOf(addr, role)\n& totalStakes(role)"]:::step
+V1["JobRegistry.jobs(jobId) → state / parties / reward / success"]:::step
+V2["StakeManager.stakeOf(addr, role) & totalStakes(role)"]:::step
 V3["JobRegistry.feePct(), jobStake()"]:::step
-V4["FeePool.pendingFees(), distributeFees(), cumulative stats"]:::step
-V5["TaxPolicy.version/details"]:::step
+V4["FeePool.pendingFees(), distributeFees(), claimable"]:::step
+V5["TaxPolicy.details/version (ack once per address)"]:::step
 end
 class P7 phase
 
-%% =========================
-%% LITE LEGEND
-%% =========================
-subgraph LEG["🧭 Legend"]
+%% ---------- LEGEND ----------
+subgraph LEG["🧭 Legend & Golden Rules"]
 direction TB
-LG1["Role IDs → Agent=0, Validator=1, Platform=2"]:::info
-LG2["$AGIALPHA uses 6 decimals (base units)"]:::info
-LG3["All actions via Etherscan ‘Write’, wallet signs popups"]:::info
-LG4["Owner-only steps are in Phases 2–4"]:::info
-LG5["Optional modules: DisputeModule, JobRouter/PlatformRegistry"]:::info
+L1["Role IDs → Agent=0 • Validator=1 • Platform=2"]:::info
+L2["$AGIALPHA uses 6 decimals (base units)"]:::info
+L3["All interactions are Etherscan ‘Write’ calls, authorized by wallet signatures"]:::info
+L4["Owner-only steps live in Phases 2–4"]:::info
+L5["Optional modules: DisputeModule, JobRouter/PlatformRegistry"]:::info
 end
 class LEG phase
 
-%% =========================
-%% FLOWS (edges)
-%% =========================
-H --> P1:::edge
-P1 --> P2:::edge
-P2 --> P3:::edge
-P3 --> P4:::edge
-P4 --> P5:::edge
-R1 --> O1:::edge
-R2 --> O1:::edge
-R3 --> O1:::edge
-O1 -->|Approved| S1:::edge
-O1 -->|Rejected| F1:::edge
-S1 --> O2:::edge
-F1 --> O2:::edge
-O1 --> A1:::edge
-A1 -->|Yes| A2:::edge
-A2 --> A3:::edge
-A3 --> O2:::edge
-O2 --> P7:::edge
-P5 --> P7:::edge
-LEG --> P7:::edge
+%% ---------- FLOW ----------
+B --> P1
+P1 --> P2
+P2 --> P3
+P3 --> P4
+P4 --> P5
+EMP --> OQ
+AGT --> OQ
+VAL --> OQ
+OQ --> OK
+OK --> OS
+OQ --> DA
+DA --> DR
+DR --> OK
+OK --> OF
+OK --> P7
+LEG --> P7
 ```
 
 ## Prerequisites: Wallet Setup and Tokens
