@@ -1862,6 +1862,8 @@ How jobs, reputation, and value circulate within the AGI ecosystem. Read the exp
 ## Legal & Regulatory
 Explains the utility-token nature of $AGI and related considerations. See [docs/legal-regulatory.md](docs/legal-regulatory.md) for full details.
 
+On-chain rewards reduce reporting duties but do not eliminate personal obligations: every employer, agent, validator, and platform operator must follow the laws of their jurisdiction and consult professionals as needed. This repository provides no legal or tax advice.
+
 ## Roadmap
 A snapshot of planned enhancements and future directions is available in [docs/roadmap.md](docs/roadmap.md).
 
