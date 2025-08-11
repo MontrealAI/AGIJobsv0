@@ -1106,6 +1106,20 @@ Role-based quick steps:
 3. Cast a commit with ValidationModule `commitValidation(jobId, hash)` and later reveal via `revealValidation(jobId, approve, salt)`.
 4. If a vote period lapses without resolution, anyone may call `finalize(jobId)` on the ValidationModule.
 
+#### Owner Control Quick Reference
+
+The contract owner can retune economics or swap tokens at any time without redeploying modules. Common setters accessible from a block explorer include:
+
+- **StakeManager** – `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress`.
+- **FeePool** – `setToken`, `setStakeManager`, `setRewardRole`, `setBurnPct`.
+- **PlatformRegistry** – `setStakeManager`, `setReputationEngine`, `setMinPlatformStake`.
+- **ReputationEngine** – `setCaller`, `setWeights`, `blacklist`, `unblacklist`.
+- **GovernanceReward** – `setToken`, `recordVoters`, `finalizeEpoch`.
+- **DisputeModule** – `setAppealFee`, `setTaxPolicy`, `setFeePool`.
+- **JobRegistry** – `setModules`, `setFeePool`, `setTaxPolicy`.
+
+All amounts are entered using the 6‑decimal base units of $AGIALPHA, preserving on‑chain accounting while keeping the owner tax neutral.
+
 ### Step-by-Step Job Flow via Etherscan
 
 Verified contract addresses:

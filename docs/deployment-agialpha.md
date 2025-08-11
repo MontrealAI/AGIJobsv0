@@ -27,7 +27,7 @@ Use the *Deploy* tab on each contract's Etherscan page. Confirm transactions thr
 4. In **JobRegistry**, call `setTaxPolicy(taxPolicy)` and optionally `bumpTaxPolicyVersion`.
 
 ## 3. Configure Token Parameters
-The StakeManager already points to $AGIALPHA (6 decimals). To change tokens later, use `setToken(newToken)`.
+The StakeManager already points to $AGIALPHA (6 decimals). To change tokens later, call `setToken(newToken)` on `StakeManager` and `FeePool` (and on `GovernanceReward` if used).
 
 For stakes, rewards and fees enter values in base units (all amounts are scaled by `10**6`):
 - `1` token = `1_000_000`
@@ -60,7 +60,7 @@ Update parameters as needed:
 Platform owners stake under `Role.Platform` via `StakeManager.depositStake(2, amount)`. As jobs finalize, `FeePool` receives the protocol fee and streams rewards. Operators claim with `FeePool.claimRewards()` directly through Etherscan.
 
 ## 8. Changing the Token
-Only the owner may switch currencies: `StakeManager.setToken(newToken)`. Existing stakes and escrows remain untouched; new deposits and payouts use the updated token.
+Only the owner may switch currencies: invoke `setToken(newToken)` on `StakeManager`, `FeePool`, and any reward modules. Existing stakes and escrows remain untouched; new deposits and payouts use the updated token.
 
 ## Security Notes
 - Verify each deployed address on at least two explorers.
