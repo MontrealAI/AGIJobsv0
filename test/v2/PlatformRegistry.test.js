@@ -86,5 +86,52 @@ describe("PlatformRegistry", function () {
     // reputation alone should not give score without stake for owner
     expect(await registry.getScore(owner.address)).to.equal(0);
   });
+
+  it("owner stakeAndActivate(0) registers with zero score and weight", async () => {
+    const JobRouter = await ethers.getContractFactory(
+      "contracts/v2/modules/JobRouter.sol:JobRouter"
+    );
+    const jobRouter = await JobRouter.connect(owner).deploy(
+      await registry.getAddress(),
+      owner.address
+    );
+
+    const FeePool = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
+    const feePool = await FeePool.connect(owner).deploy(
+      await token.getAddress(),
+      await stakeManager.getAddress(),
+      2,
+      owner.address
+    );
+
+    const Incentives = await ethers.getContractFactory(
+      "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+    );
+    const incentives = await Incentives.connect(owner).deploy(
+      await stakeManager.getAddress(),
+      await registry.getAddress(),
+      await jobRouter.getAddress(),
+      owner.address
+    );
+
+    await registry.setRegistrar(await incentives.getAddress(), true);
+    await jobRouter.setRegistrar(await incentives.getAddress(), true);
+
+    await expect(incentives.connect(owner).stakeAndActivate(0))
+      .to.emit(registry, "Registered")
+      .withArgs(owner.address);
+    expect(await registry.getScore(owner.address)).to.equal(0);
+    expect(await jobRouter.routingWeight(owner.address)).to.equal(0);
+
+    await expect(feePool.connect(owner).claimRewards())
+      .to.emit(feePool, "RewardsClaimed")
+      .withArgs(owner.address, 0);
+
+    await expect(
+      incentives.connect(platform).stakeAndActivate(0)
+    ).to.be.revertedWith("amount");
+  });
 });
 

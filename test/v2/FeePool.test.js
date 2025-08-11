@@ -171,4 +171,58 @@ describe("FeePool", function () {
       .withArgs(owner.address, 0);
     expect(await token.balanceOf(owner.address)).to.equal(before);
   });
+
+  it("owner stakeAndActivate(0) yields zero score, weight and payout", async () => {
+    const Rep = await ethers.getContractFactory(
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    );
+    const rep = await Rep.connect(owner).deploy(owner.address);
+    await rep.setStakeManager(await stakeManager.getAddress());
+    await rep.setCaller(owner.address, true);
+
+    const Registry = await ethers.getContractFactory(
+      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+    );
+    const registry = await Registry.connect(owner).deploy(
+      await stakeManager.getAddress(),
+      await rep.getAddress(),
+      1,
+      owner.address
+    );
+
+    const JobRouter = await ethers.getContractFactory(
+      "contracts/v2/modules/JobRouter.sol:JobRouter"
+    );
+    const jobRouter = await JobRouter.connect(owner).deploy(
+      await registry.getAddress(),
+      owner.address
+    );
+
+    const Incentives = await ethers.getContractFactory(
+      "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+    );
+    const incentives = await Incentives.connect(owner).deploy(
+      await stakeManager.getAddress(),
+      await registry.getAddress(),
+      await jobRouter.getAddress(),
+      owner.address
+    );
+
+    await registry.setRegistrar(await incentives.getAddress(), true);
+    await jobRouter.setRegistrar(await incentives.getAddress(), true);
+
+    await expect(incentives.connect(owner).stakeAndActivate(0))
+      .to.emit(registry, "Registered")
+      .withArgs(owner.address);
+    expect(await registry.getScore(owner.address)).to.equal(0);
+    expect(await jobRouter.routingWeight(owner.address)).to.equal(0);
+
+    await expect(feePool.connect(owner).claimRewards())
+      .to.emit(feePool, "RewardsClaimed")
+      .withArgs(owner.address, 0);
+
+    await expect(
+      incentives.connect(user1).stakeAndActivate(0)
+    ).to.be.revertedWith("amount");
+  });
 });

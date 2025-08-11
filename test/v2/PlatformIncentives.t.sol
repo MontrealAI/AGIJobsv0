@@ -68,6 +68,8 @@ contract PlatformIncentivesTest is Test {
         incentives.stakeAndActivate(0);
         assertTrue(platformRegistry.registered(address(this)));
         assertTrue(jobRouter.registered(address(this)));
+        assertEq(platformRegistry.getScore(address(this)), 0);
+        assertEq(jobRouter.routingWeight(address(this)), 0);
 
         token.mint(address(this), 5e6);
         token.transfer(address(feePool), 5e6);
@@ -81,7 +83,15 @@ contract PlatformIncentivesTest is Test {
         assertEq(token.balanceOf(operator) - before, 5e6);
 
         uint256 ownerBefore = token.balanceOf(address(this));
+        vm.expectEmit(true, false, false, true, address(feePool));
+        emit FeePool.RewardsClaimed(address(this), 0);
         feePool.claimRewards();
         assertEq(token.balanceOf(address(this)) - ownerBefore, 0);
+    }
+
+    function testStakeZeroRevertsForNonOwner() public {
+        vm.prank(operator);
+        vm.expectRevert(bytes("amount"));
+        incentives.stakeAndActivate(0);
     }
 }
