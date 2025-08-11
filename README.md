@@ -1101,6 +1101,10 @@ $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments,
    - On `StakeManager`, call `setMinStake`, `setSlashingPercentages`, and `setTreasury` as needed.
    - On `FeePool`, call `setRewardRole(2)` to direct revenue to platform stakers and adjust `setBurnPct` if desired.
    - The deploying entity may register its reference platform without staking; it will appear in `PlatformRegistry` but receive no routing priority or fee share.
+      - **Worked example**
+        1. The owner skips `depositStake` (amount = `0`) and calls `PlatformRegistry.register()`.
+        2. Querying `PlatformRegistry.getScore(owner)` returns `0`, so the platform has no routing weight.
+        3. Calling `FeePool.claimRewards()` emits `RewardsClaimed(owner, 0)`, confirming no payout.
 3. **Wire modules together**
    - In `JobRegistry`, call `setModules` with addresses of `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`, and `CertificateNFT`.
    - In `ValidationModule`, set validator windows, pool, and connect the `ReputationEngine`.

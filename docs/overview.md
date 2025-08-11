@@ -31,6 +31,10 @@ The v2 contracts share a unified incentive model:
 - **Routing** – `JobRegistry` locks each job's reward and protocol fee, then routes the fee portion to `FeePool` on finalisation.
 - **Revenue share** – `FeePool` streams accumulated fees to platform operators pro‑rata to their staked amount.
 - **Zero‑stake main deployer** – The primary deployment address holds no stake and receives no rewards; all revenue accrues to platform stakers.
+  - **Worked example**
+    1. The owner skips `depositStake` (amount = `0`) and calls `PlatformRegistry.register()`.
+    2. `PlatformRegistry.getScore(owner)` returns `0`, so the platform has no routing weight.
+    3. Calling `FeePool.claimRewards()` emits `RewardsClaimed(owner, 0)`, confirming no payout.
 
 ## Etherscan Interactions
 1. Open the relevant contract address on Etherscan.
