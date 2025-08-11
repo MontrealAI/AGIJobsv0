@@ -86,13 +86,13 @@ describe("GovernanceReward", function () {
 
     await expect(reward.connect(voter1).claim(0))
       .to.emit(reward, "RewardClaimed")
-      .withArgs(0, voter1.address, 12_500_000);
+      .withArgs(0, voter1.address, 12500000);
     await expect(reward.connect(voter2).claim(0))
       .to.emit(reward, "RewardClaimed")
-      .withArgs(0, voter2.address, 37_500_000);
+      .withArgs(0, voter2.address, 37500000);
 
-    expect(await token.balanceOf(voter1.address)).to.equal(12_500_000);
-    expect(await token.balanceOf(voter2.address)).to.equal(37_500_000);
+    expect(await token.balanceOf(voter1.address)).to.equal(12500000);
+    expect(await token.balanceOf(voter2.address)).to.equal(37500000);
 
     await expect(reward.connect(voter1).claim(0)).to.be.revertedWith("claimed");
   });
