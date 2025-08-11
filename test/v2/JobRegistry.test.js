@@ -83,7 +83,7 @@ describe("JobRegistry integration", function () {
 
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await expect(registry.connect(employer).createJob())
+    await expect(registry.connect(employer).createJob(reward, "uri"))
       .to.emit(registry, "JobCreated")
       .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake);
     const jobId = 1;
@@ -129,7 +129,7 @@ describe("JobRegistry integration", function () {
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + reward / 10);
-    await registry.connect(employer).createJob();
+    await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(true);
@@ -146,7 +146,7 @@ describe("JobRegistry integration", function () {
 
   it("handles collusion resolved by dispute", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob();
+    await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(false); // colluding validator
@@ -154,7 +154,7 @@ describe("JobRegistry integration", function () {
     await expect(
       registry.connect(agent).dispute(jobId, { value: appealFee })
     )
-      .to.emit(registry, "DisputeRaised")
+      .to.emit(registry, "JobDisputed")
       .withArgs(jobId, agent.address);
     await expect(dispute.connect(owner).resolve(jobId, false))
       .to.emit(registry, "JobFinalized")
@@ -168,7 +168,7 @@ describe("JobRegistry integration", function () {
 
   it("slashes stake when dispute fails", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob();
+    await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(false);
@@ -176,7 +176,7 @@ describe("JobRegistry integration", function () {
     await expect(
       registry.connect(agent).dispute(jobId, { value: appealFee })
     )
-      .to.emit(registry, "DisputeRaised")
+      .to.emit(registry, "JobDisputed")
       .withArgs(jobId, agent.address);
     await expect(dispute.connect(owner).resolve(jobId, true))
       .to.emit(registry, "JobFinalized")
@@ -191,7 +191,7 @@ describe("JobRegistry integration", function () {
 
   it("allows employer to cancel before completion", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob();
+    await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
     await expect(registry.connect(employer).cancelJob(jobId))
       .to.emit(registry, "JobCancelled")

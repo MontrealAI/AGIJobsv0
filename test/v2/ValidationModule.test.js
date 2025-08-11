@@ -54,6 +54,7 @@ describe("ValidationModule V2", function () {
       stake: 0,
       success: false,
       status: 0,
+      uri: "",
     };
     await jobRegistry.setJob(1, jobStruct);
   });
