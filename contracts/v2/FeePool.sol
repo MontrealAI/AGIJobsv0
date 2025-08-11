@@ -50,6 +50,7 @@ contract FeePool is Ownable {
     event RewardRoleUpdated(IStakeManager.Role role);
     event BurnPctUpdated(uint256 pct);
     event TreasuryUpdated(address indexed treasury);
+    event RewardTransferred(address indexed to, uint256 amount);
 
     constructor(
         IERC20 _token,
@@ -111,6 +112,14 @@ contract FeePool is Ownable {
         userCheckpoint[msg.sender] = cumulative;
         token.safeTransfer(msg.sender, owed);
         emit RewardsClaimed(msg.sender, owed);
+    }
+
+    /// @notice transfer tokens to an external reward contract
+    /// @param to recipient address
+    /// @param amount token amount with 6 decimals
+    function transferReward(address to, uint256 amount) external {
+        token.safeTransfer(to, amount);
+        emit RewardTransferred(to, amount);
     }
 
     /// @notice update ERC20 token used for payouts

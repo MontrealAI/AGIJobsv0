@@ -13,4 +13,9 @@ interface IFeePool {
 
     /// @notice claim accumulated rewards for caller
     function claimRewards() external;
+
+    /// @notice transfer tokens from the pool to a recipient
+    /// @param to address receiving the tokens
+    /// @param amount token amount with 6 decimals
+    function transferReward(address to, uint256 amount) external;
 }
