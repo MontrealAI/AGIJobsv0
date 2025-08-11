@@ -550,5 +550,164 @@ describe("StakeManager", function () {
 
     expect(await stakeManager.lockedStakes(user.address)).to.equal(0n);
   });
+
+  it("rejects zero stake deposits", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await expect(
+      stakeManager.connect(user).depositStake(0, 0)
+    ).to.be.revertedWith("amount");
+  });
+
+  it("allows withdrawal after slashing", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await stakeManager.connect(user).depositStake(0, 200);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await stakeManager
+      .connect(registrySigner)
+      .slash(user.address, 0, 100, employer.address);
+    await stakeManager.connect(user).withdrawStake(0, 100);
+
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(0n);
+    expect(await token.balanceOf(user.address)).to.equal(900n);
+  });
+
+  it("supports token swap for new stakes", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    const Token = await ethers.getContractFactory("MockERC20");
+    const token2 = await Token.deploy();
+    await token2.mint(user.address, 500);
+    await stakeManager.connect(owner).setToken(await token2.getAddress());
+
+    await token2.connect(user).approve(await stakeManager.getAddress(), 200);
+    await expect(
+      stakeManager.connect(user).depositStake(0, 200)
+    ).to.emit(stakeManager, "StakeDeposited").withArgs(user.address, 0, 200);
+  });
+
+  it("matches 18-decimal slashing math", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.mint(user.address, 1000000);
+    await token.connect(user).approve(await stakeManager.getAddress(), 1000000);
+    await stakeManager.connect(user).depositStake(0, 1000000);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    const amount = 123456n;
+    const amount18 = amount * 10n ** 12n;
+    const employerBefore = await token.balanceOf(employer.address);
+    const treasuryBefore = await token.balanceOf(treasury.address);
+
+    await stakeManager
+      .connect(registrySigner)
+      .slash(user.address, 0, amount, employer.address);
+
+    const employerAfter = await token.balanceOf(employer.address);
+    const treasuryAfter = await token.balanceOf(treasury.address);
+    const share6 = (amount * 50n) / 100n;
+
+    expect(employerAfter - employerBefore).to.equal(share6);
+    expect(treasuryAfter - treasuryBefore).to.equal(share6);
+
+    const shareFrom18 = (amount18 * 50n / 100n) / 10n ** 12n;
+    expect(share6).to.equal(shareFrom18);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(1000000n - amount);
+  });
+
+  it("enforces owner-only parameter updates", async () => {
+    await expect(
+      stakeManager.connect(owner).setMinStake(10)
+    ).to.emit(stakeManager, "MinStakeUpdated").withArgs(10n);
+    await expect(
+      stakeManager.connect(user).setMinStake(1)
+    )
+      .to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount")
+      .withArgs(user.address);
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(40, 60)
+    ).to.emit(stakeManager, "SlashingPercentagesUpdated").withArgs(40n, 60n);
+  });
 });
 
