@@ -14,6 +14,12 @@ contract JobRouter is Ownable {
     address[] public platformList;
     /// @dev tracks whether an operator is active within the router
     mapping(address => bool) public registered;
+    /// @dev tracks whether an operator has ever been added to `platformList`
+    mapping(address => bool) public listed;
+    /// @dev block after which an operator may re-register
+    mapping(address => uint64) public cooldown;
+    /// @dev number of blocks an operator must wait after deregistering
+    uint64 public constant COOLDOWN_BLOCKS = 1;
     /// @dev addresses authorised to register operators on their behalf
     mapping(address => bool) public registrars;
 
@@ -29,10 +35,14 @@ contract JobRouter is Ownable {
     /// @notice Register the caller for job routing.
     /// @dev Caller must already be registered within the PlatformRegistry.
     function register() external {
+        require(block.number >= cooldown[msg.sender], "cooldown");
         require(!registered[msg.sender], "registered");
         require(platformRegistry.registered(msg.sender), "registry");
         registered[msg.sender] = true;
-        platformList.push(msg.sender);
+        if (!listed[msg.sender]) {
+            platformList.push(msg.sender);
+            listed[msg.sender] = true;
+        }
         emit Registered(msg.sender);
     }
 
@@ -42,10 +52,14 @@ contract JobRouter is Ownable {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
         }
+        require(block.number >= cooldown[operator], "cooldown");
         require(!registered[operator], "registered");
         require(platformRegistry.registered(operator), "registry");
         registered[operator] = true;
-        platformList.push(operator);
+        if (!listed[operator]) {
+            platformList.push(operator);
+            listed[operator] = true;
+        }
         emit Registered(operator);
     }
 
@@ -53,6 +67,7 @@ contract JobRouter is Ownable {
     function deregister() external {
         require(registered[msg.sender], "not registered");
         registered[msg.sender] = false;
+        cooldown[msg.sender] = uint64(block.number + COOLDOWN_BLOCKS);
         emit Deregistered(msg.sender);
     }
 

@@ -7,6 +7,7 @@ import "contracts/v2/interfaces/IPlatformRegistry.sol";
 // minimal cheatcode interface
 interface Vm {
     function prank(address) external;
+    function roll(uint256) external;
 }
 
 contract MockPlatformRegistry is IPlatformRegistry {
@@ -85,6 +86,34 @@ contract JobRouterTest {
         vm.prank(platform1);
         try router.register() { reverted = false; } catch { reverted = true; }
         require(reverted, "needs registry");
+    }
+
+    function testReRegisterDoesNotDuplicateWeight() public {
+        setUp();
+        registerPlatforms();
+        vm.prank(platform1);
+        router.deregister();
+        vm.roll(block.number + 1);
+        vm.prank(platform1);
+        router.register();
+        require(router.routingWeight(platform1) == 100e18 / 400, "dup weight");
+    }
+
+    function testRegisterCooldown() public {
+        setUp();
+        registry.register(platform1, 100);
+        vm.prank(platform1);
+        router.register();
+        vm.prank(platform1);
+        router.deregister();
+        bool reverted;
+        vm.prank(platform1);
+        try router.register() { reverted = false; } catch { reverted = true; }
+        require(reverted, "cooldown not enforced");
+        vm.roll(block.number + 1);
+        vm.prank(platform1);
+        router.register();
+        require(router.routingWeight(platform1) == 1e18, "post cooldown");
     }
 }
 
