@@ -379,16 +379,19 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
         if (job.success) {
-            uint256 fee = 0;
-            if (address(feePool) != address(0) && job.reward > 0) {
-                fee = (uint256(job.reward) * job.feePct) / 100;
-                if (fee > 0) {
-                    stakeManager.releaseJobFunds(jobKey, address(feePool), fee);
-                    feePool.depositFee(fee);
+            IFeePool pool = feePool;
+            if (address(stakeManager) != address(0)) {
+                uint256 fee;
+                if (address(pool) != address(0) && job.reward > 0) {
+                    fee = (uint256(job.reward) * job.feePct) / 100;
                 }
-            }
-            if (address(stakeManager) != address(0) && job.reward > 0) {
-                stakeManager.releaseJobFunds(jobKey, job.agent, uint256(job.reward));
+                stakeManager.finalizeJobFunds(
+                    jobKey,
+                    job.agent,
+                    uint256(job.reward),
+                    fee,
+                    pool
+                );
             }
             if (address(reputationEngine) != address(0)) {
                 reputationEngine.add(job.agent, 1);

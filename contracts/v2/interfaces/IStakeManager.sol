@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import {IFeePool} from "./IFeePool.sol";
+
 /// @title IStakeManager
 /// @notice Interface for staking balances, job escrows and slashing logic
 interface IStakeManager {
@@ -39,6 +41,15 @@ interface IStakeManager {
 
     /// @notice release locked job funds to recipient
     function releaseJobFunds(bytes32 jobId, address to, uint256 amount) external;
+
+    /// @notice finalize job funds by paying agent and forwarding fees
+    function finalizeJobFunds(
+        bytes32 jobId,
+        address agent,
+        uint256 reward,
+        uint256 fee,
+        IFeePool feePool
+    ) external;
 
     /// @notice set the dispute module authorized to manage dispute fees
     function setDisputeModule(address module) external;
