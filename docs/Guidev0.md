@@ -4,6 +4,35 @@
 
 This guide walks you through setting up the AGI Jobs v2 smart contracts on Ethereum mainnet and using them **without any coding**, only via Etherscan’s web interface. We cover everything from connecting your wallet and obtaining tokens, to deploying the contracts, configuring them, and using the system as an employer, agent, validator, or platform operator. All interactions (deployments and function calls) will be done through Etherscan’s **Contract** tabs with a MetaMask wallet.
 
+**Table of Contents:**
+
+1. [Prerequisites: Wallet Setup and Tokens](#prerequisites-wallet-setup-and-tokens)
+2. [Deploying the AGI Jobs v2 Contracts](#deploying-the-agi-jobs-v2-contracts)
+
+   * 2.1 [StakeManager](#deploy-stakemanager)
+   * 2.2 [JobRegistry](#deploy-jobregistry)
+   * 2.3 [ValidationModule](#deploy-validationmodule)
+   * 2.4 [ReputationEngine](#deploy-reputationengine)
+   * 2.5 [DisputeModule](#deploy-disputemodule)
+   * 2.6 [CertificateNFT](#deploy-certificatenft)
+   * 2.7 [FeePool (“Treasury” for fees)](#deploy-feepool)
+   * 2.8 [TaxPolicy](#deploy-taxpolicy)
+   * 2.9 [JobRouter (Platform Discovery) *(Optional)*](#deploy-jobrouter-optional)
+3. [Initial Configuration of Contracts](#initial-configuration-of-contracts)
+
+   * 3.1 [Linking Modules](#linking-modules)
+   * 3.2 [Setting Economic Parameters](#setting-economic-parameters)
+   * 3.3 [Finalizing Setup](#finalizing-setup)
+4. [Using AGI Jobs v2 – Role-by-Role Guide](#using-agi-jobs-v2--role-by-role-guide)
+
+   * 4.1 [Employer: Posting a Job](#employer-posting-a-job)
+   * 4.2 [Agent: Taking and Completing a Job](#agent-taking-and-completing-a-job)
+   * 4.3 [Validator: Validating a Completed Job](#validator-validating-a-completed-job)
+   * 4.4 [Platform Operator: Staking and Earning Fees](#platform-operator-staking-and-earning-fees)
+5. [Verifying Transactions and Additional Tips](#verifying-transactions-and-additional-tips)
+
+---
+
 ```mermaid
 flowchart TD
     subgraph "Prerequisites"
@@ -95,35 +124,6 @@ flowchart TD
         FS --> FP
     end
 ```
-
-**Table of Contents:**
-
-1. [Prerequisites: Wallet Setup and Tokens](#prerequisites-wallet-setup-and-tokens)
-2. [Deploying the AGI Jobs v2 Contracts](#deploying-the-agi-jobs-v2-contracts)
-
-   * 2.1 [StakeManager](#deploy-stakemanager)
-   * 2.2 [JobRegistry](#deploy-jobregistry)
-   * 2.3 [ValidationModule](#deploy-validationmodule)
-   * 2.4 [ReputationEngine](#deploy-reputationengine)
-   * 2.5 [DisputeModule](#deploy-disputemodule)
-   * 2.6 [CertificateNFT](#deploy-certificatenft)
-   * 2.7 [FeePool (“Treasury” for fees)](#deploy-feepool)
-   * 2.8 [TaxPolicy](#deploy-taxpolicy)
-   * 2.9 [JobRouter (Platform Discovery) *(Optional)*](#deploy-jobrouter-optional)
-3. [Initial Configuration of Contracts](#initial-configuration-of-contracts)
-
-   * 3.1 [Linking Modules](#linking-modules)
-   * 3.2 [Setting Economic Parameters](#setting-economic-parameters)
-   * 3.3 [Finalizing Setup](#finalizing-setup)
-4. [Using AGI Jobs v2 – Role-by-Role Guide](#using-agi-jobs-v2--role-by-role-guide)
-
-   * 4.1 [Employer: Posting a Job](#employer-posting-a-job)
-   * 4.2 [Agent: Taking and Completing a Job](#agent-taking-and-completing-a-job)
-   * 4.3 [Validator: Validating a Completed Job](#validator-validating-a-completed-job)
-   * 4.4 [Platform Operator: Staking and Earning Fees](#platform-operator-staking-and-earning-fees)
-5. [Verifying Transactions and Additional Tips](#verifying-transactions-and-additional-tips)
-
----
 
 ## Prerequisites: Wallet Setup and Tokens
 
