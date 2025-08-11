@@ -195,10 +195,10 @@ describe("StakeManager", function () {
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await expect(
       stakeManager.connect(user).depositStake(3, 100)
-    ).to.be.revertedWith("role");
+    ).to.be.revertedWithoutReason();
     await expect(
       stakeManager.connect(user).withdrawStake(3, 1)
-    ).to.be.revertedWith("role");
+    ).to.be.revertedWithoutReason();
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
@@ -210,7 +210,7 @@ describe("StakeManager", function () {
       stakeManager
         .connect(registrySigner)
         .slash(user.address, 3, 1, employer.address)
-    ).to.be.revertedWith("role");
+    ).to.be.revertedWithoutReason();
   });
 
   it("enforces tax acknowledgement for staking operations", async () => {
