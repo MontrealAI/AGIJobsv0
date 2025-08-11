@@ -2,106 +2,109 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IStakeManager} from "../interfaces/IStakeManager.sol";
+import {IPlatformRegistry} from "../interfaces/IPlatformRegistry.sol";
 
 /// @title JobRouter
-/// @notice Registers staked platform operators and selects one based on stake
-///         weighted randomness.
-/// @dev All stake amounts use the same 6 decimal precision as the
-///      `StakeManager`.
+/// @notice Routes jobs to registered platform operators based on stake and reputation scores.
+///         Falls back to the deployer when no eligible operator exists.
 contract JobRouter is Ownable {
-    struct PlatformInfo {
-        uint256 stake; // stake recorded at registration
-        bool registered; // whether the operator is active
-    }
+    IPlatformRegistry public platformRegistry;
 
-    /// @notice contract managing platform stakes
-    IStakeManager public stakeManager;
-
-    /// @notice cumulative stake of all registered platforms
-    uint256 public totalStake;
-
-    /// @dev mapping of operator address to its stake and status
-    mapping(address => PlatformInfo) public platforms;
-
-    /// @dev list of all operators ever registered (for iteration)
+    /// @dev list of operators that have registered with the router
     address[] public platformList;
+    /// @dev tracks whether an operator is active within the router
+    mapping(address => bool) public registered;
 
-    event Registered(address indexed operator, uint256 stake);
+    event Registered(address indexed operator);
     event Deregistered(address indexed operator);
     event PlatformSelected(bytes32 indexed seed, address indexed operator);
 
-    /// @param _stakeManager address of the stake manager contract
-    /// @param deployer address to seed in the platform list with zero stake
-    constructor(IStakeManager _stakeManager, address deployer) Ownable(deployer) {
-        stakeManager = _stakeManager;
-        // seed deployer as a non-selectable platform to avoid empty array checks
-        platforms[deployer] = PlatformInfo({stake: 0, registered: true});
-        platformList.push(deployer);
+    constructor(IPlatformRegistry _platformRegistry, address owner) Ownable(owner) {
+        platformRegistry = _platformRegistry;
     }
 
-    /// @notice Register the caller as a platform operator using their stake.
-    /// @dev Requires the caller to have non-zero `Role.Platform` stake.
+    /// @notice Register the caller for job routing.
+    /// @dev Caller must already be registered within the PlatformRegistry.
     function register() external {
-        PlatformInfo storage p = platforms[msg.sender];
-        require(!p.registered || p.stake == 0, "registered");
-
-        uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
-        require(stake > 0, "stake");
-
-        if (!p.registered) {
-            platformList.push(msg.sender);
-            p.registered = true;
-        }
-        p.stake = stake;
-        totalStake += stake;
-
-        emit Registered(msg.sender, stake);
+        require(!registered[msg.sender], "registered");
+        require(platformRegistry.registered(msg.sender), "registry");
+        registered[msg.sender] = true;
+        platformList.push(msg.sender);
+        emit Registered(msg.sender);
     }
 
-    /// @notice Deregister the caller and remove their stake from weighting.
+    /// @notice Deregister the caller from routing.
     function deregister() external {
-        PlatformInfo storage p = platforms[msg.sender];
-        require(p.registered && p.stake > 0, "not registered");
-        totalStake -= p.stake;
-        p.stake = 0;
-        p.registered = false;
+        require(registered[msg.sender], "not registered");
+        registered[msg.sender] = false;
         emit Deregistered(msg.sender);
     }
 
-    /// @notice Compute routing weight for an operator as a fraction of total stake.
+    /// @notice Compute routing weight for an operator as a fraction of total score.
     /// @dev Returned value is scaled by 1e18 for precision.
     function routingWeight(address operator) public view returns (uint256) {
-        if (totalStake == 0) return 0;
-        PlatformInfo storage p = platforms[operator];
-        if (!p.registered || p.stake == 0) return 0;
-        return (p.stake * 1e18) / totalStake;
-    }
-
-    /// @notice Select a platform using blockhash/seed based randomness weighted by stake.
-    /// @param seed external entropy provided by caller
-    /// @return selected address of the chosen platform or address(0) if none
-    function selectPlatform(bytes32 seed) external returns (address selected) {
-        if (totalStake == 0) {
-            emit PlatformSelected(seed, address(0));
-            return address(0);
-        }
-
-        uint256 rand =
-            uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), seed))) % totalStake;
-        uint256 cumulative;
+        if (!registered[operator] || !platformRegistry.registered(operator)) return 0;
+        uint256 score = platformRegistry.getScore(operator);
+        if (score == 0) return 0;
+        uint256 total;
         uint256 len = platformList.length;
         for (uint256 i; i < len; i++) {
-            PlatformInfo storage p = platforms[platformList[i]];
-            if (!p.registered || p.stake == 0) continue;
-            cumulative += p.stake;
+            address p = platformList[i];
+            if (!registered[p] || !platformRegistry.registered(p)) continue;
+            uint256 s = platformRegistry.getScore(p);
+            if (s == 0) continue;
+            total += s;
+        }
+        if (total == 0) return 0;
+        return (score * 1e18) / total;
+    }
+
+    /// @notice Select a platform using blockhash/seed based randomness weighted by score.
+    /// @param seed external entropy provided by caller
+    /// @return selected address of the chosen platform or owner() if none
+    function selectPlatform(bytes32 seed) external returns (address selected) {
+        uint256 len = platformList.length;
+        uint256 total;
+        for (uint256 i; i < len; i++) {
+            address op = platformList[i];
+            if (!registered[op]) continue;
+            if (!platformRegistry.registered(op)) {
+                registered[op] = false;
+                continue;
+            }
+            uint256 score = platformRegistry.getScore(op);
+            if (score == 0) continue;
+            total += score;
+        }
+        if (total == 0) {
+            selected = owner();
+            emit PlatformSelected(seed, selected);
+            return selected;
+        }
+        uint256 rand =
+            uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), seed))) % total;
+        uint256 cumulative;
+        for (uint256 i; i < len; i++) {
+            address op = platformList[i];
+            if (!registered[op]) continue;
+            if (!platformRegistry.registered(op)) {
+                registered[op] = false;
+                continue;
+            }
+            uint256 score = platformRegistry.getScore(op);
+            if (score == 0) continue;
+            cumulative += score;
             if (rand < cumulative) {
-                selected = platformList[i];
+                selected = op;
                 break;
             }
         }
-
         emit PlatformSelected(seed, selected);
+    }
+
+    /// @notice Update the PlatformRegistry address.
+    function setPlatformRegistry(IPlatformRegistry registry) external onlyOwner {
+        platformRegistry = registry;
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
@@ -119,4 +122,3 @@ contract JobRouter is Ownable {
         revert("JobRouter: no ether");
     }
 }
-
