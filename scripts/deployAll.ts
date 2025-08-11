@@ -76,6 +76,28 @@ async function main() {
   );
   await dispute.waitForDeployment();
 
+  // FeePool receives protocol fees and streams them to staked operators.
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await token.getAddress(),
+    await stake.getAddress(),
+    2, // IStakeManager.Role.Platform
+    deployer.address
+  );
+  await feePool.waitForDeployment();
+
+  // Optional ETH revenue distributor for off-chain jobs.
+  const RevenueDistributor = await ethers.getContractFactory(
+    "contracts/v2/modules/RevenueDistributor.sol:RevenueDistributor"
+  );
+  const distributor = await RevenueDistributor.deploy(
+    await stake.getAddress(),
+    deployer.address
+  );
+  await distributor.waitForDeployment();
+
   // PlatformRegistry tracks platforms; min stake uses 6‑decimal scaling.
   const PlatformRegistry = await ethers.getContractFactory(
     "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
@@ -99,6 +121,10 @@ async function main() {
     await nft.getAddress()
   );
 
+  // Route protocol fees to FeePool and set a 5% fee cut.
+  await registry.setFeePool(await feePool.getAddress());
+  await registry.setFeePct(5);
+
   const addresses = {
     agiAlphaToken: await token.getAddress(),
     stakeManager: await stake.getAddress(),
@@ -108,6 +134,8 @@ async function main() {
     disputeModule: await dispute.getAddress(),
     certificateNFT: await nft.getAddress(),
     platformRegistry: await platformRegistry.getAddress(),
+    feePool: await feePool.getAddress(),
+    revenueDistributor: await distributor.getAddress(),
     taxPolicy: await tax.getAddress(),
   };
 
