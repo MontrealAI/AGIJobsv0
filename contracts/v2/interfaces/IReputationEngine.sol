@@ -34,6 +34,11 @@ interface IReputationEngine {
     /// @return The current reputation score of the user
     function reputation(address user) external view returns (uint256);
 
+    /// @notice Alias for {reputation} for backwards compatibility
+    /// @param user Address to query
+    /// @return The current reputation score of the user
+    function getReputation(address user) external view returns (uint256);
+
     /// @notice Check if a user is blacklisted
     /// @param user Address to query
     /// @return True if the user is blacklisted

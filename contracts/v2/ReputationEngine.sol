@@ -92,8 +92,12 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Get reputation score for a user.
-    function reputation(address user) external view returns (uint256) {
+    function reputation(address user) public view returns (uint256) {
         return _scores[user];
+    }
+
+    function getReputation(address user) external view returns (uint256) {
+        return reputation(user);
     }
 
     /// @notice Check blacklist status for a user.

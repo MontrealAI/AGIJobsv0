@@ -112,6 +112,10 @@ contract MockReputationEngine is IReputationEngine {
         return _rep[user];
     }
 
+    function getReputation(address user) external view override returns (uint256) {
+        return _rep[user];
+    }
+
     function isBlacklisted(address) external pure override returns (bool) {
         return false;
     }
