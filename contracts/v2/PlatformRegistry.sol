@@ -21,14 +21,15 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
     uint256 public minPlatformStake;
-
     mapping(address => bool) public registered;
+    mapping(address => bool) public blacklist;
 
     event Registered(address indexed operator);
     event Deregistered(address indexed operator);
     event StakeManagerUpdated(address indexed stakeManager);
     event ReputationEngineUpdated(address indexed engine);
     event MinPlatformStakeUpdated(uint256 stake);
+    event Blacklisted(address indexed operator, bool status);
 
     constructor(
         IStakeManager _stakeManager,
@@ -46,6 +47,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     ///      `Role.Platform` stake within the `StakeManager`.
     function register() external nonReentrant {
         require(!registered[msg.sender], "registered");
+        require(!blacklist[msg.sender], "blacklisted");
         uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
         require(stake >= minPlatformStake, "stake");
         registered[msg.sender] = true;
@@ -61,7 +63,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Retrieve routing score for a platform based on stake and reputation.
     function getScore(address operator) public view returns (uint256) {
-        if (reputationEngine.isBlacklisted(operator)) return 0;
+        if (blacklist[operator] || reputationEngine.isBlacklisted(operator)) return 0;
         uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
         uint256 rep = reputationEngine.reputation(operator);
         uint256 stakeW = reputationEngine.stakeWeight();
@@ -86,6 +88,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     function setMinPlatformStake(uint256 stake) external onlyOwner {
         minPlatformStake = stake;
         emit MinPlatformStakeUpdated(stake);
+    }
+
+    function setBlacklist(address operator, bool status) external onlyOwner {
+        blacklist[operator] = status;
+        emit Blacklisted(operator, status);
     }
 
     /// @notice Confirms the contract and owner are perpetually tax neutral.
