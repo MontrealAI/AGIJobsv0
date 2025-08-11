@@ -31,6 +31,7 @@ contract MockStakeManager is IStakeManager {
     }
 
     function depositStake(Role, uint256) external override {}
+    function depositStakeFor(address, Role, uint256) external override {}
     function withdrawStake(Role, uint256) external override {}
     function lockJobFunds(bytes32, address, uint256) external override {}
     function releaseJobFunds(bytes32, address, uint256) external override {}
@@ -88,8 +89,12 @@ contract FeePoolTest {
         feePool.distributeFees();
         vm.prank(alice);
         feePool.claimRewards();
-        uint256 expected = 1_500_000 * 1_000_000 / 3_000_000;
-        require(token.balanceOf(alice) == expected, "claim");
+        vm.prank(bob);
+        feePool.claimRewards();
+        uint256 aliceExpected = 1_500_000 * 1_000_000 / 3_000_000;
+        uint256 bobExpected = 1_500_000 * 2_000_000 / 3_000_000;
+        require(token.balanceOf(alice) == aliceExpected, "alice claim");
+        require(token.balanceOf(bob) == bobExpected, "bob claim");
     }
 
     function testTokenSwitch() public {
