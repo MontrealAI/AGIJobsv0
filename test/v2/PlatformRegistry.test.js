@@ -66,5 +66,15 @@ describe("PlatformRegistry", function () {
       .to.emit(registry, "MinPlatformStakeUpdated")
       .withArgs(STAKE * 2);
   });
+
+  it("enforces owner-managed blacklist", async () => {
+    await registry.setBlacklist(platform.address, true);
+    await expect(registry.connect(platform).register()).to.be.revertedWith(
+      "blacklisted"
+    );
+    expect(await registry.getScore(platform.address)).to.equal(0);
+    await registry.setBlacklist(platform.address, false);
+    await registry.connect(platform).register();
+  });
 });
 

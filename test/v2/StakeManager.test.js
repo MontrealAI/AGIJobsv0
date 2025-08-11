@@ -90,6 +90,47 @@ describe("StakeManager", function () {
     expect(await token.balanceOf(treasury.address)).to.equal(50n);
   });
 
+  it("rejects unauthorized slashing and excessive amounts", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(user).depositStake(0, 100);
+
+    await expect(
+      stakeManager
+        .connect(user)
+        .slash(user.address, 0, 10, employer.address)
+    ).to.be.revertedWith("only job registry");
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .slash(user.address, 0, 200, employer.address)
+    ).to.be.revertedWith("stake");
+  });
+
   it("enforces tax acknowledgement for staking operations", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
