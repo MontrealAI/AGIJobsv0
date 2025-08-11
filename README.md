@@ -1008,6 +1008,7 @@ interface IStakeManager {
 | `ValidationModule` | `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9` | Selects validators and runs commit‑reveal voting |
 | `StakeManager` | `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` | Custodies collateral and executes slashing |
 | `ReputationEngine` | `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9` | Updates reputation scores and applies penalties |
+| `PlatformRegistry` | `0x0000000000000000000000000000000000000000` | Registers staked operators and exposes routing scores |
 | `DisputeModule` | `0x0165878A594ca255338adfa4d48449f69242Eb8F` | Handles appeals and renders final rulings |
 | `CertificateNFT` | `0x5FC8d32690cc91D4c39d9d3abcBD16989F875707` | Mints ERC‑721 certificates for completed jobs |
 | `TaxPolicy` | `0x0000000000000000000000000000000000000000` | Stores tax disclaimer URI and acknowledgement helper |
@@ -1031,14 +1032,14 @@ $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments,
 1. **Deploy core modules** in the following order using any wallet or Etherscan `Write` tab:
    - `StakeManager` – constructor takes the $AGIALPHA token and treasury address.
    - `ReputationEngine` – pass your address as owner and later call `setCaller` for authorized modules.
-   - `FeePool`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `CertificateNFT`, `JobRouter`, and `DiscoveryModule` – use the previously deployed module addresses in their constructors.
+   - `FeePool`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `CertificateNFT`, and `PlatformRegistry` – use the previously deployed module addresses in their constructors.
 2. **Configure staking and rewards**
    - On `StakeManager`, call `setMinStake`, `setSlashingPercentages`, and `setTreasury` as needed.
    - On `FeePool`, call `setRewardRole(2)` to direct revenue to platform stakers and adjust `setBurnPct` if desired.
 3. **Wire modules together**
    - In `JobRegistry`, call `setModules` with addresses of `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`, and `CertificateNFT`.
    - In `ValidationModule`, set validator windows, pool, and connect the `ReputationEngine`.
-   - For discovery and routing benefits, register platform operators in `JobRouter` and `DiscoveryModule` once they have staked tokens (`Role 2 = Platform`).
+   - Once operators have staked tokens (role `2 = Platform`), have them call `register()` on `PlatformRegistry` to gain routing priority and fee shares.
 4. **Token flexibility**
    - If a new payout token is needed, the owner may call `setToken` on `StakeManager`, `FeePool`, and any other module holding tokens. No redeployment is required.
 
@@ -1056,6 +1057,9 @@ Once configured, all interaction—job creation, staking, validation, dispute re
 **depositStake**
 1. Open `StakeManager` **Read Contract** and confirm `isTaxExempt()`.
 2. In **Write Contract**, call `depositStake(role, amount)` (role `0` = Agent, `1` = Validator, `2` = Platform).
+
+**registerPlatform**
+1. After staking under role `2`, open `PlatformRegistry` **Write Contract** and call `register()` to receive routing priority and fee shares.
 
 **commitValidation / revealValidation**
 1. On `ValidationModule` **Read Contract**, check `isTaxExempt()`.
