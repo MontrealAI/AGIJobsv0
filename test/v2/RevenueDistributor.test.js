@@ -42,5 +42,28 @@ describe("RevenueDistributor", function () {
     expect(a2 - b2).to.equal(ethers.parseEther("2"));
     expect(a3 - b3).to.equal(ethers.parseEther("3"));
   });
+
+  it("skips owner even if registered and staked", async () => {
+    await stakeManager.setStake(owner.address, 2, 400);
+    await distributor.connect(owner).register();
+
+    const amount = ethers.parseEther("6");
+    const bOwner = await ethers.provider.getBalance(owner.address);
+    const b1 = await ethers.provider.getBalance(op1.address);
+    const b2 = await ethers.provider.getBalance(op2.address);
+    const b3 = await ethers.provider.getBalance(op3.address);
+
+    await distributor.connect(payer).distribute({ value: amount });
+
+    const aOwner = await ethers.provider.getBalance(owner.address);
+    const a1 = await ethers.provider.getBalance(op1.address);
+    const a2 = await ethers.provider.getBalance(op2.address);
+    const a3 = await ethers.provider.getBalance(op3.address);
+
+    expect(aOwner - bOwner).to.equal(0n);
+    expect(a1 - b1).to.equal(ethers.parseEther("1"));
+    expect(a2 - b2).to.equal(ethers.parseEther("2"));
+    expect(a3 - b3).to.equal(ethers.parseEther("3"));
+  });
 });
 
