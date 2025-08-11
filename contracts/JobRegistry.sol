@@ -20,6 +20,10 @@ interface IStakeManager {
     function stakes(address user) external view returns (uint256);
 }
 
+interface IFeePool {
+    function depositFee(uint256 amount) external;
+}
+
 interface ICertificateNFT {
     function mintCertificate(
         address to,
@@ -43,6 +47,7 @@ contract JobRegistry is Ownable {
         address agent;
         uint256 reward;
         uint256 stake;
+        uint256 fee;
         bool success;
         Status status;
         string outputURI;
@@ -56,9 +61,11 @@ contract JobRegistry is Ownable {
     IStakeManager public stakeManager;
     ICertificateNFT public certificateNFT;
     IDisputeModule public disputeModule;
+    IFeePool public feePool;
 
     uint256 public jobReward;
     uint256 public jobStake;
+    uint256 public feePct;
 
     /// @notice tracks which addresses acknowledged the tax policy
     mapping(address => bool) private _taxAcknowledged;
@@ -72,6 +79,8 @@ contract JobRegistry is Ownable {
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
     event DisputeModuleUpdated(address module);
+    event FeePoolUpdated(address pool);
+    event FeePctUpdated(uint256 feePct);
 
     event JobCreated(
         uint256 indexed jobId,
@@ -136,6 +145,18 @@ contract JobRegistry is Ownable {
         emit ModuleUpdated("DisputeModule", address(module));
     }
 
+    function setFeePool(IFeePool pool) external onlyOwner {
+        feePool = pool;
+        emit FeePoolUpdated(address(pool));
+        emit ModuleUpdated("FeePool", address(pool));
+    }
+
+    function setFeePct(uint256 _feePct) external onlyOwner {
+        require(_feePct <= 100, "pct");
+        feePct = _feePct;
+        emit FeePctUpdated(_feePct);
+    }
+
     function setModules(
         IValidationModule _validationModule,
         IReputationEngine _reputationEngine,
@@ -176,16 +197,18 @@ contract JobRegistry is Ownable {
         require(agent != msg.sender, "self");
         require(stakeManager.stakes(agent) >= jobStake, "stake missing");
         jobId = ++nextJobId;
+        uint256 fee = (jobReward * feePct) / 100;
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: agent,
             reward: jobReward,
             stake: jobStake,
+            fee: fee,
             success: false,
             status: Status.Created,
             outputURI: ""
         });
-        stakeManager.lockReward(msg.sender, jobReward);
+        stakeManager.lockReward(msg.sender, jobReward + fee);
         emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake);
     }
 
@@ -239,12 +262,20 @@ contract JobRegistry is Ownable {
         require(job.status == Status.Completed, "not ready");
         job.status = Status.Finalized;
         if (job.success) {
-            stakeManager.payReward(job.agent, job.reward);
+            uint256 payout = job.reward;
+            IFeePool pool = feePool;
+            uint256 fee = job.fee;
+            if (address(pool) != address(0) && fee > 0) {
+                stakeManager.payReward(address(pool), fee);
+                pool.depositFee(fee);
+                payout -= fee;
+            }
+            stakeManager.payReward(job.agent, payout);
             stakeManager.releaseStake(job.agent, job.stake);
             reputationEngine.addReputation(job.agent, 1);
             certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
         } else {
-            stakeManager.payReward(job.employer, job.reward);
+            stakeManager.payReward(job.employer, job.reward + job.fee);
             stakeManager.slash(job.agent, job.employer, job.stake);
             reputationEngine.subtractReputation(job.agent, 1);
         }
