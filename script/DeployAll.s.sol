@@ -10,8 +10,14 @@ import {ValidationModule} from "contracts/v2/ValidationModule.sol";
 import {ReputationEngine} from "contracts/v2/ReputationEngine.sol";
 import {DisputeModule} from "contracts/v2/DisputeModule.sol";
 import {CertificateNFT} from "contracts/v2/modules/CertificateNFT.sol";
+import {ICertificateNFT} from "contracts/v2/interfaces/ICertificateNFT.sol";
 import {FeePool} from "contracts/v2/FeePool.sol";
 import {PlatformRegistry} from "contracts/v2/PlatformRegistry.sol";
+import {IStakeManager} from "contracts/v2/interfaces/IStakeManager.sol";
+import {IReputationEngine} from "contracts/v2/interfaces/IReputationEngine.sol";
+import {IFeePool} from "contracts/v2/interfaces/IFeePool.sol";
+import {IValidationModule} from "contracts/v2/interfaces/IValidationModule.sol";
+import {IDisputeModule} from "contracts/v2/interfaces/IDisputeModule.sol";
 import {TaxPolicy} from "contracts/v2/TaxPolicy.sol";
 import {RevenueDistributor} from "contracts/v2/modules/RevenueDistributor.sol";
 
@@ -50,8 +56,8 @@ contract DeployAll is Script {
 
         FeePool feePool = new FeePool(
             IERC20(address(token)),
-            stake,
-            StakeManager.Role.Platform,
+            IStakeManager(address(stake)),
+            IStakeManager.Role.Platform,
             vm.addr(deployer)
         );
 
@@ -61,15 +67,21 @@ contract DeployAll is Script {
         );
 
         PlatformRegistry platformRegistry = new PlatformRegistry(
-            stake,
-            reputation,
+            IStakeManager(address(stake)),
+            IReputationEngine(address(reputation)),
             1_000e6,
             vm.addr(deployer)
         );
 
         stake.setJobRegistry(address(registry));
-        registry.setModules(validation, stake, reputation, dispute, nft);
-        registry.setFeePool(feePool);
+        registry.setModules(
+            validation,
+            stake,
+            IReputationEngine(address(reputation)),
+            IDisputeModule(address(dispute)),
+            ICertificateNFT(address(nft))
+        );
+        registry.setFeePool(IFeePool(address(feePool)));
         registry.setFeePct(5);
 
         vm.stopBroadcast();

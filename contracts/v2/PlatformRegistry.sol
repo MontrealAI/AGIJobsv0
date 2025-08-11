@@ -23,6 +23,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     uint256 public minPlatformStake;
     mapping(address => bool) public registered;
     mapping(address => bool) public blacklist;
+    mapping(address => bool) public registrars;
 
     event Registered(address indexed operator);
     event Deregistered(address indexed operator);
@@ -30,6 +31,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     event ReputationEngineUpdated(address indexed engine);
     event MinPlatformStakeUpdated(uint256 stake);
     event Blacklisted(address indexed operator, bool status);
+    event RegistrarUpdated(address indexed registrar, bool allowed);
 
     constructor(
         IStakeManager _stakeManager,
@@ -96,6 +98,28 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     function setBlacklist(address operator, bool status) external onlyOwner {
         blacklist[operator] = status;
         emit Blacklisted(operator, status);
+    }
+
+    /// @notice Authorize or revoke a registrar address.
+    function setRegistrar(address registrar, bool allowed) external onlyOwner {
+        registrars[registrar] = allowed;
+        emit RegistrarUpdated(registrar, allowed);
+    }
+
+    /// @notice Register an operator on their behalf.
+    /// @dev Caller must be the operator or an authorised registrar.
+    function registerFor(address operator) external nonReentrant {
+        if (msg.sender != operator) {
+            require(registrars[msg.sender], "registrar");
+        }
+        require(!registered[operator], "registered");
+        require(!blacklist[operator], "blacklisted");
+        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        if (operator != owner()) {
+            require(stake >= minPlatformStake, "stake");
+        }
+        registered[operator] = true;
+        emit Registered(operator);
     }
 
     /// @notice Confirms the contract and owner are perpetually tax neutral.

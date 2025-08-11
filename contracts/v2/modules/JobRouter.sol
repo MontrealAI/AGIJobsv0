@@ -14,10 +14,13 @@ contract JobRouter is Ownable {
     address[] public platformList;
     /// @dev tracks whether an operator is active within the router
     mapping(address => bool) public registered;
+    /// @dev addresses authorised to register operators on their behalf
+    mapping(address => bool) public registrars;
 
     event Registered(address indexed operator);
     event Deregistered(address indexed operator);
     event PlatformSelected(bytes32 indexed seed, address indexed operator);
+    event RegistrarUpdated(address indexed registrar, bool allowed);
 
     constructor(IPlatformRegistry _platformRegistry, address owner) Ownable(owner) {
         platformRegistry = _platformRegistry;
@@ -33,11 +36,30 @@ contract JobRouter is Ownable {
         emit Registered(msg.sender);
     }
 
+    /// @notice Register an operator on their behalf.
+    /// @dev Caller must be the operator or an authorised registrar.
+    function registerFor(address operator) external {
+        if (msg.sender != operator) {
+            require(registrars[msg.sender], "registrar");
+        }
+        require(!registered[operator], "registered");
+        require(platformRegistry.registered(operator), "registry");
+        registered[operator] = true;
+        platformList.push(operator);
+        emit Registered(operator);
+    }
+
     /// @notice Deregister the caller from routing.
     function deregister() external {
         require(registered[msg.sender], "not registered");
         registered[msg.sender] = false;
         emit Deregistered(msg.sender);
+    }
+
+    /// @notice Authorize or revoke a registrar address.
+    function setRegistrar(address registrar, bool allowed) external onlyOwner {
+        registrars[registrar] = allowed;
+        emit RegistrarUpdated(registrar, allowed);
     }
 
     /// @notice Compute routing weight for an operator as a fraction of total score.
