@@ -2,44 +2,28 @@
 pragma solidity ^0.8.25;
 
 import "contracts/v2/modules/JobRouter.sol";
-import "contracts/v2/interfaces/IStakeManager.sol";
-import "contracts/v2/interfaces/IFeePool.sol";
+import "contracts/v2/interfaces/IPlatformRegistry.sol";
 
 // minimal cheatcode interface
 interface Vm {
     function prank(address) external;
 }
 
-contract MockStakeManager is IStakeManager {
-    function depositStake(Role, uint256) external override {}
-    function withdrawStake(Role, uint256) external override {}
-    function lockJobFunds(bytes32, address, uint256) external override {}
-    function releaseJobFunds(bytes32, address, uint256) external override {}
-    function finalizeJobFunds(bytes32, address, uint256, uint256, IFeePool) external override {}
-    function setDisputeModule(address) external override {}
-    function lockDisputeFee(address, uint256) external override {}
-    function payDisputeFee(address, uint256) external override {}
-    function slash(address, Role, uint256, address) external override {}
-    function setSlashPercentSumEnforcement(bool) external override {}
+contract MockPlatformRegistry is IPlatformRegistry {
+    mapping(address => bool) public registered;
+    mapping(address => uint256) public scores;
 
-    mapping(address => mapping(Role => uint256)) public stakes;
-    mapping(Role => uint256) public totals;
-
-    function setStake(address user, Role role, uint256 amount) external {
-        totals[role] = totals[role] - stakes[user][role] + amount;
-        stakes[user][role] = amount;
+    function register(address op, uint256 score) external {
+        registered[op] = true;
+        scores[op] = score;
     }
 
-    function stakeOf(address user, Role role) external view override returns (uint256) {
-        return stakes[user][role];
+    function setScore(address op, uint256 score) external {
+        scores[op] = score;
     }
 
-    function totalStake(Role role) external view override returns (uint256) {
-        return totals[role];
-    }
-
-    function jobRegistry() external pure override returns (address) {
-        return address(0);
+    function getScore(address op) external view returns (uint256) {
+        return registered[op] ? scores[op] : 0;
     }
 }
 
@@ -47,18 +31,18 @@ contract JobRouterTest {
     Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
     JobRouter router;
-    MockStakeManager stakeManager;
+    MockPlatformRegistry registry;
     address platform1 = address(0x1);
     address platform2 = address(0x2);
 
     function setUp() public {
-        stakeManager = new MockStakeManager();
-        router = new JobRouter(stakeManager, address(this));
+        registry = new MockPlatformRegistry();
+        router = new JobRouter(registry, address(this));
     }
 
     function registerPlatforms() internal {
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 300);
+        registry.register(platform1, 100);
+        registry.register(platform2, 300);
         vm.prank(platform1);
         router.register();
         vm.prank(platform2);
@@ -85,15 +69,15 @@ contract JobRouterTest {
     function testNoEligiblePlatforms() public {
         setUp();
         address selected = router.selectPlatform(bytes32(uint256(1)));
-        require(selected == address(0), "none");
+        require(selected == address(this), "none");
     }
 
-    function testRegisterRequiresStake() public {
+    function testRegisterRequiresRegistration() public {
         setUp();
         bool reverted;
         vm.prank(platform1);
         try router.register() { reverted = false; } catch { reverted = true; }
-        require(reverted, "needs stake");
+        require(reverted, "needs registry");
     }
 }
 

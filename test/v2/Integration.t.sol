@@ -5,6 +5,7 @@ import "contracts/v2/FeePool.sol";
 import "contracts/v2/modules/JobRouter.sol";
 import "contracts/v2/interfaces/IStakeManager.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
+import "contracts/v2/interfaces/IPlatformRegistry.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface Vm {
@@ -37,6 +38,21 @@ contract ReentrantToken is ERC20 {
     }
 }
 
+contract MockPlatformRegistry is IPlatformRegistry {
+    mapping(address => bool) public registered;
+    mapping(address => uint256) public scores;
+    function register(address op, uint256 score) external {
+        registered[op] = true;
+        scores[op] = score;
+    }
+    function setScore(address op, uint256 score) external {
+        scores[op] = score;
+    }
+    function getScore(address op) external view returns (uint256) {
+        return registered[op] ? scores[op] : 0;
+    }
+}
+
 contract MockStakeManager is IStakeManager {
     mapping(address => mapping(Role => uint256)) public stakes;
     mapping(Role => uint256) public totals;
@@ -64,12 +80,12 @@ contract MockStakeManager is IStakeManager {
     }
 }
 
-
 contract IntegrationTest {
     Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
     TestToken token;
     MockStakeManager stakeManager;
+    MockPlatformRegistry registry;
     FeePool feePool;
     JobRouter router;
 
@@ -81,14 +97,17 @@ contract IntegrationTest {
         token = new TestToken();
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
+        registry = new MockPlatformRegistry();
         feePool = new FeePool(token, stakeManager, IStakeManager.Role.Platform, address(this));
-        router = new JobRouter(stakeManager, address(this));
+        router = new JobRouter(registry, address(this));
     }
 
     function testLifecycle() public {
         setUp();
         stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
         stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200);
+        registry.register(platform1, 100);
+        registry.register(platform2, 200);
         vm.prank(platform1);
         router.register();
         vm.prank(platform2);
@@ -130,23 +149,23 @@ contract IntegrationTest {
 
     function testFuzzRoutingFairness(uint64 st1, uint64 st2, bytes32 seed) public {
         setUp();
-        uint256 stake1 = uint256(st1 % 1e12);
-        uint256 stake2 = uint256(st2 % 1e12);
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, stake1);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, stake2);
-        if (stake1 > 0) {
+        uint256 score1 = uint256(st1 % 1e12);
+        uint256 score2 = uint256(st2 % 1e12);
+        if (score1 > 0) {
+            registry.register(platform1, score1);
             vm.prank(platform1);
             router.register();
         }
-        if (stake2 > 0) {
+        if (score2 > 0) {
+            registry.register(platform2, score2);
             vm.prank(platform2);
             router.register();
         }
         address selected = router.selectPlatform(seed);
-        uint256 weight1 = stake1;
-        uint256 weight2 = stake2;
+        uint256 weight1 = score1;
+        uint256 weight2 = score2;
         if (weight1 + weight2 == 0) {
-            require(selected == address(0), "none");
+            require(selected == address(this), "none");
         } else {
             bytes32 bh = blockhash(block.number - 1);
             uint256 r = uint256(keccak256(abi.encodePacked(bh, seed))) % (weight1 + weight2);
