@@ -20,6 +20,7 @@ Key incentive features in the v2 suite:
 - Every economic parameter—token address, fee split, minimum stake, burn percentage—can be retuned by the contract owner via `Ownable` setters, without redeploying modules.
 - Staked participants must comply with local regulations even though rewards are distributed on-chain; see [docs/tax-obligations.md](docs/tax-obligations.md) for guidance.
 - All interactions are available through block explorer "Write" tabs, keeping the system accessible to non-technical users without bespoke tooling.
+- `PlatformIncentives` lets operators stake and register in a single `stakeAndActivate` call after approving the `StakeManager`, streamlining on‑chain onboarding.
 
 | Role              | Stake Requirement | Incentives unlocked                                             |
 |-------------------|------------------:|-----------------------------------------------------------------|
@@ -64,7 +65,8 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, and `TaxPolicy`.
 2. Connect them with owner‑only setters such as `JobRegistry.setModules`, `StakeManager.setJobRegistry`, `JobRegistry.setFeePool`, and `JobRegistry.setTaxPolicy`.
 3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setParameters`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
-4. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
+4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
+5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
 
 Amounts use 6‑decimal base units:
 
