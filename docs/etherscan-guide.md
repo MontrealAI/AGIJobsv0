@@ -32,6 +32,19 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
+## Deployment Order
+Deploy modules sequentially so later contracts can reference earlier addresses.
+
+| # | Module | Purpose |
+| --- | --- | --- |
+| 1 | StakeManager | Custodies escrowed rewards and participant stakes. |
+| 2 | JobRegistry | Posts jobs and routes calls between modules. |
+| 3 | ValidationModule | Runs commit–reveal voting and selects validators. |
+| 4 | ReputationEngine | Tracks good or bad performance for each address. |
+| 5 | DisputeModule | Handles appeals when validation is contested. |
+| 6 | CertificateNFT | Issues completion certificates for finished jobs. |
+| 7 | TaxPolicy | Stores the tax disclaimer and acknowledgement text. |
+
 ## Role-based Instructions
 
 Before performing any on-chain action, employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` and verify `isTaxExempt()`—all taxes fall on participants while the contracts and owner remain globally exempt. The `acknowledgeTaxPolicy` transaction emits `TaxAcknowledged(user, version, acknowledgement)` so the accepted disclaimer text is permanently recorded on-chain.
@@ -78,6 +91,36 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 2. In `JobRegistry` **Write Contract**, call **dispute(jobId)** with the required `appealFee`; the registry forwards to `DisputeModule.appeal(jobId)`.
 3. After the ruling, verify **DisputeResolved** in the `DisputeModule` and `JobRegistry` event logs.
 
+## Function Reference
+
+### JobRegistry
+| Function | Parameters | Typical Use Case |
+| --- | --- | --- |
+| `createJob(string details, uint256 reward)` | `details` – off-chain URI, `reward` – escrowed token amount | Employer posts a new job and locks payment. |
+| `acknowledgeTaxPolicy()` | none | Participant confirms tax disclaimer before interacting. |
+| `setModules(address validation, address stake, address reputation, address dispute, address certificate)` | module addresses | Owner wires modules after deployment. |
+
+### StakeManager
+| Function | Parameters | Typical Use Case |
+| --- | --- | --- |
+| `depositStake(uint8 role, uint256 amount)` | `role` – 0 Agent, 1 Validator, 2 Platform; `amount` – tokens | Participants bond tokens for their role. |
+| `setToken(address newToken)` | `newToken` – ERC‑20 address | Owner switches the staking and reward token. |
+| `slash(address offender, address beneficiary, uint256 amount)` | offending address, beneficiary address, amount | Owner penalises misbehaviour and redirects stake. |
+
+### ValidationModule
+| Function | Parameters | Typical Use Case |
+| --- | --- | --- |
+| `commit(uint256 jobId, bytes32 hash)` | `jobId` – job reference, `hash` – vote commitment | Validator submits a hashed vote during commit window. |
+| `reveal(uint256 jobId, bool verdict, bytes32 salt)` | jobId, approval verdict, salt | Validator reveals vote before the reveal window closes. |
+| `finalize(uint256 jobId)` | jobId | Anyone settles a validated job after reveals. |
+
+### DisputeModule
+| Function | Parameters | Typical Use Case |
+| --- | --- | --- |
+| `raiseDispute(uint256 jobId, string reason)` | jobId, reason URI | Participant appeals a validation outcome. |
+| `resolveDispute(uint256 jobId, bool uphold)` | jobId, `uphold` – sustain original result? | Moderator issues a final ruling. |
+| `setAppealFee(uint256 fee)` | fee amount | Owner adjusts the dispute bond charged on appeals. |
+
 ## Parameter Glossary
 
 | Parameter | Description |
@@ -89,6 +132,11 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | `burnPercentage` | Portion of payout burned on job finalization (basis points). |
 | `validationRewardPercentage` | Share of payout granted to correct validators. |
 | `cancelRewardPercentage` | Share awarded to the caller when cancelling expired jobs. |
+
+## Operational Warnings
+- Gas costs rise with complex calls and network congestion; budget extra ETH for `finalize` or `setModules`.
+- Commit and reveal phases have strict windows; missing a window can forfeit rewards or trigger slashing.
+- Raising a dispute requires an `appealFee` bond in the `DisputeModule`; losing an appeal may forfeit this bond.
 
 ## Security Warnings
 - Contracts are unaudited; interact at your own risk.
