@@ -5,6 +5,7 @@ import "contracts/v2/FeePool.sol";
 import "contracts/v2/modules/JobRouter.sol";
 import "contracts/v2/interfaces/IStakeManager.sol";
 import "contracts/v2/interfaces/IReputationEngine.sol";
+import "contracts/v2/interfaces/IFeePool.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface Vm {
@@ -50,6 +51,7 @@ contract MockStakeManager is IStakeManager {
     function withdrawStake(Role, uint256) external override {}
     function lockJobFunds(bytes32, address, uint256) external override {}
     function releaseJobFunds(bytes32, address, uint256) external override {}
+    function finalizeJobFunds(bytes32, address, uint256, uint256, IFeePool) external override {}
     function setDisputeModule(address) external override {}
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
@@ -115,8 +117,9 @@ contract IntegrationTest {
         vm.prevrandao(bytes32(uint256(1)));
         router.selectPlatform(jobId);
         token.mint(address(feePool), 3000);
-        vm.prank(jobRegistryAddr);
+        vm.prank(address(stakeManager));
         feePool.depositFee(3000);
+        feePool.distributeFees();
         vm.prank(platform1);
         feePool.claimRewards();
         vm.prank(platform2);
@@ -133,8 +136,9 @@ contract IntegrationTest {
         stakeManager.setStake(platform1, IStakeManager.Role.Platform, stake1);
         stakeManager.setStake(platform2, IStakeManager.Role.Platform, stake2);
         token.mint(address(feePool), amount);
-        vm.prank(jobRegistryAddr);
+        vm.prank(address(stakeManager));
         feePool.depositFee(amount);
+        feePool.distributeFees();
         vm.prank(platform1);
         feePool.claimRewards();
         vm.prank(platform2);
@@ -191,8 +195,9 @@ contract IntegrationTest {
         ReentrantToken mal = new ReentrantToken(feePool);
         feePool.setToken(mal);
         mal.mint(address(feePool), 3000);
-        vm.prank(jobRegistryAddr);
+        vm.prank(address(stakeManager));
         feePool.depositFee(3000);
+        feePool.distributeFees();
         mal.trigger();
         vm.prank(platform1);
         feePool.claimRewards();
