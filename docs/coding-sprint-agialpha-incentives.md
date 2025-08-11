@@ -62,6 +62,9 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
    - Update `README.md`, `docs/incentive-mechanisms-agialpha.md` and
      `docs/deployment-agialpha.md` to cover Etherscan flows, owner‑only setters
      and base‑unit conversions.
+   - Add a concise Etherscan deployment quickstart to the README so non‑technical
+     operators can launch the suite with $AGIALPHA and later retune parameters
+     without redeploying contracts.
 
 ## Definition of Done
 - All modules deployed immutably and wired through `JobRegistry`.

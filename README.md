@@ -146,7 +146,9 @@ interface ICertificateNFT { function mintCertificate(address employer, uint256 j
 - Transfer ownership to a multisig or timelock for added security.
 - Public functions accept primitive types and include NatSpec comments so owners can administer modules directly through Etherscan's **Write Contract** tab without scripts.
 
-### Using $AGIALPHA (6 decimals)
+### Using $AGIALPHA (6 decimals) – Etherscan Deployment Quickstart
+
+This section walks a non‑technical owner through deploying and operating the suite directly from a browser on [Etherscan](https://etherscan.io). $AGIALPHA (6‑decimal ERC‑20) is the default currency for payments, staking, rewards and dispute deposits, yet the owner may swap the token or retune parameters later without redeploying any module.
 
 The v2 contracts treat the payment token as an owner‑configurable parameter. By default the `StakeManager` points to the $AGIALPHA ERC‑20 at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe` (6 decimals). All token operations are scaled by `10**6`, so callers must convert whole values to base units before submitting transactions. For example:
 
@@ -158,15 +160,13 @@ The v2 contracts treat the payment token as an owner‑configurable parameter. B
 
 When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` to obtain 6‑decimal values; this downscaling can truncate precision beyond six decimals.
 
-**Deployment steps**
+**Etherscan deployment steps**
 
-1. Deploy `StakeManager` with the $AGIALPHA address, or call `setToken` after deployment to switch tokens.
-2. Wire modules via `JobRegistry.setModules`, then attach the fee pool through `JobRegistry.setFeePool(pool)` and choose a protocol fee with `setFeePct(pct)`. All stake and fee parameters use 6‑decimal units (e.g. `100_000000` for 100 tokens).
-3. Employers and agents `approve` the `StakeManager` to spend $AGIALPHA, then use `createJob` or `depositStake` normally. Employer approvals must cover the reward plus protocol fee.
-4. Platform operators stake under `Role.Platform` via `StakeManager.depositStake(2, amount)` and register their marketplace with `JobRouter.registerPlatform(operator)`. Staked operators share job fees through `FeePool` and can claim rewards with `claimRewards()`.
-5. Deploy `GovernanceReward` with `(token, owner)`; after each vote record participants and call `finalizeEpoch(totalReward)` so voters can claim bonuses.
-6. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
-7. All owner and user actions can be performed in a browser through Etherscan's **Write Contract** tab – connect a wallet, enter the primitive arguments, and submit the transaction.
+1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, owner, treasury)`, `JobRegistry(owner)`, `ValidationModule(jobRegistry, stakeManager, owner)`, `ReputationEngine(owner)`, `DisputeModule(jobRegistry, stakeManager, reputationEngine, owner)`, `CertificateNFT(name, symbol, owner)`, `FeePool(token, stakeManager, role, owner)` and `TaxPolicy(owner)`.
+2. **Wire them together** – In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`, then `setFeePool(feePool)` and `setFeePct(pct)`. Point the `StakeManager` back to the registry with `setJobRegistry(jobRegistry)`.
+3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend $AGIALPHA and then call `createJob` or `depositStake`. Platform operators stake under `Role.Platform` via `depositStake(2, amount)` and register through `JobRouter.registerPlatform(operator)`.
+4. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, owner)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
+5. **Adjust over time** – The owner can update burn rates, stake thresholds or even swap the token using `setToken` on `StakeManager`, `FeePool` and reward modules. All interactions use simple primitive types suitable for the **Write Contract** tab.
 
 Each module is deployed once and remains immutable; the owner upgrades components by deploying a replacement and repointing `JobRegistry.setModules` or other owner‑only setters. Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
