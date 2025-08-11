@@ -9,6 +9,7 @@ Key incentive features in the v2 suite:
 - **Stake‑weighted routing & discovery** – `PlatformRegistry` and `JobRouter` prioritise operators with higher stake and reputation; well‑staked validators receive additional validation slots.
 - **Governance rewards** – `GovernanceReward` pays bonuses to voters who participate in parameter polls.
 - **Sybil and regulatory mitigation** – minimum stakes, burn sinks, and blacklist controls deter abuse while keeping participants pseudonymous.
+- **Tax‑neutral pseudonymity** – every module rejects direct ETH and exposes `isTaxExempt()` so rewards flow on‑chain in $AGIALPHA with no off‑chain reporting.
 - **Owner‑controlled configuration** – every module exposes `Ownable` setters so the owner can adjust tokens, fees and stake thresholds directly through Etherscan without redeploying contracts.
 
 > **Critical Security Notice:** `AGIJobManagerv0.sol` in `legacy/` is the exact source for the mainnet contract at [`0x0178…ba477`](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477). It is immutable and must never be altered. Any future releases will appear as new files (for example, `contracts/AGIJobManagerv1.sol`) and will be announced only through official AGI.eth channels. Always cross‑check contract addresses and bytecode on multiple explorers before sending funds or interacting with a deployment.
