@@ -50,9 +50,9 @@ describe("Legacy contract ether rejection", function () {
 
   it("StakeManager", async () => {
     const Token = await ethers.getContractFactory(
-      "contracts/mocks/MockERC20.sol:MockERC20"
+      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    const token = await Token.deploy();
+    const token = await Token.deploy(owner.address);
     await token.waitForDeployment();
     const Factory = await ethers.getContractFactory(
       "contracts/StakeManager.sol:StakeManager"
