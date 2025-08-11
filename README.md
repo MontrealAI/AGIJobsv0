@@ -12,6 +12,24 @@ Key incentive features in the v2 suite:
 - **Tax‑neutral pseudonymity** – every module rejects direct ETH and exposes `isTaxExempt()` so rewards flow on‑chain in $AGIALPHA with no off‑chain reporting.
 - **Owner‑controlled configuration** – every module exposes `Ownable` setters so the owner can adjust tokens, fees and stake thresholds directly through Etherscan without redeploying contracts.
 
+### Platform Operator Incentives
+
+Staking $AGIALPHA through `PlatformIncentives.stakeAndActivate` registers a platform in `PlatformRegistry`, boosts its routing priority in `JobRouter`, and entitles it to a proportional share of fees from `FeePool`. In short: **staking → routing priority → revenue share**.
+
+#### Etherscan registration
+
+- **Register with stake**
+  1. Approve `StakeManager` for the desired amount of $AGIALPHA.
+  2. Open `PlatformIncentives` on Etherscan and call `stakeAndActivate(amount)` from the **Write Contract** tab.
+  3. Verify `PlatformRegistry.getScore(address)` is greater than zero and later claim fees via `FeePool.claimRewards()`.
+
+- **Owner zero-stake registration**
+  1. Skip staking and open `PlatformRegistry` on Etherscan.
+  2. From the **Write Contract** tab, call `register()` to list the platform without routing weight or fee share.
+  3. `PlatformRegistry.getScore(owner)` returns `0` and `FeePool.claimRewards()` emits a zero payout.
+
+On-chain rewards do not remove your obligation to follow local tax laws; consult professionals.
+
 ### Universal Stake-Based Incentive Architecture
 
 - Operators opt in by staking **$AGIALPHA**. Staked addresses gain routing priority, a share of protocol fees, and permission to activate their own job portals.
