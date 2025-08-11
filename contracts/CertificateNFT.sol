@@ -8,19 +8,19 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @notice ERC721 certificate minted upon successful job completion.
 contract CertificateNFT is ERC721, Ownable {
     string private baseTokenURI;
-    address public jobRegistry;
+    mapping(address => bool) public minters;
     mapping(uint256 => string) private _tokenURIs;
 
     event BaseURIUpdated(string newURI);
-    event JobRegistryUpdated(address registry);
+    event MinterUpdated(address minter, bool allowed);
 
     constructor(string memory name_, string memory symbol_, address owner)
         ERC721(name_, symbol_)
         Ownable(owner)
     {}
 
-    modifier onlyJobRegistry() {
-        require(msg.sender == jobRegistry, "only JobRegistry");
+    modifier onlyMinter() {
+        require(minters[msg.sender], "not minter");
         _;
     }
 
@@ -30,10 +30,10 @@ contract CertificateNFT is ERC721, Ownable {
         emit BaseURIUpdated(uri);
     }
 
-    /// @notice Set the authorized JobRegistry contract.
-    function setJobRegistry(address registry) external onlyOwner {
-        jobRegistry = registry;
-        emit JobRegistryUpdated(registry);
+    /// @notice Authorize or remove a minter (e.g., JobRegistry).
+    function setMinter(address minter, bool allowed) external onlyOwner {
+        minters[minter] = allowed;
+        emit MinterUpdated(minter, allowed);
     }
 
     /// @notice Mint a new certificate to `to` for `jobId`.
@@ -42,7 +42,7 @@ contract CertificateNFT is ERC721, Ownable {
         address to,
         uint256 jobId,
         string calldata uri
-    ) external onlyJobRegistry returns (uint256 tokenId) {
+    ) external onlyMinter returns (uint256 tokenId) {
         tokenId = jobId;
         _safeMint(to, tokenId);
         if (bytes(uri).length != 0) {
@@ -62,6 +62,10 @@ contract CertificateNFT is ERC721, Ownable {
     {
         string memory custom = _tokenURIs[tokenId];
         if (bytes(custom).length != 0) {
+            string memory base = _baseURI();
+            if (bytes(base).length != 0) {
+                return string(abi.encodePacked(base, custom));
+            }
             return custom;
         }
         return super.tokenURI(tokenId);

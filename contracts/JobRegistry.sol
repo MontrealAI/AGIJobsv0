@@ -45,6 +45,7 @@ contract JobRegistry is Ownable {
         uint256 stake;
         bool success;
         Status status;
+        string outputURI;
     }
 
     uint256 public nextJobId;
@@ -143,6 +144,7 @@ contract JobRegistry is Ownable {
     /// @notice Create a new job.
     function createJob(address agent) external returns (uint256 jobId) {
         require(jobReward > 0 || jobStake > 0, "params not set");
+        require(agent != msg.sender, "self");
         require(stakeManager.stakes(agent) >= jobStake, "stake missing");
         jobId = ++nextJobId;
         jobs[jobId] = Job({
@@ -151,20 +153,22 @@ contract JobRegistry is Ownable {
             reward: jobReward,
             stake: jobStake,
             success: false,
-            status: Status.Created
+            status: Status.Created,
+            outputURI: ""
         });
         stakeManager.lockReward(msg.sender, jobReward);
         emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake);
     }
 
     /// @notice Agent submits job result; validation outcome stored.
-    function completeJob(uint256 jobId) external {
+    function completeJob(uint256 jobId, string calldata uri) external {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "invalid status");
         require(msg.sender == job.agent, "only agent");
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
         job.status = Status.Completed;
+        job.outputURI = uri;
         emit JobCompleted(jobId, outcome);
     }
 
@@ -200,7 +204,7 @@ contract JobRegistry is Ownable {
             stakeManager.payReward(job.agent, job.reward);
             stakeManager.releaseStake(job.agent, job.stake);
             reputationEngine.addReputation(job.agent, 1);
-            certificateNFT.mintCertificate(job.agent, jobId, "");
+            certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
         } else {
             stakeManager.payReward(job.employer, job.reward);
             stakeManager.slash(job.agent, job.employer, job.stake);
