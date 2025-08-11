@@ -40,3 +40,41 @@ cast send $JOB_REGISTRY "finalize(uint256)" $JOB_ID --from $ANYONE
 ```
 
 Validators that miss a window or reveal a vote inconsistent with their commit risk slashing and loss of reputation.
+
+## Governance Reward Epoch
+
+After each parameter poll, the owner rewards participating voters through the `GovernanceReward` contract.
+
+| Phase | Caller | Description | Function |
+|-------|--------|-------------|----------|
+| Record | Owner | capture addresses that voted this epoch | `GovernanceReward.recordVoters([v1,v2])` |
+| Finalize | Owner | deposit total reward and close the epoch | `GovernanceReward.finalizeEpoch(totalReward)` |
+| Claim | Voter | withdraw an equal share for that epoch | `GovernanceReward.claim(epoch)` |
+
+`totalReward` uses 6‑decimal base units. `finalizeEpoch` increments `currentEpoch` so subsequent `recordVoters` calls start a new epoch.
+
+### Sample Solidity
+
+```solidity
+address[] memory voters = new address[](2);
+voters[0] = voter1;
+voters[1] = voter2;
+reward.recordVoters(voters);
+token.approve(address(reward), 200 * 1e6);
+reward.finalizeEpoch(200 * 1e6);
+// later
+reward.connect(voter1).claim(0);
+```
+
+### CLI Example
+
+```bash
+# record voters after a poll
+cast send $GOV_REWARD "recordVoters(address[])" "[$VOTER1,$VOTER2]" --from $OWNER
+# deposit rewards and finalize the epoch
+cast send $TOKEN "approve(address,uint256)" $GOV_REWARD 200000000 --from $OWNER
+cast send $GOV_REWARD "finalizeEpoch(uint256)" 200000000 --from $OWNER
+# voter claims their share
+cast send $GOV_REWARD "claim(uint256)" 0 --from $VOTER1
+```
+
