@@ -4,6 +4,98 @@
 
 This guide walks you through setting up the AGI Jobs v2 smart contracts on Ethereum mainnet and using them **without any coding**, only via Etherscan’s web interface. We cover everything from connecting your wallet and obtaining tokens, to deploying the contracts, configuring them, and using the system as an employer, agent, validator, or platform operator. All interactions (deployments and function calls) will be done through Etherscan’s **Contract** tabs with a MetaMask wallet.
 
+```mermaid
+flowchart TD
+    subgraph "Prerequisites"
+        PR1["Install MetaMask (Ethereum mainnet)"]
+        PR2["Connect wallet to Etherscan Web3"]
+        PR3["Ensure wallet has ETH for gas"]
+        PR4["Acquire $AGIALPHA tokens\n(add to MetaMask, note 6 decimals)"]
+        PR1 --> PR2 --> PR3 --> PR4
+    end
+    PR4 --> DE1
+    subgraph "Deploy Contracts"
+        DE1["Deploy StakeManager\n(token=$AGIALPHA, owner=you, treasury=addr)"]
+        DE2["Deploy JobRegistry\n(owner=you)"]
+        DE3["Deploy ValidationModule\n(jobRegistry, stakeManager,\n owner=you)"]
+        DE4["Deploy ReputationEngine\n(owner=you)"]
+        DE5["Deploy DisputeModule\n(jobRegistry, stakeManager,\n reputationEngine, owner=you)"]
+        DE6["Deploy CertificateNFT\n(name, symbol,\n owner=you)"]
+        DE7["Deploy FeePool\n(token=$AGIALPHA, stakeManager,\n rewardRole=2, owner=you)"]
+        DE8["Deploy TaxPolicy\n(owner=you)"]
+        DE9["Deploy JobRouter\n(optional, stakeManager,\n reputationEngine, owner=you)"]
+        DE1 --> DE2 --> DE3 --> DE4 --> DE5 --> DE6 --> DE7 --> DE8 --> DE9
+    end
+    DE9 --> LM1
+    subgraph "Link Modules"
+        LM1["JobRegistry.setModules(\nvalidation=ValidationModule,\n stake=StakeManager,\n reputation=ReputationEngine,\n dispute=DisputeModule,\n certificate=CertificateNFT)"]
+        LM2["JobRegistry.setFeePool(FeePool)"]
+        LM3["JobRegistry.setTaxPolicy(TaxPolicy)"]
+        LM4["StakeManager.setJobRegistry(JobRegistry)"]
+        LM5["StakeManager.setDisputeModule(DisputeModule)"]
+        LM6["FeePool.setStakeManager(StakeManager)"]
+        LM7["FeePool.setRewardRole(2 = Platform)"]
+        LM8["DisputeModule.setFeePool(FeePool)"]
+        LM9["DisputeModule.setTaxPolicy(TaxPolicy)"]
+        LM10["JobRouter.setStakeManager/\nReputationEngine (if needed)"]
+        LM1 --> LM2 --> LM3 --> LM4 --> LM5 --> LM6 --> LM7 --> LM8 --> LM9 --> LM10
+    end
+    LM10 --> PA1
+    subgraph "Set Parameters"
+        PA1["StakeManager.setMinStake(minimum stake)"]
+        PA2["StakeManager.setSlashingPercentages(\nemployerPct, treasuryPct)"]
+        PA3["JobRegistry.setJobStake(required agent collateral)"]
+        PA4["JobRegistry.setFeePct(protocol fee %)"]
+        PA5["ValidationModule.setParameters(\nvalidatorsPerJob, commit & reveal time,\n reward%, slash%)"]
+        PA6["DisputeModule.setAppealFee(fee amount)"]
+        PA7["FeePool.setBurnPct(burn %)"]
+        PA8["PlatformRegistry.setMinPlatformStake (if applicable)"]
+        PA1 --> PA2 --> PA3 --> PA4 --> PA5 --> PA6 --> PA7 --> PA8
+    end
+    PA8 --> EM1
+    subgraph "Using the System"
+        EM1["Employer: approve StakeManager to spend reward"]
+        EM2["Employer: call createJob(reward, URI) on JobRegistry"]
+        EM3["StakeManager escrows reward+fee;\nJobRegistry emits JobCreated (jobId)"]
+        EM1 --> EM2 --> EM3
+        EM3 --> AG1
+        EM3 -.-> EM4["(Optional) Employer cancels job"]
+        AG1["Agent: depositStake(role=0, amount) in StakeManager"]
+        AG2["Agent: call applyForJob(jobId) on JobRegistry"]
+        AG3["JobRegistry assigns agent;\njob state -> Applied"]
+        AG4["Agent works on task off-chain"]
+        AG5["Agent: call completeJob(jobId) on JobRegistry"]
+        AG6["JobRegistry moves job to 'Completed',\nvalidation phase begins"]
+        AG1 --> AG2 --> AG3 --> AG4 --> AG5 --> AG6
+        AG6 --> VA2
+        VA2["Validator: depositStake(role=1) in StakeManager"]
+        VA2 --> VA1
+        VA1["System selects N validators for the job"]
+        VA1 --> VA3
+        VA3["Validators: commit votes (hashed) in ValidationModule"]
+        VA3 --> VA4
+        VA4["Validators: reveal votes (approve/reject)"]
+        VA4 --> VA5
+        VA5["ValidationModule tallies results"]
+        VA5 --> T2
+        T2{"Job outcome?"}
+        T2 -- "Success" --> FS["StakeManager: pay agent & validators; send fee to FeePool\nCertificateNFT: mint completion certificate\nReputationEngine: update agent & validator rep"]
+        T2 -- "Failure" --> Y{"Agent appeals?"}
+        Y -- "No" --> FL["StakeManager: refund employer; slash agent stake\n(split to employer & treasury)\nReputationEngine: update rep (agent-, validators+)"]
+        Y -- "Yes" --> D3["DisputeModule: mediator/jury review"]
+        D3 --> Z{"Dispute outcome"}
+        Z -- "Agent wins" --> FS
+        Z -- "Employer wins" --> FL
+        subgraph "Platform Operator"
+            FP["FeePool accrues protocol fees"]
+            PO1["Platform Op: stake & register platform"]
+            PO2["Platform Op: claim fees (FeePool)"]
+            FP --> PO1 --> PO2
+        end
+        FS --> FP
+    end
+```
+
 **Table of Contents:**
 
 1. [Prerequisites: Wallet Setup and Tokens](#prerequisites-wallet-setup-and-tokens)
