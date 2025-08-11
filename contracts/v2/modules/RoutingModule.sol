@@ -76,14 +76,14 @@ contract RoutingModule is Ownable {
         for (uint256 i; i < len; i++) {
             address op = operators[i];
             if (!isOperator[op]) continue;
-            uint256 stake = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
-            if (stake == 0) continue;
-            uint256 rep = 1;
+            uint256 weight;
             if (reputationEnabled && address(reputationEngine) != address(0)) {
-                rep = reputationEngine.getReputation(op);
-                if (rep == 0) continue;
+                weight = reputationEngine.getOperatorScore(op);
+            } else {
+                weight = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
             }
-            totalWeight += stake * rep;
+            if (weight == 0) continue;
+            totalWeight += weight;
         }
 
         if (totalWeight == 0) {
@@ -97,14 +97,13 @@ contract RoutingModule is Ownable {
         for (uint256 i; i < len; i++) {
             address op = operators[i];
             if (!isOperator[op]) continue;
-            uint256 stake = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
-            if (stake == 0) continue;
-            uint256 rep = 1;
+            uint256 weight;
             if (reputationEnabled && address(reputationEngine) != address(0)) {
-                rep = reputationEngine.getReputation(op);
-                if (rep == 0) continue;
+                weight = reputationEngine.getOperatorScore(op);
+            } else {
+                weight = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
             }
-            uint256 weight = stake * rep;
+            if (weight == 0) continue;
             cumulative += weight;
             if (rand < cumulative) {
                 selected = op;
