@@ -30,6 +30,7 @@ All modules expose simple `Ownable` setters so the contract owner can retune fee
 ## 5. Owner Controls & User Experience
 - The contract owner may update fees, burn rates, stake thresholds, and even swap the token address via `StakeManager.setToken`.
 - All interactions rely on simple data types, enabling non‑technical users to operate entirely through Etherscan.
+- Each module exposes an `isTaxExempt()` view and rejects direct ETH to prevent the contracts or owner from ever holding taxable funds.
 - Reward flows never touch off‑chain accounts, keeping operators pseudonymous and outside traditional reporting regimes.
 
 These incentives encourage honest participation, amplify $AGIALPHA demand, and keep all flows pseudonymous and globally tax‑neutral.
