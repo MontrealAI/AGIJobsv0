@@ -77,19 +77,14 @@ describe("PlatformRegistry", function () {
     await registry.connect(platform).register();
   });
 
-  it("requires deployer to stake before registering", async () => {
-    const Registry = await ethers.getContractFactory(
-      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
-    );
-    const reg2 = await Registry.connect(owner).deploy(
-      await stakeManager.getAddress(),
-      await reputationEngine.getAddress(),
-      0,
-      owner.address
-    );
-    await expect(reg2.connect(owner).register()).to.be.revertedWith(
-      "owner stake"
-    );
+  it("allows owner to register without stake and yields zero score", async () => {
+    await expect(registry.connect(owner).register())
+      .to.emit(registry, "Registered")
+      .withArgs(owner.address);
+    expect(await registry.getScore(owner.address)).to.equal(0);
+    await reputationEngine.add(owner.address, 10);
+    // reputation alone should not give score without stake for owner
+    expect(await registry.getScore(owner.address)).to.equal(0);
   });
 });
 

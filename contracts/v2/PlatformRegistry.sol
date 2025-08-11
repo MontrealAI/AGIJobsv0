@@ -49,8 +49,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
         uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
-        if (msg.sender == owner()) require(stake > 0, "owner stake");
-        require(stake >= minPlatformStake, "stake");
+        if (msg.sender != owner()) {
+            require(stake >= minPlatformStake, "stake");
+        }
         registered[msg.sender] = true;
         emit Registered(msg.sender);
     }
@@ -66,6 +67,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     function getScore(address operator) public view returns (uint256) {
         if (blacklist[operator] || reputationEngine.isBlacklisted(operator)) return 0;
         uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        if (operator == owner() && stake == 0) return 0;
         uint256 rep = reputationEngine.reputation(operator);
         uint256 stakeW = reputationEngine.stakeWeight();
         uint256 repW = reputationEngine.reputationWeight();
