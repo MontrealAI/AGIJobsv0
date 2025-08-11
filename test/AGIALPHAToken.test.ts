@@ -2,29 +2,28 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 
 describe("AGIALPHAToken", function () {
-  it("uses 6 decimals and allows owner mint/burn", async function () {
-    const [owner, user] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    const token = await Token.deploy(owner.address);
+  it("mints initial supply to deployer and reports 6 decimals", async function () {
+    const [owner] = await ethers.getSigners();
+    const supply = ethers.parseUnits("1000", 6);
+    const Token = await ethers.getContractFactory("AGIALPHAToken");
+    const token = await Token.deploy("AGI ALPHA", "AGIALPHA", supply);
+    await token.waitForDeployment();
 
-    await token.mint(user.address, 1_000_000); // 1 token
     expect(await token.decimals()).to.equal(6);
-    expect(await token.balanceOf(user.address)).to.equal(1_000_000);
-
-    await token.burn(user.address, 400_000);
-    expect(await token.balanceOf(user.address)).to.equal(600_000);
+    expect(await token.balanceOf(owner.address)).to.equal(supply);
   });
 
-  it("prevents non-owner minting", async function () {
+  it("handles transfers using 6 decimal precision", async function () {
     const [owner, user] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    const token = await Token.deploy(owner.address);
-    await expect(
-      token.connect(user).mint(user.address, 1)
-    ).to.be.reverted;
+    const supply = ethers.parseUnits("1", 6); // 1 token
+    const Token = await ethers.getContractFactory("AGIALPHAToken");
+    const token = await Token.deploy("AGI ALPHA", "AGIALPHA", supply);
+    await token.waitForDeployment();
+
+    const amount = ethers.parseUnits("0.25", 6); // 0.25 token
+    await token.transfer(user.address, amount);
+
+    expect(await token.balanceOf(user.address)).to.equal(amount);
+    expect(await token.balanceOf(owner.address)).to.equal(supply - amount);
   });
 });
