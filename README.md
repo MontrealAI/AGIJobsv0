@@ -37,7 +37,14 @@ Key incentive features in the v2 suite:
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
- 
+
+## Pseudonymity & Legal Minimisation
+
+- Every module rejects direct ether and exposes an `isTaxExempt()` view so neither the contracts nor the owner ever take custody or earn revenue.
+- All value flows occur directly between participant wallets in $AGIALPHA, allowing operators to remain pseudonymous with no off‑chain reporting.
+- Staking gates, slashing and optional blacklist hooks deter sybil attacks while preserving address‑level privacy.
+- Owners configure fees, burns, stakes and even swap the payment token entirely through `Ownable` setters accessible in Etherscan's **Write Contract** tab.
+
 ## Quick Start: FeePool, JobRouter & GovernanceReward
 
 1. **Deploy & verify** – deploy `FeePool(token, stakeManager, rewardRole, owner)` and `JobRouter(stakeManager, reputationEngine, owner)`. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
