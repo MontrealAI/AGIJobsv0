@@ -23,14 +23,17 @@ This sprint adds revenue sharing and routing incentives to the v2 suite while pr
 4. **DiscoveryModule**
    - Index platforms and expose a paginated list sorted by stake and reputation.
    - Include a stake badge for UI clients.
-5. **Dispute & Governance Hooks**
+5. **GovernanceReward Contract**
+   - Record voters during parameter polls and hold owner‑funded bonuses on‑chain.
+   - After each vote the owner finalises the epoch so recorded voters claim equal rewards.
+6. **Dispute & Governance Hooks**
    - Add token‑weighted voting using staked balances for configuration changes (e.g., fee rates).
-   - Implement bonus distribution to participating voters in the next `FeePool` epoch.
+   - Connect the `GovernanceReward` to parameter changes so participants receive bonuses.
    - Denominate appeal deposits in $AGIALPHA via `DisputeModule.setAppealFee` and route slashed fees to the `FeePool` or burner.
-6. **Sybil Mitigations**
+7. **Sybil Mitigations**
    - Enforce minimum stake for platform registration.
    - Add optional identity commitments or human‑check modules that can be toggled by the owner.
-7. **Testing & Docs**
+8. **Testing & Docs**
    - Extend Hardhat tests to cover revenue distribution, routing, governance, and slashing scenarios.
    - Update `README.md` and `docs/incentive-mechanisms-agialpha.md` once modules are complete.
 

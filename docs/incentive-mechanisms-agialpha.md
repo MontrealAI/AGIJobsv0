@@ -14,7 +14,7 @@ This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting�
 
 ## 3. Governance‑Aligned Rewards
 - Staked operators participate in token‑weighted votes that adjust module parameters and fee splits.
-- Winning voters gain small bonus shares from the next reward epoch, linking governance diligence to revenue.
+- A dedicated `GovernanceReward` contract records voters and distributes owner‑funded bonuses after each poll, linking governance diligence to revenue.
 
 ## 4. Sybil & Regulatory Mitigation
 - Minimum stake gates every platform deployment; failure or misconduct can slash this collateral.
