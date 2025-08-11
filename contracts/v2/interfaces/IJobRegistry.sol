@@ -21,6 +21,7 @@ interface IJobRegistry {
         uint256 stake;
         bool success;
         Status status;
+        string uri;
     }
 
     /// @dev Reverts when job creation parameters have not been configured
@@ -57,6 +58,7 @@ interface IJobRegistry {
     event AgentApplied(uint256 indexed jobId, address indexed agent);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
+    event JobDisputed(uint256 indexed jobId, address indexed caller);
 
     // owner wiring of modules
 
@@ -91,10 +93,13 @@ interface IJobRegistry {
 
     // core job flow
 
-    /// @notice Create a new job with the preset reward and stake parameters
+    /// @notice Create a new job specifying reward and metadata URI
+    /// @param reward Amount escrowed as payment for the job
+    /// @param uri Metadata describing the job
     /// @return jobId Identifier of the newly created job
-    /// @dev Reverts with {JobParametersUnset} if parameters have not been set
-    function createJob() external returns (uint256 jobId);
+    function createJob(uint256 reward, string calldata uri)
+        external
+        returns (uint256 jobId);
 
     /// @notice Agent expresses interest in a job
     /// @param jobId Identifier of the job to apply for

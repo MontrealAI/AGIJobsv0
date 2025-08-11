@@ -86,7 +86,7 @@ describe("Job lifecycle with disputes", function () {
   });
 
   async function startJob() {
-    await registry.connect(employer).createJob();
+    await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
     return jobId;
