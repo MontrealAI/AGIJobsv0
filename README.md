@@ -40,6 +40,14 @@ On-chain rewards do not remove your obligation to follow local tax laws; consult
 - All interactions are available through block explorer "Write" tabs, keeping the system accessible to non-technical users without bespoke tooling.
 - `PlatformIncentives` lets operators stake and register in a single `stakeAndActivate` call after approving the `StakeManager`, streamlining on‑chain onboarding.
 
+Within this unified, pseudonymous economy:
+- **Employers** lock job rewards in $AGIALPHA.
+- **Agents** and **validators** stake to access work and secure validation rights.
+- **Platform operators** stake to activate portals, gain routing priority, and claim protocol fees.
+- The **contract owner** tunes parameters only; with a default stake of `0`, it receives no fee share or routing boost.
+All value transfers occur on-chain while `Ownable` setters let the owner retune incentives without redeployment.
+
+
 | Role              | Stake Requirement | Incentives unlocked                                             |
 |-------------------|------------------:|-----------------------------------------------------------------|
 | Platform operator | `minPlatformStake`| Routing priority, platform‑fee share, ability to activate portal |
