@@ -29,18 +29,27 @@ contract FeePool is Ownable {
     /// @notice percentage of each fee burned (out of 100)
     uint256 public burnPct;
 
+    /// @notice address receiving rounding dust after distribution
+    address public treasury;
+
     /// @notice cumulative fee per staked token scaled by ACCUMULATOR_SCALE
     uint256 public cumulativePerToken;
+
+    /// @notice fees awaiting distribution
+    uint256 public pendingFees;
 
     /// @notice checkpoint of claimed rewards per user
     mapping(address => uint256) public userCheckpoint;
 
     event FeeDeposited(address indexed from, uint256 amount);
+    event FeesDistributed(uint256 amount);
+    event Burned(uint256 amount);
     event RewardsClaimed(address indexed user, uint256 amount);
     event TokenUpdated(address indexed token);
     event StakeManagerUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
     event BurnPctUpdated(uint256 pct);
+    event TreasuryUpdated(address indexed treasury);
 
     constructor(
         IERC20 _token,
@@ -66,15 +75,32 @@ contract FeePool is Ownable {
     /// @param amount fee amount scaled to 6 decimals
     function depositFee(uint256 amount) external onlyStakeManager {
         require(amount > 0, "amount");
+        pendingFees += amount;
+        emit FeeDeposited(msg.sender, amount);
+    }
+
+    /// @notice distribute accumulated fees to stakers
+    function distributeFees() public {
+        uint256 amount = pendingFees;
+        require(amount > 0, "amount");
+        pendingFees = 0;
+
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
             token.safeTransfer(BURN_ADDRESS, burnAmount);
+            emit Burned(burnAmount);
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);
         require(total > 0, "total stake");
-        cumulativePerToken += (distribute * ACCUMULATOR_SCALE) / total;
-        emit FeeDeposited(msg.sender, distribute);
+        uint256 perToken = (distribute * ACCUMULATOR_SCALE) / total;
+        cumulativePerToken += perToken;
+        uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
+        uint256 dust = distribute - accounted;
+        if (dust > 0 && treasury != address(0)) {
+            token.safeTransfer(treasury, dust);
+        }
+        emit FeesDistributed(accounted);
     }
 
     /// @notice claim accumulated rewards for caller
@@ -110,6 +136,12 @@ contract FeePool is Ownable {
         require(pct <= 100, "pct");
         burnPct = pct;
         emit BurnPctUpdated(pct);
+    }
+
+    /// @notice update treasury address for rounding dust
+    function setTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.

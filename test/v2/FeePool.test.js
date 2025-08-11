@@ -82,6 +82,7 @@ describe("FeePool", function () {
 
     const before1 = await token.balanceOf(user1.address);
     const before2 = await token.balanceOf(user2.address);
+    await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
     expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
@@ -108,6 +109,7 @@ describe("FeePool", function () {
 
     const before1 = await token.balanceOf(user1.address);
     const before2 = await token.balanceOf(user2.address);
+    await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
     expect((await token.balanceOf(user1.address)) - before1).to.equal(15n);
@@ -139,6 +141,7 @@ describe("FeePool", function () {
 
     const before1 = await token2.balanceOf(user1.address);
     const before2 = await token2.balanceOf(user2.address);
+    await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
     expect((await token2.balanceOf(user1.address)) - before1).to.equal(25n);

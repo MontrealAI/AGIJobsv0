@@ -138,6 +138,7 @@ describe("JobRegistry integration", function () {
 
     // platform operator should be able to claim fee
     const before = await token.balanceOf(owner.address);
+    await feePool.connect(owner).distributeFees();
     await feePool.connect(owner).claimRewards();
     const after = await token.balanceOf(owner.address);
     expect(after - before).to.equal(BigInt(reward / 10));

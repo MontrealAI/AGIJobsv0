@@ -8,6 +8,9 @@ interface IFeePool {
     /// @param amount amount of tokens transferred to the pool scaled to 6 decimals
     function depositFee(uint256 amount) external;
 
+    /// @notice distribute pending fees to stakers
+    function distributeFees() external;
+
     /// @notice claim accumulated rewards for caller
     function claimRewards() external;
 }

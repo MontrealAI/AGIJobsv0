@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "contracts/v2/FeePool.sol";
+import "contracts/v2/interfaces/IFeePool.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // minimal cheatcode interface
@@ -33,6 +34,7 @@ contract MockStakeManager is IStakeManager {
     function withdrawStake(Role, uint256) external override {}
     function lockJobFunds(bytes32, address, uint256) external override {}
     function releaseJobFunds(bytes32, address, uint256) external override {}
+    function finalizeJobFunds(bytes32, address, uint256, uint256, IFeePool) external override {}
     function setDisputeModule(address) external override {}
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
@@ -70,8 +72,9 @@ contract FeePoolTest {
     function testDepositFee() public {
         setUp();
         token.mint(address(feePool), 1_000_000);
-        vm.prank(jobRegistry);
+        vm.prank(address(stakeManager));
         feePool.depositFee(1_000_000);
+        feePool.distributeFees();
         uint256 expected = 1_000_000 * feePool.ACCUMULATOR_SCALE() / 3_000_000;
         require(feePool.cumulativePerToken() == expected, "acc");
         require(token.balanceOf(address(feePool)) == 1_000_000, "bal");
@@ -80,8 +83,9 @@ contract FeePoolTest {
     function testClaimRewards() public {
         setUp();
         token.mint(address(feePool), 1_500_000);
-        vm.prank(jobRegistry);
+        vm.prank(address(stakeManager));
         feePool.depositFee(1_500_000);
+        feePool.distributeFees();
         vm.prank(alice);
         feePool.claimRewards();
         uint256 expected = 1_500_000 * 1_000_000 / 3_000_000;
@@ -94,8 +98,9 @@ contract FeePoolTest {
         vm.prank(address(this));
         feePool.setToken(token2);
         token2.mint(address(feePool), 1_000_000);
-        vm.prank(jobRegistry);
+        vm.prank(address(stakeManager));
         feePool.depositFee(1_000_000);
+        feePool.distributeFees();
         vm.prank(alice);
         feePool.claimRewards();
         require(token2.balanceOf(alice) == 333_333, "switch");
@@ -104,8 +109,9 @@ contract FeePoolTest {
     function testPrecisionSixDecimals() public {
         setUp();
         token.mint(address(feePool), 1_000_000);
-        vm.prank(jobRegistry);
+        vm.prank(address(stakeManager));
         feePool.depositFee(1_000_000);
+        feePool.distributeFees();
         vm.prank(alice);
         feePool.claimRewards();
         vm.prank(bob);
