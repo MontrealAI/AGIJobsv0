@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import "contracts/v2/FeePool.sol";
 import "contracts/v2/modules/JobRouter.sol";
 import "contracts/v2/interfaces/IStakeManager.sol";
-import "contracts/v2/interfaces/IReputationEngine.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -65,29 +64,12 @@ contract MockStakeManager is IStakeManager {
     }
 }
 
-contract MockReputationEngine is IReputationEngine {
-    mapping(address => bool) public blacklist;
-    mapping(address => uint256) public reps;
-    function add(address, uint256) external override {}
-    function subtract(address, uint256) external override {}
-    function setCaller(address, bool) external override {}
-    function setThreshold(uint256) external override {}
-    function setBlacklist(address user, bool b) external override { blacklist[user] = b; }
-    function isBlacklisted(address user) external view override returns (bool) { return blacklist[user]; }
-    function setReputation(address user, uint256 amount) external { reps[user] = amount; }
-    function reputation(address user) external view override returns (uint256) { return reps[user]; }
-    function getReputation(address user) external view override returns (uint256) { return reps[user]; }
-    function getOperatorScore(address user) external view override returns (uint256) { return reps[user]; }
-    function setStakeManager(address) external override {}
-    function setScoringWeights(uint256, uint256) external override {}
-}
 
 contract IntegrationTest {
     Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
     TestToken token;
     MockStakeManager stakeManager;
-    MockReputationEngine repEngine;
     FeePool feePool;
     JobRouter router;
 
@@ -99,23 +81,19 @@ contract IntegrationTest {
         token = new TestToken();
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
-        repEngine = new MockReputationEngine();
         feePool = new FeePool(token, stakeManager, IStakeManager.Role.Platform, address(this));
-        router = new JobRouter(stakeManager, repEngine, address(this));
-        router.setMinStake(1);
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200);
-        repEngine.setReputation(platform1, 1);
-        repEngine.setReputation(platform2, 3);
-        router.registerPlatform(platform1);
-        router.registerPlatform(platform2);
+        router = new JobRouter(stakeManager, address(this));
     }
 
     function testLifecycle() public {
         setUp();
-        bytes32 jobId = bytes32(uint256(1));
-        vm.prevrandao(bytes32(uint256(1)));
-        router.selectPlatform(jobId);
+        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
+        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200);
+        vm.prank(platform1);
+        router.register();
+        vm.prank(platform2);
+        router.register();
+        router.selectPlatform(bytes32(uint256(1)));
         token.mint(address(feePool), 3000);
         vm.prank(address(stakeManager));
         feePool.depositFee(3000);
@@ -150,24 +128,28 @@ contract IntegrationTest {
         require(bal1 + bal2 + token.balanceOf(address(feePool)) == amount, "sum");
     }
 
-    function testFuzzRoutingFairness(uint64 st1, uint64 rp1, uint64 st2, uint64 rp2, bytes32 jobId, bytes32 rand) public {
+    function testFuzzRoutingFairness(uint64 st1, uint64 st2, bytes32 seed) public {
         setUp();
         uint256 stake1 = uint256(st1 % 1e12);
         uint256 stake2 = uint256(st2 % 1e12);
-        uint256 rep1 = uint256(rp1 % 1e6);
-        uint256 rep2 = uint256(rp2 % 1e6);
         stakeManager.setStake(platform1, IStakeManager.Role.Platform, stake1);
         stakeManager.setStake(platform2, IStakeManager.Role.Platform, stake2);
-        repEngine.setReputation(platform1, rep1);
-        repEngine.setReputation(platform2, rep2);
-        vm.prevrandao(rand);
-        address selected = router.selectPlatform(jobId);
-        uint256 weight1 = stake1 * rep1;
-        uint256 weight2 = stake2 * rep2;
+        if (stake1 > 0) {
+            vm.prank(platform1);
+            router.register();
+        }
+        if (stake2 > 0) {
+            vm.prank(platform2);
+            router.register();
+        }
+        address selected = router.selectPlatform(seed);
+        uint256 weight1 = stake1;
+        uint256 weight2 = stake2;
         if (weight1 + weight2 == 0) {
             require(selected == address(0), "none");
         } else {
-            uint256 r = uint256(keccak256(abi.encodePacked(jobId, rand))) % (weight1 + weight2);
+            bytes32 bh = blockhash(block.number - 1);
+            uint256 r = uint256(keccak256(abi.encodePacked(bh, seed))) % (weight1 + weight2);
             address expected = r < weight1 ? platform1 : platform2;
             require(selected == expected, "fair");
         }
@@ -180,10 +162,6 @@ contract IntegrationTest {
         feePool.setRewardRole(IStakeManager.Role.Validator);
         feePool.setStakeManager(stakeManager);
         feePool.setBurnPct(5);
-        router.setMinStake(10);
-        router.setStakeWeighting(2e18);
-        router.setStakeManager(stakeManager);
-        router.setReputationEngine(repEngine);
         vm.prank(platform1);
         bool reverted;
         try feePool.setBurnPct(1) { reverted = false; } catch { reverted = true; }
@@ -192,6 +170,8 @@ contract IntegrationTest {
 
     function testFeePoolReentrancy() public {
         setUp();
+        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
+        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200);
         ReentrantToken mal = new ReentrantToken(feePool);
         feePool.setToken(mal);
         mal.mint(address(feePool), 3000);
