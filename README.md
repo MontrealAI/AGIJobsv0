@@ -108,6 +108,7 @@ For a detailed walkthrough of these steps in Etherscan, see [docs/deployment-agi
 3. **Initialize parameters**
    - On `StakeManager`, call `setToken(token)` if the staking token differs from the constructor value.
    - On `JobRegistry`, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)` followed by `setFeePool(feePool)` to enable revenue sharing.
+   - On `FeePool`, call `setTreasury(treasury)` so rounding dust from distributions goes to the treasury and adjust `setBurnPct(pct)` if burning is desired.
 4. **Stake & register** – still in **Write Contract**, stake with `depositStake(role, amount)` on `StakeManager` (role `2` for platform operators). Amounts use 6‑decimal base units—`25_000000` stakes 25 tokens. Afterwards register the platform through `JobRouter.registerPlatform(operator)`.
 5. **Governance bonuses** – after a parameter vote, call `recordVoters([...])` on `GovernanceReward`, approve bonus tokens, then `finalizeEpoch(totalReward)` so voters can claim via `claim(epoch)`.
 
@@ -1108,7 +1109,7 @@ $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments,
    - `FeePool`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `CertificateNFT`, and `PlatformRegistry` – use the previously deployed module addresses in their constructors.
 2. **Configure staking and rewards**
    - On `StakeManager`, call `setMinStake`, `setSlashingPercentages`, and `setTreasury` as needed.
-   - On `FeePool`, call `setRewardRole(2)` to direct revenue to platform stakers and adjust `setBurnPct` if desired.
+   - On `FeePool`, call `setRewardRole(2)` to direct revenue to platform stakers, adjust `setBurnPct` if desired, and `setTreasury(treasury)` to collect any rounding dust from distributions.
    - The deploying entity may register its reference platform without staking; it will appear in `PlatformRegistry` but receive no routing priority or fee share.
       - **Worked example**
         1. The owner skips `depositStake` (amount = `0`) and calls `PlatformRegistry.register()`.
@@ -1170,7 +1171,7 @@ Role-based quick steps:
 The contract owner can retune economics or swap tokens at any time without redeploying modules. Common setters accessible from a block explorer include:
 
 - **StakeManager** – `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress`.
-- **FeePool** – `setToken`, `setStakeManager`, `setRewardRole`, `setBurnPct`.
+- **FeePool** – `setToken`, `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury`.
 - **PlatformRegistry** – `setStakeManager`, `setReputationEngine`, `setMinPlatformStake`.
 - **ReputationEngine** – `setCaller`, `setWeights`, `blacklist`, `unblacklist`.
 - **GovernanceReward** – `setToken`, `recordVoters`, `finalizeEpoch`.
