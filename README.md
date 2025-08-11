@@ -24,6 +24,7 @@ Key incentive features in the v2 suite:
 - [$AGIALPHA token contract on Etherscan](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe#code) – verify this 6‑decimal token on-chain before using it for staking or payments.
 - [AGIALPHAToken source](contracts/v2/AGIALPHAToken.sol) – default 6‑decimal ERC‑20 with owner‑controlled mint and burn.
 - [Etherscan Interaction Guide](docs/etherscan-guide.md) – module diagram, deployed addresses, role-based instructions, and verification checklist.
+- [AGIALPHA operational workflows](docs/agialpha-workflows.md) – approval/staking, platform registration, fee claiming, and dispute steps with 6‑decimal examples.
 - [Project Overview](docs/overview.md) – architecture diagram, module summaries, governance table, incentive mechanics, deployment addresses, and quick start.
 - [AGIJobManager v0 Source](legacy/AGIJobManagerv0.sol)
 - [AGIJobManager v1 Source](contracts/AGIJobManagerv1.sol) – experimental upgrade using Solidity 0.8.21; includes an automatic token burn on final validation via the `JobFinalizedAndBurned` event and configurable burn parameters. Not deployed; treat any address claiming to be v1 as unverified until announced through official channels.
