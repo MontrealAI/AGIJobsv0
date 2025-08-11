@@ -77,7 +77,7 @@ describe("PlatformRegistry", function () {
     await registry.connect(platform).register();
   });
 
-  it("allows owner to register without stake and yields zero score", async () => {
+  it("returns zero score when owner registers without stake", async () => {
     await expect(registry.connect(owner).register())
       .to.emit(registry, "Registered")
       .withArgs(owner.address);

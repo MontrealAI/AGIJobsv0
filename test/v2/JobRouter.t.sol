@@ -72,6 +72,13 @@ contract JobRouterTest {
         require(selected == address(this), "none");
     }
 
+    function testOwnerZeroStakeHasNoWeight() public {
+        setUp();
+        registry.register(address(this), 0);
+        router.register();
+        require(router.routingWeight(address(this)) == 0, "weight");
+    }
+
     function testRegisterRequiresRegistration() public {
         setUp();
         bool reverted;
