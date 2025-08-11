@@ -63,7 +63,7 @@ contract RevenueDistributor is Ownable {
         uint256 totalStake;
         for (uint256 i; i < len; i++) {
             address op = operators[i];
-            if (!isOperator[op]) continue;
+            if (op == owner() || !isOperator[op]) continue;
             uint256 stake = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
             if (stake == 0) continue;
             stakes[i] = stake;
@@ -74,6 +74,7 @@ contract RevenueDistributor is Ownable {
         uint256 distributed;
         for (uint256 i; i < len; i++) {
             address op = operators[i];
+            if (op == owner()) continue;
             uint256 stake = stakes[i];
             if (stake == 0) continue;
             uint256 share = (amount * stake) / totalStake;
