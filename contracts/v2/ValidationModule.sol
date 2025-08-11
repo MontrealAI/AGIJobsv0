@@ -104,6 +104,7 @@ contract ValidationModule is IValidationModule, Ownable {
         override
         onlyOwner
     {
+        require(commitDur > 0 && revealDur > 0, "windows");
         commitWindow = commitDur;
         revealWindow = revealDur;
         emit TimingUpdated(commitDur, revealDur);
@@ -146,7 +147,7 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 count = m < maxValidators ? m : maxValidators;
 
         bytes32 seed = keccak256(
-            abi.encodePacked(block.prevrandao, jobId, block.timestamp)
+            abi.encodePacked(blockhash(block.number - 1), jobId, block.timestamp)
         );
 
         selected = new address[](count);
@@ -193,6 +194,7 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
+        require(validatorStakes[jobId][msg.sender] > 0, "stake");
         uint256 nonce = jobNonce[jobId];
         require(
             commitments[jobId][msg.sender][nonce] == bytes32(0),
