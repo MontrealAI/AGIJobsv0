@@ -308,7 +308,7 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    event AppealRaised(uint256 indexed jobId, address indexed caller);
+    event DisputeRaised(uint256 indexed jobId, address indexed caller);
     function appeal(uint256 jobId) external payable;
     function resolve(uint256 jobId, bool employerWins) external;
     function setAppealFee(uint256 fee) external;

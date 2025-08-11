@@ -19,8 +19,8 @@ interface IDisputeModule {
     /// @dev Reverts when no appeal bond exists for a job
     error NoAppealBond(uint256 jobId);
 
-    event AppealRaised(uint256 indexed jobId, address indexed caller);
-    event AppealResolved(uint256 indexed jobId, bool employerWins);
+    event DisputeRaised(uint256 indexed jobId, address indexed caller);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event AppealFeeUpdated(uint256 fee);
     event ModeratorUpdated(address moderator);
     event AppealJuryUpdated(address jury);

@@ -132,7 +132,7 @@ contract DisputeModule is IDisputeModule, Ownable {
         appellants[jobId] = payable(caller);
         bonds[jobId] = msg.value;
 
-        emit AppealRaised(jobId, caller);
+        emit DisputeRaised(jobId, caller);
     }
 
     // ---------------------------------------------------------------------
@@ -181,7 +181,7 @@ contract DisputeModule is IDisputeModule, Ownable {
         (bool ok, ) = recipient.call{value: bond}("");
         require(ok, "transfer failed");
 
-        emit AppealResolved(jobId, employerWins);
+        emit DisputeResolved(jobId, employerWins);
     }
 
     /// @notice Confirms the module and its owner are perpetually tax-exempt.
