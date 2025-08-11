@@ -46,6 +46,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint32 feePct;
         State state;
         bool success;
+        string uri;
     }
 
     uint256 public nextJobId;
@@ -85,7 +86,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         _;
     }
 
-    uint128 public jobReward;
+    // default agent stake requirement configured by owner
     uint96 public jobStake;
     uint256 public feePct;
 
@@ -130,7 +131,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
-    event DisputeRaised(uint256 indexed jobId, address indexed caller);
+    event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
@@ -250,11 +251,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
-        require(
-            reward <= type(uint128).max && stake <= type(uint96).max,
-            "overflow"
-        );
-        jobReward = uint128(reward);
+        require(stake <= type(uint96).max, "overflow");
         jobStake = uint96(stake);
         emit JobParametersUpdated(reward, stake);
     }
@@ -262,40 +259,32 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------------
     // Job lifecycle
     // ---------------------------------------------------------------------
-    function createJob()
+    function createJob(uint256 reward, string calldata uri)
         external
         requiresTaxAcknowledgement
         nonReentrant
         returns (uint256 jobId)
     {
-        require(jobReward > 0 || jobStake > 0, "params not set");
+        require(reward > 0 || jobStake > 0, "params not set");
+        require(reward <= type(uint128).max, "overflow");
         unchecked { nextJobId++; }
         jobId = nextJobId;
         uint32 feePctSnapshot = uint32(feePct);
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
-            reward: jobReward,
+            reward: uint128(reward),
             stake: jobStake,
             feePct: feePctSnapshot,
             state: State.Created,
-            success: false
+            success: false,
+            uri: uri
         });
-        if (address(stakeManager) != address(0) && jobReward > 0) {
-            uint256 fee = (uint256(jobReward) * feePctSnapshot) / 100;
-            stakeManager.lockJobFunds(
-                bytes32(jobId),
-                msg.sender,
-                uint256(jobReward) + fee
-            );
+        if (address(stakeManager) != address(0) && reward > 0) {
+            uint256 fee = (reward * feePctSnapshot) / 100;
+            stakeManager.lockJobFunds(bytes32(jobId), msg.sender, reward + fee);
         }
-        emit JobCreated(
-            jobId,
-            msg.sender,
-            address(0),
-            uint256(jobReward),
-            uint256(jobStake)
-        );
+        emit JobCreated(jobId, msg.sender, address(0), reward, uint256(jobStake));
     }
 
     function applyForJob(uint256 jobId)
@@ -345,7 +334,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         } else {
             require(msg.value == 0, "fee unused");
         }
-        emit DisputeRaised(jobId, msg.sender);
+        emit JobDisputed(jobId, msg.sender);
     }
 
     function dispute(uint256 jobId)
@@ -397,7 +386,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 reputationEngine.add(job.agent, 1);
             }
             if (address(certificateNFT) != address(0)) {
-                certificateNFT.mint(job.agent, jobId, "");
+                certificateNFT.mint(job.agent, jobId, job.uri);
             }
         } else {
             if (address(stakeManager) != address(0)) {

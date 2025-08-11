@@ -47,17 +47,17 @@ describe("JobRegistry tax policy integration", function () {
   });
 
   it("requires re-acknowledgement after version bump", async () => {
-    await registry.connect(owner).setJobParameters(1, 0);
+    await registry.connect(owner).setJobParameters(0, 0);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(user).acknowledgeTaxPolicy();
     await registry.connect(owner).bumpTaxPolicyVersion();
     await expect(
-      registry.connect(user).createJob()
+      registry.connect(user).createJob(1, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(registry, "TaxAcknowledged")
       .withArgs(user.address, 2, "ack");
-    await expect(registry.connect(user).createJob())
+    await expect(registry.connect(user).createJob(1, "uri"))
       .to.emit(registry, "JobCreated")
       .withArgs(1, user.address, ethers.ZeroAddress, 1, 0);
   });
