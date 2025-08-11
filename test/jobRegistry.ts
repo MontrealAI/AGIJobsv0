@@ -20,14 +20,12 @@ describe("JobRegistry tax policy gating", function () {
     );
     policy = await Policy.deploy(owner.address, "ipfs://policy", "ack");
 
-    await registry
-      .connect(owner)
-      .setJobParameters(1, 0);
+    await registry.connect(owner).setJobParameters(0, 0);
   });
 
   it("requires acknowledgement before job actions", async () => {
     await expect(
-      registry.connect(employer).createJob()
+      registry.connect(employer).createJob(1, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
 
     await expect(
@@ -37,7 +35,7 @@ describe("JobRegistry tax policy gating", function () {
       .withArgs(await policy.getAddress(), 1);
 
     await expect(
-      registry.connect(employer).createJob()
+      registry.connect(employer).createJob(1, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
 
     await expect(
@@ -47,7 +45,7 @@ describe("JobRegistry tax policy gating", function () {
       .withArgs(employer.address, 1, "ack");
 
     await expect(
-      registry.connect(employer).createJob()
+      registry.connect(employer).createJob(1, "uri")
     ).to.emit(registry, "JobCreated").withArgs(1, employer.address, ethers.ZeroAddress, 1, 0);
 
     await expect(
