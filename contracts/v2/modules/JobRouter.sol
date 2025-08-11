@@ -3,144 +3,105 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
-import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
 
 /// @title JobRouter
-/// @notice Routes jobs to registered platforms based on stake and reputation weighting
+/// @notice Registers staked platform operators and selects one based on stake
+///         weighted randomness.
+/// @dev All stake amounts use the same 6 decimal precision as the
+///      `StakeManager`.
 contract JobRouter is Ownable {
+    struct PlatformInfo {
+        uint256 stake; // stake recorded at registration
+        bool registered; // whether the operator is active
+    }
+
+    /// @notice contract managing platform stakes
     IStakeManager public stakeManager;
-    IReputationEngine public reputationEngine;
 
-    /// @notice minimum stake required for a platform to register and remain eligible
-    uint256 public minStake;
+    /// @notice cumulative stake of all registered platforms
+    uint256 public totalStake;
 
-    /// @notice weighting factor applied to stake when computing selection weight
-    /// @dev scaled by 1e18 for precision
-    uint256 public stakeWeighting = 1e18;
+    /// @dev mapping of operator address to its stake and status
+    mapping(address => PlatformInfo) public platforms;
 
-    /// @dev list of registered platforms
-    address[] public platforms;
-    mapping(address => bool) public isPlatform;
+    /// @dev list of all operators ever registered (for iteration)
+    address[] public platformList;
 
-    /// @dev records selected platform for a jobId
-    mapping(bytes32 => address) public routingHistory;
+    event Registered(address indexed operator, uint256 stake);
+    event Deregistered(address indexed operator);
+    event PlatformSelected(bytes32 indexed seed, address indexed operator);
 
-    event PlatformRegistered(address indexed operator);
-    event PlatformDeregistered(address indexed operator);
-    event PlatformSelected(bytes32 indexed jobId, address indexed platform);
-    event MinStakeUpdated(uint256 minStake);
-    event StakeWeightingUpdated(uint256 stakeWeighting);
-    event StakeManagerUpdated(address indexed stakeManager);
-    event ReputationEngineUpdated(address indexed reputationEngine);
-
-    constructor(IStakeManager _stakeManager, IReputationEngine _reputationEngine, address owner)
-        Ownable(owner)
-    {
+    /// @param _stakeManager address of the stake manager contract
+    /// @param deployer address to seed in the platform list with zero stake
+    constructor(IStakeManager _stakeManager, address deployer) Ownable(deployer) {
         stakeManager = _stakeManager;
-        reputationEngine = _reputationEngine;
+        // seed deployer as a non-selectable platform to avoid empty array checks
+        platforms[deployer] = PlatformInfo({stake: 0, registered: true});
+        platformList.push(deployer);
     }
 
-    /// @notice Register a platform if it meets the minimum stake requirement
-    /// @param operator Address of the platform operator
-    function registerPlatform(address operator) external {
-        require(!isPlatform[operator], "registered");
-        require(!reputationEngine.isBlacklisted(operator), "blacklisted");
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
-        require(stake >= minStake, "stake too low");
-        isPlatform[operator] = true;
-        platforms.push(operator);
-        emit PlatformRegistered(operator);
-    }
+    /// @notice Register the caller as a platform operator using their stake.
+    /// @dev Requires the caller to have non-zero `Role.Platform` stake.
+    function register() external {
+        PlatformInfo storage p = platforms[msg.sender];
+        require(!p.registered || p.stake == 0, "registered");
 
-    /// @notice Deregister a misbehaving platform
-    function deregisterPlatform(address operator) external onlyOwner {
-        if (!isPlatform[operator]) return;
-        isPlatform[operator] = false;
-        // remove from array
-        uint256 len = platforms.length;
-        for (uint256 i; i < len; i++) {
-            if (platforms[i] == operator) {
-                platforms[i] = platforms[len - 1];
-                platforms.pop();
-                break;
-            }
+        uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
+        require(stake > 0, "stake");
+
+        if (!p.registered) {
+            platformList.push(msg.sender);
+            p.registered = true;
         }
-        emit PlatformDeregistered(operator);
+        p.stake = stake;
+        totalStake += stake;
+
+        emit Registered(msg.sender, stake);
     }
 
-    /// @notice Compute routing score for a platform based on stake and reputation
-    /// @param operator Address of the platform operator
-    /// @return score Weighted score used for routing decisions
-    function getRoutingScore(address operator) public view returns (uint256 score) {
-        if (reputationEngine.isBlacklisted(operator)) return 0;
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
-        if (stake < minStake) return 0;
-        uint256 rep = reputationEngine.getReputation(operator);
-        if (rep == 0) return 0;
-        score = (stake * stakeWeighting / 1e18) * rep;
+    /// @notice Deregister the caller and remove their stake from weighting.
+    function deregister() external {
+        PlatformInfo storage p = platforms[msg.sender];
+        require(p.registered && p.stake > 0, "not registered");
+        totalStake -= p.stake;
+        p.stake = 0;
+        p.registered = false;
+        emit Deregistered(msg.sender);
     }
 
-    /// @notice Select a platform for a given jobId based on weighted randomness
-    /// @param jobId Identifier of the job
-    /// @return selected address of chosen platform or address(0) if none eligible
-    function selectPlatform(bytes32 jobId) external returns (address selected) {
-        uint256 len = platforms.length;
-        uint256 totalWeight;
-        uint256[] memory weights = new uint256[](len);
+    /// @notice Compute routing weight for an operator as a fraction of total stake.
+    /// @dev Returned value is scaled by 1e18 for precision.
+    function routingWeight(address operator) public view returns (uint256) {
+        if (totalStake == 0) return 0;
+        PlatformInfo storage p = platforms[operator];
+        if (!p.registered || p.stake == 0) return 0;
+        return (p.stake * 1e18) / totalStake;
+    }
 
-        for (uint256 i = 0; i < len; i++) {
-            address platform = platforms[i];
-            if (!isPlatform[platform]) continue;
-            uint256 weight = getRoutingScore(platform);
-            if (weight > 0) {
-                weights[i] = weight;
-                totalWeight += weight;
-            }
-        }
-
-        if (totalWeight == 0) {
-            emit PlatformSelected(jobId, address(0));
-            routingHistory[jobId] = address(0);
+    /// @notice Select a platform using blockhash/seed based randomness weighted by stake.
+    /// @param seed external entropy provided by caller
+    /// @return selected address of the chosen platform or address(0) if none
+    function selectPlatform(bytes32 seed) external returns (address selected) {
+        if (totalStake == 0) {
+            emit PlatformSelected(seed, address(0));
             return address(0);
         }
 
-        uint256 rand = uint256(keccak256(abi.encodePacked(jobId, block.prevrandao))) % totalWeight;
+        uint256 rand =
+            uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), seed))) % totalStake;
         uint256 cumulative;
-        for (uint256 i = 0; i < len; i++) {
-            uint256 weight = weights[i];
-            if (weight == 0) continue;
-            cumulative += weight;
+        uint256 len = platformList.length;
+        for (uint256 i; i < len; i++) {
+            PlatformInfo storage p = platforms[platformList[i]];
+            if (!p.registered || p.stake == 0) continue;
+            cumulative += p.stake;
             if (rand < cumulative) {
-                selected = platforms[i];
+                selected = platformList[i];
                 break;
             }
         }
-        routingHistory[jobId] = selected;
-        emit PlatformSelected(jobId, selected);
-    }
 
-    /// @notice Update minimum stake requirement
-    function setMinStake(uint256 _minStake) external onlyOwner {
-        minStake = _minStake;
-        emit MinStakeUpdated(_minStake);
-    }
-
-    /// @notice Update stake weighting factor
-    function setStakeWeighting(uint256 _stakeWeighting) external onlyOwner {
-        stakeWeighting = _stakeWeighting;
-        emit StakeWeightingUpdated(_stakeWeighting);
-    }
-
-    /// @notice Update StakeManager address
-    function setStakeManager(IStakeManager _stakeManager) external onlyOwner {
-        stakeManager = _stakeManager;
-        emit StakeManagerUpdated(address(_stakeManager));
-    }
-
-    /// @notice Update ReputationEngine address
-    function setReputationEngine(IReputationEngine _reputationEngine) external onlyOwner {
-        reputationEngine = _reputationEngine;
-        emit ReputationEngineUpdated(address(_reputationEngine));
+        emit PlatformSelected(seed, selected);
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
