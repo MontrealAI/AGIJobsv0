@@ -68,3 +68,20 @@ Only the owner may switch currencies: invoke `setToken(newToken)` on `StakeManag
 - Keep constructor parameters and ABI files for later verification.
 
 By following these steps the owner can deploy the AGIJobs suite with $AGIALPHA as the unit of account, while retaining the ability to replace the token without redeploying other modules.
+
+## Etherscan Walkthrough
+
+1. **Open contract pages** – for each deployed module, navigate to its Etherscan address and select **Contract → Write Contract**. Click **Connect to Web3** with the owner wallet.
+2. **Wire modules**
+   - In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`.
+   - In `StakeManager` call `setJobRegistry(jobRegistry)`.
+   - Back in `JobRegistry` call `setFeePool(feePool)` then `setFeePct(pct)` and `setTaxPolicy(taxPolicy)`.
+3. **Configure economics**
+   - On `StakeManager` call `setMinStake(amount)` and `setSlashingPercentages(empPct, treasuryPct)`.
+   - On `ValidationModule` call `setParameters(...)` with 6‑decimal base units.
+   - On `DisputeModule` call `setAppealFee(fee)` and link any reward pools via `setFeePool(feePool)`.
+   - On `FeePool` call `setBurnPct(pct)` to destroy a portion of each fee.
+4. **Verify state** – after each transaction switch to **Read Contract** to confirm the new values and emitted events.
+5. **Stay safe** – double‑check addresses, keep keys on hardware or multisig wallets, and never interact from untrusted networks.
+
+This sequence covers the critical owner‑only setters needed to bootstrap the system. For background on module responsibilities and token math, refer back to the sections above.

@@ -40,6 +40,30 @@ Key incentive features in the v2 suite:
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
 
+## Deploying with $AGIALPHA
+
+The modular v2 suite is deployed module by module and then wired together on‑chain. A typical flow is:
+
+1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, and `TaxPolicy`.
+2. Connect them with owner‑only setters such as `JobRegistry.setModules`, `StakeManager.setJobRegistry`, `JobRegistry.setFeePool`, and `JobRegistry.setTaxPolicy`.
+3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setParameters`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
+
+Amounts use 6‑decimal base units:
+
+```
+1 token   = 1_000_000
+0.5 token =   500_000
+25 tokens = 25_000000
+```
+
+Safety tips:
+
+- Verify addresses and constructor parameters on multiple explorers before sending transactions.
+- Prefer hardware wallets or multisigs for owner actions.
+- After each setter call, confirm new values in the **Read Contract** tab.
+
+For a detailed walkthrough of these steps in Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+
 ## Pseudonymity & Legal Minimisation
 
 - Every module rejects direct ether and exposes an `isTaxExempt()` view so neither the contracts nor the owner ever take custody or earn revenue.

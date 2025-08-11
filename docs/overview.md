@@ -30,6 +30,8 @@ graph TD
 3. Call the desired function and submit the transaction.
 4. Verify emitted events and new state in **Read Contract** or on a second explorer.
 
+For a step-by-step deployment walkthrough with owner-only setters, see [deployment-agialpha.md](deployment-agialpha.md).
+
 ### Governance Table
 | Module | Owner Functions | Purpose |
 | --- | --- | --- |
