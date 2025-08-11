@@ -58,6 +58,15 @@ Key incentive features in the v2 suite:
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
 
+## Etherscan "Write" Checklist
+
+- [ ] Connect to Web3 on a contract's **Write** tab
+- [ ] Call `PlatformIncentives.stakeAndActivate`
+- [ ] Trigger `FeePool.distributeFees`
+- [ ] Withdraw with `FeePool.claimRewards`
+
+For screenshots and step-by-step instructions, see [docs/etherscan-guide.md](docs/etherscan-guide.md).
+
 ## Deploying with $AGIALPHA
 
 The modular v2 suite is deployed module by module and then wired together on‑chain. A typical flow is:

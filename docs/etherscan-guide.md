@@ -6,6 +6,17 @@
 
 > **Tax Note:** The contracts and their owner are globally tax‑exempt; employers, agents, and validators shoulder all tax duties. Each module exposes `isTaxExempt()` for verification.
 
+## Calling Contract Methods via Etherscan
+
+1. **Connect to Web3** – open the contract on Etherscan, select the **Write Contract** tab, click **Connect to Web3**, and approve the connection.
+   ![connect-web3](https://via.placeholder.com/650x150?text=Connect+to+Web3)
+2. **stakeAndActivate** – visit the `PlatformIncentives` address, connect, enter the stake amount, and press **Write** on `stakeAndActivate(amount)`.
+   ![stake-and-activate](https://via.placeholder.com/650x150?text=stakeAndActivate)
+3. **distributeFees** – on the `FeePool` contract, call `distributeFees()` to allocate pending fees to stakers.
+   ![distribute-fees](https://via.placeholder.com/650x150?text=distributeFees)
+4. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
+   ![claim-rewards](https://via.placeholder.com/650x150?text=claimRewards)
+
 ## Module Addresses & Roles
 | Module | Address | Role |
 | --- | --- | --- |
