@@ -50,6 +50,7 @@ async function deployFixture() {
 describe("JobRegistry and CertificateNFT", function () {
   it("prevents self-hiring", async function () {
     const { registry, employer } = await deployFixture();
+    await registry.connect(employer).acknowledgeTaxPolicy();
     await expect(
       registry.connect(employer).createJob(employer.address)
     ).to.be.revertedWith("self");
@@ -58,6 +59,8 @@ describe("JobRegistry and CertificateNFT", function () {
   it("mints certificate with output URI on completion", async function () {
     const { registry, employer, agent, validation, cert } = await deployFixture();
 
+    await registry.connect(employer).acknowledgeTaxPolicy();
+    await registry.connect(agent).acknowledgeTaxPolicy();
     await registry.connect(employer).createJob(agent.address);
     const jobId = 1;
     await validation.setOutcome(jobId, true);

@@ -32,6 +32,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice total stake per address across all roles
     mapping(address => uint256) public totalStake;
 
+    /// @notice tracks which addresses acknowledged the tax policy
+    mapping(address => bool) private _taxAcknowledged;
+
+    /// @notice emitted when a user acknowledges the tax policy
+    event TaxPolicyAcknowledged(address indexed user);
+
     /// @notice emitted when stake is deposited
     event StakeDeposited(address indexed user, uint8 indexed role, uint256 amount);
 
@@ -72,10 +78,33 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // Staking logic
     // ------------------------------------------------------------------
 
+    /// @notice require caller to acknowledge current tax policy
+    modifier requiresTaxAcknowledgement() {
+        if (msg.sender != owner()) {
+            require(_taxAcknowledged[msg.sender], "acknowledge tax policy");
+        }
+        _;
+    }
+
+    /// @notice allow users to acknowledge the tax policy
+    function acknowledgeTaxPolicy() external {
+        _taxAcknowledged[msg.sender] = true;
+        emit TaxPolicyAcknowledged(msg.sender);
+    }
+
+    /// @notice returns whether msg.sender has acknowledged the tax policy
+    function isTaxExempt() external view returns (bool) {
+        return _taxAcknowledged[msg.sender];
+    }
+
     /// @notice deposit stake for a given role
     /// @param role numeric identifier of participant role
     /// @param amount token amount with 6 decimals
-    function depositStake(uint8 role, uint256 amount) external nonReentrant {
+    function depositStake(uint8 role, uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         require(amount > 0, "StakeManager: amount 0");
 
         uint256 newRoleStake = stakes[msg.sender][role] + amount;
@@ -96,7 +125,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice withdraw stake for a given role
     /// @param role numeric identifier of participant role
     /// @param amount token amount with 6 decimals
-    function withdrawStake(uint8 role, uint256 amount) external nonReentrant {
+    function withdrawStake(uint8 role, uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
         uint256 staked = stakes[msg.sender][role];
         require(staked >= amount, "StakeManager: insufficient");
 

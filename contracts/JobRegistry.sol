@@ -60,6 +60,12 @@ contract JobRegistry is Ownable {
     uint256 public jobReward;
     uint256 public jobStake;
 
+    /// @notice tracks which addresses acknowledged the tax policy
+    mapping(address => bool) private _taxAcknowledged;
+
+    /// @notice emitted when a user acknowledges the tax policy
+    event TaxPolicyAcknowledged(address indexed user);
+
     event ModuleUpdated(string module, address newAddress);
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
@@ -80,6 +86,25 @@ contract JobRegistry is Ownable {
     event JobParametersUpdated(uint256 reward, uint256 stake);
 
     constructor(address owner) Ownable(owner) {}
+
+    /// @notice require caller to acknowledge current tax policy
+    modifier requiresTaxAcknowledgement() {
+        if (msg.sender != owner()) {
+            require(_taxAcknowledged[msg.sender], "acknowledge tax policy");
+        }
+        _;
+    }
+
+    /// @notice allow users to acknowledge the tax policy
+    function acknowledgeTaxPolicy() external {
+        _taxAcknowledged[msg.sender] = true;
+        emit TaxPolicyAcknowledged(msg.sender);
+    }
+
+    /// @notice returns whether msg.sender has acknowledged the tax policy
+    function isTaxExempt() external view returns (bool) {
+        return _taxAcknowledged[msg.sender];
+    }
 
     function setValidationModule(IValidationModule module) external onlyOwner {
         validationModule = module;
@@ -142,7 +167,11 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Create a new job.
-    function createJob(address agent) external returns (uint256 jobId) {
+    function createJob(address agent)
+        external
+        requiresTaxAcknowledgement
+        returns (uint256 jobId)
+    {
         require(jobReward > 0 || jobStake > 0, "params not set");
         require(agent != msg.sender, "self");
         require(stakeManager.stakes(agent) >= jobStake, "stake missing");
@@ -161,7 +190,10 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Agent submits job result; validation outcome stored.
-    function completeJob(uint256 jobId, string calldata uri) external {
+    function completeJob(uint256 jobId, string calldata uri)
+        external
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "invalid status");
         require(msg.sender == job.agent, "only agent");
@@ -173,7 +205,10 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Agent disputes a failed job outcome.
-    function dispute(uint256 jobId) external {
+    function dispute(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
@@ -196,7 +231,10 @@ contract JobRegistry is Ownable {
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
-    function finalize(uint256 jobId) external {
+    function finalize(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed, "not ready");
         job.status = Status.Finalized;
