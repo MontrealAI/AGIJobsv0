@@ -148,7 +148,7 @@ describe("FeePool", function () {
     expect((await token2.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
-  it("prevents deployer from claiming rewards without stake", async () => {
+  it("emits zero payout for owner without stake", async () => {
     const feeAmount = 50;
     const jobId = ethers.encodeBytes32String("job4");
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
