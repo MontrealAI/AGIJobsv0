@@ -76,6 +76,49 @@ async function main() {
   );
   await dispute.waitForDeployment();
 
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await token.getAddress(),
+    await stake.getAddress(),
+    2, // IStakeManager.Role.Platform
+    deployer.address
+  );
+  await feePool.waitForDeployment();
+
+  const PlatformRegistry = await ethers.getContractFactory(
+    "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+  );
+  const minPlatformStake = ethers.parseUnits("1000", 6);
+  const platformRegistry = await PlatformRegistry.deploy(
+    await stake.getAddress(),
+    await reputation.getAddress(),
+    minPlatformStake,
+    deployer.address
+  );
+  await platformRegistry.waitForDeployment();
+
+  const JobRouter = await ethers.getContractFactory(
+    "contracts/v2/modules/JobRouter.sol:JobRouter"
+  );
+  const jobRouter = await JobRouter.deploy(
+    await platformRegistry.getAddress(),
+    deployer.address
+  );
+  await jobRouter.waitForDeployment();
+
+  const PlatformIncentives = await ethers.getContractFactory(
+    "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+  );
+  const incentives = await PlatformIncentives.deploy(
+    await stake.getAddress(),
+    await platformRegistry.getAddress(),
+    await jobRouter.getAddress(),
+    deployer.address
+  );
+  await incentives.waitForDeployment();
+
   await stake.setJobRegistry(await registry.getAddress());
 
   await registry.setModules(
@@ -86,6 +129,11 @@ async function main() {
     await nft.getAddress()
   );
 
+  await registry.setFeePool(await feePool.getAddress());
+  await registry.setFeePct(5);
+  await platformRegistry.setRegistrar(await incentives.getAddress(), true);
+  await jobRouter.setRegistrar(await incentives.getAddress(), true);
+
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());
   console.log("StakeManager:", await stake.getAddress());
@@ -93,6 +141,10 @@ async function main() {
   console.log("DisputeModule:", await dispute.getAddress());
   console.log("CertificateNFT:", await nft.getAddress());
   console.log("TaxPolicy:", await tax.getAddress());
+  console.log("FeePool:", await feePool.getAddress());
+  console.log("PlatformRegistry:", await platformRegistry.getAddress());
+  console.log("JobRouter:", await jobRouter.getAddress());
+  console.log("PlatformIncentives:", await incentives.getAddress());
 
   await verify(await stake.getAddress(), [await token.getAddress(), deployer.address, deployer.address]);
   await verify(await registry.getAddress(), [deployer.address]);
@@ -101,6 +153,10 @@ async function main() {
   await verify(await dispute.getAddress(), [await registry.getAddress(), deployer.address]);
   await verify(await nft.getAddress(), ["Cert", "CERT", deployer.address]);
   await verify(await tax.getAddress(), [deployer.address, "ipfs://policy", "All taxes on participants; contract and owner exempt"]);
+  await verify(await feePool.getAddress(), [await token.getAddress(), await stake.getAddress(), 2, deployer.address]);
+  await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake, deployer.address]);
+  await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress(), deployer.address]);
+  await verify(await incentives.getAddress(), [await stake.getAddress(), await platformRegistry.getAddress(), await jobRouter.getAddress(), deployer.address]);
 }
 
 main().catch((error) => {
