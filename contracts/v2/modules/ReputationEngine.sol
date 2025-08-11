@@ -4,119 +4,95 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title ReputationEngine (module)
-/// @notice Tracks reputation per role and enforces thresholds with blacklist support.
-/// @dev Only participants bear any tax obligations; the contract holds no funds
-///      and rejects ether.
+/// @notice Maintains role based reputation scores with weighted updates.
+/// @dev Holds no funds and rejects ether so neither the contract nor owner
+///      incur tax obligations.
 contract ReputationEngine is Ownable {
+    /// @notice participant roles
     enum Role {
         Agent,
         Validator
     }
 
-    // reputation score per user per role
-    mapping(address => mapping(Role => uint256)) private _reputation;
-    // blacklist status per user per role
-    mapping(address => mapping(Role => bool)) private _blacklisted;
-    // authorised callers mapped to the role they may update
-    mapping(address => Role) public callers;
+    /// @dev reputation score per role per user
+    mapping(Role => mapping(address => uint256)) private _reputation;
+    /// @dev authorised modules allowed to update scores
+    mapping(address => bool) public callers;
 
-    // minimum reputation before a user is blacklisted
-    uint256 public agentThreshold;
-    uint256 public validatorThreshold;
+    /// @notice weight applied to positive deltas (scaled by 1e18)
+    uint256 public performanceWeight = 1e18;
+    /// @notice weight applied to negative deltas (scaled by 1e18)
+    uint256 public slashingWeight = 1e18;
 
-    event ReputationUpdated(address indexed user, Role indexed role, int256 delta, uint256 newScore);
-    event BlacklistUpdated(address indexed user, Role indexed role, bool status);
-    event CallerAuthorized(address indexed caller, Role role);
-    event ThresholdsUpdated(uint256 agentThreshold, uint256 validatorThreshold);
+    event ReputationUpdated(Role indexed role, address indexed user, int256 delta, uint256 newScore);
+    event CallerAuthorized(address indexed caller, bool allowed);
+    event WeightsUpdated(uint256 performanceWeight, uint256 slashingWeight);
 
     constructor(address owner) Ownable(owner) {}
 
-    /// @notice Authorize a caller and assign its role.
-    function setCaller(address caller, Role role) external onlyOwner {
-        callers[caller] = role;
-        emit CallerAuthorized(caller, role);
+    modifier onlyCaller() {
+        require(callers[msg.sender], "not authorized");
+        _;
     }
 
-    /// @notice Set reputation thresholds for agents and validators.
-    function setThresholds(uint256 agent, uint256 validator) external onlyOwner {
-        agentThreshold = agent;
-        validatorThreshold = validator;
-        emit ThresholdsUpdated(agent, validator);
+    /// @notice Authorize or revoke a caller module
+    function setCaller(address caller, bool allowed) external onlyOwner {
+        callers[caller] = allowed;
+        emit CallerAuthorized(caller, allowed);
     }
 
-    /// @notice Owner can manually override blacklist status for a user and role.
-    function setBlacklist(address user, Role role, bool status) external onlyOwner {
-        _blacklisted[user][role] = status;
-        emit BlacklistUpdated(user, role, status);
+    /// @notice Configure weighting factors for positive and negative updates
+    function setWeights(uint256 performance, uint256 slashing) external onlyOwner {
+        performanceWeight = performance;
+        slashingWeight = slashing;
+        emit WeightsUpdated(performance, slashing);
     }
 
-    /// @notice Increase reputation for the caller's role.
-    function addReputation(address user, uint256 amount) external {
-        Role role = callers[msg.sender];
-        require(_isAuthorized(role), "not authorized");
-
-        uint256 newScore = _reputation[user][role] + amount;
-        _reputation[user][role] = newScore;
-        emit ReputationUpdated(user, role, int256(amount), newScore);
-
-        uint256 threshold = _thresholdFor(role);
-        if (_blacklisted[user][role] && newScore >= threshold) {
-            _blacklisted[user][role] = false;
-            emit BlacklistUpdated(user, role, false);
-        }
+    /// @notice Update reputation for a user and role
+    /// @param role Role whose score is updated
+    /// @param user Address whose reputation changes
+    /// @param delta Signed change applied to the score
+    function updateReputation(Role role, address user, int256 delta) external onlyCaller {
+        int256 weight = delta >= 0 ? int256(performanceWeight) : int256(slashingWeight);
+        int256 adjusted = (delta * weight) / int256(1e18);
+        int256 current = int256(_reputation[role][user]);
+        int256 newScoreSigned = current + adjusted;
+        if (newScoreSigned < 0) newScoreSigned = 0;
+        uint256 newScore = uint256(newScoreSigned);
+        _reputation[role][user] = newScore;
+        emit ReputationUpdated(role, user, adjusted, newScore);
     }
 
-    /// @notice Decrease reputation for the caller's role.
-    function subtractReputation(address user, uint256 amount) external {
-        Role role = callers[msg.sender];
-        require(_isAuthorized(role), "not authorized");
-
-        uint256 current = _reputation[user][role];
-        uint256 newScore = current > amount ? current - amount : 0;
-        _reputation[user][role] = newScore;
-        emit ReputationUpdated(user, role, -int256(amount), newScore);
-
-        uint256 threshold = _thresholdFor(role);
-        if (!_blacklisted[user][role] && newScore < threshold) {
-            _blacklisted[user][role] = true;
-            emit BlacklistUpdated(user, role, true);
-        }
+    /// @notice Return reputation score for a user and role
+    function getReputation(Role role, address user) public view returns (uint256) {
+        return _reputation[role][user];
     }
 
-    /// @notice Retrieve reputation score for a user and role.
-    function reputationOf(address user, Role role) external view returns (uint256) {
-        return _reputation[user][role];
+    /// @notice Routing score used for job prioritisation
+    function getRoutingScore(Role role, address user) external view returns (uint256) {
+        return getReputation(role, user);
     }
 
-    /// @notice Check blacklist status for a user and role.
-    function isBlacklisted(address user, Role role) external view returns (bool) {
-        return _blacklisted[user][role];
+    /// @notice Governance power derived from reputation
+    function getGovernancePower(Role role, address user) external view returns (uint256) {
+        return getReputation(role, user);
     }
 
-    /// @notice Confirms the module and its owner are tax-neutral.
-    /// @return Always true, indicating no tax liability can arise.
+    /// @notice Confirms the module and its owner are tax neutral
     function isTaxExempt() external pure returns (bool) {
         return true;
-    }
-
-    function _thresholdFor(Role role) internal view returns (uint256) {
-        return role == Role.Agent ? agentThreshold : validatorThreshold;
-    }
-
-    function _isAuthorized(Role role) internal pure returns (bool) {
-        return role == Role.Agent || role == Role.Validator;
     }
 
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------
 
-    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral
     receive() external payable {
         revert("ReputationEngine: no ether");
     }
 
-    /// @dev Reject calls with unexpected calldata or funds.
+    /// @dev Reject calls with unexpected calldata or funds
     fallback() external payable {
         revert("ReputationEngine: no ether");
     }
