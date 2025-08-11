@@ -1943,3 +1943,6 @@ See [CHANGELOG.md](CHANGELOG.md) for a summary of major changes across releases.
 ## License
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
+## Disclaimer
+
+On-chain reward flows can lessen off-chain reporting, but operators are still responsible for complying with tax and regulatory requirements in their jurisdiction. Review authoritative resources such as the [IRS guidance on digital assets](https://www.irs.gov/businesses/small-businesses-self-employed/virtual-currencies) or consult a qualified professional to ensure compliance.
