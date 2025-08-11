@@ -6,6 +6,7 @@ This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting�
 - Platform operators stake $AGIALPHA in `StakeManager`.
 - A `FeePool` contract receives a protocol fee from each finalized job and periodically streams rewards to operators proportional to stake weight.
 - Rewards are paid directly on‑chain; no custody of user funds or off‑chain accounting is required.
+- During distribution, any rounding dust is forwarded to a treasury address set via `FeePool.setTreasury(treasury)` so unallocated tokens never remain trapped.
 
 Token burns may be configured on every fee so a portion of payouts is destroyed, creating a deflationary sink that increases scarcity without routing revenue to the owner.
 
