@@ -82,4 +82,19 @@ describe("DisputeModule", function () {
       agent.address
     );
   });
+
+  it("restricts parameter updates to the owner", async () => {
+    await expect(dispute.connect(owner).setAppealFee(20n))
+      .to.emit(dispute, "AppealFeeUpdated")
+      .withArgs(20n);
+    await expect(dispute.connect(owner).setModerator(employer.address))
+      .to.emit(dispute, "ModeratorUpdated")
+      .withArgs(employer.address);
+    await expect(dispute.connect(owner).setAppealJury(agent.address))
+      .to.emit(dispute, "AppealJuryUpdated")
+      .withArgs(agent.address);
+    await expect(dispute.connect(employer).setAppealFee(30n))
+      .to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount")
+      .withArgs(employer.address);
+  });
 });
