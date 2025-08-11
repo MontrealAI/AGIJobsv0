@@ -3,6 +3,13 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+Key incentive features in the v2 suite:
+
+- **On‑chain revenue sharing** – `FeePool` redistributes protocol fees to staked platform operators, requiring no off‑chain reporting.
+- **Stake‑weighted routing & discovery** – `PlatformRegistry` and `JobRouter` prioritise operators with higher stake and reputation.
+- **Governance rewards** – `GovernanceReward` pays bonuses to voters who participate in parameter polls.
+- **Sybil and regulatory mitigation** – minimum stakes, burn sinks, and blacklist controls deter abuse while keeping participants pseudonymous.
+
 > **Critical Security Notice:** `AGIJobManagerv0.sol` in `legacy/` is the exact source for the mainnet contract at [`0x0178…ba477`](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477). It is immutable and must never be altered. Any future releases will appear as new files (for example, `contracts/AGIJobManagerv1.sol`) and will be announced only through official AGI.eth channels. Always cross‑check contract addresses and bytecode on multiple explorers before sending funds or interacting with a deployment.
 
 ## Quick Links

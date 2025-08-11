@@ -1,43 +1,69 @@
 # Coding Sprint: $AGIALPHA Incentive Modules
 
-This sprint adds revenue sharing and routing incentives to the v2 suite while preserving tax neutrality and pseudonymity.
+This sprint finalises revenue sharing, routing and governance incentives for the
+v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymous.
 
 ## Objectives
-- Implement smart‑contract revenue sharing for platform operators.
-- Introduce stake‑weighted job routing and discovery modules.
-- Align governance with rewards and embed sybil resistance.
-- Keep all value flows on‑chain in $AGIALPHA (6 decimals) and let the owner swap
-  the token or adjust parameters without redeploying contracts.
+- Implement smart‑contract revenue sharing for platform operators with no
+  off‑chain accounting.
+- Route and discover jobs using stake‑weighted, reputation‑aware algorithms.
+- Align governance with rewards and ensure all parameters remain owner‑configurable.
+- Embed sybil resistance and regulatory‑flag mitigation through staking gates,
+  blacklists and burn sinks.
+- Keep all value flows on‑chain in $AGIALPHA (6 decimals) so the owner can swap
+  the token or tune parameters without redeploying contracts.
 
 ## Tasks
 1. **FeePool Contract**
-   - Collect per‑job protocol fees from `JobRegistry`.
-   - Track operator stakes from `StakeManager` and stream rewards periodically.
-   - Expose `setFeePercentage` and `setBurnPercentage` for the owner.
+   - Collect protocol fees from `JobRegistry` on each finalised job.
+   - Track operator stakes from `StakeManager` and stream rewards in proportion
+     to stake.
+   - Enforce burn percentage for an entropy sink; owner toggles via `setBurnPct`.
 2. **StakeManager Extensions**
-   - Record operator stakes (`role = 2`).
-   - Emit events for stake deposits, withdrawals, and slashing usable by `FeePool`.
-3. **JobRouter**
-   - Accept job submissions without specified platform and route them to eligible operators based on stake weight.
-   - Allow owner to adjust routing algorithm parameters.
-4. **DiscoveryModule**
-   - Index platforms and expose a paginated list sorted by stake and reputation.
-   - Include a stake badge for UI clients.
-5. **GovernanceReward Contract**
-   - Record voters during parameter polls and hold owner‑funded bonuses on‑chain.
-   - After each vote the owner finalises the epoch so recorded voters claim equal rewards.
-6. **Dispute & Governance Hooks**
-   - Add token‑weighted voting using staked balances for configuration changes (e.g., fee rates).
-   - Connect the `GovernanceReward` to parameter changes so participants receive bonuses.
-   - Denominate appeal deposits in $AGIALPHA via `DisputeModule.setAppealFee` and route slashed fees to the `FeePool` or burner.
-7. **Sybil Mitigations**
-   - Enforce minimum stake for platform registration.
-   - Add optional identity commitments or human‑check modules that can be toggled by the owner.
-8. **Testing & Docs**
-   - Extend Hardhat tests to cover revenue distribution, routing, governance, and slashing scenarios.
-   - Update `README.md` and `docs/incentive-mechanisms-agialpha.md` once modules are complete.
+   - Record platform operator stakes (`role = 2`) and expose `setMinStake`,
+     `setMaxStakePerAddress` and `lockStake` hooks.
+   - Emit events for deposits, withdrawals, slashing and lock/unlock for
+     auditability.
+3. **PlatformRegistry & JobRouter**
+   - Register platform operators that maintain the minimum stake.
+   - Compute routing scores from stake and reputation and expose view functions
+     for front‑ends.
+   - JobRouter assigns unspecific jobs to the highest‑scoring registered
+     operator; owner adjusts weighting factors.
+4. **ReputationEngine**
+   - Support stake/reputation weighting, blacklisting and threshold‑based sybil
+     flagging.
+   - Expose `setScoringWeights`, `blacklist` and `isBlacklisted` helpers for
+     `PlatformRegistry` and external auditors.
+5. **DiscoveryModule**
+   - Provide paginated operator listings sorted by
+     `PlatformRegistry.getScore`.
+   - Include stake badge metadata for UI clients and optional blacklist
+     filtering.
+6. **GovernanceReward & Parameter Polls**
+   - Record voters for each governance epoch and distribute owner‑funded
+     rewards.
+   - Integrate with parameter change votes so participants get bonuses after
+     `finalizeEpoch`.
+7. **Dispute & Burn Hooks**
+   - Appeal deposits denominated in $AGIALPHA via `DisputeModule.setAppealFee`;
+     slashed fees forwarded to `FeePool` or burned.
+   - Owner chooses burn rate to counter sybil farms and avoid accumulating
+     taxable treasuries.
+8. **Sybil/Regulatory Defenses**
+   - Enforce minimum stake for platform registration; expose `setMinPlatformStake`.
+   - Optional identity commitment module (stub) plug‑in for `PlatformRegistry`.
+   - Document tax‑policy acknowledgement flows; wire `TaxPolicy` and
+     `JobRegistry.acknowledgeTaxPolicy`.
+9. **Testing & Documentation**
+   - Extend Hardhat tests for revenue distribution, routing priority,
+     governance rewards, slashing and blacklist enforcement.
+   - Update `README.md`, `docs/incentive-mechanisms-agialpha.md` and
+     `docs/deployment-agialpha.md` to cover Etherscan flows and base‑unit
+     conversions.
 
 ## Definition of Done
-- All new modules deployed immutably and wired through `JobRegistry`.
+- All modules deployed immutably and wired through `JobRegistry`.
 - `npm run lint` and `npm test` pass.
-- Documentation explains Etherscan flows for non‑technical operators.
+- Documentation explains pseudonymity, tax disclaimers and Etherscan interaction
+  for non‑technical operators.
