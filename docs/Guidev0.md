@@ -35,94 +35,111 @@ This guide walks you through setting up the AGI Jobs v2 smart contracts on Ether
 
 ```mermaid
 flowchart TD
-    subgraph "Prerequisites"
-        PR1["Install MetaMask (Ethereum mainnet)"]
-        PR2["Connect wallet to Etherscan Web3"]
-        PR3["Ensure wallet has ETH for gas"]
-        PR4["Acquire $AGIALPHA tokens\n(add to MetaMask, note 6 decimals)"]
-        PR1 --> PR2 --> PR3 --> PR4
+    %% Style definitions
+    classDef section fill:#0f172a,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold
+    classDef step fill:#0891b2,stroke:#fff,stroke-width:1px,color:#fff
+    classDef decision fill:#facc15,stroke:#fff,stroke-width:1px,color:#000,font-weight:bold
+    classDef success fill:#22c55e,stroke:#fff,stroke-width:1px,color:#fff
+    classDef fail fill:#ef4444,stroke:#fff,stroke-width:1px,color:#fff
+
+    %% PREREQUISITES
+    subgraph PR["🚀 Prerequisites"]
+        PR1["🦊 Install & set up MetaMask\n(Ethereum Mainnet)"]:::step
+        PR2["🔗 Connect wallet to Etherscan\nvia 'Connect to Web3'"]:::step
+        PR3["⛽ Ensure ETH for gas fees"]:::step
+        PR4["💠 Acquire $AGIALPHA (6 decimals)\nAdd token to MetaMask"]:::step
     end
-    PR4 --> DE1
-    subgraph "Deploy Contracts"
-        DE1["Deploy StakeManager\n(token=$AGIALPHA, owner=you, treasury=addr)"]
-        DE2["Deploy JobRegistry\n(owner=you)"]
-        DE3["Deploy ValidationModule\n(jobRegistry, stakeManager,\n owner=you)"]
-        DE4["Deploy ReputationEngine\n(owner=you)"]
-        DE5["Deploy DisputeModule\n(jobRegistry, stakeManager,\n reputationEngine, owner=you)"]
-        DE6["Deploy CertificateNFT\n(name, symbol,\n owner=you)"]
-        DE7["Deploy FeePool\n(token=$AGIALPHA, stakeManager,\n rewardRole=2, owner=you)"]
-        DE8["Deploy TaxPolicy\n(owner=you)"]
-        DE9["Deploy JobRouter\n(optional, stakeManager,\n reputationEngine, owner=you)"]
-        DE1 --> DE2 --> DE3 --> DE4 --> DE5 --> DE6 --> DE7 --> DE8 --> DE9
+    class PR section
+
+    %% DEPLOY
+    subgraph DEP["🏗️ Deploy AGI Jobs v2 Contracts"]
+        DE1["📦 StakeManager"]:::step
+        DE2["📦 JobRegistry"]:::step
+        DE3["📦 ValidationModule"]:::step
+        DE4["📦 ReputationEngine"]:::step
+        DE5["📦 DisputeModule (optional)"]:::step
+        DE6["📦 CertificateNFT"]:::step
+        DE7["📦 FeePool (rewardRole=2)"]:::step
+        DE8["📦 TaxPolicy"]:::step
+        DE9["📦 JobRouter (optional)"]:::step
     end
-    DE9 --> LM1
-    subgraph "Link Modules"
-        LM1["JobRegistry.setModules(\nvalidation=ValidationModule,\n stake=StakeManager,\n reputation=ReputationEngine,\n dispute=DisputeModule,\n certificate=CertificateNFT)"]
-        LM2["JobRegistry.setFeePool(FeePool)"]
-        LM3["JobRegistry.setTaxPolicy(TaxPolicy)"]
-        LM4["StakeManager.setJobRegistry(JobRegistry)"]
-        LM5["StakeManager.setDisputeModule(DisputeModule)"]
-        LM6["FeePool.setStakeManager(StakeManager)"]
-        LM7["FeePool.setRewardRole(2 = Platform)"]
-        LM8["DisputeModule.setFeePool(FeePool)"]
-        LM9["DisputeModule.setTaxPolicy(TaxPolicy)"]
-        LM10["JobRouter.setStakeManager/\nReputationEngine (if needed)"]
-        LM1 --> LM2 --> LM3 --> LM4 --> LM5 --> LM6 --> LM7 --> LM8 --> LM9 --> LM10
+    class DEP section
+
+    %% LINK MODULES
+    subgraph LINK["🔗 Link Modules"]
+        LM1["JobRegistry.setModules(...)"]:::step
+        LM2["JobRegistry.setFeePool(...)"]:::step
+        LM3["JobRegistry.setTaxPolicy(...)"]:::step
+        LM4["StakeManager.setJobRegistry(...)"]:::step
+        LM5["StakeManager.setDisputeModule(...)"]:::step
+        LM6["FeePool.setStakeManager(...)"]:::step
+        LM7["FeePool.setRewardRole(2)"]:::step
+        LM8["DisputeModule.setFeePool(...)"]:::step
+        LM9["DisputeModule.setTaxPolicy(...)"]:::step
+        LM10["JobRouter link StakeManager & ReputationEngine"]:::step
     end
-    LM10 --> PA1
-    subgraph "Set Parameters"
-        PA1["StakeManager.setMinStake(minimum stake)"]
-        PA2["StakeManager.setSlashingPercentages(\nemployerPct, treasuryPct)"]
-        PA3["JobRegistry.setJobStake(required agent collateral)"]
-        PA4["JobRegistry.setFeePct(protocol fee %)"]
-        PA5["ValidationModule.setParameters(\nvalidatorsPerJob, commit & reveal time,\n reward%, slash%)"]
-        PA6["DisputeModule.setAppealFee(fee amount)"]
-        PA7["FeePool.setBurnPct(burn %)"]
-        PA8["PlatformRegistry.setMinPlatformStake (if applicable)"]
-        PA1 --> PA2 --> PA3 --> PA4 --> PA5 --> PA6 --> PA7 --> PA8
+    class LINK section
+
+    %% PARAMETERS
+    subgraph PARAM["⚙️ Set Economic Parameters"]
+        PA1["StakeManager.setMinStake(...)"]:::step
+        PA2["StakeManager.setSlashingPercentages(...)"]:::step
+        PA3["JobRegistry.setJobStake(...)"]:::step
+        PA4["JobRegistry.setFeePct(...)"]:::step
+        PA5["ValidationModule.setParameters(...)"]:::step
+        PA6["DisputeModule.setAppealFee(...)"]:::step
+        PA7["FeePool.setBurnPct(...)"]:::step
+        PA8["PlatformRegistry.setMinPlatformStake(...)"]:::step
     end
-    PA8 --> EM1
-    subgraph "Using the System"
-        EM1["Employer: approve StakeManager to spend reward"]
-        EM2["Employer: call createJob(reward, URI) on JobRegistry"]
-        EM3["StakeManager escrows reward+fee;\nJobRegistry emits JobCreated (jobId)"]
-        EM1 --> EM2 --> EM3
-        EM3 --> AG1
-        EM3 -.-> EM4["(Optional) Employer cancels job"]
-        AG1["Agent: depositStake(role=0, amount) in StakeManager"]
-        AG2["Agent: call applyForJob(jobId) on JobRegistry"]
-        AG3["JobRegistry assigns agent;\njob state -> Applied"]
-        AG4["Agent works on task off-chain"]
-        AG5["Agent: call completeJob(jobId) on JobRegistry"]
-        AG6["JobRegistry moves job to 'Completed',\nvalidation phase begins"]
-        AG1 --> AG2 --> AG3 --> AG4 --> AG5 --> AG6
-        AG6 --> VA2
-        VA2["Validator: depositStake(role=1) in StakeManager"]
-        VA2 --> VA1
-        VA1["System selects N validators for the job"]
-        VA1 --> VA3
-        VA3["Validators: commit votes (hashed) in ValidationModule"]
-        VA3 --> VA4
-        VA4["Validators: reveal votes (approve/reject)"]
-        VA4 --> VA5
-        VA5["ValidationModule tallies results"]
-        VA5 --> T2
-        T2{"Job outcome?"}
-        T2 -- "Success" --> FS["StakeManager: pay agent & validators; send fee to FeePool\nCertificateNFT: mint completion certificate\nReputationEngine: update agent & validator rep"]
-        T2 -- "Failure" --> Y{"Agent appeals?"}
-        Y -- "No" --> FL["StakeManager: refund employer; slash agent stake\n(split to employer & treasury)\nReputationEngine: update rep (agent-, validators+)"]
-        Y -- "Yes" --> D3["DisputeModule: mediator/jury review"]
-        D3 --> Z{"Dispute outcome"}
-        Z -- "Agent wins" --> FS
-        Z -- "Employer wins" --> FL
-        subgraph "Platform Operator"
-            FP["FeePool accrues protocol fees"]
-            PO1["Platform Op: stake & register platform"]
-            PO2["Platform Op: claim fees (FeePool)"]
-            FP --> PO1 --> PO2
+    class PARAM section
+
+    %% USING
+    subgraph USE["🎯 Using the System"]
+        subgraph EMP["Employer"]
+            EM1["Approve StakeManager to spend reward"]:::step
+            EM2["JobRegistry.createJob(reward, URI)"]:::step
+            EM3["JobPosted → reward escrowed"]:::success
         end
-        FS --> FP
+        subgraph AGT["Agent"]
+            AG1["StakeManager.depositStake(role=0)"]:::step
+            AG2["JobRegistry.applyForJob(jobId)"]:::step
+            AG3["Do work off-chain"]:::step
+            AG4["JobRegistry.completeJob(jobId)"]:::step
+        end
+        subgraph VAL["Validator"]
+            VA1["StakeManager.depositStake(role=1)"]:::step
+            VA2["Commit vote hash"]:::step
+            VA3["Reveal vote"]:::step
+        end
+        subgraph PO["Platform Operator"]
+            PO1["StakeManager.depositStake(role=2)"]:::step
+            PO2["JobRouter.registerPlatform(address)"]:::step
+            PO3["Claim rewards from FeePool"]:::success
+        end
     end
+    class USE section
+
+    %% DECISION & OUTCOMES
+    DEC1{"Job Outcome?"}:::decision
+    DEC2{"Appeal?"}:::decision
+    OUT1["✅ Success → Pay agent & validators\nMint certificate\nUpdate reputation"]:::success
+    OUT2["❌ Failure → Refund employer\nSlash agent stake\nUpdate reputation"]:::fail
+    OUT3["📝 Dispute review & resolution"]:::step
+
+    %% FLOW CONNECTIONS
+    PR4 --> DE1
+    DE9 --> LM1
+    LM10 --> PA1
+    PA8 --> EM1
+    EM3 --> AG1
+    AG4 --> VA1
+    VA3 --> DEC1
+    DEC1 -- Yes --> OUT1
+    DEC1 -- No --> DEC2
+    DEC2 -- No --> OUT2
+    DEC2 -- Yes --> OUT3 --> DEC1
+    OUT1 --> PO1
+    OUT2 --> PO1
 ```
 
 ## Prerequisites: Wallet Setup and Tokens
