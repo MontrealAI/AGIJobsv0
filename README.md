@@ -12,6 +12,14 @@ Key incentive features in the v2 suite:
 - **Tax‑neutral pseudonymity** – every module rejects direct ETH and exposes `isTaxExempt()` so rewards flow on‑chain in $AGIALPHA with no off‑chain reporting.
 - **Owner‑controlled configuration** – every module exposes `Ownable` setters so the owner can adjust tokens, fees and stake thresholds directly through Etherscan without redeploying contracts.
 
+### Universal Stake-Based Incentive Architecture
+
+- Operators opt in by staking **$AGIALPHA**. Staked addresses gain routing priority, a share of protocol fees, and permission to activate their own job portals.
+- The main deploying entity is a special case with **stake = 0**. It receives no routing preference or fee share, keeping its involvement tax neutral and reporting free while still demonstrating network functionality.
+- All value flows are enforced entirely on-chain through modules such as `StakeManager`, `FeePool`, and `PlatformRegistry`, allowing participants to remain pseudonymous.
+- Every economic parameter—token address, fee split, minimum stake, burn percentage—can be retuned by the contract owner via `Ownable` setters, without redeploying modules.
+- Staked participants must comply with local regulations even though rewards are distributed on-chain; see [docs/tax-obligations.md](docs/tax-obligations.md) for guidance.
+
 > **Critical Security Notice:** `AGIJobManagerv0.sol` in `legacy/` is the exact source for the mainnet contract at [`0x0178…ba477`](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477). It is immutable and must never be altered. Any future releases will appear as new files (for example, `contracts/AGIJobManagerv1.sol`) and will be announced only through official AGI.eth channels. Always cross‑check contract addresses and bytecode on multiple explorers before sending funds or interacting with a deployment.
 
 ## Quick Links
