@@ -211,6 +211,8 @@ OK --> P7
 LEG --> P7
 ```
 
+---
+
 ## Prerequisites: Wallet Setup and Tokens
 
 * **Ethereum Wallet:** Install [MetaMask](https://metamask.io/) or a similar Ethereum wallet extension. Set it to **Ethereum Mainnet**. Ensure you have access to the wallet’s **public address** and can sign transactions (with your private key or hardware wallet as appropriate).
