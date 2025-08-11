@@ -24,6 +24,14 @@ graph TD
 | ReputationEngine | Updates reputation, enforces blacklists. |
 | CertificateNFT | Mints ERC‑721 certificates for completed jobs. |
 
+## Universal Incentive System
+The v2 contracts share a unified incentive model:
+
+- **Staking** – Agents, validators, and platform operators stake through `StakeManager` under their respective roles. Stakes secure honest behaviour and unlock job participation.
+- **Routing** – `JobRegistry` locks each job's reward and protocol fee, then routes the fee portion to `FeePool` on finalisation.
+- **Revenue share** – `FeePool` streams accumulated fees to platform operators pro‑rata to their staked amount.
+- **Zero‑stake main deployer** – The primary deployment address holds no stake and receives no rewards; all revenue accrues to platform stakers.
+
 ## Etherscan Interactions
 1. Open the relevant contract address on Etherscan.
 2. In **Write Contract**, connect your wallet.
@@ -32,15 +40,15 @@ graph TD
 
 For a step-by-step deployment walkthrough with owner-only setters, see [deployment-agialpha.md](deployment-agialpha.md).
 
-### Governance Table
-| Module | Owner Functions | Purpose |
+### Owner Controls and Defaults
+| Module | Owner-only setters (default) | Purpose |
 | --- | --- | --- |
-| JobRegistry | `setModules`, `setJobParameters` | Wire module addresses and set job rewards/stake. |
-| ValidationModule | `setParameters` | Tune validator counts, stake ratios, rewards and slashing. |
-| DisputeModule | `setAppealParameters` | Configure appeal fees and moderator/jury settings. |
-| StakeManager | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury` | Adjust staking token, minimum stake, slashing splits and treasury. |
-| ReputationEngine | `setCaller`, `setThreshold`, `setBlacklist` | Authorise callers, set reputation floors, manage blacklist. |
-| CertificateNFT | `setJobRegistry` | Authorise the registry allowed to mint. |
+| JobRegistry | `setModules` (none set), `setJobParameters` (`reward=0`, `stake=0`), `setFeePool` (0 address), `setFeePct` (`0`), `setTaxPolicy` (0 address) | Wire modules, set template stake/reward, and configure fees/tax policy. |
+| ValidationModule | `setValidatorPool` (empty), `setReputationEngine` (0 address), `setCommitRevealWindows` (`0`, `0`), `setValidatorBounds` (`0`, `0`), `setVRF` (0 address) | Choose validators and tune commit/reveal timing and committee sizes. |
+| DisputeModule | `setModerator` (owner), `setAppealJury` (owner), `setAppealFee` (`0`), `setJobRegistry` (constructor address) | Configure appeal bond and arbiters. |
+| StakeManager | `setToken` (constructor token), `setMinStake` (`0`), `setSlashingPercentages` (`0`, `0`), `setTreasury` (constructor treasury), `setJobRegistry` (0 address), `setDisputeModule` (0 address), `setSlashPercentSumEnforcement` (`false`), `setMaxStakePerAddress` (`0`) | Adjust staking token, minimums, slashing rules, and authorised modules. |
+| ReputationEngine | `setCaller` (`false`), `setStakeManager` (0 address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
+| CertificateNFT | `setJobRegistry` (0 address), `setBaseURI` (empty) | Authorise minting registry and metadata base URI. |
 
 ## Incentive Mechanics
 Honest participation minimises a system-wide free energy similar to the thermodynamic relation `G = H - T S`.

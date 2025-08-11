@@ -8,23 +8,33 @@ This guide walks a non-technical owner through deploying and configuring the mod
 - Sufficient ETH for gas fees and $AGIALPHA for testing job flows.
 
 ## 1. Deploy the Modules
-1. **StakeManager** – constructor arguments `(tokenAddress, owner, treasury)`.
-2. **JobRegistry** – constructor argument `owner`.
-3. **ValidationModule** – constructor arguments `(jobRegistry, stakeManager, owner)`.
-4. **ReputationEngine** – constructor argument `owner`.
-5. **DisputeModule** – constructor arguments `(jobRegistry, stakeManager, reputationEngine, owner)`.
-6. **CertificateNFT** – constructor arguments `(name, symbol, owner)`.
-7. **FeePool** – constructor arguments `(token, stakeManager, rewardRole, owner)`; set `rewardRole` to `2` for platform operators.
-8. **TaxPolicy** – constructor argument `owner`.
-9. *(Optional)* **JobRouter** and **DiscoveryModule** for stake‑weighted routing and search.
+Deploy each contract in the order below. On Etherscan, open **Contract → Deploy**, connect your wallet, paste the verified bytecode, and enter constructor arguments exactly as shown.
 
-Use the *Deploy* tab on each contract's Etherscan page. Confirm transactions through your wallet.
+| # | Module | Constructor arguments (example) |
+| --- | --- | --- |
+| 1 | StakeManager | `(tokenAddress, owner, treasury)` → `(0x2e8f...eabe, YOUR_ADDRESS, TREASURY_ADDRESS)` |
+| 2 | JobRegistry | `(owner)` → `(YOUR_ADDRESS)` |
+| 3 | ValidationModule | `(jobRegistry, stakeManager, owner)` → `(<JobRegistry>, <StakeManager>, YOUR_ADDRESS)` |
+| 4 | ReputationEngine | `(owner)` → `(YOUR_ADDRESS)` |
+| 5 | DisputeModule | `(jobRegistry, stakeManager, reputationEngine, owner)` → `(<JobRegistry>, <StakeManager>, <ReputationEngine>, YOUR_ADDRESS)` |
+| 6 | CertificateNFT | `(name, symbol, owner)` → `("AGI Jobs", "AGIJOB", YOUR_ADDRESS)` |
+| 7 | FeePool | `(token, stakeManager, rewardRole, owner)` → `(0x2e8f...eabe, <StakeManager>, 2, YOUR_ADDRESS)` |
+| 8 | TaxPolicy | `(owner)` → `(YOUR_ADDRESS)` |
+| 9 | *(Optional)* JobRouter/DiscoveryModule | per module docs |
+
+After each deployment, note the contract address for later wiring.
+
+**Example Etherscan deployment**
+1. Search for the compiled contract on Etherscan and open the **Contract → Verify and Publish** page. Upload the flattened source to verify bytecode.
+2. Once verified, switch to **Contract → Deploy**, paste the constructor arguments in the order shown above, and press **Write**.
+3. Confirm the transaction in your wallet and record the resulting contract address.
 
 ## 2. Wire the Modules
+Using Etherscan's **Write Contract** tab, submit the following transactions in order:
 1. In **JobRegistry**, call `setModules(validation, stakeManager, reputation, dispute, certificate)`.
 2. In **StakeManager**, call `setJobRegistry(jobRegistry)`.
-3. In **JobRegistry**, call `setFeePool(feePool)` then `setFeePct(pct)` to choose the percentage of each job reward routed to the pool.
-4. In **JobRegistry**, call `setTaxPolicy(taxPolicy)` and optionally `bumpTaxPolicyVersion`.
+3. Back in **JobRegistry**, call `setFeePool(feePool)` then `setFeePct(pct)` to choose the percentage of each job reward routed to the pool.
+4. Finally, on **JobRegistry** call `setTaxPolicy(taxPolicy)` and optionally `bumpTaxPolicyVersion`.
 
 ## 3. Configure Token Parameters
 The StakeManager already points to $AGIALPHA (6 decimals). To change tokens later, call `setToken(newToken)` on `StakeManager` and `FeePool` (and on `GovernanceReward` if used).
@@ -62,10 +72,13 @@ Platform owners stake under `Role.Platform` via `StakeManager.depositStake(2, am
 ## 8. Changing the Token
 Only the owner may switch currencies: invoke `setToken(newToken)` on `StakeManager`, `FeePool`, and any reward modules. Existing stakes and escrows remain untouched; new deposits and payouts use the updated token.
 
-## Security Notes
-- Verify each deployed address on at least two explorers.
-- Use multisig or timelock for the owner where possible.
-- Keep constructor parameters and ABI files for later verification.
+## Troubleshooting & Security Tips
+- **Mismatched constructor inputs** – double‑check the argument order if deployment reverts.
+- **Missing module links** – if a call fails with "job registry" or similar, ensure `setModules` and `setJobRegistry` have been executed.
+- **Stuck transactions** – increase gas price or use your wallet’s speed‑up feature.
+- **Verify addresses** on at least two explorers before wiring modules.
+- **Protect the owner key** – use a hardware wallet or multisig and avoid untrusted networks.
+- **Keep records** of constructor parameters and ABIs for later verification.
 
 By following these steps the owner can deploy the AGIJobs suite with $AGIALPHA as the unit of account, while retaining the ability to replace the token without redeploying other modules.
 
