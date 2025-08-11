@@ -49,6 +49,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
         uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
+        if (msg.sender == owner()) require(stake > 0, "owner stake");
         require(stake >= minPlatformStake, "stake");
         registered[msg.sender] = true;
         emit Registered(msg.sender);

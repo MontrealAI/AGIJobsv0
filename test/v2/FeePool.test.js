@@ -147,4 +147,28 @@ describe("FeePool", function () {
     expect((await token2.balanceOf(user1.address)) - before1).to.equal(25n);
     expect((await token2.balanceOf(user2.address)) - before2).to.equal(75n);
   });
+
+  it("prevents deployer from claiming rewards without stake", async () => {
+    const feeAmount = 50;
+    const jobId = ethers.encodeBytes32String("job4");
+    await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockJobFunds(jobId, employer.address, feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .finalizeJobFunds(
+        jobId,
+        user1.address,
+        0,
+        feeAmount,
+        await feePool.getAddress()
+      );
+    await feePool.connect(owner).distributeFees();
+    const before = await token.balanceOf(owner.address);
+    await expect(feePool.connect(owner).claimRewards())
+      .to.emit(feePool, "RewardsClaimed")
+      .withArgs(owner.address, 0);
+    expect(await token.balanceOf(owner.address)).to.equal(before);
+  });
 });

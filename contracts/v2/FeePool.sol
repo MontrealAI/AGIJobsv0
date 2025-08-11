@@ -107,6 +107,10 @@ contract FeePool is Ownable {
     /// @notice claim accumulated rewards for caller
     function claimRewards() external {
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
+        if (msg.sender == owner() && stake == 0) {
+            emit RewardsClaimed(msg.sender, 0);
+            return;
+        }
         uint256 cumulative = (stake * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
         userCheckpoint[msg.sender] = cumulative;
