@@ -98,3 +98,20 @@ By following these steps the owner can deploy the AGIJobs suite with $AGIALPHA a
 5. **Stay safe** – double‑check addresses, keep keys on hardware or multisig wallets, and never interact from untrusted networks.
 
 This sequence covers the critical owner‑only setters needed to bootstrap the system. For background on module responsibilities and token math, refer back to the sections above.
+
+## Platform Registry, Router & Incentives Example
+
+The following sequence mirrors the automated deployment script and shows each transaction with 6‑decimal arguments.
+
+1. **Deploy StakeManager** – `StakeManager(token, owner, treasury)` → `(0x2e8f…eabe, YOUR_ADDRESS, TREASURY_ADDRESS)`.
+2. **Deploy PlatformRegistry** – `PlatformRegistry(stakeManager, reputation, minStake, owner)` → `(<StakeManager>, <ReputationEngine>, 1000_000000, YOUR_ADDRESS)` sets a 1,000 token minimum.
+3. **Deploy JobRouter** – `JobRouter(platformRegistry, owner)` → `(<PlatformRegistry>, YOUR_ADDRESS)`.
+4. **Deploy FeePool** – `FeePool(token, stakeManager, 2, owner)` where `2` represents the `Platform` role.
+5. **Deploy PlatformIncentives** – `PlatformIncentives(stakeManager, platformRegistry, jobRouter, owner)`.
+6. **Wire modules**
+   - In `JobRegistry` call `setFeePool(<FeePool>)` then `setFeePct(5)` for a 5% protocol fee.
+   - In `PlatformRegistry` call `setRegistrar(<PlatformIncentives>, true)`.
+   - In `JobRouter` call `setRegistrar(<PlatformIncentives>, true)`.
+7. **Stake and activate** – a platform operator approves the StakeManager and calls `PlatformIncentives.stakeAndActivate(25_000000)` to lock 25 tokens and register for routing and fee sharing. The owner may pass `0` to register without staking.
+
+All amounts use 6‑decimal base units; e.g. `25_000000` represents 25 tokens. Adjust the example values to match your deployment.
