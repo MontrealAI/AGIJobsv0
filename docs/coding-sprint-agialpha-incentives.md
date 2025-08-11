@@ -55,12 +55,13 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
    - Optional identity commitment module (stub) plug‑in for `PlatformRegistry`.
    - Document tax‑policy acknowledgement flows; wire `TaxPolicy` and
      `JobRegistry.acknowledgeTaxPolicy`.
+   - Surface `isTaxExempt()` on every module and reject direct ETH so owners and contracts remain revenue‑free and off‑ledger.
 9. **Testing & Documentation**
    - Extend Hardhat tests for revenue distribution, routing priority,
      governance rewards, slashing and blacklist enforcement.
    - Update `README.md`, `docs/incentive-mechanisms-agialpha.md` and
-     `docs/deployment-agialpha.md` to cover Etherscan flows and base‑unit
-     conversions.
+     `docs/deployment-agialpha.md` to cover Etherscan flows, owner‑only setters
+     and base‑unit conversions.
 
 ## Definition of Done
 - All modules deployed immutably and wired through `JobRegistry`.

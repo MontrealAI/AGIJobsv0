@@ -7,6 +7,8 @@ This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting�
 - A `FeePool` contract receives a protocol fee from each finalized job and periodically streams rewards to operators proportional to stake weight.
 - Rewards are paid directly on‑chain; no custody of user funds or off‑chain accounting is required.
 
+Token burns may be configured on every fee so a portion of payouts is destroyed, creating a deflationary sink that increases scarcity without routing revenue to the owner.
+
 ## 2. Algorithmic & Reputational Incentives
 - `JobRouter` favors platforms with higher stakes when routing unspecific jobs, giving committed operators more volume.
 - `DiscoveryModule` surfaces staked platforms earlier in search results and displays a stake badge as reputation.
@@ -22,6 +24,8 @@ This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting�
 - Appeal deposits in `DisputeModule` are denominated in $AGIALPHA and may be burned or paid to honest parties, discouraging frivolous challenges.
 - On-chain tax acknowledgements and blacklist thresholds are owner‑tuned, letting deployments adapt to local compliance signals while keeping addresses pseudonymous.
 - Because the protocol never takes custody or issues off‑chain payouts, there is no centralized revenue that would trigger reporting duties.
+
+All modules expose simple `Ownable` setters so the contract owner can retune fees, stakes, burn rates or even swap the token address through Etherscan without redeploying contracts.
 
 ## 5. Owner Controls & User Experience
 - The contract owner may update fees, burn rates, stake thresholds, and even swap the token address via `StakeManager.setToken`.
