@@ -31,7 +31,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
  
-## Quick Start: FeePool & JobRouter
+## Quick Start: FeePool, JobRouter & GovernanceReward
 
 1. **Deploy & verify** – deploy `FeePool(token, stakeManager, rewardRole, owner)` and `JobRouter(stakeManager, reputationEngine, owner)`. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
 2. **Connect wallet** – from the **Write Contract** tab click **Connect to Web3**. Owners may initialize modules immediately after verification.
@@ -39,6 +39,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
    - On `StakeManager`, call `setToken(token)` if the staking token differs from the constructor value.
    - On `JobRegistry`, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)` followed by `setFeePool(feePool)` to enable revenue sharing.
 4. **Stake & register** – still in **Write Contract**, stake with `depositStake(role, amount)` on `StakeManager` (role `2` for platform operators). Amounts use 6‑decimal base units—`25_000000` stakes 25 tokens. Afterwards register the platform through `JobRouter.registerPlatform(operator)`.
+5. **Governance bonuses** – after a parameter vote, call `recordVoters([...])` on `GovernanceReward`, approve bonus tokens, then `finalizeEpoch(totalReward)` so voters can claim via `claim(epoch)`.
 
 ### Base‑Unit Conversions (6 decimals)
 
@@ -61,6 +62,7 @@ curl -s -X POST https://mainnet.infura.io/v3/YOUR_KEY \
 
 - [FeePool.sol](contracts/v2/FeePool.sol) – revenue sharing module · [tests](test/v2/FeePool.t.sol)
 - [JobRouter.sol](contracts/v2/modules/JobRouter.sol) – stake‑weighted routing · [tests](test/v2/JobRouter.t.sol)
+- [GovernanceReward.sol](contracts/v2/GovernanceReward.sol) – voter bonus distribution · [tests](test/v2/GovernanceReward.test.js)
 
 ## Architecture Diagram
 
@@ -146,8 +148,9 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 2. Wire modules via `JobRegistry.setModules`, then attach the fee pool through `JobRegistry.setFeePool(pool)` and choose a protocol fee with `setFeePct(pct)`. All stake and fee parameters use 6‑decimal units (e.g. `100_000000` for 100 tokens).
 3. Employers and agents `approve` the `StakeManager` to spend $AGIALPHA, then use `createJob` or `depositStake` normally. Employer approvals must cover the reward plus protocol fee.
 4. Platform operators stake under `Role.Platform` via `StakeManager.depositStake(2, amount)` and register their marketplace with `JobRouter.registerPlatform(operator)`. Staked operators share job fees through `FeePool` and can claim rewards with `claimRewards()`.
-5. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
-6. All owner and user actions can be performed in a browser through Etherscan's **Write Contract** tab – connect a wallet, enter the primitive arguments, and submit the transaction.
+5. Deploy `GovernanceReward` with `(token, owner)`; after each vote record participants and call `finalizeEpoch(totalReward)` so voters can claim bonuses.
+6. Appeal fees in `DisputeModule` are denominated in $AGIALPHA and set with `setAppealFee`.
+7. All owner and user actions can be performed in a browser through Etherscan's **Write Contract** tab – connect a wallet, enter the primitive arguments, and submit the transaction.
 
 Each module is deployed once and remains immutable; the owner upgrades components by deploying a replacement and repointing `JobRegistry.setModules` or other owner‑only setters. Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
@@ -178,7 +181,7 @@ graph TD
 
 - **On-chain revenue sharing** – the `FeePool` redistributes protocol fees to platform operators in proportion to their staked $AGIALPHA so rewards require no off-chain reporting.
 - **Algorithmic & reputational perks** – `JobRouter`, `DiscoveryModule` and the `ReputationEngine` grant stake‑weighted job routing priority, validator throughput and search visibility.
-- **Governance-aligned rewards** – staked operators vote on parameters and participating voters earn small bonus shares in the next `FeePool` epoch.
+- **Governance-aligned rewards** – staked operators vote on parameters and `GovernanceReward` pays equal bonuses to recorded voters after each epoch.
 - **Sybil & regulatory mitigation** – minimum stakes, slashing, appeal deposits, and owner‑tuned burns and blacklist thresholds keep operations pseudonymous while deterring sybil attacks.
 - **Tax‑neutral pseudonymous value flows** – all transfers occur directly between wallets in $AGIALPHA with no off‑chain reporting, leaving operators tax‑neutral and the owner revenue‑free.
 - **Owner-controlled & Etherscan-friendly** – only the contract owner can adjust fees, burns, stake thresholds or even swap the token, and every action uses simple function calls suitable for Etherscan.
