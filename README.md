@@ -19,6 +19,7 @@ Key incentive features in the v2 suite:
 - All value flows are enforced entirely on-chain through modules such as `StakeManager`, `FeePool`, and `PlatformRegistry`, allowing participants to remain pseudonymous.
 - Every economic parameter—token address, fee split, minimum stake, burn percentage—can be retuned by the contract owner via `Ownable` setters, without redeploying modules.
 - Staked participants must comply with local regulations even though rewards are distributed on-chain; see [docs/tax-obligations.md](docs/tax-obligations.md) for guidance.
+- All interactions are available through block explorer "Write" tabs, keeping the system accessible to non-technical users without bespoke tooling.
 
 | Role              | Stake Requirement | Incentives unlocked                                             |
 |-------------------|------------------:|-----------------------------------------------------------------|
@@ -1862,7 +1863,7 @@ How jobs, reputation, and value circulate within the AGI ecosystem. Read the exp
 ## Legal & Regulatory
 Explains the utility-token nature of $AGI and related considerations. See [docs/legal-regulatory.md](docs/legal-regulatory.md) for full details.
 
-On-chain rewards reduce reporting duties but do not eliminate personal obligations: every employer, agent, validator, and platform operator must follow the laws of their jurisdiction and consult professionals as needed. This repository provides no legal or tax advice.
+Regulatory landscapes evolve quickly. While on-chain rewards reduce reporting duties, they do not eliminate personal obligations: every employer, agent, validator, and platform operator must follow the laws of their jurisdiction and consult professionals as needed. This repository provides no legal or tax advice.
 
 ## Roadmap
 A snapshot of planned enhancements and future directions is available in [docs/roadmap.md](docs/roadmap.md).
