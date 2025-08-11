@@ -68,6 +68,18 @@ contract JobRouter is Ownable {
         emit PlatformDeregistered(operator);
     }
 
+    /// @notice Compute routing score for a platform based on stake and reputation
+    /// @param operator Address of the platform operator
+    /// @return score Weighted score used for routing decisions
+    function getRoutingScore(address operator) public view returns (uint256 score) {
+        if (reputationEngine.isBlacklisted(operator)) return 0;
+        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        if (stake < minStake) return 0;
+        uint256 rep = reputationEngine.getReputation(operator);
+        if (rep == 0) return 0;
+        score = (stake * stakeWeighting / 1e18) * rep;
+    }
+
     /// @notice Select a platform for a given jobId based on weighted randomness
     /// @param jobId Identifier of the job
     /// @return selected address of chosen platform or address(0) if none eligible
@@ -79,11 +91,8 @@ contract JobRouter is Ownable {
         for (uint256 i = 0; i < len; i++) {
             address platform = platforms[i];
             if (!isPlatform[platform]) continue;
-            if (reputationEngine.isBlacklisted(platform)) continue;
-            uint256 stake = stakeManager.stakeOf(platform, IStakeManager.Role.Platform);
-            uint256 rep = reputationEngine.reputation(platform);
-            if (stake >= minStake && rep > 0) {
-                uint256 weight = (stake * stakeWeighting / 1e18) * rep;
+            uint256 weight = getRoutingScore(platform);
+            if (weight > 0) {
                 weights[i] = weight;
                 totalWeight += weight;
             }

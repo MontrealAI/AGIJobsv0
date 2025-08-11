@@ -57,16 +57,15 @@ contract DiscoveryModule is Ownable {
         emit PlatformDeregistered(operator);
     }
 
-    /// @notice Get top platforms ranked by operator score
+    /// @notice List platforms ranked by routing score with pagination
+    /// @param offset Starting index in the sorted list
     /// @param limit Maximum number of platforms to return
-    function getTopPlatforms(uint256 limit)
+    function getPlatforms(uint256 offset, uint256 limit)
         external
         view
         returns (address[] memory)
     {
         uint256 len = platforms.length;
-        if (limit > len) limit = len;
-
         address[] memory addrs = new address[](len);
         uint256[] memory scores = new uint256[](len);
         uint256 count;
@@ -77,10 +76,10 @@ contract DiscoveryModule is Ownable {
             if (reputationEngine.isBlacklisted(p)) continue;
             uint256 stake = stakeManager.stakeOf(p, IStakeManager.Role.Platform);
             if (stake < minStake) continue;
-            uint256 score = reputationEngine.getOperatorScore(p);
-            if (score == 0) continue;
+            uint256 rep = reputationEngine.getReputation(p);
+            if (rep == 0) continue;
             addrs[count] = p;
-            scores[count] = score;
+            scores[count] = stake * rep;
             count++;
         }
 
@@ -98,18 +97,17 @@ contract DiscoveryModule is Ownable {
             }
         }
 
-        if (limit < count) {
-            address[] memory result = new address[](limit);
-            for (uint256 i = 0; i < limit; i++) {
-                result[i] = addrs[i];
-            }
-            return result;
+        if (offset >= count) {
+            return new address[](0);
         }
-        address[] memory all = new address[](count);
-        for (uint256 i = 0; i < count; i++) {
-            all[i] = addrs[i];
+        uint256 end = offset + limit;
+        if (end > count) end = count;
+        uint256 size = end - offset;
+        address[] memory result = new address[](size);
+        for (uint256 i = 0; i < size; i++) {
+            result[i] = addrs[offset + i];
         }
-        return all;
+        return result;
     }
 
     /// @notice Update minimum stake requirement for registration and ranking

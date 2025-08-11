@@ -74,6 +74,7 @@ contract MockReputationEngine is IReputationEngine {
     function isBlacklisted(address user) external view override returns (bool) { return blacklist[user]; }
     function setReputation(address user, uint256 amount) external { reps[user] = amount; }
     function reputation(address user) external view override returns (uint256) { return reps[user]; }
+    function getReputation(address user) external view override returns (uint256) { return reps[user]; }
     function getOperatorScore(address user) external view override returns (uint256) { return reps[user]; }
     function setStakeManager(address) external override {}
     function setScoringWeights(uint256, uint256) external override {}

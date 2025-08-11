@@ -66,6 +66,9 @@ contract MockReputationEngine is IReputationEngine {
     function reputation(address user) external view override returns (uint256) {
         return reps[user];
     }
+    function getReputation(address user) external view override returns (uint256) {
+        return reps[user];
+    }
     function getOperatorScore(address user) external view override returns (uint256) {
         return reps[user];
     }
@@ -93,6 +96,12 @@ contract JobRouterTest {
         repEngine.setReputation(platform2, 3);
         router.registerPlatform(platform1);
         router.registerPlatform(platform2);
+    }
+
+    function testRoutingScore() public {
+        setUp();
+        require(router.getRoutingScore(platform1) == 100, "score1");
+        require(router.getRoutingScore(platform2) == 300, "score2");
     }
 
     function testDeterministicSelection() public {
