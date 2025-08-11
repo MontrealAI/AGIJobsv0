@@ -7,4 +7,7 @@ interface IFeePool {
     /// @notice notify the pool about newly received fees
     /// @param amount amount of tokens transferred to the pool scaled to 6 decimals
     function depositFee(uint256 amount) external;
+
+    /// @notice claim accumulated rewards for caller
+    function claimRewards() external;
 }

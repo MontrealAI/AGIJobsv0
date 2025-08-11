@@ -65,14 +65,15 @@ contract FeePool is Ownable {
     ///      registry itself never holds custody of user funds.
     /// @param amount fee amount scaled to 6 decimals
     function depositFee(uint256 amount) external onlyStakeManager {
-        uint256 total = stakeManager.totalStake(rewardRole);
-        require(total > 0, "total stake");
+        require(amount > 0, "amount");
         uint256 burnAmount = (amount * burnPct) / 100;
-        uint256 distribute = amount - burnAmount;
-        cumulativePerToken += (distribute * ACCUMULATOR_SCALE) / total;
         if (burnAmount > 0) {
             token.safeTransfer(BURN_ADDRESS, burnAmount);
         }
+        uint256 distribute = amount - burnAmount;
+        uint256 total = stakeManager.totalStake(rewardRole);
+        require(total > 0, "total stake");
+        cumulativePerToken += (distribute * ACCUMULATOR_SCALE) / total;
         emit FeeDeposited(msg.sender, distribute);
     }
 

@@ -131,6 +131,88 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("stake");
   });
 
+  it("supports staking and slashing for all roles", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 600);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    for (const role of [0, 1, 2]) {
+      await stakeManager.connect(user).depositStake(role, 100);
+      expect(await stakeManager.stakes(user.address, role)).to.equal(100n);
+      await stakeManager
+        .connect(registrySigner)
+        .slash(user.address, role, 50, employer.address);
+      expect(await stakeManager.stakes(user.address, role)).to.equal(50n);
+    }
+  });
+
+  it("reverts for invalid role", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy(
+      owner.address,
+      "ipfs://policy",
+      "ack"
+    );
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await expect(
+      stakeManager.connect(user).depositStake(3, 100)
+    ).to.be.revertedWithoutReason();
+    await expect(
+      stakeManager.connect(user).withdrawStake(3, 1)
+    ).to.be.revertedWithoutReason();
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .slash(user.address, 3, 1, employer.address)
+    ).to.be.revertedWithoutReason();
+  });
+
   it("enforces tax acknowledgement for staking operations", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"

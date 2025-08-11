@@ -46,7 +46,7 @@ describe("FeePool", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      0,
+      2,
       owner.address
     );
 
@@ -59,8 +59,8 @@ describe("FeePool", function () {
 
     await token.connect(user1).approve(await stakeManager.getAddress(), 1000);
     await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
-    await stakeManager.connect(user1).depositStake(0, 100);
-    await stakeManager.connect(user2).depositStake(0, 300);
+    await stakeManager.connect(user1).depositStake(2, 100);
+    await stakeManager.connect(user2).depositStake(2, 300);
   });
 
   it("distributes rewards proportionally", async () => {
