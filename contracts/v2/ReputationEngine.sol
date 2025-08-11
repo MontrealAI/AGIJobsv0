@@ -10,13 +10,26 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable {
-    mapping(address => uint256) private _scores;
+    struct Metrics {
+        uint256 completedJobs;
+        uint256 disputes;
+        uint256 slashes;
+        uint256 score;
+        uint256 lastUpdated;
+    }
+
+    mapping(address => Metrics) private _metrics;
     mapping(address => bool) private _blacklisted;
     mapping(address => bool) public callers;
     uint256 public threshold;
     IStakeManager public stakeManager;
     uint256 public stakeWeight = 1e18;
     uint256 public reputationWeight = 1e18;
+    uint256 public decayRate = 1e16; // 1% per second scaled by 1e18
+
+    uint256 public constant COMPLETION_REWARD = 1e18;
+    uint256 public constant DISPUTE_PENALTY = 1e18;
+    uint256 public constant SLASH_PENALTY = 1e18;
 
     event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
     event Blacklisted(address indexed user, bool status);
@@ -66,38 +79,117 @@ contract ReputationEngine is Ownable {
         emit Blacklisted(user, status);
     }
 
-    /// @notice Increase reputation for a user.
-    function add(address user, uint256 amount) external onlyCaller {
-        uint256 newScore = _scores[user] + amount;
-        _scores[user] = newScore;
-        emit ReputationChanged(user, int256(amount), newScore);
+    /// @dev apply linear decay to a user's score based on time elapsed
+    function _applyDecay(address user) internal {
+        Metrics storage m = _metrics[user];
+        if (m.lastUpdated == 0) {
+            m.lastUpdated = block.timestamp;
+            return;
+        }
+        uint256 elapsed = block.timestamp - m.lastUpdated;
+        if (elapsed > 0) {
+            uint256 decay = (m.score * decayRate * elapsed) / 1e18;
+            m.score = decay >= m.score ? 0 : m.score - decay;
+            m.lastUpdated = block.timestamp;
+        }
+    }
 
-        if (_blacklisted[user] && newScore >= threshold) {
+    /// @notice Record a successfully completed job.
+    function recordCompletion(address user) external onlyCaller {
+        _applyDecay(user);
+        Metrics storage m = _metrics[user];
+        m.completedJobs += 1;
+        m.score += COMPLETION_REWARD;
+        emit ReputationChanged(user, int256(COMPLETION_REWARD), m.score);
+
+        if (_blacklisted[user] && m.score >= threshold) {
             _blacklisted[user] = false;
             emit Blacklisted(user, false);
         }
     }
 
-    /// @notice Decrease reputation for a user.
-    function subtract(address user, uint256 amount) external onlyCaller {
-        uint256 current = _scores[user];
-        uint256 newScore = current > amount ? current - amount : 0;
-        _scores[user] = newScore;
-        emit ReputationChanged(user, -int256(amount), newScore);
+    /// @notice Record a dispute against a user.
+    function recordDispute(address user) external onlyCaller {
+        _applyDecay(user);
+        Metrics storage m = _metrics[user];
+        m.disputes += 1;
+        uint256 penalty = DISPUTE_PENALTY;
+        m.score = m.score > penalty ? m.score - penalty : 0;
+        emit ReputationChanged(user, -int256(penalty), m.score);
 
-        if (!_blacklisted[user] && newScore < threshold) {
+        if (!_blacklisted[user] && m.score < threshold) {
             _blacklisted[user] = true;
             emit Blacklisted(user, true);
         }
     }
 
-    /// @notice Get reputation score for a user.
+    /// @notice Record slashing of a user.
+    /// @param amount Amount of slashing in reputation units (scaled by 1e18)
+    function recordSlash(address user, uint256 amount) external onlyCaller {
+        _applyDecay(user);
+        Metrics storage m = _metrics[user];
+        m.slashes += amount;
+        uint256 penalty = (amount * SLASH_PENALTY) / 1e18;
+        m.score = m.score > penalty ? m.score - penalty : 0;
+        emit ReputationChanged(user, -int256(penalty), m.score);
+
+        if (!_blacklisted[user] && m.score < threshold) {
+            _blacklisted[user] = true;
+            emit Blacklisted(user, true);
+        }
+    }
+
+    /// @notice Increase reputation for a user (generic).
+    function add(address user, uint256 amount) external onlyCaller {
+        _applyDecay(user);
+        Metrics storage m = _metrics[user];
+        m.score += amount;
+        emit ReputationChanged(user, int256(amount), m.score);
+
+        if (_blacklisted[user] && m.score >= threshold) {
+            _blacklisted[user] = false;
+            emit Blacklisted(user, false);
+        }
+    }
+
+    /// @notice Decrease reputation for a user (generic).
+    function subtract(address user, uint256 amount) external onlyCaller {
+        _applyDecay(user);
+        Metrics storage m = _metrics[user];
+        m.score = m.score > amount ? m.score - amount : 0;
+        emit ReputationChanged(user, -int256(amount), m.score);
+
+        if (!_blacklisted[user] && m.score < threshold) {
+            _blacklisted[user] = true;
+            emit Blacklisted(user, true);
+        }
+    }
+
+    /// @notice Get reputation score for a user applying decay.
     function reputation(address user) public view returns (uint256) {
-        return _scores[user];
+        Metrics storage m = _metrics[user];
+        uint256 score = m.score;
+        if (m.lastUpdated == 0) return score;
+        uint256 elapsed = block.timestamp - m.lastUpdated;
+        if (elapsed > 0) {
+            uint256 decay = (score * decayRate * elapsed) / 1e18;
+            score = decay >= score ? 0 : score - decay;
+        }
+        return score;
     }
 
     function getReputation(address user) external view returns (uint256) {
         return reputation(user);
+    }
+
+    /// @notice Return tracked metrics for a user.
+    function getMetrics(address user)
+        external
+        view
+        returns (uint256 completed, uint256 disputes, uint256 slashes)
+    {
+        Metrics storage m = _metrics[user];
+        return (m.completedJobs, m.disputes, m.slashes);
     }
 
     /// @notice Check blacklist status for a user.
@@ -111,10 +203,13 @@ contract ReputationEngine is Ownable {
         if (_blacklisted[operator]) return 0;
         uint256 stake;
         if (address(stakeManager) != address(0)) {
-            stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
+            stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
         }
-        uint256 rep = _scores[operator];
-        return ((stake * stakeWeight) + (rep * reputationWeight)) / 1e18;
+        uint256 rep = reputation(operator);
+        if (stake == 0 || rep == 0) return 0;
+        uint256 weightedStake = (stake * stakeWeight) / 1e18;
+        uint256 weightedRep = (rep * reputationWeight) / 1e18;
+        return (weightedStake * weightedRep) / 1e18;
     }
 
     /// @notice Confirms the contract and its owner cannot incur tax obligations.

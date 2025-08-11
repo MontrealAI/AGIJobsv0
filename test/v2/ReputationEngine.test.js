@@ -11,26 +11,53 @@ describe("ReputationEngine", function () {
     );
     engine = await Engine.deploy(owner.address);
     await engine.connect(owner).setCaller(caller.address, true);
-    await engine.connect(owner).setThreshold(2);
+    await engine
+      .connect(owner)
+      .setThreshold(ethers.parseEther("2"));
   });
 
-  it("applies reputation gains and decay with blacklisting", async () => {
-    await engine.connect(caller).add(user.address, 3);
-    expect(await engine.reputation(user.address)).to.equal(3);
+  it("tracks metrics, applies decay and blacklists", async () => {
+    await engine.connect(caller).recordCompletion(user.address);
+    expect(await engine.reputation(user.address)).to.equal(
+      ethers.parseEther("1")
+    );
 
-    await engine.connect(caller).subtract(user.address, 2);
-    expect(await engine.reputation(user.address)).to.equal(1);
+    // advance time to trigger decay
+    await ethers.provider.send("evm_increaseTime", [10]);
+    await ethers.provider.send("evm_mine", []);
+    const decayed = await engine.reputation(user.address);
+    expect(decayed).to.equal(ethers.parseEther("0.9"));
+
+    await engine.connect(caller).recordDispute(user.address);
+    expect(await engine.reputation(user.address)).to.equal(0n);
     expect(await engine.isBlacklisted(user.address)).to.equal(true);
 
-    await engine.connect(caller).add(user.address, 2);
-    expect(await engine.reputation(user.address)).to.equal(3);
+    const metrics = await engine.getMetrics(user.address);
+    expect(metrics.completed).to.equal(1n);
+    expect(metrics.disputes).to.equal(1n);
+
+    await engine.connect(caller).recordCompletion(user.address);
+    await engine.connect(caller).recordCompletion(user.address);
+    expect(await engine.reputation(user.address)).to.equal(
+      ethers.parseEther("2")
+    );
     expect(await engine.isBlacklisted(user.address)).to.equal(false);
   });
 
+  it("records slashes", async () => {
+    await engine.connect(caller).recordCompletion(user.address);
+    await engine
+      .connect(caller)
+      .recordSlash(user.address, ethers.parseEther("1"));
+    const metrics = await engine.getMetrics(user.address);
+    expect(metrics.slashes).to.equal(ethers.parseEther("1"));
+    expect(await engine.reputation(user.address)).to.equal(0n);
+  });
+
   it("rejects unauthorized callers", async () => {
-    await expect(engine.connect(user).add(user.address, 1)).to.be.revertedWith(
-      "not authorized"
-    );
+    await expect(
+      engine.connect(user).recordCompletion(user.address)
+    ).to.be.revertedWith("not authorized");
   });
 
   it("allows authorized caller to manually set blacklist status", async () => {

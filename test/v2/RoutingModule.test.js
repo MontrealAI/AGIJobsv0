@@ -8,8 +8,12 @@ describe("RoutingModule", function () {
     [owner, op1, op2] = await ethers.getSigners();
     const Stake = await ethers.getContractFactory("MockStakeManager");
     stakeManager = await Stake.deploy();
-    const Engine = await ethers.getContractFactory("MockReputationEngine");
-    engine = await Engine.deploy();
+    const Engine = await ethers.getContractFactory(
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    );
+    engine = await Engine.deploy(owner.address);
+    await engine.connect(owner).setStakeManager(await stakeManager.getAddress());
+    await engine.connect(owner).setCaller(owner.address, true);
     const Router = await ethers.getContractFactory(
       "contracts/v2/modules/RoutingModule.sol:RoutingModule"
     );
@@ -22,8 +26,10 @@ describe("RoutingModule", function () {
 
     await stakeManager.setStake(op1.address, 2, 100);
     await stakeManager.setStake(op2.address, 2, 300);
-    await engine.add(op1.address, 1);
-    await engine.add(op2.address, 3);
+    await engine.connect(owner).recordCompletion(op1.address);
+    await engine.connect(owner).recordCompletion(op2.address);
+    await engine.connect(owner).recordCompletion(op2.address);
+    await engine.connect(owner).recordCompletion(op2.address);
 
     await router.connect(op1).register();
     await router.connect(op2).register();
