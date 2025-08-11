@@ -15,6 +15,7 @@ contract FeePool is Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
+    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     /// @notice ERC20 token used for fees and rewards
     IERC20 public token;
@@ -52,25 +53,25 @@ contract FeePool is Ownable {
         rewardRole = _role;
     }
 
-    modifier onlyJobRegistry() {
-        require(msg.sender == stakeManager.jobRegistry(), "only job registry");
+    modifier onlyStakeManager() {
+        require(msg.sender == address(stakeManager), "only stake manager");
         _;
     }
 
     /// @notice account for newly received job fees
     /// @dev assumes `amount` tokens have already been transferred to this
-    ///      contract (typically by `StakeManager.releaseJobFunds`). Only the
-    ///      `JobRegistry` may call this to keep accounting trustless while the
+    ///      contract (typically by `StakeManager.finalizeJobFunds`). Only the
+    ///      `StakeManager` may call this to keep accounting trustless while the
     ///      registry itself never holds custody of user funds.
     /// @param amount fee amount scaled to 6 decimals
-    function depositFee(uint256 amount) external onlyJobRegistry {
+    function depositFee(uint256 amount) external onlyStakeManager {
         uint256 total = stakeManager.totalStake(rewardRole);
         require(total > 0, "total stake");
         uint256 burnAmount = (amount * burnPct) / 100;
         uint256 distribute = amount - burnAmount;
         cumulativePerToken += (distribute * ACCUMULATOR_SCALE) / total;
         if (burnAmount > 0) {
-            token.safeTransfer(address(0), burnAmount);
+            token.safeTransfer(BURN_ADDRESS, burnAmount);
         }
         emit FeeDeposited(msg.sender, distribute);
     }

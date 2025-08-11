@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
+import {IFeePool} from "./interfaces/IFeePool.sol";
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -285,6 +286,34 @@ contract StakeManager is Ownable, ReentrancyGuard {
         jobEscrows[jobId] = escrow - amount;
         token.safeTransfer(to, amount);
         emit JobFundsReleased(jobId, to, amount);
+    }
+
+    /// @notice finalize a job by paying the agent and forwarding protocol fees
+    /// @param jobId unique job identifier
+    /// @param agent recipient of the job reward
+    /// @param reward amount paid to the agent
+    /// @param fee amount forwarded to the fee pool
+    /// @param feePool fee pool contract receiving protocol fees
+    function finalizeJobFunds(
+        bytes32 jobId,
+        address agent,
+        uint256 reward,
+        uint256 fee,
+        IFeePool feePool
+    ) external onlyJobRegistry {
+        uint256 total = reward + fee;
+        uint256 escrow = jobEscrows[jobId];
+        require(escrow >= total, "escrow");
+        jobEscrows[jobId] = escrow - total;
+        if (reward > 0) {
+            token.safeTransfer(agent, reward);
+            emit JobFundsReleased(jobId, agent, reward);
+        }
+        if (fee > 0 && address(feePool) != address(0)) {
+            token.safeTransfer(address(feePool), fee);
+            feePool.depositFee(fee);
+            emit JobFundsReleased(jobId, address(feePool), fee);
+        }
     }
 
     // ---------------------------------------------------------------
