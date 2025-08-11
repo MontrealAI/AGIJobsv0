@@ -20,6 +20,13 @@ Key incentive features in the v2 suite:
 - Every economic parameter—token address, fee split, minimum stake, burn percentage—can be retuned by the contract owner via `Ownable` setters, without redeploying modules.
 - Staked participants must comply with local regulations even though rewards are distributed on-chain; see [docs/tax-obligations.md](docs/tax-obligations.md) for guidance.
 
+| Role              | Stake Requirement | Incentives unlocked                                             |
+|-------------------|------------------:|-----------------------------------------------------------------|
+| Platform operator | `minPlatformStake`| Routing priority, platform‑fee share, ability to activate portal |
+| Agent             | `jobStake`        | Job rewards, reputation points, certificate NFTs                |
+| Validator         | owner‑set minimum | Validation rewards, reputation gains                            |
+| Main deployer     | 0                 | Demonstration only; **no** fee share or routing preference      |
+
 > **Critical Security Notice:** `AGIJobManagerv0.sol` in `legacy/` is the exact source for the mainnet contract at [`0x0178…ba477`](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477). It is immutable and must never be altered. Any future releases will appear as new files (for example, `contracts/AGIJobManagerv1.sol`) and will be announced only through official AGI.eth channels. Always cross‑check contract addresses and bytecode on multiple explorers before sending funds or interacting with a deployment.
 
 ## Quick Links
@@ -56,6 +63,7 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, and `TaxPolicy`.
 2. Connect them with owner‑only setters such as `JobRegistry.setModules`, `StakeManager.setJobRegistry`, `JobRegistry.setFeePool`, and `JobRegistry.setTaxPolicy`.
 3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setParameters`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
+4. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
 
 Amounts use 6‑decimal base units:
 
@@ -79,6 +87,7 @@ For a detailed walkthrough of these steps in Etherscan, see [docs/deployment-agi
 - All value flows occur directly between participant wallets in $AGIALPHA, allowing operators to remain pseudonymous with no off‑chain reporting.
 - Staking gates, slashing and optional blacklist hooks deter sybil attacks while preserving address‑level privacy.
 - Owners configure fees, burns, stakes and even swap the payment token entirely through `Ownable` setters accessible in Etherscan's **Write Contract** tab.
+- Operators must independently comply with local laws and tax rules; the protocol provides no KYC or reporting facilities.
 
 ## Quick Start: FeePool, JobRouter & GovernanceReward
 
