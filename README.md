@@ -3,6 +3,8 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+All participants opt in by staking `$AGIALPHA`. Staked operators gain routing priority and revenue share, while the main deploying entity is a special case that registers with **stake = 0**, earning no boosts so it remains tax neutral. Because every incentive flows on-chain, operators can participate pseudonymously without creating off‑chain reporting obligations.
+
 For a step‑by‑step deployment walkthrough using $AGIALPHA and Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 For a detailed description of the platform-wide incentive architecture, see [docs/universal-platform-incentive-architecture.md](docs/universal-platform-incentive-architecture.md).
 
