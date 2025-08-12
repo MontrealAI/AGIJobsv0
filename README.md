@@ -6,6 +6,18 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 For a step‑by‑step deployment walkthrough using $AGIALPHA and Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 For a detailed description of the platform-wide incentive architecture, see [docs/universal-platform-incentive-architecture.md](docs/universal-platform-incentive-architecture.md).
 
+### Quick start: $AGIALPHA deployment
+
+1. Verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token address (6 decimals) and all module addresses listed in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+2. Through a block explorer’s **Write Contract** tabs:
+   - Approve `$AGIALPHA` for the `StakeManager`.
+   - Call `StakeManager.depositStake(role, amount)` using 6‑decimal units (`1` token = `1_000000`).
+   - Platform operators may call `PlatformIncentives.stakeAndActivate(amount)` to stake and register in one step.
+3. Fees, staking rewards, and dispute deposits all move in `$AGIALPHA` by default. The contract owner can swap the payment token later via `StakeManager.setToken` and related setters without redeploying other modules.
+4. Before staking or claiming rewards, call `JobRegistry.acknowledgeTaxPolicy` and confirm `isTaxExempt()` on each module.
+
+This summary is for convenience only. Screenshots and extended explanations are provided in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+
 ### Regulatory disclaimer
 
 Regulatory shifts may change compliance obligations even when rewards flow entirely on-chain. While the design minimises reporting by routing fees directly in $AGIALPHA, participants must still monitor policy updates, obey local laws, and obtain professional advice before interacting with the contracts. On-chain rewards do not exempt any party from local regulations. The protocol itself never issues tax forms or collects personal data; every operator remains responsible for self‑reporting and compliance within their jurisdiction. Nothing in this repository or its documentation constitutes legal, financial, or tax advice.
