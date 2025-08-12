@@ -26,6 +26,11 @@ contract ValidationModule is IValidationModule, Ownable {
     uint256 public minValidators;
     uint256 public maxValidators;
 
+    uint256 public constant DEFAULT_COMMIT_WINDOW = 1 days;
+    uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
+    uint256 public constant DEFAULT_MIN_VALIDATORS = 1;
+    uint256 public constant DEFAULT_MAX_VALIDATORS = 3;
+
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
 
@@ -80,14 +85,18 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 _maxValidators,
         address[] memory _validatorPool
     ) Ownable(msg.sender) {
-        require(_commitWindow > 0 && _revealWindow > 0, "windows");
-        require(_minValidators > 0 && _maxValidators >= _minValidators, "bounds");
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
-        commitWindow = _commitWindow;
-        revealWindow = _revealWindow;
-        minValidators = _minValidators;
-        maxValidators = _maxValidators;
+        commitWindow =
+            _commitWindow == 0 ? DEFAULT_COMMIT_WINDOW : _commitWindow;
+        revealWindow =
+            _revealWindow == 0 ? DEFAULT_REVEAL_WINDOW : _revealWindow;
+        minValidators =
+            _minValidators == 0 ? DEFAULT_MIN_VALIDATORS : _minValidators;
+        maxValidators =
+            _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
+        require(commitWindow > 0 && revealWindow > 0, "windows");
+        require(maxValidators >= minValidators, "bounds");
         if (_validatorPool.length != 0) {
             validatorPool = _validatorPool;
             emit ValidatorsUpdated(_validatorPool);

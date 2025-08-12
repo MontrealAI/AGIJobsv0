@@ -17,6 +17,10 @@ contract FeePool is Ownable {
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
+    /// @notice default $AGIALPHA token used when no token is specified
+    address public constant DEFAULT_TOKEN =
+        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
+
     /// @notice ERC20 token used for fees and rewards
     IERC20 public token;
 
@@ -60,7 +64,10 @@ contract FeePool is Ownable {
         address _treasury
     ) Ownable(msg.sender) {
         require(_burnPct <= 100, "pct");
-        token = _token;
+        token =
+            address(_token) == address(0)
+                ? IERC20(DEFAULT_TOKEN)
+                : _token;
         stakeManager = _stakeManager;
         rewardRole = _role;
         burnPct = _burnPct;
