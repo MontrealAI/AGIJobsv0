@@ -2,206 +2,165 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
-
-/// @notice Minimal interface for the JobRegistry used by the dispute module
-interface IJobRegistry {
-    struct Job {
-        address agent;
-        address employer;
-        uint256 reward;
-        uint256 stake;
-        uint8 state;
-    }
-
-    function jobs(uint256 jobId) external view returns (Job memory);
-    function resolveDispute(uint256 jobId, bool employerWins) external;
-    function finalize(uint256 jobId) external;
-    function taxPolicyVersion() external view returns (uint256);
-    function taxAcknowledgedVersion(address user) external view returns (uint256);
-}
+import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title DisputeModule
-/// @notice Simple appeal layer with bond posting and moderator/jury resolution
-/// @dev The owner or an appointed moderator finalises disputes. Bonds are paid
-///      to the winning party. When a dispute is resolved the module calls back
-///      into the JobRegistry which in turn distributes funds and slashes stakes
-///      through the StakeManager. Only the `appeal` function accepts ether; all
-///      other transfers are rejected so the contract and owner remain tax
-///      neutral.
-contract DisputeModule is IDisputeModule, Ownable {
-    /// @notice Registry managing the underlying jobs
+/// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
+/// @dev Only participants bear any tax obligations; the module temporarily
+/// holds dispute bonds and rejects unsolicited ETH transfers.
+contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
 
-    event JobRegistryUpdated(address registry);
-
-    /// @notice Fee that must accompany an appeal. Acts as a bond returned to
-    ///         the winner of the dispute.
+    /// @notice Fee required to initiate a dispute, in token units (6 decimals).
     uint256 public appealFee;
 
-    /// @notice Optional moderator address allowed to resolve disputes in
-    ///         addition to the contract owner. This can be a multisig or a
-    ///         validator committee address.
+    /// @notice Time that must elapse before a dispute can be resolved.
+    uint256 public disputeWindow;
+
+    /// @notice Optional moderator address that can resolve disputes.
     address public moderator;
 
-    /// @notice Optional jury address that may also resolve disputes.
-    address public jury;
-
-    /// @dev Tracks who appealed a particular job.
-    mapping(uint256 => address payable) public appellants;
-
-    /// @dev Amount of bond posted for each job appeal.
-    mapping(uint256 => uint256) public bonds;
-
-    constructor(
-        IJobRegistry _jobRegistry,
-        uint256 _appealFee,
-        address _moderator,
-        address _jury
-    ) Ownable(msg.sender) {
-        require(address(_jobRegistry) != address(0), "registry");
-        jobRegistry = _jobRegistry;
-        appealFee = _appealFee;
-        moderator = _moderator == address(0) ? msg.sender : _moderator;
-        jury = _jury == address(0) ? msg.sender : _jury;
+    struct Dispute {
+        address claimant;
+        string evidence;
+        uint256 raisedAt;
+        bool resolved;
     }
 
-    /// @notice Ensure participant has acknowledged current tax policy.
-    modifier requiresTaxAcknowledgement(uint256 jobId) {
-        address caller = msg.sender;
-        if (caller == address(jobRegistry)) {
-            caller = jobRegistry.jobs(jobId).agent;
+    /// @dev Tracks active disputes by jobId.
+    mapping(uint256 => Dispute) public disputes;
+    /// @dev Bonds posted by disputing parties.
+    mapping(uint256 => uint256) public bonds;
+
+    event DisputeRaised(uint256 indexed jobId, address indexed caller, string evidence);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    event ModeratorUpdated(address moderator);
+    event AppealFeeUpdated(uint256 fee);
+    event DisputeWindowUpdated(uint256 window);
+
+    constructor(IJobRegistry _jobRegistry) Ownable(msg.sender) {
+        jobRegistry = _jobRegistry;
+        appealFee = 0;
+        disputeWindow = 1 days;
+        moderator = msg.sender;
+    }
+
+    modifier requiresTaxAcknowledgement() {
+        IJobRegistryTax registry = IJobRegistryTax(address(jobRegistry));
+        if (msg.sender != owner()) {
+            require(
+                registry.taxAcknowledgedVersion(msg.sender) ==
+                    registry.taxPolicyVersion(),
+                "acknowledge tax policy"
+            );
         }
-        require(
-            jobRegistry.taxAcknowledgedVersion(caller) ==
-                jobRegistry.taxPolicyVersion(),
-            "acknowledge tax policy"
-        );
         _;
     }
 
-    // ---------------------------------------------------------------------
-    // Owner configuration
-    // ---------------------------------------------------------------------
+    /// @notice Modifier restricting calls to the owner or moderator.
+    modifier onlyArbiter() {
+        require(msg.sender == owner() || msg.sender == moderator, "not authorized");
+        _;
+    }
 
-    /// @notice Set the moderator allowed to resolve disputes alongside the owner
-    function setModerator(address _moderator) external override onlyOwner {
+    /// @notice Set the moderator address.
+    function setModerator(address _moderator) external onlyOwner {
         moderator = _moderator;
         emit ModeratorUpdated(_moderator);
     }
 
-    /// @notice Set the jury allowed to resolve disputes alongside the owner
-    function setAppealJury(address _jury) external override onlyOwner {
-        jury = _jury;
-        emit AppealJuryUpdated(_jury);
-    }
-
-    /// @notice Configure the appeal bond required to escalate a job
-    function setAppealFee(uint256 fee) external override onlyOwner {
+    /// @notice Configure the appeal fee in token units (6 decimals).
+    function setAppealFee(uint256 fee) external onlyOwner {
         appealFee = fee;
         emit AppealFeeUpdated(fee);
     }
 
-    /// @notice Set the job registry reference
-    function setJobRegistry(IJobRegistry _jobRegistry) external onlyOwner {
-        require(address(_jobRegistry) != address(0), "registry");
-        jobRegistry = _jobRegistry;
-        emit JobRegistryUpdated(address(_jobRegistry));
+    /// @notice Configure the dispute resolution window.
+    function setDisputeWindow(uint256 window) external onlyOwner {
+        disputeWindow = window;
+        emit DisputeWindowUpdated(window);
     }
 
-    // ---------------------------------------------------------------------
-    // Appeals
-    // ---------------------------------------------------------------------
-
-    /// @notice Post the appeal fee to escalate a disputed job
-    /// @param jobId Identifier of the job in the JobRegistry
-    function appeal(uint256 jobId)
+    /// @notice Raise a dispute by posting the appeal fee and providing evidence.
+    /// @param jobId Identifier of the job being disputed.
+    /// @param evidence Supporting evidence for the dispute.
+    function raiseDispute(uint256 jobId, string calldata evidence)
         external
-        payable
-        override
-        requiresTaxAcknowledgement(jobId)
+        requiresTaxAcknowledgement
     {
-        if (msg.value != appealFee) {
-            revert IncorrectAppealFee(appealFee, msg.value);
-        }
-        if (bonds[jobId] != 0) {
-            revert AlreadyAppealed(jobId);
-        }
-
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address caller = msg.sender == address(jobRegistry)
-            ? job.agent
-            : msg.sender;
-        if (caller != job.agent && caller != job.employer) {
-            revert NotParticipant(caller);
-        }
+        require(
+            msg.sender == job.employer || msg.sender == job.agent,
+            "not participant"
+        );
 
-        appellants[jobId] = payable(caller);
-        bonds[jobId] = msg.value;
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt == 0, "disputed");
 
-        emit DisputeRaised(jobId, caller);
+        IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
+            msg.sender,
+            appealFee
+        );
+
+        disputes[jobId] = Dispute({
+            claimant: msg.sender,
+            evidence: evidence,
+            raisedAt: block.timestamp,
+            resolved: false
+        });
+        bonds[jobId] = appealFee;
+
+        emit DisputeRaised(jobId, msg.sender, evidence);
     }
 
-    // ---------------------------------------------------------------------
-    // Resolution
-    // ---------------------------------------------------------------------
+    /// @notice Resolve an existing dispute after the dispute window elapses.
+    /// The outcome is determined by a simple pseudorandom coin flip to emulate
+    /// a moderator or jury decision.
+    function resolveDispute(uint256 jobId) external onlyArbiter {
+        Dispute storage d = disputes[jobId];
+        require(d.raisedAt != 0 && !d.resolved, "no dispute");
+        require(block.timestamp >= d.raisedAt + disputeWindow, "window");
 
-    /// @dev Restrict resolution to owner or designated moderator/jury address
-    modifier onlyArbiter() {
-        if (
-            msg.sender != owner() &&
-            msg.sender != moderator &&
-            msg.sender != jury
-        ) {
-            revert NotArbiter(msg.sender);
-        }
-        _;
-    }
+        bool employerWins = _decideOutcome(jobId);
+        address recipient = employerWins
+            ? jobRegistry.jobs(jobId).employer
+            : jobRegistry.jobs(jobId).agent;
 
-    /// @notice Resolve an appealed job and finalise the associated registry
-    ///         outcome. The appeal bond is paid to the prevailing party.
-    /// @param jobId Identifier of the job being appealed
-    /// @param employerWins True if the employer wins the dispute
-    function resolve(uint256 jobId, bool employerWins)
-        external
-        override
-        onlyArbiter
-    {
+        d.resolved = true;
         uint256 bond = bonds[jobId];
-        if (bond == 0) {
-            revert NoAppealBond(jobId);
-        }
-
-        // Determine bond recipient
-        address payable recipient = employerWins
-            ? payable(jobRegistry.jobs(jobId).employer)
-            : appellants[jobId];
-
-        // Inform the registry of the final ruling and trigger settlement
-        jobRegistry.resolveDispute(jobId, employerWins);
-        jobRegistry.finalize(jobId);
-
-        // Clean up state before transferring
+        delete disputes[jobId];
         delete bonds[jobId];
-        delete appellants[jobId];
 
-        (bool ok, ) = recipient.call{value: bond}("");
-        require(ok, "transfer failed");
+        jobRegistry.resolveDispute(jobId, employerWins);
+
+        if (bond > 0) {
+            IStakeManager(jobRegistry.stakeManager()).payDisputeFee(
+                recipient,
+                bond
+            );
+        }
 
         emit DisputeResolved(jobId, employerWins);
     }
 
-    /// @notice Confirms the module and its owner are perpetually tax-exempt.
-    /// @return Always true, indicating no tax liabilities can arise.
+    /// @notice Confirms the module and its owner cannot accrue tax liabilities.
+    /// @return Always true, signalling perpetual tax exemption.
     function isTaxExempt() external pure returns (bool) {
         return true;
+    }
+
+    /// @dev Determine dispute outcome. Uses blockhash for a pseudorandom coin flip.
+    function _decideOutcome(uint256 jobId) internal view returns (bool) {
+        return uint256(blockhash(block.number - 1) ^ bytes32(jobId)) % 2 == 0;
     }
 
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------
 
-    /// @dev Reject direct ETH transfers; only `appeal` may receive funds.
+    /// @dev Reject direct ETH transfers that are not dispute bonds.
     receive() external payable {
         revert("DisputeModule: no ether");
     }
@@ -211,5 +170,4 @@ contract DisputeModule is IDisputeModule, Ownable {
         revert("DisputeModule: no ether");
     }
 }
-
 
