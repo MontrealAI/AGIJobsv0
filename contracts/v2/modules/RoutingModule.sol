@@ -12,6 +12,9 @@ contract RoutingModule is Ownable {
     IReputationEngine public reputationEngine;
     bool public reputationEnabled;
 
+    uint256 public minStake;
+    mapping(address => bool) public blacklist;
+
     address[] public operators;
     mapping(address => bool) public isOperator;
 
@@ -24,6 +27,9 @@ contract RoutingModule is Ownable {
     event SelectionCommitted(bytes32 indexed jobId, bytes32 commitHash);
     event ReputationEngineUpdated(address indexed engine);
     event ReputationEnabled(bool enabled);
+    event StakeManagerUpdated(address indexed stakeManager);
+    event MinStakeUpdated(uint256 stake);
+    event Blacklisted(address indexed operator, bool status);
 
     constructor(
         IStakeManager _stakeManager,
@@ -37,8 +43,9 @@ contract RoutingModule is Ownable {
     /// @notice Register the caller as an operator.
     function register() external {
         require(!isOperator[msg.sender], "registered");
+        require(!blacklist[msg.sender], "blacklisted");
         uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
-        require(stake > 0, "stake");
+        require(stake >= minStake, "stake");
         isOperator[msg.sender] = true;
         operators.push(msg.sender);
         emit OperatorRegistered(msg.sender);
@@ -71,6 +78,24 @@ contract RoutingModule is Ownable {
         emit ReputationEnabled(enabled);
     }
 
+    /// @notice update StakeManager contract
+    function setStakeManager(IStakeManager manager) external onlyOwner {
+        stakeManager = manager;
+        emit StakeManagerUpdated(address(manager));
+    }
+
+    /// @notice update minimum stake required for operator registration
+    function setMinStake(uint256 stake) external onlyOwner {
+        minStake = stake;
+        emit MinStakeUpdated(stake);
+    }
+
+    /// @notice update blacklist status for an operator
+    function setBlacklist(address operator, bool status) external onlyOwner {
+        blacklist[operator] = status;
+        emit Blacklisted(operator, status);
+    }
+
     function commit(bytes32 jobId, bytes32 commitHash) external {
         require(commits[jobId] == bytes32(0), "committed");
         commits[jobId] = commitHash;
@@ -95,7 +120,7 @@ contract RoutingModule is Ownable {
         uint256 len = operators.length;
         for (uint256 i; i < len; i++) {
             address op = operators[i];
-            if (!isOperator[op]) continue;
+            if (!isOperator[op] || blacklist[op]) continue;
             uint256 stake = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
             if (stake == 0) continue;
             uint256 rep = 1;
@@ -117,7 +142,7 @@ contract RoutingModule is Ownable {
         uint256 cumulative;
         for (uint256 i; i < len; i++) {
             address op = operators[i];
-            if (!isOperator[op]) continue;
+            if (!isOperator[op] || blacklist[op]) continue;
             uint256 stake = stakeManager.stakeOf(op, IStakeManager.Role.Platform);
             if (stake == 0) continue;
             uint256 rep = 1;
