@@ -164,6 +164,31 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (_jobStake > 0) {
             jobStake = _jobStake;
         }
+        if (address(_validation) != address(0)) {
+            emit ValidationModuleUpdated(address(_validation));
+            emit ModuleUpdated("ValidationModule", address(_validation));
+        }
+        if (address(_stakeMgr) != address(0)) {
+            emit StakeManagerUpdated(address(_stakeMgr));
+            emit ModuleUpdated("StakeManager", address(_stakeMgr));
+        }
+        if (address(_reputation) != address(0)) {
+            emit ReputationEngineUpdated(address(_reputation));
+            emit ModuleUpdated("ReputationEngine", address(_reputation));
+        }
+        if (address(_dispute) != address(0)) {
+            emit DisputeModuleUpdated(address(_dispute));
+            emit ModuleUpdated("DisputeModule", address(_dispute));
+        }
+        if (address(_certNFT) != address(0)) {
+            emit CertificateNFTUpdated(address(_certNFT));
+            emit ModuleUpdated("CertificateNFT", address(_certNFT));
+        }
+        if (address(_feePool) != address(0)) {
+            emit FeePoolUpdated(address(_feePool));
+            emit ModuleUpdated("FeePool", address(_feePool));
+        }
+        emit FeePctUpdated(feePct);
     }
 
     // ---------------------------------------------------------------------

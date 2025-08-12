@@ -9,6 +9,7 @@ Other constructors now ship with sensible defaults so a deployer can leave param
 
 - `StakeManager` splits slashing 100% to the treasury when percentages are omitted.
 - `JobRegistry` applies a 5% protocol fee if `_feePct` is `0`.
+- `JobRegistry` emits `ModuleUpdated` events for any modules supplied at deployment, making on-chain verification easier.
 - `ValidationModule` defaults to 1‑day commit/reveal windows with 1–3 validators if zero values are provided.
 
 All v2 constructors omit the `owner` argument—the deploying address automatically becomes the owner via `Ownable(msg.sender)`.
@@ -31,6 +32,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
    - Agents can deposit stake and apply in one call with
      `JobRegistry.stakeAndApply(jobId, amount)` after approving the
      `StakeManager` for the stake amount.
+   - Stakers can claim protocol fees with a single call to `FeePool.claimRewards()`; any pending fees are distributed automatically.
 3. Fees, staking rewards, and dispute deposits all move in `$AGIALPHA` by default. The contract owner can swap the payment token later via `StakeManager.setToken` and related setters without redeploying other modules.
 4. Before staking or claiming rewards, call `JobRegistry.acknowledgeTaxPolicy` and confirm `isTaxExempt()` on each module.
 
@@ -42,7 +44,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 4. **Stake** – on `StakeManager` call `depositStake(role, amount)`.
 5. **Activate a platform** – if you are an operator, call `PlatformIncentives.stakeAndActivate(amount)` (use `0` for the owner’s zero‑stake case).
 6. **Verify registration** – check `PlatformRegistry.getScore(address)` and `JobRouter.registered(address)` in the **Read** tabs.
-7. **Claim fees later** – when `FeePool.distributeFees()` has been called, withdraw rewards via `FeePool.claimRewards()`.
+7. **Claim fees later** – simply call `FeePool.claimRewards()`; the function distributes any pending fees before paying rewards.
 
 This summary is for convenience only. Screenshots and extended explanations are provided in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 
