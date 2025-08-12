@@ -15,13 +15,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @notice ERC20 token used for staking
-    IERC20 public immutable token;
+    IERC20 public token;
 
     /// @notice minimum stake required per role
     uint256 public minStake;
 
     /// @notice maximum aggregate stake allowed per address (0 disables limit)
     uint256 public maxStakePerAddress;
+
+    /// @notice blacklist of addresses prohibited from staking
+    mapping(address => bool) public blacklist;
 
     /// @notice maximum slashing percentage per role (0-100)
     mapping(uint8 => uint256) public slashingPercentages;
@@ -46,6 +49,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @notice emitted when stake is slashed
     event StakeSlashed(address indexed user, uint8 indexed role, uint256 amount);
+
+    /// @notice emitted when staking token is updated
+    event TokenUpdated(address indexed token);
+
+    /// @notice emitted when blacklist status changes for an address
+    event BlacklistUpdated(address indexed user, bool status);
 
     /// @param _token ERC20 token with 6 decimals used for staking
     /// @param owner address that receives contract ownership
@@ -72,6 +81,19 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function setSlashingPercentage(uint8 role, uint256 percent) external onlyOwner {
         require(percent <= 100, "StakeManager: percent > 100");
         slashingPercentages[role] = percent;
+    }
+
+    /// @notice update staking token
+    function setToken(IERC20Metadata newToken) external onlyOwner {
+        require(newToken.decimals() == 6, "StakeManager: token not 6 decimals");
+        token = IERC20(address(newToken));
+        emit TokenUpdated(address(newToken));
+    }
+
+    /// @notice update blacklist status for an address
+    function setBlacklist(address user, bool status) external onlyOwner {
+        blacklist[user] = status;
+        emit BlacklistUpdated(user, status);
     }
 
     // ------------------------------------------------------------------
@@ -107,6 +129,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     {
         require(amount > 0, "StakeManager: amount 0");
 
+        require(!blacklist[msg.sender], "StakeManager: blacklisted");
         uint256 newRoleStake = stakes[msg.sender][role] + amount;
         require(newRoleStake >= minStake, "StakeManager: below min");
 
