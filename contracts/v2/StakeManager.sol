@@ -97,6 +97,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
+    event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
 
     constructor(
         IERC20 _token,
@@ -181,6 +182,21 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function setDisputeModule(address module) external onlyOwner {
         disputeModule = module;
         emit DisputeModuleUpdated(module);
+    }
+
+    /// @notice update job registry and dispute module in one call
+    /// @param _jobRegistry registry contract enforcing tax acknowledgements
+    /// @param _disputeModule module contract allowed to move dispute fees
+    function setModules(address _jobRegistry, address _disputeModule)
+        external
+        onlyOwner
+    {
+        require(_jobRegistry != address(0) && _disputeModule != address(0), "module");
+        jobRegistry = _jobRegistry;
+        disputeModule = _disputeModule;
+        emit JobRegistryUpdated(_jobRegistry);
+        emit DisputeModuleUpdated(_disputeModule);
+        emit ModulesUpdated(_jobRegistry, _disputeModule);
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
