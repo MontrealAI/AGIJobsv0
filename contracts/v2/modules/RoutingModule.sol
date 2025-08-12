@@ -15,9 +15,13 @@ contract RoutingModule is Ownable {
     address[] public operators;
     mapping(address => bool) public isOperator;
 
+    mapping(bytes32 => bytes32) public commits;
+    mapping(bytes32 => uint256) public commitBlock;
+
     event OperatorRegistered(address indexed operator);
     event OperatorDeregistered(address indexed operator);
     event OperatorSelected(bytes32 indexed jobId, address indexed operator);
+    event SelectionCommitted(bytes32 indexed jobId, bytes32 commitHash);
     event ReputationEngineUpdated(address indexed engine);
     event ReputationEnabled(bool enabled);
 
@@ -67,10 +71,26 @@ contract RoutingModule is Ownable {
         emit ReputationEnabled(enabled);
     }
 
+    function commit(bytes32 jobId, bytes32 commitHash) external {
+        require(commits[jobId] == bytes32(0), "committed");
+        commits[jobId] = commitHash;
+        commitBlock[jobId] = block.number;
+        emit SelectionCommitted(jobId, commitHash);
+    }
+
     /// @notice Select an operator using deterministic pseudo-randomness.
     /// @param jobId identifier of the job to route
+    /// @param seed revealed randomness seed
     /// @return selected address of the chosen operator or address(0) if none
-    function selectOperator(bytes32 jobId) external returns (address selected) {
+    function selectOperator(bytes32 jobId, bytes32 seed) external returns (address selected) {
+        bytes32 commitHash = commits[jobId];
+        require(commitHash != bytes32(0), "no commit");
+        require(keccak256(abi.encode(seed)) == commitHash, "seed");
+        uint256 committed = commitBlock[jobId];
+        require(block.number > committed + 1, "reveal");
+        bytes32 bh = blockhash(committed + 1);
+        require(bh != bytes32(0), "stale");
+
         uint256 totalWeight;
         uint256 len = operators.length;
         for (uint256 i; i < len; i++) {
@@ -88,11 +108,12 @@ contract RoutingModule is Ownable {
 
         if (totalWeight == 0) {
             emit OperatorSelected(jobId, address(0));
+            delete commits[jobId];
+            delete commitBlock[jobId];
             return address(0);
         }
 
-        uint256 rand =
-            uint256(keccak256(abi.encode(block.timestamp, jobId))) % totalWeight;
+        uint256 rand = uint256(keccak256(abi.encode(bh, seed))) % totalWeight;
         uint256 cumulative;
         for (uint256 i; i < len; i++) {
             address op = operators[i];
@@ -113,6 +134,8 @@ contract RoutingModule is Ownable {
         }
 
         emit OperatorSelected(jobId, selected);
+        delete commits[jobId];
+        delete commitBlock[jobId];
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
