@@ -136,7 +136,30 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
 
-    constructor() Ownable(msg.sender) {}
+    constructor(
+        IValidationModule _validation,
+        IStakeManager _stakeMgr,
+        IReputationEngine _reputation,
+        IDisputeModule _dispute,
+        ICertificateNFT _certNFT,
+        IFeePool _feePool,
+        uint256 _feePct,
+        uint96 _jobStake
+    ) Ownable(msg.sender) {
+        validationModule = _validation;
+        stakeManager = _stakeMgr;
+        reputationEngine = _reputation;
+        disputeModule = _dispute;
+        certificateNFT = _certNFT;
+        feePool = _feePool;
+        if (_feePct > 0) {
+            require(_feePct <= 100, "pct");
+            feePct = _feePct;
+        }
+        if (_jobStake > 0) {
+            jobStake = _jobStake;
+        }
+    }
 
     // ---------------------------------------------------------------------
     // Owner configuration

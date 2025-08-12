@@ -94,9 +94,19 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
 
-    constructor(IERC20 _token, address _treasury) Ownable(msg.sender) {
+    constructor(
+        IERC20 _token,
+        uint256 _minStake,
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct,
+        address _treasury
+    ) Ownable(msg.sender) {
+        require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
         token = _token;
-        treasury = _treasury;
+        minStake = _minStake;
+        employerSlashPct = _employerSlashPct;
+        treasurySlashPct = _treasurySlashPct;
+        treasury = _treasury == address(0) ? msg.sender : _treasury;
     }
 
     // ---------------------------------------------------------------

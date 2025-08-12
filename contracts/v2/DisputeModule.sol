@@ -53,10 +53,17 @@ contract DisputeModule is IDisputeModule, Ownable {
     /// @dev Amount of bond posted for each job appeal.
     mapping(uint256 => uint256) public bonds;
 
-    constructor(IJobRegistry _jobRegistry) Ownable(msg.sender) {
+    constructor(
+        IJobRegistry _jobRegistry,
+        uint256 _appealFee,
+        address _moderator,
+        address _jury
+    ) Ownable(msg.sender) {
+        require(address(_jobRegistry) != address(0), "registry");
         jobRegistry = _jobRegistry;
-        moderator = msg.sender;
-        jury = msg.sender;
+        appealFee = _appealFee;
+        moderator = _moderator == address(0) ? msg.sender : _moderator;
+        jury = _jury == address(0) ? msg.sender : _jury;
     }
 
     /// @notice Ensure participant has acknowledged current tax policy.
