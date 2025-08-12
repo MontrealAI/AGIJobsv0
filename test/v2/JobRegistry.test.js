@@ -100,7 +100,7 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await expect(registry.connect(employer).createJob(reward, "uri"))
       .to.emit(registry, "JobCreated")
-      .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake);
+      .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake, 0);
     const jobId = 1;
     await expect(registry.connect(agent).applyForJob(jobId))
       .to.emit(registry, "AgentApplied")

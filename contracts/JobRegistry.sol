@@ -87,7 +87,8 @@ contract JobRegistry is Ownable {
         address indexed employer,
         address indexed agent,
         uint256 reward,
-        uint256 stake
+        uint256 stake,
+        uint256 fee
     );
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
@@ -209,7 +210,7 @@ contract JobRegistry is Ownable {
             outputURI: ""
         });
         stakeManager.lockReward(msg.sender, jobReward + fee);
-        emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake);
+        emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake, fee);
     }
 
     /// @notice Agent submits job result; validation outcome stored.

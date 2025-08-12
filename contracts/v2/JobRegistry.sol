@@ -125,7 +125,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         address indexed employer,
         address indexed agent,
         uint256 reward,
-        uint256 stake
+        uint256 stake,
+        uint256 fee
     );
     event AgentApplied(uint256 indexed jobId, address indexed agent);
     event JobCompleted(uint256 indexed jobId, bool success);
@@ -308,11 +309,19 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             success: false,
             uri: uri
         });
+        uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
-            uint256 fee = (reward * feePctSnapshot) / 100;
+            fee = (reward * feePctSnapshot) / 100;
             stakeManager.lockJobFunds(bytes32(jobId), msg.sender, reward + fee);
         }
-        emit JobCreated(jobId, msg.sender, address(0), reward, uint256(jobStake));
+        emit JobCreated(
+            jobId,
+            msg.sender,
+            address(0),
+            reward,
+            uint256(jobStake),
+            fee
+        );
     }
 
     function createJob(uint256 reward, string calldata uri)
