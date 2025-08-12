@@ -21,7 +21,9 @@ describe("JobRegistry integration", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
     const Validation = await ethers.getContractFactory(
@@ -42,6 +44,8 @@ describe("JobRegistry integration", function () {
     registry = await Registry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -81,6 +85,9 @@ describe("JobRegistry integration", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await registry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setDisputeModule(await dispute.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
     await registry
       .connect(owner)
@@ -129,7 +136,9 @@ describe("JobRegistry integration", function () {
       await stakeManager.getAddress(),
       2,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await registry.connect(owner).setFeePool(await feePool.getAddress());
     await registry.connect(owner).setFeePct(10); // 10%

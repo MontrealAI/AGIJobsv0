@@ -20,7 +20,9 @@ describe("Governance reward lifecycle", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
 
     const JobRegistry = await ethers.getContractFactory(
@@ -29,6 +31,8 @@ describe("Governance reward lifecycle", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

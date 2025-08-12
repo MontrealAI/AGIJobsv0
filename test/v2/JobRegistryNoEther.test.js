@@ -16,6 +16,7 @@ describe("JobRegistry ether rejection", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );

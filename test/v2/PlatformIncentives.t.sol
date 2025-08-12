@@ -29,7 +29,15 @@ contract PlatformIncentivesTest is Test {
 
     function setUp() public {
         token = new AGIALPHAToken(address(this));
-        stakeManager = new StakeManager(token, address(this), address(0));
+        stakeManager = new StakeManager(
+            token,
+            0,
+            100,
+            0,
+            address(this),
+            address(0),
+            address(0)
+        );
         jobRegistry = new MockJobRegistry();
         jobRegistry.setTaxPolicyVersion(1);
         stakeManager.setJobRegistry(address(jobRegistry));

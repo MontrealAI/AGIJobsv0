@@ -32,7 +32,9 @@ describe("multi-operator job lifecycle", function () {
       0,
       100,
       0,
-      owner.address
+      owner.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
 
     const Validation = await ethers.getContractFactory(
@@ -56,6 +58,7 @@ describe("multi-operator job lifecycle", function () {
     registry = await Registry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -121,6 +124,7 @@ describe("multi-operator job lifecycle", function () {
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await stakeManager.setJobRegistry(await registry.getAddress());
+    await stakeManager.setDisputeModule(await dispute.getAddress());
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);

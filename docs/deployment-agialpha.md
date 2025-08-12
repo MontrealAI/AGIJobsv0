@@ -17,26 +17,25 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 Deploy each contract from the **Write Contract** tabs (the deployer automatically becomes the owner):
 
 1. `AGIALPHAToken()` – mint the initial supply to the owner or treasury.
-2. `StakeManager(token, treasury)` – records stake balances and holds job escrows.
-3. `JobRegistry()` – tracks jobs and tax acknowledgements.
-4. `ValidationModule(jobRegistry, stakeManager)` – handles validation and slashing.
-5. `ReputationEngine()` – optional reputation weighting.
-6. `DisputeModule(jobRegistry, stakeManager)` – manages appeals and dispute fees.
-7. `CertificateNFT(name, symbol)` – certifies completed work.
-8. `FeePool(token, stakeManager, role)` – redistributes protocol fees to stakers.
-9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – lists platform operators.
-10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
-11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register in one call.
+2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)` – records stake balances and holds job escrows.
+3. `ValidationModule(jobRegistry, stakeManager)` – handles validation and slashing.
+4. `ReputationEngine()` – optional reputation weighting.
+5. `DisputeModule(jobRegistry, stakeManager)` – manages appeals and dispute fees.
+6. `CertificateNFT(name, symbol)` – certifies completed work.
+7. `FeePool(token, stakeManager, role)` – redistributes protocol fees to stakers.
+8. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – lists platform operators.
+9. `JobRouter(platformRegistry)` – stake‑weighted job routing.
+10. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register in one call.
 
-After each deployment, copy the address for later wiring.
+After deploying these modules and recording their addresses, deploy the registry last:
+
+11. `JobRegistry(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, taxPolicy, feePct, jobStake)` – tracks jobs and tax acknowledgements.
 
 ## 3. Wire the modules
 
-Use each contract's **Write** tab to connect modules:
+Use each contract's **Write** tab to connect remaining references:
 
-- `StakeManager.setJobRegistry(jobRegistry)` and `StakeManager.setDisputeModule(disputeModule)`
-- `JobRegistry.setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)`
-- `JobRegistry.setFeePool(feePool)` and `JobRegistry.setTaxPolicy(taxPolicy)` if used
+- `StakeManager.setJobRegistry(jobRegistry)` and `StakeManager.setDisputeModule(disputeModule)` if not provided at deploy time.
 - `PlatformRegistry.setRegistrar(platformIncentives, true)` and `JobRouter.setRegistrar(platformIncentives, true)`
 
 Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. No redeployments are required when swapping tokens or adjusting fees.

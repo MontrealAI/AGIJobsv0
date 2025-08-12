@@ -31,7 +31,9 @@ describe("end-to-end job lifecycle", function () {
       0,
       100,
       0,
-      owner.address
+      owner.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
 
     const Validation = await ethers.getContractFactory(
@@ -55,6 +57,7 @@ describe("end-to-end job lifecycle", function () {
     registry = await Registry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -105,6 +108,8 @@ describe("end-to-end job lifecycle", function () {
     await registry.setJobParameters(0, stakeRequired);
     await stakeManager.setJobRegistry(await registry.getAddress());
     await stakeManager.setSlashingPercentages(100, 0);
+    await stakeManager.setJobRegistry(await registry.getAddress());
+    await stakeManager.setDisputeModule(await dispute.getAddress());
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);
