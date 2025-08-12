@@ -3,9 +3,11 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+For a step‑by‑step deployment walkthrough using $AGIALPHA and Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+
 ### Regulatory disclaimer
 
-On-chain fee sharing reduces but does not eliminate tax or reporting duties. Participants remain responsible for complying with local laws and should seek professional advice before using the contracts.
+On-chain fee sharing reduces but does not eliminate tax or reporting duties. Regulations continue to evolve, so participants must monitor policy changes, comply with local laws, and seek professional advice before using the contracts.
 
 Key incentive features in the v2 suite:
 
@@ -38,7 +40,7 @@ On-chain rewards do not remove your obligation to follow local tax laws; consult
 
 - Operators opt in by staking **$AGIALPHA**. Staked addresses gain routing priority, a share of protocol fees, and permission to activate their own job portals.
 - The main deploying entity is a special case with **stake = 0**. It receives no routing preference or fee share, keeping its involvement tax neutral and reporting free while still demonstrating network functionality.
-- All value flows are enforced entirely on-chain through modules such as `StakeManager`, `FeePool`, and `PlatformRegistry`, allowing participants to remain pseudonymous.
+- All value flows are enforced entirely on-chain through modules such as `StakeManager`, `FeePool`, and `PlatformRegistry`, allowing participants to remain pseudonymous and avoiding off-chain accounting or reporting.
 - Every economic parameter—token address, fee split, minimum stake, burn percentage—can be retuned by the contract owner via `Ownable` setters, without redeploying modules.
 - Staked participants must comply with local regulations even though rewards are distributed on-chain; see [docs/tax-obligations.md](docs/tax-obligations.md) for guidance.
 - All interactions are available through block explorer "Write" tabs, keeping the system accessible to non-technical users without bespoke tooling.
