@@ -5,6 +5,11 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
+import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
+
+interface IJobRegistryAck {
+    function acknowledgeTaxPolicy() external returns (string memory);
+}
 
 /// @title PlatformIncentives
 /// @notice Helper that stakes $AGIALPHA for platform operators and registers them
@@ -48,6 +53,31 @@ contract PlatformIncentives is Ownable {
     /// @dev Caller must `approve` the StakeManager for `amount` tokens beforehand.
     ///      The main deployer may pass `amount = 0` to register without incentives.
     function stakeAndActivate(uint256 amount) external {
+        if (amount > 0) {
+            stakeManager.depositStakeFor(
+                msg.sender,
+                IStakeManager.Role.Platform,
+                amount
+            );
+        } else {
+            require(msg.sender == owner(), "amount");
+        }
+        platformRegistry.registerFor(msg.sender);
+        jobRouter.registerFor(msg.sender);
+        emit Activated(msg.sender, amount);
+    }
+
+    /// @notice Acknowledge tax policy if needed, stake tokens and activate routing.
+    /// @param amount token amount with 6 decimals; caller must approve first
+    function acknowledgeStakeAndActivate(uint256 amount) external {
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryTax reg = IJobRegistryTax(registry);
+            if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
+                IJobRegistryAck(registry).acknowledgeTaxPolicy();
+            }
+        }
+
         if (amount > 0) {
             stakeManager.depositStakeFor(
                 msg.sender,

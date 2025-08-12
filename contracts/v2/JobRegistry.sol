@@ -18,6 +18,10 @@ interface IDisputeModule {
     function resolve(uint256 jobId, bool employerWins) external;
 }
 
+interface IDisputeModuleEvidence {
+    function raiseDispute(uint256 jobId, string calldata evidence) external;
+}
+
 interface ICertificateNFT {
     function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
 }
@@ -408,6 +412,27 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
     {
         raiseDispute(jobId);
+    }
+
+    /// @notice Acknowledge tax policy if needed and raise a dispute with evidence.
+    /// @param jobId Identifier of the disputed job
+    /// @param evidence Supporting evidence for the dispute
+    function acknowledgeAndDispute(uint256 jobId, string calldata evidence) external {
+        if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
+            _acknowledge(msg.sender);
+        }
+
+        Job storage job = jobs[jobId];
+        require(job.state == State.Completed && !job.success, "cannot dispute");
+        require(msg.sender == job.agent, "only agent");
+        job.state = State.Disputed;
+        if (address(disputeModule) != address(0)) {
+            IDisputeModuleEvidence(address(disputeModule)).raiseDispute(
+                jobId,
+                evidence
+            );
+        }
+        emit JobDisputed(jobId, msg.sender);
     }
 
     /// @notice Owner resolves a dispute, setting the final outcome.
