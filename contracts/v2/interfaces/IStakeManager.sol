@@ -33,6 +33,9 @@ interface IStakeManager {
     /// @notice deposit stake for caller for a specific role
     function depositStake(Role role, uint256 amount) external;
 
+    /// @notice acknowledge the tax policy and deposit stake in one call
+    function acknowledgeAndDeposit(Role role, uint256 amount) external;
+
     /// @notice deposit stake on behalf of a user for a specific role
     function depositStakeFor(address user, Role role, uint256 amount) external;
 

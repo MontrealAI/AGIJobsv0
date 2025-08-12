@@ -8,6 +8,10 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 
+interface IJobRegistryAck {
+    function acknowledgeTaxPolicy() external returns (string memory);
+}
+
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
 /// @dev Holds only the staking token and rejects direct ether so neither the
@@ -309,6 +313,37 @@ contract StakeManager is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
         nonReentrant
     {
+        require(role <= Role.Platform, "role");
+        require(amount > 0, "amount");
+        uint256 newStake = stakes[msg.sender][role] + amount;
+        require(newStake >= minStake, "min stake");
+
+        if (maxStakePerAddress > 0) {
+            uint256 total =
+                stakes[msg.sender][Role.Agent] +
+                stakes[msg.sender][Role.Validator] +
+                stakes[msg.sender][Role.Platform] +
+                amount;
+            require(total <= maxStakePerAddress, "max stake");
+        }
+
+        stakes[msg.sender][role] = newStake;
+        totalStakes[role] += amount;
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        emit StakeDeposited(msg.sender, role, amount);
+    }
+
+    /// @notice acknowledge the tax policy and deposit stake in one transaction
+    /// @param role participant role for the stake
+    /// @param amount token amount with 6 decimals; caller must approve first
+    function acknowledgeAndDeposit(Role role, uint256 amount) external nonReentrant {
+        address registry = jobRegistry;
+        require(registry != address(0), "job registry");
+        IJobRegistryTax reg = IJobRegistryTax(registry);
+        if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
+            IJobRegistryAck(registry).acknowledgeTaxPolicy();
+        }
+
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
         uint256 newStake = stakes[msg.sender][role] + amount;
