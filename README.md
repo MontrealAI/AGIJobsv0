@@ -30,7 +30,7 @@ Staking $AGIALPHA through `PlatformIncentives.stakeAndActivate` registers a plat
   2. Open `PlatformIncentives` on Etherscan and call `stakeAndActivate(amount)` from the **Write Contract** tab.
   3. Verify `PlatformRegistry.getScore(address)` is greater than zero and later claim fees via `FeePool.claimRewards()`.
 
-- **Owner zero-stake registration**
+- **Owner zero-stake registration** – The deployer may register to test the system but receives no routing or revenue boost.
   1. Skip staking and open `PlatformRegistry` on Etherscan.
   2. From the **Write Contract** tab, call `register()` to list the platform without routing weight or fee share.
   3. `PlatformRegistry.getScore(owner)` returns `0` and `FeePool.claimRewards()` emits a zero payout.

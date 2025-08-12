@@ -69,6 +69,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     function getScore(address operator) public view returns (uint256) {
         if (blacklist[operator] || reputationEngine.isBlacklisted(operator)) return 0;
         uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        // Deployer may register without staking but receives no routing boost.
         if (operator == owner() && stake == 0) return 0;
         uint256 rep = reputationEngine.reputation(operator);
         uint256 stakeW = reputationEngine.stakeWeight();
