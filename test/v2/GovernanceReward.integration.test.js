@@ -17,13 +17,25 @@ describe("Governance reward lifecycle", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       treasury.address
     );
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy();
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -43,7 +55,9 @@ describe("Governance reward lifecycle", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2
+      2,
+      0,
+      treasury.address
     );
 
     const Reward = await ethers.getContractFactory(

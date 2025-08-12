@@ -14,10 +14,12 @@ describe("DisputeModule", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await jobRegistry.getAddress());
-    await dispute.connect(owner).setAppealFee(appealFee);
-    await dispute.connect(owner).setModerator(moderator.address);
-    await dispute.connect(owner).setAppealJury(jury.address);
+    dispute = await Dispute.deploy(
+      await jobRegistry.getAddress(),
+      appealFee,
+      moderator.address,
+      jury.address
+    );
   });
 
   async function raise(jobId, agentSigner) {

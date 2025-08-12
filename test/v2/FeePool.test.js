@@ -15,13 +15,25 @@ describe("FeePool", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       treasury.address
     );
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    jobRegistry = await JobRegistry.deploy();
+    jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -44,7 +56,9 @@ describe("FeePool", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2
+      2,
+      0,
+      treasury.address
     );
 
     const registryAddr = await jobRegistry.getAddress();

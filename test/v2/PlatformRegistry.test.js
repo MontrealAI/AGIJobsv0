@@ -21,6 +21,9 @@ describe("PlatformRegistry", function () {
     );
     stakeManager = await Stake.connect(platform).deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       treasury.address
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
@@ -103,7 +106,9 @@ describe("PlatformRegistry", function () {
     const feePool = await FeePool.connect(owner).deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2
+      2,
+      0,
+      treasury.address
     );
 
     const Incentives = await ethers.getContractFactory(

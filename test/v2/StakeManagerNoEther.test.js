@@ -13,6 +13,9 @@ describe("StakeManager ether rejection", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       owner.address
     );
     await stakeManager.waitForDeployment();

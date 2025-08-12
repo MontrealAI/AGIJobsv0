@@ -9,7 +9,16 @@ describe("JobRegistry ether rejection", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Factory.deploy();
+    registry = await Factory.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
     await registry.waitForDeployment();
   });
 

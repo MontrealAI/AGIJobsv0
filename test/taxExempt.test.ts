@@ -20,7 +20,16 @@ describe("Tax exemption flags", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const registry = await JobRegistry.deploy();
+    const registry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
     await registry.waitForDeployment();
 
     const StakeManager = await ethers.getContractFactory(
@@ -28,6 +37,9 @@ describe("Tax exemption flags", function () {
     );
     const stake = await StakeManager.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       owner.address
     );
     await stake.waitForDeployment();
@@ -49,7 +61,11 @@ describe("Tax exemption flags", function () {
     );
     const val = await ValidationModule.deploy(
       await registry.getAddress(),
-      await stake.getAddress()
+      await stake.getAddress(),
+      1,
+      1,
+      1,
+      1
     );
     await val.waitForDeployment();
 
@@ -57,7 +73,10 @@ describe("Tax exemption flags", function () {
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     const disp = await DisputeModule.deploy(
-      await registry.getAddress()
+      await registry.getAddress(),
+      0,
+      owner.address,
+      owner.address
     );
     await disp.waitForDeployment();
 

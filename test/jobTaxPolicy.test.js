@@ -18,7 +18,16 @@ describe("JobRegistry tax policy integration", function () {
     const RegistryFactory = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await RegistryFactory.deploy();
+    registry = await RegistryFactory.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
     await registry.waitForDeployment();
   });
 

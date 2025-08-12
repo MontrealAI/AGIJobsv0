@@ -29,6 +29,9 @@ describe("Platform reward flow", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       treasury.address
     );
     await stakeManager.connect(owner).setMinStake(0);
@@ -36,7 +39,16 @@ describe("Platform reward flow", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    jobRegistry = await JobRegistry.deploy();
+    jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
 
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -76,7 +88,9 @@ describe("Platform reward flow", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2
+      2,
+      0,
+      treasury.address
     );
   });
 
