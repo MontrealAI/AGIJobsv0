@@ -1,6 +1,6 @@
 # Universal Platform Incentive Architecture
 
-This document details a stake-based framework that aligns every AGI Jobs v2 role within a single on-chain economy.  The design operates entirely in the six‑decimal **$AGIALPHA** token and allows the contract owner to reconfigure parameters without redeploying modules.
+This document details a stake-based framework that aligns every AGI Jobs v2 role within a single on-chain economy. The design operates entirely in the six‑decimal **$AGIALPHA** token and allows the contract owner to reconfigure parameters without redeploying modules. All interactions are pseudonymous: modules never require off-chain identity, and value transfers occur purely on-chain.
 
 ## Core Modules
 - **StakeManager** – tracks deposits for agents, validators and platform operators; owner may update token, minimums and slashing percentages.
@@ -46,4 +46,4 @@ The owner can retune the system at any time:
    - Reject unexpected ETH in every module.
    - Verify `isTaxExempt()` returns `true` for helpers and owner addresses.
 
-Participants must still follow local laws despite the on-chain design; see `docs/tax-obligations.md` for guidance.
+Participants must still follow local laws despite the on-chain design. Recent regulatory shifts, such as the U.S. repeal of certain digital-asset reporting rules in 2025, lessen protocol-level obligations but do not eliminate individual responsibilities. See `docs/tax-obligations.md` for guidance.

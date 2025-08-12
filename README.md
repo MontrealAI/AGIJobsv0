@@ -8,7 +8,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 
 ### Regulatory disclaimer
 
-On-chain fee sharing reduces but does not eliminate tax or reporting duties. Regulations continue to evolve, so participants must monitor policy changes, comply with local laws, and seek professional advice before using the contracts.
+On-chain fee sharing reduces but does not eliminate tax or reporting duties. Regulations continue to evolve, so participants must monitor policy changes, comply with local laws, and seek professional advice before using the contracts. Recent regulatory shifts—such as the 2025 repeal of certain digital-asset reporting rules in the United States—lessen protocol-level obligations, yet every operator, employer, agent, and validator remains individually responsible for local compliance.
 
 Key incentive features in the v2 suite:
 
