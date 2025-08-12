@@ -133,5 +133,20 @@ describe("PlatformRegistry", function () {
       incentives.connect(platform).stakeAndActivate(0)
     ).to.be.revertedWith("amount");
   });
+
+  it("allows zero-stake registration when min stake is zero", async () => {
+    await registry.setMinPlatformStake(0);
+    await expect(registry.connect(sybil).register())
+      .to.emit(registry, "Registered")
+      .withArgs(sybil.address);
+    expect(await registry.getScore(sybil.address)).to.equal(0);
+  });
+
+  it("allows operator to deregister", async () => {
+    await registry.connect(platform).register();
+    expect(await registry.registered(platform.address)).to.equal(true);
+    await registry.connect(platform).deregister();
+    expect(await registry.registered(platform.address)).to.equal(false);
+  });
 });
 
