@@ -8,7 +8,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 
 ### Regulatory disclaimer
 
-Regulatory shifts may change compliance obligations even when rewards flow entirely on-chain. While the design minimises reporting by routing fees directly in $AGIALPHA, participants must still monitor policy updates, obey local laws, and obtain professional advice before interacting with the contracts. The protocol itself never issues tax forms or collects personal data; every operator remains responsible for self‑reporting and compliance within their jurisdiction.
+Regulatory shifts may change compliance obligations even when rewards flow entirely on-chain. While the design minimises reporting by routing fees directly in $AGIALPHA, participants must still monitor policy updates, obey local laws, and obtain professional advice before interacting with the contracts. The protocol itself never issues tax forms or collects personal data; every operator remains responsible for self‑reporting and compliance within their jurisdiction. Nothing in this repository or its documentation constitutes legal, financial, or tax advice.
 
 Key incentive features in the v2 suite:
 
