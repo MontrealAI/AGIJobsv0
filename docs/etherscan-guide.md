@@ -6,15 +6,19 @@
 
 > **Tax Note:** The contracts and their owner are globally tax‑exempt; employers, agents, and validators shoulder all tax duties. Each module exposes `isTaxExempt()` for verification.
 
+> **Base units:** $AGIALPHA uses 6 decimals. Enter amounts as integers (`1` token = `1_000000`, `0.5` token = `500000`).
+
 ## Calling Contract Methods via Etherscan
 
 1. **Connect to Web3** – open the contract on Etherscan, select the **Write Contract** tab, click **Connect to Web3**, and approve the connection.
    ![connect-web3](https://via.placeholder.com/650x150?text=Connect+to+Web3)
-2. **stakeAndActivate** – visit the `PlatformIncentives` address, connect, enter the stake amount, and press **Write** on `stakeAndActivate(amount)`.
+2. **depositStake** – on `StakeManager`, enter the role and amount (6‑decimal base units) in `depositStake(role, amount)`.
+   ![deposit-stake](https://via.placeholder.com/650x150?text=depositStake)
+3. **stakeAndActivate** – visit the `PlatformIncentives` address, connect, enter the stake amount, and press **Write** on `stakeAndActivate(amount)`.
    ![stake-and-activate](https://via.placeholder.com/650x150?text=stakeAndActivate)
-3. **distributeFees** – on the `FeePool` contract, call `distributeFees()` to allocate pending fees to stakers.
+4. **distributeFees** – on the `FeePool` contract, call `distributeFees()` to allocate pending fees to stakers.
    ![distribute-fees](https://via.placeholder.com/650x150?text=distributeFees)
-4. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
+5. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
    ![claim-rewards](https://via.placeholder.com/650x150?text=claimRewards)
 
 ## Module Addresses & Roles
@@ -29,6 +33,16 @@
 | TaxPolicy | *TBD* | Stores tax disclaimer URI and acknowledgement helper |
 
 > Addresses will be published after deployment. Always verify each on multiple explorers before interacting.
+
+## Role & Staking Summary
+- **Employer** – posts jobs and escrows rewards.
+- **Agent** – calls `StakeManager.depositStake(0, amount)` and completes work.
+- **Validator** – calls `StakeManager.depositStake(1, amount)` and votes on jobs.
+- **Platform operator** – stakes with `depositStake(2, amount)` then `PlatformRegistry.register()` for routing and fees.
+
+**Fee Claiming** – trigger `FeePool.distributeFees()` and withdraw with `FeePool.claimRewards()`.
+
+*Zero‑stake deployer* – the owner may register with `0` stake to appear in `PlatformRegistry` without routing weight or rewards.
 
 ## Module Diagram
 ```mermaid
@@ -70,12 +84,14 @@ Before performing any on-chain action, employers, agents, and validators must ca
 ### Agents
 1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Check the emitted `TaxAcknowledged` event for the recorded disclaimer.
 2. Open `StakeManager`; in **Read Contract** confirm **isTaxExempt()**, then stake with **depositStake(0, amount)** (role `0` = Agent).
+   ![agent stake](https://via.placeholder.com/650x150?text=depositStake)
 3. Use **applyForJob** and **completeJob** as needed.
 4. Call **requestJobCompletion** when work is ready for validation.
 
 ### Validators
 1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Inspect the `TaxAcknowledged` event log for the acknowledgement text.
 2. Stake required AGI via **StakeManager.depositStake(1, amount)** after confirming **StakeManager.isTaxExempt()**.
+   ![validator stake](https://via.placeholder.com/650x150?text=depositStake)
 3. During validation, open `ValidationModule`, confirm **isTaxExempt()**, and send hashed votes with **commitValidation(jobId, commitHash)**.
 4. Reveal decisions using **revealValidation(jobId, approve, salt)** before the window closes.
 
@@ -164,3 +180,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 - [ ] Cross-check transactions on at least two block explorers.
 - [ ] Review parameter settings via read functions before calling write methods.
 - [ ] Ensure the AGI token address `0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D` matches the token in your wallet.
+
+---
+
+*Regulatory note: this guide is informational only and does not constitute legal or tax advice. See [tax-obligations.md](tax-obligations.md) for details on participant responsibilities.*
