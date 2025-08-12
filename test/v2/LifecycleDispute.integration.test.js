@@ -23,7 +23,9 @@ describe("Job lifecycle with disputes", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
 

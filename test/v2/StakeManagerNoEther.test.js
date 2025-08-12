@@ -16,7 +16,9 @@ describe("StakeManager ether rejection", function () {
       0,
       100,
       0,
-      owner.address
+      owner.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.waitForDeployment();
   });

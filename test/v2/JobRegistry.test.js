@@ -21,7 +21,9 @@ describe("JobRegistry integration", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
     const Validation = await ethers.getContractFactory(
