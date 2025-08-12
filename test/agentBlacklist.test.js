@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 async function deployFixture() {
-  const [owner, employer, agent] = await ethers.getSigners();
+  const [, employer, agent] = await ethers.getSigners();
 
   const Token = await ethers.getContractFactory("MockERC20");
   const token = await Token.deploy();

@@ -2,11 +2,11 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("StakingRouter", function () {
-  let token, registry, router, owner, operator, other;
+  let token, registry, router, owner, operator;
   const cooldown = 100; // seconds
 
   beforeEach(async () => {
-    [owner, operator, other] = await ethers.getSigners();
+    [owner, operator] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory(
       "contracts/AGIALPHAToken.sol:AGIALPHAToken"

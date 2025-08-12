@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 // helper constants
-const TOKEN = 1_000_000n; // 1 token with 6 decimals
+const TOKEN = 1000000n; // 1 token with 6 decimals
 const STAKE_ALICE = 200n * TOKEN; // 200 tokens
 const STAKE_BOB = 100n * TOKEN; // 100 tokens
 const REWARD = 50n * TOKEN; // job reward 50 tokens
@@ -20,9 +20,9 @@ describe("Platform reward flow", function () {
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
     token = await Token.deploy(owner.address);
-    await token.mint(alice.address, 1_000n * TOKEN);
-    await token.mint(bob.address, 1_000n * TOKEN);
-    await token.mint(employer.address, 1_000n * TOKEN);
+    await token.mint(alice.address, 1000n * TOKEN);
+    await token.mint(bob.address, 1000n * TOKEN);
+    await token.mint(employer.address, 1000n * TOKEN);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -148,7 +148,7 @@ describe("Platform reward flow", function () {
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
     token2 = await Token.deploy(owner.address);
-    await token2.mint(employer.address, 1_000n * TOKEN);
+    await token2.mint(employer.address, 1000n * TOKEN);
 
     await stakeManager.connect(owner).setToken(await token2.getAddress());
     await feePool.connect(owner).setToken(await token2.getAddress());
