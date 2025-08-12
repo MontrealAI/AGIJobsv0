@@ -37,6 +37,10 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const args = parseArgs();
 
+  const owner =
+    typeof args.owner === "string" ? args.owner : deployer.address;
+  const ownerSigner = await ethers.getSigner(owner);
+
   // -------------------------------------------------------------------------
   // optional external token
   // -------------------------------------------------------------------------
@@ -55,26 +59,27 @@ async function main() {
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
-  const treasury = typeof args.treasury === "string" ? args.treasury : deployer.address;
-  const stake = await Stake.deploy(tokenAddress, deployer.address, treasury);
+  const treasury =
+    typeof args.treasury === "string" ? args.treasury : owner;
+  const stake = await Stake.deploy(tokenAddress, owner, treasury);
   await stake.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy(deployer.address);
+  const registry = await Registry.deploy(owner);
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(
     "contracts/v2/TaxPolicy.sol:TaxPolicy"
   );
   const tax = await TaxPolicy.deploy(
-    deployer.address,
+    owner,
     "ipfs://policy",
     "All taxes on participants; contract and owner exempt"
   );
   await tax.waitForDeployment();
-  await registry.setTaxPolicy(await tax.getAddress());
+  await registry.connect(ownerSigner).setTaxPolicy(await tax.getAddress());
 
   const Validation = await ethers.getContractFactory(
     "contracts/v2/ValidationModule.sol:ValidationModule"
@@ -82,20 +87,20 @@ async function main() {
   const validation = await Validation.deploy(
     await registry.getAddress(),
     await stake.getAddress(),
-    deployer.address
+    owner
   );
   await validation.waitForDeployment();
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
   );
-  const reputation = await Reputation.deploy(deployer.address);
+  const reputation = await Reputation.deploy(owner);
   await reputation.waitForDeployment();
 
   const NFT = await ethers.getContractFactory(
     "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
   );
-  const nft = await NFT.deploy("Cert", "CERT", deployer.address);
+  const nft = await NFT.deploy("Cert", "CERT", owner);
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
@@ -103,7 +108,7 @@ async function main() {
   );
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
-    deployer.address
+    owner
   );
   await dispute.waitForDeployment();
 
@@ -114,7 +119,7 @@ async function main() {
     tokenAddress,
     await stake.getAddress(),
     2, // IStakeManager.Role.Platform
-    treasury
+    owner
   );
   await feePool.waitForDeployment();
 
@@ -129,7 +134,7 @@ async function main() {
     await stake.getAddress(),
     await reputation.getAddress(),
     minPlatformStake,
-    deployer.address
+    owner
   );
   await platformRegistry.waitForDeployment();
 
@@ -138,7 +143,7 @@ async function main() {
   );
   const jobRouter = await JobRouter.deploy(
     await platformRegistry.getAddress(),
-    deployer.address
+    owner
   );
   await jobRouter.waitForDeployment();
 
@@ -149,13 +154,13 @@ async function main() {
     await stake.getAddress(),
     await platformRegistry.getAddress(),
     await jobRouter.getAddress(),
-    deployer.address
+    owner
   );
   await incentives.waitForDeployment();
 
-  await stake.setJobRegistry(await registry.getAddress());
+  await stake.connect(ownerSigner).setJobRegistry(await registry.getAddress());
 
-  await registry.setModules(
+  await registry.connect(ownerSigner).setModules(
     await validation.getAddress(),
     await stake.getAddress(),
     await reputation.getAddress(),
@@ -163,10 +168,30 @@ async function main() {
     await nft.getAddress()
   );
 
-  await registry.setFeePool(await feePool.getAddress());
-  await registry.setFeePct(5);
-  await platformRegistry.setRegistrar(await incentives.getAddress(), true);
-  await jobRouter.setRegistrar(await incentives.getAddress(), true);
+  await registry
+    .connect(ownerSigner)
+    .setFeePool(await feePool.getAddress());
+
+  const feePct =
+    typeof args.feePct === "string" ? Number(args.feePct) : 5;
+  await registry.connect(ownerSigner).setFeePct(feePct);
+
+  const burnPct =
+    typeof args.burnPct === "string" ? Number(args.burnPct) : 0;
+  await feePool.connect(ownerSigner).setBurnPct(burnPct);
+
+  const minStake = ethers.parseUnits(
+    typeof args.minStake === "string" ? args.minStake : "0",
+    6
+  );
+  await stake.connect(ownerSigner).setMinStake(minStake);
+
+  await platformRegistry
+    .connect(ownerSigner)
+    .setRegistrar(await incentives.getAddress(), true);
+  await jobRouter
+    .connect(ownerSigner)
+    .setRegistrar(await incentives.getAddress(), true);
 
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());
@@ -200,21 +225,19 @@ async function main() {
     JSON.stringify(addresses, null, 2)
   );
 
-  await verify(await stake.getAddress(), [tokenAddress, deployer.address, treasury]);
-  await verify(await registry.getAddress(), [deployer.address]);
-  await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress(), deployer.address]);
-  await verify(await reputation.getAddress(), [deployer.address]);
-  await verify(await dispute.getAddress(), [await registry.getAddress(), deployer.address]);
-  await verify(await nft.getAddress(), ["Cert", "CERT", deployer.address]);
-  await verify(await tax.getAddress(), [deployer.address, "ipfs://policy", "All taxes on participants; contract and owner exempt"]);
-  await verify(await feePool.getAddress(), [tokenAddress, await stake.getAddress(), 2, treasury]);
-  await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake, deployer.address]);
-  await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress(), deployer.address]);
-  await verify(await incentives.getAddress(), [await stake.getAddress(), await platformRegistry.getAddress(), await jobRouter.getAddress(), deployer.address]);
+  await verify(await stake.getAddress(), [tokenAddress, owner, treasury]);
+  await verify(await registry.getAddress(), [owner]);
+  await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress(), owner]);
+  await verify(await reputation.getAddress(), [owner]);
+  await verify(await dispute.getAddress(), [await registry.getAddress(), owner]);
+  await verify(await nft.getAddress(), ["Cert", "CERT", owner]);
+  await verify(await tax.getAddress(), [owner, "ipfs://policy", "All taxes on participants; contract and owner exempt"]);
+  await verify(await feePool.getAddress(), [tokenAddress, await stake.getAddress(), 2, owner]);
+  await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake, owner]);
+  await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress(), owner]);
+  await verify(await incentives.getAddress(), [await stake.getAddress(), await platformRegistry.getAddress(), await jobRouter.getAddress(), owner]);
 
-  if (args.stakeOwner || args.activateOwner) {
-    await incentives.stakeAndActivate(0);
-  }
+  await incentives.connect(ownerSigner).stakeAndActivate(0);
 }
 
 main().catch((error) => {
