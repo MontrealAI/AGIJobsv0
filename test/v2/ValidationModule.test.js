@@ -29,7 +29,8 @@ describe("ValidationModule V2", function () {
       60,
       60,
       2,
-      2
+      2,
+      []
     );
     await validation.waitForDeployment();
     await validation

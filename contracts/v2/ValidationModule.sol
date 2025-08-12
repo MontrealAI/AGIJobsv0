@@ -77,7 +77,8 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 _commitWindow,
         uint256 _revealWindow,
         uint256 _minValidators,
-        uint256 _maxValidators
+        uint256 _maxValidators,
+        address[] memory _validatorPool
     ) Ownable(msg.sender) {
         require(_commitWindow > 0 && _revealWindow > 0, "windows");
         require(_minValidators > 0 && _maxValidators >= _minValidators, "bounds");
@@ -87,6 +88,10 @@ contract ValidationModule is IValidationModule, Ownable {
         revealWindow = _revealWindow;
         minValidators = _minValidators;
         maxValidators = _maxValidators;
+        if (_validatorPool.length != 0) {
+            validatorPool = _validatorPool;
+            emit ValidatorsUpdated(_validatorPool);
+        }
     }
 
     /// @notice Update the list of eligible validators.

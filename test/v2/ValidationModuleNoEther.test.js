@@ -21,7 +21,8 @@ describe("ValidationModule ether rejection", function () {
       1,
       1,
       1,
-      1
+      1,
+      []
     );
     await validation.waitForDeployment();
   });
