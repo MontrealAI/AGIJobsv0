@@ -81,7 +81,7 @@ contract FeePool is Ownable {
     }
 
     /// @notice distribute accumulated fees to stakers
-    function distributeFees() public {
+    function distributeFees() external {
         uint256 amount = pendingFees;
         require(amount > 0, "amount");
         pendingFees = 0;

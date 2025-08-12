@@ -215,7 +215,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         nonReentrant
     {
         require(user != address(0), "user");
-        require(uint256(role) <= uint256(Role.Platform), "role");
+        require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
 
         if (user != owner()) {
@@ -252,7 +252,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
         nonReentrant
     {
-        require(uint256(role) <= uint256(Role.Platform), "role");
+        require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
         uint256 newStake = stakes[msg.sender][role] + amount;
         require(newStake >= minStake, "min stake");
@@ -278,7 +278,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
         nonReentrant
     {
-        require(uint256(role) <= uint256(Role.Platform), "role");
+        require(role <= Role.Platform, "role");
         uint256 staked = stakes[msg.sender][role];
         require(staked >= amount, "stake");
         uint256 newStake = staked - amount;
@@ -394,7 +394,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         external
         onlyJobRegistry
     {
-        require(uint256(role) <= uint256(Role.Platform), "role");
+        require(role <= Role.Platform, "role");
         uint256 staked = stakes[user][role];
         require(staked >= amount, "stake");
 

@@ -20,6 +20,7 @@ contract PlatformIncentives is Ownable {
         address indexed platformRegistry,
         address indexed jobRouter
     );
+    event Activated(address indexed operator, uint256 amount);
 
     constructor(
         IStakeManager _stakeManager,
@@ -59,6 +60,7 @@ contract PlatformIncentives is Ownable {
         }
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
+        emit Activated(msg.sender, amount);
     }
 
     /// @notice Confirms this contract and its owner remain tax neutral.

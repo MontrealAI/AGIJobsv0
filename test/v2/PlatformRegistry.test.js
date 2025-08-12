@@ -46,12 +46,16 @@ describe("PlatformRegistry", function () {
     );
   });
 
-  it("registers staked operator and rejects unstaked", async () => {
+  it("registers operators regardless of stake", async () => {
     await expect(registry.connect(platform).register())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
     expect(await registry.registered(platform.address)).to.equal(true);
-    await expect(registry.connect(sybil).register()).to.be.revertedWith("stake");
+    await expect(registry.connect(sybil).register())
+      .to.emit(registry, "Registered")
+      .withArgs(sybil.address);
+    expect(await registry.registered(sybil.address)).to.equal(true);
+    expect(await registry.getScore(sybil.address)).to.equal(0);
   });
 
   it("computes score based on stake and reputation", async () => {
@@ -132,14 +136,6 @@ describe("PlatformRegistry", function () {
     await expect(
       incentives.connect(platform).stakeAndActivate(0)
     ).to.be.revertedWith("amount");
-  });
-
-  it("allows zero-stake registration when min stake is zero", async () => {
-    await registry.setMinPlatformStake(0);
-    await expect(registry.connect(sybil).register())
-      .to.emit(registry, "Registered")
-      .withArgs(sybil.address);
-    expect(await registry.getScore(sybil.address)).to.equal(0);
   });
 
   it("allows operator to deregister", async () => {
