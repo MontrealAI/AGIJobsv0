@@ -44,11 +44,13 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice Register caller as a platform operator.
-    /// @dev No minimum stake is required; routing weight derives from stake and
-    ///      reputation via `getScore`.
     function register() external nonReentrant {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
+        uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
+        if (msg.sender != owner()) {
+            require(stake >= minPlatformStake, "stake");
+        }
         registered[msg.sender] = true;
         emit Registered(msg.sender);
     }
@@ -110,6 +112,10 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         }
         require(!registered[operator], "registered");
         require(!blacklist[operator], "blacklisted");
+        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        if (operator != owner()) {
+            require(stake >= minPlatformStake, "stake");
+        }
         registered[operator] = true;
         emit Registered(operator);
     }
