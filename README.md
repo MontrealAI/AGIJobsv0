@@ -8,7 +8,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 
 ### Regulatory disclaimer
 
-On-chain fee sharing reduces but does not eliminate tax or reporting duties. Regulations continue to evolve, so participants must monitor policy changes, comply with local laws, and seek professional advice before using the contracts.
+Regulatory shifts may change compliance obligations even when rewards flow entirely on-chain. While the design minimises reporting by routing fees directly in $AGIALPHA, participants must still monitor policy updates, obey local laws, and obtain professional advice before interacting with the contracts.
 
 Key incentive features in the v2 suite:
 
@@ -36,6 +36,10 @@ Staking $AGIALPHA through `PlatformIncentives.stakeAndActivate` registers a plat
   3. `PlatformRegistry.getScore(owner)` returns `0` and `FeePool.claimRewards()` emits a zero payout.
 
 On-chain rewards do not remove your obligation to follow local tax laws; consult professionals.
+
+### Owner Controls
+
+The contract owner may retune any economic parameter without redeploying modules. `StakeManager.setToken`, `FeePool.setToken`, and related setters swap the payment token (default $AGIALPHA, 6 decimals), while `setMinStake`, `setFeePct`, `setBurnPct`, and module `setModules` calls update fees, stake thresholds, burn rates, and wiring. All changes are performed through block‑explorer "Write" tabs, keeping administration accessible to non‑technical owners.
 
 ### Universal Stake-Based Incentive Architecture
 

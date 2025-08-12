@@ -2,6 +2,8 @@
 
 This document details a stake-based framework that aligns every AGI Jobs v2 role within a single on-chain economy.  The design operates entirely in the six‑decimal **$AGIALPHA** token and allows the contract owner to reconfigure parameters without redeploying modules.
 
+> Regulatory shifts continue to evolve. On-chain fee routing minimises reporting, but operators and owners must still comply with local laws and monitor policy updates.
+
 ## Core Modules
 - **StakeManager** – tracks deposits for agents, validators and platform operators; owner may update token, minimums and slashing percentages.
 - **PlatformRegistry** – records platform operators and exposes routing scores derived from stake and reputation.
