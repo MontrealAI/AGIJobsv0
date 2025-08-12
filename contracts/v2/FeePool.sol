@@ -86,6 +86,7 @@ contract FeePool is Ownable {
 
     /// @notice distribute accumulated fees to stakers
     /// @dev All fee amounts use 6 decimal units.
+    /// @dev Should be called after `depositFee` to settle pending fees.
     function distributeFees() public {
         uint256 amount = pendingFees;
         require(amount > 0, "amount");
@@ -110,7 +111,8 @@ contract FeePool is Ownable {
     }
 
     /// @notice claim accumulated rewards for caller
-    /// @dev Rewards are denominated using 6 decimal units.
+    /// @dev Rewards are denominated using 6 decimal units. Triggers
+    ///      `distributeFees` if there are unaccounted fees.
     function claimRewards() external {
         if (pendingFees > 0) {
             distributeFees();
@@ -138,24 +140,28 @@ contract FeePool is Ownable {
     }
 
     /// @notice update ERC20 token used for payouts
+    /// @param newToken fee/reward token address which must use 6 decimals
     function setToken(IERC20 newToken) external onlyOwner {
         token = newToken;
         emit TokenUpdated(address(newToken));
     }
 
     /// @notice update StakeManager contract
+    /// @param manager contract orchestrating fee deposits and staking
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
     }
 
     /// @notice update reward role used for distribution
+    /// @param role staker role whose participants earn rewards
     function setRewardRole(IStakeManager.Role role) external onlyOwner {
         rewardRole = role;
         emit RewardRoleUpdated(role);
     }
 
     /// @notice update percentage of each fee to burn
+    /// @param pct percentage of fees burned (0-100)
     function setBurnPct(uint256 pct) external onlyOwner {
         require(pct <= 100, "pct");
         burnPct = pct;
@@ -163,6 +169,7 @@ contract FeePool is Ownable {
     }
 
     /// @notice update treasury address for rounding dust
+    /// @param _treasury address receiving dust after distribution
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);

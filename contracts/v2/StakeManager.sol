@@ -114,18 +114,22 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     /// @notice update the staking/payout token
+    /// @param newToken ERC20 token address using 6 decimals
     function setToken(IERC20 newToken) external onlyOwner {
         token = newToken;
         emit TokenUpdated(address(newToken));
     }
 
     /// @notice update the minimum stake required
+    /// @param _minStake minimum token amount with 6 decimals
     function setMinStake(uint256 _minStake) external onlyOwner {
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
     }
 
     /// @notice update slashing percentage splits
+    /// @param _employerSlashPct percentage sent to employer (0-100)
+    /// @param _treasurySlashPct percentage sent to treasury (0-100)
     function setSlashingPercentages(
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
@@ -137,30 +141,35 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice toggle enforcement that slashing percentages must sum to 100
+    /// @param enforced true to require employer+treasury percentages equal 100
     function setSlashPercentSumEnforcement(bool enforced) external onlyOwner {
         enforceSlashPercentSum100 = enforced;
         emit SlashPercentSumEnforcementUpdated(enforced);
     }
 
     /// @notice update treasury recipient address
+    /// @param _treasury address receiving treasury slash share
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
 
     /// @notice set the JobRegistry used for tax acknowledgement tracking
+    /// @param _jobRegistry registry contract enforcing tax acknowledgements
     function setJobRegistry(address _jobRegistry) external onlyOwner {
         jobRegistry = _jobRegistry;
         emit JobRegistryUpdated(_jobRegistry);
     }
 
     /// @notice set the dispute module authorized to manage dispute fees
+    /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external onlyOwner {
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
+    /// @param maxStake cap on combined stake per address using 6 decimals
     function setMaxStakePerAddress(uint256 maxStake) external onlyOwner {
         maxStakePerAddress = maxStake;
         emit MaxStakePerAddressUpdated(maxStake);
@@ -196,6 +205,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice lock a portion of a user's stake for a period of time
+    /// @param user address whose stake is being locked
+    /// @param amount token amount with 6 decimals
+    /// @param lockTime seconds until the stake unlocks
     function lockStake(address user, uint256 amount, uint64 lockTime)
         external
         onlyJobRegistry
@@ -213,7 +225,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeLocked(user, amount, unlockTime[user]);
     }
 
-    /// @notice deposit stake on behalf of a user for a specific role
+    /// @notice deposit stake on behalf of a user for a specific role; use
+    ///         `depositStake` when staking for the caller.
+    /// @dev Use `depositStake` when the caller is staking for themselves.
     /// @dev `user` must have approved the StakeManager to transfer tokens.
     ///      The caller may be any address (e.g. a helper contract) but the
     ///      user must have acknowledged the current tax policy.
@@ -256,7 +270,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeDeposited(user, role, amount);
     }
 
-    /// @notice deposit stake for caller for a specific role
+    /// @notice deposit stake for caller for a specific role after approving tokens
+    /// @param role participant role for the stake
+    /// @param amount token amount with 6 decimals; caller must approve first
     function depositStake(Role role, uint256 amount)
         external
         requiresTaxAcknowledgement
@@ -282,7 +298,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeDeposited(msg.sender, role, amount);
     }
 
-    /// @notice withdraw available stake for a specific role
+    /// @notice withdraw available stake for a specific role once unlocked via `lockStake`
+    /// @param role participant role of the stake being withdrawn
+    /// @param amount token amount with 6 decimals
     function withdrawStake(Role role, uint256 amount)
         external
         requiresTaxAcknowledgement
@@ -321,7 +339,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // job escrow logic
     // ---------------------------------------------------------------
 
-    /// @notice lock job funds from an employer
+    /// @notice lock job funds from an employer for later release via
+    ///         `releaseJobFunds` or `finalizeJobFunds`
+    /// @param jobId unique job identifier
+    /// @param from employer providing the escrow
+    /// @param amount token amount with 6 decimals; employer must approve first
     function lockJobFunds(bytes32 jobId, address from, uint256 amount)
         external
         onlyJobRegistry
@@ -332,6 +354,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice release locked job funds to recipient
+    /// @param jobId unique job identifier
+    /// @param to recipient of the release
+    /// @param amount token amount with 6 decimals
     function releaseJobFunds(bytes32 jobId, address to, uint256 amount)
         external
         onlyJobRegistry
@@ -346,8 +371,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice finalize a job by paying the agent and forwarding protocol fees
     /// @param jobId unique job identifier
     /// @param agent recipient of the job reward
-    /// @param reward amount paid to the agent
-    /// @param fee amount forwarded to the fee pool
+    /// @param reward amount paid to the agent with 6 decimals
+    /// @param fee amount forwarded to the fee pool with 6 decimals
     /// @param feePool fee pool contract receiving protocol fees
     function finalizeJobFunds(
         bytes32 jobId,
@@ -375,7 +400,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // dispute fee logic
     // ---------------------------------------------------------------
 
-    /// @notice lock the dispute fee from a payer
+    /// @notice lock the dispute fee from a payer for later payout via
+    ///         `payDisputeFee`
+    /// @param payer address providing the fee, must approve first
+    /// @param amount token amount with 6 decimals
     function lockDisputeFee(address payer, uint256 amount)
         external
         onlyDisputeModule
@@ -386,6 +414,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice pay a locked dispute fee to the recipient
+    /// @param to recipient of the fee payout
+    /// @param amount token amount with 6 decimals
     function payDisputeFee(address to, uint256 amount)
         external
         onlyDisputeModule
@@ -400,6 +430,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     /// @notice slash stake from a user for a specific role and distribute shares
+    /// @param user address whose stake will be reduced
+    /// @param role participant role of the slashed stake
+    /// @param amount token amount with 6 decimals to slash
+    /// @param employer recipient of the employer share
     function slash(address user, Role role, uint256 amount, address employer)
         external
         onlyJobRegistry
@@ -441,11 +475,14 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice Return the total stake deposited by a user for a role
+    /// @param user address whose stake balance is queried
+    /// @param role participant role to query
     function stakeOf(address user, Role role) external view returns (uint256) {
         return stakes[user][role];
     }
 
     /// @notice Return total stake for a role
+    /// @param role participant role to query
     function totalStake(Role role) external view returns (uint256) {
         return totalStakes[role];
     }
