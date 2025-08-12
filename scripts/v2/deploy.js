@@ -23,7 +23,12 @@ async function main() {
   );
   const stake = await Stake.deploy(
     await token.getAddress(),
-    deployer.address
+    0,
+    0,
+    0,
+    deployer.address,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
   );
   await stake.waitForDeployment();
 

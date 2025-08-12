@@ -22,7 +22,9 @@ describe("Full system integration", function () {
       0,
       100,
       0,
-      owner.address
+      owner.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
 
     const Validation = await ethers.getContractFactory(

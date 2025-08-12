@@ -31,8 +31,12 @@ contract DeployAll is Script {
 
         StakeManager stake = new StakeManager(
             IERC20(address(token)),
+            0,
+            0,
+            0,
             vm.addr(deployer),
-            vm.addr(deployer)
+            address(0),
+            address(0)
         );
 
         JobRegistry registry = new JobRegistry(vm.addr(deployer));
