@@ -14,17 +14,17 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 
 ## 2. Deploy core modules
 
-Deploy each contract from the **Write Contract** tabs (the deployer automatically becomes the owner):
+Deploy each contract from the **Write Contract** tabs (the deployer automatically becomes the owner). Parameters may be left as `0` to accept the defaults shown below:
 
 1. `AGIALPHAToken()` – mint the initial supply to the owner or treasury.
-2. `StakeManager(token, treasury)` – records stake balances and holds job escrows.
-3. `JobRegistry()` – tracks jobs and tax acknowledgements.
-4. `ValidationModule(jobRegistry, stakeManager)` – handles validation and slashing.
+2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury.
+3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee.
+4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
 5. `ReputationEngine()` – optional reputation weighting.
 6. `DisputeModule(jobRegistry, stakeManager)` – manages appeals and dispute fees.
 7. `CertificateNFT(name, symbol)` – certifies completed work.
-8. `FeePool(token, stakeManager, role)` – redistributes protocol fees to stakers.
-9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – lists platform operators.
+8. `FeePool(token, stakeManager, role, burnPct, treasury)` – use `address(0)` for `token` to fall back to $AGIALPHA; `burnPct` defaults to `0`.
+9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
 10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
 11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register in one call.
 

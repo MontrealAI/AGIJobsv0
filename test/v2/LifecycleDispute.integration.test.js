@@ -78,6 +78,7 @@ describe("Job lifecycle with disputes", function () {
       await nft.getAddress()
     );
     await registry.connect(owner).setJobParameters(reward, stake);
+    await registry.connect(owner).setFeePct(0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(1);

@@ -27,6 +27,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
         Platform
     }
 
+    /// @notice default $AGIALPHA token used when no token is specified
+    address public constant DEFAULT_TOKEN =
+        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
+
     /// @notice ERC20 token used for staking and payouts
     IERC20 public token;
 
@@ -101,11 +105,22 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 _treasurySlashPct,
         address _treasury
     ) Ownable(msg.sender) {
-        require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
-        token = _token;
+        token =
+            address(_token) == address(0)
+                ? IERC20(DEFAULT_TOKEN)
+                : _token;
         minStake = _minStake;
-        employerSlashPct = _employerSlashPct;
-        treasurySlashPct = _treasurySlashPct;
+        if (_employerSlashPct + _treasurySlashPct == 0) {
+            employerSlashPct = 0;
+            treasurySlashPct = 100;
+        } else {
+            require(
+                _employerSlashPct + _treasurySlashPct <= 100,
+                "pct"
+            );
+            employerSlashPct = _employerSlashPct;
+            treasurySlashPct = _treasurySlashPct;
+        }
         treasury = _treasury == address(0) ? msg.sender : _treasury;
     }
 

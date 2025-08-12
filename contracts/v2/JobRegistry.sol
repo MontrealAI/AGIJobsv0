@@ -89,6 +89,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     // default agent stake requirement configured by owner
     uint96 public jobStake;
     uint256 public feePct;
+    uint256 public constant DEFAULT_FEE_PCT = 5;
 
     // module configuration events
     event ModuleUpdated(string module, address newAddress);
@@ -153,10 +154,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         disputeModule = _dispute;
         certificateNFT = _certNFT;
         feePool = _feePool;
-        if (_feePct > 0) {
-            require(_feePct <= 100, "pct");
-            feePct = _feePct;
-        }
+        uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
+        require(pct <= 100, "pct");
+        feePct = pct;
         if (_jobStake > 0) {
             jobStake = _jobStake;
         }
