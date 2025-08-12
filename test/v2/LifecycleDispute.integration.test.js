@@ -20,9 +20,6 @@ describe("Job lifecycle with disputes", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       treasury.address
     );
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -51,9 +48,7 @@ describe("Job lifecycle with disputes", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
 
     const Dispute = await ethers.getContractFactory(

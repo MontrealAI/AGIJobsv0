@@ -148,9 +148,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IReputationEngine _reputation,
         IDisputeModule _dispute,
         ICertificateNFT _certNFT,
-        IFeePool _feePool,
-        uint256 _feePct,
-        uint96 _jobStake
+        IFeePool _feePool
     ) Ownable(msg.sender) {
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -158,12 +156,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         disputeModule = _dispute;
         certificateNFT = _certNFT;
         feePool = _feePool;
-        uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
-        require(pct <= 100, "pct");
-        feePct = pct;
-        if (_jobStake > 0) {
-            jobStake = _jobStake;
-        }
+        feePct = DEFAULT_FEE_PCT;
+        jobStake = 0;
     }
 
     // ---------------------------------------------------------------------

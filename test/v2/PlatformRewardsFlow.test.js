@@ -29,9 +29,6 @@ describe("Platform reward flow", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       treasury.address
     );
     await stakeManager.connect(owner).setMinStake(0);
@@ -45,9 +42,7 @@ describe("Platform reward flow", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
 
     const TaxPolicy = await ethers.getContractFactory(
@@ -89,9 +84,9 @@ describe("Platform reward flow", function () {
       await token.getAddress(),
       await stakeManager.getAddress(),
       2,
-      0,
       treasury.address
     );
+    await feePool.connect(owner).setBurnPct(0);
   });
 
   it("handles zero-stake owner, proportional fees, and token swap", async () => {
