@@ -3,6 +3,10 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+### Regulatory disclaimer
+
+On-chain fee sharing reduces but does not eliminate tax or reporting duties. Participants remain responsible for complying with local laws and should seek professional advice before using the contracts.
+
 Key incentive features in the v2 suite:
 
 - **On‑chain revenue sharing** – `FeePool` redistributes protocol fees to staked platform operators, requiring no off‑chain reporting.
@@ -77,6 +81,7 @@ All value transfers occur on-chain while `Ownable` setters let the owner retune 
 - [Coding Sprint for v2](docs/coding-sprint-v2.md) – step-by-step plan for implementing the modular suite.
 - [Incentive Mechanisms for $AGIALPHA](docs/incentive-mechanisms-agialpha.md) – revenue sharing, routing priority, governance rewards, and sybil mitigation.
 - [Coding Sprint: $AGIALPHA Incentive Modules](docs/coding-sprint-agialpha-incentives.md) – tasks for integrating fee pools and discovery incentives.
+- [Coding Sprint: Platform Incentives](docs/coding-sprint-platform-incentives.md) – consolidates operator staking, routing and fee share.
 - [Production-Scale AGIJobs Platform Sprint Plan](docs/ProductionScaleAGIJobsPlatformSprintPlanv0.md) – background research and
   architectural rationale behind the modular design.
 - [Deployment Guide for $AGIALPHA](docs/deployment-agialpha.md) – non-technical walkthrough for deploying and configuring the suite with the 6‑decimal token.
