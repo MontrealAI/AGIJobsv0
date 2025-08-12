@@ -170,7 +170,7 @@ For screenshots and step-by-step instructions, see [docs/etherscan-guide.md](doc
 The modular v2 suite is deployed module by module and then wired together on‑chain. A typical flow is:
 
 1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule(commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, and `TaxPolicy`.
-2. Connect them with owner‑only setters such as `JobRegistry.setModules`, `StakeManager.setJobRegistry`, `JobRegistry.setFeePool`, and `JobRegistry.setTaxPolicy`.
+2. Connect them with owner‑only setters such as `JobRegistry.setModules`, `StakeManager.setModules(jobRegistry, disputeModule)`, `JobRegistry.setFeePool`, and `JobRegistry.setTaxPolicy`.
 3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
 5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
@@ -328,7 +328,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 **Etherscan deployment steps**
 
 1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, treasury)`, `JobRegistry()`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine()`, `DisputeModule(jobRegistry, stakeManager, reputationEngine)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Commit and reveal windows default to 24 hours each if no different values are desired.
-2. **Wire them together** – In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`, then `setFeePool(feePool)` and `setFeePct(pct)`. Point the `StakeManager` back to the registry with `setJobRegistry(jobRegistry)`.
+2. **Wire them together** – In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`, then `setFeePool(feePool)` and `setFeePct(pct)`. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
    - Agents stake with `depositStake(role, amount)` or one‑shot with `stakeAndApply(jobId, amount)` after approving the stake.
@@ -1845,7 +1845,7 @@ For a production deployment using $AGIALPHA (6 decimals):
 
 1. Deploy `StakeManager` with the token address and owner address.
 2. Deploy `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, and `TaxPolicy`.
-3. Call `StakeManager.setJobRegistry` and `JobRegistry.setModules` to link them.
+3. Call `StakeManager.setModules(jobRegistry, disputeModule)` and `JobRegistry.setModules` to link them.
 4. Configure stakes, timing windows, and fees in base units of 1e6 via the owner‑only setter functions.
 5. Verify each module on Etherscan and record the addresses.
 
