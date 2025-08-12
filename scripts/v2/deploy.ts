@@ -61,7 +61,15 @@ async function main() {
   );
   const treasury =
     typeof args.treasury === "string" ? args.treasury : owner;
-  const stake = await Stake.deploy(tokenAddress, treasury);
+  const stake = await Stake.deploy(
+    tokenAddress,
+    0,
+    0,
+    0,
+    treasury,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
   await stake.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(

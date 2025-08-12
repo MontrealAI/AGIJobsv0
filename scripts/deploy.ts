@@ -13,8 +13,12 @@ async function main() {
   );
   const stake = await Stake.deploy(
     await token.getAddress(),
+    0,
+    0,
+    0,
     deployer.address,
-    deployer.address
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
   );
 
   const Registry = await ethers.getContractFactory(

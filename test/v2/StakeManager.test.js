@@ -19,7 +19,9 @@ describe("StakeManager", function () {
       0,
       50,
       50,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(owner).setMinStake(0);
   });

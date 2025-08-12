@@ -32,7 +32,9 @@ describe("Platform reward flow", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(owner).setMinStake(0);
 
