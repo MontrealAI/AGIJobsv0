@@ -16,7 +16,6 @@ describe("StakeManager", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address,
       treasury.address
     );
     await stakeManager.connect(owner).setMinStake(0);
@@ -28,12 +27,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
       "ipfs://policy",
       "ack"
     );
@@ -94,15 +92,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -135,15 +129,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -175,15 +165,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -217,15 +203,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -279,15 +261,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -456,15 +434,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -510,15 +484,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -555,15 +525,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -581,15 +547,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -618,15 +580,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());
@@ -650,15 +608,11 @@ describe("StakeManager", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry
       .connect(owner)
       .setTaxPolicy(await taxPolicy.getAddress());

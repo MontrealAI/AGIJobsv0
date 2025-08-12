@@ -23,7 +23,6 @@ async function main() {
   );
   const stake = await Stake.deploy(
     await token.getAddress(),
-    deployer.address,
     deployer.address
   );
   await stake.waitForDeployment();
@@ -31,14 +30,13 @@ async function main() {
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy(deployer.address);
+  const registry = await Registry.deploy();
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(
     "contracts/v2/TaxPolicy.sol:TaxPolicy"
   );
   const tax = await TaxPolicy.deploy(
-    deployer.address,
     "ipfs://policy",
     "All taxes on participants; contract and owner exempt"
   );
@@ -50,29 +48,27 @@ async function main() {
   );
   const validation = await Validation.deploy(
     await registry.getAddress(),
-    await stake.getAddress(),
-    deployer.address
+    await stake.getAddress()
   );
   await validation.waitForDeployment();
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
   );
-  const reputation = await Reputation.deploy(deployer.address);
+  const reputation = await Reputation.deploy();
   await reputation.waitForDeployment();
 
   const NFT = await ethers.getContractFactory(
     "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
   );
-  const nft = await NFT.deploy("Cert", "CERT", deployer.address);
+  const nft = await NFT.deploy("Cert", "CERT");
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/DisputeModule.sol:DisputeModule"
   );
   const dispute = await Dispute.deploy(
-    await registry.getAddress(),
-    deployer.address
+    await registry.getAddress()
   );
   await dispute.waitForDeployment();
 
@@ -94,13 +90,13 @@ async function main() {
   console.log("CertificateNFT:", await nft.getAddress());
   console.log("TaxPolicy:", await tax.getAddress());
 
-  await verify(await stake.getAddress(), [await token.getAddress(), deployer.address, deployer.address]);
-  await verify(await registry.getAddress(), [deployer.address]);
-  await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress(), deployer.address]);
-  await verify(await reputation.getAddress(), [deployer.address]);
-  await verify(await dispute.getAddress(), [await registry.getAddress(), deployer.address]);
-  await verify(await nft.getAddress(), ["Cert", "CERT", deployer.address]);
-  await verify(await tax.getAddress(), [deployer.address, "ipfs://policy", "All taxes on participants; contract and owner exempt"]);
+  await verify(await stake.getAddress(), [await token.getAddress(), deployer.address]);
+  await verify(await registry.getAddress(), []);
+  await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress()]);
+  await verify(await reputation.getAddress(), []);
+  await verify(await dispute.getAddress(), [await registry.getAddress()]);
+  await verify(await nft.getAddress(), ["Cert", "CERT"]);
+  await verify(await tax.getAddress(), ["ipfs://policy", "All taxes on participants; contract and owner exempt"]);
 }
 
 main().catch((error) => {

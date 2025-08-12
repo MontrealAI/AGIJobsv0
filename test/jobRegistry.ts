@@ -13,12 +13,12 @@ describe("JobRegistry tax policy gating", function () {
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy(owner.address);
+    registry = await Registry.deploy();
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    policy = await Policy.deploy(owner.address, "ipfs://policy", "ack");
+    policy = await Policy.deploy("ipfs://policy", "ack");
 
     await registry.connect(owner).setJobParameters(0, 0);
   });

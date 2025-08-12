@@ -18,7 +18,7 @@ contract RevenueDistributor is Ownable {
     event TreasuryUpdated(address indexed treasury);
     event RevenueDistributed(address indexed from, uint256 amount);
 
-    constructor(IStakeManager _stakeManager, address owner) Ownable(owner) {
+    constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
         stakeManager = _stakeManager;
     }
 

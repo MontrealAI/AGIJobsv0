@@ -8,24 +8,25 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 - The verified `$AGIALPHA` token contract address.
 - The compiled bytecode for each module (already provided in this repository).
 - Awareness that all contracts are **Ownable**; keep the deploying wallet secure.
+- The deploying address automatically becomes the owner; constructors no longer take an `owner` parameter.
 
 > **Regulatory notice:** On‑chain rewards minimise reporting requirements but do **not** remove your duty to obey local laws. Consult professionals before proceeding.
 
 ## 2. Deploy core modules
 
-Deploy each contract from the **Write Contract** tabs:
+Deploy each contract from the **Write Contract** tabs (the deployer automatically becomes the owner):
 
-1. `AGIALPHAToken(owner)` – mint the initial supply to the owner or treasury.
-2. `StakeManager(token, owner, treasury)` – records stake balances and holds job escrows.
-3. `JobRegistry(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, owner)` – tracks jobs and tax acknowledgements.
-4. `ValidationModule(jobRegistry, stakeManager, owner)` – handles validation and slashing.
-5. `ReputationEngine(owner)` – optional reputation weighting.
-6. `DisputeModule(jobRegistry, stakeManager, owner)` – manages appeals and dispute fees.
-7. `CertificateNFT(jobRegistry)` – certifies completed work.
-8. `FeePool(token, stakeManager, role, owner)` – redistributes protocol fees to stakers.
-9. `PlatformRegistry(stakeManager, reputationEngine, minStake, owner)` – lists platform operators.
-10. `JobRouter(platformRegistry, owner)` – stake‑weighted job routing.
-11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter, owner)` – helper that lets operators stake and register in one call.
+1. `AGIALPHAToken()` – mint the initial supply to the owner or treasury.
+2. `StakeManager(token, treasury)` – records stake balances and holds job escrows.
+3. `JobRegistry()` – tracks jobs and tax acknowledgements.
+4. `ValidationModule(jobRegistry, stakeManager)` – handles validation and slashing.
+5. `ReputationEngine()` – optional reputation weighting.
+6. `DisputeModule(jobRegistry, stakeManager)` – manages appeals and dispute fees.
+7. `CertificateNFT(name, symbol)` – certifies completed work.
+8. `FeePool(token, stakeManager, role)` – redistributes protocol fees to stakers.
+9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – lists platform operators.
+10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
+11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register in one call.
 
 After each deployment, copy the address for later wiring.
 

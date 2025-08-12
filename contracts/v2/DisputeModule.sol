@@ -53,10 +53,10 @@ contract DisputeModule is IDisputeModule, Ownable {
     /// @dev Amount of bond posted for each job appeal.
     mapping(uint256 => uint256) public bonds;
 
-    constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
+    constructor(IJobRegistry _jobRegistry) Ownable(msg.sender) {
         jobRegistry = _jobRegistry;
-        moderator = owner;
-        jury = owner;
+        moderator = msg.sender;
+        jury = msg.sender;
     }
 
     /// @notice Ensure participant has acknowledged current tax policy.

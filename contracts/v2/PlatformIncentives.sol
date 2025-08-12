@@ -25,9 +25,8 @@ contract PlatformIncentives is Ownable {
     constructor(
         IStakeManager _stakeManager,
         IPlatformRegistryFull _platformRegistry,
-        IJobRouter _jobRouter,
-        address owner
-    ) Ownable(owner) {
+        IJobRouter _jobRouter
+    ) Ownable(msg.sender) {
         stakeManager = _stakeManager;
         platformRegistry = _platformRegistry;
         jobRouter = _jobRouter;

@@ -136,7 +136,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     // ---------------------------------------------------------------------
     // Owner configuration

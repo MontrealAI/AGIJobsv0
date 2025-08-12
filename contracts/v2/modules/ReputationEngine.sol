@@ -28,7 +28,7 @@ contract ReputationEngine is Ownable {
     event CallerAuthorized(address indexed caller, bool allowed);
     event WeightsUpdated(uint256 performanceWeight, uint256 slashingWeight);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     modifier onlyCaller() {
         require(callers[msg.sender], "not authorized");

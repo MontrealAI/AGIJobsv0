@@ -19,7 +19,7 @@ describe("Platform reward flow", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    token = await Token.deploy(owner.address);
+    token = await Token.deploy();
     await token.mint(alice.address, 1000n * TOKEN);
     await token.mint(bob.address, 1000n * TOKEN);
     await token.mint(employer.address, 1000n * TOKEN);
@@ -29,7 +29,6 @@ describe("Platform reward flow", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address,
       treasury.address
     );
     await stakeManager.connect(owner).setMinStake(0);
@@ -37,13 +36,12 @@ describe("Platform reward flow", function () {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    jobRegistry = await JobRegistry.deploy(owner.address);
+    jobRegistry = await JobRegistry.deploy();
 
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
       "ipfs://policy",
       "ack"
     );
@@ -54,7 +52,7 @@ describe("Platform reward flow", function () {
     const Reputation = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const reputation = await Reputation.deploy(owner.address);
+    const reputation = await Reputation.deploy();
 
     const PlatformRegistry = await ethers.getContractFactory(
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
@@ -62,16 +60,14 @@ describe("Platform reward flow", function () {
     platformRegistry = await PlatformRegistry.deploy(
       await stakeManager.getAddress(),
       await reputation.getAddress(),
-      0,
-      owner.address
+      0
     );
 
     const JobRouter = await ethers.getContractFactory(
       "contracts/v2/modules/JobRouter.sol:JobRouter"
     );
     jobRouter = await JobRouter.deploy(
-      await platformRegistry.getAddress(),
-      owner.address
+      await platformRegistry.getAddress()
     );
 
     const FeePool = await ethers.getContractFactory(
@@ -80,8 +76,7 @@ describe("Platform reward flow", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
   });
 
@@ -147,7 +142,7 @@ describe("Platform reward flow", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    token2 = await Token.deploy(owner.address);
+    token2 = await Token.deploy();
     await token2.mint(employer.address, 1000n * TOKEN);
 
     await stakeManager.connect(owner).setToken(await token2.getAddress());

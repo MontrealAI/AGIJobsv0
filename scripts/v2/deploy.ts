@@ -61,20 +61,19 @@ async function main() {
   );
   const treasury =
     typeof args.treasury === "string" ? args.treasury : owner;
-  const stake = await Stake.deploy(tokenAddress, owner, treasury);
+  const stake = await Stake.deploy(tokenAddress, treasury);
   await stake.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy(owner);
+  const registry = await Registry.deploy();
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(
     "contracts/v2/TaxPolicy.sol:TaxPolicy"
   );
   const tax = await TaxPolicy.deploy(
-    owner,
     "ipfs://policy",
     "All taxes on participants; contract and owner exempt"
   );
@@ -86,29 +85,27 @@ async function main() {
   );
   const validation = await Validation.deploy(
     await registry.getAddress(),
-    await stake.getAddress(),
-    owner
+    await stake.getAddress()
   );
   await validation.waitForDeployment();
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
   );
-  const reputation = await Reputation.deploy(owner);
+  const reputation = await Reputation.deploy();
   await reputation.waitForDeployment();
 
   const NFT = await ethers.getContractFactory(
     "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
   );
-  const nft = await NFT.deploy("Cert", "CERT", owner);
+  const nft = await NFT.deploy("Cert", "CERT");
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/DisputeModule.sol:DisputeModule"
   );
   const dispute = await Dispute.deploy(
-    await registry.getAddress(),
-    owner
+    await registry.getAddress()
   );
   await dispute.waitForDeployment();
 
@@ -118,8 +115,7 @@ async function main() {
   const feePool = await FeePool.deploy(
     tokenAddress,
     await stake.getAddress(),
-    2, // IStakeManager.Role.Platform
-    owner
+    2 // IStakeManager.Role.Platform
   );
   await feePool.waitForDeployment();
 
@@ -133,8 +129,7 @@ async function main() {
   const platformRegistry = await PlatformRegistry.deploy(
     await stake.getAddress(),
     await reputation.getAddress(),
-    minPlatformStake,
-    owner
+    minPlatformStake
   );
   await platformRegistry.waitForDeployment();
 
@@ -142,8 +137,7 @@ async function main() {
     "contracts/v2/modules/JobRouter.sol:JobRouter"
   );
   const jobRouter = await JobRouter.deploy(
-    await platformRegistry.getAddress(),
-    owner
+    await platformRegistry.getAddress()
   );
   await jobRouter.waitForDeployment();
 
@@ -153,8 +147,7 @@ async function main() {
   const incentives = await PlatformIncentives.deploy(
     await stake.getAddress(),
     await platformRegistry.getAddress(),
-    await jobRouter.getAddress(),
-    owner
+    await jobRouter.getAddress()
   );
   await incentives.waitForDeployment();
 

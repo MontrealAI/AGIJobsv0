@@ -10,7 +10,7 @@ describe("JobEscrow ether rejection", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    token = await Token.deploy(owner.address);
+    token = await Token.deploy();
     await token.connect(owner).mint(employer.address, 1000);
 
     const Routing = await ethers.getContractFactory(

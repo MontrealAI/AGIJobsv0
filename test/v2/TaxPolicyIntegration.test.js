@@ -9,11 +9,11 @@ describe("JobRegistry tax policy integration", function () {
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy(owner.address);
+    registry = await Registry.deploy();
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    policy = await Policy.deploy(owner.address, "ipfs://policy", "ack");
+    policy = await Policy.deploy("ipfs://policy", "ack");
   });
 
   it("allows owner to set policy and expose acknowledgement", async () => {

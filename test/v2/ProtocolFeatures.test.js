@@ -90,8 +90,7 @@ describe("Protocol core features", function () {
       "contracts/v2/modules/RevenueDistributor.sol:RevenueDistributor"
     );
     const distributor = await Distributor.deploy(
-      stakeManager.target,
-      owner.address
+      stakeManager.target
     );
     await stakeManager.setStake(operator1.address, 2, 100);
     await stakeManager.setStake(operator2.address, 2, 300);
@@ -123,7 +122,7 @@ describe("Protocol core features", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    const dispute = await Dispute.deploy(registry.target, owner.address);
+    const dispute = await Dispute.deploy(registry.target);
     await dispute.connect(owner).setAppealFee(5);
     await dispute.connect(owner).setDisputeWindow(0);
     const jobId = 1;

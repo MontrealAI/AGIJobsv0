@@ -24,9 +24,8 @@ contract DiscoveryModule is Ownable {
 
     constructor(
         IStakeManager _stakeManager,
-        IReputationEngine _reputationEngine,
-        address owner
-    ) Ownable(owner) {
+        IReputationEngine _reputationEngine
+    ) Ownable(msg.sender) {
         stakeManager = _stakeManager;
         reputationEngine = _reputationEngine;
     }

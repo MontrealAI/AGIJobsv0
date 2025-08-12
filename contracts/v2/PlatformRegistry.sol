@@ -36,9 +36,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     constructor(
         IStakeManager _stakeManager,
         IReputationEngine _reputationEngine,
-        uint256 _minStake,
-        address owner
-    ) Ownable(owner) {
+        uint256 _minStake
+    ) Ownable(msg.sender) {
         stakeManager = _stakeManager;
         reputationEngine = _reputationEngine;
         minPlatformStake = _minStake;

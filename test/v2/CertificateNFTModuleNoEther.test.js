@@ -9,7 +9,7 @@ describe("CertificateNFT module ether rejection", function () {
     const NFT = await ethers.getContractFactory(
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );
-    nft = await NFT.deploy("Cert", "CERT", owner.address);
+    nft = await NFT.deploy("Cert", "CERT");
     await nft.waitForDeployment();
   });
 

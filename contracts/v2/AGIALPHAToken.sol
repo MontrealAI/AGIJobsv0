@@ -13,7 +13,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract AGIALPHAToken is ERC20, Ownable {
     uint8 private constant DECIMALS = 6;
 
-    constructor(address owner) ERC20("AGI ALPHA", "AGIALPHA") Ownable(owner) {}
+    constructor() ERC20("AGI ALPHA", "AGIALPHA") Ownable(msg.sender) {}
 
     /// @notice Returns token decimals (6).
     function decimals() public pure override returns (uint8) {

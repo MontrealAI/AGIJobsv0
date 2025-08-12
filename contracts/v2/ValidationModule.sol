@@ -73,9 +73,8 @@ contract ValidationModule is IValidationModule, Ownable {
 
     constructor(
         IJobRegistry _jobRegistry,
-        IStakeManager _stakeManager,
-        address owner
-    ) Ownable(owner) {
+        IStakeManager _stakeManager
+    ) Ownable(msg.sender) {
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
     }
