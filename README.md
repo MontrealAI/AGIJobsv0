@@ -18,6 +18,16 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 3. Fees, staking rewards, and dispute deposits all move in `$AGIALPHA` by default. The contract owner can swap the payment token later via `StakeManager.setToken` and related setters without redeploying other modules.
 4. Before staking or claiming rewards, call `JobRegistry.acknowledgeTaxPolicy` and confirm `isTaxExempt()` on each module.
 
+#### Beginner-friendly Etherscan flow
+
+1. **Open a contract** – navigate to its address on Etherscan and select the **Contract → Write** tab.
+2. **Connect wallet** – click *Connect to Web3* so transactions come from your address.
+3. **Approve spending** – on the `$AGIALPHA` token page call `approve(StakeManager, amount)` using 6‑decimal units.
+4. **Stake** – on `StakeManager` call `depositStake(role, amount)`.
+5. **Activate a platform** – if you are an operator, call `PlatformIncentives.stakeAndActivate(amount)` (use `0` for the owner’s zero‑stake case).
+6. **Verify registration** – check `PlatformRegistry.getScore(address)` and `JobRouter.registered(address)` in the **Read** tabs.
+7. **Claim fees later** – when `FeePool.distributeFees()` has been called, withdraw rewards via `FeePool.claimRewards()`.
+
 This summary is for convenience only. Screenshots and extended explanations are provided in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 
 ### Regulatory disclaimer
