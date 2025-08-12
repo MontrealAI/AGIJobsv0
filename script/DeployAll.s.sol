@@ -47,7 +47,11 @@ contract DeployAll is Script {
         ValidationModule validation = new ValidationModule(
             registry,
             stake,
-            vm.addr(deployer)
+            1 days,
+            1 days,
+            1,
+            3,
+            new address[](0)
         );
 
         ReputationEngine reputation = new ReputationEngine(vm.addr(deployer));

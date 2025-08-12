@@ -163,9 +163,9 @@ For screenshots and step-by-step instructions, see [docs/etherscan-guide.md](doc
 
 The modular v2 suite is deployed module by module and then wired together on‑chain. A typical flow is:
 
-1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, and `TaxPolicy`.
+1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule(commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, and `TaxPolicy`.
 2. Connect them with owner‑only setters such as `JobRegistry.setModules`, `StakeManager.setJobRegistry`, `JobRegistry.setFeePool`, and `JobRegistry.setTaxPolicy`.
-3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setParameters`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
+3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
 5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
 
@@ -321,7 +321,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 **Etherscan deployment steps**
 
-1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, treasury)`, `JobRegistry()`, `ValidationModule(jobRegistry, stakeManager)`, `ReputationEngine()`, `DisputeModule(jobRegistry, stakeManager, reputationEngine)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module.
+1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, treasury)`, `JobRegistry()`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine()`, `DisputeModule(jobRegistry, stakeManager, reputationEngine)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Commit and reveal windows default to 24 hours each if no different values are desired.
 2. **Wire them together** – In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`, then `setFeePool(feePool)` and `setFeePct(pct)`. Point the `StakeManager` back to the registry with `setJobRegistry(jobRegistry)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
@@ -1231,7 +1231,7 @@ $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments,
         3. Calling `FeePool.claimRewards()` emits `RewardsClaimed(owner, 0)`, confirming no payout.
 3. **Wire modules together**
    - In `JobRegistry`, call `setModules` with addresses of `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`, and `CertificateNFT`.
-   - In `ValidationModule`, set validator windows, pool, and connect the `ReputationEngine`.
+   - In `ValidationModule`, commit and reveal windows default to 24 hours; adjust them only if needed, then set validator bounds and pool, and connect the `ReputationEngine`.
    - Once operators have staked tokens (role `2 = Platform`), have them call `register()` on `PlatformRegistry` to gain routing priority and fee shares.
 4. **Token flexibility**
    - If a new payout token is needed, the owner may call `setToken` on `StakeManager`, `FeePool`, and any other module holding tokens. No redeployment is required.

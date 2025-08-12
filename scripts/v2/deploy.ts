@@ -85,7 +85,12 @@ async function main() {
   );
   const validation = await Validation.deploy(
     await registry.getAddress(),
-    await stake.getAddress()
+    await stake.getAddress(),
+    60,
+    60,
+    1,
+    3,
+    []
   );
   await validation.waitForDeployment();
 
