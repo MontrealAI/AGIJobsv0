@@ -55,7 +55,7 @@ describe("JobRegistry tax policy gating", function () {
 
     await expect(
       registry.connect(employer).createJob(1, "uri")
-    ).to.emit(registry, "JobCreated").withArgs(1, employer.address, ethers.ZeroAddress, 1, 0);
+    ).to.emit(registry, "JobCreated").withArgs(1, employer.address, ethers.ZeroAddress, 1, 0, 0);
 
     await expect(
       registry.connect(agent).applyForJob(1)

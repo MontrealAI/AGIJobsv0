@@ -415,7 +415,14 @@ Below are abbreviated interface snippets; see [docs/modular-architecture-v2.md](
 
 ```solidity
 interface IJobRegistry {
-    event JobCreated(uint256 indexed jobId, address employer, uint256 reward);
+    event JobCreated(
+        uint256 indexed jobId,
+        address indexed employer,
+        address indexed agent,
+        uint256 reward,
+        uint256 stake,
+        uint256 fee
+    );
     function createJob(string calldata details, uint256 reward) external;
     function setModules(address validation, address stake, address reputation, address dispute, address certificate) external;
 }

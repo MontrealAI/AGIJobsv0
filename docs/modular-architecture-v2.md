@@ -37,7 +37,14 @@ All modules are deployed as **immutable** contracts. Governance upgrades occur b
 Example Solidity interfaces (Solidity ^0.8.20):
 ```solidity
 interface IJobRegistry {
-    event JobCreated(uint256 indexed jobId, address employer, uint256 reward);
+    event JobCreated(
+        uint256 indexed jobId,
+        address indexed employer,
+        address indexed agent,
+        uint256 reward,
+        uint256 stake,
+        uint256 fee
+    );
     function createJob(string calldata details, uint256 reward) external;
     function setModules(
         address validation,

@@ -53,7 +53,8 @@ interface IJobRegistry {
         address indexed employer,
         address indexed agent,
         uint256 reward,
-        uint256 stake
+        uint256 stake,
+        uint256 fee
     );
     event AgentApplied(uint256 indexed jobId, address indexed agent);
     event JobCompleted(uint256 indexed jobId, bool success);
