@@ -260,6 +260,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         (ack, uri) = taxPolicy.policyDetails();
     }
 
+    /// @notice Internal helper to acknowledge the current tax policy for a user.
+    function _acknowledge(address user) internal returns (string memory ack) {
+        require(address(taxPolicy) != address(0), "policy");
+        ack = taxPolicy.acknowledge(user);
+        taxAcknowledgedVersion[user] = taxPolicyVersion;
+        emit TaxAcknowledged(user, taxPolicyVersion, ack);
+    }
+
     /// @notice Acknowledge the current tax policy.
     /// @dev Retrieves the acknowledgement text from the `TaxPolicy` contract
     /// and emits it for off-chain visibility so participants have an on-chain
@@ -267,10 +275,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @return ack Human‑readable disclaimer confirming the caller bears all
     /// tax responsibility.
     function acknowledgeTaxPolicy() external returns (string memory ack) {
-        require(address(taxPolicy) != address(0), "policy");
-        ack = taxPolicy.acknowledge(msg.sender);
-        taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
-        emit TaxAcknowledged(msg.sender, taxPolicyVersion, ack);
+        ack = _acknowledge(msg.sender);
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
@@ -282,8 +287,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------------
     // Job lifecycle
     // ---------------------------------------------------------------------
-    function createJob(uint256 reward, string calldata uri)
-        external
+    function _createJob(uint256 reward, string calldata uri)
+        internal
         requiresTaxAcknowledgement
         nonReentrant
         returns (uint256 jobId)
@@ -310,10 +315,22 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit JobCreated(jobId, msg.sender, address(0), reward, uint256(jobStake));
     }
 
-    function applyForJob(uint256 jobId)
+    function createJob(uint256 reward, string calldata uri)
         external
-        requiresTaxAcknowledgement
+        returns (uint256 jobId)
     {
+        jobId = _createJob(reward, uri);
+    }
+
+    function acknowledgeAndCreateJob(uint256 reward, string calldata uri)
+        external
+        returns (uint256 jobId)
+    {
+        _acknowledge(msg.sender);
+        jobId = _createJob(reward, uri);
+    }
+
+    function _applyForJob(uint256 jobId) internal requiresTaxAcknowledgement {
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
@@ -326,6 +343,22 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         job.agent = msg.sender;
         job.state = State.Applied;
         emit AgentApplied(jobId, msg.sender);
+    }
+
+    function applyForJob(uint256 jobId) external {
+        _applyForJob(jobId);
+    }
+
+    function stakeAndApply(uint256 jobId, uint256 amount) external {
+        if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
+            _acknowledge(msg.sender);
+        }
+        stakeManager.depositStakeFor(
+            msg.sender,
+            IStakeManager.Role.Agent,
+            amount
+        );
+        _applyForJob(jobId);
     }
 
     /// @notice Agent completes the job; validation outcome stored.

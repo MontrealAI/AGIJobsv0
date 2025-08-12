@@ -19,6 +19,12 @@ For a detailed description of the platform-wide incentive architecture, see [doc
    - Approve `$AGIALPHA` for the `StakeManager`.
    - Call `StakeManager.depositStake(role, amount)` using 6‑decimal units (`1` token = `1_000000`).
    - Platform operators may call `PlatformIncentives.stakeAndActivate(amount)` to stake and register in one step.
+   - Employers can accept the tax policy and post work in one transaction via
+     `JobRegistry.acknowledgeAndCreateJob(reward, uri)` after approving the
+     `StakeManager` for `reward + fee`.
+   - Agents can deposit stake and apply in one call with
+     `JobRegistry.stakeAndApply(jobId, amount)` after approving the
+     `StakeManager` for the stake amount.
 3. Fees, staking rewards, and dispute deposits all move in `$AGIALPHA` by default. The contract owner can swap the payment token later via `StakeManager.setToken` and related setters without redeploying other modules.
 4. Before staking or claiming rewards, call `JobRegistry.acknowledgeTaxPolicy` and confirm `isTaxExempt()` on each module.
 
@@ -317,7 +323,10 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, treasury)`, `JobRegistry()`, `ValidationModule(jobRegistry, stakeManager)`, `ReputationEngine()`, `DisputeModule(jobRegistry, stakeManager, reputationEngine)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module.
 2. **Wire them together** – In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`, then `setFeePool(feePool)` and `setFeePct(pct)`. Point the `StakeManager` back to the registry with `setJobRegistry(jobRegistry)`.
-3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend $AGIALPHA and then call `createJob` or `depositStake`. Platform operators stake under `Role.Platform` via `depositStake(2, amount)` and register through `JobRouter.registerPlatform(operator)`.
+3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
+   - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
+   - Agents stake with `depositStake(role, amount)` or one‑shot with `stakeAndApply(jobId, amount)` after approving the stake.
+   - Platform operators stake under `Role.Platform` via `depositStake(2, amount)` and register through `JobRouter.registerPlatform(operator)`.
 4. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, feePool, stakeManager, role)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
 5. **Adjust over time** – The owner can update burn rates, stake thresholds or even swap the token using `setToken` on `StakeManager`, `FeePool` and reward modules. All interactions use simple primitive types suitable for the **Write Contract** tab.
 
