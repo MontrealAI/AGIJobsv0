@@ -73,10 +73,20 @@ contract ValidationModule is IValidationModule, Ownable {
 
     constructor(
         IJobRegistry _jobRegistry,
-        IStakeManager _stakeManager
+        IStakeManager _stakeManager,
+        uint256 _commitWindow,
+        uint256 _revealWindow,
+        uint256 _minValidators,
+        uint256 _maxValidators
     ) Ownable(msg.sender) {
+        require(_commitWindow > 0 && _revealWindow > 0, "windows");
+        require(_minValidators > 0 && _maxValidators >= _minValidators, "bounds");
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
+        commitWindow = _commitWindow;
+        revealWindow = _revealWindow;
+        minValidators = _minValidators;
+        maxValidators = _maxValidators;
     }
 
     /// @notice Update the list of eligible validators.

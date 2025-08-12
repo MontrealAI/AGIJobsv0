@@ -19,6 +19,9 @@ describe("Full system integration", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       owner.address
     );
 
@@ -40,12 +43,26 @@ describe("Full system integration", function () {
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy();
+    registry = await Registry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
 
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress());
+    dispute = await Dispute.deploy(
+      await registry.getAddress(),
+      appealFee,
+      owner.address,
+      owner.address
+    );
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -62,7 +79,6 @@ describe("Full system integration", function () {
         await nft.getAddress()
       );
     await registry.connect(owner).setJobParameters(reward, stake);
-    await dispute.connect(owner).setAppealFee(appealFee);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(1);

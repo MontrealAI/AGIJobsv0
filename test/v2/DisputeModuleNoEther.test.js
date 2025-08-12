@@ -12,7 +12,12 @@ describe("DisputeModule ether rejection", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress());
+    dispute = await Dispute.deploy(
+      await registry.getAddress(),
+      0,
+      owner.address,
+      owner.address
+    );
     await dispute.waitForDeployment();
   });
 

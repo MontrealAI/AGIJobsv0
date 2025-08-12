@@ -29,6 +29,9 @@ describe("multi-operator job lifecycle", function () {
     );
     stakeManager = await Stake.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       owner.address
     );
 
@@ -50,12 +53,26 @@ describe("multi-operator job lifecycle", function () {
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy();
+    registry = await Registry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
 
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress());
+    dispute = await Dispute.deploy(
+      await registry.getAddress(),
+      0,
+      owner.address,
+      owner.address
+    );
 
     const FeePoolF = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -63,7 +80,9 @@ describe("multi-operator job lifecycle", function () {
     feePool = await FeePoolF.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2
+      2,
+      0,
+      owner.address
     );
 
     const Policy = await ethers.getContractFactory(

@@ -28,6 +28,9 @@ describe("end-to-end job lifecycle", function () {
     );
     stakeManager = await Stake.deploy(
       await token.getAddress(),
+      0,
+      100,
+      0,
       owner.address
     );
 
@@ -49,12 +52,26 @@ describe("end-to-end job lifecycle", function () {
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy();
+    registry = await Registry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
 
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress());
+    dispute = await Dispute.deploy(
+      await registry.getAddress(),
+      appealFee,
+      owner.address,
+      owner.address
+    );
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -62,7 +79,9 @@ describe("end-to-end job lifecycle", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2
+      2,
+      0,
+      owner.address
     );
 
     const Policy = await ethers.getContractFactory(
@@ -90,7 +109,6 @@ describe("end-to-end job lifecycle", function () {
     await rep.setCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);
     await nft.transferOwnership(await registry.getAddress());
-    await dispute.setAppealFee(appealFee);
 
     await registry.acknowledgeTaxPolicy();
     await registry.connect(employer).acknowledgeTaxPolicy();
