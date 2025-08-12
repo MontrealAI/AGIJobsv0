@@ -48,3 +48,7 @@ All other core modules—`StakeManager`, `ValidationModule`, `ReputationEngine`,
 ## Responsibilities
 Participants must track their own transactions and consult professional advisers for jurisdiction‑specific reporting. The platform and its owner do not provide tax services or reporting.
 
+
+### Disclaimer
+
+Routing rewards on-chain can reduce off-chain reporting, but it does not remove each operator's duty to follow local tax laws. Consult authoritative resources such as the [IRS guidance on digital assets](https://www.irs.gov/businesses/small-businesses-self-employed/virtual-currencies) or equivalent local publications to determine your obligations.
