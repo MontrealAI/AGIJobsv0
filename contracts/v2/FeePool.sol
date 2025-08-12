@@ -85,7 +85,8 @@ contract FeePool is Ownable {
     }
 
     /// @notice distribute accumulated fees to stakers
-    function distributeFees() external {
+    /// @dev All fee amounts use 6 decimal units.
+    function distributeFees() public {
         uint256 amount = pendingFees;
         require(amount > 0, "amount");
         pendingFees = 0;
@@ -109,7 +110,11 @@ contract FeePool is Ownable {
     }
 
     /// @notice claim accumulated rewards for caller
+    /// @dev Rewards are denominated using 6 decimal units.
     function claimRewards() external {
+        if (pendingFees > 0) {
+            distributeFees();
+        }
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
         // Deployer may claim but receives no rewards without stake.
         if (msg.sender == owner() && stake == 0) {
@@ -124,9 +129,10 @@ contract FeePool is Ownable {
     }
 
     /// @notice transfer tokens to an external reward contract
+    /// @dev Amount uses 6 decimal units.
     /// @param to recipient address
     /// @param amount token amount with 6 decimals
-    function transferReward(address to, uint256 amount) external {
+    function transferReward(address to, uint256 amount) external onlyOwner {
         token.safeTransfer(to, amount);
         emit RewardTransferred(to, amount);
     }
