@@ -2,48 +2,67 @@
 
 All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPHA = 1_000_000 units**). Convert values before entering them on Etherscan.
 
-## 1. Deploy Each Module
+## One-click Etherscan deployment
 
-Deploy contracts in the following order from Etherscan's **Contract → Deploy** tab. The deploying address automatically becomes the owner.
+### Recommended constructor parameters
 
-| # | Module | Constructor arguments (example) |
-| --- | --- | --- |
-| 1 | StakeManager | `(token, treasury)` → `(0x2e8f…eabe, TREASURY)` |
-| 2 | JobRegistry | `()` |
-| 3 | ValidationModule | `(jobRegistry, stakeManager)` → `(<JobRegistry>, <StakeManager>)` |
-| 4 | ReputationEngine | `()` |
-| 5 | DisputeModule | `(jobRegistry, stakeManager, reputationEngine)` → `(<JobRegistry>, <StakeManager>, <ReputationEngine>)` |
-| 6 | CertificateNFT | `(name, symbol)` → `("AGI Jobs", "AGIJOB")` |
-| 7 | FeePool | `(token, stakeManager, rewardRole)` → `(0x2e8f…eabe, <StakeManager>, 2)` |
-| 8 | TaxPolicy | `(uri, acknowledgement)` → `("ipfs://policy", "All taxes on participants; contract and owner exempt")` |
-| 9 | PlatformIncentives | `(stakeManager, platformRegistry, feePool)` or as required |
+| Parameter | Recommended value |
+| --- | --- |
+| `token` | `0x2e8fb54C3EC41F55F06C1f082C081A609eAA4EbE` |
+| `feePct` | `5` (protocol fee percentage) |
+| `burnPct` | `0` (no burn) |
+| `commitWindow` | `86400` seconds (24h) |
+| `revealWindow` | `86400` seconds (24h) |
 
-Record each address for later configuration.
+### Deployment order and wiring
 
-## 2. Stake & Register a Platform
+1. Deploy `StakeManager(token, treasury)` with the token above and your treasury address.
+2. Deploy `JobRegistry()`.
+3. Deploy `TaxPolicy(uri, acknowledgement)` and call `JobRegistry.setTaxPolicy(taxPolicy)`.
+4. Deploy `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, 1, 3, [])`.
+5. Deploy `ReputationEngine()`.
+6. Deploy `CertificateNFT("AGI Jobs", "AGIJOB")`.
+7. Deploy `DisputeModule(jobRegistry, 0, owner, owner)`.
+8. Deploy `FeePool(token, stakeManager, 2, burnPct, treasury)`.
+9. Deploy `PlatformRegistry(stakeManager, reputationEngine, 0)`.
+10. Deploy `JobRouter(platformRegistry)`.
+11. Deploy `PlatformIncentives(stakeManager, platformRegistry, jobRouter)`.
+12. Wire modules:
+    - `StakeManager.setJobRegistry(jobRegistry)`
+    - `JobRegistry.setModules(validation, stakeManager, reputation, dispute, nft)`
+    - `JobRegistry.setFeePool(feePool)` then `JobRegistry.setFeePct(feePct)`
+    - `PlatformRegistry.setRegistrar(platformIncentives, true)`
+    - `JobRouter.setRegistrar(platformIncentives, true)`
+13. Verify each contract via **Contract → Verify and Publish** on Etherscan.
 
-1. Approve the StakeManager to spend your $AGIALPHA.
-2. On **PlatformIncentives → Write Contract**, call **stakeAndActivate(amount)** with the desired stake (base units, e.g., `25_000_000` for 25 tokens).
+### Job posting, staking, and activation via Etherscan
 
-![1 - stakeAndActivate](https://via.placeholder.com/650x150?text=stakeAndActivate)
+1. **Post a job:** Approve the `StakeManager` to transfer `reward + fee`. On `JobRegistry`, call `acknowledgeAndCreateJob(reward, uri)`.
+2. **Stake tokens:** After approving tokens, call `StakeManager.depositStake(role, amount)` (`0` = Agent, `1` = Validator, `2` = Platform).
+3. **Activate a platform:** On `PlatformIncentives`, call `stakeAndActivate(amount)` to stake and register in one transaction.
 
-## 3. Distribute Fees
+### Owner-only setters
+
+- `StakeManager.setToken(newToken)`
+- `StakeManager.setMinStake(amount)`
+- `JobRegistry.setFeePct(fee)`
+- `ValidationModule.setCommitRevealWindows(commitWindow, revealWindow)`
+- `FeePool.setBurnPct(pct)`
+- `DisputeModule.setAppealFee(fee)`
+
+## Distribute Fees
 
 As jobs finalize, protocol fees accumulate in the FeePool. Anyone may trigger distribution.
 
 1. Open **FeePool → Write Contract** and call **distributeFees()**.
 
-![2 - distributeFees](https://via.placeholder.com/650x150?text=distributeFees)
-
-## 4. Claim Rewards
+## Claim Rewards
 
 Stakers withdraw accrued fees from the same contract.
 
 1. In **FeePool → Write Contract**, execute **claimRewards()**.
 
-![3 - claimRewards](https://via.placeholder.com/650x150?text=claimRewards)
-
-## 5. Token Conversion Reference
+## Token Conversion Reference
 
 - `1.0 AGIALPHA = 1_000_000 units`
 - `0.5 AGIALPHA = 500_000 units`
