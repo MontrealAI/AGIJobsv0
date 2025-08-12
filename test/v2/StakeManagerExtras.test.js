@@ -19,7 +19,9 @@ describe("StakeManager extras", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(owner).setMinStake(0);
   });
@@ -31,6 +33,8 @@ describe("StakeManager extras", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

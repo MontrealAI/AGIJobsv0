@@ -24,7 +24,9 @@ describe("PlatformRegistry", function () {
       0,
       100,
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
     await token.connect(platform).approve(await stakeManager.getAddress(), STAKE);

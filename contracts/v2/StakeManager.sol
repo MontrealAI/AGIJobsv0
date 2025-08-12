@@ -99,7 +99,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 _minStake,
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
-        address _treasury
+        address _treasury,
+        address _jobRegistry,
+        address _disputeModule
     ) Ownable(msg.sender) {
         require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
         token = _token;
@@ -107,6 +109,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
         treasury = _treasury == address(0) ? msg.sender : _treasury;
+        jobRegistry = _jobRegistry;
+        disputeModule = _disputeModule;
     }
 
     // ---------------------------------------------------------------
