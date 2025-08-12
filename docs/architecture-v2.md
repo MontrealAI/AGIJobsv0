@@ -2,6 +2,12 @@
 
 AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules with single responsibilities. Each module is deployed once and interacts with others only through minimal interfaces so storage layouts remain isolated. Every module inherits `Ownable`, ensuring only the contract owner can tune parameters or perform privileged actions. The design emphasises gas efficiency, governance composability and game-theoretic soundness while remaining simple enough for non‑technical users to invoke through block explorers such as Etherscan.
 
+## Trust assumptions
+
+- **Deterministic randomness** – validator selection uses commit‑reveal entropy seeded by the owner and on-chain data. No external randomness oracle or subscription is involved, so outcomes are reproducible.
+- **Owner control** – `Ownable` setters let the owner swap tokens or retune parameters at will. Users must trust this address to act in good faith.
+- **No external dependencies** – the architecture avoids Chainlink VRF and subscription services entirely.
+
 ## Modules
 - **JobRegistry** – posts jobs, escrows payouts and tracks lifecycle state.
 - **ValidationModule** – selects validators, orchestrates commit‑reveal voting and returns preliminary outcomes.
@@ -232,3 +238,7 @@ Reference Solidity interfaces are provided in `contracts/v2/interfaces` for inte
 - Enable the Solidity optimizer with high `runs` to reduce bytecode size.
 - Group related storage writes to minimise `SSTORE` operations.
 - Declare configuration constants as `immutable` or `constant` to cut storage reads.
+
+## Compliance note
+
+Although rewards settle on-chain, builders and users remain responsible for obeying the laws and regulations of their local jurisdictions. This document does not constitute legal or tax advice.
