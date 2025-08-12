@@ -21,7 +21,7 @@ Key incentive features in the v2 suite:
 
 ### Platform Operator Incentives
 
-Staking $AGIALPHA through `PlatformIncentives.stakeAndActivate` registers a platform in `PlatformRegistry`, boosts its routing priority in `JobRouter`, and entitles it to a proportional share of fees from `FeePool`. In short: **staking → routing priority → revenue share**.
+Staking $AGIALPHA through `PlatformIncentives.stakeAndActivate` registers a platform in `PlatformRegistry`, boosts its routing priority in `JobRouter`, and entitles it to a proportional share of fees from `FeePool`. Fees are split on-chain according to `stake / totalStake`, so an operator with 2,000,000 units (2 tokens) out of 10,000,000 total stake receives 20% of each distribution. The main deployer, with a default stake of `0`, is listed only for demonstration and earns no share. In short: **staking → routing priority → revenue share**.
 
 #### Etherscan registration
 
