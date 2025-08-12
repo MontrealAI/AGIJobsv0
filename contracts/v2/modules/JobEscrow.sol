@@ -108,5 +108,20 @@ contract JobEscrow {
         token.safeTransfer(job.operator, job.reward);
         emit ResultAccepted(jobId, msg.sender);
     }
+
+    /// @notice Confirms this contract and its owner remain tax neutral.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    /// @dev Reject direct ETH transfers to keep the escrow token-only.
+    receive() external payable {
+        revert("JobEscrow: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("JobEscrow: no ether");
+    }
 }
 
