@@ -16,6 +16,8 @@ contract FeePool is Ownable {
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address public constant DEFAULT_TOKEN =
+        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
 
     /// @notice ERC20 token used for fees and rewards
     IERC20 public token;
@@ -53,18 +55,16 @@ contract FeePool is Ownable {
     event RewardTransferred(address indexed to, uint256 amount);
 
     constructor(
-        IERC20 _token,
         IStakeManager _stakeManager,
         IStakeManager.Role _role,
-        uint256 _burnPct,
-        address _treasury
+        uint256 _burnPct
     ) Ownable(msg.sender) {
         require(_burnPct <= 100, "pct");
-        token = _token;
+        token = IERC20(DEFAULT_TOKEN);
         stakeManager = _stakeManager;
         rewardRole = _role;
         burnPct = _burnPct;
-        treasury = _treasury == address(0) ? msg.sender : _treasury;
+        treasury = msg.sender;
     }
 
     modifier onlyStakeManager() {

@@ -20,6 +20,10 @@ import {IFeePool} from "./interfaces/IFeePool.sol";
 contract StakeManager is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    /// @notice default staking token address
+    address public constant DEFAULT_TOKEN =
+        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
+
     /// @notice participant roles
     enum Role {
         Agent,
@@ -95,18 +99,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event StakeUnlocked(address indexed user, uint256 amount);
 
     constructor(
-        IERC20 _token,
         uint256 _minStake,
         uint256 _employerSlashPct,
-        uint256 _treasurySlashPct,
-        address _treasury
+        uint256 _treasurySlashPct
     ) Ownable(msg.sender) {
         require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
-        token = _token;
+        token = IERC20(DEFAULT_TOKEN);
         minStake = _minStake;
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
-        treasury = _treasury == address(0) ? msg.sender : _treasury;
+        treasury = msg.sender;
     }
 
     // ---------------------------------------------------------------
