@@ -21,6 +21,12 @@ This document details a stake-based framework that aligns every AGI Jobs v2 role
 | Main deployer | 0 | May register for demonstration but receives **no** routing or revenue boosts |
 | Owner | 0 | Adjusts parameters via `Ownable` setters; does not receive fees unless staking like any operator |
 
+Platform rewards follow simple formulas:
+
+- **Routing score** = `(stake * stakeWeight + reputation * reputationWeight) / 1e18` from `PlatformRegistry.getScore`.
+- **Fee share** for an operator = `fee * operatorStake / totalStake` in `FeePool`.
+  - If `operatorStake = 0` (the main deployer), both routing score and fee share evaluate to zero.
+
 All interactions flow through block‑explorer “Write” tabs so non‑technical users can participate without custom tooling.  Each contract exposes `isTaxExempt()` and rejects direct ETH to keep value transfers pseudonymous and on‑chain.
 
 ## Zero‑Stake Special Case
