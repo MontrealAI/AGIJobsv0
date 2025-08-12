@@ -17,6 +17,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice ERC20 token used for staking
     IERC20 public token;
 
+    /// @notice address receiving slashed stakes
+    address public treasury;
+
     /// @notice minimum stake required per role
     uint256 public minStake;
 
@@ -50,6 +53,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice emitted when stake is slashed
     event StakeSlashed(address indexed user, uint8 indexed role, uint256 amount);
 
+    /// @notice emitted when treasury address is updated
+    event TreasuryUpdated(address indexed treasury);
+
     /// @notice emitted when staking token is updated
     event TokenUpdated(address indexed token);
 
@@ -58,9 +64,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @param _token ERC20 token with 6 decimals used for staking
     /// @param owner address that receives contract ownership
-    constructor(IERC20Metadata _token, address owner) Ownable(owner) {
+    /// @param _treasury address receiving slashed stakes (owner if zero)
+    constructor(IERC20Metadata _token, address owner, address _treasury)
+        Ownable(owner)
+    {
         require(_token.decimals() == 6, "StakeManager: token not 6 decimals");
         token = IERC20(address(_token));
+        treasury = _treasury == address(0) ? owner : _treasury;
     }
 
     // ------------------------------------------------------------------
@@ -88,6 +98,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
         require(newToken.decimals() == 6, "StakeManager: token not 6 decimals");
         token = IERC20(address(newToken));
         emit TokenUpdated(address(newToken));
+    }
+
+    /// @notice update treasury recipient
+    function setTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     /// @notice update blacklist status for an address
@@ -163,7 +179,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeWithdrawn(msg.sender, role, amount);
     }
 
-    /// @notice slash a user's stake for a role and send to contract owner
+    /// @notice slash a user's stake for a role and send to treasury
     /// @param user address whose stake will be reduced
     /// @param role numeric identifier of participant role
     /// @param percent percentage to slash (0-100)
@@ -182,7 +198,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         stakes[user][role] = staked - amount;
         totalStake[user] -= amount;
 
-        token.safeTransfer(owner(), amount);
+        token.safeTransfer(treasury, amount);
         emit StakeSlashed(user, role, amount);
     }
 

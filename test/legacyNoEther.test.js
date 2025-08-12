@@ -57,7 +57,11 @@ describe("Legacy contract ether rejection", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/StakeManager.sol:StakeManager"
     );
-    const stake = await Factory.deploy(await token.getAddress(), owner.address);
+    const stake = await Factory.deploy(
+      await token.getAddress(),
+      owner.address,
+      ethers.ZeroAddress
+    );
     await stake.waitForDeployment();
     await expectReject(stake);
   });

@@ -64,7 +64,7 @@ contract FeePool is Ownable {
         stakeManager = _stakeManager;
         rewardRole = _role;
         burnPct = _burnPct;
-        treasury = _treasury;
+        treasury = _treasury == address(0) ? msg.sender : _treasury;
     }
 
     modifier onlyStakeManager() {

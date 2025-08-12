@@ -21,7 +21,11 @@ describe("Protocol core features", function () {
     const StakeManager = await ethers.getContractFactory(
       "contracts/StakeManager.sol:StakeManager"
     );
-    const manager = await StakeManager.deploy(token.target, owner.address);
+    const manager = await StakeManager.deploy(
+      token.target,
+      owner.address,
+      ethers.ZeroAddress
+    );
     await manager.setSlashingPercentage(1, 100);
     await token.transfer(user.address, ethers.parseUnits("100", 6));
     await manager.connect(user).acknowledgeTaxPolicy();
