@@ -1,14 +1,20 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
+const DECIMALS = 6n;
+const SCALE = 10n ** DECIMALS;
+const toUnits = (value) => BigInt(value) * SCALE;
+
 describe("FeePool", function () {
   let token, token2, stakeManager, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
 
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
-    token2 = await Token.deploy();
+    const Token = await ethers.getContractFactory(
+      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
+    );
+    token = await Token.deploy(owner.address);
+    token2 = await Token.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -36,9 +42,9 @@ describe("FeePool", function () {
     await jobRegistry.connect(user1).acknowledgeTaxPolicy();
     await jobRegistry.connect(user2).acknowledgeTaxPolicy();
 
-    await token.mint(user1.address, 1000);
-    await token.mint(user2.address, 1000);
-    await token.mint(employer.address, 1000);
+    await token.connect(owner).mint(user1.address, toUnits(1000));
+    await token.connect(owner).mint(user2.address, toUnits(1000));
+    await token.connect(owner).mint(employer.address, toUnits(1000));
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -57,14 +63,18 @@ describe("FeePool", function () {
     ]);
     registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
-    await token.connect(user1).approve(await stakeManager.getAddress(), 1000);
-    await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
-    await stakeManager.connect(user1).depositStake(2, 100);
-    await stakeManager.connect(user2).depositStake(2, 300);
+    await token
+      .connect(user1)
+      .approve(await stakeManager.getAddress(), toUnits(1000));
+    await token
+      .connect(user2)
+      .approve(await stakeManager.getAddress(), toUnits(1000));
+    await stakeManager.connect(user1).depositStake(2, toUnits(100));
+    await stakeManager.connect(user2).depositStake(2, toUnits(300));
   });
 
   it("distributes rewards proportionally", async () => {
-    const feeAmount = 100;
+    const feeAmount = toUnits(100);
     const jobId = ethers.encodeBytes32String("job1");
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
@@ -85,13 +95,13 @@ describe("FeePool", function () {
     await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(toUnits(25));
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(toUnits(75));
   });
 
   it("burns configured percentage of fees", async () => {
     await feePool.connect(owner).setBurnPct(25);
-    const feeAmount = 80;
+    const feeAmount = toUnits(80);
     const jobId = ethers.encodeBytes32String("job2");
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
@@ -112,18 +122,18 @@ describe("FeePool", function () {
     await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(15n);
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(45n);
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(toUnits(15));
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(toUnits(45));
     const burnAddr = "0x000000000000000000000000000000000000dEaD";
-    expect(await token.balanceOf(burnAddr)).to.equal(20n);
+    expect(await token.balanceOf(burnAddr)).to.equal(toUnits(20));
   });
 
   it("uses new token after token swap", async () => {
     await stakeManager.connect(owner).setToken(await token2.getAddress());
     await feePool.connect(owner).setToken(await token2.getAddress());
 
-    await token2.mint(employer.address, 1000);
-    const feeAmount = 100;
+    await token2.connect(owner).mint(employer.address, toUnits(1000));
+    const feeAmount = toUnits(100);
     const jobId = ethers.encodeBytes32String("job3");
     await token2.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
@@ -144,12 +154,12 @@ describe("FeePool", function () {
     await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
-    expect((await token2.balanceOf(user1.address)) - before1).to.equal(25n);
-    expect((await token2.balanceOf(user2.address)) - before2).to.equal(75n);
+    expect((await token2.balanceOf(user1.address)) - before1).to.equal(toUnits(25));
+    expect((await token2.balanceOf(user2.address)) - before2).to.equal(toUnits(75));
   });
 
   it("emits zero payout for owner without stake", async () => {
-    const feeAmount = 50;
+    const feeAmount = toUnits(50);
     const jobId = ethers.encodeBytes32String("job4");
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager

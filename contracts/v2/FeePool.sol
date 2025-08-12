@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -58,6 +59,7 @@ contract FeePool is Ownable {
         IStakeManager.Role _role,
         address owner
     ) Ownable(owner) {
+        require(IERC20Metadata(address(_token)).decimals() == 6, "decimals");
         token = _token;
         stakeManager = _stakeManager;
         rewardRole = _role;
@@ -129,6 +131,7 @@ contract FeePool is Ownable {
 
     /// @notice update ERC20 token used for payouts
     function setToken(IERC20 newToken) external onlyOwner {
+        require(IERC20Metadata(address(newToken)).decimals() == 6, "decimals");
         token = newToken;
         emit TokenUpdated(address(newToken));
     }
