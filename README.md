@@ -10,6 +10,20 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 
 Regulatory shifts may change compliance obligations even when rewards flow entirely on-chain. While the design minimises reporting by routing fees directly in $AGIALPHA, participants must still monitor policy updates, obey local laws, and obtain professional advice before interacting with the contracts. The protocol itself never issues tax forms or collects personal data; every operator remains responsible for self‑reporting and compliance within their jurisdiction. Nothing in this repository or its documentation constitutes legal, financial, or tax advice.
 
+### Roles & Staking Summary
+
+- **Employer** – posts jobs and escrows rewards.
+- **Agent** – stakes under role `0` and submits work.
+- **Validator** – stakes under role `1` and votes on jobs.
+- **Platform operator** – stakes under role `2` then registers for routing priority and fee share.
+
+**Staking & Fees**
+1. Approve $AGIALPHA and call `StakeManager.depositStake(role, amount)` using 6‑decimal base units (`1` token = `1_000000`, `0.5` = `500000`).
+2. Platform operators call `PlatformRegistry.register()` after staking.
+3. When jobs finalize, anyone can call `FeePool.distributeFees()`; stakers withdraw via `FeePool.claimRewards()`.
+
+*Zero‑stake deployer* – the owner may register with amount `0`, appearing in `PlatformRegistry` without routing weight or rewards.
+
 Key incentive features in the v2 suite:
 
 - **On‑chain revenue sharing** – `FeePool` redistributes protocol fees to staked platform operators, requiring no off‑chain reporting.
@@ -1173,10 +1187,18 @@ Once configured, all interaction—job creation, staking, validation, dispute re
 
 **depositStake**
 1. Open `StakeManager` **Read Contract** and confirm `isTaxExempt()`.
-2. In **Write Contract**, call `depositStake(role, amount)` (role `0` = Agent, `1` = Validator, `2` = Platform).
+2. In **Write Contract**, call `depositStake(role, amount)` (role `0` = Agent, `1` = Validator, `2` = Platform) using 6‑decimal base units (`1` token = `1_000000`).
+   ![depositStake screenshot](https://via.placeholder.com/650x300?text=depositStake)
 
 **registerPlatform**
 1. After staking under role `2`, open `PlatformRegistry` **Write Contract** and call `register()` to receive routing priority and fee shares.
+   ![register screenshot](https://via.placeholder.com/650x300?text=register)
+
+**claimRewards**
+1. In `FeePool`, call `distributeFees()` to push pending fees.
+   ![distributeFees screenshot](https://via.placeholder.com/650x300?text=distributeFees)
+2. Then call `claimRewards()` to withdraw your share.
+   ![claimRewards screenshot](https://via.placeholder.com/650x300?text=claimRewards)
 
 **commitValidation / revealValidation**
 1. On `ValidationModule` **Read Contract**, check `isTaxExempt()`.
@@ -1981,4 +2003,8 @@ See [CHANGELOG.md](CHANGELOG.md) for a summary of major changes across releases.
 
 ## License
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+---
+
+*Regulatory note: this README is not legal or tax advice. Review [docs/tax-obligations.md](docs/tax-obligations.md) for jurisdiction‑specific guidance before interacting with the contracts.*
 

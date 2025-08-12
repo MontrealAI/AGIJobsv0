@@ -2,6 +2,21 @@
 
 This guide walks a non-technical owner through deploying and configuring the modular AGIJobs suite using the $AGIALPHA token (6 decimals) for payments, staking, rewards and disputes. All steps can be performed through [Etherscan](https://etherscan.io) once the bytecode for each module is verified.
 
+### Quick Role & Staking Summary
+
+- **Employer** – posts jobs and provides escrow.
+- **Agent** – stakes with `StakeManager.depositStake(0, amount)` and delivers results.
+- **Validator** – stakes with `StakeManager.depositStake(1, amount)` and votes on jobs.
+- **Platform operator** – stakes with `StakeManager.depositStake(2, amount)` then calls `PlatformRegistry.register()` for routing priority and fee share.
+
+**Fee Claiming**
+1. After jobs settle, anyone may call `FeePool.distributeFees()`.
+2. Stakers withdraw rewards via `FeePool.claimRewards()`.
+
+*Zero‑stake deployer* – the owner can call `PlatformRegistry.register()` with amount `0`, appearing in listings without routing weight or rewards.
+
+Amounts use 6‑decimal base units (`1` token = `1_000000`; `0.5` token = `500000`).
+
 ## Prerequisites
 - Ethereum wallet controlling the owner address (hardware wallet recommended).
 - $AGIALPHA token contract: `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe`.
@@ -26,7 +41,9 @@ After each deployment, note the contract address for later wiring.
 
 **Example Etherscan deployment**
 1. Search for the compiled contract on Etherscan and open the **Contract → Verify and Publish** page. Upload the flattened source to verify bytecode.
+   ![verify bytecode](https://via.placeholder.com/650x300?text=Verify+and+Publish)
 2. Once verified, switch to **Contract → Deploy**, paste the constructor arguments in the order shown above, and press **Write**.
+   ![deploy contract](https://via.placeholder.com/650x300?text=Contract+Deploy)
 3. Confirm the transaction in your wallet and record the resulting contract address.
 
 ## 2. Wire the Modules
@@ -68,6 +85,8 @@ Update parameters as needed:
 
 ## 7. Platform Operator Rewards
 Platform owners stake under `Role.Platform` via `StakeManager.depositStake(2, amount)`. As jobs finalize, `FeePool` receives the protocol fee and streams rewards. Operators claim with `FeePool.claimRewards()` directly through Etherscan.
+![distribute fees](https://via.placeholder.com/650x300?text=distributeFees)
+![claim rewards](https://via.placeholder.com/650x300?text=claimRewards)
 
 ## 8. Changing the Token
 Only the owner may switch currencies: invoke `setToken(newToken)` on `StakeManager`, `FeePool`, and any reward modules. Existing stakes and escrows remain untouched; new deposits and payouts use the updated token.
@@ -115,3 +134,7 @@ The following sequence mirrors the automated deployment script and shows each tr
 7. **Stake and activate** – a platform operator approves the StakeManager and calls `PlatformIncentives.stakeAndActivate(25_000000)` to lock 25 tokens and register for routing and fee sharing. The owner may pass `0` to register without staking.
 
 All amounts use 6‑decimal base units; e.g. `25_000000` represents 25 tokens. Adjust the example values to match your deployment.
+
+---
+
+*Regulatory note: this guide is not legal or tax advice. Review [tax-obligations.md](tax-obligations.md) for jurisdiction‑specific obligations before deploying.*
