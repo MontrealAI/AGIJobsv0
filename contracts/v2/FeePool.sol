@@ -107,6 +107,7 @@ contract FeePool is Ownable {
     /// @notice claim accumulated rewards for caller
     function claimRewards() external {
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
+        // Deployer may claim but receives no rewards without stake.
         if (msg.sender == owner() && stake == 0) {
             emit RewardsClaimed(msg.sender, 0);
             return;
