@@ -26,16 +26,14 @@ describe("ValidationModule V2", function () {
     validation = await Validation.deploy(
       await jobRegistry.getAddress(),
       await stakeManager.getAddress(),
-      60,
-      60,
-      2,
-      2,
       []
     );
     await validation.waitForDeployment();
     await validation
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
+    await validation.connect(owner).setCommitRevealWindows(60, 60);
+    await validation.connect(owner).setValidatorBounds(2, 2);
 
     // validator stakes and pool
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));

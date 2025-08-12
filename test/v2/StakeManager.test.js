@@ -16,9 +16,6 @@ describe("StakeManager", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      50,
-      50,
       treasury.address
     );
     await stakeManager.connect(owner).setMinStake(0);
@@ -34,9 +31,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -89,13 +84,13 @@ describe("StakeManager", function () {
       0,
       employer.address,
       treasury.address,
-      50,
-      50
+      80,
+      20
     );
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
-    expect(await token.balanceOf(employer.address)).to.equal(750n);
-    expect(await token.balanceOf(treasury.address)).to.equal(50n);
+    expect(await token.balanceOf(employer.address)).to.equal(780n);
+    expect(await token.balanceOf(treasury.address)).to.equal(20n);
   });
 
   it("rejects unauthorized slashing and excessive amounts", async () => {
@@ -108,9 +103,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -154,9 +147,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -199,9 +190,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -246,9 +235,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -313,9 +300,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -495,9 +480,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -554,9 +537,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -604,9 +585,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -635,9 +614,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -677,9 +654,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -714,9 +689,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"

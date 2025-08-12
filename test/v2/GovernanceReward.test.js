@@ -17,9 +17,6 @@ describe("GovernanceReward", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       treasury.address
     );
 
@@ -32,9 +29,7 @@ describe("GovernanceReward", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -55,9 +50,9 @@ describe("GovernanceReward", function () {
       await token.getAddress(),
       await stakeManager.getAddress(),
       2,
-      0,
       treasury.address
     );
+    await feePool.connect(owner).setBurnPct(0);
 
     const Reward = await ethers.getContractFactory(
       "contracts/v2/GovernanceReward.sol:GovernanceReward"

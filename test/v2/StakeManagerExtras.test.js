@@ -16,9 +16,6 @@ describe("StakeManager extras", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       treasury.address
     );
     await stakeManager.connect(owner).setMinStake(0);
@@ -34,9 +31,7 @@ describe("StakeManager extras", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"

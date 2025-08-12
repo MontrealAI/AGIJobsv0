@@ -28,9 +28,6 @@ describe("end-to-end job lifecycle", function () {
     );
     stakeManager = await Stake.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       owner.address
     );
 
@@ -58,9 +55,7 @@ describe("end-to-end job lifecycle", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
 
     const Dispute = await ethers.getContractFactory(
@@ -80,9 +75,9 @@ describe("end-to-end job lifecycle", function () {
       await token.getAddress(),
       await stakeManager.getAddress(),
       2,
-      0,
       owner.address
     );
+    await feePool.connect(owner).setBurnPct(0);
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"

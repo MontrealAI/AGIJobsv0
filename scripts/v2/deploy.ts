@@ -67,7 +67,14 @@ async function main() {
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy();
+  const registry = await Registry.deploy(
+    ethers.ZeroAddress,
+    await stake.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(
@@ -86,13 +93,11 @@ async function main() {
   const validation = await Validation.deploy(
     await registry.getAddress(),
     await stake.getAddress(),
-    60,
-    60,
-    1,
-    3,
     []
   );
   await validation.waitForDeployment();
+  await validation.setCommitRevealWindows(60, 60);
+  await validation.setValidatorBounds(1, 3);
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
@@ -120,7 +125,8 @@ async function main() {
   const feePool = await FeePool.deploy(
     tokenAddress,
     await stake.getAddress(),
-    2 // IStakeManager.Role.Platform
+    2, // IStakeManager.Role.Platform
+    treasury
   );
   await feePool.waitForDeployment();
 
@@ -223,17 +229,32 @@ async function main() {
     JSON.stringify(addresses, null, 2)
   );
 
-  await verify(await stake.getAddress(), [tokenAddress, owner, treasury]);
-  await verify(await registry.getAddress(), [owner]);
-  await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress(), owner]);
-  await verify(await reputation.getAddress(), [owner]);
-  await verify(await dispute.getAddress(), [await registry.getAddress(), owner]);
-  await verify(await nft.getAddress(), ["Cert", "CERT", owner]);
-  await verify(await tax.getAddress(), [owner, "ipfs://policy", "All taxes on participants; contract and owner exempt"]);
-  await verify(await feePool.getAddress(), [tokenAddress, await stake.getAddress(), 2, owner]);
-  await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake, owner]);
-  await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress(), owner]);
-  await verify(await incentives.getAddress(), [await stake.getAddress(), await platformRegistry.getAddress(), await jobRouter.getAddress(), owner]);
+  await verify(await stake.getAddress(), [tokenAddress, treasury]);
+  await verify(await registry.getAddress(), [
+    ethers.ZeroAddress,
+    await stake.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+  ]);
+  await verify(await validation.getAddress(), [
+    await registry.getAddress(),
+    await stake.getAddress(),
+    [],
+  ]);
+  await verify(await reputation.getAddress(), []);
+  await verify(await dispute.getAddress(), [await registry.getAddress()]);
+  await verify(await nft.getAddress(), ["Cert", "CERT"]);
+  await verify(await tax.getAddress(), ["ipfs://policy", "All taxes on participants; contract and owner exempt"]);
+  await verify(await feePool.getAddress(), [tokenAddress, await stake.getAddress(), 2, treasury]);
+  await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake]);
+  await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress()]);
+  await verify(await incentives.getAddress(), [
+    await stake.getAddress(),
+    await platformRegistry.getAddress(),
+    await jobRouter.getAddress(),
+  ]);
 
   await incentives.connect(ownerSigner).stakeAndActivate(0);
 }

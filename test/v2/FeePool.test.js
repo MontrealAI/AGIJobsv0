@@ -15,9 +15,6 @@ describe("FeePool", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       treasury.address
     );
 
@@ -30,9 +27,7 @@ describe("FeePool", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -57,9 +52,9 @@ describe("FeePool", function () {
       await token.getAddress(),
       await stakeManager.getAddress(),
       2,
-      0,
       treasury.address
     );
+    await feePool.connect(owner).setBurnPct(0);
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [

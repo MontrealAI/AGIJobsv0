@@ -30,7 +30,14 @@ async function main() {
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy();
+  const registry = await Registry.deploy(
+    ethers.ZeroAddress,
+    await stake.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(
@@ -49,13 +56,11 @@ async function main() {
   const validation = await Validation.deploy(
     await registry.getAddress(),
     await stake.getAddress(),
-    60,
-    60,
-    1,
-    3,
     []
   );
   await validation.waitForDeployment();
+  await validation.setCommitRevealWindows(60, 60);
+  await validation.setValidatorBounds(1, 3);
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
@@ -96,8 +101,19 @@ async function main() {
   console.log("TaxPolicy:", await tax.getAddress());
 
   await verify(await stake.getAddress(), [await token.getAddress(), deployer.address]);
-  await verify(await registry.getAddress(), []);
-  await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress()]);
+  await verify(await registry.getAddress(), [
+    ethers.ZeroAddress,
+    await stake.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+  ]);
+  await verify(await validation.getAddress(), [
+    await registry.getAddress(),
+    await stake.getAddress(),
+    [],
+  ]);
   await verify(await reputation.getAddress(), []);
   await verify(await dispute.getAddress(), [await registry.getAddress()]);
   await verify(await nft.getAddress(), ["Cert", "CERT"]);

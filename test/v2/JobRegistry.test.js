@@ -18,9 +18,6 @@ describe("JobRegistry integration", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      0,
-      100,
-      0,
       treasury.address
     );
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -45,9 +42,7 @@ describe("JobRegistry integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      0,
-      0
+      ethers.ZeroAddress
     );
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
@@ -129,9 +124,9 @@ describe("JobRegistry integration", function () {
       await token.getAddress(),
       await stakeManager.getAddress(),
       2,
-      0,
       treasury.address
     );
+    await feePool.connect(owner).setBurnPct(0);
     await registry.connect(owner).setFeePool(await feePool.getAddress());
     await registry.connect(owner).setFeePct(10); // 10%
     await token.mint(owner.address, reward);

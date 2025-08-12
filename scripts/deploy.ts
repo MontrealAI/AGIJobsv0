@@ -13,14 +13,20 @@ async function main() {
   );
   const stake = await Stake.deploy(
     await token.getAddress(),
-    deployer.address,
     deployer.address
   );
 
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy(deployer.address);
+  const registry = await Registry.deploy(
+    ethers.ZeroAddress,
+    await stake.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
 
   const Validation = await ethers.getContractFactory(
     "contracts/v2/ValidationModule.sol:ValidationModule"
@@ -28,12 +34,10 @@ async function main() {
   const validation = await Validation.deploy(
     await registry.getAddress(),
     await stake.getAddress(),
-    60,
-    60,
-    1,
-    3,
     []
   );
+  await validation.setCommitRevealWindows(60, 60);
+  await validation.setValidatorBounds(1, 3);
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
