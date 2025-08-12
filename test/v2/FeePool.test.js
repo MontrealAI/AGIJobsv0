@@ -225,4 +225,10 @@ describe("FeePool", function () {
       incentives.connect(user1).stakeAndActivate(0)
     ).to.be.revertedWith("amount");
   });
+
+  it("reverts when distributing with zero fees", async () => {
+    await expect(feePool.connect(owner).distributeFees()).to.be.revertedWith(
+      "amount"
+    );
+  });
 });

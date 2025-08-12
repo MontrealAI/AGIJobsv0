@@ -63,4 +63,13 @@ describe("JobRouter", function () {
     expect(r1).to.be.closeTo(0.25, 0.05);
     expect(r2).to.be.closeTo(0.75, 0.05);
   });
+
+  it("computes routing weight based on stake", async () => {
+    const w1 = await router.routingWeight(op1.address);
+    const w2 = await router.routingWeight(op2.address);
+    const quarter = ethers.parseUnits("0.25", 18);
+    const threeQuarter = ethers.parseUnits("0.75", 18);
+    expect(w1).to.be.closeTo(quarter, ethers.parseUnits("0.05", 18));
+    expect(w2).to.be.closeTo(threeQuarter, ethers.parseUnits("0.05", 18));
+  });
 });
