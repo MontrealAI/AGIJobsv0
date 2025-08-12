@@ -4,19 +4,19 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 
 ## 1. Deploy Each Module
 
-Deploy contracts in the following order from Etherscan's **Contract → Deploy** tab. Use your owner address for every `owner` field.
+Deploy contracts in the following order from Etherscan's **Contract → Deploy** tab. The deploying address automatically becomes the owner.
 
 | # | Module | Constructor arguments (example) |
 | --- | --- | --- |
-| 1 | StakeManager | `(token, owner, treasury)` → `(0x2e8f…eabe, YOU, TREASURY)` |
-| 2 | JobRegistry | `(owner)` → `(YOU)` |
-| 3 | ValidationModule | `(jobRegistry, stakeManager, owner)` → `(<JobRegistry>, <StakeManager>, YOU)` |
-| 4 | ReputationEngine | `(owner)` → `(YOU)` |
-| 5 | DisputeModule | `(jobRegistry, stakeManager, reputationEngine, owner)` → `(<JobRegistry>, <StakeManager>, <ReputationEngine>, YOU)` |
-| 6 | CertificateNFT | `(name, symbol, owner)` → `("AGI Jobs", "AGIJOB", YOU)` |
-| 7 | FeePool | `(token, stakeManager, rewardRole, owner)` → `(0x2e8f…eabe, <StakeManager>, 2, YOU)` |
-| 8 | TaxPolicy | `(owner)` → `(YOU)` |
-| 9 | PlatformIncentives | `(stakeManager, platformRegistry, feePool, owner)` or as required |
+| 1 | StakeManager | `(token, treasury)` → `(0x2e8f…eabe, TREASURY)` |
+| 2 | JobRegistry | `()` |
+| 3 | ValidationModule | `(jobRegistry, stakeManager)` → `(<JobRegistry>, <StakeManager>)` |
+| 4 | ReputationEngine | `()` |
+| 5 | DisputeModule | `(jobRegistry, stakeManager, reputationEngine)` → `(<JobRegistry>, <StakeManager>, <ReputationEngine>)` |
+| 6 | CertificateNFT | `(name, symbol)` → `("AGI Jobs", "AGIJOB")` |
+| 7 | FeePool | `(token, stakeManager, rewardRole)` → `(0x2e8f…eabe, <StakeManager>, 2)` |
+| 8 | TaxPolicy | `(uri, acknowledgement)` → `("ipfs://policy", "All taxes on participants; contract and owner exempt")` |
+| 9 | PlatformIncentives | `(stakeManager, platformRegistry, feePool)` or as required |
 
 Record each address for later configuration.
 

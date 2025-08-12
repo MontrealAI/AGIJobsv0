@@ -28,7 +28,7 @@ contract JobRouter is Ownable {
     event PlatformSelected(bytes32 indexed seed, address indexed operator);
     event RegistrarUpdated(address indexed registrar, bool allowed);
 
-    constructor(IPlatformRegistry _platformRegistry, address owner) Ownable(owner) {
+    constructor(IPlatformRegistry _platformRegistry) Ownable(msg.sender) {
         platformRegistry = _platformRegistry;
     }
 

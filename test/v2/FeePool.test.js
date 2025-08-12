@@ -15,19 +15,17 @@ describe("FeePool", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address,
       treasury.address
     );
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    jobRegistry = await JobRegistry.deploy(owner.address);
+    jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
       "ipfs://policy",
       "ack"
     );
@@ -46,8 +44,7 @@ describe("FeePool", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
 
     const registryAddr = await jobRegistry.getAddress();
@@ -176,7 +173,7 @@ describe("FeePool", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.connect(owner).deploy(owner.address);
+    const rep = await Rep.connect(owner).deploy();
     await rep.setStakeManager(await stakeManager.getAddress());
     await rep.setCaller(owner.address, true);
 
@@ -186,16 +183,14 @@ describe("FeePool", function () {
     const registry = await Registry.connect(owner).deploy(
       await stakeManager.getAddress(),
       await rep.getAddress(),
-      1,
-      owner.address
+      1
     );
 
     const JobRouter = await ethers.getContractFactory(
       "contracts/v2/modules/JobRouter.sol:JobRouter"
     );
     const jobRouter = await JobRouter.connect(owner).deploy(
-      await registry.getAddress(),
-      owner.address
+      await registry.getAddress()
     );
 
     const Incentives = await ethers.getContractFactory(
@@ -204,8 +199,7 @@ describe("FeePool", function () {
     const incentives = await Incentives.connect(owner).deploy(
       await stakeManager.getAddress(),
       await registry.getAddress(),
-      await jobRouter.getAddress(),
-      owner.address
+      await jobRouter.getAddress()
     );
 
     await registry.setRegistrar(await incentives.getAddress(), true);

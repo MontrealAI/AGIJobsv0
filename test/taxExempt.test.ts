@@ -14,13 +14,13 @@ describe("Tax exemption flags", function () {
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const tax = await TaxPolicy.deploy(owner.address, "ipfs://policy", "ack");
+    const tax = await TaxPolicy.deploy("ipfs://policy", "ack");
     await tax.waitForDeployment();
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const registry = await JobRegistry.deploy(owner.address);
+    const registry = await JobRegistry.deploy();
     await registry.waitForDeployment();
 
     const StakeManager = await ethers.getContractFactory(
@@ -28,7 +28,6 @@ describe("Tax exemption flags", function () {
     );
     const stake = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address,
       owner.address
     );
     await stake.waitForDeployment();
@@ -36,13 +35,13 @@ describe("Tax exemption flags", function () {
     const ReputationEngine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await ReputationEngine.deploy(owner.address);
+    const rep = await ReputationEngine.deploy();
     await rep.waitForDeployment();
 
     const CertificateNFT = await ethers.getContractFactory(
       "contracts/v2/CertificateNFT.sol:CertificateNFT"
     );
-    const cert = await CertificateNFT.deploy("Cert", "CERT", owner.address);
+    const cert = await CertificateNFT.deploy("Cert", "CERT");
     await cert.waitForDeployment();
 
     const ValidationModule = await ethers.getContractFactory(
@@ -50,8 +49,7 @@ describe("Tax exemption flags", function () {
     );
     const val = await ValidationModule.deploy(
       await registry.getAddress(),
-      await stake.getAddress(),
-      owner.address
+      await stake.getAddress()
     );
     await val.waitForDeployment();
 
@@ -59,8 +57,7 @@ describe("Tax exemption flags", function () {
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     const disp = await DisputeModule.deploy(
-      await registry.getAddress(),
-      owner.address
+      await registry.getAddress()
     );
     await disp.waitForDeployment();
 

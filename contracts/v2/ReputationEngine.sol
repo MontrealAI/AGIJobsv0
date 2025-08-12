@@ -25,7 +25,7 @@ contract ReputationEngine is Ownable {
     event StakeManagerUpdated(address stakeManager);
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     modifier onlyCaller() {
         require(callers[msg.sender], "not authorized");

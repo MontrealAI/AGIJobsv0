@@ -55,9 +55,8 @@ contract FeePool is Ownable {
     constructor(
         IERC20 _token,
         IStakeManager _stakeManager,
-        IStakeManager.Role _role,
-        address owner
-    ) Ownable(owner) {
+        IStakeManager.Role _role
+    ) Ownable(msg.sender) {
         token = _token;
         stakeManager = _stakeManager;
         rewardRole = _role;

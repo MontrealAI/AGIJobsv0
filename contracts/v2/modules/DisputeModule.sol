@@ -40,9 +40,9 @@ contract DisputeModule is Ownable {
     event AppealFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
 
-    constructor(IJobRegistry _jobRegistry, address owner) Ownable(owner) {
+    constructor(IJobRegistry _jobRegistry) Ownable(msg.sender) {
         jobRegistry = _jobRegistry;
-        moderator = owner;
+        moderator = msg.sender;
     }
 
     modifier requiresTaxAcknowledgement() {

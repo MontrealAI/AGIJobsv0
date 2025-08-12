@@ -13,9 +13,9 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     address public jobRegistry;
     mapping(uint256 => string) private _tokenURIs;
 
-    constructor(string memory name_, string memory symbol_, address owner_)
+    constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
-        Ownable(owner_)
+        Ownable(msg.sender)
     {}
 
     modifier onlyJobRegistry() {

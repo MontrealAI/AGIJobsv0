@@ -37,9 +37,7 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Emitted when a user acknowledges the tax policy.
     event PolicyAcknowledged(address indexed user);
 
-    constructor(address owner_, string memory uri, string memory ack)
-        Ownable(owner_)
-    {
+    constructor(string memory uri, string memory ack) Ownable(msg.sender) {
         _policyURI = uri;
         _acknowledgement = ack;
         _version = 1;

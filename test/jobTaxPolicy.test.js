@@ -10,7 +10,6 @@ describe("JobRegistry tax policy integration", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     policy = await TaxPolicyFactory.deploy(
-      owner.address,
       "ipfs://policy",
       "ack"
     );
@@ -19,7 +18,7 @@ describe("JobRegistry tax policy integration", function () {
     const RegistryFactory = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await RegistryFactory.deploy(owner.address);
+    registry = await RegistryFactory.deploy();
     await registry.waitForDeployment();
   });
 

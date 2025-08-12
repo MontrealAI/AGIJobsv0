@@ -13,7 +13,7 @@ describe("PlatformRegistry", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    token = await Token.connect(owner).deploy(owner.address);
+    token = await Token.connect(owner).deploy();
     await token.mint(platform.address, STAKE);
 
     const Stake = await ethers.getContractFactory(
@@ -21,7 +21,6 @@ describe("PlatformRegistry", function () {
     );
     stakeManager = await Stake.connect(platform).deploy(
       await token.getAddress(),
-      platform.address,
       treasury.address
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
@@ -31,7 +30,7 @@ describe("PlatformRegistry", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    reputationEngine = await Rep.connect(owner).deploy(owner.address);
+    reputationEngine = await Rep.connect(owner).deploy();
     await reputationEngine.setStakeManager(await stakeManager.getAddress());
     await reputationEngine.setCaller(owner.address, true);
 
@@ -41,8 +40,7 @@ describe("PlatformRegistry", function () {
     registry = await Registry.connect(owner).deploy(
       await stakeManager.getAddress(),
       await reputationEngine.getAddress(),
-      STAKE,
-      owner.address
+      STAKE
     );
   });
 
@@ -96,8 +94,7 @@ describe("PlatformRegistry", function () {
       "contracts/v2/modules/JobRouter.sol:JobRouter"
     );
     const jobRouter = await JobRouter.connect(owner).deploy(
-      await registry.getAddress(),
-      owner.address
+      await registry.getAddress()
     );
 
     const FeePool = await ethers.getContractFactory(
@@ -106,8 +103,7 @@ describe("PlatformRegistry", function () {
     const feePool = await FeePool.connect(owner).deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
 
     const Incentives = await ethers.getContractFactory(
@@ -116,8 +112,7 @@ describe("PlatformRegistry", function () {
     const incentives = await Incentives.connect(owner).deploy(
       await stakeManager.getAddress(),
       await registry.getAddress(),
-      await jobRouter.getAddress(),
-      owner.address
+      await jobRouter.getAddress()
     );
 
     await registry.setRegistrar(await incentives.getAddress(), true);

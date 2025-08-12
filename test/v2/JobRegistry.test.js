@@ -18,7 +18,6 @@ describe("JobRegistry integration", function () {
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address,
       treasury.address
     );
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -29,23 +28,23 @@ describe("JobRegistry integration", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    rep = await Rep.deploy(owner.address);
+    rep = await Rep.deploy();
     const NFT = await ethers.getContractFactory(
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );
-    nft = await NFT.deploy("Cert", "CERT", owner.address);
+    nft = await NFT.deploy("Cert", "CERT");
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy(owner.address);
+    registry = await Registry.deploy();
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress(), owner.address);
+    dispute = await Dispute.deploy(await registry.getAddress());
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    policy = await Policy.deploy(owner.address, "ipfs://policy", "ack");
+    policy = await Policy.deploy("ipfs://policy", "ack");
 
     await registry
       .connect(owner)
@@ -112,8 +111,7 @@ describe("JobRegistry integration", function () {
     const feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
     await registry.connect(owner).setFeePool(await feePool.getAddress());
     await registry.connect(owner).setFeePct(10); // 10%

@@ -48,9 +48,8 @@ contract GovernanceReward is Ownable {
         IERC20 _token,
         IFeePool _feePool,
         IStakeManager _stakeManager,
-        IStakeManager.Role _role,
-        address owner
-    ) Ownable(owner) {
+        IStakeManager.Role _role
+    ) Ownable(msg.sender) {
         token = _token;
         feePool = _feePool;
         stakeManager = _stakeManager;

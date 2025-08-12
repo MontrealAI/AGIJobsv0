@@ -25,8 +25,7 @@ describe("ValidationModule V2", function () {
     );
     validation = await Validation.deploy(
       await jobRegistry.getAddress(),
-      await stakeManager.getAddress(),
-      owner.address
+      await stakeManager.getAddress()
     );
     await validation.waitForDeployment();
     await validation

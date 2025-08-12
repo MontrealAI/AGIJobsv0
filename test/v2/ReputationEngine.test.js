@@ -9,7 +9,7 @@ describe("ReputationEngine", function () {
     const Engine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    engine = await Engine.deploy(owner.address);
+    engine = await Engine.deploy();
     await engine.connect(owner).setCaller(caller.address, true);
     await engine.connect(owner).setThreshold(2);
   });

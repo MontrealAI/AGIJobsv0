@@ -14,7 +14,7 @@ describe("JobRouter", function () {
     const Reputation = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    reputation = await Reputation.deploy(owner.address);
+    reputation = await Reputation.deploy();
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
@@ -22,8 +22,7 @@ describe("JobRouter", function () {
     registry = await Registry.deploy(
       await stakeManager.getAddress(),
       await reputation.getAddress(),
-      0,
-      owner.address
+      0
     );
 
     // set platform stakes
@@ -37,7 +36,7 @@ describe("JobRouter", function () {
     const Router = await ethers.getContractFactory(
       "contracts/v2/modules/JobRouter.sol:JobRouter"
     );
-    router = await Router.deploy(await registry.getAddress(), owner.address);
+    router = await Router.deploy(await registry.getAddress());
     await router.connect(op1).register();
     await router.connect(op2).register();
   });

@@ -13,8 +13,7 @@ describe("RevenueDistributor", function () {
       "contracts/v2/modules/RevenueDistributor.sol:RevenueDistributor"
     );
     distributor = await Distributor.deploy(
-      await stakeManager.getAddress(),
-      owner.address
+      await stakeManager.getAddress()
     );
 
     await stakeManager.setStake(op1.address, 2, 100);

@@ -17,7 +17,7 @@ describe("multi-operator job lifecycle", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    token = await Token.deploy(owner.address);
+    token = await Token.deploy();
     const mintAmount = ethers.parseUnits("10000", 6);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
@@ -29,7 +29,6 @@ describe("multi-operator job lifecycle", function () {
     );
     stakeManager = await Stake.deploy(
       await token.getAddress(),
-      owner.address,
       owner.address
     );
 
@@ -41,22 +40,22 @@ describe("multi-operator job lifecycle", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    rep = await Rep.deploy(owner.address);
+    rep = await Rep.deploy();
 
     const NFT = await ethers.getContractFactory(
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );
-    nft = await NFT.deploy("Cert", "CERT", owner.address);
+    nft = await NFT.deploy("Cert", "CERT");
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    registry = await Registry.deploy(owner.address);
+    registry = await Registry.deploy();
 
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress(), owner.address);
+    dispute = await Dispute.deploy(await registry.getAddress());
 
     const FeePoolF = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -64,15 +63,13 @@ describe("multi-operator job lifecycle", function () {
     feePool = await FeePoolF.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     policy = await Policy.deploy(
-      owner.address,
       "ipfs://policy",
       "ack"
     );
@@ -83,16 +80,14 @@ describe("multi-operator job lifecycle", function () {
     platformRegistry = await PlatformRegistryF.deploy(
       await stakeManager.getAddress(),
       await rep.getAddress(),
-      0,
-      owner.address
+      0
     );
 
     const JobRouterF = await ethers.getContractFactory(
       "contracts/v2/modules/JobRouter.sol:JobRouter"
     );
     jobRouter = await JobRouterF.deploy(
-      await platformRegistry.getAddress(),
-      owner.address
+      await platformRegistry.getAddress()
     );
 
     await registry.setModules(

@@ -17,9 +17,9 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
 
-    constructor(string memory name_, string memory symbol_, address owner_)
+    constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
-        Ownable(owner_)
+        Ownable(msg.sender)
     {}
 
     modifier onlyJobRegistry() {

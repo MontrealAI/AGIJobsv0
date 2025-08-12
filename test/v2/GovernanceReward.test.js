@@ -10,26 +10,24 @@ describe("GovernanceReward", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    token = await Token.deploy(owner.address);
+    token = await Token.deploy();
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
       await token.getAddress(),
-      owner.address,
       treasury.address
     );
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const jobRegistry = await JobRegistry.deploy(owner.address);
+    const jobRegistry = await JobRegistry.deploy();
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy(
-      owner.address,
       "ipfs://policy",
       "ack"
     );
@@ -44,8 +42,7 @@ describe("GovernanceReward", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
 
     const Reward = await ethers.getContractFactory(
@@ -55,8 +52,7 @@ describe("GovernanceReward", function () {
       await token.getAddress(),
       await feePool.getAddress(),
       await stakeManager.getAddress(),
-      2,
-      owner.address
+      2
     );
 
     await reward.setEpochLength(1);

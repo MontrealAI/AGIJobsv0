@@ -52,7 +52,7 @@ describe("Legacy contract ether rejection", function () {
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
-    const token = await Token.deploy(owner.address);
+    const token = await Token.deploy();
     await token.waitForDeployment();
     const Factory = await ethers.getContractFactory(
       "contracts/StakeManager.sol:StakeManager"

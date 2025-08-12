@@ -3,6 +3,8 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+All v2 constructors omit the `owner` argument—the deploying address automatically becomes the owner via `Ownable(msg.sender)`.
+
 All participants opt in by staking `$AGIALPHA`. Staked operators gain routing priority and revenue share, while the main deploying entity is a special case that registers with **stake = 0**, earning no boosts so it remains tax neutral. Because every incentive flows on-chain, operators can participate pseudonymously without creating off‑chain reporting obligations.
 
 For a step‑by‑step deployment walkthrough using $AGIALPHA and Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
@@ -197,7 +199,7 @@ For step‑by‑step screenshots of these flows, see [docs/deployment-agialpha.m
 
 ## Quick Start: FeePool, JobRouter & GovernanceReward
 
-1. **Deploy & verify** – deploy `FeePool(token, stakeManager, rewardRole, owner)` and `JobRouter(stakeManager, reputationEngine, owner)`. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
+1. **Deploy & verify** – deploy `FeePool(token, stakeManager, rewardRole)` and `JobRouter(stakeManager, reputationEngine)`. The deployer automatically becomes the owner. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
 2. **Connect wallet** – from the **Write Contract** tab click **Connect to Web3**. Owners may initialize modules immediately after verification.
 3. **Initialize parameters**
    - On `StakeManager`, call `setToken(token)` if the staking token differs from the constructor value.
@@ -311,10 +313,10 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 **Etherscan deployment steps**
 
-1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, owner, treasury)`, `JobRegistry(owner)`, `ValidationModule(jobRegistry, stakeManager, owner)`, `ReputationEngine(owner)`, `DisputeModule(jobRegistry, stakeManager, reputationEngine, owner)`, `CertificateNFT(name, symbol, owner)`, `FeePool(token, stakeManager, role, owner)` and `TaxPolicy(owner)`.
+1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, treasury)`, `JobRegistry()`, `ValidationModule(jobRegistry, stakeManager)`, `ReputationEngine()`, `DisputeModule(jobRegistry, stakeManager, reputationEngine)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module.
 2. **Wire them together** – In `JobRegistry` call `setModules(validation, stakeManager, reputation, dispute, certificate)`, then `setFeePool(feePool)` and `setFeePct(pct)`. Point the `StakeManager` back to the registry with `setJobRegistry(jobRegistry)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend $AGIALPHA and then call `createJob` or `depositStake`. Platform operators stake under `Role.Platform` via `depositStake(2, amount)` and register through `JobRouter.registerPlatform(operator)`.
-4. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, owner)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
+4. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, feePool, stakeManager, role)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
 5. **Adjust over time** – The owner can update burn rates, stake thresholds or even swap the token using `setToken` on `StakeManager`, `FeePool` and reward modules. All interactions use simple primitive types suitable for the **Write Contract** tab.
 
 Each module is deployed once and remains immutable; the owner upgrades components by deploying a replacement and repointing `JobRegistry.setModules` or other owner‑only setters. Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
