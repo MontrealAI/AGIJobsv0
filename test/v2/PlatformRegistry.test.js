@@ -47,16 +47,24 @@ describe("PlatformRegistry", function () {
     );
   });
 
-  it("registers operators regardless of stake", async () => {
+  it("requires minimum stake for non-owner registration", async () => {
     await expect(registry.connect(platform).register())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
     expect(await registry.registered(platform.address)).to.equal(true);
-    await expect(registry.connect(sybil).register())
+    await expect(registry.connect(sybil).register()).to.be.revertedWith(
+      "stake"
+    );
+  });
+
+  it("registrar enforces operator stake", async () => {
+    await registry.setRegistrar(owner.address, true);
+    await expect(
+      registry.connect(owner).registerFor(sybil.address)
+    ).to.be.revertedWith("stake");
+    await expect(registry.connect(owner).registerFor(platform.address))
       .to.emit(registry, "Registered")
-      .withArgs(sybil.address);
-    expect(await registry.registered(sybil.address)).to.equal(true);
-    expect(await registry.getScore(sybil.address)).to.equal(0);
+      .withArgs(platform.address);
   });
 
   it("computes score based on stake and reputation", async () => {
