@@ -25,7 +25,7 @@ graph TD
 | CertificateNFT | Mints ERC‑721 certificates for completed jobs. |
 
 ## Universal Incentive System
-The v2 contracts share a unified incentive model:
+The v2 contracts share a unified incentive model built around the six‑decimal **$AGIALPHA** token. Core modules—`StakeManager`, `PlatformRegistry`, `JobRouter`, `FeePool`, and `PlatformIncentives`—coordinate staking, job routing, and fee distribution:
 
 - **Staking** – Agents, validators, and platform operators stake through `StakeManager` under their respective roles. Stakes secure honest behaviour and unlock job participation.
 - **Routing** – `JobRegistry` locks each job's reward and protocol fee, then routes the fee portion to `FeePool` on finalisation.
@@ -36,6 +36,26 @@ The v2 contracts share a unified incentive model:
     1. The owner skips `depositStake` (amount = `0`) and calls `PlatformRegistry.register()`.
     2. `PlatformRegistry.getScore(owner)` returns `0`, so the platform has no routing weight.
     3. Calling `FeePool.claimRewards()` emits `RewardsClaimed(owner, 0)`, confirming no payout.
+
+### Roles and Incentives
+| Role | Stake | Incentives |
+|------|------:|------------|
+| Platform operator | `minPlatformStake` | Routing priority and proportional share of `FeePool` distributions |
+| Agent | job‑level stake | Eligibility to complete work and earn rewards |
+| Validator | owner‑set minimum | Commit–reveal voting rights and validation rewards |
+| Main deployer | 0 | Demonstration only: zero routing score or fee share |
+| Owner | 0 | Adjusts parameters but must stake to earn fees |
+
+### Scoring and Fee Distribution
+Routing score = `(stake * stakeWeight + reputation * reputationWeight) / 1e18` from `PlatformRegistry.getScore`.
+
+Example: if an operator stakes `2,000` tokens and has reputation `500` with weights `0.7e18` and `0.3e18`, then `score = (2,000 × 0.7 + 500 × 0.3) = 1,550`.
+
+Fee share = `fee * operatorStake / totalStake` in `FeePool`.
+
+Example: a job sending a `100` token fee to `FeePool` with `operatorStake = 2,000` and `totalStake = 10,000` yields `100 × 2,000 / 10,000 = 20` tokens for that operator.
+
+Each contract exposes `isTaxExempt(addr)` and rejects direct ETH to keep value transfers on‑chain and pseudonymous. A platform may register with `0` stake; both routing score and fee share evaluate to zero, so the deployer can demonstrate expected behaviour without revealing taxable revenue.
 
 ## Etherscan Interactions
 1. Open the relevant contract address on Etherscan.
