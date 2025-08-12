@@ -135,7 +135,9 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
 5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
 
-Amounts use 6‑decimal base units:
+### Token decimals & staking units
+
+$AGIALPHA uses 6‑decimal base units for both payments and staking:
 
 ```
 1 token   = 1_000_000
@@ -143,13 +145,23 @@ Amounts use 6‑decimal base units:
 25 tokens = 25_000000
 ```
 
+The deployer must also stake; an address with zero stake receives no job routing or FeePool revenue.
+
+### Etherscan registration checklist
+
+- Sign in to [Etherscan](https://etherscan.io) and open each deployed contract address.
+- Under **Contract → Verify and Publish**, upload the source to register the bytecode.
+- In **Contract → Write Contract**, click **Connect to Web3** and configure modules or stakes.
+
 Safety tips:
 
 - Verify addresses and constructor parameters on multiple explorers before sending transactions.
 - Prefer hardware wallets or multisigs for owner actions.
 - After each setter call, confirm new values in the **Read Contract** tab.
 
-For a detailed walkthrough of these steps in Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+For step‑by‑step screenshots of these flows, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
+
+*This documentation is not legal or tax advice. Review [docs/tax-obligations.md](docs/tax-obligations.md) before deployment.*
 
 ## Pseudonymity & Legal Minimisation
 
