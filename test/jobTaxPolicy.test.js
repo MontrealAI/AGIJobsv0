@@ -25,6 +25,7 @@ describe("JobRegistry tax policy integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );

@@ -37,6 +37,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -111,6 +112,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -153,6 +155,7 @@ describe("StakeManager", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -202,6 +205,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -245,6 +249,7 @@ describe("StakeManager", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -312,6 +317,7 @@ describe("StakeManager", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -498,6 +504,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -557,6 +564,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -607,6 +615,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -634,6 +643,7 @@ describe("StakeManager", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -680,6 +690,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
@@ -713,6 +724,7 @@ describe("StakeManager", function () {
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

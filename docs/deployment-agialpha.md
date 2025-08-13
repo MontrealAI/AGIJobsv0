@@ -18,7 +18,7 @@ Deploy each contract from the **Write Contract** tabs (the deployer automaticall
 
 1. `AGIALPHAToken()` – after deployment, call `mint(to, amount)` to create the initial supply.
 2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury.
-3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee.
+3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
 5. `ReputationEngine()` – optional reputation weighting.
 6. `DisputeModule(jobRegistry, appealFee, moderator, jury)` – manages appeals and dispute fees.
@@ -36,7 +36,7 @@ Use each contract's **Write** tab to connect modules:
 
 - `StakeManager.setModules(jobRegistry, disputeModule)`
 - `JobRegistry.setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)`
-- `JobRegistry.setFeePool(feePool)` and `JobRegistry.setTaxPolicy(taxPolicy)` if used
+- `JobRegistry.setFeePool(feePool)`
 - `PlatformRegistry.setRegistrar(platformIncentives, true)` and `JobRouter.setRegistrar(platformIncentives, true)`
 
 Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. No redeployments are required when swapping tokens or adjusting fees.

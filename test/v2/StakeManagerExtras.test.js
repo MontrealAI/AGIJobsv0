@@ -37,6 +37,7 @@ describe("StakeManager extras", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );

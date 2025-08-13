@@ -149,6 +149,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IDisputeModule _dispute,
         ICertificateNFT _certNFT,
         IFeePool _feePool,
+        ITaxPolicy _policy,
         uint256 _feePct,
         uint96 _jobStake
     ) Ownable(msg.sender) {
@@ -189,6 +190,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             emit ModuleUpdated("FeePool", address(_feePool));
         }
         emit FeePctUpdated(feePct);
+        if (address(_policy) != address(0)) {
+            require(_policy.isTaxExempt(), "not tax exempt");
+            taxPolicy = _policy;
+            taxPolicyVersion++;
+            emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
+        }
     }
 
     // ---------------------------------------------------------------------
