@@ -399,6 +399,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Acknowledge the tax policy and apply for a job.
+     * @param jobId Identifier of the job to apply for.
+     */
+    function acknowledgeAndApply(uint256 jobId) external {
+        _acknowledge(msg.sender);
+        _applyForJob(jobId);
+    }
+
+    /**
      * @notice Deposit stake and apply for a job in a single call.
      * @dev `amount` uses 6-decimal base units. Caller must `approve` the
      *      StakeManager to pull `amount` $AGIALPHA beforehand.

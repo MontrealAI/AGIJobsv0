@@ -12,7 +12,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 | Participant | One-call helper | Notes |
 | --- | --- | --- |
 | Employer | `acknowledgeAndCreateJob(reward, uri)` | Approve `StakeManager` for `reward + fee` |
-| Agent | `stakeAndApply(jobId, amount)` | Approve stake amount; combines deposit and apply |
+| Agent | `stakeAndApply(jobId, amount)` or `acknowledgeAndApply(jobId)` | Approve stake if required; combines acknowledgement and apply |
 | Platform operator | `acknowledgeStakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
 | Platform (no stake) | `acknowledgeAndRegister()` | Registers in `PlatformRegistry` without staking |
 
@@ -36,6 +36,7 @@ Helper functions expose common flows in single calls so Etherscan users do not h
 
 - `JobRegistry.acknowledgeAndCreateJob` posts work after acknowledging the tax policy.
 - `JobRegistry.stakeAndApply` deposits stake and applies to a job.
+- `JobRegistry.acknowledgeAndApply` acknowledges the tax policy and applies when no stake is needed.
 - `PlatformIncentives.stakeAndActivate` (and `acknowledgeStakeAndActivate`) stakes and registers a platform for routing and fees.
 - `PlatformRegistry.acknowledgeAndRegister` lists an operator without staking.
 - `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
@@ -58,7 +59,8 @@ For a detailed description of the platform-wide incentive architecture, see [doc
      `StakeManager` for `reward + fee`.
    - Agents can deposit stake and apply in one call with
      `JobRegistry.stakeAndApply(jobId, amount)` after approving the
-     `StakeManager` for the stake amount.
+     `StakeManager` for the stake amount, or simply
+     `JobRegistry.acknowledgeAndApply(jobId)` if no stake is required.
    - Stakers can claim protocol fees with a single call to `FeePool.claimRewards()`; any pending fees are distributed automatically.
 3. Fees, staking rewards, and dispute deposits all move in `$AGIALPHA` by default. The contract owner can swap the payment token later via `StakeManager.setToken` and related setters without redeploying other modules.
 4. Before staking or claiming rewards, call `JobRegistry.acknowledgeTaxPolicy` and confirm `isTaxExempt()` on each module.
@@ -374,7 +376,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate)` then `setFeePool(feePool)` and `setFeePct(pct)`. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
-   - Agents stake with `depositStake(role, amount)` or one‑shot with `stakeAndApply(jobId, amount)` after approving the stake.
+   - Agents stake with `depositStake(role, amount)` or one‑shot with `stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` when no stake is required) after approving the stake.
    - Platform operators stake under `Role.Platform` via `depositStake(2, amount)` and register through `JobRouter.registerPlatform(operator)`.
 4. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, feePool, stakeManager, role)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
 5. **Adjust over time** – The owner can update burn rates, stake thresholds or even swap the token using `setToken` on `StakeManager`, `FeePool` and reward modules. All interactions use simple primitive types suitable for the **Write Contract** tab.
