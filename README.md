@@ -191,7 +191,7 @@ For screenshots and step-by-step instructions, see [docs/etherscan-guide.md](doc
 The modular v2 suite is deployed module by module and then wired together on‑chain. A typical flow is:
 
 1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, `FeePool`, `TaxPolicy`, and finally `ModuleInstaller`.
-2. Call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter)` once to wire cross‑links between modules.
+2. Call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once to wire cross‑links, set the protocol fee pool and optional tax policy, and automatically transfer ownership of all modules back to the caller.
 3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
 5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
