@@ -7,7 +7,7 @@ describe("Job lifecycle with disputes", function () {
 
   const reward = 100;
   const stake = 200;
-  const appealFee = 10;
+  const appealFee = 10n;
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
@@ -60,14 +60,10 @@ describe("Job lifecycle with disputes", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/DisputeModule.sol:DisputeModule"
+      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      appealFee,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
+    await dispute.connect(owner).setAppealFee(appealFee);
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -102,6 +98,7 @@ describe("Job lifecycle with disputes", function () {
     await token.connect(agent).approve(await stakeManager.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
   });
 
   async function startJob() {
@@ -111,12 +108,27 @@ describe("Job lifecycle with disputes", function () {
     return jobId;
   }
 
+  async function ensureOutcome(jobId, employerWinsDesired) {
+    while (true) {
+      const block = await ethers.provider.getBlock(
+        await ethers.provider.getBlockNumber()
+      );
+      const employerWins =
+        (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
+      if (employerWins === employerWinsDesired) break;
+      await ethers.provider.send("evm_mine", []);
+    }
+  }
+
   it("rewards agent when dispute resolves in their favor", async () => {
     const jobId = await startJob();
     await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, false);
+    await token.connect(agent).approve(await stakeManager.getAddress(), appealFee);
+    await dispute.connect(agent).raiseDispute(jobId, "evidence");
+    await ensureOutcome(jobId, false);
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(900n);
     expect(await rep.reputation(agent.address)).to.equal(1);
@@ -128,11 +140,14 @@ describe("Job lifecycle with disputes", function () {
     const jobId = await startJob();
     await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, true);
+    await token.connect(agent).approve(await stakeManager.getAddress(), appealFee);
+    await dispute.connect(agent).raiseDispute(jobId, "evidence");
+    await ensureOutcome(jobId, true);
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.finalize(jobId);
 
-    expect(await token.balanceOf(agent.address)).to.equal(800n);
-    expect(await token.balanceOf(employer.address)).to.equal(1200n);
+    expect(await token.balanceOf(agent.address)).to.equal(790n);
+    expect(await token.balanceOf(employer.address)).to.equal(1210n);
     expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(true);
     expect(await nft.balanceOf(agent.address)).to.equal(0n);

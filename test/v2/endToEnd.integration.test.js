@@ -8,7 +8,7 @@ describe("end-to-end job lifecycle", function () {
   const stakeRequired = ethers.parseUnits("200", 6);
   const platformStake = ethers.parseUnits("500", 6);
   const feePct = 10;
-  const appealFee = ethers.parseEther("1");
+  const appealFee = ethers.parseUnits("10", 6);
 
   beforeEach(async () => {
     [owner, employer, agent, platform] = await ethers.getSigners();
@@ -66,14 +66,10 @@ describe("end-to-end job lifecycle", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/DisputeModule.sol:DisputeModule"
+      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      appealFee,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
+    await dispute.connect(owner).setAppealFee(appealFee);
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -108,6 +104,7 @@ describe("end-to-end job lifecycle", function () {
     await registry.setJobParameters(0, stakeRequired);
     await stakeManager.setJobRegistry(await registry.getAddress());
     await stakeManager.setSlashingPercentages(100, 0);
+    await stakeManager.setDisputeModule(await dispute.getAddress());
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);
@@ -165,10 +162,27 @@ describe("end-to-end job lifecycle", function () {
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, true);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), appealFee);
+    await dispute.connect(agent).raiseDispute(jobId, "evidence");
+    await ensureOutcome(jobId, true);
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.finalize(jobId);
 
     expect(await stakeManager.stakeOf(agent.address, 0)).to.equal(0n);
     expect(await feePool.pendingFees()).to.equal(0n);
   });
+
+  async function ensureOutcome(jobId, employerWinsDesired) {
+    while (true) {
+      const block = await ethers.provider.getBlock(
+        await ethers.provider.getBlockNumber()
+      );
+      const employerWins =
+        (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
+      if (employerWins === employerWinsDesired) break;
+      await ethers.provider.send("evm_mine", []);
+    }
+  }
 });
