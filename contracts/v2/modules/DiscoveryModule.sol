@@ -11,6 +11,8 @@ contract DiscoveryModule is Ownable {
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
 
+    uint256 public constant DEFAULT_MIN_STAKE = 1e6;
+
     uint256 public minStake;
 
     address[] public platforms;
@@ -24,10 +26,19 @@ contract DiscoveryModule is Ownable {
 
     constructor(
         IStakeManager _stakeManager,
-        IReputationEngine _reputationEngine
+        IReputationEngine _reputationEngine,
+        uint256 _minStake
     ) Ownable(msg.sender) {
         stakeManager = _stakeManager;
+        if (address(_stakeManager) != address(0)) {
+            emit StakeManagerUpdated(address(_stakeManager));
+        }
         reputationEngine = _reputationEngine;
+        if (address(_reputationEngine) != address(0)) {
+            emit ReputationEngineUpdated(address(_reputationEngine));
+        }
+        minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
+        emit MinStakeUpdated(minStake);
     }
 
     /// @notice Register a platform if it meets the minimum stake requirement

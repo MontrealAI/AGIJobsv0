@@ -21,7 +21,8 @@ describe("DiscoveryModule", function () {
     );
     discovery = await Discovery.deploy(
       await stakeManager.getAddress(),
-      await engine.getAddress()
+      await engine.getAddress(),
+      0
     );
     await discovery.connect(owner).setMinStake(0);
   });
