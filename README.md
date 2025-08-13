@@ -188,13 +188,26 @@ For screenshots and step-by-step instructions, see [docs/etherscan-guide.md](doc
 
 ## Deploying with $AGIALPHA
 
-The modular v2 suite is deployed module by module and then wired together on‑chain. A typical flow is:
+The modular v2 suite is deployed module by module and then wired together on‑chain. The 6‑decimal **$AGIALPHA** token is the default currency for payments, staking, rewards, and dispute deposits. Deploy modules in the following order:
 
-1. Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, `FeePool`, `TaxPolicy`, and finally `ModuleInstaller`.
-2. Call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once to wire cross‑links, set the protocol fee pool and optional tax policy, and automatically transfer ownership of all modules back to the caller.
-3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
-4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
-5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
+1. `StakeManager`
+2. `JobRegistry`
+3. `ValidationModule`
+4. `ReputationEngine`
+5. `DisputeModule`
+6. `CertificateNFT`
+7. `PlatformRegistry`
+8. `JobRouter`
+9. `PlatformIncentives`
+10. `FeePool`
+11. `TaxPolicy` (optional)
+12. `ModuleInstaller`
+
+Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once to wire cross‑links, set the protocol fee pool and optional tax policy, and automatically return ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
+
+Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `appealFee` in $AGIALPHA and calling `JobRegistry.dispute(jobId)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
+
+Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 
 ### Token decimals & staking units
 
@@ -755,7 +768,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 
 ### Appeals
 1. After a failed job outcome, ensure you have acknowledged the tax policy and confirmed `JobRegistry.isTaxExempt()` and `DisputeModule.isTaxExempt()`.
-2. In `JobRegistry` **Write Contract**, invoke `dispute(jobId)` with the required `appealFee`; the registry forwards to `DisputeModule.appeal(jobId)`.
+2. Approve the `StakeManager` for the `appealFee` in `$AGIALPHA` and then invoke `JobRegistry.dispute(jobId)`; the registry forwards to `DisputeModule.appeal(jobId)` and no ETH is ever sent.
 3. Track `DisputeRaised` and `DisputeResolved` events on both contracts to follow the appeal.
 
 ### Moderators
