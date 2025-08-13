@@ -27,17 +27,19 @@ Deploy each contract from the **Write Contract** tabs (the deployer automaticall
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
 10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
 11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register in one call.
+12. `ModuleInstaller()` – temporary helper for wiring modules.
 
 After each deployment, copy the address for later wiring.
 
 ## 3. Wire the modules
 
-Use each contract's **Write** tab to connect modules:
+Transfer ownership of each module to the `ModuleInstaller` and, from the deploying account, call:
 
-- `StakeManager.setModules(jobRegistry, disputeModule)`
-- `JobRegistry.setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)`
-- `JobRegistry.setFeePool(feePool)`
-- `PlatformRegistry.setRegistrar(platformIncentives, true)` and `JobRouter.setRegistrar(platformIncentives, true)`
+```
+ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)
+```
+
+The installer sets cross‑links, assigns the fee pool and optional tax policy, then automatically transfers ownership of all modules back to you. Finally, authorize registrars with `PlatformRegistry.setRegistrar(platformIncentives, true)` and `JobRouter.setRegistrar(platformIncentives, true)`.
 
 Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. No redeployments are required when swapping tokens or adjusting fees.
 
