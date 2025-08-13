@@ -27,6 +27,7 @@ describe("Tax exemption flags", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );

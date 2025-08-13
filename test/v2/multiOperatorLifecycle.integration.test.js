@@ -62,6 +62,7 @@ describe("multi-operator job lifecycle", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );

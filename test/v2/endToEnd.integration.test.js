@@ -61,6 +61,7 @@ describe("end-to-end job lifecycle", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );

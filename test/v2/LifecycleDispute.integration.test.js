@@ -55,6 +55,7 @@ describe("Job lifecycle with disputes", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      ethers.ZeroAddress,
       0,
       0
     );
