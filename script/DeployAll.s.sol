@@ -60,7 +60,7 @@ contract DeployAll is Script {
 
         ReputationEngine reputation = new ReputationEngine(vm.addr(deployer));
         CertificateNFT nft = new CertificateNFT("Cert", "CERT", vm.addr(deployer));
-        DisputeModule dispute = new DisputeModule(registry);
+        DisputeModule dispute = new DisputeModule(registry, 0, 0, address(0));
 
         FeePool feePool = new FeePool(
             IERC20(address(token)),

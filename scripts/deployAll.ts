@@ -74,7 +74,12 @@ async function main() {
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/modules/DisputeModule.sol:DisputeModule"
   );
-  const dispute = await Dispute.deploy(await registry.getAddress());
+  const dispute = await Dispute.deploy(
+    await registry.getAddress(),
+    0,
+    0,
+    ethers.ZeroAddress
+  );
   await dispute.waitForDeployment();
 
   // FeePool receives protocol fees and streams them to staked operators.

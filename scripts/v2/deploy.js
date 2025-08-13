@@ -78,7 +78,10 @@ async function main() {
     "contracts/v2/modules/DisputeModule.sol:DisputeModule"
   );
   const dispute = await Dispute.deploy(
-    await registry.getAddress()
+    await registry.getAddress(),
+    0,
+    0,
+    ethers.ZeroAddress
   );
   await dispute.waitForDeployment();
 
@@ -104,7 +107,12 @@ async function main() {
   await verify(await registry.getAddress(), []);
   await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress()]);
   await verify(await reputation.getAddress(), []);
-  await verify(await dispute.getAddress(), [await registry.getAddress()]);
+  await verify(await dispute.getAddress(), [
+    await registry.getAddress(),
+    0,
+    0,
+    ethers.ZeroAddress,
+  ]);
   await verify(await nft.getAddress(), ["Cert", "CERT"]);
   await verify(await tax.getAddress(), ["ipfs://policy", "All taxes on participants; contract and owner exempt"]);
 }

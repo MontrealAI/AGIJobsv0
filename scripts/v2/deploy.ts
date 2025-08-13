@@ -117,8 +117,19 @@ async function main() {
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/modules/DisputeModule.sol:DisputeModule"
   );
+  const appealFee = ethers.parseUnits(
+    typeof args.appealFee === "string" ? args.appealFee : "0",
+    6
+  );
+  const disputeWindow =
+    typeof args.disputeWindow === "string" ? Number(args.disputeWindow) : 0;
+  const moderator =
+    typeof args.moderator === "string" ? args.moderator : ethers.ZeroAddress;
   const dispute = await Dispute.deploy(
-    await registry.getAddress()
+    await registry.getAddress(),
+    appealFee,
+    disputeWindow,
+    moderator
   );
   await dispute.waitForDeployment();
 
@@ -235,7 +246,13 @@ async function main() {
   await verify(await registry.getAddress(), [owner]);
   await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress(), owner]);
   await verify(await reputation.getAddress(), [owner]);
-  await verify(await dispute.getAddress(), [await registry.getAddress(), owner]);
+  await verify(await dispute.getAddress(), [
+    await registry.getAddress(),
+    appealFee,
+    disputeWindow,
+    moderator,
+    owner,
+  ]);
   await verify(await nft.getAddress(), ["Cert", "CERT", owner]);
   await verify(await tax.getAddress(), [owner, "ipfs://policy", "All taxes on participants; contract and owner exempt"]);
   await verify(await feePool.getAddress(), [tokenAddress, await stake.getAddress(), 2, owner]);

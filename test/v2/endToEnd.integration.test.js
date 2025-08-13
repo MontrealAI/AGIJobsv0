@@ -69,7 +69,12 @@ describe("end-to-end job lifecycle", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress());
+    dispute = await Dispute.deploy(
+      await registry.getAddress(),
+      0,
+      0,
+      ethers.ZeroAddress
+    );
     await dispute.connect(owner).setAppealFee(appealFee);
 
     const FeePool = await ethers.getContractFactory(

@@ -70,7 +70,12 @@ describe("multi-operator job lifecycle", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(await registry.getAddress());
+    dispute = await Dispute.deploy(
+      await registry.getAddress(),
+      0,
+      0,
+      ethers.ZeroAddress
+    );
 
     const FeePoolF = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"

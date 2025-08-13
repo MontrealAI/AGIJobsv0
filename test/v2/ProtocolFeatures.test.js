@@ -123,7 +123,12 @@ describe("Protocol core features", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    const dispute = await Dispute.deploy(registry.target);
+    const dispute = await Dispute.deploy(
+      registry.target,
+      0,
+      0,
+      ethers.ZeroAddress
+    );
     await dispute.connect(owner).setAppealFee(5);
     await dispute.connect(owner).setDisputeWindow(0);
     await registry.setDisputeModule(dispute.target);

@@ -14,12 +14,15 @@ contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
 
     /// @notice Fee required to initiate a dispute, in token units (6 decimals).
+    /// @dev Defaults to 1 token (1e6 units) if zero is provided to the constructor.
     uint256 public appealFee;
 
     /// @notice Time that must elapse before a dispute can be resolved.
+    /// @dev Defaults to 1 day if zero is provided to the constructor.
     uint256 public disputeWindow;
 
     /// @notice Optional moderator address that can resolve disputes.
+    /// @dev Defaults to the deployer address if zero is provided to the constructor.
     address public moderator;
 
     struct Dispute {
@@ -39,9 +42,25 @@ contract DisputeModule is Ownable {
     event AppealFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
 
-    constructor(IJobRegistry _jobRegistry) Ownable(msg.sender) {
+    /// @param _jobRegistry Address of the JobRegistry contract.
+    /// @param _appealFee Initial appeal fee in token units (6 decimals); defaults to 1e6.
+    /// @param _disputeWindow Minimum time in seconds before resolution; defaults to 1 day.
+    /// @param _moderator Optional moderator address; defaults to the deployer.
+    constructor(
+        IJobRegistry _jobRegistry,
+        uint256 _appealFee,
+        uint256 _disputeWindow,
+        address _moderator
+    ) Ownable(msg.sender) {
         jobRegistry = _jobRegistry;
-        moderator = msg.sender;
+
+        appealFee = _appealFee > 0 ? _appealFee : 1e6;
+        emit AppealFeeUpdated(appealFee);
+
+        disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
+        emit DisputeWindowUpdated(disputeWindow);
+
+        moderator = _moderator != address(0) ? _moderator : msg.sender;
     }
 
     /// @notice Modifier restricting calls to the owner or moderator.
@@ -63,12 +82,14 @@ contract DisputeModule is Ownable {
     }
 
     /// @notice Configure the appeal fee in token units (6 decimals).
+    /// @param fee New appeal fee; 0 disables the fee.
     function setAppealFee(uint256 fee) external onlyOwner {
         appealFee = fee;
         emit AppealFeeUpdated(fee);
     }
 
-    /// @notice Configure the dispute resolution window.
+    /// @notice Configure the dispute resolution window in seconds.
+    /// @param window Minimum time before a dispute can be resolved.
     function setDisputeWindow(uint256 window) external onlyOwner {
         disputeWindow = window;
         emit DisputeWindowUpdated(window);
