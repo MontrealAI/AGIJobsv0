@@ -8,4 +8,7 @@ import {IPlatformRegistry} from "./IPlatformRegistry.sol";
 interface IPlatformRegistryFull is IPlatformRegistry {
     /// @notice Register an operator on their behalf
     function registerFor(address operator) external;
+
+    /// @notice Authorize or revoke a registrar
+    function setRegistrar(address registrar, bool allowed) external;
 }

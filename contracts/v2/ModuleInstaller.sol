@@ -27,6 +27,7 @@ interface IOwnable {
 ///      own `transferOwnership` functions.
 contract ModuleInstaller {
     bool public initialized;
+    address public owner;
 
     /// @notice Emitted after all modules are wired together.
     event ModulesInstalled(
@@ -42,6 +43,10 @@ contract ModuleInstaller {
         address feePool,
         address taxPolicy
     );
+
+    constructor(address _owner) {
+        owner = _owner;
+    }
 
     /// @notice Connect core modules after deployment.
     /// @param jobRegistry Address of the JobRegistry contract
@@ -69,6 +74,7 @@ contract ModuleInstaller {
         ITaxPolicy taxPolicy
     ) external {
         require(!initialized, "init");
+        require(msg.sender == owner, "owner");
         initialized = true;
 
         jobRegistry.setModules(
@@ -88,6 +94,8 @@ contract ModuleInstaller {
             platformRegistry,
             jobRouter
         );
+        platformRegistry.setRegistrar(address(platformIncentives), true);
+        jobRouter.setRegistrar(address(platformIncentives), true);
 
         jobRegistry.transferOwnership(msg.sender);
         stakeManager.transferOwnership(msg.sender);
