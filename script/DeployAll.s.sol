@@ -8,7 +8,7 @@ import {StakeManager} from "contracts/v2/StakeManager.sol";
 import {JobRegistry} from "contracts/v2/JobRegistry.sol";
 import {ValidationModule} from "contracts/v2/ValidationModule.sol";
 import {ReputationEngine} from "contracts/v2/ReputationEngine.sol";
-import {DisputeModule} from "contracts/v2/DisputeModule.sol";
+import {DisputeModule} from "contracts/v2/modules/DisputeModule.sol";
 import {CertificateNFT} from "contracts/v2/modules/CertificateNFT.sol";
 import {ICertificateNFT} from "contracts/v2/interfaces/ICertificateNFT.sol";
 import {FeePool} from "contracts/v2/FeePool.sol";
@@ -60,7 +60,7 @@ contract DeployAll is Script {
 
         ReputationEngine reputation = new ReputationEngine(vm.addr(deployer));
         CertificateNFT nft = new CertificateNFT("Cert", "CERT", vm.addr(deployer));
-        DisputeModule dispute = new DisputeModule(registry, vm.addr(deployer));
+        DisputeModule dispute = new DisputeModule(registry);
 
         FeePool feePool = new FeePool(
             IERC20(address(token)),

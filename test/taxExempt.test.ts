@@ -73,14 +73,9 @@ describe("Tax exemption flags", function () {
     await val.waitForDeployment();
 
     const DisputeModule = await ethers.getContractFactory(
-      "contracts/v2/DisputeModule.sol:DisputeModule"
+      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    const disp = await DisputeModule.deploy(
-      await registry.getAddress(),
-      0,
-      owner.address,
-      owner.address
-    );
+    const disp = await DisputeModule.deploy(await registry.getAddress());
     await disp.waitForDeployment();
 
     expect(await tax.isTaxExempt()).to.equal(true);

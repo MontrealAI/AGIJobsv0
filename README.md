@@ -205,7 +205,7 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 
 Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once to wire cross‑links, set the protocol fee pool and optional tax policy, and automatically return ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
 
-Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `appealFee` in $AGIALPHA and calling `JobRegistry.dispute(jobId)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
+Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `appealFee` in $AGIALPHA and calling `JobRegistry.raiseDispute(jobId, evidence)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
 
 Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 
@@ -571,7 +571,7 @@ These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`]
 
 The sample [deployment script](scripts/v2/deploy.ts) wires the modules, sets the `TaxPolicy`, and points the `StakeManager` at the `JobRegistry`, providing a turnkey, tax‑neutral configuration that non‑technical users can verify on explorers.
 
-For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.sol), [`JobRegistry`](contracts/v2/JobRegistry.sol), [`StakeManager`](contracts/v2/StakeManager.sol), [`ValidationModule`](contracts/v2/ValidationModule.sol), [`ReputationEngine`](contracts/v2/ReputationEngine.sol), [`DisputeModule`](contracts/v2/DisputeModule.sol), and [`CertificateNFT`](contracts/v2/CertificateNFT.sol) each expose `isTaxExempt()` which always returns `true`, signalling that neither these contracts nor the owner can ever accrue tax liability.
+For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.sol), [`JobRegistry`](contracts/v2/JobRegistry.sol), [`StakeManager`](contracts/v2/StakeManager.sol), [`ValidationModule`](contracts/v2/ValidationModule.sol), [`ReputationEngine`](contracts/v2/ReputationEngine.sol), [`DisputeModule`](contracts/v2/modules/DisputeModule.sol), and [`CertificateNFT`](contracts/v2/CertificateNFT.sol) each expose `isTaxExempt()` which always returns `true`, signalling that neither these contracts nor the owner can ever accrue tax liability.
 
 ### Checking the tax disclaimer on Etherscan
 
@@ -757,7 +757,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 2. In `StakeManager` **Read Contract**, check `isTaxExempt()` then stake AGI with `depositStake(0, amount)` (role `0` = Agent).
 3. Apply using `JobRegistry.applyForJob(jobId)` and, once hired, submit work with `submitWork(jobId, details)`.
 4. Call `requestJobCompletion(jobId, evidence)` to trigger validation.
-5. If validators reject the result, open the `DisputeModule`, confirm `isTaxExempt()`, and escalate by calling `JobRegistry.dispute(jobId)` with the appeal fee.
+5. If validators reject the result, open the `DisputeModule`, confirm `isTaxExempt()`, and escalate by calling `JobRegistry.raiseDispute(jobId, evidence)`.
 
 ### Validators
 1. On `JobRegistry`, call `acknowledgeTaxPolicy()` and confirm `isTaxExempt()`.
@@ -768,7 +768,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 
 ### Appeals
 1. After a failed job outcome, ensure you have acknowledged the tax policy and confirmed `JobRegistry.isTaxExempt()` and `DisputeModule.isTaxExempt()`.
-2. Approve the `StakeManager` for the `appealFee` in `$AGIALPHA` and then invoke `JobRegistry.dispute(jobId)`; the registry forwards to `DisputeModule.appeal(jobId)` and no ETH is ever sent.
+2. Approve the `StakeManager` for the `appealFee` in `$AGIALPHA` and then invoke `JobRegistry.raiseDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute(jobId, evidence)` and no ETH is ever sent.
 3. Track `DisputeRaised` and `DisputeResolved` events on both contracts to follow the appeal.
 
 ### Moderators
@@ -1309,7 +1309,7 @@ Once configured, all interaction—job creation, staking, validation, dispute re
 
 **appeal**
 1. Confirm `isTaxExempt()` on both `JobRegistry` and `DisputeModule`.
-2. In `JobRegistry` **Write Contract**, call `dispute(jobId)` with the required appeal fee; the registry forwards to `DisputeModule.appeal(jobId)`.
+2. In `JobRegistry` **Write Contract**, call `raiseDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute(jobId, evidence)`.
 
 Role-based quick steps:
 

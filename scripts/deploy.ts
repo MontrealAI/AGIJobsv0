@@ -50,12 +50,9 @@ async function main() {
   const nft = await NFT.deploy("Cert", "CERT", deployer.address);
 
   const Dispute = await ethers.getContractFactory(
-    "contracts/v2/DisputeModule.sol:DisputeModule"
+    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
   );
-  const dispute = await Dispute.deploy(
-    await registry.getAddress(),
-    deployer.address
-  );
+  const dispute = await Dispute.deploy(await registry.getAddress());
 
   await registry.setModules(
     await validation.getAddress(),
