@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IRoutingModule {
     function selectOperator(bytes32 jobId) external returns (address);
@@ -13,7 +14,7 @@ interface IRoutingModule {
 /// Jobs are routed to operators via the RoutingModule. Rewards are released
 /// to the operator once the employer accepts the submitted result or after a
 /// timeout.
-contract JobEscrow {
+contract JobEscrow is Ownable {
     using SafeERC20 for IERC20;
 
     enum State { None, Posted, Submitted, Accepted, Cancelled }
@@ -30,19 +31,33 @@ contract JobEscrow {
 
     uint256 public constant TIMEOUT = 3 days;
 
-    IERC20 public immutable token;
+    IERC20 public token;
     IRoutingModule public routingModule;
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
 
+    event TokenUpdated(address indexed token);
+    event RoutingModuleUpdated(address indexed routingModule);
     event JobPosted(uint256 indexed jobId, address indexed employer, address indexed operator, uint256 reward, string data);
     event JobCancelled(uint256 indexed jobId);
     event ResultSubmitted(uint256 indexed jobId, string result);
     event ResultAccepted(uint256 indexed jobId, address caller);
 
-    constructor(IERC20 _token, IRoutingModule _routing) {
-        token = _token;
+    constructor(IERC20 _token, IRoutingModule _routing) Ownable(msg.sender) {
+        token = address(_token) == address(0)
+            ? IERC20(0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe)
+            : _token;
         routingModule = _routing;
+    }
+
+    function setToken(IERC20 newToken) external onlyOwner {
+        token = newToken;
+        emit TokenUpdated(address(newToken));
+    }
+
+    function setRoutingModule(IRoutingModule newRouting) external onlyOwner {
+        routingModule = newRouting;
+        emit RoutingModuleUpdated(address(newRouting));
     }
 
     /// @notice Post a new job and escrow the reward.
