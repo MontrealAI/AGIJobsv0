@@ -3,6 +3,20 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+### Deployment Quickstart
+
+1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller`, supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
+2. **Initialize once** – Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`. This single call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
+3. **Token‑only disputes** – Agents approve the `StakeManager` for the `appealFee` and raise disputes with `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; the bond stays entirely in tokens, never ETH.
+
+| Participant | One-call helper | Notes |
+| --- | --- | --- |
+| Employer | `acknowledgeAndCreateJob(reward, uri)` | Approve `StakeManager` for `reward + fee` |
+| Agent | `stakeAndApply(jobId, amount)` | Approve stake amount; combines deposit and apply |
+| Platform operator | `stakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
+
+See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
+
 ### Deployment simplifications & defaults
 
 StakeManager and FeePool constructors each accept an `IERC20 token` address and an optional `_treasury`. StakeManager additionally lets the deployer pre‑wire a `jobRegistry` and `disputeModule`; supplying `address(0)` for either defers wiring to a later `setModules` call. Deployments here default to the $AGIALPHA token above, and passing `address(0)` uses the owner as treasury. Should economics change, the owner may later call `setToken` on these modules to point to a different ERC‑20 without redeploying. If a zero token address is supplied, both modules automatically fall back to the $AGIALPHA default.
@@ -46,14 +60,6 @@ For a detailed description of the platform-wide incentive architecture, see [doc
    - Stakers can claim protocol fees with a single call to `FeePool.claimRewards()`; any pending fees are distributed automatically.
 3. Fees, staking rewards, and dispute deposits all move in `$AGIALPHA` by default. The contract owner can swap the payment token later via `StakeManager.setToken` and related setters without redeploying other modules.
 4. Before staking or claiming rewards, call `JobRegistry.acknowledgeTaxPolicy` and confirm `isTaxExempt()` on each module.
-
-#### Role-based entry points
-
-| Participant | One-call helper | Notes |
-| --- | --- | --- |
-| Employer | `acknowledgeAndCreateJob(reward, uri)` | Approve `StakeManager` for `reward + fee` first |
-| Agent | `stakeAndApply(jobId, amount)` | Approve stake amount; combines deposit and apply |
-| Platform operator | `stakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
 
 #### Beginner-friendly Etherscan flow
 
@@ -209,17 +215,18 @@ Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegist
 
 Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 
-### Token decimals & staking units
+### Token units & swapping
 
-$AGIALPHA uses 6‑decimal base units for both payments and staking:
+$AGIALPHA uses 6‑decimal base units for all payments, stakes and dispute bonds:
 
 ```
-1 token   = 1_000_000
-0.5 token =   500_000
+1 token   = 1_000000
+0.5 token =   500000
+0.1 token =   100000
 25 tokens = 25_000000
 ```
 
-The deployer must also stake; an address with zero stake receives no job routing or FeePool revenue.
+Use these integers for every approval and constructor parameter. The owner can later swap to a different ERC‑20 via `StakeManager.setToken` without redeploying other modules. The deployer must also stake; an address with zero stake receives no job routing or FeePool revenue.
 
 ### Etherscan registration checklist
 
