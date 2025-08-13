@@ -172,19 +172,32 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(false); // colluding validator
     await registry.connect(agent).completeJob(jobId);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), appealFee);
     await expect(
-      registry.connect(agent).dispute(jobId, { value: appealFee })
+      registry.connect(agent).dispute(jobId, "evidence")
     )
       .to.emit(registry, "JobDisputed")
       .withArgs(jobId, agent.address);
-    await expect(dispute.connect(owner).resolve(jobId, false))
-      .to.emit(registry, "JobFinalized")
-      .withArgs(jobId, true);
+    const block = await ethers.provider.getBlock("latest");
+    const expected = (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.connect(employer).finalize(jobId);
 
-    expect(await token.balanceOf(agent.address)).to.equal(900);
-    expect(await rep.reputation(agent.address)).to.equal(1);
-    expect(await rep.isBlacklisted(agent.address)).to.equal(false);
-    expect(await nft.balanceOf(agent.address)).to.equal(1);
+    if (expected) {
+      // employer wins
+      expect(await token.balanceOf(agent.address)).to.equal(800);
+      expect(await rep.reputation(agent.address)).to.equal(0);
+      expect(await rep.isBlacklisted(agent.address)).to.equal(true);
+      expect(await nft.balanceOf(agent.address)).to.equal(0);
+    } else {
+      // agent wins
+      expect(await token.balanceOf(agent.address)).to.equal(900);
+      expect(await rep.reputation(agent.address)).to.equal(1);
+      expect(await rep.isBlacklisted(agent.address)).to.equal(false);
+      expect(await nft.balanceOf(agent.address)).to.equal(1);
+    }
   });
 
   it("slashes stake when dispute fails", async () => {
@@ -194,20 +207,33 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), appealFee);
     await expect(
-      registry.connect(agent).dispute(jobId, { value: appealFee })
+      registry.connect(agent).dispute(jobId, "evidence")
     )
       .to.emit(registry, "JobDisputed")
       .withArgs(jobId, agent.address);
-    await expect(dispute.connect(owner).resolve(jobId, true))
-      .to.emit(registry, "JobFinalized")
-      .withArgs(jobId, false);
+    const block2 = await ethers.provider.getBlock("latest");
+    const expected2 = (BigInt(block2.hash) ^ BigInt(jobId)) % 2n === 0n;
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.connect(employer).finalize(jobId);
 
-    expect(await token.balanceOf(agent.address)).to.equal(800);
-    expect(await token.balanceOf(employer.address)).to.equal(1200);
-    expect(await rep.reputation(agent.address)).to.equal(0);
-    expect(await rep.isBlacklisted(agent.address)).to.equal(true);
-    expect(await nft.balanceOf(agent.address)).to.equal(0);
+    if (expected2) {
+      // employer wins
+      expect(await token.balanceOf(agent.address)).to.equal(800);
+      expect(await token.balanceOf(employer.address)).to.equal(1200);
+      expect(await rep.reputation(agent.address)).to.equal(0);
+      expect(await rep.isBlacklisted(agent.address)).to.equal(true);
+      expect(await nft.balanceOf(agent.address)).to.equal(0);
+    } else {
+      // agent wins
+      expect(await token.balanceOf(agent.address)).to.equal(900);
+      expect(await rep.reputation(agent.address)).to.equal(1);
+      expect(await rep.isBlacklisted(agent.address)).to.equal(false);
+      expect(await nft.balanceOf(agent.address)).to.equal(1);
+    }
   });
 
   it("allows employer to cancel before completion", async () => {

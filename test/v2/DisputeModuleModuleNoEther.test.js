@@ -10,7 +10,7 @@ describe("DisputeModule module ether rejection", function () {
     registry = await JobMock.deploy();
     await registry.waitForDeployment();
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     dispute = await Dispute.deploy(await registry.getAddress());
     await dispute.waitForDeployment();

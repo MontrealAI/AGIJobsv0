@@ -118,8 +118,9 @@ interface IJobRegistry {
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
+    /// @param evidence Supporting evidence for the dispute
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent}
-    function dispute(uint256 jobId) external payable;
+    function dispute(uint256 jobId, string calldata evidence) external;
 
     /// @notice Acknowledge tax policy if needed and raise a dispute with evidence
     /// @param jobId Identifier of the disputed job

@@ -2,54 +2,29 @@
 pragma solidity ^0.8.25;
 
 /// @title IDisputeModule
-/// @notice Interface for raising and resolving disputes or appeals
+/// @notice Interface for raising and resolving disputes with token bonds
 interface IDisputeModule {
-    /// @dev Reverts when appeal fee sent does not match required value
-    error IncorrectAppealFee(uint256 expected, uint256 provided);
-
-    /// @dev Reverts when a job has already been appealed
-    error AlreadyAppealed(uint256 jobId);
-
-    /// @dev Reverts when caller is neither the employer nor the agent
-    error NotParticipant(address caller);
-
-    /// @dev Reverts when dispute resolution is attempted by an unauthorised account
-    error NotArbiter(address caller);
-
-    /// @dev Reverts when no appeal bond exists for a job
-    error NoAppealBond(uint256 jobId);
-
-    event DisputeRaised(uint256 indexed jobId, address indexed caller);
+    event DisputeRaised(uint256 indexed jobId, address indexed caller, string evidence);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
-    event AppealFeeUpdated(uint256 fee);
     event ModeratorUpdated(address moderator);
-    event AppealJuryUpdated(address jury);
+    event AppealFeeUpdated(uint256 fee);
+    event DisputeWindowUpdated(uint256 window);
 
-    /// @notice Escalate a job dispute by posting the appeal fee
+    /// @notice Post a dispute bond and submit evidence for a job
     /// @param jobId Identifier of the disputed job
-    /// @dev Reverts with {IncorrectAppealFee} if the supplied value is wrong
-    ///      or {AlreadyAppealed} if a bond already exists
-    function appeal(uint256 jobId) external payable;
+    /// @param evidence Supporting evidence for the dispute
+    function raiseDispute(uint256 jobId, string calldata evidence) external;
 
-    /// @notice Resolve an appealed job and distribute the bond to the winner
-    /// @param jobId Identifier of the job being appealed
-    /// @param employerWins True if the employer prevails in the dispute
-    /// @dev Reverts with {NotArbiter} if caller is unauthorised or
-    ///      {NoAppealBond} if no bond was posted
-    function resolve(uint256 jobId, bool employerWins) external;
+    /// @notice Resolve an existing dispute after the dispute window elapses
+    /// @param jobId Identifier of the job being disputed
+    function resolveDispute(uint256 jobId) external;
 
-    /// @notice Owner configuration for appeal economics
-    /// @param fee New fee required to raise an appeal
-    /// @dev Only callable by contract owner
+    /// @notice Configure the appeal fee in token units (6 decimals)
     function setAppealFee(uint256 fee) external;
 
-    /// @notice Owner configuration for dispute moderator
-    /// @param moderator Address allowed to resolve disputes in addition to owner
-    /// @dev Only callable by contract owner
+    /// @notice Configure the moderator address authorised to resolve disputes
     function setModerator(address moderator) external;
 
-    /// @notice Owner configuration for dispute jury
-    /// @param jury Address allowed to resolve disputes alongside owner
-    /// @dev Only callable by contract owner
-    function setAppealJury(address jury) external;
+    /// @notice Configure the minimum window before disputes may be resolved
+    function setDisputeWindow(uint256 window) external;
 }

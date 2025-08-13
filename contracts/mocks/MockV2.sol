@@ -89,7 +89,7 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
     function applyForJob(uint256) external override {}
     function completeJob(uint256) external override {}
     function acknowledgeAndCompleteJob(uint256) external override {}
-    function dispute(uint256) external payable override {}
+    function dispute(uint256, string calldata) external override {}
     function acknowledgeAndDispute(uint256, string calldata) external override {}
     function resolveDispute(uint256, bool) external override {}
     function finalize(uint256) external override {}

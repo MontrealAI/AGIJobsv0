@@ -21,7 +21,7 @@ Deploy each contract from the **Write Contract** tabs (the deployer automaticall
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
 5. `ReputationEngine()` – optional reputation weighting.
-6. `DisputeModule(jobRegistry, appealFee, moderator, jury)` – manages appeals and dispute fees.
+6. `DisputeModule(jobRegistry)` – manages disputes and token bonds; configure `appealFee` and `disputeWindow` after deployment.
 7. `CertificateNFT(name, symbol)` – certifies completed work.
 8. `FeePool(token, stakeManager, role, burnPct, treasury)` – use `address(0)` for `token` to fall back to $AGIALPHA; `burnPct` defaults to `0`.
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
@@ -55,8 +55,8 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 
 ## 6. Dispute resolution
 
-- Participants approve the `StakeManager` for the configured `appealFee` and call `JobRegistry.dispute(jobId)`.
-- The `DisputeModule` holds the fee in `$AGIALPHA` and releases it to the winner or back to the payer after resolution.
+- Participants approve the `StakeManager` for the configured `appealFee` and call `JobRegistry.dispute(jobId, evidence)`.
+- The `DisputeModule` locks the bond in `$AGIALPHA` and releases it to the winner or back to the payer after resolution.
 
 ## 7. Final checks
 
