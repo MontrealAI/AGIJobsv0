@@ -26,6 +26,7 @@ describe("Full system integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress
     );
+    await stakeManager.connect(owner).setMinStake(0);
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/mocks/ValidationStub.sol:ValidationStub"

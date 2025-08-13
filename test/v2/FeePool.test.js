@@ -22,6 +22,7 @@ describe("FeePool", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress
     );
+    await stakeManager.connect(owner).setMinStake(0);
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
@@ -62,6 +63,7 @@ describe("FeePool", function () {
       0,
       treasury.address
     );
+    await feePool.setBurnPct(0);
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [

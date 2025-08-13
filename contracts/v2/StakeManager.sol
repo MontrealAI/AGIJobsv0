@@ -35,6 +35,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     address public constant DEFAULT_TOKEN =
         0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
 
+    /// @notice default minimum stake when constructor param is zero
+    uint256 public constant DEFAULT_MIN_STAKE = 1e6;
+
     /// @notice ERC20 token used for staking and payouts
     IERC20 public token;
 
@@ -103,6 +106,19 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event StakeUnlocked(address indexed user, uint256 amount);
     event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
 
+    /// @notice Deploys the StakeManager.
+    /// @param _token ERC20 token used for staking and payouts. Defaults to
+    /// DEFAULT_TOKEN when zero address.
+    /// @param _minStake Minimum stake required to participate. Defaults to
+    /// DEFAULT_MIN_STAKE when set to zero.
+    /// @param _employerSlashPct Percentage of slashed amount sent to employer
+    /// (0-100).
+    /// @param _treasurySlashPct Percentage of slashed amount sent to treasury
+    /// (0-100).
+    /// @param _treasury Address receiving treasury share of slashed stake.
+    /// Defaults to deployer when zero address.
+    /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
+    /// @param _disputeModule Dispute module authorized to manage dispute fees.
     constructor(
         IERC20 _token,
         uint256 _minStake,
@@ -118,10 +134,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
                 : _token;
         emit TokenUpdated(address(token));
 
-        minStake = _minStake;
-        if (_minStake > 0) {
-            emit MinStakeUpdated(_minStake);
-        }
+        minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
+        emit MinStakeUpdated(minStake);
         if (_employerSlashPct + _treasurySlashPct == 0) {
             employerSlashPct = 0;
             treasurySlashPct = 100;

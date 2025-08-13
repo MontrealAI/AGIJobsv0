@@ -25,6 +25,7 @@ describe("JobRegistry integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress
     );
+    await stakeManager.connect(owner).setMinStake(0);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
     const Validation = await ethers.getContractFactory(
       "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
@@ -134,6 +135,7 @@ describe("JobRegistry integration", function () {
       0,
       treasury.address
     );
+    await feePool.setBurnPct(0);
     await registry.connect(owner).setFeePool(await feePool.getAddress());
     await registry.connect(owner).setFeePct(10); // 10%
     await token.mint(owner.address, reward);

@@ -18,6 +18,8 @@ interface IReputationEngine {
 /// @dev Holds no tokens and rejects ether to remain tax neutral. All values
 ///      use 6 decimals via the `StakeManager`.
 contract PlatformRegistry is Ownable, ReentrancyGuard {
+    uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = 1e6;
+
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
     uint256 public minPlatformStake;
@@ -33,6 +35,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     event Blacklisted(address indexed operator, bool status);
     event RegistrarUpdated(address indexed registrar, bool allowed);
 
+    /// @notice Deploys the PlatformRegistry.
+    /// @param _stakeManager StakeManager contract.
+    /// @param _reputationEngine Reputation engine used for scoring.
+    /// @param _minStake Minimum stake required for platforms to register.
+    /// Defaults to DEFAULT_MIN_PLATFORM_STAKE when set to zero.
     constructor(
         IStakeManager _stakeManager,
         IReputationEngine _reputationEngine,
@@ -48,10 +55,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
             emit ReputationEngineUpdated(address(_reputationEngine));
         }
 
-        minPlatformStake = _minStake;
-        if (_minStake > 0) {
-            emit MinPlatformStakeUpdated(_minStake);
-        }
+        minPlatformStake =
+            _minStake == 0 ? DEFAULT_MIN_PLATFORM_STAKE : _minStake;
+        emit MinPlatformStakeUpdated(minPlatformStake);
     }
 
     /// @notice Register caller as a platform operator.

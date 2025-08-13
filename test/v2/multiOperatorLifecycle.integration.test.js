@@ -86,6 +86,7 @@ describe("multi-operator job lifecycle", function () {
       0,
       owner.address
     );
+    await feePool.setBurnPct(0);
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
