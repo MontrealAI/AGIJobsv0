@@ -13,7 +13,8 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 | --- | --- | --- |
 | Employer | `acknowledgeAndCreateJob(reward, uri)` | Approve `StakeManager` for `reward + fee` |
 | Agent | `stakeAndApply(jobId, amount)` | Approve stake amount; combines deposit and apply |
-| Platform operator | `stakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
+| Platform operator | `acknowledgeStakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
+| Platform (no stake) | `acknowledgeAndRegister()` | Registers in `PlatformRegistry` without staking |
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
@@ -36,6 +37,7 @@ Helper functions expose common flows in single calls so Etherscan users do not h
 - `JobRegistry.acknowledgeAndCreateJob` posts work after acknowledging the tax policy.
 - `JobRegistry.stakeAndApply` deposits stake and applies to a job.
 - `PlatformIncentives.stakeAndActivate` (and `acknowledgeStakeAndActivate`) stakes and registers a platform for routing and fees.
+- `PlatformRegistry.acknowledgeAndRegister` lists an operator without staking.
 - `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
 - `StakeManager.acknowledgeAndDeposit` and `acknowledgeAndDepositFor` stake tokens after acknowledging the tax policy, reducing transactions for users and helpers.
 
