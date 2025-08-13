@@ -1,12 +1,14 @@
 # Etherscan Interaction Guide
 
+For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-agialpha.md).
+
 ## Quick Links
 - AGIJobManager v0: [Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) | [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
 - $AGI Token: [Etherscan](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code) | [Blockscout](https://eth.blockscout.com/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D?tab=contract)
 
 > **Tax Note:** The contracts and their owner are globally tax‑exempt; employers, agents, and validators shoulder all tax duties. Each module exposes `isTaxExempt()` for verification.
 
-> **Base units:** $AGIALPHA uses 6 decimals. Enter amounts as integers (`1` token = `1_000000`, `0.5` token = `500000`).
+> **Base units:** $AGIALPHA uses 6 decimals. Enter amounts as integers (`1` token = `1_000000`, `0.5` token = `500000`, `0.1` token = `100000`).
 
 ## Calling Contract Methods via Etherscan
 
@@ -20,6 +22,7 @@
    ![distribute-fees](https://via.placeholder.com/650x150?text=distributeFees)
 5. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
    ![claim-rewards](https://via.placeholder.com/650x150?text=claimRewards)
+6. **acknowledgeAndDispute** – if contesting a job, approve the `StakeManager` for the `appealFee` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)`.
 
 ## Module Addresses & Roles
 | Module | Address | Role |
@@ -115,7 +118,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 
 ### Disputers
 1. Ensure you've acknowledged the tax policy and confirmed **isTaxExempt()** on both `JobRegistry` and `DisputeModule`.
-2. In `JobRegistry` **Write Contract**, call **dispute(jobId)** with the required `appealFee`; the registry forwards to `DisputeModule.appeal(jobId)`.
+2. Approve the `StakeManager` for the configured `appealFee` in `$AGIALPHA` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)` from the **Write Contract** tab.
 3. After the ruling, verify **DisputeResolved** in the `DisputeModule` and `JobRegistry` event logs.
 
 ## Function Reference

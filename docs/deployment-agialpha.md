@@ -1,6 +1,6 @@
 # Deployment Guide: AGIJobs v2 with $AGIALPHA
 
-This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 6‑decimal **$AGIALPHA** token. By default this token handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer.
+This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 6‑decimal **$AGIALPHA** token. By default this token handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
 
 ## 1. Prerequisites
 
@@ -17,7 +17,7 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Parameters may be left as `0` to accept the defaults shown below:
 
 1. `AGIALPHAToken()` – after deployment, call `mint(to, amount)` to create the initial supply.
-2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury.
+2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury. The owner can later swap to a different ERC‑20 with `StakeManager.setToken`.
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
 5. `ReputationEngine()` – optional reputation weighting.
@@ -39,7 +39,7 @@ Transfer ownership of each module to the `ModuleInstaller` and, from the deployi
 ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)
 ```
 
-The installer sets cross‑links, assigns the fee pool and optional tax policy, then automatically transfers ownership of all modules back to you. Finally, authorize registrars with `PlatformRegistry.setRegistrar(platformIncentives, true)` and `JobRouter.setRegistrar(platformIncentives, true)`.
+The installer sets cross‑links, assigns the fee pool and optional tax policy, registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`, then automatically transfers ownership of all modules back to you.
 
 Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. No redeployments are required when swapping tokens or adjusting fees.
 
@@ -53,7 +53,7 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 
 ## 5. Stake and register a platform
 
-1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000`).
+1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000`, `0.1 token = 100000`).
 2. Call `PlatformIncentives.stakeAndActivate(amount)` from the operator's address. The helper stakes tokens, registers the platform in `PlatformRegistry`, and enrolls it with `JobRouter` for routing priority.
 3. The owner may register with `amount = 0` to appear in registries without fee or routing boosts.
 
@@ -65,8 +65,8 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 
 ## 7. Dispute resolution
 
-- Participants must approve the `StakeManager` for the configured `appealFee` in `$AGIALPHA` and call `JobRegistry.dispute(jobId)`; no ETH is ever sent.
-- The `DisputeModule` holds the fee in `$AGIALPHA` and releases it to the winner or back to the payer after resolution.
+- The disputing agent approves the `StakeManager` for the configured `appealFee` in `$AGIALPHA` and calls `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; no ETH is ever sent.
+- The `DisputeModule` escrows the token fee and releases it to the winner or back to the payer after resolution.
 
 ## 8. Final checks
 
