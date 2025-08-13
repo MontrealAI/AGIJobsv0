@@ -555,9 +555,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         finalize(jobId);
     }
 
+    /// @notice Acknowledge the tax policy and cancel a job in one call.
+    /// @param jobId Identifier of the job to cancel
+    function acknowledgeAndCancel(uint256 jobId) external {
+        _acknowledge(msg.sender);
+        cancelJob(jobId);
+    }
+
     /// @notice Cancel a job before completion and refund the employer.
     function cancelJob(uint256 jobId)
-        external
+        public
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
