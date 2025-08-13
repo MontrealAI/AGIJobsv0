@@ -7,7 +7,7 @@ async function deployFixture() {
   const Validation = await ethers.getContractFactory(
     "contracts/ValidationModule.sol:ValidationModule"
   );
-  const validation = await Validation.deploy(owner.address);
+  const validation = await Validation.deploy();
   await validation.waitForDeployment();
 
   const Reputation = await ethers.getContractFactory(
@@ -26,13 +26,13 @@ async function deployFixture() {
   const Cert = await ethers.getContractFactory(
     "contracts/CertificateNFT.sol:CertificateNFT"
   );
-  const cert = await Cert.deploy("Cert", "CERT", owner.address);
+  const cert = await Cert.deploy();
   await cert.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(
     "contracts/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy(owner.address);
+  const registry = await Registry.deploy();
   await registry.waitForDeployment();
 
   await registry.setValidationModule(await validation.getAddress());

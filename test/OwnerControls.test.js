@@ -7,7 +7,7 @@ describe("OwnerControls", function () {
   beforeEach(async () => {
     [owner, other, addr1] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory("OwnerControls");
-    controls = await Factory.deploy(owner.address);
+    controls = await Factory.deploy();
     await controls.waitForDeployment();
   });
 

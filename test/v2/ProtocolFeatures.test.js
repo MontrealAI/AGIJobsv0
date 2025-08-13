@@ -21,11 +21,8 @@ describe("Protocol core features", function () {
     const StakeManager = await ethers.getContractFactory(
       "contracts/StakeManager.sol:StakeManager"
     );
-    const manager = await StakeManager.deploy(
-      token.target,
-      owner.address,
-      ethers.ZeroAddress
-    );
+    const manager = await StakeManager.deploy();
+    await manager.setToken(token.target);
     await manager.setSlashingPercentage(1, 100);
     await token.transfer(user.address, ethers.parseUnits("100", 6));
     await manager.connect(user).acknowledgeTaxPolicy();
@@ -57,7 +54,7 @@ describe("Protocol core features", function () {
       ethers.parseUnits("1000", 6)
     );
     const Registry = await ethers.getContractFactory("OperatorRegistry");
-    const registry = await Registry.deploy(owner.address);
+    const registry = await Registry.deploy();
     const Router = await ethers.getContractFactory("StakingRouter");
     const router = await Router.deploy(
       token.target,

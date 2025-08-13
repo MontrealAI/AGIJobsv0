@@ -20,7 +20,7 @@ contract OperatorRegistry is Ownable {
     event OperatorReputationUpdated(address indexed operator, uint256 reputation);
     event StakingRouterUpdated(address indexed router);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     modifier onlyStakingRouter() {
         require(msg.sender == stakingRouter, "router");

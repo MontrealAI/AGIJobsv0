@@ -15,7 +15,7 @@ describe("StakingRouter", function () {
     await token.waitForDeployment();
 
     const Registry = await ethers.getContractFactory("OperatorRegistry");
-    registry = await Registry.deploy(owner.address);
+    registry = await Registry.deploy();
     await registry.waitForDeployment();
 
     const Router = await ethers.getContractFactory("StakingRouter");

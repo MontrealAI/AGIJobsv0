@@ -16,10 +16,7 @@ contract JobNFT is ERC721, Ownable {
     event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
 
-    constructor(string memory name_, string memory symbol_, address owner)
-        ERC721(name_, symbol_)
-        Ownable(owner)
-    {}
+    constructor() ERC721("Job", "JOB") Ownable(msg.sender) {}
 
     modifier onlyJobRegistry() {
         require(msg.sender == jobRegistry, "only JobRegistry");

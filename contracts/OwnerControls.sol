@@ -29,7 +29,7 @@ contract OwnerControls is Ownable {
     event CertificateNFTUpdated(address newAddress);
     event DisputeModuleUpdated(address newAddress);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     function setMinStake(uint256 newMinStake) external onlyOwner {
         minStake = newMinStake;

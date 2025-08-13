@@ -16,7 +16,7 @@ describe("ValidationModule", function () {
     const ValidationModule = await ethers.getContractFactory(
       "contracts/ValidationModule.sol:ValidationModule"
     );
-    validation = await ValidationModule.deploy(owner.address);
+    validation = await ValidationModule.deploy();
     await validation.connect(owner).setStakeManager(stakeAddr);
     await validation.connect(owner).setChallengeWindow(1000);
     await validation.connect(owner).setDisputeBond(50);

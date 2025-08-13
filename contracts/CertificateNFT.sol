@@ -14,10 +14,7 @@ contract CertificateNFT is ERC721, Ownable {
     event BaseURIUpdated(string newURI);
     event MinterUpdated(address minter, bool allowed);
 
-    constructor(string memory name_, string memory symbol_, address owner)
-        ERC721(name_, symbol_)
-        Ownable(owner)
-    {}
+    constructor() ERC721("Cert", "CERT") Ownable(msg.sender) {}
 
     modifier onlyMinter() {
         require(minters[msg.sender], "not minter");

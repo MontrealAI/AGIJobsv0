@@ -31,16 +31,7 @@ contract DisputeResolution is Ownable {
     event ReputationEngineUpdated(address engine);
     event ValidationModuleUpdated(address module);
 
-    constructor(
-        IStakeManager _stakeManager,
-        IReputationEngine _reputationEngine,
-        IValidationModule _validationModule,
-        address owner
-    ) Ownable(owner) {
-        stakeManager = _stakeManager;
-        reputationEngine = _reputationEngine;
-        validationModule = _validationModule;
-    }
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Resolve a challenged result and distribute bonds accordingly
     /// @param jobId Identifier of the disputed job

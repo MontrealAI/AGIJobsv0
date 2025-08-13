@@ -62,15 +62,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice emitted when blacklist status changes for an address
     event BlacklistUpdated(address indexed user, bool status);
 
-    /// @param _token ERC20 token with 6 decimals used for staking
-    /// @param owner address that receives contract ownership
-    /// @param _treasury address receiving slashed stakes (owner if zero)
-    constructor(IERC20Metadata _token, address owner, address _treasury)
-        Ownable(owner)
-    {
-        require(_token.decimals() == 6, "StakeManager: token not 6 decimals");
-        token = IERC20(address(_token));
-        treasury = _treasury == address(0) ? owner : _treasury;
+    constructor() Ownable(msg.sender) {
+        treasury = msg.sender;
     }
 
     // ------------------------------------------------------------------
