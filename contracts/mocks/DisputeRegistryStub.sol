@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "../v2/interfaces/IDisputeModule.sol";
+interface IDisputeModule {
+    function raiseDispute(uint256 jobId, string calldata evidence) external;
+}
 
 /// @notice Simple job registry stub to interact with DisputeModule in tests
 contract DisputeRegistryStub {
@@ -30,6 +32,6 @@ contract DisputeRegistryStub {
     function finalize(uint256) external {}
 
     function appeal(address module, uint256 jobId) external payable {
-        IDisputeModule(module).appeal{value: msg.value}(jobId);
+        IDisputeModule(module).raiseDispute(jobId, "");
     }
 }

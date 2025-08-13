@@ -14,12 +14,8 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    function appeal(uint256 jobId) external payable;
-    function resolve(uint256 jobId, bool employerWins) external;
-}
-
-interface IDisputeModuleEvidence {
     function raiseDispute(uint256 jobId, string calldata evidence) external;
+    function resolveDispute(uint256 jobId, bool employerWins) external;
 }
 
 interface ICertificateNFT {
@@ -442,10 +438,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         completeJob(jobId);
     }
 
-    /// @notice Agent disputes a failed job outcome.
-    function raiseDispute(uint256 jobId)
+    /// @notice Agent disputes a failed job outcome with supporting evidence.
+    /// @param jobId Identifier of the disputed job.
+    /// @param evidence Supporting evidence for the dispute.
+    function raiseDispute(uint256 jobId, string calldata evidence)
         public
-        payable
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
@@ -453,19 +450,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(msg.sender == job.agent, "only agent");
         job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.appeal{value: msg.value}(jobId);
-        } else {
-            require(msg.value == 0, "fee unused");
+            disputeModule.raiseDispute(jobId, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
-    }
-
-    function dispute(uint256 jobId)
-        external
-        payable
-        requiresTaxAcknowledgement
-    {
-        raiseDispute(jobId);
     }
 
     /**
@@ -480,18 +467,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
             _acknowledge(msg.sender);
         }
-
-        Job storage job = jobs[jobId];
-        require(job.state == State.Completed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent, "only agent");
-        job.state = State.Disputed;
-        if (address(disputeModule) != address(0)) {
-            IDisputeModuleEvidence(address(disputeModule)).raiseDispute(
-                jobId,
-                evidence
-            );
-        }
-        emit JobDisputed(jobId, msg.sender);
+        raiseDispute(jobId, evidence);
     }
 
     /// @notice Owner resolves a dispute, setting the final outcome.

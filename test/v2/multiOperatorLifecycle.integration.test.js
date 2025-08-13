@@ -68,14 +68,9 @@ describe("multi-operator job lifecycle", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/DisputeModule.sol:DisputeModule"
+      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      0,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
 
     const FeePoolF = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -125,6 +120,7 @@ describe("multi-operator job lifecycle", function () {
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await stakeManager.setJobRegistry(await registry.getAddress());
+    await stakeManager.setDisputeModule(await dispute.getAddress());
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);

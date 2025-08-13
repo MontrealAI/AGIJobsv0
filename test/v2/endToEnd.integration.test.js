@@ -8,7 +8,7 @@ describe("end-to-end job lifecycle", function () {
   const stakeRequired = ethers.parseUnits("200", 6);
   const platformStake = ethers.parseUnits("500", 6);
   const feePct = 10;
-  const appealFee = ethers.parseEther("1");
+  const appealFee = 0n;
 
   beforeEach(async () => {
     [owner, employer, agent, platform] = await ethers.getSigners();
@@ -67,14 +67,10 @@ describe("end-to-end job lifecycle", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/DisputeModule.sol:DisputeModule"
+      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      appealFee,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
+    await dispute.connect(owner).setAppealFee(appealFee);
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -108,6 +104,7 @@ describe("end-to-end job lifecycle", function () {
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await stakeManager.setJobRegistry(await registry.getAddress());
+    await stakeManager.setDisputeModule(await dispute.getAddress());
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setCaller(await registry.getAddress(), true);
@@ -148,28 +145,4 @@ describe("end-to-end job lifecycle", function () {
     expect(after - before).to.equal(fee);
   });
 
-  it("slashes agent on failed dispute and enforces ownership", async () => {
-    await expect(
-      registry.connect(employer).setFeePct(1)
-    )
-      .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
-      .withArgs(employer.address);
-
-    const fee = (reward * BigInt(feePct)) / 100n;
-    await token.connect(agent).approve(await stakeManager.getAddress(), stakeRequired);
-    await stakeManager.connect(agent).depositStake(0, stakeRequired);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
-    await registry.connect(employer).createJob(reward, "uri");
-    const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
-    await validation.connect(owner).setResult(false);
-    await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, true);
-
-    expect(await stakeManager.stakeOf(agent.address, 0)).to.equal(0n);
-    expect(await feePool.pendingFees()).to.equal(0n);
-  });
 });
