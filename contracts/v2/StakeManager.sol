@@ -353,9 +353,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
         _deposit(msg.sender, role, amount);
     }
 
-    /// @notice acknowledge the tax policy and deposit stake in one transaction
-    /// @param role participant role for the stake
-    /// @param amount token amount with 6 decimals; caller must approve first
+    /**
+     * @notice Acknowledge the tax policy and deposit $AGIALPHA stake in one call.
+     * @dev Uses 6-decimal base units (1 token = 1_000000). Caller must `approve`
+     *      this contract to transfer at least `amount` $AGIALPHA beforehand.
+     * @param role Participant role receiving credit for the stake.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
     function acknowledgeAndDeposit(Role role, uint256 amount) external nonReentrant {
         address registry = jobRegistry;
         require(registry != address(0), "job registry");
@@ -368,10 +372,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
         _deposit(msg.sender, role, amount);
     }
 
-    /// @notice acknowledge the tax policy and deposit stake on behalf of a user
-    /// @param user address receiving credit for the stake
-    /// @param role participant role for the stake
-    /// @param amount token amount with 6 decimals; user must approve first
+    /**
+     * @notice Acknowledge the tax policy and deposit $AGIALPHA stake on behalf of
+     *         a user.
+     * @dev Uses 6-decimal base units. The `user` must `approve` this contract to
+     *      transfer at least `amount` tokens beforehand.
+     * @param user Address receiving credit for the stake.
+     * @param role Participant role receiving credit for the stake.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
     function acknowledgeAndDepositFor(
         address user,
         Role role,
