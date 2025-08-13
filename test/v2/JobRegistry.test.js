@@ -128,6 +128,20 @@ describe("JobRegistry integration", function () {
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
 
+  it("acknowledges and applies in one call for zero-stake jobs", async () => {
+    const [, , , newAgent] = await ethers.getSigners();
+    await registry.connect(owner).setJobParameters(reward, 0);
+    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await registry.connect(employer).createJob(reward, "uri");
+    await expect(registry.connect(newAgent).acknowledgeAndApply(1))
+      .to.emit(registry, "AgentApplied")
+      .withArgs(1, newAgent.address);
+    const version = await registry.taxPolicyVersion();
+    expect(
+      await registry.taxAcknowledgedVersion(newAgent.address)
+    ).to.equal(version);
+  });
+
   it("distributes platform fee to stakers", async () => {
     // set up fee pool rewarding platform stakers
     const FeePool = await ethers.getContractFactory(
