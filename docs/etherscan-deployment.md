@@ -27,13 +27,11 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 9. Deploy `PlatformRegistry(stakeManager, reputationEngine, 0)`.
 10. Deploy `JobRouter(platformRegistry)`.
 11. Deploy `PlatformIncentives(stakeManager, platformRegistry, jobRouter)`.
-12. Wire modules:
-    - `StakeManager.setJobRegistry(jobRegistry)`
-    - `JobRegistry.setModules(validation, stakeManager, reputation, dispute, nft)`
-    - `JobRegistry.setFeePool(feePool)` then `JobRegistry.setFeePct(feePct)`
+12. Deploy `ModuleInstaller()`.
+13. Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validation, reputation, dispute, nft, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` from the deploying account. The installer wires modules, assigns the fee pool and optional tax policy, then transfers ownership back automatically. Finally authorize registrars:
     - `PlatformRegistry.setRegistrar(platformIncentives, true)`
     - `JobRouter.setRegistrar(platformIncentives, true)`
-13. Verify each contract via **Contract → Verify and Publish** on Etherscan.
+14. Verify each contract via **Contract → Verify and Publish** on Etherscan.
 
 ### Job posting, staking, and activation via Etherscan
 
