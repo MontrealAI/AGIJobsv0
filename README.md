@@ -3,6 +3,8 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+**$AGIALPHA units** – The token powers all fees, stakes, and rewards. It reports `decimals = 6`, so enter amounts in base units (`1` token = `1_000000`).
+
 ### Deployment Quickstart
 
 1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller` (deployer auto‑assigned as owner), supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
@@ -18,6 +20,15 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 | Platform (no stake) | `acknowledgeAndRegister()` | Registers in `PlatformRegistry` without staking |
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
+
+### Etherscan Quick Deploy
+
+1. **Call `Deployer.deploy`** – On Etherscan, open the verified `Deployer` contract and execute `deploy()` to launch all modules with `$AGIALPHA` defaults.
+2. **Check token decimals** – In the token or `StakeManager` **Read Contract** tab call `decimals()`; it must return `6` before sending amounts.
+3. **Practice with helpers** – Post a small job and then reclaim funds via `JobRegistry.acknowledgeAndCancel(jobId)` to confirm flows and acknowledgements.
+4. **Owner-only tuning** – Configuration setters such as `setToken`, `setFeePct`, and `setBurnPct` remain `onlyOwner` and can be adjusted later through explorer "Write" tabs.
+
+For detailed walkthroughs, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md) and [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
 ### Deployment simplifications & defaults
 
