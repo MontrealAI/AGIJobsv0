@@ -91,10 +91,14 @@ contract ValidationModule is IValidationModule, Ownable {
             _commitWindow == 0 ? DEFAULT_COMMIT_WINDOW : _commitWindow;
         revealWindow =
             _revealWindow == 0 ? DEFAULT_REVEAL_WINDOW : _revealWindow;
+        emit TimingUpdated(commitWindow, revealWindow);
+
         minValidators =
             _minValidators == 0 ? DEFAULT_MIN_VALIDATORS : _minValidators;
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
+        emit ValidatorBoundsUpdated(minValidators, maxValidators);
+
         require(commitWindow > 0 && revealWindow > 0, "windows");
         require(maxValidators >= minValidators, "bounds");
         if (_validatorPool.length != 0) {

@@ -68,10 +68,19 @@ contract FeePool is Ownable {
             address(_token) == address(0)
                 ? IERC20(DEFAULT_TOKEN)
                 : _token;
+        emit TokenUpdated(address(token));
+
         stakeManager = _stakeManager;
+        emit StakeManagerUpdated(address(_stakeManager));
+
         rewardRole = _role;
+        emit RewardRoleUpdated(_role);
+
         burnPct = _burnPct;
+        emit BurnPctUpdated(_burnPct);
+
         treasury = _treasury == address(0) ? msg.sender : _treasury;
+        emit TreasuryUpdated(treasury);
     }
 
     modifier onlyStakeManager() {

@@ -39,8 +39,19 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         uint256 _minStake
     ) Ownable(msg.sender) {
         stakeManager = _stakeManager;
+        if (address(_stakeManager) != address(0)) {
+            emit StakeManagerUpdated(address(_stakeManager));
+        }
+
         reputationEngine = _reputationEngine;
+        if (address(_reputationEngine) != address(0)) {
+            emit ReputationEngineUpdated(address(_reputationEngine));
+        }
+
         minPlatformStake = _minStake;
+        if (_minStake > 0) {
+            emit MinPlatformStakeUpdated(_minStake);
+        }
     }
 
     /// @notice Register caller as a platform operator.

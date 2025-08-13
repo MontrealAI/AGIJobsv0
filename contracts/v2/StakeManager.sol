@@ -116,7 +116,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
             address(_token) == address(0)
                 ? IERC20(DEFAULT_TOKEN)
                 : _token;
+        emit TokenUpdated(address(token));
+
         minStake = _minStake;
+        if (_minStake > 0) {
+            emit MinStakeUpdated(_minStake);
+        }
         if (_employerSlashPct + _treasurySlashPct == 0) {
             employerSlashPct = 0;
             treasurySlashPct = 100;
@@ -128,7 +133,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
             employerSlashPct = _employerSlashPct;
             treasurySlashPct = _treasurySlashPct;
         }
+        emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
+
         treasury = _treasury == address(0) ? msg.sender : _treasury;
+        emit TreasuryUpdated(treasury);
         if (_jobRegistry != address(0)) {
             jobRegistry = _jobRegistry;
         }
