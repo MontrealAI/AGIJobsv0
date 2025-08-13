@@ -36,17 +36,21 @@ contract PlatformIncentivesTest is Test {
         rep = new MockReputationEngine();
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
-            rep,
-            1e6,
+            IReputationEngine(address(rep)),
+            1e6
+        );
+        jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
+        feePool = new FeePool(
+            token,
+            IStakeManager(address(stakeManager)),
+            IStakeManager.Role.Platform,
+            0,
             address(this)
         );
-        jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)), address(this));
-        feePool = new FeePool(token, IStakeManager(address(stakeManager)), IStakeManager.Role.Platform, address(this));
         incentives = new PlatformIncentives(
             IStakeManager(address(stakeManager)),
             IPlatformRegistryFull(address(platformRegistry)),
-            IJobRouter(address(jobRouter)),
-            address(this)
+            IJobRouter(address(jobRouter))
         );
         platformRegistry.setRegistrar(address(incentives), true);
         jobRouter.setRegistrar(address(incentives), true);

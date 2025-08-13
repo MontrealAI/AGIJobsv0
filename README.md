@@ -13,6 +13,7 @@ Other constructors now ship with sensible defaults so a deployer can leave param
 - `JobRegistry` applies a 5% protocol fee if `_feePct` is `0`.
 - `JobRegistry` emits `ModuleUpdated` events for any modules supplied at deployment, making on-chain verification easier.
 - `ValidationModule` defaults to 1‑day commit/reveal windows with 1–3 validators if zero values are provided.
+- Constructors emit configuration events (`TokenUpdated`, `MinStakeUpdated`, etc.) at deployment so non‑technical users can confirm settings directly on Etherscan.
 
 All v2 constructors omit the `owner` argument—the deploying address automatically becomes the owner via `Ownable(msg.sender)`.
 

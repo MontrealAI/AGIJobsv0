@@ -38,7 +38,7 @@ contract JobRouterTest {
 
     function setUp() public {
         registry = new MockPlatformRegistry();
-        router = new JobRouter(registry, address(this));
+        router = new JobRouter(registry);
     }
 
     function registerPlatforms() internal {
