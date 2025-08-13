@@ -59,6 +59,21 @@ describe("PlatformRegistry", function () {
     );
   });
 
+  it("acknowledgeAndRegister registers caller", async () => {
+    await expect(registry.connect(platform).acknowledgeAndRegister())
+      .to.emit(registry, "Registered")
+      .withArgs(platform.address);
+  });
+
+  it("acknowledgeAndRegisterFor works for registrars", async () => {
+    await registry.setRegistrar(owner.address, true);
+    await expect(
+      registry.connect(owner).acknowledgeAndRegisterFor(platform.address)
+    )
+      .to.emit(registry, "Registered")
+      .withArgs(platform.address);
+  });
+
   it("registrar enforces operator stake", async () => {
     await registry.setRegistrar(owner.address, true);
     await expect(

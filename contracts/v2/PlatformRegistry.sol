@@ -4,6 +4,11 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
+
+interface IJobRegistryAck {
+    function acknowledgeTaxPolicy() external returns (string memory);
+}
 
 interface IReputationEngine {
     function reputation(address user) external view returns (uint256);
@@ -60,16 +65,20 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         emit MinPlatformStakeUpdated(minPlatformStake);
     }
 
-    /// @notice Register caller as a platform operator.
-    function register() external nonReentrant {
-        require(!registered[msg.sender], "registered");
-        require(!blacklist[msg.sender], "blacklisted");
-        uint256 stake = stakeManager.stakeOf(msg.sender, IStakeManager.Role.Platform);
-        if (msg.sender != owner()) {
+    function _register(address operator) internal {
+        require(!registered[operator], "registered");
+        require(!blacklist[operator], "blacklisted");
+        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
+        if (operator != owner()) {
             require(stake >= minPlatformStake, "stake");
         }
-        registered[msg.sender] = true;
-        emit Registered(msg.sender);
+        registered[operator] = true;
+        emit Registered(operator);
+    }
+
+    /// @notice Register caller as a platform operator.
+    function register() external nonReentrant {
+        _register(msg.sender);
     }
 
     /// @notice Remove caller from the registry.
@@ -77,6 +86,41 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         require(registered[msg.sender], "not registered");
         registered[msg.sender] = false;
         emit Deregistered(msg.sender);
+    }
+
+    /// @notice Register caller after acknowledging the tax policy if needed.
+    function acknowledgeAndRegister() external nonReentrant {
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryTax reg = IJobRegistryTax(registry);
+            if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
+                IJobRegistryAck(registry).acknowledgeTaxPolicy();
+            }
+        }
+        _register(msg.sender);
+    }
+
+    /// @notice Register an operator on their behalf.
+    function registerFor(address operator) external nonReentrant {
+        if (msg.sender != operator) {
+            require(registrars[msg.sender], "registrar");
+        }
+        _register(operator);
+    }
+
+    /// @notice Register an operator after acknowledgement on their behalf.
+    function acknowledgeAndRegisterFor(address operator) external nonReentrant {
+        if (msg.sender != operator) {
+            require(registrars[msg.sender], "registrar");
+        }
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryTax reg = IJobRegistryTax(registry);
+            if (reg.taxAcknowledgedVersion(operator) != reg.taxPolicyVersion()) {
+                IJobRegistryAck(registry).acknowledgeTaxPolicy();
+            }
+        }
+        _register(operator);
     }
 
     /// @notice Retrieve routing score for a platform based on stake and reputation.
@@ -119,22 +163,6 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     function setRegistrar(address registrar, bool allowed) external onlyOwner {
         registrars[registrar] = allowed;
         emit RegistrarUpdated(registrar, allowed);
-    }
-
-    /// @notice Register an operator on their behalf.
-    /// @dev Caller must be the operator or an authorised registrar.
-    function registerFor(address operator) external nonReentrant {
-        if (msg.sender != operator) {
-            require(registrars[msg.sender], "registrar");
-        }
-        require(!registered[operator], "registered");
-        require(!blacklist[operator], "blacklisted");
-        uint256 stake = stakeManager.stakeOf(operator, IStakeManager.Role.Platform);
-        if (operator != owner()) {
-            require(stake >= minPlatformStake, "stake");
-        }
-        registered[operator] = true;
-        emit Registered(operator);
     }
 
     /// @notice Confirms the contract and owner are perpetually tax neutral.
