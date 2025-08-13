@@ -1,6 +1,6 @@
 # Deployment Guide: AGIJobs v2 with $AGIALPHA
 
-This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 6‑decimal **$AGIALPHA** token. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer.
+This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 6‑decimal **$AGIALPHA** token. By default this token handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer.
 
 ## 1. Prerequisites
 
@@ -14,7 +14,7 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 
 ## 2. Deploy core modules
 
-Deploy each contract from the **Write Contract** tabs (the deployer automatically becomes the owner). Parameters may be left as `0` to accept the defaults shown below:
+Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Parameters may be left as `0` to accept the defaults shown below:
 
 1. `AGIALPHAToken()` – after deployment, call `mint(to, amount)` to create the initial supply.
 2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury.
@@ -43,29 +43,37 @@ The installer sets cross‑links, assigns the fee pool and optional tax policy, 
 
 Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. No redeployments are required when swapping tokens or adjusting fees.
 
-## 4. Stake and register a platform
+## 4. One-call helper summary
+
+| Participant | Helper | Purpose |
+| --- | --- | --- |
+| Employer | `JobRegistry.acknowledgeAndCreateJob(reward, uri)` | Accept tax policy and post a job |
+| Agent | `JobRegistry.stakeAndApply(jobId, amount)` | Deposit stake and apply in one call |
+| Platform operator | `PlatformIncentives.stakeAndActivate(amount)` | Stake and register for routing and rewards |
+
+## 5. Stake and register a platform
 
 1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000`).
 2. Call `PlatformIncentives.stakeAndActivate(amount)` from the operator's address. The helper stakes tokens, registers the platform in `PlatformRegistry`, and enrolls it with `JobRouter` for routing priority.
 3. The owner may register with `amount = 0` to appear in registries without fee or routing boosts.
 
-## 5. Claim fees and rewards
+## 6. Claim fees and rewards
 
 - Employers send job fees directly to the `StakeManager`, which forwards them to `FeePool`.
 - Anyone may trigger `FeePool.distributeFees()`; rewards accrue to stakers according to `stake / totalStake`.
 - Operators withdraw with `FeePool.claimRewards()`.
 
-## 6. Dispute resolution
+## 7. Dispute resolution
 
-- Participants approve the `StakeManager` for the configured `appealFee` and call `JobRegistry.dispute(jobId)`.
+- Participants must approve the `StakeManager` for the configured `appealFee` in `$AGIALPHA` and call `JobRegistry.dispute(jobId)`; no ETH is ever sent.
 - The `DisputeModule` holds the fee in `$AGIALPHA` and releases it to the winner or back to the payer after resolution.
 
-## 7. Final checks
+## 8. Final checks
 
 - Before staking or claiming rewards, each address must call `JobRegistry.acknowledgeTaxPolicy()`.
 - Verify that `isTaxExempt()` on every module returns `true` to confirm contracts remain tax neutral.
 
-## 8. Safety reminders
+## 9. Safety reminders
 
 - Verify all addresses on multiple explorers before transacting.
 - Record every parameter change after calling owner setters.
