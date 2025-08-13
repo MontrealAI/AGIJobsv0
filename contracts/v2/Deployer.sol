@@ -35,8 +35,21 @@ import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.s
 contract Deployer {
     bool public deployed;
 
-    /// @notice Deploy and wire all modules.
-    /// @param withTaxPolicy Whether to deploy the optional TaxPolicy module.
+    event Deployed(
+        address stakeManager,
+        address jobRegistry,
+        address validationModule,
+        address reputationEngine,
+        address disputeModule,
+        address certificateNFT,
+        address platformRegistry,
+        address jobRouter,
+        address platformIncentives,
+        address feePool,
+        address taxPolicy
+    );
+
+    /// @notice Deploy and wire all modules including TaxPolicy.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -47,9 +60,59 @@ contract Deployer {
     /// @return jobRouter Address of the JobRouter
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
-    /// @return taxPolicy Address of the TaxPolicy (zero if not deployed)
-    function deploy(bool withTaxPolicy)
+    /// @return taxPolicy Address of the TaxPolicy
+    function deploy()
         external
+        returns (
+            address stakeManager,
+            address jobRegistry,
+            address validationModule,
+            address reputationEngine,
+            address disputeModule,
+            address certificateNFT,
+            address platformRegistry,
+            address jobRouter,
+            address platformIncentives,
+            address feePool,
+            address taxPolicy
+        )
+    {
+        return _deploy(true);
+    }
+
+    /// @notice Deploy and wire all modules without the TaxPolicy.
+    /// @return stakeManager Address of the StakeManager
+    /// @return jobRegistry Address of the JobRegistry
+    /// @return validationModule Address of the ValidationModule
+    /// @return reputationEngine Address of the ReputationEngine
+    /// @return disputeModule Address of the DisputeModule
+    /// @return certificateNFT Address of the CertificateNFT
+    /// @return platformRegistry Address of the PlatformRegistry
+    /// @return jobRouter Address of the JobRouter
+    /// @return platformIncentives Address of the PlatformIncentives helper
+    /// @return feePool Address of the FeePool
+    /// @return taxPolicy Address of the TaxPolicy (always zero)
+    function deployWithoutTaxPolicy()
+        external
+        returns (
+            address stakeManager,
+            address jobRegistry,
+            address validationModule,
+            address reputationEngine,
+            address disputeModule,
+            address certificateNFT,
+            address platformRegistry,
+            address jobRouter,
+            address platformIncentives,
+            address feePool,
+            address taxPolicy
+        )
+    {
+        return _deploy(false);
+    }
+
+    function _deploy(bool withTaxPolicy)
+        internal
         returns (
             address stakeManager,
             address jobRegistry,
@@ -182,6 +245,20 @@ contract Deployer {
         if (address(policy) != address(0)) {
             policy.transferOwnership(owner);
         }
+
+        emit Deployed(
+            address(stake),
+            address(registry),
+            address(validation),
+            address(reputation),
+            address(dispute),
+            address(certificate),
+            address(pRegistry),
+            address(router),
+            address(incentives),
+            address(pool),
+            address(policy)
+        );
 
         return (
             address(stake),
