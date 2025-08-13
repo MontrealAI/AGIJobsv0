@@ -137,9 +137,11 @@ contract FeePool is Ownable {
         emit FeesDistributed(accounted);
     }
 
-    /// @notice claim accumulated rewards for caller
-    /// @dev Rewards are denominated using 6 decimal units. Triggers
-    ///      `distributeFees` if there are unaccounted fees.
+    /**
+     * @notice Claim accumulated $AGIALPHA rewards for the caller.
+     * @dev Rewards use 6-decimal units. Automatically calls `distributeFees`
+     *      if there are pending fees awaiting distribution.
+     */
     function claimRewards() external {
         if (pendingFees > 0) {
             distributeFees();

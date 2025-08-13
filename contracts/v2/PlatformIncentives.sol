@@ -49,9 +49,13 @@ contract PlatformIncentives is Ownable {
         emit ModulesUpdated(address(_stakeManager), address(_platformRegistry), address(_jobRouter));
     }
 
-    /// @notice Stake tokens and activate routing for the caller.
-    /// @dev Caller must `approve` the StakeManager for `amount` tokens beforehand.
-    ///      The main deployer may pass `amount = 0` to register without incentives.
+    /**
+     * @notice Stake $AGIALPHA and activate routing for the caller.
+     * @dev `amount` uses 6-decimal base units. Caller must `approve` the
+     *      StakeManager for at least `amount` tokens beforehand. The owner may
+     *      pass `0` to register without incentives.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
     function stakeAndActivate(uint256 amount) external {
         if (amount > 0) {
             stakeManager.depositStakeFor(
@@ -67,8 +71,13 @@ contract PlatformIncentives is Ownable {
         emit Activated(msg.sender, amount);
     }
 
-    /// @notice Acknowledge tax policy if needed, stake tokens and activate routing.
-    /// @param amount token amount with 6 decimals; caller must approve first
+    /**
+     * @notice Acknowledge the tax policy, stake $AGIALPHA, and activate routing.
+     * @dev `amount` uses 6-decimal base units. Caller must `approve` the
+     *      StakeManager before calling. Owner may pass `0` to register without
+     *      incentives.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
     function acknowledgeStakeAndActivate(uint256 amount) external {
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {

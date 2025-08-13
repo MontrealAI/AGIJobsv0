@@ -367,6 +367,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         jobId = _createJob(reward, uri);
     }
 
+    /**
+     * @notice Acknowledge the tax policy and create a job in one transaction.
+     * @dev `reward` uses 6-decimal base units. Caller must `approve` the
+     *      StakeManager for `reward + fee` $AGIALPHA before calling.
+     * @param reward Job reward in $AGIALPHA with 6 decimals.
+     * @param uri Metadata URI describing the job.
+     * @return jobId Identifier of the newly created job.
+     */
     function acknowledgeAndCreateJob(uint256 reward, string calldata uri)
         external
         returns (uint256 jobId)
@@ -394,6 +402,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         _applyForJob(jobId);
     }
 
+    /**
+     * @notice Deposit stake and apply for a job in a single call.
+     * @dev `amount` uses 6-decimal base units. Caller must `approve` the
+     *      StakeManager to pull `amount` $AGIALPHA beforehand.
+     * @param jobId Identifier of the job to apply for.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
     function stakeAndApply(uint256 jobId, uint256 amount) external {
         if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
             _acknowledge(msg.sender);
@@ -453,9 +468,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         raiseDispute(jobId);
     }
 
-    /// @notice Acknowledge tax policy if needed and raise a dispute with evidence.
-    /// @param jobId Identifier of the disputed job
-    /// @param evidence Supporting evidence for the dispute
+    /**
+     * @notice Acknowledge the tax policy if needed and raise a dispute with
+     *         supporting evidence.
+     * @dev No tokens are transferred; any stake requirements elsewhere use
+     *      6-decimal $AGIALPHA units that must have been approved previously.
+     * @param jobId Identifier of the disputed job.
+     * @param evidence Supporting evidence for the dispute.
+     */
     function acknowledgeAndDispute(uint256 jobId, string calldata evidence) external {
         if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
             _acknowledge(msg.sender);
