@@ -24,6 +24,7 @@ describe("JobRouter", function () {
       await reputation.getAddress(),
       0
     );
+    await registry.setMinPlatformStake(0);
 
     // set platform stakes
     await stakeManager.setStake(op1.address, 2, 100);

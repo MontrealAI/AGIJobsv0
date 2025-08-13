@@ -16,6 +16,7 @@ contract FeePool is Ownable {
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    uint256 public constant DEFAULT_BURN_PCT = 5;
 
     /// @notice default $AGIALPHA token used when no token is specified
     address public constant DEFAULT_TOKEN =
@@ -56,6 +57,15 @@ contract FeePool is Ownable {
     event TreasuryUpdated(address indexed treasury);
     event RewardTransferred(address indexed to, uint256 amount);
 
+    /// @notice Deploys the FeePool.
+    /// @param _token ERC20 token used for fees and rewards. Defaults to
+    /// DEFAULT_TOKEN when zero address.
+    /// @param _stakeManager StakeManager tracking staker balances.
+    /// @param _role Staker role whose participants receive rewards.
+    /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
+    /// DEFAULT_BURN_PCT when set to zero.
+    /// @param _treasury Address receiving rounding dust. Defaults to deployer
+    /// when zero address.
     constructor(
         IERC20 _token,
         IStakeManager _stakeManager,
@@ -63,7 +73,8 @@ contract FeePool is Ownable {
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
-        require(_burnPct <= 100, "pct");
+        uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
+        require(pct <= 100, "pct");
         token =
             address(_token) == address(0)
                 ? IERC20(DEFAULT_TOKEN)
@@ -76,8 +87,8 @@ contract FeePool is Ownable {
         rewardRole = _role;
         emit RewardRoleUpdated(_role);
 
-        burnPct = _burnPct;
-        emit BurnPctUpdated(_burnPct);
+        burnPct = pct;
+        emit BurnPctUpdated(pct);
 
         treasury = _treasury == address(0) ? msg.sender : _treasury;
         emit TreasuryUpdated(treasury);

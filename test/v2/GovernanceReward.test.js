@@ -60,6 +60,7 @@ describe("GovernanceReward", function () {
       0,
       treasury.address
     );
+    await feePool.setBurnPct(0);
 
     const Reward = await ethers.getContractFactory(
       "contracts/v2/GovernanceReward.sol:GovernanceReward"

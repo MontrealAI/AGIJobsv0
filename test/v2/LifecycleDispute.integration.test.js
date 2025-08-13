@@ -27,6 +27,7 @@ describe("Job lifecycle with disputes", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress
     );
+    await stakeManager.connect(owner).setMinStake(0);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
 
     const Validation = await ethers.getContractFactory(

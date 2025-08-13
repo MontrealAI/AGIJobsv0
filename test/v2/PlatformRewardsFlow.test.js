@@ -94,6 +94,7 @@ describe("Platform reward flow", function () {
       0,
       treasury.address
     );
+    await feePool.setBurnPct(0);
   });
 
   it("handles zero-stake owner, proportional fees, and token swap", async () => {
