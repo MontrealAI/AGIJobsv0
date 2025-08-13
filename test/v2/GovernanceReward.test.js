@@ -89,6 +89,22 @@ describe("GovernanceReward", function () {
     await token.mint(await feePool.getAddress(), 100 * 1e6);
   });
 
+  it("enforces 6-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20");
+    const bad = await Bad.deploy();
+    await expect(
+      reward.connect(owner).setToken(await bad.getAddress())
+    ).to.be.revertedWith("decimals");
+
+    const Good = await ethers.getContractFactory("MockERC206Decimals");
+    const good = await Good.deploy();
+    await expect(
+      reward.connect(owner).setToken(await good.getAddress())
+    )
+      .to.emit(reward, "TokenUpdated")
+      .withArgs(await good.getAddress());
+  });
+
   it("rewards voters proportional to staked balance", async () => {
     await reward.recordVoters([voter1.address, voter2.address]);
 

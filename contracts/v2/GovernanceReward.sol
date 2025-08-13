@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
@@ -101,11 +102,16 @@ contract GovernanceReward is Ownable {
     /// @param newToken ERC20 token using 6 decimals. Set to zero address to
     /// revert to DEFAULT_TOKEN.
     function setToken(IERC20 newToken) external onlyOwner {
-        token =
+        IERC20 candidate =
             address(newToken) == address(0)
                 ? IERC20(DEFAULT_TOKEN)
                 : newToken;
-        emit TokenUpdated(address(token));
+        require(
+            IERC20Metadata(address(candidate)).decimals() == 6,
+            "decimals"
+        );
+        token = candidate;
+        emit TokenUpdated(address(candidate));
     }
 
     /// @notice record voters for the current epoch and snapshot their stake

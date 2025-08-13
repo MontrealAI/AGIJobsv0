@@ -6,7 +6,7 @@ describe("FeePool", function () {
 
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
+    const Token = await ethers.getContractFactory("MockERC206Decimals");
     token = await Token.deploy();
     token2 = await Token.deploy();
 
@@ -77,6 +77,14 @@ describe("FeePool", function () {
     await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
     await stakeManager.connect(user1).depositStake(2, 100);
     await stakeManager.connect(user2).depositStake(2, 300);
+  });
+
+  it("requires 6-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20");
+    const bad = await Bad.deploy();
+    await expect(
+      feePool.connect(owner).setToken(await bad.getAddress())
+    ).to.be.revertedWith("decimals");
   });
 
   it("distributes rewards proportionally", async () => {

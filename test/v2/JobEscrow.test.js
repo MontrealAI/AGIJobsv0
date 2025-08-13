@@ -24,6 +24,22 @@ describe("JobEscrow", function () {
     escrow = await Escrow.deploy(await token.getAddress(), await routing.getAddress());
   });
 
+  it("enforces 6-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20");
+    const bad = await Bad.deploy();
+    await expect(
+      escrow.connect(owner).setToken(await bad.getAddress())
+    ).to.be.revertedWith("decimals");
+
+    const Good = await ethers.getContractFactory("MockERC206Decimals");
+    const good = await Good.deploy();
+    await expect(
+      escrow.connect(owner).setToken(await good.getAddress())
+    )
+      .to.emit(escrow, "TokenUpdated")
+      .withArgs(await good.getAddress());
+  });
+
   it("runs normal job flow", async () => {
     const reward = 1000;
     await token.connect(employer).approve(await escrow.getAddress(), reward);
