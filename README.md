@@ -30,6 +30,30 @@ All participants opt in by staking `$AGIALPHA`. Staked operators gain routing pr
 For a step‑by‑step deployment walkthrough using $AGIALPHA and Etherscan, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 For a detailed description of the platform-wide incentive architecture, see [docs/universal-platform-incentive-architecture.md](docs/universal-platform-incentive-architecture.md).
 
+### Deployment via Etherscan
+
+1. **Deploy modules in order**
+   1. `StakeManager(0,0,0,0,0,0,0)` – uses default $AGIALPHA token and 1 token minimum stake.
+   2. `FeePool(0, stakeManager, Role.Platform, 0, 0)` – defaults to $AGIALPHA and 5% burn when `0`.
+   3. `ReputationEngine()` – no arguments.
+   4. `PlatformRegistry(stakeManager, reputationEngine, 0)` – `0` sets 1 token minimum stake.
+   5. `JobRouter(platformRegistry)` – stake‑weighted routing.
+   6. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper for staking and registration.
+   7. `ValidationModule(0, stakeManager, 0,0,0,0,[])` – 24 h commit/reveal windows with 1–3 validators by default.
+   8. `DisputeModule(0, 0, 0, 0)` – appeal fee initially `0`.
+   9. `CertificateNFT("AGI Certificate","AGIC")` – job completion token.
+   10. `JobRegistry(0, stakeManager, reputationEngine, 0, certificateNFT, feePool, 0, 0)` – protocol fee falls back to 5% and stake to `0`.
+2. **Wire once** – call `ModuleInstallerSimple.wire(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter)` from the owner account.
+3. **Tune later** – the owner may retune parameters through setters like `StakeManager.setMinStake`, `ValidationModule.setCommitRevealWindows`, `DisputeModule.setAppealFee`, or `FeePool.setBurnPct` without redeploying.
+
+All constructor amounts and subsequent setter values use 6‑decimal units of $AGIALPHA.
+
+#### Common user actions
+
+- **Post a job** – `JobRegistry.acknowledgeAndCreateJob(reward, uri)` posts work after acknowledging the tax policy.
+- **Stake & apply** – agents call `JobRegistry.stakeAndApply(jobId, amount)` to deposit stake and apply in one transaction.
+- **Platform activation** – operators use `PlatformIncentives.stakeAndActivate(amount)` (or `acknowledgeStakeAndActivate`) to stake and register for routing and fee share.
+
 ### Quick start: $AGIALPHA deployment
 
 1. Verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token address (6 decimals) and all module addresses listed in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
