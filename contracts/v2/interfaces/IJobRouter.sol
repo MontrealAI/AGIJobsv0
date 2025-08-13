@@ -9,4 +9,7 @@ interface IJobRouter {
 
     /// @notice Whether an operator is registered
     function registered(address operator) external view returns (bool);
+
+    /// @notice Authorize or revoke a registrar
+    function setRegistrar(address registrar, bool allowed) external;
 }

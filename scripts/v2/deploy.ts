@@ -86,7 +86,6 @@ async function main() {
     "All taxes on participants; contract and owner exempt"
   );
   await tax.waitForDeployment();
-  await registry.connect(ownerSigner).setTaxPolicy(await tax.getAddress());
 
   const Validation = await ethers.getContractFactory(
     "contracts/v2/ValidationModule.sol:ValidationModule"
@@ -175,19 +174,39 @@ async function main() {
   );
   await incentives.waitForDeployment();
 
-  await stake.connect(ownerSigner).setJobRegistry(await registry.getAddress());
-
-  await registry.connect(ownerSigner).setModules(
-    await validation.getAddress(),
-    await stake.getAddress(),
-    await reputation.getAddress(),
-    await dispute.getAddress(),
-    await nft.getAddress()
+  const Installer = await ethers.getContractFactory(
+    "contracts/v2/ModuleInstaller.sol:ModuleInstaller"
   );
+  const installer = await Installer.deploy(owner);
+  await installer.waitForDeployment();
 
-  await registry
+  await registry.transferOwnership(await installer.getAddress());
+  await stake.transferOwnership(await installer.getAddress());
+  await validation.transferOwnership(await installer.getAddress());
+  await reputation.transferOwnership(await installer.getAddress());
+  await dispute.transferOwnership(await installer.getAddress());
+  await nft.transferOwnership(await installer.getAddress());
+  await incentives.transferOwnership(await installer.getAddress());
+  await platformRegistry.transferOwnership(await installer.getAddress());
+  await jobRouter.transferOwnership(await installer.getAddress());
+  await feePool.transferOwnership(await installer.getAddress());
+  await tax.transferOwnership(await installer.getAddress());
+
+  await installer
     .connect(ownerSigner)
-    .setFeePool(await feePool.getAddress());
+    .initialize(
+      await registry.getAddress(),
+      await stake.getAddress(),
+      await validation.getAddress(),
+      await reputation.getAddress(),
+      await dispute.getAddress(),
+      await nft.getAddress(),
+      await incentives.getAddress(),
+      await platformRegistry.getAddress(),
+      await jobRouter.getAddress(),
+      await feePool.getAddress(),
+      await tax.getAddress()
+    );
 
   const feePct =
     typeof args.feePct === "string" ? Number(args.feePct) : 5;
@@ -202,13 +221,6 @@ async function main() {
     6
   );
   await stake.connect(ownerSigner).setMinStake(minStake);
-
-  await platformRegistry
-    .connect(ownerSigner)
-    .setRegistrar(await incentives.getAddress(), true);
-  await jobRouter
-    .connect(ownerSigner)
-    .setRegistrar(await incentives.getAddress(), true);
 
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());
@@ -259,6 +271,7 @@ async function main() {
   await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake, owner]);
   await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress(), owner]);
   await verify(await incentives.getAddress(), [await stake.getAddress(), await platformRegistry.getAddress(), await jobRouter.getAddress(), owner]);
+  await verify(await installer.getAddress(), [owner]);
 
   await incentives.connect(ownerSigner).stakeAndActivate(0);
 }
