@@ -413,6 +413,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit JobCompleted(jobId, outcome);
     }
 
+    /// @notice Acknowledge the tax policy and complete the job in one call.
+    /// @param jobId Identifier of the job being completed
+    function acknowledgeAndCompleteJob(uint256 jobId) external {
+        _acknowledge(msg.sender);
+        completeJob(jobId);
+    }
+
     /// @notice Agent disputes a failed job outcome.
     function raiseDispute(uint256 jobId)
         public
@@ -474,7 +481,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @dev The dispute module may call this without acknowledgement as it
     ///      merely relays the arbiter's ruling and holds no tax liability.
     function finalize(uint256 jobId)
-        external
+        public
         requiresTaxAcknowledgement
         nonReentrant
     {
@@ -527,6 +534,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             }
         }
         emit JobFinalized(jobId, job.success);
+    }
+
+    /// @notice Acknowledge the tax policy and finalise the job in one call.
+    /// @param jobId Identifier of the job to finalise
+    function acknowledgeAndFinalize(uint256 jobId) external {
+        _acknowledge(msg.sender);
+        finalize(jobId);
     }
 
     /// @notice Cancel a job before completion and refund the employer.

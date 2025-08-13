@@ -112,6 +112,10 @@ interface IJobRegistry {
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent} accordingly
     function completeJob(uint256 jobId) external;
 
+    /// @notice Acknowledge tax policy and complete the job in one call
+    /// @param jobId Identifier of the job being completed
+    function acknowledgeAndCompleteJob(uint256 jobId) external;
+
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent}
@@ -132,6 +136,10 @@ interface IJobRegistry {
     /// @param jobId Identifier of the job to finalise
     /// @dev Reverts with {InvalidStatus} if job is not ready for finalisation
     function finalize(uint256 jobId) external;
+
+    /// @notice Acknowledge tax policy and finalise the job in one call
+    /// @param jobId Identifier of the job to finalise
+    function acknowledgeAndFinalize(uint256 jobId) external;
 
     /// @notice Employer cancels a job before an agent is selected
     /// @param jobId Identifier of the job to cancel
