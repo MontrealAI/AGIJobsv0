@@ -3,6 +3,8 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+### Deployment simplifications & defaults
+
 StakeManager and FeePool constructors each accept an `IERC20 token` address and an optional `_treasury`. StakeManager additionally lets the deployer pre‑wire a `jobRegistry` and `disputeModule`; supplying `address(0)` for either defers wiring to a later `setModules` call. Deployments here default to the $AGIALPHA token above, and passing `address(0)` uses the owner as treasury. Should economics change, the owner may later call `setToken` on these modules to point to a different ERC‑20 without redeploying. If a zero token address is supplied, both modules automatically fall back to the $AGIALPHA default.
 
 Other constructors now ship with sensible defaults so a deployer can leave parameters empty when using Etherscan:
@@ -13,6 +15,13 @@ Other constructors now ship with sensible defaults so a deployer can leave param
 - `ValidationModule` defaults to 1‑day commit/reveal windows with 1–3 validators if zero values are provided.
 
 All v2 constructors omit the `owner` argument—the deploying address automatically becomes the owner via `Ownable(msg.sender)`.
+
+Helper functions expose common flows in single calls so Etherscan users do not have to chain multiple transactions:
+
+- `JobRegistry.acknowledgeAndCreateJob` posts work after acknowledging the tax policy.
+- `JobRegistry.stakeAndApply` deposits stake and applies to a job.
+- `PlatformIncentives.stakeAndActivate` (and `acknowledgeStakeAndActivate`) stakes and registers a platform for routing and fees.
+- `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
 
 All participants opt in by staking `$AGIALPHA`. Staked operators gain routing priority and revenue share, while the main deploying entity is a special case that registers with **stake = 0**, earning no boosts so it remains tax neutral. Because every incentive flows on-chain, operators can participate pseudonymously without creating off‑chain reporting obligations.
 
