@@ -29,5 +29,3 @@ MATERIALS PROVIDED IN THIS SYSTEM (WHICH INCLUDE $AGIALPHA) ARE WITHOUT WARRANTY
 **AGI ALPHA AGENT Telegram Link:** <https://t.me/agialpha>.
 
 **The ONLY Official information about $AGIALPHA are the ON-CHAIN Records of the AGI ALPHA Agent:** <https://app.ens.domains/alpha.agent.agi.eth>.
-
-**AGI ALPHA Agent ENS on-chain records:** <https://etherscan.io/address/0x231b0ee14048e9dccd1d247744d114a4eb5e8e63#readContract>.
