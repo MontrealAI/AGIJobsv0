@@ -13,6 +13,12 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
+import {IFeePool} from "./interfaces/IFeePool.sol";
+import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+
+interface IOwnable {
+    function transferOwnership(address newOwner) external;
+}
 
 /// @title ModuleInstaller
 /// @notice Wires deployed modules together in a single transaction.
@@ -32,7 +38,9 @@ contract ModuleInstaller {
         address certificateNFT,
         address platformIncentives,
         address platformRegistry,
-        address jobRouter
+        address jobRouter,
+        address feePool,
+        address taxPolicy
     );
 
     /// @notice Connect core modules after deployment.
@@ -45,6 +53,8 @@ contract ModuleInstaller {
     /// @param platformIncentives Address of the PlatformIncentives helper
     /// @param platformRegistry Address of the PlatformRegistry
     /// @param jobRouter Address of the JobRouter
+    /// @param feePool Address of the FeePool contract
+    /// @param taxPolicy Address of the TaxPolicy contract (optional)
     function initialize(
         JobRegistry jobRegistry,
         StakeManager stakeManager,
@@ -54,7 +64,9 @@ contract ModuleInstaller {
         ICertificateNFT certificateNFT,
         PlatformIncentives platformIncentives,
         IPlatformRegistryFull platformRegistry,
-        IJobRouter jobRouter
+        IJobRouter jobRouter,
+        IFeePool feePool,
+        ITaxPolicy taxPolicy
     ) external {
         require(!initialized, "init");
         initialized = true;
@@ -66,12 +78,30 @@ contract ModuleInstaller {
             disputeModule,
             certificateNFT
         );
+        jobRegistry.setFeePool(feePool);
+        if (address(taxPolicy) != address(0)) {
+            jobRegistry.setTaxPolicy(taxPolicy);
+        }
         stakeManager.setModules(address(jobRegistry), address(disputeModule));
         platformIncentives.setModules(
             IStakeManager(address(stakeManager)),
             platformRegistry,
             jobRouter
         );
+
+        jobRegistry.transferOwnership(msg.sender);
+        stakeManager.transferOwnership(msg.sender);
+        IOwnable(address(validationModule)).transferOwnership(msg.sender);
+        IOwnable(address(reputationEngine)).transferOwnership(msg.sender);
+        IOwnable(address(disputeModule)).transferOwnership(msg.sender);
+        IOwnable(address(certificateNFT)).transferOwnership(msg.sender);
+        platformIncentives.transferOwnership(msg.sender);
+        IOwnable(address(platformRegistry)).transferOwnership(msg.sender);
+        IOwnable(address(jobRouter)).transferOwnership(msg.sender);
+        IOwnable(address(feePool)).transferOwnership(msg.sender);
+        if (address(taxPolicy) != address(0)) {
+            IOwnable(address(taxPolicy)).transferOwnership(msg.sender);
+        }
 
         emit ModulesInstalled(
             address(jobRegistry),
@@ -82,7 +112,9 @@ contract ModuleInstaller {
             address(certificateNFT),
             address(platformIncentives),
             address(platformRegistry),
-            address(jobRouter)
+            address(jobRouter),
+            address(feePool),
+            address(taxPolicy)
         );
     }
 }
