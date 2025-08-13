@@ -5,7 +5,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 ### Deployment Quickstart
 
-1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller`, supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
+1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller` (deployer auto‑assigned as owner), supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
 2. **Initialize once** – Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`. This single call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
 3. **Token‑only disputes** – Agents approve the `StakeManager` for the `appealFee` and raise disputes with `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; the bond stays entirely in tokens, never ETH.
 

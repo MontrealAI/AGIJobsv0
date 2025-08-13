@@ -177,7 +177,7 @@ async function main() {
   const Installer = await ethers.getContractFactory(
     "contracts/v2/ModuleInstaller.sol:ModuleInstaller"
   );
-  const installer = await Installer.deploy(owner);
+  const installer = await Installer.deploy();
   await installer.waitForDeployment();
 
   await registry.transferOwnership(await installer.getAddress());

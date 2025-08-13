@@ -44,8 +44,9 @@ contract ModuleInstaller {
         address taxPolicy
     );
 
-    constructor(address _owner) {
-        owner = _owner;
+    /// @notice Sets the deployer as the temporary owner.
+    constructor() {
+        owner = msg.sender;
     }
 
     /// @notice Connect core modules after deployment.
