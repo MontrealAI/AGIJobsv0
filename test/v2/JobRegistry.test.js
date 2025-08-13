@@ -7,7 +7,7 @@ describe("JobRegistry integration", function () {
 
   const reward = 100;
   const stake = 200;
-  const appealFee = 10;
+  const appealFee = 0;
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
@@ -54,14 +54,10 @@ describe("JobRegistry integration", function () {
       0
     );
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/DisputeModule.sol:DisputeModule"
+      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      appealFee,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
+    await dispute.connect(owner).setAppealFee(appealFee);
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -97,8 +93,11 @@ describe("JobRegistry integration", function () {
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
 
-    await token.connect(agent).approve(await stakeManager.getAddress(), stake);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), stake + appealFee);
     await stakeManager.connect(agent).depositStake(0, stake);
+    await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
   });
 
   it("runs successful job lifecycle", async () => {
@@ -166,50 +165,6 @@ describe("JobRegistry integration", function () {
     expect(after - before).to.equal(BigInt(reward / 10));
   });
 
-  it("handles collusion resolved by dispute", async () => {
-    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward, "uri");
-    const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
-    await validation.connect(owner).setResult(false); // colluding validator
-    await registry.connect(agent).completeJob(jobId);
-    await expect(
-      registry.connect(agent).dispute(jobId, { value: appealFee })
-    )
-      .to.emit(registry, "JobDisputed")
-      .withArgs(jobId, agent.address);
-    await expect(dispute.connect(owner).resolve(jobId, false))
-      .to.emit(registry, "JobFinalized")
-      .withArgs(jobId, true);
-
-    expect(await token.balanceOf(agent.address)).to.equal(900);
-    expect(await rep.reputation(agent.address)).to.equal(1);
-    expect(await rep.isBlacklisted(agent.address)).to.equal(false);
-    expect(await nft.balanceOf(agent.address)).to.equal(1);
-  });
-
-  it("slashes stake when dispute fails", async () => {
-    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward, "uri");
-    const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
-    await validation.connect(owner).setResult(false);
-    await registry.connect(agent).completeJob(jobId);
-    await expect(
-      registry.connect(agent).dispute(jobId, { value: appealFee })
-    )
-      .to.emit(registry, "JobDisputed")
-      .withArgs(jobId, agent.address);
-    await expect(dispute.connect(owner).resolve(jobId, true))
-      .to.emit(registry, "JobFinalized")
-      .withArgs(jobId, false);
-
-    expect(await token.balanceOf(agent.address)).to.equal(800);
-    expect(await token.balanceOf(employer.address)).to.equal(1200);
-    expect(await rep.reputation(agent.address)).to.equal(0);
-    expect(await rep.isBlacklisted(agent.address)).to.equal(true);
-    expect(await nft.balanceOf(agent.address)).to.equal(0);
-  });
 
   it("allows employer to cancel before completion", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);

@@ -5,6 +5,7 @@ import "../v2/interfaces/IStakeManager.sol";
 import "../v2/interfaces/IJobRegistry.sol";
 import "../v2/interfaces/IJobRegistryTax.sol";
 import "../v2/interfaces/IReputationEngine.sol";
+import "../v2/interfaces/IDisputeModule.sol";
 
 contract MockStakeManager is IStakeManager {
     mapping(address => mapping(Role => uint256)) private _stakes;
@@ -60,6 +61,7 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
     uint256 public taxPolicyVersion;
     mapping(address => uint256) public taxAcknowledgedVersion;
     address private _stakeManager;
+    address public disputeModule;
 
     function setJob(uint256 jobId, Job calldata job) external {
         _jobs[jobId] = job;
@@ -83,7 +85,9 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
         _stakeManager = manager;
     }
     function setCertificateNFT(address) external override {}
-    function setDisputeModule(address) external override {}
+    function setDisputeModule(address module) external override {
+        disputeModule = module;
+    }
     function setJobParameters(uint256, uint256) external override {}
     function createJob(uint256, string calldata) external override returns (uint256) {return 0;}
     function applyForJob(uint256) external override {}
@@ -92,6 +96,9 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
     function dispute(uint256) external payable override {}
     function acknowledgeAndDispute(uint256, string calldata) external override {}
     function resolveDispute(uint256, bool) external override {}
+    function raiseDispute(uint256 jobId, string calldata evidence) external {
+        IDisputeModule(disputeModule).raiseDispute(jobId, evidence);
+    }
     function finalize(uint256) external override {}
     function acknowledgeAndFinalize(uint256) external override {}
     function cancelJob(uint256) external override {}

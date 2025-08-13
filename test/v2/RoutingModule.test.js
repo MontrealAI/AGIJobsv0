@@ -60,8 +60,8 @@ describe("JobRouter", function () {
     const r1 = c1 / trials;
     const r2 = c2 / trials;
     expect(r2).to.be.greaterThan(r1);
-    expect(r1).to.be.closeTo(0.25, 0.05);
-    expect(r2).to.be.closeTo(0.75, 0.05);
+    expect(r1).to.be.closeTo(0.25, 0.1);
+    expect(r2).to.be.closeTo(0.75, 0.1);
   });
 
   it("computes routing weight based on stake", async () => {

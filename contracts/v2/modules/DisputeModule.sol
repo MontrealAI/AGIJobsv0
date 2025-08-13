@@ -3,13 +3,13 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
-import {IJobRegistryTax} from "../interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
-/// @dev Only participants bear any tax obligations; the module temporarily
-/// holds dispute bonds and rejects unsolicited ETH transfers.
+/// @dev Only participants bear any tax obligations; the module escrows token
+/// based dispute fees via the StakeManager and rejects unsolicited ETH
+/// transfers.
 contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
 
@@ -27,12 +27,11 @@ contract DisputeModule is Ownable {
         string evidence;
         uint256 raisedAt;
         bool resolved;
+        uint256 fee;
     }
 
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
-    /// @dev Bonds posted by disputing parties.
-    mapping(uint256 => uint256) public bonds;
 
     event DisputeRaised(uint256 indexed jobId, address indexed caller, string evidence);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
@@ -45,21 +44,15 @@ contract DisputeModule is Ownable {
         moderator = msg.sender;
     }
 
-    modifier requiresTaxAcknowledgement() {
-        IJobRegistryTax registry = IJobRegistryTax(address(jobRegistry));
-        if (msg.sender != owner()) {
-            require(
-                registry.taxAcknowledgedVersion(msg.sender) ==
-                    registry.taxPolicyVersion(),
-                "acknowledge tax policy"
-            );
-        }
-        _;
-    }
-
     /// @notice Modifier restricting calls to the owner or moderator.
     modifier onlyArbiter() {
         require(msg.sender == owner() || msg.sender == moderator, "not authorized");
+        _;
+    }
+
+    /// @notice Restrict functions to the JobRegistry.
+    modifier onlyJobRegistry() {
+        require(msg.sender == address(jobRegistry), "not registry");
         _;
     }
 
@@ -86,57 +79,60 @@ contract DisputeModule is Ownable {
     /// @param evidence Supporting evidence for the dispute.
     function raiseDispute(uint256 jobId, string calldata evidence)
         external
-        requiresTaxAcknowledgement
+        onlyJobRegistry
     {
-        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        require(
-            msg.sender == job.employer || msg.sender == job.agent,
-            "not participant"
-        );
-
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
-        IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
-            msg.sender,
-            appealFee
-        );
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        address claimant = job.agent;
+
+        // Lock the dispute fee in the StakeManager if configured.
+        if (appealFee > 0) {
+            try
+                IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
+                    claimant,
+                    appealFee
+                )
+            {} catch {}
+        }
 
         disputes[jobId] = Dispute({
-            claimant: msg.sender,
+            claimant: claimant,
             evidence: evidence,
             raisedAt: block.timestamp,
-            resolved: false
+            resolved: false,
+            fee: appealFee
         });
-        bonds[jobId] = appealFee;
 
-        emit DisputeRaised(jobId, msg.sender, evidence);
+        emit DisputeRaised(jobId, claimant, evidence);
     }
 
     /// @notice Resolve an existing dispute after the dispute window elapses.
-    /// The outcome is determined by a simple pseudorandom coin flip to emulate
-    /// a moderator or jury decision.
-    function resolveDispute(uint256 jobId) external onlyArbiter {
+    /// @param jobId Identifier of the disputed job.
+    /// @param employerWins True if the employer prevails.
+    function resolveDispute(uint256 jobId, bool employerWins)
+        external
+        onlyArbiter
+    {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
 
-        bool employerWins = _decideOutcome(jobId);
-        address payable recipient = employerWins
-            ? payable(jobRegistry.jobs(jobId).employer)
-            : payable(jobRegistry.jobs(jobId).agent);
-
         d.resolved = true;
-        uint256 bond = bonds[jobId];
+
+        address recipient = employerWins
+            ? jobRegistry.jobs(jobId).employer
+            : d.claimant;
+        uint256 fee = d.fee;
         delete disputes[jobId];
-        delete bonds[jobId];
 
         jobRegistry.resolveDispute(jobId, employerWins);
 
-        if (bond > 0) {
+        if (fee > 0) {
             IStakeManager(jobRegistry.stakeManager()).payDisputeFee(
                 recipient,
-                bond
+                fee
             );
         }
 
@@ -148,16 +144,11 @@ contract DisputeModule is Ownable {
     function isTaxExempt() external pure returns (bool) {
         return true;
     }
-
-    /// @dev Determine dispute outcome. Uses blockhash for a pseudorandom coin flip.
-    function _decideOutcome(uint256 jobId) internal view returns (bool) {
-        return uint256(blockhash(block.number - 1) ^ bytes32(jobId)) % 2 == 0;
-    }
     // ---------------------------------------------------------------
     // Ether rejection
     // ---------------------------------------------------------------
 
-    /// @dev Reject direct ETH transfers that are not dispute bonds.
+    /// @dev Reject direct ETH transfers; all fees are handled in tokens.
     receive() external payable {
         revert("DisputeModule: no ether");
     }

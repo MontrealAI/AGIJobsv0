@@ -126,6 +126,7 @@ describe("Protocol core features", function () {
     const dispute = await Dispute.deploy(registry.target);
     await dispute.connect(owner).setAppealFee(5);
     await dispute.connect(owner).setDisputeWindow(0);
+    await registry.setDisputeModule(dispute.target);
     const jobId = 1;
     await registry.setJob(jobId, {
       employer: employer.address,
@@ -136,17 +137,19 @@ describe("Protocol core features", function () {
       status: 0,
       uri: ""
     });
-    const tx = await dispute
-      .connect(employer)
+    const tx = await registry
+      .connect(agent)
       .raiseDispute(jobId, "evidence");
     const rcpt = await tx.wait();
-    expect(await dispute.bonds(jobId)).to.equal(5);
+    const disputeInfo = await dispute.disputes(jobId);
+    expect(disputeInfo.fee).to.equal(5);
     const block = await ethers.provider.getBlock(rcpt.blockNumber);
     const expected = (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
-    await expect(dispute.connect(owner).resolveDispute(jobId))
+    await expect(dispute.connect(owner).resolveDispute(jobId, expected))
       .to.emit(dispute, "DisputeResolved")
       .withArgs(jobId, expected);
-    expect(await dispute.bonds(jobId)).to.equal(0);
+    const cleared = await dispute.disputes(jobId);
+    expect(cleared.raisedAt).to.equal(0);
   });
 });
 
