@@ -289,25 +289,32 @@ describe("StakeManager", function () {
     ).to.emit(stakeManager, "StakeWithdrawn").withArgs(user.address, 0, 50);
   });
 
-  it("restricts token updates to owner", async () => {
-    const Token2 = await ethers.getContractFactory("MockERC20");
-    const token2 = await Token2.deploy();
+  it("restricts token updates to owner and enforces 6 decimals", async () => {
+    const Token6 = await ethers.getContractFactory("MockERC206Decimals");
+    const token6 = await Token6.deploy();
     await expect(
-      stakeManager.connect(user).setToken(await token2.getAddress())
+      stakeManager.connect(user).setToken(await token6.getAddress())
     ).to.be.revertedWithCustomError(
       stakeManager,
       "OwnableUnauthorizedAccount"
     );
+
+    const Token18 = await ethers.getContractFactory("MockERC20");
+    const token18 = await Token18.deploy();
     await expect(
-      stakeManager.connect(owner).setToken(await token2.getAddress())
+      stakeManager.connect(owner).setToken(await token18.getAddress())
+    ).to.be.revertedWith("decimals");
+
+    await expect(
+      stakeManager.connect(owner).setToken(await token6.getAddress())
     )
       .to.emit(stakeManager, "TokenUpdated")
-      .withArgs(await token2.getAddress());
-    expect(await stakeManager.token()).to.equal(await token2.getAddress());
+      .withArgs(await token6.getAddress());
+    expect(await stakeManager.token()).to.equal(await token6.getAddress());
   });
 
   it("uses new token for deposits and payouts after update", async () => {
-    const Token2 = await ethers.getContractFactory("MockERC20");
+    const Token2 = await ethers.getContractFactory("MockERC206Decimals");
     const token2 = await Token2.deploy();
 
     // wire job registry so user can stake
@@ -706,7 +713,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
 
-    const Token = await ethers.getContractFactory("MockERC20");
+    const Token = await ethers.getContractFactory("MockERC206Decimals");
     const token2 = await Token.deploy();
     await token2.mint(user.address, 500);
     await stakeManager.connect(owner).setToken(await token2.getAddress());
