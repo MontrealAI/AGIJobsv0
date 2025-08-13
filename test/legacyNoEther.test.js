@@ -18,14 +18,14 @@ describe("Legacy contract ether rejection", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/JobRegistry.sol:JobRegistry"
     );
-    const registry = await Factory.deploy(owner.address);
+    const registry = await Factory.deploy();
     await registry.waitForDeployment();
     await expectReject(registry);
   });
 
   it("JobNFT", async () => {
     const Factory = await ethers.getContractFactory("JobNFT");
-    const nft = await Factory.deploy("Job", "JOB", owner.address);
+    const nft = await Factory.deploy();
     await nft.waitForDeployment();
     await expectReject(nft);
   });
@@ -34,7 +34,7 @@ describe("Legacy contract ether rejection", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/ReputationEngine.sol:ReputationEngine"
     );
-    const engine = await Factory.deploy(owner.address);
+    const engine = await Factory.deploy();
     await engine.waitForDeployment();
     await expectReject(engine);
   });
@@ -43,25 +43,16 @@ describe("Legacy contract ether rejection", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/ValidationModule.sol:ValidationModule"
     );
-    const module = await Factory.deploy(owner.address);
+    const module = await Factory.deploy();
     await module.waitForDeployment();
     await expectReject(module);
   });
 
   it("StakeManager", async () => {
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    const token = await Token.deploy();
-    await token.waitForDeployment();
     const Factory = await ethers.getContractFactory(
       "contracts/StakeManager.sol:StakeManager"
     );
-    const stake = await Factory.deploy(
-      await token.getAddress(),
-      owner.address,
-      ethers.ZeroAddress
-    );
+    const stake = await Factory.deploy();
     await stake.waitForDeployment();
     await expectReject(stake);
   });
@@ -70,7 +61,7 @@ describe("Legacy contract ether rejection", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/CertificateNFT.sol:CertificateNFT"
     );
-    const cert = await Factory.deploy("Cert", "CERT", owner.address);
+    const cert = await Factory.deploy();
     await cert.waitForDeployment();
     await expectReject(cert);
   });

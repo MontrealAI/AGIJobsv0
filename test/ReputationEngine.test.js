@@ -10,7 +10,7 @@ describe("ReputationEngine", function () {
       const Engine = await ethers.getContractFactory(
         "contracts/ReputationEngine.sol:ReputationEngine"
       );
-    engine = await Engine.deploy(owner.address);
+    engine = await Engine.deploy();
     await engine.waitForDeployment();
 
     // Role enum: 1 = Agent, 2 = Validator

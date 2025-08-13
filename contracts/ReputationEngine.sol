@@ -38,7 +38,7 @@ contract ReputationEngine is Ownable {
     event ValidatorThresholdUpdated(uint256 newThreshold);
     event DecayConstantUpdated(uint256 newK);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Authorize a caller and assign its role.
     function setCaller(address caller, Role role) external onlyOwner {

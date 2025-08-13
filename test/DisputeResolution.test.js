@@ -22,7 +22,7 @@ describe("DisputeResolution", function () {
     const Validation = await ethers.getContractFactory(
       "contracts/ValidationModule.sol:ValidationModule"
     );
-    validation = await Validation.deploy(owner.address);
+    validation = await Validation.deploy();
     const valAddr = await validation.getAddress();
     await validation.connect(owner).setStakeManager(stakeAddr);
     await validation.connect(owner).setChallengeWindow(1000);
@@ -31,13 +31,11 @@ describe("DisputeResolution", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/DisputeResolution.sol:DisputeResolution"
     );
-    dispute = await Dispute.deploy(
-      stakeAddr,
-      repAddr,
-      valAddr,
-      owner.address
-    );
+    dispute = await Dispute.deploy();
     const disputeAddr = await dispute.getAddress();
+    await dispute.setStakeManager(stakeAddr);
+    await dispute.setReputationEngine(repAddr);
+    await dispute.setValidationModule(valAddr);
     await validation.connect(owner).setDisputeResolution(disputeAddr);
   });
 

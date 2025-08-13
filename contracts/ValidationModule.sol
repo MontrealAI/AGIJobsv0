@@ -33,7 +33,7 @@ contract ValidationModule is Ownable {
     event ChallengeWindowUpdated(uint256 window);
     event DisputeResolutionUpdated(address resolver);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;

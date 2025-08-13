@@ -95,7 +95,7 @@ contract JobRegistry is Ownable {
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobParametersUpdated(uint256 reward, uint256 stake);
 
-    constructor(address owner) Ownable(owner) {}
+    constructor() Ownable(msg.sender) {}
 
     /// @notice require caller to acknowledge current tax policy
     modifier requiresTaxAcknowledgement() {

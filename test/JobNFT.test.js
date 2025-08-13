@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 async function deployFixture() {
   const [owner, jobRegistry, user] = await ethers.getSigners();
   const JobNFT = await ethers.getContractFactory("JobNFT");
-  const nft = await JobNFT.deploy("Job", "JOB", owner.address);
+  const nft = await JobNFT.deploy();
   await nft.waitForDeployment();
   await nft.setJobRegistry(jobRegistry.address);
   return { nft, owner, jobRegistry, user };

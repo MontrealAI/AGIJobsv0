@@ -273,11 +273,8 @@ Now, deploy the modules in this recommended order:
 
 * **Contract:** `StakeManager` (module for stakes and funds).
 
-* **Constructor inputs:** `(address token, address owner, address treasury)`.
+* **Constructor inputs:** `()`.
 
-  * **token:** Enter the address of the \$AGIALPHA token contract (0x2e8f…eAA4EbE). This sets \$AGIALPHA as the token used for all payments and staking.
-  * **owner:** Enter **your own Ethereum address** (the deployer’s address). You will become the owner who can adjust parameters.
-  * **treasury:** Enter the address that should receive a portion of slashed stakes as “treasury”. This could be your address again, a community treasury address, or even a burn address. (This is not the same as the FeePool; it’s used for slashing distribution.) For simplicity, you can use your own address here as well, or another you control for collecting slashes.
 
 * Click **“Deploy”**, confirm in MetaMask, and wait for the StakeManager contract to be created. Note down the new **StakeManager contract address**.
 
@@ -285,9 +282,8 @@ Now, deploy the modules in this recommended order:
 
 * **Contract:** `JobRegistry` (the central job coordination contract).
 
-* **Constructor inputs:** `(address owner)`.
+* **Constructor inputs:** `()`.
 
-  * **owner:** Enter **your address** (deployer). You will manage job parameters and module links as the owner.
 
 * Deploy the JobRegistry contract. Note the **JobRegistry address**.
 
@@ -295,11 +291,8 @@ Now, deploy the modules in this recommended order:
 
 * **Contract:** `ValidationModule` (for validator selection and vote handling).
 
-* **Constructor inputs:** `(address jobRegistry, address stakeManager, address owner)`.
+* **Constructor inputs:** `()`.
 
-  * **jobRegistry:** Enter the **address of the JobRegistry** you just deployed.
-  * **stakeManager:** Enter the **address of the StakeManager** you deployed.
-  * **owner:** Enter **your address** (deployer/owner).
 
 * Deploy ValidationModule and save its address.
 
@@ -307,7 +300,7 @@ Now, deploy the modules in this recommended order:
 
 * **Contract:** `ReputationEngine` (tracks user reputation scores).
 
-* **Constructor inputs:** `(address owner)` – just your address as owner.
+* **Constructor inputs:** `()`.
 
 * Deploy and note the ReputationEngine address.
 
@@ -328,11 +321,8 @@ Now, deploy the modules in this recommended order:
 
 * **Contract:** `CertificateNFT` (ERC-721 token for job completion certificates).
 
-* **Constructor inputs:** `(string name, string symbol, address owner)`.
+* **Constructor inputs:** `()`.
 
-  * **name:** A name for the NFT collection (e.g. `"AGI Job Certificate"`).
-  * **symbol:** A symbol for the NFTs (e.g. `"AGICERT"`).
-  * **owner:** Your address (owner of the NFT contract, capable of adjusting base URI if needed).
 
 * Deploy CertificateNFT and note the address. (You may verify this contract’s source as well; it’s a standard ERC-721 with custom mint function.)
 

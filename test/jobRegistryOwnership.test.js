@@ -9,7 +9,7 @@ describe("JobRegistry ownership", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/JobRegistry.sol:JobRegistry"
     );
-    registry = await Factory.deploy(owner.address);
+    registry = await Factory.deploy();
     await registry.waitForDeployment();
   });
 
