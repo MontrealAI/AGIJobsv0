@@ -13,6 +13,7 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
+import {IFeePool} from "./interfaces/IFeePool.sol";
 
 /// @title ModuleInstallerSimple
 /// @notice Minimal helper that wires deployed modules together.
@@ -29,6 +30,7 @@ contract ModuleInstallerSimple {
     /// @param platformIncentives Address of the PlatformIncentives helper
     /// @param platformRegistry Address of the PlatformRegistry
     /// @param jobRouter Address of the JobRouter
+    /// @param feePool Address of the FeePool contract
     function wire(
         JobRegistry jobRegistry,
         StakeManager stakeManager,
@@ -38,7 +40,8 @@ contract ModuleInstallerSimple {
         ICertificateNFT certificateNFT,
         PlatformIncentives platformIncentives,
         IPlatformRegistryFull platformRegistry,
-        IJobRouter jobRouter
+        IJobRouter jobRouter,
+        IFeePool feePool
     ) external {
         jobRegistry.setModules(
             validationModule,
@@ -47,6 +50,7 @@ contract ModuleInstallerSimple {
             disputeModule,
             certificateNFT
         );
+        jobRegistry.setFeePool(feePool);
         stakeManager.setJobRegistry(address(jobRegistry));
         stakeManager.setModules(address(jobRegistry), address(disputeModule));
         platformIncentives.setModules(
