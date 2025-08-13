@@ -16,6 +16,16 @@ contract GovernanceReward is Ownable {
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
 
+    /// @notice default $AGIALPHA token used when no token is specified
+    address public constant DEFAULT_TOKEN =
+        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
+
+    /// @notice default epoch length when constructor param is zero
+    uint256 public constant DEFAULT_EPOCH_LENGTH = 1 weeks;
+
+    /// @notice default reward percentage when constructor param is zero
+    uint256 public constant DEFAULT_REWARD_PCT = 5;
+
     IERC20 public token;
     IFeePool public feePool;
     IStakeManager public stakeManager;
@@ -48,12 +58,29 @@ contract GovernanceReward is Ownable {
         IERC20 _token,
         IFeePool _feePool,
         IStakeManager _stakeManager,
-        IStakeManager.Role _role
+        IStakeManager.Role _role,
+        uint256 _epochLength,
+        uint256 _rewardPct
     ) Ownable(msg.sender) {
-        token = _token;
+        token =
+            address(_token) == address(0)
+                ? IERC20(DEFAULT_TOKEN)
+                : _token;
+        emit TokenUpdated(address(token));
+
         feePool = _feePool;
         stakeManager = _stakeManager;
         rewardRole = _role;
+
+        epochLength =
+            _epochLength == 0 ? DEFAULT_EPOCH_LENGTH : _epochLength;
+        emit EpochLengthUpdated(epochLength);
+
+        uint256 pct = _rewardPct == 0 ? DEFAULT_REWARD_PCT : _rewardPct;
+        require(pct <= 100, "pct");
+        rewardPct = pct;
+        emit RewardPctUpdated(pct);
+
         lastEpochTime = block.timestamp;
     }
 
@@ -70,10 +97,15 @@ contract GovernanceReward is Ownable {
         emit RewardPctUpdated(pct);
     }
 
-    /// @notice update the token address
+    /// @notice update the token address used for rewards
+    /// @param newToken ERC20 token using 6 decimals. Set to zero address to
+    /// revert to DEFAULT_TOKEN.
     function setToken(IERC20 newToken) external onlyOwner {
-        token = newToken;
-        emit TokenUpdated(address(newToken));
+        token =
+            address(newToken) == address(0)
+                ? IERC20(DEFAULT_TOKEN)
+                : newToken;
+        emit TokenUpdated(address(token));
     }
 
     /// @notice record voters for the current epoch and snapshot their stake

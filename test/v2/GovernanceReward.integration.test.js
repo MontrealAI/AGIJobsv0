@@ -67,17 +67,16 @@ describe("Governance reward lifecycle", function () {
     const Reward = await ethers.getContractFactory(
       "contracts/v2/GovernanceReward.sol:GovernanceReward"
     );
-      reward = await Reward.deploy(
-        await token.getAddress(),
-        await feePool.getAddress(),
-        await stakeManager.getAddress(),
-        2
-      );
+    reward = await Reward.deploy(
+      await token.getAddress(),
+      await feePool.getAddress(),
+      await stakeManager.getAddress(),
+      2,
+      1,
+      50
+    );
 
-      await feePool.connect(owner).transferOwnership(await reward.getAddress());
-
-      await reward.setEpochLength(1);
-      await reward.setRewardPct(50);
+    await feePool.connect(owner).transferOwnership(await reward.getAddress());
 
     // stake setup
     await token.mint(voter1.address, 100 * 1e6);
