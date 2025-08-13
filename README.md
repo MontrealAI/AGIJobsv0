@@ -22,6 +22,7 @@ Helper functions expose common flows in single calls so Etherscan users do not h
 - `JobRegistry.stakeAndApply` deposits stake and applies to a job.
 - `PlatformIncentives.stakeAndActivate` (and `acknowledgeStakeAndActivate`) stakes and registers a platform for routing and fees.
 - `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
+- `StakeManager.acknowledgeAndDeposit` and `acknowledgeAndDepositFor` stake tokens after acknowledging the tax policy, reducing transactions for users and helpers.
 
 All participants opt in by staking `$AGIALPHA`. Staked operators gain routing priority and revenue share, while the main deploying entity is a special case that registers with **stake = 0**, earning no boosts so it remains tax neutral. Because every incentive flows on-chain, operators can participate pseudonymously without creating off‑chain reporting obligations.
 
@@ -33,7 +34,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 1. Verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token address (6 decimals) and all module addresses listed in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 2. Through a block explorer’s **Write Contract** tabs:
    - Approve `$AGIALPHA` for the `StakeManager`.
-   - Call `StakeManager.depositStake(role, amount)` using 6‑decimal units (`1` token = `1_000000`).
+   - Call `StakeManager.acknowledgeAndDeposit(role, amount)` (or `acknowledgeAndDepositFor` when staking for another address) using 6‑decimal units (`1` token = `1_000000`).
    - Platform operators may call `PlatformIncentives.stakeAndActivate(amount)` to stake and register in one step.
    - Employers can accept the tax policy and post work in one transaction via
      `JobRegistry.acknowledgeAndCreateJob(reward, uri)` after approving the
@@ -58,7 +59,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 1. **Open a contract** – navigate to its address on Etherscan and select the **Contract → Write** tab.
 2. **Connect wallet** – click *Connect to Web3* so transactions come from your address.
 3. **Approve spending** – on the `$AGIALPHA` token page call `approve(StakeManager, amount)` using 6‑decimal units.
-4. **Stake** – on `StakeManager` call `depositStake(role, amount)`.
+4. **Stake** – on `StakeManager` call `acknowledgeAndDeposit(role, amount)`.
 5. **Activate a platform** – if you are an operator, call `PlatformIncentives.stakeAndActivate(amount)` (use `0` for the owner’s zero‑stake case).
 6. **Verify registration** – check `PlatformRegistry.getScore(address)` and `JobRouter.registered(address)` in the **Read** tabs.
 7. **Claim fees later** – simply call `FeePool.claimRewards()`; the function distributes any pending fees before paying rewards.
@@ -83,7 +84,7 @@ Regulatory shifts may change compliance obligations even when rewards flow entir
 - **Platform operator** – stakes under role `2` then registers for routing priority and fee share.
 
 **Staking & Fees**
-1. Approve $AGIALPHA and call `StakeManager.depositStake(role, amount)` using 6‑decimal base units (`1` token = `1_000000`, `0.5` = `500000`).
+1. Approve $AGIALPHA and call `StakeManager.acknowledgeAndDeposit(role, amount)` using 6‑decimal base units (`1` token = `1_000000`, `0.5` = `500000`).
 2. Platform operators call `PlatformRegistry.register()` after staking.
 3. When jobs finalize, anyone can call `FeePool.distributeFees()`; stakers withdraw via `FeePool.claimRewards()`.
 
