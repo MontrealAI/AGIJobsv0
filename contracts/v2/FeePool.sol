@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {AGIALPHA} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title FeePool
@@ -19,8 +20,7 @@ contract FeePool is Ownable {
     uint256 public constant DEFAULT_BURN_PCT = 5;
 
     /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN =
-        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
+    address public constant DEFAULT_TOKEN = AGIALPHA;
 
     /// @notice ERC20 token used for fees and rewards
     IERC20 public token;

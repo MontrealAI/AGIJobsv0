@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AGIALPHA} from "../Constants.sol";
 
 interface IRoutingModule {
     function selectOperator(bytes32 jobId) external returns (address);
@@ -30,6 +31,8 @@ contract JobEscrow is Ownable {
     }
 
     uint256 public constant TIMEOUT = 3 days;
+    /// @notice default $AGIALPHA token used when no token is specified
+    address public constant DEFAULT_TOKEN = AGIALPHA;
 
     IERC20 public token;
     IRoutingModule public routingModule;
@@ -44,9 +47,10 @@ contract JobEscrow is Ownable {
     event ResultAccepted(uint256 indexed jobId, address caller);
 
     constructor(IERC20 _token, IRoutingModule _routing) Ownable(msg.sender) {
-        token = address(_token) == address(0)
-            ? IERC20(0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe)
-            : _token;
+        token =
+            address(_token) == address(0)
+                ? IERC20(DEFAULT_TOKEN)
+                : _token;
         routingModule = _routing;
     }
 

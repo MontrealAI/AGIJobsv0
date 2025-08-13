@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 
@@ -32,8 +33,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN =
-        0x2e8Fb54C3eC41F55F06C1F082C081a609EaA4ebe;
+    address public constant DEFAULT_TOKEN = AGIALPHA;
 
     /// @notice default minimum stake when constructor param is zero
     uint256 public constant DEFAULT_MIN_STAKE = 1e6;
