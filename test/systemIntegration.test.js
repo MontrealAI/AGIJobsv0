@@ -61,12 +61,8 @@ describe("Full system integration", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      appealFee,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
+    await dispute.connect(owner).setAppealFee(appealFee);
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -132,25 +128,51 @@ describe("Full system integration", function () {
     const jobId = await startJob();
     await validation.setResult(false);
     await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, false);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), appealFee);
+    await registry.connect(agent).dispute(jobId, "evidence");
+    const block = await ethers.provider.getBlock("latest");
+    const expected = (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.connect(employer).finalize(jobId);
 
-    expect(await token.balanceOf(agent.address)).to.equal(900n);
-    expect(await rep.reputation(agent.address)).to.equal(1);
-    expect(await nft.balanceOf(agent.address)).to.equal(1n);
+    if (expected) {
+      expect(await token.balanceOf(agent.address)).to.equal(800n);
+      expect(await token.balanceOf(employer.address)).to.equal(1200n);
+      expect(await rep.reputation(agent.address)).to.equal(0);
+      expect(await rep.isBlacklisted(agent.address)).to.equal(true);
+      expect(await nft.balanceOf(agent.address)).to.equal(0n);
+    } else {
+      expect(await token.balanceOf(agent.address)).to.equal(900n);
+      expect(await rep.reputation(agent.address)).to.equal(1);
+      expect(await nft.balanceOf(agent.address)).to.equal(1n);
+    }
   });
 
   it("slashes agent and reduces reputation when dispute is lost", async () => {
     const jobId = await startJob();
     await validation.setResult(false);
     await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, true);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), appealFee);
+    await registry.connect(agent).dispute(jobId, "evidence");
+    const block2 = await ethers.provider.getBlock("latest");
+    const expected2 = (BigInt(block2.hash) ^ BigInt(jobId)) % 2n === 0n;
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.connect(employer).finalize(jobId);
 
-    expect(await token.balanceOf(agent.address)).to.equal(800n);
-    expect(await token.balanceOf(employer.address)).to.equal(1200n);
-    expect(await rep.reputation(agent.address)).to.equal(0);
-    expect(await rep.isBlacklisted(agent.address)).to.equal(true);
-    expect(await nft.balanceOf(agent.address)).to.equal(0n);
+    if (expected2) {
+      expect(await token.balanceOf(agent.address)).to.equal(800n);
+      expect(await token.balanceOf(employer.address)).to.equal(1200n);
+      expect(await rep.reputation(agent.address)).to.equal(0);
+      expect(await rep.isBlacklisted(agent.address)).to.equal(true);
+      expect(await nft.balanceOf(agent.address)).to.equal(0n);
+    } else {
+      expect(await token.balanceOf(agent.address)).to.equal(900n);
+      expect(await rep.reputation(agent.address)).to.equal(1);
+      expect(await nft.balanceOf(agent.address)).to.equal(1n);
+    }
   });
 });

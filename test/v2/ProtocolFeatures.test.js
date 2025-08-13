@@ -121,7 +121,7 @@ describe("Protocol core features", function () {
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     const dispute = await Dispute.deploy(registry.target);
     await dispute.connect(owner).setAppealFee(5);

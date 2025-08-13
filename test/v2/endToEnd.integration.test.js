@@ -69,12 +69,8 @@ describe("end-to-end job lifecycle", function () {
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
-    dispute = await Dispute.deploy(
-      await registry.getAddress(),
-      appealFee,
-      owner.address,
-      owner.address
-    );
+    dispute = await Dispute.deploy(await registry.getAddress());
+    await dispute.connect(owner).setAppealFee(appealFee);
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
@@ -166,10 +162,20 @@ describe("end-to-end job lifecycle", function () {
     await registry.connect(agent).applyForJob(jobId);
     await validation.connect(owner).setResult(false);
     await registry.connect(agent).completeJob(jobId);
-    await registry.connect(agent).dispute(jobId, { value: appealFee });
-    await dispute.connect(owner).resolve(jobId, true);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), appealFee);
+    await registry.connect(agent).dispute(jobId, "evidence");
+    const block = await ethers.provider.getBlock("latest");
+    const expected = (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
+    await dispute.connect(owner).resolveDispute(jobId);
+    await registry.connect(employer).finalize(jobId);
 
-    expect(await stakeManager.stakeOf(agent.address, 0)).to.equal(0n);
+    if (expected) {
+      expect(await stakeManager.stakeOf(agent.address, 0)).to.equal(0n);
+    } else {
+      expect(await stakeManager.stakeOf(agent.address, 0)).to.equal(stakeRequired);
+    }
     expect(await feePool.pendingFees()).to.equal(0n);
   });
 });

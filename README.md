@@ -194,7 +194,7 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 2. Call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter)` once to wire cross‑links between modules.
 3. Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
 4. Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction.
-5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
+5. For disputes, participants `approve` the `StakeManager` for the configured `appealFee` and invoke `JobRegistry.dispute(jobId, evidence)`; the `DisputeModule` locks the bond and later pays the winner in $AGIALPHA.
 
 ### Token decimals & staking units
 
@@ -514,7 +514,7 @@ Interact with the deployment directly from a block explorer using the **Write** 
 
 ### Dispute
 1. If the outcome is contested, call `DisputeModule.raiseDispute(jobId, reason)`.
-2. Moderators resolve via `DisputeModule.resolveDispute(jobId, upheld)`; results flow back to `JobRegistry` for payout.
+2. Moderators resolve via `DisputeModule.resolveDispute(jobId)`; results flow back to `JobRegistry` for payout.
 
 No custom tooling is required—everything happens in the browser.
 
@@ -744,7 +744,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 2. In `StakeManager` **Read Contract**, check `isTaxExempt()` then stake AGI with `depositStake(0, amount)` (role `0` = Agent).
 3. Apply using `JobRegistry.applyForJob(jobId)` and, once hired, submit work with `submitWork(jobId, details)`.
 4. Call `requestJobCompletion(jobId, evidence)` to trigger validation.
-5. If validators reject the result, open the `DisputeModule`, confirm `isTaxExempt()`, and escalate by calling `JobRegistry.dispute(jobId)` with the appeal fee.
+5. If validators reject the result, open the `DisputeModule`, confirm `isTaxExempt()`, and escalate by calling `JobRegistry.dispute(jobId, evidence)` after approving the `StakeManager` for the appeal fee.
 
 ### Validators
 1. On `JobRegistry`, call `acknowledgeTaxPolicy()` and confirm `isTaxExempt()`.
@@ -755,7 +755,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 
 ### Appeals
 1. After a failed job outcome, ensure you have acknowledged the tax policy and confirmed `JobRegistry.isTaxExempt()` and `DisputeModule.isTaxExempt()`.
-2. In `JobRegistry` **Write Contract**, invoke `dispute(jobId)` with the required `appealFee`; the registry forwards to `DisputeModule.appeal(jobId)`.
+2. In `JobRegistry` **Write Contract**, invoke `dispute(jobId, evidence)` after approving the `StakeManager` for the `appealFee`; the registry forwards to `DisputeModule.raiseDispute(jobId, evidence)`.
 3. Track `DisputeRaised` and `DisputeResolved` events on both contracts to follow the appeal.
 
 ### Moderators
@@ -1296,7 +1296,7 @@ Once configured, all interaction—job creation, staking, validation, dispute re
 
 **appeal**
 1. Confirm `isTaxExempt()` on both `JobRegistry` and `DisputeModule`.
-2. In `JobRegistry` **Write Contract**, call `dispute(jobId)` with the required appeal fee; the registry forwards to `DisputeModule.appeal(jobId)`.
+2. In `JobRegistry` **Write Contract**, call `dispute(jobId, evidence)` after approving the `StakeManager` for the appeal fee; the registry forwards to `DisputeModule.raiseDispute(jobId, evidence)`.
 
 Role-based quick steps:
 

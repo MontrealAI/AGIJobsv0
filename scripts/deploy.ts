@@ -52,10 +52,7 @@ async function main() {
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/DisputeModule.sol:DisputeModule"
   );
-  const dispute = await Dispute.deploy(
-    await registry.getAddress(),
-    deployer.address
-  );
+  const dispute = await Dispute.deploy(await registry.getAddress());
 
   await registry.setModules(
     await validation.getAddress(),

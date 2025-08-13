@@ -7,20 +7,13 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 
 interface IReputationEngine {
     function add(address user, uint256 amount) external;
     function subtract(address user, uint256 amount) external;
 }
 
-interface IDisputeModule {
-    function appeal(uint256 jobId) external payable;
-    function resolve(uint256 jobId, bool employerWins) external;
-}
-
-interface IDisputeModuleEvidence {
-    function raiseDispute(uint256 jobId, string calldata evidence) external;
-}
 
 interface ICertificateNFT {
     function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
@@ -427,10 +420,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         completeJob(jobId);
     }
 
-    /// @notice Agent disputes a failed job outcome.
-    function raiseDispute(uint256 jobId)
+    /// @notice Agent disputes a failed job outcome with supporting evidence.
+    /// @param jobId Identifier of the disputed job
+    /// @param evidence Evidence string describing the dispute
+    function dispute(uint256 jobId, string calldata evidence)
         public
-        payable
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
@@ -438,19 +432,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(msg.sender == job.agent, "only agent");
         job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.appeal{value: msg.value}(jobId);
-        } else {
-            require(msg.value == 0, "fee unused");
+            disputeModule.raiseDispute(jobId, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
-    }
-
-    function dispute(uint256 jobId)
-        external
-        payable
-        requiresTaxAcknowledgement
-    {
-        raiseDispute(jobId);
     }
 
     /// @notice Acknowledge tax policy if needed and raise a dispute with evidence.
@@ -460,18 +444,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
             _acknowledge(msg.sender);
         }
-
-        Job storage job = jobs[jobId];
-        require(job.state == State.Completed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent, "only agent");
-        job.state = State.Disputed;
-        if (address(disputeModule) != address(0)) {
-            IDisputeModuleEvidence(address(disputeModule)).raiseDispute(
-                jobId,
-                evidence
-            );
-        }
-        emit JobDisputed(jobId, msg.sender);
+        dispute(jobId, evidence);
     }
 
     /// @notice Owner resolves a dispute, setting the final outcome.
