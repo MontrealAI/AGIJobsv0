@@ -271,6 +271,24 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeLocked(user, amount, unlockTime[user]);
     }
 
+    /// @dev internal stake deposit routine shared by deposit helpers
+    function _deposit(address user, Role role, uint256 amount) internal {
+        uint256 newStake = stakes[user][role] + amount;
+        require(newStake >= minStake, "min stake");
+        if (maxStakePerAddress > 0) {
+            uint256 total =
+                stakes[user][Role.Agent] +
+                stakes[user][Role.Validator] +
+                stakes[user][Role.Platform] +
+                amount;
+            require(total <= maxStakePerAddress, "max stake");
+        }
+        stakes[user][role] = newStake;
+        totalStakes[role] += amount;
+        token.safeTransferFrom(user, address(this), amount);
+        emit StakeDeposited(user, role, amount);
+    }
+
     /// @notice deposit stake on behalf of a user for a specific role; use
     ///         `depositStake` when staking for the caller.
     /// @dev Use `depositStake` when the caller is staking for themselves.
@@ -297,23 +315,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
                 "acknowledge tax policy"
             );
         }
-
-        uint256 newStake = stakes[user][role] + amount;
-        require(newStake >= minStake, "min stake");
-
-        if (maxStakePerAddress > 0) {
-            uint256 total =
-                stakes[user][Role.Agent] +
-                stakes[user][Role.Validator] +
-                stakes[user][Role.Platform] +
-                amount;
-            require(total <= maxStakePerAddress, "max stake");
-        }
-
-        stakes[user][role] = newStake;
-        totalStakes[role] += amount;
-        token.safeTransferFrom(user, address(this), amount);
-        emit StakeDeposited(user, role, amount);
+        _deposit(user, role, amount);
     }
 
     /// @notice deposit stake for caller for a specific role after approving tokens
@@ -326,22 +328,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     {
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
-        uint256 newStake = stakes[msg.sender][role] + amount;
-        require(newStake >= minStake, "min stake");
-
-        if (maxStakePerAddress > 0) {
-            uint256 total =
-                stakes[msg.sender][Role.Agent] +
-                stakes[msg.sender][Role.Validator] +
-                stakes[msg.sender][Role.Platform] +
-                amount;
-            require(total <= maxStakePerAddress, "max stake");
-        }
-
-        stakes[msg.sender][role] = newStake;
-        totalStakes[role] += amount;
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        emit StakeDeposited(msg.sender, role, amount);
+        _deposit(msg.sender, role, amount);
     }
 
     /// @notice acknowledge the tax policy and deposit stake in one transaction
@@ -354,25 +341,30 @@ contract StakeManager is Ownable, ReentrancyGuard {
         if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
             IJobRegistryAck(registry).acknowledgeTaxPolicy();
         }
-
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
-        uint256 newStake = stakes[msg.sender][role] + amount;
-        require(newStake >= minStake, "min stake");
+        _deposit(msg.sender, role, amount);
+    }
 
-        if (maxStakePerAddress > 0) {
-            uint256 total =
-                stakes[msg.sender][Role.Agent] +
-                stakes[msg.sender][Role.Validator] +
-                stakes[msg.sender][Role.Platform] +
-                amount;
-            require(total <= maxStakePerAddress, "max stake");
+    /// @notice acknowledge the tax policy and deposit stake on behalf of a user
+    /// @param user address receiving credit for the stake
+    /// @param role participant role for the stake
+    /// @param amount token amount with 6 decimals; user must approve first
+    function acknowledgeAndDepositFor(
+        address user,
+        Role role,
+        uint256 amount
+    ) external nonReentrant {
+        require(user != address(0), "user");
+        address registry = jobRegistry;
+        require(registry != address(0), "job registry");
+        IJobRegistryTax reg = IJobRegistryTax(registry);
+        if (reg.taxAcknowledgedVersion(user) != reg.taxPolicyVersion()) {
+            IJobRegistryAck(registry).acknowledgeTaxPolicy();
         }
-
-        stakes[msg.sender][role] = newStake;
-        totalStakes[role] += amount;
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        emit StakeDeposited(msg.sender, role, amount);
+        require(role <= Role.Platform, "role");
+        require(amount > 0, "amount");
+        _deposit(user, role, amount);
     }
 
     /// @notice withdraw available stake for a specific role once unlocked via `lockStake`
