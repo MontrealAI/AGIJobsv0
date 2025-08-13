@@ -15,6 +15,7 @@ describe("PlatformRegistry", function () {
     );
     token = await Token.connect(owner).deploy();
     await token.mint(platform.address, STAKE);
+    await token.mint(sybil.address, STAKE);
 
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -29,8 +30,15 @@ describe("PlatformRegistry", function () {
       ethers.ZeroAddress
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
-    await token.connect(platform).approve(await stakeManager.getAddress(), STAKE);
-    await stakeManager.connect(platform).depositStake(2, STAKE); // Role.Platform = 2
+    await token
+      .connect(platform)
+      .approve(await stakeManager.getAddress(), STAKE);
+    await stakeManager
+      .connect(platform)
+      .depositStake(2, STAKE); // Role.Platform = 2
+    await token
+      .connect(sybil)
+      .approve(await stakeManager.getAddress(), STAKE);
 
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
@@ -63,6 +71,21 @@ describe("PlatformRegistry", function () {
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
+  });
+
+  it("stakeAndRegister stakes tokens and registers caller", async () => {
+    await expect(registry.connect(sybil).stakeAndRegister(STAKE))
+      .to.emit(registry, "Registered")
+      .withArgs(sybil.address);
+    expect(
+      await stakeManager.stakeOf(sybil.address, 2) // Role.Platform = 2
+    ).to.equal(STAKE);
+  });
+
+  it("acknowledgeStakeAndRegister acknowledges, stakes, and registers", async () => {
+    await expect(registry.connect(sybil).acknowledgeStakeAndRegister(STAKE))
+      .to.emit(registry, "Registered")
+      .withArgs(sybil.address);
   });
 
   it("acknowledgeAndRegisterFor works for registrars", async () => {
