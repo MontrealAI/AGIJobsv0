@@ -84,7 +84,7 @@ interface IReputationEngine {
 
 interface IDisputeModule {
     function raiseDispute(uint256 jobId, string calldata reason) external;
-    function resolveDispute(uint256 jobId, bool uphold) external;
+    function resolveDispute(uint256 jobId) external;
     function setAppealFee(uint256 fee) external;
 }
 

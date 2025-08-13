@@ -514,7 +514,7 @@ Interact with the deployment directly from a block explorer using the **Write** 
 
 ### Dispute
 1. If the outcome is contested, call `DisputeModule.raiseDispute(jobId, reason)`.
-2. Moderators resolve via `DisputeModule.resolveDispute(jobId, upheld)`; results flow back to `JobRegistry` for payout.
+2. Moderators resolve via `DisputeModule.resolveDispute(jobId)`; results flow back to `JobRegistry` for payout.
 
 No custom tooling is required—everything happens in the browser.
 

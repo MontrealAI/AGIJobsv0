@@ -145,7 +145,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | Function | Parameters | Typical Use Case |
 | --- | --- | --- |
 | `raiseDispute(uint256 jobId, string reason)` | jobId, reason URI | Participant appeals a validation outcome. |
-| `resolveDispute(uint256 jobId, bool uphold)` | jobId, `uphold` – sustain original result? | Moderator issues a final ruling. |
+| `resolveDispute(uint256 jobId)` | jobId | Moderator issues a final ruling. |
 | `setAppealFee(uint256 fee)` | fee amount | Owner adjusts the dispute bond charged on appeals. |
 
 ## Parameter Glossary
