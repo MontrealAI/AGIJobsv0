@@ -81,7 +81,8 @@ describe("Full system integration", function () {
         await stakeManager.getAddress(),
         await rep.getAddress(),
         await dispute.getAddress(),
-        await nft.getAddress()
+        await nft.getAddress(),
+        []
       );
     await registry.connect(owner).setJobParameters(reward, stake);
     await registry.connect(owner).setFeePct(0);

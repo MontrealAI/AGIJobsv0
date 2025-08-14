@@ -124,7 +124,8 @@ async function main() {
     await stake.getAddress(),
     await reputation.getAddress(),
     await dispute.getAddress(),
-    await nft.getAddress()
+    await nft.getAddress(),
+    []
   );
 
   // Route protocol fees to FeePool and set a 5% fee cut.

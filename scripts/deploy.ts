@@ -64,7 +64,8 @@ async function main() {
     await stake.getAddress(),
     await reputation.getAddress(),
     await dispute.getAddress(),
-    await nft.getAddress()
+    await nft.getAddress(),
+    []
   );
 
   await validation.setReputationEngine(await reputation.getAddress());
