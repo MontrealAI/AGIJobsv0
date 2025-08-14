@@ -60,6 +60,7 @@ contract ValidationModule is IValidationModule, Ownable {
     event VRFUpdated(address vrf);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
+    event ValidatorSlashingPctUpdated(uint256 pct);
     event JobNonceReset(uint256 indexed jobId);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
@@ -143,6 +144,12 @@ contract ValidationModule is IValidationModule, Ownable {
         minValidators = minVals;
         maxValidators = maxVals;
         emit ValidatorBoundsUpdated(minVals, maxVals);
+    }
+
+    function setValidatorSlashingPct(uint256 pct) external onlyOwner {
+        require(pct <= 100, "pct");
+        validatorSlashingPercentage = pct;
+        emit ValidatorSlashingPctUpdated(pct);
     }
 
     /// @inheritdoc IValidationModule
