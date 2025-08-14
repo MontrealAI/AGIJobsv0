@@ -171,6 +171,37 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         _register(operator);
     }
 
+    /**
+     * @notice Acknowledge the tax policy, stake $AGIALPHA, and register an operator.
+     * @dev Caller must `approve` the `StakeManager` for at least `amount` tokens
+     *      beforehand. Uses 6-decimal base units. Invoking this helper
+     *      implicitly accepts the current tax policy for the operator if it has
+     *      not been acknowledged yet.
+     * @param operator Address to be registered.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
+    function acknowledgeStakeAndRegisterFor(
+        address operator,
+        uint256 amount
+    ) external nonReentrant {
+        if (msg.sender != operator) {
+            require(registrars[msg.sender], "registrar");
+        }
+        require(!registered[operator], "registered");
+        require(!blacklist[operator], "blacklisted");
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryAck(registry).acknowledgeFor(operator);
+        }
+        stakeManager.depositStakeFor(
+            operator,
+            IStakeManager.Role.Platform,
+            amount
+        );
+        _register(operator);
+        emit Activated(operator, amount);
+    }
+
     /// @notice Retrieve routing score for a platform based on stake and reputation.
     function getScore(address operator) public view returns (uint256) {
         if (blacklist[operator] || reputationEngine.isBlacklisted(operator)) return 0;
