@@ -6,10 +6,11 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 
 /// @title DisputeModule
-/// @notice Allows job participants to raise disputes with evidence and resolves them after a dispute window.
-/// @dev Only participants bear any tax obligations; the module escrows token
-/// based dispute fees via the StakeManager and rejects unsolicited ETH
-/// transfers.
+/// @notice Allows job participants to raise disputes with evidence and resolves
+/// them after a dispute window.
+/// @dev Maintains tax neutrality by rejecting ether and escrowing only token
+///      based dispute fees via the StakeManager. Assumes all token amounts use
+///      6 decimals (`1 token == 1e6` units).
 contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
 
@@ -41,6 +42,7 @@ contract DisputeModule is Ownable {
     event ModeratorUpdated(address moderator);
     event AppealFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
+    event JobRegistryUpdated(IJobRegistry newRegistry);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _appealFee Initial appeal fee in token units (6 decimals); defaults to 1e6.
@@ -73,6 +75,13 @@ contract DisputeModule is Ownable {
     modifier onlyJobRegistry() {
         require(msg.sender == address(jobRegistry), "not registry");
         _;
+    }
+
+    /// @notice Update the JobRegistry reference.
+    /// @param newRegistry New JobRegistry contract implementing IJobRegistry.
+    function setJobRegistry(IJobRegistry newRegistry) external onlyOwner {
+        jobRegistry = newRegistry;
+        emit JobRegistryUpdated(newRegistry);
     }
 
     /// @notice Set the moderator address.
