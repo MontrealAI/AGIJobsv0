@@ -21,16 +21,25 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
-### 🚀 Quick Deployment (Etherscan)
+### Etherscan deployment quickstart
 
-`$AGIALPHA` (6 decimals) is the default payment token for all modules. The owner can swap it later via `StakeManager.setToken`.
+`$AGIALPHA` uses 6 decimal places for every amount, and the owner may swap the token later via `setToken` without redeploying any modules.
 
-1. **Deploy with defaults** – On Etherscan, deploy the verified `Deployer` contract and call `deploy()` from its **Write Contract** tab. The single transaction emits a `Deployed` event listing every module address and sets the caller as owner, wiring `TaxPolicy` automatically.
-2. **Verify token decimals** – In the token or `StakeManager` **Read Contract** tab call `decimals()` and ensure it returns `6` before sending amounts.
-3. **Use helper flows** – Post jobs, stake, and register in single calls through `JobRegistry.acknowledgeAndCreateJob`, `JobRegistry.stakeAndApply`, and `PlatformIncentives.stakeAndActivate`.
-4. **Retune as owner** – `onlyOwner` setters like `setToken`, `setFeePct`, and `setBurnPct` can adjust tokens, fees, and other parameters after deployment.
+1. **Deploy via Deployer** – On Etherscan, open the verified `Deployer` contract’s **Write Contract** tab and call `deploy()`. The transaction emits a `Deployed` event with each module address and sets the caller as owner.
+2. **Check token decimals** – Before transferring value, call `decimals()` on the `$AGIALPHA` token or `StakeManager` from the **Read Contract** tab and confirm it returns `6`.
+3. **Call helpers from Write tabs** – Use the **Write Contract** tabs to execute single-call flows such as `JobRegistry.acknowledgeAndCreateJob`, `JobRegistry.stakeAndApply`, `PlatformIncentives.acknowledgeStakeAndActivate`, `StakeManager.acknowledgeAndDeposit`, or `PlatformRegistry.acknowledgeAndRegister`.
+4. **Owner-only tuning** – Only the owner can adjust parameters like `setToken`, `setFeePct`, `setBurnPct`, or `setMinPlatformStake`; other accounts will revert.
 
 See [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
+
+### One-call flows
+
+All helper calls below accept `$AGIALPHA` amounts in 6‑decimal base units and automatically record tax acknowledgements on-chain:
+
+- `StakeManager.acknowledgeAndDeposit`
+- `PlatformRegistry.acknowledgeAndRegister`
+- `PlatformIncentives.acknowledgeStakeAndActivate`
+- `JobRegistry.acknowledgeAndCreateJob` / `JobRegistry.stakeAndApply`
 
 ### Deployment simplifications & defaults
 
