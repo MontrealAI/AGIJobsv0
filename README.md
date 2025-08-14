@@ -147,7 +147,7 @@ For a detailed description of the platform-wide incentive architecture, see [doc
 4. **Stake** – on `StakeManager` call `acknowledgeAndDeposit(role, amount)`.
 5. **Activate a platform** – if you are an operator, call `PlatformIncentives.stakeAndActivate(amount)` (use `0` for the owner’s zero‑stake case).
 6. **Verify registration** – check `PlatformRegistry.getScore(address)` and `JobRouter.registered(address)` in the **Read** tabs.
-7. **Claim fees later** – simply call `FeePool.claimRewards()`; the function distributes any pending fees before paying rewards.
+7. **Claim fees later** – simply call `FeePool.claimRewards()`; it first runs the idempotent `distributeFees` to settle any pending fees before paying rewards.
 
 This summary is for convenience only. Screenshots and extended explanations are provided in [docs/deployment-agialpha.md](docs/deployment-agialpha.md).
 
