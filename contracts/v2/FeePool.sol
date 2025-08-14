@@ -149,10 +149,26 @@ contract FeePool is Ownable {
      * @dev Rewards use 6-decimal units. Automatically calls `distributeFees`
      *      if there are pending fees awaiting distribution, letting non‑technical
      *      stakers claim in a single Etherscan transaction.
-     */
+    */
     function claimRewards() external {
         if (pendingFees > 0) {
-            distributeFees();
+            uint256 totalStake = stakeManager.totalStake(rewardRole);
+            if (totalStake == 0) {
+                uint256 amount = pendingFees;
+                pendingFees = 0;
+
+                uint256 burnAmount = (amount * burnPct) / 100;
+                if (burnAmount > 0) {
+                    token.safeTransfer(BURN_ADDRESS, burnAmount);
+                    emit Burned(burnAmount);
+                }
+                uint256 remainder = amount - burnAmount;
+                if (remainder > 0 && treasury != address(0)) {
+                    token.safeTransfer(treasury, remainder);
+                }
+            } else {
+                distributeFees();
+            }
         }
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
         // Deployer may claim but receives no rewards without stake.
