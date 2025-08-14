@@ -141,7 +141,8 @@ describe("PlatformRegistry", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       0,
-      0
+      0,
+      []
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
