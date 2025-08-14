@@ -457,6 +457,27 @@ contract StakeManager is Ownable, ReentrancyGuard {
         _withdraw(msg.sender, role, amount);
     }
 
+    /**
+     * @notice Acknowledge the tax policy and withdraw $AGIALPHA stake on behalf of a user.
+     * @dev Uses 6-decimal base units. Caller must be authorized and the `user` must
+     *      have previously staked tokens. Invoking this helper acknowledges the
+     *      current tax policy for the `user` via the associated `JobRegistry`.
+     * @param user Address whose stake is being withdrawn.
+     * @param role Participant role of the stake being withdrawn.
+     * @param amount Withdraw amount in $AGIALPHA with 6 decimals.
+     */
+    function acknowledgeAndWithdrawFor(
+        address user,
+        Role role,
+        uint256 amount
+    ) external onlyOwner nonReentrant {
+        require(user != address(0), "user");
+        address registry = jobRegistry;
+        require(registry != address(0), "registry");
+        IJobRegistryAck(registry).acknowledgeFor(user);
+        _withdraw(user, role, amount);
+    }
+
     // ---------------------------------------------------------------
     // job escrow logic
     // ---------------------------------------------------------------

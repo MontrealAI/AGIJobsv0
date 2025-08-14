@@ -876,5 +876,59 @@ describe("StakeManager", function () {
       version
     );
   });
+
+  it("acknowledgeAndWithdrawFor requires authorization and re-acknowledges", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy1 = await TaxPolicy.deploy("ipfs://policy1", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy1.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await stakeManager.getAddress(), true);
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
+
+    const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy2.getAddress());
+
+    await expect(
+      stakeManager
+        .connect(user)
+        .acknowledgeAndWithdrawFor(user.address, 0, 50)
+    )
+      .to.be.revertedWithCustomError(
+        stakeManager,
+        "OwnableUnauthorizedAccount"
+      )
+      .withArgs(user.address);
+
+    await stakeManager
+      .connect(owner)
+      .acknowledgeAndWithdrawFor(user.address, 0, 50);
+    const version = await jobRegistry.taxPolicyVersion();
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
+    expect(await jobRegistry.taxAcknowledgedVersion(user.address)).to.equal(
+      version
+    );
+  });
 });
 
