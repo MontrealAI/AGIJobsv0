@@ -63,6 +63,7 @@ contract ValidationModule is IValidationModule, Ownable {
     event ValidatorSlashingPctUpdated(uint256 pct);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
+    event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
     event JobNonceReset(uint256 indexed jobId);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
@@ -88,8 +89,23 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 _maxValidators,
         address[] memory _validatorPool
     ) Ownable(msg.sender) {
-        jobRegistry = _jobRegistry;
-        stakeManager = _stakeManager;
+        if (address(_jobRegistry) != address(0)) {
+            jobRegistry = _jobRegistry;
+            emit JobRegistryUpdated(address(_jobRegistry));
+        }
+        if (address(_stakeManager) != address(0)) {
+            stakeManager = _stakeManager;
+            emit StakeManagerUpdated(address(_stakeManager));
+        }
+        if (
+            address(_jobRegistry) != address(0) ||
+            address(_stakeManager) != address(0)
+        ) {
+            emit ModulesUpdated(
+                address(_jobRegistry),
+                address(_stakeManager)
+            );
+        }
         commitWindow =
             _commitWindow == 0 ? DEFAULT_COMMIT_WINDOW : _commitWindow;
         revealWindow =
@@ -126,12 +142,14 @@ contract ValidationModule is IValidationModule, Ownable {
     function setJobRegistry(IJobRegistry registry) external onlyOwner {
         jobRegistry = registry;
         emit JobRegistryUpdated(address(registry));
+        emit ModulesUpdated(address(registry), address(stakeManager));
     }
 
     /// @notice Update the StakeManager reference.
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
+        emit ModulesUpdated(address(jobRegistry), address(manager));
     }
 
     /// @notice Set the optional VRF provider for future upgrades.

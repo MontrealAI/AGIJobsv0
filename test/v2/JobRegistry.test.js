@@ -34,7 +34,7 @@ describe("JobRegistry integration", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    rep = await Rep.deploy();
+    rep = await Rep.deploy(await stakeManager.getAddress());
     const NFT = await ethers.getContractFactory(
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );

@@ -261,7 +261,9 @@ contract Deployer {
             new address[](0)
         );
 
-        ReputationEngine reputation = new ReputationEngine();
+        ReputationEngine reputation = new ReputationEngine(
+            IStakeManager(address(stake))
+        );
 
         DisputeModule dispute = new DisputeModule(
             IJobRegistry(address(registry)),

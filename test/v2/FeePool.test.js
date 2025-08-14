@@ -201,7 +201,7 @@ describe("FeePool", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.connect(owner).deploy();
+    const rep = await Rep.connect(owner).deploy(ethers.ZeroAddress);
     await rep.setStakeManager(await stakeManager.getAddress());
     await rep.setCaller(owner.address, true);
 

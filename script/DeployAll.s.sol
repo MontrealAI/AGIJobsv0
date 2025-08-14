@@ -58,7 +58,9 @@ contract DeployAll is Script {
             new address[](0)
         );
 
-        ReputationEngine reputation = new ReputationEngine(vm.addr(deployer));
+        ReputationEngine reputation = new ReputationEngine(
+            IStakeManager(address(stake))
+        );
         CertificateNFT nft = new CertificateNFT("Cert", "CERT", vm.addr(deployer));
         DisputeModule dispute = new DisputeModule(registry, 0, 0, address(0));
 

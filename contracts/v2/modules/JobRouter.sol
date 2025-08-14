@@ -27,9 +27,13 @@ contract JobRouter is Ownable {
     event Deregistered(address indexed operator);
     event PlatformSelected(bytes32 indexed seed, address indexed operator);
     event RegistrarUpdated(address indexed registrar, bool allowed);
+    event ModulesUpdated(address indexed platformRegistry);
 
     constructor(IPlatformRegistry _platformRegistry) Ownable(msg.sender) {
-        platformRegistry = _platformRegistry;
+        if (address(_platformRegistry) != address(0)) {
+            platformRegistry = _platformRegistry;
+            emit ModulesUpdated(address(_platformRegistry));
+        }
     }
 
     /// @notice Register the caller for job routing.
@@ -142,6 +146,7 @@ contract JobRouter is Ownable {
     /// @notice Update the PlatformRegistry address.
     function setPlatformRegistry(IPlatformRegistry registry) external onlyOwner {
         platformRegistry = registry;
+        emit ModulesUpdated(address(registry));
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.

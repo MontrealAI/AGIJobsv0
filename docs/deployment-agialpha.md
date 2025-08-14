@@ -14,26 +14,26 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 
 ## 2. Deploy core modules
 
-Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Parameters may be left as `0` to accept the defaults shown below:
+Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Addresses for dependent modules may be passed at deployment or left as `0` and wired later. Parameters may be left as `0` to accept the defaults shown below:
 
 1. `AGIALPHAToken()` – after deployment, call `mint(to, amount)` to create the initial supply.
 2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury. The owner can later swap to a different ERC‑20 with `StakeManager.setToken`.
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
-5. `ReputationEngine()` – optional reputation weighting.
+5. `ReputationEngine(stakeManager)` – optional reputation weighting (pass `0` to wire later).
 6. `DisputeModule(jobRegistry, appealFee, moderator, jury)` – manages appeals and dispute fees.
 7. `CertificateNFT(name, symbol)` – certifies completed work.
 8. `FeePool(token, stakeManager, role, burnPct, treasury)` – use `address(0)` for `token` to fall back to $AGIALPHA; `burnPct` defaults to `0`.
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
 10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
 11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register with routing in one call. For simple flows without `JobRouter`, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` directly.
-12. `ModuleInstaller()` – temporary `Ownable` helper for wiring modules.
+12. `ModuleInstaller()` – optional `Ownable` helper for wiring modules after deployment.
 
 After each deployment, copy the address for later wiring.
 
 ## 3. Wire the modules
 
-Transfer ownership of each module to the `ModuleInstaller` and, from the owner's account, call:
+If addresses were not supplied during deployment, transfer ownership of each module to the `ModuleInstaller` and, from the owner's account, call:
 
 ```
 ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)

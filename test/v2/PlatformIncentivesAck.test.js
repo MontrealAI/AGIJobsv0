@@ -27,7 +27,7 @@ describe("PlatformIncentives acknowledge", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const reputation = await Rep.deploy();
+    const reputation = await Rep.deploy(await stakeManager.getAddress());
     await reputation.setStakeManager(await stakeManager.getAddress());
 
     const Registry = await ethers.getContractFactory(
