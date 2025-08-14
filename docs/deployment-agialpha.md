@@ -26,7 +26,7 @@ Deploy each contract **in the order listed below** from the **Write Contract** t
 8. `FeePool(token, stakeManager, role, burnPct, treasury)` – use `address(0)` for `token` to fall back to $AGIALPHA; `burnPct` defaults to `0`.
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
 10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
-11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register in one call.
+11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register with routing in one call. For simple flows without `JobRouter`, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` directly.
 12. `ModuleInstaller()` – temporary helper for wiring modules.
 
 After each deployment, copy the address for later wiring.
@@ -49,13 +49,15 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 | --- | --- | --- |
 | Employer | `JobRegistry.acknowledgeAndCreateJob(reward, uri)` | Accept tax policy and post a job |
 | Agent | `JobRegistry.stakeAndApply(jobId, amount)` | Deposit stake and apply in one call |
-| Platform operator | `PlatformIncentives.stakeAndActivate(amount)` | Stake and register for routing and rewards |
+| Platform operator (no routing) | `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` | Stake and register without routing |
+| Platform operator (with routing) | `PlatformIncentives.stakeAndActivate(amount)` | Stake and register for routing and rewards |
 
 ## 5. Stake and register a platform
 
 1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000`, `0.1 token = 100000`).
-2. Call `PlatformIncentives.stakeAndActivate(amount)` from the operator's address. The helper stakes tokens, registers the platform in `PlatformRegistry`, and enrolls it with `JobRouter` for routing priority.
-3. The owner may register with `amount = 0` to appear in registries without fee or routing boosts.
+2. Call `PlatformIncentives.stakeAndActivate(amount)` from the operator's address to register and enable routing. The helper stakes tokens, registers the platform in `PlatformRegistry`, and enrolls it with `JobRouter` for routing priority.
+3. If routing is unnecessary, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` instead.
+4. The owner may register with `amount = 0` to appear in registries without fee or routing boosts.
 
 ## 6. Claim fees and rewards
 
