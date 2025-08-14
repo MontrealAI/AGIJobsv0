@@ -43,6 +43,7 @@ contract DisputeModule is Ownable {
     event AppealFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
+    event ModulesUpdated(address indexed jobRegistry);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _appealFee Initial appeal fee in token units (6 decimals); defaults to 1e6.
@@ -54,7 +55,11 @@ contract DisputeModule is Ownable {
         uint256 _disputeWindow,
         address _moderator
     ) Ownable(msg.sender) {
-        jobRegistry = _jobRegistry;
+        if (address(_jobRegistry) != address(0)) {
+            jobRegistry = _jobRegistry;
+            emit JobRegistryUpdated(_jobRegistry);
+            emit ModulesUpdated(address(_jobRegistry));
+        }
 
         appealFee = _appealFee > 0 ? _appealFee : 1e6;
         emit AppealFeeUpdated(appealFee);
@@ -82,6 +87,7 @@ contract DisputeModule is Ownable {
     function setJobRegistry(IJobRegistry newRegistry) external onlyOwner {
         jobRegistry = newRegistry;
         emit JobRegistryUpdated(newRegistry);
+        emit ModulesUpdated(address(newRegistry));
     }
 
     /// @notice Set the moderator address.

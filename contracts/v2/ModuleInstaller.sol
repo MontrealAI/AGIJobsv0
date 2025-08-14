@@ -22,10 +22,12 @@ interface IOwnable {
 }
 
 /// @title ModuleInstaller
-/// @notice Wires deployed modules together in a single transaction.
-/// @dev Each module must transfer ownership to this installer prior to calling
-///      {initialize}. After wiring, ownership can be reclaimed via the modules'
-///      own `transferOwnership` functions.
+/// @notice Optional helper wiring deployed modules in a single transaction.
+/// @dev Core contracts now accept zero addresses in their constructors so
+///      owners may either supply dependencies at deployment or call
+///      {initialize} later. Modules must transfer ownership to this installer
+///      prior to calling {initialize}. After wiring, ownership can be reclaimed
+///      via the modules' own `transferOwnership` functions.
 contract ModuleInstaller is Ownable {
     bool public initialized;
 

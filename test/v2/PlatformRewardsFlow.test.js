@@ -68,7 +68,9 @@ describe("Platform reward flow", function () {
     const Reputation = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const reputation = await Reputation.deploy();
+    const reputation = await Reputation.deploy(
+      await stakeManager.getAddress()
+    );
 
     const PlatformRegistry = await ethers.getContractFactory(
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"

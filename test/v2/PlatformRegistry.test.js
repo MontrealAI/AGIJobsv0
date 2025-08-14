@@ -35,7 +35,9 @@ describe("PlatformRegistry", function () {
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    reputationEngine = await Rep.connect(owner).deploy();
+    reputationEngine = await Rep.connect(owner).deploy(
+      await stakeManager.getAddress()
+    );
     await reputationEngine.setStakeManager(await stakeManager.getAddress());
     await reputationEngine.setCaller(owner.address, true);
 

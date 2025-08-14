@@ -9,7 +9,7 @@ describe("ReputationEngine ether rejection", function () {
     const Engine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    engine = await Engine.deploy();
+    engine = await Engine.deploy(ethers.ZeroAddress);
     await engine.waitForDeployment();
   });
 

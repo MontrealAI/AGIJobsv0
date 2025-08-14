@@ -49,8 +49,8 @@ Supplying `0` for any field keeps the module’s baked‑in default.
 
 ### Deployment Quickstart
 
-1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller` (deployer auto‑assigned as owner), supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
-2. **Initialize once** – Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` from the installer's owner account. This `onlyOwner` call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
+1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, and `PlatformIncentives`, supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury. Constructors now accept zero addresses so dependencies can be wired later.
+2. **Initialize once (optional)** – If any addresses were left unset, deploy `ModuleInstaller` (deployer auto‑assigned as owner), transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` from the installer's owner account. This `onlyOwner` call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
 3. **Token‑only disputes** – Agents approve the `StakeManager` for the `appealFee` and raise disputes with `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; the bond stays entirely in tokens, never ETH.
 
 | Parameter | Default | Description |
@@ -307,9 +307,9 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 9. `PlatformIncentives`
 10. `FeePool`
 11. `TaxPolicy` (optional)
-12. `ModuleInstaller`
+12. `ModuleInstaller` (optional)
 
-Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once from the installer's owner. This `onlyOwner` call wires cross‑links, sets the protocol fee pool and optional tax policy, and automatically returns ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
+If any addresses were left unset during deployment, transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once from the installer's owner. This `onlyOwner` call wires cross‑links, sets the protocol fee pool and optional tax policy, and automatically returns ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
 
 Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `appealFee` in $AGIALPHA and calling `JobRegistry.raiseDispute(jobId, evidence)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
 
@@ -468,7 +468,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 **Etherscan deployment steps**
 
-1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine()`, `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role, burnPct, treasury)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields as `0` uses sensible defaults like a 5% fee and 1‑day commit/reveal windows.
+1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine(stakeManager)` (or pass `0` to wire later), `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role, burnPct, treasury)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields or addresses as `0` uses sensible defaults and allows wiring via `setModules` or `ModuleInstaller.initialize` later.
 2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate, [extraAcknowledgers])` then `setFeePool(feePool)` and `setFeePct(pct)`. This auto-registers the `StakeManager` and any optional addresses as tax-policy acknowledgers. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.

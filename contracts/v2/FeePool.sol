@@ -53,6 +53,7 @@ contract FeePool is Ownable {
     event RewardsClaimed(address indexed user, uint256 amount);
     event TokenUpdated(address indexed token);
     event StakeManagerUpdated(address indexed stakeManager);
+    event ModulesUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
     event BurnPctUpdated(uint256 pct);
     event TreasuryUpdated(address indexed treasury);
@@ -85,8 +86,11 @@ contract FeePool is Ownable {
         }
         emit TokenUpdated(address(token));
 
-        stakeManager = _stakeManager;
-        emit StakeManagerUpdated(address(_stakeManager));
+        if (address(_stakeManager) != address(0)) {
+            stakeManager = _stakeManager;
+            emit StakeManagerUpdated(address(_stakeManager));
+            emit ModulesUpdated(address(_stakeManager));
+        }
 
         rewardRole = _role;
         emit RewardRoleUpdated(_role);
@@ -214,6 +218,7 @@ contract FeePool is Ownable {
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
+        emit ModulesUpdated(address(manager));
     }
 
     /// @notice update reward role used for distribution

@@ -24,8 +24,14 @@ contract ReputationEngine is Ownable {
     event ThresholdUpdated(uint256 newThreshold);
     event StakeManagerUpdated(address stakeManager);
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
-
-    constructor() Ownable(msg.sender) {}
+    event ModulesUpdated(address indexed stakeManager);
+    constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
+        if (address(_stakeManager) != address(0)) {
+            stakeManager = _stakeManager;
+            emit StakeManagerUpdated(address(_stakeManager));
+            emit ModulesUpdated(address(_stakeManager));
+        }
+    }
 
     modifier onlyCaller() {
         require(callers[msg.sender], "not authorized");
@@ -42,6 +48,7 @@ contract ReputationEngine is Ownable {
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
+        emit ModulesUpdated(address(manager));
     }
 
     /// @notice Configure weighting factors for stake and reputation.

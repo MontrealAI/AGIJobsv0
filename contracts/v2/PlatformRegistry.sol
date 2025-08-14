@@ -32,6 +32,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     event Deregistered(address indexed operator);
     event StakeManagerUpdated(address indexed stakeManager);
     event ReputationEngineUpdated(address indexed engine);
+    event ModulesUpdated(address indexed stakeManager, address indexed reputationEngine);
     event MinPlatformStakeUpdated(uint256 stake);
     event Blacklisted(address indexed operator, bool status);
     event RegistrarUpdated(address indexed registrar, bool allowed);
@@ -55,6 +56,16 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         reputationEngine = _reputationEngine;
         if (address(_reputationEngine) != address(0)) {
             emit ReputationEngineUpdated(address(_reputationEngine));
+        }
+
+        if (
+            address(_stakeManager) != address(0) ||
+            address(_reputationEngine) != address(0)
+        ) {
+            emit ModulesUpdated(
+                address(_stakeManager),
+                address(_reputationEngine)
+            );
         }
 
         minPlatformStake =

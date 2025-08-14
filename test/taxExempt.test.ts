@@ -51,7 +51,7 @@ describe("Tax exemption flags", function () {
     const ReputationEngine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await ReputationEngine.deploy();
+    const rep = await ReputationEngine.deploy(await stake.getAddress());
     await rep.waitForDeployment();
 
     const CertificateNFT = await ethers.getContractFactory(

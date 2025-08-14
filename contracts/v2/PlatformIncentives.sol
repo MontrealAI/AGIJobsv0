@@ -28,9 +28,26 @@ contract PlatformIncentives is Ownable {
         IPlatformRegistryFull _platformRegistry,
         IJobRouter _jobRouter
     ) Ownable(msg.sender) {
-        stakeManager = _stakeManager;
-        platformRegistry = _platformRegistry;
-        jobRouter = _jobRouter;
+        if (address(_stakeManager) != address(0)) {
+            stakeManager = _stakeManager;
+        }
+        if (address(_platformRegistry) != address(0)) {
+            platformRegistry = _platformRegistry;
+        }
+        if (address(_jobRouter) != address(0)) {
+            jobRouter = _jobRouter;
+        }
+        if (
+            address(_stakeManager) != address(0) ||
+            address(_platformRegistry) != address(0) ||
+            address(_jobRouter) != address(0)
+        ) {
+            emit ModulesUpdated(
+                address(_stakeManager),
+                address(_platformRegistry),
+                address(_jobRouter)
+            );
+        }
     }
 
     /// @notice Update module addresses.
