@@ -301,6 +301,45 @@ describe("PlatformRegistry", function () {
     ).to.be.revertedWith("amount");
   });
 
+  it("acknowledgeAndDeregister deregisters and records acknowledgement", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
+    await stakeManager
+      .connect(platform)
+      .setJobRegistry(await jobRegistry.getAddress());
+
+    await registry.connect(platform).register();
+    await expect(registry.connect(platform).acknowledgeAndDeregister())
+      .to.emit(registry, "Deregistered")
+      .withArgs(platform.address);
+    const version = await jobRegistry.taxPolicyVersion();
+    expect(await jobRegistry.taxAcknowledgedVersion(platform.address)).to.equal(
+      version
+    );
+    expect(await registry.registered(platform.address)).to.equal(false);
+  });
+
   it("allows operator to deregister", async () => {
     await registry.connect(platform).register();
     expect(await registry.registered(platform.address)).to.equal(true);

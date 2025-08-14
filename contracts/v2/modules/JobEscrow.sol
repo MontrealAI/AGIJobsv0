@@ -6,6 +6,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AGIALPHA} from "../Constants.sol";
+import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
 
 interface IRoutingModule {
     function selectOperator(bytes32 jobId) external returns (address);
@@ -39,9 +40,11 @@ contract JobEscrow is Ownable {
     IRoutingModule public routingModule;
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
+    address public jobRegistry;
 
     event TokenUpdated(address indexed token);
     event RoutingModuleUpdated(address indexed routingModule);
+    event JobRegistryUpdated(address indexed jobRegistry);
     event JobPosted(uint256 indexed jobId, address indexed employer, address indexed operator, uint256 reward, string data);
     event JobCancelled(uint256 indexed jobId);
     event ResultSubmitted(uint256 indexed jobId, string result);
@@ -65,6 +68,11 @@ contract JobEscrow is Ownable {
     function setRoutingModule(IRoutingModule newRouting) external onlyOwner {
         routingModule = newRouting;
         emit RoutingModuleUpdated(address(newRouting));
+    }
+
+    function setJobRegistry(address registry) external onlyOwner {
+        jobRegistry = registry;
+        emit JobRegistryUpdated(registry);
     }
 
     /// @notice Post a new job and escrow the reward.
@@ -113,10 +121,7 @@ contract JobEscrow is Ownable {
         emit JobCancelled(jobId);
     }
 
-    /// @notice Accept the job result and release payment.
-    /// Employer may call any time after submission. Operator may call after timeout.
-    /// @param jobId Identifier of the job.
-    function acceptResult(uint256 jobId) external {
+    function _accept(uint256 jobId) internal {
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "state");
         if (msg.sender == job.employer) {
@@ -129,6 +134,23 @@ contract JobEscrow is Ownable {
         job.state = State.Accepted;
         token.safeTransfer(job.operator, job.reward);
         emit ResultAccepted(jobId, msg.sender);
+    }
+
+    /// @notice Accept the job result and release payment.
+    /// Employer may call any time after submission. Operator may call after timeout.
+    /// @param jobId Identifier of the job.
+    function acceptResult(uint256 jobId) external {
+        _accept(jobId);
+    }
+
+    /// @notice Acknowledge the tax policy and accept the job result in one call.
+    /// @param jobId Identifier of the job.
+    function acknowledgeAndAcceptResult(uint256 jobId) external {
+        address registry = jobRegistry;
+        if (registry != address(0)) {
+            IJobRegistryAck(registry).acknowledgeFor(msg.sender);
+        }
+        _accept(jobId);
     }
 
     /// @notice Confirms this contract and its owner remain tax neutral.

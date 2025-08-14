@@ -83,5 +83,54 @@ describe("JobEscrow", function () {
       "timeout"
     );
   });
+
+  it("acknowledgeAndAcceptResult accepts and records acknowledgement", async () => {
+    const reward = 800;
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await escrow.getAddress(), true);
+    await escrow
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+
+    await token.connect(employer).approve(await escrow.getAddress(), reward);
+    const tx = await escrow
+      .connect(employer)
+      .postJob(reward, "ipfs://job");
+    const jobId = (await tx.wait()).logs.find(
+      (l) => l.fragment && l.fragment.name === "JobPosted"
+    ).args.jobId;
+    await escrow.connect(operator).submitResult(jobId, "ipfs://result");
+    await expect(
+      escrow.connect(employer).acknowledgeAndAcceptResult(jobId)
+    )
+      .to.emit(escrow, "ResultAccepted")
+      .withArgs(jobId, employer.address);
+    expect(await token.balanceOf(operator.address)).to.equal(reward);
+    const version = await jobRegistry.taxPolicyVersion();
+    expect(await jobRegistry.taxAcknowledgedVersion(employer.address)).to.equal(
+      version
+    );
+  });
 });
 
