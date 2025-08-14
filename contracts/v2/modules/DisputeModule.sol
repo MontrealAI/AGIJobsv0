@@ -110,12 +110,10 @@ contract DisputeModule is Ownable {
 
         // Lock the dispute fee in the StakeManager if configured.
         if (appealFee > 0) {
-            try
-                IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
-                    claimant,
-                    appealFee
-                )
-            {} catch {}
+            IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
+                claimant,
+                appealFee
+            );
         }
 
         disputes[jobId] = Dispute({
