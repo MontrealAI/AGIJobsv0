@@ -23,7 +23,7 @@ See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated wa
 
 ### Etherscan Quick Deploy
 
-1. **Call `Deployer.deploy`** – On Etherscan, open the verified `Deployer` contract and execute `deploy()` to launch all modules with `$AGIALPHA` defaults.
+1. **Call `Deployer.deploy`** – On Etherscan, open the verified `Deployer` contract and execute `deploy()` to launch all modules with `$AGIALPHA` defaults. For setups that omit the `TaxPolicy` module, call `deployWithoutTaxPolicy()` instead.
 2. **Check token decimals** – In the token or `StakeManager` **Read Contract** tab call `decimals()`; it must return `6` before sending amounts.
 3. **Practice with helpers** – Post a small job and then reclaim funds via `JobRegistry.acknowledgeAndCancel(jobId)` to confirm flows and acknowledgements.
 4. **Owner-only tuning** – Configuration setters such as `setToken`, `setFeePct`, and `setBurnPct` remain `onlyOwner` and can be adjusted later through explorer "Write" tabs.

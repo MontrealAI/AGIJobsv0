@@ -9,8 +9,10 @@ describe("Deployer", function () {
     );
     const deployer = await Deployer.deploy();
 
-    const addresses = await deployer.deploy.staticCall(true);
-    await deployer.deploy(true);
+    const addresses = await deployer.deploy.staticCall();
+    await expect(deployer.deploy())
+      .to.emit(deployer, "Deployed")
+      .withArgs(...addresses);
 
     const [
       stake,
@@ -113,13 +115,15 @@ describe("Deployer", function () {
       "contracts/v2/Deployer.sol:Deployer"
     );
     const deployer = await Deployer.deploy();
-    const addresses = await deployer.deploy.staticCall(false);
-    await deployer.deploy(false);
+    const addresses = await deployer.deployWithoutTaxPolicy.staticCall();
+    await expect(deployer.deployWithoutTaxPolicy())
+      .to.emit(deployer, "Deployed")
+      .withArgs(...addresses);
     const [, registry,,,,,,,,, taxPolicy] = addresses;
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
-    const registryC = JobRegistry.attach(addresses[1]);
+    const registryC = JobRegistry.attach(registry);
     expect(taxPolicy).to.equal(ethers.ZeroAddress);
     expect(await registryC.taxPolicy()).to.equal(ethers.ZeroAddress);
   });
