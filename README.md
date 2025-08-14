@@ -23,7 +23,16 @@ See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated wa
 
 ### Beginner Deployment via Etherscan
 
-Before interacting, verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token (**decimals = 6**) and each module address emitted by `Deployer.deploy()` (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots). A single call to `deploy()` on the verified **Deployer** contract wires defaults and sets the caller as owner.
+Before interacting, verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token (**decimals = 6**) and each module address emitted by `Deployer.deploy()` (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots). A single call to `deploy(econ)` on the verified **Deployer** contract wires modules, sets the caller as owner, and optionally customises economics:
+
+- `feePct` – protocol fee percentage for `JobRegistry` (default `5`)
+- `burnPct` – portion of each fee burned by `FeePool` (default `5`)
+- `employerSlashPct`/`treasurySlashPct` – slashed stake split (defaults `0/100`)
+- `commitWindow`/`revealWindow` – validator timing windows in seconds (defaults `1 day` each)
+- `minStake` – global minimum stake in `StakeManager` (default `1_000_000`, i.e. 1 token)
+- `jobStake` – minimum agent stake per job in `JobRegistry` (default `0`)
+
+Supplying `0` for any field keeps the module’s baked‑in default.
 
 Use role‑specific helpers from the **Write** tabs to minimise transactions:
 
