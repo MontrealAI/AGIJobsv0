@@ -336,7 +336,7 @@ For step‑by‑step screenshots of these flows, see [docs/deployment-agialpha.m
 2. **Connect wallet** – from the **Write Contract** tab click **Connect to Web3**. Owners may initialize modules immediately after verification.
 3. **Initialize parameters**
    - On `StakeManager`, call `setToken(token)` if the staking token differs from the constructor value.
-   - On `JobRegistry`, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT)` followed by `setFeePool(feePool)` to enable revenue sharing.
+   - On `JobRegistry`, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, [extraAcknowledgers])` followed by `setFeePool(feePool)` to enable revenue sharing. The `StakeManager` and any addresses in the optional array are automatically authorised to acknowledge the tax policy for users.
    - On `FeePool`, call `setTreasury(treasury)` so rounding dust from distributions goes to the treasury and adjust `setBurnPct(pct)` if burning is desired.
 4. **Stake & register** – still in **Write Contract**, stake with `depositStake(role, amount)` on `StakeManager` (role `2` for platform operators). Amounts use 6‑decimal base units—`25_000000` stakes 25 tokens. Afterwards register the platform through `JobRouter.registerPlatform(operator)`.
 5. **Governance bonuses** – after a parameter vote, call `recordVoters([...])` on `GovernanceReward`, approve bonus tokens, then `finalizeEpoch(totalReward)` so voters can claim via `claim(epoch)`.
@@ -447,7 +447,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 **Etherscan deployment steps**
 
 1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine()`, `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role, burnPct, treasury)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields as `0` uses sensible defaults like a 5% fee and 1‑day commit/reveal windows.
-2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate)` then `setFeePool(feePool)` and `setFeePct(pct)`. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
+2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate, [extraAcknowledgers])` then `setFeePool(feePool)` and `setFeePct(pct)`. This auto-registers the `StakeManager` and any optional addresses as tax-policy acknowledgers. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
    - Agents stake with `depositStake(role, amount)` or one‑shot with `stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` when no stake is required) after approving the stake.
@@ -549,7 +549,7 @@ interface IJobRegistry {
         uint256 fee
     );
     function createJob(string calldata details, uint256 reward) external;
-    function setModules(address validation, address stake, address reputation, address dispute, address certificate) external;
+    function setModules(address validation, address stake, address reputation, address dispute, address certificate, address[] calldata extraAcknowledgers) external;
 }
 
 interface IStakeManager {
@@ -936,7 +936,7 @@ Review `*Updated` events after any call to confirm changes on-chain.
 ## Module Owner Configuration
 
 ### JobRegistry
-- `setModules(address validation, address stakeMgr, address reputation, address dispute, address certNFT)` – wire up external modules used for validation, staking, reputation, disputes and certificates.
+- `setModules(address validation, address stakeMgr, address reputation, address dispute, address certNFT, address[] extraAcknowledgers)` – wire up external modules used for validation, staking, reputation, disputes and certificates. The stake manager and any addresses in `extraAcknowledgers` are auto-authorised to acknowledge the tax policy for users.
 
 ### StakeManager
 - `setToken(address token)` – update the ERC20 token used for staking and rewards. Default is the $AGI token.
@@ -1355,7 +1355,7 @@ $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments,
         2. Querying `PlatformRegistry.getScore(owner)` returns `0`, so the platform has no routing weight.
         3. Calling `FeePool.claimRewards()` emits `RewardsClaimed(owner, 0)`, confirming no payout.
 3. **Wire modules together**
-   - In `JobRegistry`, call `setModules` with addresses of `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`, and `CertificateNFT`.
+   - In `JobRegistry`, call `setModules` with addresses of `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, and optionally an array of extra acknowledgers. The stake manager and any addresses in this array can acknowledge the tax policy on behalf of users.
    - In `ValidationModule`, commit and reveal windows default to 24 hours; adjust them only if needed, then set validator bounds and pool, and connect the `ReputationEngine`.
    - Once operators have staked tokens (role `2 = Platform`), have them call `register()` on `PlatformRegistry` to gain routing priority and fee shares.
 4. **Token flexibility**

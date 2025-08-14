@@ -102,7 +102,8 @@ describe("end-to-end job lifecycle", function () {
       await stakeManager.getAddress(),
       await rep.getAddress(),
       await dispute.getAddress(),
-      await nft.getAddress()
+      await nft.getAddress(),
+      []
     );
     await registry.setFeePool(await feePool.getAddress());
     await registry.setFeePct(feePct);

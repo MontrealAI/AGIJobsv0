@@ -242,7 +242,8 @@ contract Deployer {
             IStakeManager(address(stake)),
             JIReputationEngine(address(reputation)),
             JIDisputeModule(address(dispute)),
-            JICertificateNFT(address(certificate))
+            JICertificateNFT(address(certificate)),
+            new address[](0)
         );
         registry.setFeePool(IFeePool(address(pool)));
         if (address(policy) != address(0)) {

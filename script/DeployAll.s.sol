@@ -87,7 +87,8 @@ contract DeployAll is Script {
             stake,
             IReputationEngine(address(reputation)),
             IDisputeModule(address(dispute)),
-            ICertificateNFT(address(nft))
+            ICertificateNFT(address(nft)),
+            new address[](0)
         );
         registry.setFeePool(IFeePool(address(feePool)));
         registry.setFeePct(5);

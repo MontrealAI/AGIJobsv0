@@ -75,7 +75,8 @@ describe("JobRegistry integration", function () {
         await stakeManager.getAddress(),
         await rep.getAddress(),
         await dispute.getAddress(),
-        await nft.getAddress()
+        await nft.getAddress(),
+        []
       );
     await registry
       .connect(owner)
@@ -206,7 +207,8 @@ describe("JobRegistry integration", function () {
           await stakeManager.getAddress(),
           await rep.getAddress(),
           await dispute.getAddress(),
-          await nft.getAddress()
+          await nft.getAddress(),
+          []
         )
     ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
 
@@ -228,7 +230,8 @@ describe("JobRegistry integration", function () {
           await stakeManager.getAddress(),
           await rep.getAddress(),
           await dispute.getAddress(),
-          await nft.getAddress()
+          await nft.getAddress(),
+          []
         )
     )
       .to.emit(registry, "ValidationModuleUpdated")
@@ -240,7 +243,29 @@ describe("JobRegistry integration", function () {
       .and.to.emit(registry, "DisputeModuleUpdated")
       .withArgs(await dispute.getAddress())
       .and.to.emit(registry, "CertificateNFTUpdated")
-      .withArgs(await nft.getAddress());
+      .withArgs(await nft.getAddress())
+      .and.to.emit(registry, "AcknowledgerUpdated")
+      .withArgs(await stakeManager.getAddress(), true);
+  });
+
+  it("auto-registers acknowledgers", async () => {
+    // stake manager registered during setup
+    expect(
+      await registry.acknowledgers(await stakeManager.getAddress())
+    ).to.equal(true);
+
+    await registry
+      .connect(owner)
+      .setModules(
+        await validation.getAddress(),
+        await stakeManager.getAddress(),
+        await rep.getAddress(),
+        await dispute.getAddress(),
+        await nft.getAddress(),
+        [treasury.address]
+      );
+
+    expect(await registry.acknowledgers(treasury.address)).to.equal(true);
   });
 });
 

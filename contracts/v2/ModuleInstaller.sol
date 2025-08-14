@@ -80,7 +80,8 @@ contract ModuleInstaller is Ownable {
             IStakeManager(address(stakeManager)),
             reputationEngine,
             disputeModule,
-            certificateNFT
+            certificateNFT,
+            new address[](0)
         );
         jobRegistry.setFeePool(feePool);
         if (address(taxPolicy) != address(0)) {

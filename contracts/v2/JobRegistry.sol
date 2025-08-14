@@ -209,7 +209,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IStakeManager _stakeMgr,
         IReputationEngine _reputation,
         IDisputeModule _dispute,
-        ICertificateNFT _certNFT
+        ICertificateNFT _certNFT,
+        address[] calldata _ackModules
     ) external onlyOwner {
         require(address(_validation) != address(0), "validation");
         require(address(_stakeMgr) != address(0), "stake");
@@ -219,6 +220,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
+        acknowledgers[address(_stakeMgr)] = true;
+        emit AcknowledgerUpdated(address(_stakeMgr), true);
         reputationEngine = _reputation;
         disputeModule = _dispute;
         certificateNFT = _certNFT;
@@ -232,6 +235,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("DisputeModule", address(_dispute));
         emit CertificateNFTUpdated(address(_certNFT));
         emit ModuleUpdated("CertificateNFT", address(_certNFT));
+        for (uint256 i; i < _ackModules.length; i++) {
+            acknowledgers[_ackModules[i]] = true;
+            emit AcknowledgerUpdated(_ackModules[i], true);
+        }
     }
 
     /// @notice update the FeePool contract used for revenue sharing
