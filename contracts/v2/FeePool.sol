@@ -115,9 +115,12 @@ contract FeePool is Ownable {
     /// @notice distribute accumulated fees to stakers
     /// @dev All fee amounts use 6 decimal units.
     /// @dev Should be called after `depositFee` to settle pending fees.
+    /// @dev Safe to call even when no fees are pending; returns immediately.
     function distributeFees() public {
         uint256 amount = pendingFees;
-        require(amount > 0, "amount");
+        if (amount == 0) {
+            return;
+        }
         pendingFees = 0;
 
         uint256 burnAmount = (amount * burnPct) / 100;
