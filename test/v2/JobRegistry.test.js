@@ -51,7 +51,8 @@ describe("JobRegistry integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       0,
-      0
+      0,
+      []
     );
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"

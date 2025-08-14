@@ -156,7 +156,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IFeePool _feePool,
         ITaxPolicy _policy,
         uint256 _feePct,
-        uint96 _jobStake
+        uint96 _jobStake,
+        address[] memory _ackModules
     ) Ownable(msg.sender) {
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -198,6 +199,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             taxPolicy = _policy;
             taxPolicyVersion++;
             emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
+        }
+        for (uint256 i; i < _ackModules.length; i++) {
+            acknowledgers[_ackModules[i]] = true;
+            emit AcknowledgerUpdated(_ackModules[i], true);
         }
     }
 

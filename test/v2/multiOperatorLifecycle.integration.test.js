@@ -64,7 +64,8 @@ describe("multi-operator job lifecycle", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       0,
-      0
+      0,
+      []
     );
 
     const Dispute = await ethers.getContractFactory(

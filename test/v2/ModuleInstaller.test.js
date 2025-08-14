@@ -23,7 +23,8 @@ describe("ModuleInstaller", function () {
           ethers.ZeroAddress,
           ethers.ZeroAddress,
           ethers.ZeroAddress,
-          ethers.ZeroAddress
+          ethers.ZeroAddress,
+          []
         )
     ).to.be.revertedWithCustomError(
       installer,

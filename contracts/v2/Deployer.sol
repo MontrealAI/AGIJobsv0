@@ -170,7 +170,8 @@ contract Deployer {
             address(0),
             address(0)
         );
-
+        address[] memory ackInit = new address[](1);
+        ackInit[0] = address(stake);
         JobRegistry registry = new JobRegistry(
             IValidationModule(address(0)),
             IStakeManager(address(0)),
@@ -180,7 +181,8 @@ contract Deployer {
             IFeePool(address(0)),
             ITaxPolicy(address(0)),
             feePct,
-            jobStake
+            jobStake,
+            ackInit
         );
 
         ValidationModule validation = new ValidationModule(
@@ -237,22 +239,21 @@ contract Deployer {
         }
 
         // Wire modules
+        address[] memory acks = new address[](2);
+        acks[0] = address(pRegistry);
+        acks[1] = address(incentives);
         registry.setModules(
             validation,
             IStakeManager(address(stake)),
             JIReputationEngine(address(reputation)),
             JIDisputeModule(address(dispute)),
             JICertificateNFT(address(certificate)),
-            new address[](0)
+            acks
         );
         registry.setFeePool(IFeePool(address(pool)));
         if (address(policy) != address(0)) {
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }
-
-        registry.setAcknowledger(address(stake), true);
-        registry.setAcknowledger(address(pRegistry), true);
-        registry.setAcknowledger(address(incentives), true);
 
         validation.setReputationEngine(repInterface);
         stake.setModules(address(registry), address(dispute));
