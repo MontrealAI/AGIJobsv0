@@ -26,8 +26,8 @@ contract StakingRouter is Ownable {
     event UnstakeInitiated(address indexed operator, uint256 amount, uint256 availableAt);
     event Withdrawal(address indexed operator, uint256 amount);
 
-    constructor(IERC20 _token, OperatorRegistry _registry, uint256 _cooldown, address owner)
-        Ownable(owner)
+    constructor(IERC20 _token, OperatorRegistry _registry, uint256 _cooldown)
+        Ownable(msg.sender)
     {
         token = _token;
         registry = _registry;

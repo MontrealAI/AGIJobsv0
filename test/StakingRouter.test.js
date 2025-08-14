@@ -19,7 +19,7 @@ describe("StakingRouter", function () {
     await registry.waitForDeployment();
 
     const Router = await ethers.getContractFactory("StakingRouter");
-    router = await Router.deploy(token.target, registry.target, cooldown, owner.address);
+    router = await Router.deploy(token.target, registry.target, cooldown);
     await router.waitForDeployment();
     await registry.setStakingRouter(router.target);
 
