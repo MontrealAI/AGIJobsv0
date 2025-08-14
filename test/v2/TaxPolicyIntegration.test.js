@@ -18,7 +18,8 @@ describe("JobRegistry tax policy integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       0,
-      0
+      0,
+      []
     );
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"

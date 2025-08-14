@@ -70,7 +70,8 @@ contract ModuleInstaller is Ownable {
         IPlatformRegistryFull platformRegistry,
         IJobRouter jobRouter,
         IFeePool feePool,
-        ITaxPolicy taxPolicy
+        ITaxPolicy taxPolicy,
+        address[] calldata _ackModules
     ) external onlyOwner {
         require(!initialized, "init");
         initialized = true;
@@ -81,15 +82,12 @@ contract ModuleInstaller is Ownable {
             reputationEngine,
             disputeModule,
             certificateNFT,
-            new address[](0)
+            _ackModules
         );
         jobRegistry.setFeePool(feePool);
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
         }
-        jobRegistry.setAcknowledger(address(stakeManager), true);
-        jobRegistry.setAcknowledger(address(platformRegistry), true);
-        jobRegistry.setAcknowledger(address(platformIncentives), true);
         stakeManager.setModules(address(jobRegistry), address(disputeModule));
         platformIncentives.setModules(
             IStakeManager(address(stakeManager)),

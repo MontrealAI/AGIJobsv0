@@ -75,7 +75,18 @@ async function main() {
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const registry = await Registry.deploy();
+  const registry = await Registry.deploy(
+    ethers.ZeroAddress,
+    await stake.getAddress(),
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    0,
+    0,
+    []
+  );
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(

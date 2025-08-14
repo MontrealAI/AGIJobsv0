@@ -22,7 +22,8 @@ describe("JobRegistry tax policy gating", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       0,
-      0
+      0,
+      []
     );
 
     const Policy = await ethers.getContractFactory(
