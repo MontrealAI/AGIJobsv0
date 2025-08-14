@@ -16,8 +16,10 @@ Call `Deployer.deployDefaults()` to spin up and wire all core modules in one tra
 - `JobRegistry.stakeAndApply(jobId, amount)`
 - `JobRegistry.acknowledgeAndApply(jobId)`
 - `PlatformRegistry.acknowledgeStakeAndRegister(amount)`
+- `PlatformRegistry.acknowledgeAndDeregister()`
 - `PlatformIncentives.acknowledgeStakeAndActivate(amount)`
 - `PlatformIncentives.stakeAndActivate(amount)`
+- `JobEscrow.acknowledgeAndAcceptResult(jobId)`
 
 **Base units:** `$AGIALPHA` uses 6 decimals (`1 token = 1_000000`). Approve these amounts before using helpers.
 
@@ -38,6 +40,8 @@ Call `Deployer.deployDefaults()` to spin up and wire all core modules in one tra
 | `acknowledgeStakeAndRegister` | `amount` to `StakeManager` | Stake and register a platform |
 | `acknowledgeStakeAndActivate` | `amount` to `StakeManager` | Stake, register, and enable routing |
 | `stakeAndActivate` | `amount` to `StakeManager` | Register and route without acknowledgement |
+| `acknowledgeAndDeregister` | `0` | Deregister a platform after acknowledging policy |
+| `acknowledgeAndAcceptResult` | `0` | Employer acknowledges policy and accepts result |
 
 For screenshot walkthroughs, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md) and [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
@@ -74,8 +78,10 @@ All helper calls below accept `$AGIALPHA` amounts in 6‑decimal base units and 
 - `StakeManager.acknowledgeAndDeposit`
 - `PlatformRegistry.acknowledgeAndRegister`
 - `PlatformRegistry.acknowledgeStakeAndRegister`
+- `PlatformRegistry.acknowledgeAndDeregister`
 - `PlatformIncentives.acknowledgeStakeAndActivate`
 - `JobRegistry.acknowledgeAndCreateJob` / `JobRegistry.stakeAndApply`
+- `JobEscrow.acknowledgeAndAcceptResult`
 
 ### Deployment simplifications & defaults
 
@@ -100,6 +106,8 @@ Helper functions expose common flows in single calls so Etherscan users do not h
 - `JobRegistry.acknowledgeAndApply` acknowledges the tax policy and applies when no stake is needed.
 - `PlatformIncentives.stakeAndActivate` (and `acknowledgeStakeAndActivate`) stakes and registers a platform for routing and fees.
 - `PlatformRegistry.acknowledgeAndRegister` lists an operator without staking.
+- `PlatformRegistry.acknowledgeAndDeregister` removes an operator after acknowledging the tax policy.
+- `JobEscrow.acknowledgeAndAcceptResult` lets employers acknowledge the policy and release escrow.
 - `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
 - `FeePool.distributeFees` never reverts; if no stake exists, fees are sent to the treasury after burning.
 - `StakeManager.acknowledgeAndDeposit` and `acknowledgeAndDepositFor` stake tokens after acknowledging the tax policy, reducing transactions for users and helpers.

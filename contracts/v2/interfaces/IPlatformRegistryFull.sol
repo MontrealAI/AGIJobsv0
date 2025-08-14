@@ -21,6 +21,9 @@ interface IPlatformRegistryFull is IPlatformRegistry {
     /// @notice Acknowledge the tax policy, stake and register caller
     function acknowledgeStakeAndRegister(uint256 amount) external;
 
+    /// @notice Deregister caller after acknowledging the tax policy
+    function acknowledgeAndDeregister() external;
+
     /// @notice Authorize or revoke a registrar
     function setRegistrar(address registrar, bool allowed) external;
 }

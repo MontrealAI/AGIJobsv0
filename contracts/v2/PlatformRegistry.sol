@@ -154,6 +154,21 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         emit Activated(msg.sender, amount);
     }
 
+    /**
+     * @notice Deregister the caller after acknowledging the tax policy.
+     * @dev Invoking this helper implicitly accepts the current tax policy via
+     *      the associated `JobRegistry` when set.
+     */
+    function acknowledgeAndDeregister() external nonReentrant {
+        require(registered[msg.sender], "not registered");
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryAck(registry).acknowledgeFor(msg.sender);
+        }
+        registered[msg.sender] = false;
+        emit Deregistered(msg.sender);
+    }
+
     /// @notice Register an operator on their behalf.
     function registerFor(address operator) external nonReentrant {
         if (msg.sender != operator) {
