@@ -4,11 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
-
-interface IJobRegistryAck {
-    function acknowledgeTaxPolicy() external returns (string memory);
-}
+import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 
 interface IReputationEngine {
     function reputation(address user) external view returns (uint256);
@@ -99,10 +95,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     function acknowledgeAndRegister() external nonReentrant {
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
-            IJobRegistryTax reg = IJobRegistryTax(registry);
-            if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
-                IJobRegistryAck(registry).acknowledgeTaxPolicy();
-            }
+            IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
         _register(msg.sender);
     }
@@ -130,10 +123,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         }
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
-            IJobRegistryTax reg = IJobRegistryTax(registry);
-            if (reg.taxAcknowledgedVersion(operator) != reg.taxPolicyVersion()) {
-                IJobRegistryAck(registry).acknowledgeTaxPolicy();
-            }
+            IJobRegistryAck(registry).acknowledgeFor(operator);
         }
         _register(operator);
     }

@@ -9,10 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
-
-interface IJobRegistryAck {
-    function acknowledgeTaxPolicy() external returns (string memory);
-}
+import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -367,11 +364,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
      */
     function acknowledgeAndDeposit(Role role, uint256 amount) external nonReentrant {
         address registry = jobRegistry;
-        require(registry != address(0), "job registry");
-        IJobRegistryTax reg = IJobRegistryTax(registry);
-        if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
-            IJobRegistryAck(registry).acknowledgeTaxPolicy();
-        }
+        require(registry != address(0), "registry");
+        IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
         _deposit(msg.sender, role, amount);
@@ -394,11 +388,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
     ) external nonReentrant {
         require(user != address(0), "user");
         address registry = jobRegistry;
-        require(registry != address(0), "job registry");
-        IJobRegistryTax reg = IJobRegistryTax(registry);
-        if (reg.taxAcknowledgedVersion(user) != reg.taxPolicyVersion()) {
-            IJobRegistryAck(registry).acknowledgeTaxPolicy();
-        }
+        require(registry != address(0), "registry");
+        IJobRegistryAck(registry).acknowledgeFor(user);
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
         _deposit(user, role, amount);

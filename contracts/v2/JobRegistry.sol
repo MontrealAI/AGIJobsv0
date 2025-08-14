@@ -68,6 +68,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @dev Mapping is public for off-chain auditability.
     mapping(address => uint256) public taxAcknowledgedVersion;
 
+    /// @notice Addresses allowed to acknowledge the tax policy for others.
+    mapping(address => bool) public acknowledgers;
+
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
     /// version for callers other than the owner or dispute module.
     modifier requiresTaxAcknowledgement() {
@@ -116,6 +119,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 version,
         string acknowledgement
     );
+
+    /// @notice Emitted when an acknowledger role is updated.
+    /// @param acknowledger Address being granted or revoked the role.
+    /// @param allowed True if the address can acknowledge for others.
+    event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -293,6 +301,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         (ack, uri) = taxPolicy.policyDetails();
     }
 
+    /// @notice Allow or revoke an acknowledger address.
+    /// @param acknowledger Address granted permission to acknowledge for users.
+    /// @param allowed True to allow the address, false to revoke.
+    function setAcknowledger(address acknowledger, bool allowed) external onlyOwner {
+        acknowledgers[acknowledger] = allowed;
+        emit AcknowledgerUpdated(acknowledger, allowed);
+    }
+
     /// @notice Internal helper to acknowledge the current tax policy for a user.
     function _acknowledge(address user) internal returns (string memory ack) {
         require(address(taxPolicy) != address(0), "policy");
@@ -309,6 +325,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// tax responsibility.
     function acknowledgeTaxPolicy() external returns (string memory ack) {
         ack = _acknowledge(msg.sender);
+    }
+
+    /// @notice Acknowledge the current tax policy on behalf of a user.
+    /// @param user Address whose acknowledgement is recorded.
+    /// @return ack Human-readable disclaimer confirming the user bears all tax responsibility.
+    function acknowledgeFor(address user) external returns (string memory ack) {
+        require(acknowledgers[msg.sender], "acknowledger");
+        ack = _acknowledge(user);
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {

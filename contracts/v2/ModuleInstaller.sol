@@ -89,6 +89,9 @@ contract ModuleInstaller {
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
         }
+        jobRegistry.setAcknowledger(address(stakeManager), true);
+        jobRegistry.setAcknowledger(address(platformRegistry), true);
+        jobRegistry.setAcknowledger(address(platformIncentives), true);
         stakeManager.setModules(address(jobRegistry), address(disputeModule));
         platformIncentives.setModules(
             IStakeManager(address(stakeManager)),

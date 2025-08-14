@@ -5,11 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
-import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
-
-interface IJobRegistryAck {
-    function acknowledgeTaxPolicy() external returns (string memory);
-}
+import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 
 /// @title PlatformIncentives
 /// @notice Helper that stakes $AGIALPHA for platform operators and registers them
@@ -84,10 +80,7 @@ contract PlatformIncentives is Ownable {
     function acknowledgeStakeAndActivate(uint256 amount) external {
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
-            IJobRegistryTax reg = IJobRegistryTax(registry);
-            if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
-                IJobRegistryAck(registry).acknowledgeTaxPolicy();
-            }
+            IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
 
         if (amount > 0) {
