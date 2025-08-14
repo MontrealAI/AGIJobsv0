@@ -11,7 +11,7 @@ describe("JobRegistry integration", function () {
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
+    const Token = await ethers.getContractFactory("MockERC206Decimals");
     token = await Token.deploy();
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"

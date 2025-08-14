@@ -126,10 +126,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
         address _jobRegistry,
         address _disputeModule
     ) Ownable(msg.sender) {
-        token =
-            address(_token) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : _token;
+        if (address(_token) == address(0)) {
+            token = IERC20(DEFAULT_TOKEN);
+        } else {
+            IERC20Metadata meta = IERC20Metadata(address(_token));
+            require(meta.decimals() == 6, "decimals");
+            token = _token;
+        }
         emit TokenUpdated(address(token));
 
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
