@@ -251,6 +251,45 @@ describe("ValidationModule V2", function () {
     ).to.not.be.reverted;
   });
 
+  it("allows owner to reassign registry and stake manager", async () => {
+    // select validators to create state for job 1
+    await validation.selectValidators(1);
+
+    const StakeMock2 = await ethers.getContractFactory("MockStakeManager");
+    const newStake = await StakeMock2.deploy();
+    await newStake.waitForDeployment();
+    await newStake.setStake(v1.address, 1, ethers.parseEther("100"));
+    await newStake.setStake(v2.address, 1, ethers.parseEther("50"));
+    await newStake.setStake(v3.address, 1, ethers.parseEther("10"));
+
+    const JobMock2 = await ethers.getContractFactory("MockJobRegistry");
+    const newJob = await JobMock2.deploy();
+    await newJob.waitForDeployment();
+
+    await expect(
+      validation.connect(employer).setStakeManager(await newStake.getAddress())
+    ).to.be.revertedWithCustomError(validation, "OwnableUnauthorizedAccount");
+
+    await expect(
+      validation.connect(owner).setStakeManager(await newStake.getAddress())
+    )
+      .to.emit(validation, "StakeManagerUpdated")
+      .withArgs(await newStake.getAddress());
+
+    await expect(
+      validation.connect(owner).setJobRegistry(await newJob.getAddress())
+    )
+      .to.emit(validation, "JobRegistryUpdated")
+      .withArgs(await newJob.getAddress());
+
+    await expect(validation.selectValidators(1)).to.be.revertedWith(
+      "already selected"
+    );
+
+    await validation.connect(owner).resetJobNonce(1);
+    await expect(validation.selectValidators(1)).to.not.be.reverted;
+  });
+
   it("enforces tax acknowledgement for commit and reveal", async () => {
     await jobRegistry.setTaxPolicyVersion(1);
     const tx = await validation.selectValidators(1);

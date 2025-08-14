@@ -61,6 +61,8 @@ contract ValidationModule is IValidationModule, Ownable {
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
     event ValidatorSlashingPctUpdated(uint256 pct);
+    event JobRegistryUpdated(address registry);
+    event StakeManagerUpdated(address manager);
     event JobNonceReset(uint256 indexed jobId);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
@@ -118,6 +120,18 @@ contract ValidationModule is IValidationModule, Ownable {
     function setReputationEngine(IReputationEngine engine) external onlyOwner {
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
+    }
+
+    /// @notice Update the JobRegistry reference.
+    function setJobRegistry(IJobRegistry registry) external onlyOwner {
+        jobRegistry = registry;
+        emit JobRegistryUpdated(address(registry));
+    }
+
+    /// @notice Update the StakeManager reference.
+    function setStakeManager(IStakeManager manager) external onlyOwner {
+        stakeManager = manager;
+        emit StakeManagerUpdated(address(manager));
     }
 
     /// @notice Set the optional VRF provider for future upgrades.
