@@ -399,7 +399,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Acknowledge the tax policy and apply for a job.
+     * @notice Acknowledge the current tax policy and apply for a job.
+     * @dev No tokens are transferred. Job reward and stake amounts elsewhere
+     *      use 6-decimal $AGIALPHA units. Any stake deposits require prior
+     *      `approve` calls on the $AGIALPHA token via the `StakeManager`.
      * @param jobId Identifier of the job to apply for.
      */
     function acknowledgeAndApply(uint256 jobId) external {
@@ -408,9 +411,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Deposit stake and apply for a job in a single call.
+     * @notice Deposit stake, implicitly acknowledge the tax policy if needed,
+     *         and apply for a job in a single call.
      * @dev `amount` uses 6-decimal base units. Caller must `approve` the
-     *      StakeManager to pull `amount` $AGIALPHA beforehand.
+     *      `StakeManager` to pull `amount` $AGIALPHA beforehand. If the caller
+     *      has not yet acknowledged the tax policy, this helper will do so
+     *      automatically on their behalf.
      * @param jobId Identifier of the job to apply for.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */

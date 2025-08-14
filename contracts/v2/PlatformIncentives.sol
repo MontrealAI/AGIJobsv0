@@ -52,8 +52,10 @@ contract PlatformIncentives is Ownable {
     /**
      * @notice Stake $AGIALPHA and activate routing for the caller.
      * @dev `amount` uses 6-decimal base units. Caller must `approve` the
-     *      StakeManager for at least `amount` tokens beforehand. The owner may
-     *      pass `0` to register without incentives.
+     *      `StakeManager` for at least `amount` tokens beforehand. This helper
+     *      does **not** acknowledge the tax policy; use
+     *      `acknowledgeStakeAndActivate` if acknowledgement is required. The
+     *      owner may pass `0` to register without incentives.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
     function stakeAndActivate(uint256 amount) external {
@@ -74,8 +76,9 @@ contract PlatformIncentives is Ownable {
     /**
      * @notice Acknowledge the tax policy, stake $AGIALPHA, and activate routing.
      * @dev `amount` uses 6-decimal base units. Caller must `approve` the
-     *      StakeManager before calling. Owner may pass `0` to register without
-     *      incentives.
+     *      `StakeManager` before calling. Owner may pass `0` to register without
+     *      incentives. Calling this helper implicitly accepts the current tax
+     *      policy via the linked JobRegistry.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
     function acknowledgeStakeAndActivate(uint256 amount) external {
