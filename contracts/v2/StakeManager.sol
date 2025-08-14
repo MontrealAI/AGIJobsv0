@@ -395,41 +395,66 @@ contract StakeManager is Ownable, ReentrancyGuard {
         _deposit(user, role, amount);
     }
 
-    /// @notice withdraw available stake for a specific role once unlocked via `lockStake`
-    /// @param role participant role of the stake being withdrawn
-    /// @param amount token amount with 6 decimals
-    function withdrawStake(Role role, uint256 amount)
-        external
-        requiresTaxAcknowledgement
-        nonReentrant
-    {
+    /// @dev internal stake withdrawal routine shared by withdraw helpers
+    function _withdraw(address user, Role role, uint256 amount) internal {
         require(role <= Role.Platform, "role");
-        uint256 staked = stakes[msg.sender][role];
+        uint256 staked = stakes[user][role];
         require(staked >= amount, "stake");
         uint256 newStake = staked - amount;
         require(newStake == 0 || newStake >= minStake, "min stake");
 
-        uint256 locked = lockedStakes[msg.sender];
-        uint64 unlock = unlockTime[msg.sender];
+        uint256 locked = lockedStakes[user];
+        uint64 unlock = unlockTime[user];
         uint256 totalStakeUser =
-            stakes[msg.sender][Role.Agent] +
-            stakes[msg.sender][Role.Validator] +
-            stakes[msg.sender][Role.Platform];
+            stakes[user][Role.Agent] +
+            stakes[user][Role.Validator] +
+            stakes[user][Role.Platform];
         uint256 remaining = totalStakeUser - amount;
         if (locked > 0) {
             if (block.timestamp < unlock) {
                 require(remaining >= locked, "locked");
             } else {
-                lockedStakes[msg.sender] = 0;
-                unlockTime[msg.sender] = 0;
-                emit StakeUnlocked(msg.sender, locked);
+                lockedStakes[user] = 0;
+                unlockTime[user] = 0;
+                emit StakeUnlocked(user, locked);
             }
         }
 
-        stakes[msg.sender][role] = newStake;
+        stakes[user][role] = newStake;
         totalStakes[role] -= amount;
-        token.safeTransfer(msg.sender, amount);
-        emit StakeWithdrawn(msg.sender, role, amount);
+        token.safeTransfer(user, amount);
+        emit StakeWithdrawn(user, role, amount);
+    }
+
+    /**
+     * @notice Withdraw previously staked $AGIALPHA for a specific role.
+     * @dev Uses 6-decimal base units (1 token = 1_000000). Stake must be unlocked
+     *      and caller must have deposited tokens beforehand via `approve` +
+     *      deposit.
+     * @param role Participant role of the stake being withdrawn.
+     * @param amount Token amount with 6 decimals to withdraw.
+     */
+    function withdrawStake(Role role, uint256 amount)
+        external
+        requiresTaxAcknowledgement
+        nonReentrant
+    {
+        _withdraw(msg.sender, role, amount);
+    }
+
+    /**
+     * @notice Acknowledge the tax policy and withdraw $AGIALPHA stake in one call.
+     * @dev Uses 6-decimal base units. Caller must have staked tokens previously,
+     *      which required an `approve` for this contract. Invoking this helper
+     *      acknowledges the current tax policy via the associated `JobRegistry`.
+     * @param role Participant role of the stake being withdrawn.
+     * @param amount Withdraw amount in $AGIALPHA with 6 decimals.
+     */
+    function acknowledgeAndWithdraw(Role role, uint256 amount) external nonReentrant {
+        address registry = jobRegistry;
+        require(registry != address(0), "registry");
+        IJobRegistryAck(registry).acknowledgeFor(msg.sender);
+        _withdraw(msg.sender, role, amount);
     }
 
     // ---------------------------------------------------------------

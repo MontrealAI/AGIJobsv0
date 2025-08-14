@@ -42,6 +42,9 @@ interface IStakeManager {
     /// @notice withdraw available stake for a specific role
     function withdrawStake(Role role, uint256 amount) external;
 
+    /// @notice acknowledge the tax policy and withdraw stake in one call
+    function acknowledgeAndWithdraw(Role role, uint256 amount) external;
+
     /// @notice lock job funds from an employer
     function lockJobFunds(bytes32 jobId, address from, uint256 amount) external;
 
