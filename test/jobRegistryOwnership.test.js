@@ -2,10 +2,10 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("JobRegistry ownership", function () {
-  let owner, user, registry;
+  let user, registry;
 
   beforeEach(async () => {
-    [owner, user] = await ethers.getSigners();
+    [, user] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory(
       "contracts/JobRegistry.sol:JobRegistry"
     );
