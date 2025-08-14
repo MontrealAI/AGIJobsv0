@@ -59,8 +59,7 @@ describe("Protocol core features", function () {
     const router = await Router.deploy(
       token.target,
       registry.target,
-      0,
-      owner.address
+      0
     );
     await registry.setStakingRouter(router.target);
     await token.transfer(operator1.address, ethers.parseUnits("100", 6));
