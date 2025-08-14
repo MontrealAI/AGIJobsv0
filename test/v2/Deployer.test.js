@@ -9,8 +9,19 @@ describe("Deployer", function () {
     );
     const deployer = await Deployer.deploy();
 
-    const addresses = await deployer.deploy.staticCall();
-    await expect(deployer.deploy())
+    const econ = {
+      feePct: 0,
+      burnPct: 0,
+      employerSlashPct: 0,
+      treasurySlashPct: 0,
+      commitWindow: 0,
+      revealWindow: 0,
+      minStake: 0,
+      jobStake: 0,
+    };
+
+    const addresses = await deployer.deploy.staticCall(econ);
+    await expect(deployer.deploy(econ))
       .to.emit(deployer, "Deployed")
       .withArgs(...addresses);
 
@@ -115,8 +126,18 @@ describe("Deployer", function () {
       "contracts/v2/Deployer.sol:Deployer"
     );
     const deployer = await Deployer.deploy();
-    const addresses = await deployer.deployWithoutTaxPolicy.staticCall();
-    await expect(deployer.deployWithoutTaxPolicy())
+    const econ = {
+      feePct: 0,
+      burnPct: 0,
+      employerSlashPct: 0,
+      treasurySlashPct: 0,
+      commitWindow: 0,
+      revealWindow: 0,
+      minStake: 0,
+      jobStake: 0,
+    };
+    const addresses = await deployer.deployWithoutTaxPolicy.staticCall(econ);
+    await expect(deployer.deployWithoutTaxPolicy(econ))
       .to.emit(deployer, "Deployed")
       .withArgs(...addresses);
     const [, registry,,,,,,,,, taxPolicy] = addresses;

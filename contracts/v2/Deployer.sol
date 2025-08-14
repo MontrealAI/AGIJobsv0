@@ -35,6 +35,20 @@ import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.s
 contract Deployer {
     bool public deployed;
 
+    /// @notice Economic configuration applied during deployment.
+    /// @dev Zero values use each module's baked-in default such as a 5% fee,
+    ///      5% burn, 1-day commit/reveal windows and a 1 token minimum stake.
+    struct EconParams {
+        uint256 feePct; // protocol fee percentage for JobRegistry
+        uint256 burnPct; // portion of fees burned by FeePool
+        uint256 employerSlashPct; // slashed stake sent to employer
+        uint256 treasurySlashPct; // slashed stake sent to treasury
+        uint256 commitWindow; // validator commit window in seconds
+        uint256 revealWindow; // validator reveal window in seconds
+        uint256 minStake; // global minimum stake in StakeManager (6 decimals)
+        uint96 jobStake; // minimum agent stake per job in JobRegistry (6 decimals)
+    }
+
     event Deployed(
         address stakeManager,
         address jobRegistry,
@@ -50,6 +64,7 @@ contract Deployer {
     );
 
     /// @notice Deploy and wire all modules including TaxPolicy.
+    /// @param econ Economic parameters. Supply `0` to use module defaults.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -61,7 +76,7 @@ contract Deployer {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy
-    function deploy()
+    function deploy(EconParams calldata econ)
         external
         returns (
             address stakeManager,
@@ -77,10 +92,11 @@ contract Deployer {
             address taxPolicy
         )
     {
-        return _deploy(true);
+        return _deploy(true, econ);
     }
 
     /// @notice Deploy and wire all modules without the TaxPolicy.
+    /// @param econ Economic parameters. Supply `0` to use module defaults.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -92,7 +108,7 @@ contract Deployer {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployWithoutTaxPolicy()
+    function deployWithoutTaxPolicy(EconParams calldata econ)
         external
         returns (
             address stakeManager,
@@ -108,10 +124,10 @@ contract Deployer {
             address taxPolicy
         )
     {
-        return _deploy(false);
+        return _deploy(false, econ);
     }
 
-    function _deploy(bool withTaxPolicy)
+    function _deploy(bool withTaxPolicy, EconParams memory econ)
         internal
         returns (
             address stakeManager,
@@ -131,11 +147,25 @@ contract Deployer {
         deployed = true;
         address owner = msg.sender;
 
+        uint256 feePct = econ.feePct == 0 ? 5 : econ.feePct;
+        uint256 burnPct = econ.burnPct == 0 ? 5 : econ.burnPct;
+        uint256 commitWindow =
+            econ.commitWindow == 0 ? 1 days : econ.commitWindow;
+        uint256 revealWindow =
+            econ.revealWindow == 0 ? 1 days : econ.revealWindow;
+        uint256 minStake = econ.minStake == 0 ? 1e6 : econ.minStake;
+        uint256 employerSlashPct = econ.employerSlashPct;
+        uint256 treasurySlashPct = econ.treasurySlashPct;
+        if (employerSlashPct + treasurySlashPct == 0) {
+            treasurySlashPct = 100;
+        }
+        uint96 jobStake = econ.jobStake;
+
         StakeManager stake = new StakeManager(
             IERC20(address(0)),
-            0,
-            0,
-            0,
+            minStake,
+            employerSlashPct,
+            treasurySlashPct,
             owner,
             address(0),
             address(0)
@@ -149,15 +179,15 @@ contract Deployer {
             JICertificateNFT(address(0)),
             IFeePool(address(0)),
             ITaxPolicy(address(0)),
-            0,
-            0
+            feePct,
+            jobStake
         );
 
         ValidationModule validation = new ValidationModule(
             IJobRegistry(address(registry)),
             IStakeManager(address(stake)),
-            0,
-            0,
+            commitWindow,
+            revealWindow,
             0,
             0,
             new address[](0)
@@ -179,7 +209,7 @@ contract Deployer {
             IERC20(address(0)),
             IStakeManager(address(stake)),
             IStakeManager.Role.Platform,
-            0,
+            burnPct,
             owner
         );
 
