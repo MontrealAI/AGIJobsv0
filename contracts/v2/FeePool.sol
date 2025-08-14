@@ -141,7 +141,8 @@ contract FeePool is Ownable {
     /**
      * @notice Claim accumulated $AGIALPHA rewards for the caller.
      * @dev Rewards use 6-decimal units. Automatically calls `distributeFees`
-     *      if there are pending fees awaiting distribution.
+     *      if there are pending fees awaiting distribution, letting non‑technical
+     *      stakers claim in a single Etherscan transaction.
      */
     function claimRewards() external {
         if (pendingFees > 0) {

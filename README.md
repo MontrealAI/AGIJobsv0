@@ -25,7 +25,7 @@ See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated wa
 
 `$AGIALPHA` (6 decimals) is the default payment token for all modules. The owner can swap it later via `StakeManager.setToken`.
 
-1. **Deploy with defaults** – Deploy the verified `Deployer` contract and call `deploy()`; the `TaxPolicy` module is wired in automatically.
+1. **Deploy with defaults** – On Etherscan, deploy the verified `Deployer` contract and call `deploy()` from its **Write Contract** tab. The single transaction emits a `Deployed` event listing every module address and sets the caller as owner, wiring `TaxPolicy` automatically.
 2. **Verify token decimals** – In the token or `StakeManager` **Read Contract** tab call `decimals()` and ensure it returns `6` before sending amounts.
 3. **Use helper flows** – Post jobs, stake, and register in single calls through `JobRegistry.acknowledgeAndCreateJob`, `JobRegistry.stakeAndApply`, and `PlatformIncentives.stakeAndActivate`.
 4. **Retune as owner** – `onlyOwner` setters like `setToken`, `setFeePct`, and `setBurnPct` can adjust tokens, fees, and other parameters after deployment.
