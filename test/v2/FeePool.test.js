@@ -247,9 +247,10 @@ describe("FeePool", function () {
     ).to.be.revertedWith("amount");
   });
 
-  it("reverts when distributing with zero fees", async () => {
-    await expect(feePool.connect(owner).distributeFees()).to.be.revertedWith(
-      "amount"
-    );
+  it("returns immediately when distributing with zero fees", async () => {
+    const cumulative = await feePool.cumulativePerToken();
+    await expect(feePool.connect(owner).distributeFees()).to.not.be.reverted;
+    expect(await feePool.pendingFees()).to.equal(0);
+    expect(await feePool.cumulativePerToken()).to.equal(cumulative);
   });
 });

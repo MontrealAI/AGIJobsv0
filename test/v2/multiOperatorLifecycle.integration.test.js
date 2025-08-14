@@ -186,7 +186,9 @@ describe("multi-operator job lifecycle", function () {
     await jobRouter.connect(platform1).deregister();
     expect(await jobRouter.registered(platform1.address)).to.equal(false);
 
-    await expect(feePool.distributeFees()).to.be.revertedWith("amount");
+    const cumulative = await feePool.cumulativePerToken();
+    await expect(feePool.distributeFees()).to.not.be.reverted;
+    expect(await feePool.cumulativePerToken()).to.equal(cumulative);
   });
 });
 
