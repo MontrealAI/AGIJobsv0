@@ -37,7 +37,7 @@ contract Deployer {
 
     /// @notice Economic configuration applied during deployment.
     /// @dev Zero values use each module's baked-in default such as a 5% fee,
-    ///      5% burn, 1-day commit/reveal windows and a 1 token minimum stake.
+    ///      5% burn, 1-day commit/reveal windows and a 1e6 minimum stake.
     struct EconParams {
         uint256 feePct; // protocol fee percentage for JobRegistry
         uint256 burnPct; // portion of fees burned by FeePool
@@ -124,6 +124,72 @@ contract Deployer {
             address taxPolicy
         )
     {
+        return _deploy(false, econ);
+    }
+
+    /// @notice Deploy and wire all modules using module defaults.
+    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e6 minimum stake.
+    /// @return stakeManager Address of the StakeManager
+    /// @return jobRegistry Address of the JobRegistry
+    /// @return validationModule Address of the ValidationModule
+    /// @return reputationEngine Address of the ReputationEngine
+    /// @return disputeModule Address of the DisputeModule
+    /// @return certificateNFT Address of the CertificateNFT
+    /// @return platformRegistry Address of the PlatformRegistry
+    /// @return jobRouter Address of the JobRouter
+    /// @return platformIncentives Address of the PlatformIncentives helper
+    /// @return feePool Address of the FeePool
+    /// @return taxPolicy Address of the TaxPolicy
+    function deployDefaults()
+        external
+        returns (
+            address stakeManager,
+            address jobRegistry,
+            address validationModule,
+            address reputationEngine,
+            address disputeModule,
+            address certificateNFT,
+            address platformRegistry,
+            address jobRouter,
+            address platformIncentives,
+            address feePool,
+            address taxPolicy
+        )
+    {
+        EconParams memory econ;
+        return _deploy(true, econ);
+    }
+
+    /// @notice Deploy and wire modules with defaults and no TaxPolicy.
+    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e6 minimum stake.
+    /// @return stakeManager Address of the StakeManager
+    /// @return jobRegistry Address of the JobRegistry
+    /// @return validationModule Address of the ValidationModule
+    /// @return reputationEngine Address of the ReputationEngine
+    /// @return disputeModule Address of the DisputeModule
+    /// @return certificateNFT Address of the CertificateNFT
+    /// @return platformRegistry Address of the PlatformRegistry
+    /// @return jobRouter Address of the JobRouter
+    /// @return platformIncentives Address of the PlatformIncentives helper
+    /// @return feePool Address of the FeePool
+    /// @return taxPolicy Address of the TaxPolicy (always zero)
+    function deployDefaultsWithoutTaxPolicy()
+        external
+        returns (
+            address stakeManager,
+            address jobRegistry,
+            address validationModule,
+            address reputationEngine,
+            address disputeModule,
+            address certificateNFT,
+            address platformRegistry,
+            address jobRouter,
+            address platformIncentives,
+            address feePool,
+            address taxPolicy
+        )
+    {
+        EconParams memory econ;
         return _deploy(false, econ);
     }
 
