@@ -21,14 +21,16 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
-### Etherscan Quick Deploy
+### 🚀 Quick Deployment (Etherscan)
 
-1. **Call `Deployer.deploy`** – On Etherscan, open the verified `Deployer` contract and execute `deploy()` to launch all modules with `$AGIALPHA` defaults. For setups that omit the `TaxPolicy` module, call `deployWithoutTaxPolicy()` instead.
-2. **Check token decimals** – In the token or `StakeManager` **Read Contract** tab call `decimals()`; it must return `6` before sending amounts.
-3. **Practice with helpers** – Post a small job and then reclaim funds via `JobRegistry.acknowledgeAndCancel(jobId)` to confirm flows and acknowledgements.
-4. **Owner-only tuning** – Configuration setters such as `setToken`, `setFeePct`, and `setBurnPct` remain `onlyOwner` and can be adjusted later through explorer "Write" tabs.
+`$AGIALPHA` (6 decimals) is the default payment token for all modules. The owner can swap it later via `StakeManager.setToken`.
 
-For detailed walkthroughs, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md) and [docs/etherscan-guide.md](docs/etherscan-guide.md).
+1. **Deploy with defaults** – Deploy the verified `Deployer` contract and call `deploy()`; the `TaxPolicy` module is wired in automatically.
+2. **Verify token decimals** – In the token or `StakeManager` **Read Contract** tab call `decimals()` and ensure it returns `6` before sending amounts.
+3. **Use helper flows** – Post jobs, stake, and register in single calls through `JobRegistry.acknowledgeAndCreateJob`, `JobRegistry.stakeAndApply`, and `PlatformIncentives.stakeAndActivate`.
+4. **Retune as owner** – `onlyOwner` setters like `setToken`, `setFeePct`, and `setBurnPct` can adjust tokens, fees, and other parameters after deployment.
+
+See [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
 ### Deployment simplifications & defaults
 
