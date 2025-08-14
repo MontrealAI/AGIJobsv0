@@ -7,6 +7,12 @@ For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment
 
 **$AGIALPHA units** – The token powers all fees, stakes, and rewards. It reports `decimals = 6`, so enter amounts in base units (`1` token = `1_000000`).
 
+### One-Click Deployment
+
+- **Call `Deployer.deployDefaults`** for a fully wired stack in one transaction. The function deploys all core modules with baked-in economics (5% fee, 5% burn, 1-token minimum stake) and sets the caller as owner.
+- **Blank fields fall back to `msg.sender`** – when deploying modules individually on Etherscan, leaving address parameters empty (`0` or `address(0)`) assigns them to the sender, so no manual owner entry is required.
+- **Default token** – deployments use `$AGIALPHA` (6 decimals). If economics change, the owner may later run `setToken` on modules like `StakeManager` and `FeePool` to swap the ERC-20 without redeploying.
+
 ### Deployer Overview
 
 - **Deploy via `Deployer.deploy(econ)`** – call the verified Deployer with `econ = 0` to accept defaults (5% fee, 1‑token minimum stakes, 1‑day validator windows, 6‑decimal `$AGIALPHA`). The transaction emits addresses for every module.
@@ -56,12 +62,13 @@ All defaults assume the `$AGIALPHA` token (`decimals = 6`); owners can swap toke
 | Employer | `acknowledgeAndCreateJob(reward, uri)` | Approve `StakeManager` for `reward + fee` |
 | Employer (cancel) | `acknowledgeAndCancel(jobId)` | Cancels a job after acknowledging the tax policy |
 | Agent | `stakeAndApply(jobId, amount)` or `acknowledgeAndApply(jobId)` | Approve stake if required; combines acknowledgement and apply |
-| Platform operator | `acknowledgeStakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
+| Platform operator | `acknowledgeStakeAndRegister(amount)` | Acknowledge policy, stake, and register in `PlatformRegistry`; owner may pass `0` |
+| Platform (routing) | `acknowledgeStakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
 | Platform (no stake) | `acknowledgeAndRegister()` | Registers in `PlatformRegistry` without staking |
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
-### Etherscan Checklists
+### Step-by-Step Etherscan Instructions
 
 Use the following quick checklists for common flows (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots):
 
@@ -76,9 +83,9 @@ Use the following quick checklists for common flows (see [docs/etherscan-guide.m
 3. **Verify events** – confirm `StakeDeposited` on `StakeManager` and `AgentApplied` on `JobRegistry`.
 
 #### Register a Platform
-1. **Approve** – approve a stake (owners may pass `0`).
-2. **Helper call** – on `PlatformIncentives` → **Write**, call `acknowledgeStakeAndActivate(amount)`.
-3. **Verify events** – look for `Activated` and any `StakeDeposited` logs.
+1. **Approve** – approve a stake for `StakeManager` (owners may pass `0`).
+2. **Helper call** – on `PlatformRegistry` → **Write**, call `acknowledgeStakeAndRegister(amount)`.
+3. **Verify events** – check for `Registered` and any `StakeDeposited` logs.
 
 #### Raise a Dispute
 1. **Approve** – approve the appeal fee on `$AGIALPHA`.
@@ -93,12 +100,13 @@ All helper calls below accept `$AGIALPHA` amounts in 6‑decimal base units and 
 
 - `StakeManager.acknowledgeAndDeposit`
 - `PlatformRegistry.acknowledgeAndRegister`
+- `PlatformRegistry.acknowledgeStakeAndRegister`
 - `PlatformIncentives.acknowledgeStakeAndActivate`
 - `JobRegistry.acknowledgeAndCreateJob` / `JobRegistry.stakeAndApply`
 
 ### Deployment simplifications & defaults
 
-StakeManager and FeePool constructors each accept an `IERC20 token` address and an optional `_treasury`. StakeManager additionally lets the deployer pre‑wire a `jobRegistry` and `disputeModule`; supplying `address(0)` for either defers wiring to a later `setModules` call. Deployments here default to the $AGIALPHA token above, and passing `address(0)` uses the owner as treasury. Should economics change, the owner may later call `setToken` on these modules to point to a different ERC‑20 without redeploying. If a zero token address is supplied, both modules automatically fall back to the $AGIALPHA default.
+StakeManager and FeePool constructors each accept an `IERC20 token` address and an optional `_treasury`. Leaving address fields blank (`0` or `address(0)`) defaults them to `msg.sender`, streamlining Etherscan deployments. StakeManager additionally lets the deployer pre‑wire a `jobRegistry` and `disputeModule`; supplying `address(0)` for either defers wiring to a later `setModules` call. Deployments here default to the $AGIALPHA token above, and passing `address(0)` uses the owner as treasury. Should economics change, the owner may later call `setToken` on these modules to point to a different ERC‑20 without redeploying. If a zero token address is supplied, both modules automatically fall back to the $AGIALPHA default.
 
 Other constructors now ship with sensible defaults so a deployer can leave parameters empty when using Etherscan:
 
@@ -1423,13 +1431,15 @@ Role-based quick steps:
 
 The contract owner can retune economics or swap tokens at any time without redeploying modules. Common setters accessible from a block explorer include:
 
-- **StakeManager** – `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress`.
-- **FeePool** – `setToken`, `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury`.
-- **PlatformRegistry** – `setStakeManager`, `setReputationEngine`, `setMinPlatformStake`.
-- **ReputationEngine** – `setCaller`, `setWeights`, `blacklist`, `unblacklist`.
-- **GovernanceReward** – `setToken`, `recordVoters`, `finalizeEpoch`.
-- **DisputeModule** – `setAppealFee`, `setTaxPolicy`, `setFeePool`.
-- **JobRegistry** – `setModules`, `setFeePool`, `setTaxPolicy`.
+| Module | Owner-only setters |
+| --- | --- |
+| StakeManager | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
+| FeePool | `setToken`, `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury` |
+| PlatformRegistry | `setStakeManager`, `setReputationEngine`, `setMinPlatformStake` |
+| ReputationEngine | `setCaller`, `setWeights`, `blacklist`, `unblacklist` |
+| GovernanceReward | `setToken`, `recordVoters`, `finalizeEpoch` |
+| DisputeModule | `setAppealFee`, `setTaxPolicy`, `setFeePool` |
+| JobRegistry | `setModules`, `setFeePool`, `setTaxPolicy` |
 
 All amounts are entered using the 6‑decimal base units of $AGIALPHA, preserving on‑chain accounting while keeping the owner tax neutral.
 
