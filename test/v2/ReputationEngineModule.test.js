@@ -2,10 +2,10 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("ReputationEngine module", function () {
-  let owner, caller, user, engine;
+  let caller, user, engine;
 
   beforeEach(async () => {
-    [owner, caller, user] = await ethers.getSigners();
+    [, caller, user] = await ethers.getSigners();
     const Engine = await ethers.getContractFactory(
       "contracts/v2/modules/ReputationEngine.sol:ReputationEngine"
     );

@@ -2,10 +2,10 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("OwnerControls", function () {
-  let controls, owner, other, addr1;
+  let controls, other, addr1;
 
   beforeEach(async () => {
-    [owner, other, addr1] = await ethers.getSigners();
+    [, other, addr1] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory("OwnerControls");
     controls = await Factory.deploy();
     await controls.waitForDeployment();
