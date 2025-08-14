@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 // AGIJobManagerV1 supersedes AGIJobManager v0
+/* solhint-disable max-states-count */
 
 /*
 
@@ -114,16 +115,37 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-interface ENS {
-    function resolver(bytes32 node) external view returns (address);
+/// @title ENS registry interface
+/// @notice Minimal interface for retrieving resolver addresses.
+/// @author AGI
+interface IENS {
+    /// @notice Get resolver address for a node.
+    /// @param node The ENS node hash.
+    /// @return resolverAddr Address of the resolver for `node`.
+    function resolver(bytes32 node) external view returns (address resolverAddr);
 }
 
-interface Resolver {
-    function addr(bytes32 node) external view returns (address payable);
+/// @title Resolver interface
+/// @notice Interface to query addresses from ENS records.
+/// @author AGI
+interface IResolver {
+    /// @notice Get the address associated with an ENS node.
+    /// @param node The ENS node hash.
+    /// @return resolvedAddress The resolved payable address for `node`.
+    function addr(bytes32 node)
+        external
+        view
+        returns (address payable resolvedAddress);
 }
 
-interface NameWrapper {
-    function ownerOf(uint256 id) external view returns (address);
+/// @title ENS NameWrapper interface
+/// @notice Minimal interface to check ownership of wrapped ENS names.
+/// @author AGI
+interface INameWrapper {
+    /// @notice Get the owner of a wrapped ENS name.
+    /// @param id The namehash of the ENS name.
+    /// @return owner The address of the name owner.
+    function ownerOf(uint256 id) external view returns (address owner);
 }
 
 /// @title AGIJobManagerV1
@@ -131,6 +153,7 @@ interface NameWrapper {
 ///         stake-based validator incentives with slashing and outcome-aligned
 ///         rewards. This contract is a work in progress and has not been
 ///         deployed on any network.
+/// @author AGI
 /// @custom:security-contact security@agi.network
 contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     using ECDSA for bytes32;
@@ -177,8 +200,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     bytes32 public agentRootNode;
     bytes32 public validatorMerkleRoot;
     bytes32 public agentMerkleRoot;
-    ENS public ens;
-    NameWrapper public nameWrapper;
+    IENS public ens;
+    INameWrapper public nameWrapper;
 
     /// @notice Canonical address used to irretrievably burn tokens.
     address public constant BURN_ADDRESS =
@@ -687,8 +710,8 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
     ) ERC721("AGIJobs", "Job") Ownable(msg.sender) {
         agiToken = IERC20(_agiTokenAddress);
         baseURI = _initialBaseURI;
-        ens = ENS(_ensAddress);
-        nameWrapper = NameWrapper(_nameWrapperAddress);
+        ens = IENS(_ensAddress);
+        nameWrapper = INameWrapper(_nameWrapperAddress);
         clubRootNode = _clubRootNode;
         agentRootNode = _agentRootNode;
         validatorMerkleRoot = _validatorMerkleRoot;
@@ -1504,13 +1527,13 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
     function setENS(address newEnsAddress) external onlyOwner {
         if (newEnsAddress == address(0)) revert InvalidAddress();
-        ens = ENS(newEnsAddress);
+        ens = IENS(newEnsAddress);
         emit ENSAddressUpdated(newEnsAddress);
     }
 
     function setNameWrapper(address newNameWrapperAddress) external onlyOwner {
         if (newNameWrapperAddress == address(0)) revert InvalidAddress();
-        nameWrapper = NameWrapper(newNameWrapperAddress);
+        nameWrapper = INameWrapper(newNameWrapperAddress);
         emit NameWrapperAddressUpdated(newNameWrapperAddress);
     }
 
@@ -2684,7 +2707,7 @@ contract AGIJobManagerV1 is Ownable, ReentrancyGuard, Pausable, ERC721 {
 
         address resolverAddress = ens.resolver(subnode);
         if (resolverAddress != address(0)) {
-            Resolver resolver = Resolver(resolverAddress);
+            IResolver resolver = IResolver(resolverAddress);
             try resolver.addr(subnode) returns (address payable resolvedAddress) {
                 if (resolvedAddress == claimant) {
                     emit OwnershipVerified(claimant, subdomain);
