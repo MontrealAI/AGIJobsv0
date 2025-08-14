@@ -35,6 +35,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     event MinPlatformStakeUpdated(uint256 stake);
     event Blacklisted(address indexed operator, bool status);
     event RegistrarUpdated(address indexed registrar, bool allowed);
+    event Activated(address indexed operator, uint256 amount);
 
     /// @notice Deploys the PlatformRegistry.
     /// @param _stakeManager StakeManager contract.
@@ -85,6 +86,24 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     }
 
     /**
+     * @notice Deposit $AGIALPHA stake and register the caller in one step.
+     * @dev Caller must `approve` the `StakeManager` for at least `amount` tokens
+     *      beforehand. Uses 6-decimal base units.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
+    function stakeAndRegister(uint256 amount) external nonReentrant {
+        require(!registered[msg.sender], "registered");
+        require(!blacklist[msg.sender], "blacklisted");
+        stakeManager.depositStakeFor(
+            msg.sender,
+            IStakeManager.Role.Platform,
+            amount
+        );
+        _register(msg.sender);
+        emit Activated(msg.sender, amount);
+    }
+
+    /**
      * @notice Register the caller after acknowledging the tax policy when
      *         necessary.
      * @dev Assumes the caller has already staked the required $AGIALPHA via the
@@ -98,6 +117,30 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         }
         _register(msg.sender);
+    }
+
+    /**
+     * @notice Acknowledge the tax policy, stake $AGIALPHA, and register.
+     * @dev Caller must `approve` the `StakeManager` for at least `amount` tokens
+     *      beforehand. Uses 6-decimal base units. Invoking this helper
+     *      implicitly accepts the current tax policy if it has not been
+     *      acknowledged yet.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
+    function acknowledgeStakeAndRegister(uint256 amount) external nonReentrant {
+        require(!registered[msg.sender], "registered");
+        require(!blacklist[msg.sender], "blacklisted");
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryAck(registry).acknowledgeFor(msg.sender);
+        }
+        stakeManager.depositStakeFor(
+            msg.sender,
+            IStakeManager.Role.Platform,
+            amount
+        );
+        _register(msg.sender);
+        emit Activated(msg.sender, amount);
     }
 
     /// @notice Register an operator on their behalf.
