@@ -18,7 +18,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 | `commitWindow` | 1 day | Validator commit window |
 | `revealWindow` | 1 day | Validator reveal window |
 | `minStake` | 1_000_000 (1 token) | Global minimum stake in `StakeManager` |
-| `jobStake` | 0 | Minimum agent stake per job |
+| `jobStake` | 1_000_000 (1 token) | Minimum agent stake per job |
 
 All defaults assume the `$AGIALPHA` token (`decimals = 6`); owners can swap tokens later via `StakeManager.setToken` and `FeePool.setToken`.
 
@@ -49,7 +49,7 @@ A single call to `deploy(econ)` on the verified **Deployer** contract wires modu
 - `employerSlashPct`/`treasurySlashPct` – slashed stake split (defaults `0/100`)
 - `commitWindow`/`revealWindow` – validator timing windows in seconds (defaults `1 day` each)
 - `minStake` – global minimum stake in `StakeManager` (default `1_000_000`, i.e. 1 token)
-- `jobStake` – minimum agent stake per job in `JobRegistry` (default `0`)
+- `jobStake` – minimum agent stake per job in `JobRegistry` (default `1_000_000`, i.e. 1 token)
 
 Supplying `0` for any field keeps the module’s baked‑in default.
 
