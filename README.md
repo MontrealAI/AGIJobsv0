@@ -17,6 +17,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 | Employer (cancel) | `acknowledgeAndCancel(jobId)` | Cancels a job after acknowledging the tax policy |
 | Agent | `stakeAndApply(jobId, amount)` or `acknowledgeAndApply(jobId)` | Approve stake if required; combines acknowledgement and apply |
 | Platform operator | `acknowledgeStakeAndActivate(amount)` | Registers in `PlatformRegistry` and `JobRouter`; owner may pass `0` |
+| Platform operator (registry only) | `acknowledgeStakeAndRegister(amount)` or `stakeAndRegister(amount)` | Registers in `PlatformRegistry` without JobRouter |
 | Platform (no stake) | `acknowledgeAndRegister()` | Registers in `PlatformRegistry` without staking |
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.

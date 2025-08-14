@@ -100,6 +100,54 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         _register(msg.sender);
     }
 
+    /**
+     * @notice Stake $AGIALPHA and register as a platform in one call.
+     * @dev `amount` uses 6-decimal base units. Caller must `approve` the
+     *      StakeManager for at least `amount` tokens beforehand. The owner may
+     *      pass `0` to register without staking.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
+    function stakeAndRegister(uint256 amount) external nonReentrant {
+        require(address(stakeManager) != address(0), "stake manager");
+        if (amount > 0) {
+            stakeManager.depositStakeFor(
+                msg.sender,
+                IStakeManager.Role.Platform,
+                amount
+            );
+        } else {
+            require(msg.sender == owner(), "amount");
+        }
+        _register(msg.sender);
+    }
+
+    /**
+     * @notice Acknowledge the tax policy, stake $AGIALPHA, and register.
+     * @dev `amount` uses 6-decimal base units. Caller must `approve` the
+     *      StakeManager for at least `amount` tokens beforehand. Owner may pass
+     *      `0` to register without staking.
+     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     */
+    function acknowledgeStakeAndRegister(uint256 amount) external nonReentrant {
+        address registry = stakeManager.jobRegistry();
+        if (registry != address(0)) {
+            IJobRegistryTax reg = IJobRegistryTax(registry);
+            if (reg.taxAcknowledgedVersion(msg.sender) != reg.taxPolicyVersion()) {
+                IJobRegistryAck(registry).acknowledgeTaxPolicy();
+            }
+        }
+        if (amount > 0) {
+            stakeManager.depositStakeFor(
+                msg.sender,
+                IStakeManager.Role.Platform,
+                amount
+            );
+        } else {
+            require(msg.sender == owner(), "amount");
+        }
+        _register(msg.sender);
+    }
+
     /// @notice Register an operator on their behalf.
     function registerFor(address operator) external nonReentrant {
         if (msg.sender != operator) {
