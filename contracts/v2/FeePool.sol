@@ -56,7 +56,7 @@ contract FeePool is Ownable {
     event RewardRoleUpdated(IStakeManager.Role role);
     event BurnPctUpdated(uint256 pct);
     event TreasuryUpdated(address indexed treasury);
-    event RewardTransferred(address indexed to, uint256 amount);
+    event OwnerWithdrawal(address indexed to, uint256 amount);
 
     /// @notice Deploys the FeePool.
     /// @param _token ERC20 token used for fees and rewards. Defaults to
@@ -161,13 +161,13 @@ contract FeePool is Ownable {
         emit RewardsClaimed(msg.sender, owed);
     }
 
-    /// @notice transfer tokens to an external reward contract
+    /// @notice owner-only emergency escape hatch to withdraw tokens
     /// @dev Amount uses 6 decimal units.
     /// @param to recipient address
     /// @param amount token amount with 6 decimals
-    function transferReward(address to, uint256 amount) external onlyOwner {
+    function ownerWithdraw(address to, uint256 amount) external onlyOwner {
         token.safeTransfer(to, amount);
-        emit RewardTransferred(to, amount);
+        emit OwnerWithdrawal(to, amount);
     }
 
     /// @notice update ERC20 token used for payouts

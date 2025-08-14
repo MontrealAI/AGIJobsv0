@@ -137,7 +137,7 @@ contract GovernanceReward is Ownable {
         require(total > 0, "no voters");
         uint256 poolBal = token.balanceOf(address(feePool));
         uint256 rewardAmount = (poolBal * rewardPct) / 100;
-        feePool.transferReward(address(this), rewardAmount);
+        feePool.ownerWithdraw(address(this), rewardAmount);
         rewardPerStake[epoch] = (rewardAmount * ACCUMULATOR_SCALE) / total;
         emit EpochFinalized(epoch, rewardAmount);
         currentEpoch = epoch + 1;

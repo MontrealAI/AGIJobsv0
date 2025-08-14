@@ -16,9 +16,9 @@ interface IFeePool {
     /// @dev Rewards use 6 decimal units.
     function claimRewards() external;
 
-    /// @notice transfer tokens from the pool to a recipient
+    /// @notice owner-only emergency withdrawal of tokens from the pool
     /// @dev Amount uses 6 decimal units.
     /// @param to address receiving the tokens
     /// @param amount token amount with 6 decimals
-    function transferReward(address to, uint256 amount) external;
+    function ownerWithdraw(address to, uint256 amount) external;
 }
