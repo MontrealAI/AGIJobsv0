@@ -13,6 +13,13 @@ For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment
 - **Blank fields fall back to `msg.sender`** – when deploying modules individually on Etherscan, leaving address parameters empty (`0` or `address(0)`) assigns them to the sender, so no manual owner entry is required.
 - **Default token** – deployments use `$AGIALPHA` (6 decimals). If economics change, the owner may later run `setToken` on modules like `StakeManager` and `FeePool` to swap the ERC-20 without redeploying.
 
+#### `deployDefaults` Quickstart
+
+1. **Deploy everything** – call `Deployer.deployDefaults()` for the fastest setup. It wires every module with baked‑in economics (5% fee, 5% burn, 1‑token minimum stake) and makes the caller the owner.
+2. **Approve in 6‑decimal units** – `$AGIALPHA` uses 6 decimals. Before using helpers such as `acknowledgeAndCreateJob` or `stakeAndApply`, first `approve` the required token amount on `$AGIALPHA`.
+3. **Retune later** – the owner can adjust economics without redeploying via setters like `StakeManager.setToken`, `JobRegistry.setFeePct`, and `FeePool.setBurnPct`.
+4. **Need visuals?** – see [docs/deployment-agialpha.md](docs/deployment-agialpha.md) and [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshot walkthroughs.
+
 ### Deployer Overview
 
 - **Deploy via `Deployer.deploy(econ)`** – call the verified Deployer with `econ = 0` to accept defaults (5% fee, 1‑token minimum stakes, 1‑day validator windows, 6‑decimal `$AGIALPHA`). The transaction emits addresses for every module.
