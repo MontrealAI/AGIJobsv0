@@ -54,6 +54,9 @@ contract GovernanceReward is Ownable {
     event EpochFinalized(uint256 indexed epoch, uint256 rewardAmount);
     event RewardClaimed(uint256 indexed epoch, address indexed voter, uint256 amount);
     event TokenUpdated(address indexed token);
+    event FeePoolUpdated(address indexed feePool);
+    event StakeManagerUpdated(address indexed stakeManager);
+    event RewardRoleUpdated(IStakeManager.Role role);
 
     constructor(
         IERC20 _token,
@@ -72,6 +75,9 @@ contract GovernanceReward is Ownable {
         feePool = _feePool;
         stakeManager = _stakeManager;
         rewardRole = _role;
+        emit FeePoolUpdated(address(_feePool));
+        emit StakeManagerUpdated(address(_stakeManager));
+        emit RewardRoleUpdated(_role);
 
         epochLength =
             _epochLength == 0 ? DEFAULT_EPOCH_LENGTH : _epochLength;
@@ -112,6 +118,24 @@ contract GovernanceReward is Ownable {
         );
         token = candidate;
         emit TokenUpdated(address(candidate));
+    }
+
+    /// @notice update the FeePool reference
+    function setFeePool(IFeePool newFeePool) external onlyOwner {
+        feePool = newFeePool;
+        emit FeePoolUpdated(address(newFeePool));
+    }
+
+    /// @notice update the StakeManager reference
+    function setStakeManager(IStakeManager newStakeManager) external onlyOwner {
+        stakeManager = newStakeManager;
+        emit StakeManagerUpdated(address(newStakeManager));
+    }
+
+    /// @notice update the staker role used for reward snapshots
+    function setRewardRole(IStakeManager.Role role) external onlyOwner {
+        rewardRole = role;
+        emit RewardRoleUpdated(role);
     }
 
     /// @notice record voters for the current epoch and snapshot their stake

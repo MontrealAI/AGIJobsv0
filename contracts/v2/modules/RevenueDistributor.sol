@@ -17,9 +17,11 @@ contract RevenueDistributor is Ownable {
     event OperatorDeregistered(address indexed operator);
     event TreasuryUpdated(address indexed treasury);
     event RevenueDistributed(address indexed from, uint256 amount);
+    event StakeManagerUpdated(address indexed stakeManager);
 
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
         stakeManager = _stakeManager;
+        emit StakeManagerUpdated(address(_stakeManager));
     }
 
     /// @notice Register the caller as an operator.
@@ -51,6 +53,13 @@ contract RevenueDistributor is Ownable {
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    /// @notice Update StakeManager contract used for stake lookups.
+    /// @param manager new StakeManager address
+    function setStakeManager(IStakeManager manager) external onlyOwner {
+        stakeManager = manager;
+        emit StakeManagerUpdated(address(manager));
     }
 
     /// @notice Distribute received ETH to active operators by stake.
