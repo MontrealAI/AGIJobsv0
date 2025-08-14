@@ -21,16 +21,37 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
-### Etherscan deployment quickstart
+### Beginner Deployment via Etherscan
 
-`$AGIALPHA` uses 6 decimal places for every amount, and the owner may swap the token later via `setToken` without redeploying any modules.
+Before interacting, verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token (**decimals = 6**) and each module address emitted by `Deployer.deploy()` (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots). A single call to `deploy()` on the verified **Deployer** contract wires defaults and sets the caller as owner.
 
-1. **Deploy via Deployer** – On Etherscan, open the verified `Deployer` contract’s **Write Contract** tab and call `deploy()`. The transaction emits a `Deployed` event with each module address and sets the caller as owner.
-2. **Check token decimals** – Before transferring value, call `decimals()` on the `$AGIALPHA` token or `StakeManager` from the **Read Contract** tab and confirm it returns `6`.
-3. **Call helpers from Write tabs** – Use the **Write Contract** tabs to execute single-call flows such as `JobRegistry.acknowledgeAndCreateJob`, `JobRegistry.stakeAndApply`, `PlatformIncentives.acknowledgeStakeAndActivate`, `StakeManager.acknowledgeAndDeposit`, or `PlatformRegistry.acknowledgeAndRegister`.
-4. **Owner-only tuning** – Only the owner can adjust parameters like `setToken`, `setFeePct`, `setBurnPct`, or `setMinPlatformStake`; other accounts will revert.
+Use role‑specific helpers from the **Write** tabs to minimise transactions:
 
-See [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
+- `JobRegistry.acknowledgeAndCreateJob`
+- `JobRegistry.stakeAndApply`
+- `PlatformIncentives.acknowledgeStakeAndActivate`
+- `StakeManager.acknowledgeAndDeposit`
+- `PlatformRegistry.acknowledgeAndRegister`
+
+Only the owner can retune parameters such as `StakeManager.setToken`, `FeePool.setToken`, `JobRegistry.setFeePct`, `FeePool.setBurnPct`, and `PlatformRegistry.setMinPlatformStake`. These setters allow token swaps or fee updates without redeploying modules.
+
+#### Post a Job
+- On the `$AGIALPHA` token page, approve the `StakeManager` for `reward + fee` in 6‑decimal units.
+- Open `JobRegistry` → **Write** and call `acknowledgeAndCreateJob(reward, uri)`.
+
+#### Stake Tokens
+- Approve the stake amount on `$AGIALPHA`.
+- In `StakeManager` → **Write**, call `acknowledgeAndDeposit(role, amount)` or use `JobRegistry.stakeAndApply(jobId, amount)` to stake and apply in one call.
+
+#### Register a Platform
+- Approve a stake (or use `0` for the owner’s zero‑stake case).
+- On `PlatformIncentives` → **Write**, call `acknowledgeStakeAndActivate(amount)` or `PlatformRegistry.acknowledgeAndRegister()` for a zero‑stake listing.
+
+#### Raise a Dispute
+- Approve the appeal fee on `$AGIALPHA`.
+- In `JobRegistry` → **Write**, call `acknowledgeAndDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute`.
+
+For screenshots and extended walkthroughs, see [docs/etherscan-guide.md](docs/etherscan-guide.md). Owners may swap payout tokens later without redeploying via `StakeManager.setToken` and `FeePool.setToken`.
 
 ### One-call flows
 
