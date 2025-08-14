@@ -271,7 +271,7 @@ async function main() {
   await verify(await platformRegistry.getAddress(), [await stake.getAddress(), await reputation.getAddress(), minPlatformStake, owner]);
   await verify(await jobRouter.getAddress(), [await platformRegistry.getAddress(), owner]);
   await verify(await incentives.getAddress(), [await stake.getAddress(), await platformRegistry.getAddress(), await jobRouter.getAddress(), owner]);
-  await verify(await installer.getAddress(), [owner]);
+  await verify(await installer.getAddress(), []);
 
   await incentives.connect(ownerSigner).stakeAndActivate(0);
 }
