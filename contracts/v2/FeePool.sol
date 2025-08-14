@@ -76,10 +76,13 @@ contract FeePool is Ownable {
     ) Ownable(msg.sender) {
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         require(pct <= 100, "pct");
-        token =
-            address(_token) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : _token;
+        if (address(_token) == address(0)) {
+            token = IERC20(DEFAULT_TOKEN);
+        } else {
+            IERC20Metadata meta = IERC20Metadata(address(_token));
+            require(meta.decimals() == 6, "decimals");
+            token = _token;
+        }
         emit TokenUpdated(address(token));
 
         stakeManager = _stakeManager;
