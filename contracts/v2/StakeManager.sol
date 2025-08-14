@@ -360,6 +360,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
      * @notice Acknowledge the tax policy and deposit $AGIALPHA stake in one call.
      * @dev Uses 6-decimal base units (1 token = 1_000000). Caller must `approve`
      *      this contract to transfer at least `amount` $AGIALPHA beforehand.
+     *      Invoking this helper implicitly accepts the current tax policy via the
+     *      associated `JobRegistry`.
      * @param role Participant role receiving credit for the stake.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
@@ -379,7 +381,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
      * @notice Acknowledge the tax policy and deposit $AGIALPHA stake on behalf of
      *         a user.
      * @dev Uses 6-decimal base units. The `user` must `approve` this contract to
-     *      transfer at least `amount` tokens beforehand.
+     *      transfer at least `amount` tokens beforehand. Calling this helper
+     *      implicitly acknowledges the current tax policy for the `user`.
      * @param user Address receiving credit for the stake.
      * @param role Participant role receiving credit for the stake.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.

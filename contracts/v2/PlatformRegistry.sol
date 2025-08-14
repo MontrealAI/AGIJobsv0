@@ -88,7 +88,14 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         emit Deregistered(msg.sender);
     }
 
-    /// @notice Register caller after acknowledging the tax policy if needed.
+    /**
+     * @notice Register the caller after acknowledging the tax policy when
+     *         necessary.
+     * @dev Assumes the caller has already staked the required $AGIALPHA via the
+     *      `StakeManager`, which uses 6-decimal base units and requires prior
+     *      token `approve` calls. Invoking this helper implicitly accepts the
+     *      current tax policy if it has not been acknowledged yet.
+     */
     function acknowledgeAndRegister() external nonReentrant {
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
@@ -108,7 +115,15 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
         _register(operator);
     }
 
-    /// @notice Register an operator after acknowledgement on their behalf.
+    /**
+     * @notice Register an operator after acknowledging the tax policy on their
+     *         behalf.
+     * @dev The operator must already have the minimum stake recorded in
+     *      6-decimal $AGIALPHA units within the `StakeManager`, requiring a
+     *      prior token `approve`. Calling this helper implicitly acknowledges
+     *      the tax policy for the operator if needed.
+     * @param operator Address to be registered.
+     */
     function acknowledgeAndRegisterFor(address operator) external nonReentrant {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
