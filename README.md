@@ -8,7 +8,7 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 ### Deployment Quickstart
 
 1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller` (deployer auto‑assigned as owner), supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
-2. **Initialize once** – Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`. This single call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
+2. **Initialize once** – Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` from the installer's owner account. This `onlyOwner` call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
 3. **Token‑only disputes** – Agents approve the `StakeManager` for the `appealFee` and raise disputes with `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; the bond stays entirely in tokens, never ETH.
 
 | Participant | One-call helper | Notes |
@@ -268,7 +268,7 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 11. `TaxPolicy` (optional)
 12. `ModuleInstaller`
 
-Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once to wire cross‑links, set the protocol fee pool and optional tax policy, and automatically return ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
+Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once from the installer's owner. This `onlyOwner` call wires cross‑links, sets the protocol fee pool and optional tax policy, and automatically returns ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
 
 Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `appealFee` in $AGIALPHA and calling `JobRegistry.raiseDispute(jobId, evidence)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
 

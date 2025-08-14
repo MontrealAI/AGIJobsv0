@@ -27,8 +27,8 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 9. Deploy `PlatformRegistry(stakeManager, reputationEngine, 0)`.
 10. Deploy `JobRouter(platformRegistry)`.
 11. Deploy `PlatformIncentives(stakeManager, platformRegistry, jobRouter)`.
-12. Deploy `ModuleInstaller()`; the deployer becomes the temporary owner.
-13. Transfer ownership of each module to the installer. From that owner address, call `ModuleInstaller.initialize(jobRegistry, stakeManager, validation, reputation, dispute, nft, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` **once**. Only the deployer may invoke `initialize`, and the installer blocks subsequent calls. The transaction wires modules, assigns the fee pool and optional tax policy, then transfers ownership back automatically. Finally authorize registrars:
+12. Deploy `ModuleInstaller()`; the deployer becomes the temporary owner via `Ownable`.
+13. Transfer ownership of each module to the installer. From that owner address, call `ModuleInstaller.initialize(jobRegistry, stakeManager, validation, reputation, dispute, nft, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` **once**. Only the owner may invoke `initialize`, and the installer blocks subsequent calls. The transaction wires modules, assigns the fee pool and optional tax policy, then transfers ownership back automatically. Finally authorize registrars:
     - `PlatformRegistry.setRegistrar(platformIncentives, true)`
     - `JobRouter.setRegistrar(platformIncentives, true)`
 14. Verify each contract via **Contract → Verify and Publish** on Etherscan.
@@ -37,7 +37,7 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 
 1. Deploy `ModuleInstaller()`; the deploying address is the owner.
 2. On each module contract, call `transferOwnership(installer)`.
-3. From that owner address, open **ModuleInstaller → Write Contract** and execute `initialize(jobRegistry, stakeManager, validation, reputation, dispute, nft, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`.
+3. From that owner address, open **ModuleInstaller → Write Contract** and execute `initialize(jobRegistry, stakeManager, validation, reputation, dispute, nft, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` (gated by `onlyOwner`).
 4. After the transaction, every module reports your address as `owner` again.
 
 ### Job posting, staking, and activation via Etherscan

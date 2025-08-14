@@ -15,6 +15,7 @@ import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IOwnable {
     function transferOwnership(address newOwner) external;
@@ -25,9 +26,8 @@ interface IOwnable {
 /// @dev Each module must transfer ownership to this installer prior to calling
 ///      {initialize}. After wiring, ownership can be reclaimed via the modules'
 ///      own `transferOwnership` functions.
-contract ModuleInstaller {
+contract ModuleInstaller is Ownable {
     bool public initialized;
-    address public owner;
 
     /// @notice Emitted after all modules are wired together.
     event ModulesInstalled(
@@ -45,9 +45,7 @@ contract ModuleInstaller {
     );
 
     /// @notice Sets the deployer as the temporary owner.
-    constructor() {
-        owner = msg.sender;
-    }
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Connect core modules after deployment.
     /// @param jobRegistry Address of the JobRegistry contract
@@ -73,9 +71,8 @@ contract ModuleInstaller {
         IJobRouter jobRouter,
         IFeePool feePool,
         ITaxPolicy taxPolicy
-    ) external {
+    ) external onlyOwner {
         require(!initialized, "init");
-        require(msg.sender == owner, "owner");
         initialized = true;
 
         jobRegistry.setModules(
@@ -101,18 +98,19 @@ contract ModuleInstaller {
         platformRegistry.setRegistrar(address(platformIncentives), true);
         jobRouter.setRegistrar(address(platformIncentives), true);
 
-        jobRegistry.transferOwnership(msg.sender);
-        stakeManager.transferOwnership(msg.sender);
-        IOwnable(address(validationModule)).transferOwnership(msg.sender);
-        IOwnable(address(reputationEngine)).transferOwnership(msg.sender);
-        IOwnable(address(disputeModule)).transferOwnership(msg.sender);
-        IOwnable(address(certificateNFT)).transferOwnership(msg.sender);
-        platformIncentives.transferOwnership(msg.sender);
-        IOwnable(address(platformRegistry)).transferOwnership(msg.sender);
-        IOwnable(address(jobRouter)).transferOwnership(msg.sender);
-        IOwnable(address(feePool)).transferOwnership(msg.sender);
+        address moduleOwner = owner();
+        jobRegistry.transferOwnership(moduleOwner);
+        stakeManager.transferOwnership(moduleOwner);
+        IOwnable(address(validationModule)).transferOwnership(moduleOwner);
+        IOwnable(address(reputationEngine)).transferOwnership(moduleOwner);
+        IOwnable(address(disputeModule)).transferOwnership(moduleOwner);
+        IOwnable(address(certificateNFT)).transferOwnership(moduleOwner);
+        platformIncentives.transferOwnership(moduleOwner);
+        IOwnable(address(platformRegistry)).transferOwnership(moduleOwner);
+        IOwnable(address(jobRouter)).transferOwnership(moduleOwner);
+        IOwnable(address(feePool)).transferOwnership(moduleOwner);
         if (address(taxPolicy) != address(0)) {
-            IOwnable(address(taxPolicy)).transferOwnership(msg.sender);
+            IOwnable(address(taxPolicy)).transferOwnership(moduleOwner);
         }
 
         emit ModulesInstalled(
@@ -128,6 +126,11 @@ contract ModuleInstaller {
             address(feePool),
             address(taxPolicy)
         );
+    }
+
+    /// @notice Proof that neither this contract nor its owner accrues taxable revenue.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
     }
 }
 
