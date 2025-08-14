@@ -128,6 +128,51 @@ describe("PlatformRegistry", function () {
     );
   });
 
+  it("acknowledgeStakeAndRegisterFor stakes, acknowledges, and registers", async () => {
+    await registry.setRegistrar(owner.address, true);
+    await stakeManager.connect(platform).withdrawStake(2, STAKE);
+    await token
+      .connect(platform)
+      .approve(await stakeManager.getAddress(), STAKE);
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
+    await stakeManager
+      .connect(platform)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await expect(
+      registry
+        .connect(owner)
+        .acknowledgeStakeAndRegisterFor(platform.address, STAKE)
+    )
+      .to.emit(registry, "Activated")
+      .withArgs(platform.address, STAKE);
+    const version = await jobRegistry.taxPolicyVersion();
+    expect(await jobRegistry.taxAcknowledgedVersion(platform.address)).to.equal(
+      version
+    );
+  });
+
   it("acknowledgeAndRegister records acknowledgement", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
