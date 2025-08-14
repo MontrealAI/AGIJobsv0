@@ -5,6 +5,24 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 **$AGIALPHA units** – The token powers all fees, stakes, and rewards. It reports `decimals = 6`, so enter amounts in base units (`1` token = `1_000000`).
 
+### Deployer Overview
+
+- **Deploy via `Deployer.deploy(econ)`** – call the verified Deployer with `econ = 0` to accept defaults (5% fee, 1‑token minimum stakes, 1‑day validator windows, 6‑decimal `$AGIALPHA`). The transaction emits addresses for every module.
+- **Verify module addresses** – confirm each emitted address and the `$AGIALPHA` token on Etherscan before interacting.
+- **Use one‑call helpers** – minimise transactions with `JobRegistry.acknowledgeAndCreateJob`, `JobRegistry.stakeAndApply`, and `PlatformIncentives.acknowledgeStakeAndActivate`.
+- **Owner‑only tuning** – the owner can swap tokens or adjust fees later via setters like `StakeManager.setToken`, `JobRegistry.setFeePct`, and `FeePool.setBurnPct` without redeploying. `$AGIALPHA` (`decimals = 6`) is the default token and can be replaced by calling `setToken` on the relevant modules.
+
+A single call to `deploy(econ)` wires modules, sets the caller as owner, and optionally customises economics:
+
+- `feePct` – protocol fee percentage for `JobRegistry` (default `5`)
+- `burnPct` – portion of each fee burned by `FeePool` (default `5`)
+- `employerSlashPct`/`treasurySlashPct` – slashed stake split (defaults `0/100`)
+- `commitWindow`/`revealWindow` – validator timing windows in seconds (defaults `1 day` each)
+- `minStake` – global minimum stake in `StakeManager` (default `1_000_000`, i.e. 1 token)
+- `jobStake` – minimum agent stake per job in `JobRegistry` (default `1_000_000`, i.e. 1 token)
+
+Supplying `0` for any field keeps the module’s baked‑in default.
+
 ### Deployment Quickstart
 
 1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller` (deployer auto‑assigned as owner), supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
@@ -32,52 +50,29 @@ All defaults assume the `$AGIALPHA` token (`decimals = 6`); owners can swap toke
 
 See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated walkthrough and [docs/etherscan-guide.md](docs/etherscan-guide.md) for block‑explorer screenshots.
 
-### Beginner Deployment via Etherscan
+### Etherscan Checklists
 
-The bare-bones checklist below covers the basic flow (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots):
-
-1. **Approve $AGIALPHA** – approve the token for any required stake or fee using 6‑decimal units.
-2. **Call `deploy`** – on the verified `Deployer` contract call `deploy(econ)` and record the emitted module addresses.
-3. **Verify addresses** – confirm `$AGIALPHA` and each module on Etherscan.
-4. **Use helper functions** – from each module's **Write** tab, call single‑step helpers such as `acknowledgeAndCreateJob`, `stakeAndApply`, or `stakeAndActivate`.
-5. **Tune parameters** – owners retune later via setters like `StakeManager.setToken`, `FeePool.setToken`, `JobRegistry.setFeePct`, and `FeePool.setBurnPct`.
-
-A single call to `deploy(econ)` on the verified **Deployer** contract wires modules, sets the caller as owner, and optionally customises economics:
-
-- `feePct` – protocol fee percentage for `JobRegistry` (default `5`)
-- `burnPct` – portion of each fee burned by `FeePool` (default `5`)
-- `employerSlashPct`/`treasurySlashPct` – slashed stake split (defaults `0/100`)
-- `commitWindow`/`revealWindow` – validator timing windows in seconds (defaults `1 day` each)
-- `minStake` – global minimum stake in `StakeManager` (default `1_000_000`, i.e. 1 token)
-- `jobStake` – minimum agent stake per job in `JobRegistry` (default `1_000_000`, i.e. 1 token)
-
-Supplying `0` for any field keeps the module’s baked‑in default.
-
-Use role‑specific helpers from the **Write** tabs to minimise transactions:
-
-- `JobRegistry.acknowledgeAndCreateJob`
-- `JobRegistry.stakeAndApply`
-- `PlatformIncentives.acknowledgeStakeAndActivate`
-- `StakeManager.acknowledgeAndDeposit`
-- `PlatformRegistry.acknowledgeAndRegister`
-
-Only the owner can retune parameters such as `StakeManager.setToken`, `FeePool.setToken`, `JobRegistry.setFeePct`, `FeePool.setBurnPct`, and `PlatformRegistry.setMinPlatformStake`. These setters allow token swaps or fee updates without redeploying modules.
+Use the following quick checklists for common flows (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots):
 
 #### Post a Job
-- On the `$AGIALPHA` token page, approve the `StakeManager` for `reward + fee` in 6‑decimal units.
-- Open `JobRegistry` → **Write** and call `acknowledgeAndCreateJob(reward, uri)`.
+1. **Approve** – on the `$AGIALPHA` token page approve `StakeManager` for `reward + fee` in 6‑decimal units.
+2. **Helper call** – in `JobRegistry` → **Write**, call `acknowledgeAndCreateJob(reward, uri)`.
+3. **Verify events** – check the transaction log for `JobCreated`.
 
-#### Stake Tokens
-- Approve the stake amount on `$AGIALPHA`.
-- In `StakeManager` → **Write**, call `acknowledgeAndDeposit(role, amount)` or use `JobRegistry.stakeAndApply(jobId, amount)` to stake and apply in one call.
+#### Stake and Apply
+1. **Approve** – approve the stake amount on `$AGIALPHA`.
+2. **Helper call** – use `JobRegistry.stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` if no stake required).
+3. **Verify events** – confirm `StakeDeposited` on `StakeManager` and `AgentApplied` on `JobRegistry`.
 
 #### Register a Platform
-- Approve a stake (or use `0` for the owner’s zero‑stake case).
-- On `PlatformIncentives` → **Write**, call `acknowledgeStakeAndActivate(amount)` or `PlatformRegistry.acknowledgeAndRegister()` for a zero‑stake listing.
+1. **Approve** – approve a stake (owners may pass `0`).
+2. **Helper call** – on `PlatformIncentives` → **Write**, call `acknowledgeStakeAndActivate(amount)`.
+3. **Verify events** – look for `Activated` and any `StakeDeposited` logs.
 
 #### Raise a Dispute
-- Approve the appeal fee on `$AGIALPHA`.
-- In `JobRegistry` → **Write**, call `acknowledgeAndDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute`.
+1. **Approve** – approve the appeal fee on `$AGIALPHA`.
+2. **Helper call** – in `JobRegistry` → **Write**, call `acknowledgeAndDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute`.
+3. **Verify events** – confirm `DisputeRaised` on the `DisputeModule`.
 
 For screenshots and extended walkthroughs, see [docs/etherscan-guide.md](docs/etherscan-guide.md). Owners may swap payout tokens later without redeploying via `StakeManager.setToken` and `FeePool.setToken`.
 
