@@ -1,7 +1,7 @@
 # AGIJob Manager
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
+AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` and `FeePool.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
 **$AGIALPHA units** – The token powers all fees, stakes, and rewards. It reports `decimals = 6`, so enter amounts in base units (`1` token = `1_000000`).
 
@@ -10,6 +10,17 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 1. **Deploy modules with defaults** – Deploy `StakeManager`, `JobRegistry`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, then `ModuleInstaller` (deployer auto‑assigned as owner), supplying `0` or `address(0)` to accept defaults such as the 6‑decimal `$AGIALPHA` token and owner treasury.
 2. **Initialize once** – Transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` from the installer's owner account. This `onlyOwner` call wires cross‑links, assigns the fee pool and optional tax policy, and automatically registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`.
 3. **Token‑only disputes** – Agents approve the `StakeManager` for the `appealFee` and raise disputes with `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; the bond stays entirely in tokens, never ETH.
+
+| Parameter | Default | Description |
+| --- | --- | --- |
+| `feePct` | 5% | Protocol fee taken by `JobRegistry` |
+| `burnPct` | 5% | Portion of each fee burned by `FeePool` |
+| `commitWindow` | 1 day | Validator commit window |
+| `revealWindow` | 1 day | Validator reveal window |
+| `minStake` | 1_000_000 (1 token) | Global minimum stake in `StakeManager` |
+| `jobStake` | 0 | Minimum agent stake per job |
+
+All defaults assume the `$AGIALPHA` token (`decimals = 6`); owners can swap tokens later via `StakeManager.setToken` and `FeePool.setToken`.
 
 | Participant | One-call helper | Notes |
 | --- | --- | --- |
@@ -23,7 +34,15 @@ See [docs/deployment-agialpha.md](docs/deployment-agialpha.md) for a narrated wa
 
 ### Beginner Deployment via Etherscan
 
-Before interacting, verify the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token (**decimals = 6**) and each module address emitted by `Deployer.deploy()` (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots). A single call to `deploy(econ)` on the verified **Deployer** contract wires modules, sets the caller as owner, and optionally customises economics:
+The bare-bones checklist below covers the basic flow (see [docs/etherscan-guide.md](docs/etherscan-guide.md) for screenshots):
+
+1. **Approve $AGIALPHA** – approve the token for any required stake or fee using 6‑decimal units.
+2. **Call `deploy`** – on the verified `Deployer` contract call `deploy(econ)` and record the emitted module addresses.
+3. **Verify addresses** – confirm `$AGIALPHA` and each module on Etherscan.
+4. **Use helper functions** – from each module's **Write** tab, call single‑step helpers such as `acknowledgeAndCreateJob`, `stakeAndApply`, or `stakeAndActivate`.
+5. **Tune parameters** – owners retune later via setters like `StakeManager.setToken`, `FeePool.setToken`, `JobRegistry.setFeePct`, and `FeePool.setBurnPct`.
+
+A single call to `deploy(econ)` on the verified **Deployer** contract wires modules, sets the caller as owner, and optionally customises economics:
 
 - `feePct` – protocol fee percentage for `JobRegistry` (default `5`)
 - `burnPct` – portion of each fee burned by `FeePool` (default `5`)
