@@ -128,6 +128,7 @@ Helper functions expose common flows in single calls so Etherscan users do not h
 - `PlatformIncentives.stakeAndActivate` (and `acknowledgeStakeAndActivate`) stakes and registers a platform for routing and fees.
 - `PlatformRegistry.acknowledgeAndRegister` lists an operator without staking.
 - `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
+- `FeePool.distributeFees` never reverts; if no stake exists, fees are sent to the treasury after burning.
 - `StakeManager.acknowledgeAndDeposit` and `acknowledgeAndDepositFor` stake tokens after acknowledging the tax policy, reducing transactions for users and helpers.
 
 All participants opt in by staking `$AGIALPHA`. Staked operators gain routing priority and revenue share, while the main deploying entity is a special case that registers with **stake = 0**, earning no boosts so it remains tax neutral. Because every incentive flows on-chain, operators can participate pseudonymously without creating off‑chain reporting obligations.

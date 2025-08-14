@@ -115,10 +115,11 @@ contract FeePool is Ownable {
         emit FeeDeposited(msg.sender, amount);
     }
 
-    /// @notice distribute accumulated fees to stakers
-    /// @dev All fee amounts use 6 decimal units.
-    /// @dev Should be called after `depositFee` to settle pending fees.
-    /// @dev Safe to call even when no fees are pending; returns immediately.
+    /// @notice Distribute accumulated fees to stakers.
+    /// @dev All fee amounts use 6 decimal units. Safe to call when no fees are
+    ///      pending or when no stake is present; in the latter case funds are
+    ///      burned/forwarded to the treasury so non-technical callers never see
+    ///      a revert.
     function distributeFees() public {
         uint256 amount = pendingFees;
         if (amount == 0) {
@@ -133,7 +134,14 @@ contract FeePool is Ownable {
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);
-        require(total > 0, "total stake");
+        if (total == 0) {
+            if (distribute > 0 && treasury != address(0)) {
+                token.safeTransfer(treasury, distribute);
+            }
+            emit FeesDistributed(0);
+            return;
+        }
+
         uint256 perToken = (distribute * ACCUMULATOR_SCALE) / total;
         cumulativePerToken += perToken;
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
