@@ -793,5 +793,43 @@ describe("StakeManager", function () {
       stakeManager.connect(owner).setSlashingPercentages(40, 60)
     ).to.emit(stakeManager, "SlashingPercentagesUpdated").withArgs(40n, 60n);
   });
+
+  it("acknowledgeAndDeposit records acknowledgement and restricts callers", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await stakeManager.getAddress(), true);
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
+    const version = await jobRegistry.taxPolicyVersion();
+    expect(await jobRegistry.taxAcknowledgedVersion(user.address)).to.equal(
+      version
+    );
+    await expect(
+      jobRegistry.connect(user).acknowledgeFor(user.address)
+    ).to.be.revertedWith("acknowledger");
+  });
 });
 

@@ -219,6 +219,10 @@ contract Deployer {
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }
 
+        registry.setAcknowledger(address(stake), true);
+        registry.setAcknowledger(address(pRegistry), true);
+        registry.setAcknowledger(address(incentives), true);
+
         validation.setReputationEngine(repInterface);
         stake.setModules(address(registry), address(dispute));
         incentives.setModules(
