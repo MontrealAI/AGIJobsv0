@@ -7,10 +7,12 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
+import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 
 interface IReputationEngine {
     function add(address user, uint256 amount) external;
     function subtract(address user, uint256 amount) external;
+    function isBlacklisted(address user) external view returns (bool);
 }
 
 interface IDisputeModule {
@@ -59,6 +61,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
+    ENSOwnershipVerifier public ensOwnershipVerifier;
+    bytes32 public agentRootNode;
+    mapping(address => bool) public additionalAgents;
 
     /// @notice Current version of the tax policy. Participants must acknowledge
     /// this version before interacting. The contract owner remains exempt.
@@ -246,6 +251,28 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
     }
 
+    /// @notice Update the ENS ownership verifier contract.
+    function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
+        ensOwnershipVerifier = verifier;
+        emit ModuleUpdated("ENSOwnershipVerifier", address(verifier));
+    }
+
+    /// @notice Set the ENS root node used for agent verification.
+    function setAgentRootNode(bytes32 node) external onlyOwner {
+        agentRootNode = node;
+    }
+
+    /// @notice Configure additional agents that bypass ENS checks.
+    function setAdditionalAgents(
+        address[] calldata agents,
+        bool[] calldata allowed
+    ) external onlyOwner {
+        require(agents.length == allowed.length, "length");
+        for (uint256 i; i < agents.length; ++i) {
+            additionalAgents[agents[i]] = allowed[i];
+        }
+    }
+
     /// @notice update the FeePool contract used for revenue sharing
     function setFeePool(IFeePool _feePool) external onlyOwner {
         feePool = _feePool;
@@ -414,7 +441,21 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         jobId = _createJob(reward, uri);
     }
 
-    function _applyForJob(uint256 jobId) internal requiresTaxAcknowledgement {
+    function _applyForJob(
+        uint256 jobId,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal requiresTaxAcknowledgement {
+        require(
+            ensOwnershipVerifier.verifyOwnership(
+                msg.sender,
+                subdomain,
+                proof,
+                agentRootNode
+            ) || additionalAgents[msg.sender],
+            "Not authorized agent"
+        );
+        require(!reputationEngine.isBlacklisted(msg.sender), "Blacklisted agent");
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
@@ -429,8 +470,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit AgentApplied(jobId, msg.sender);
     }
 
-    function applyForJob(uint256 jobId) external {
-        _applyForJob(jobId);
+    function applyForJob(
+        uint256 jobId,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external {
+        _applyForJob(jobId, subdomain, proof);
     }
 
     /**
@@ -440,9 +485,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
      *      `approve` calls on the $AGIALPHA token via the `StakeManager`.
      * @param jobId Identifier of the job to apply for.
      */
-    function acknowledgeAndApply(uint256 jobId) external {
+    function acknowledgeAndApply(
+        uint256 jobId,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external {
         _acknowledge(msg.sender);
-        _applyForJob(jobId);
+        _applyForJob(jobId, subdomain, proof);
     }
 
     /**
@@ -455,7 +504,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
      * @param jobId Identifier of the job to apply for.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
-    function stakeAndApply(uint256 jobId, uint256 amount) external {
+    function stakeAndApply(
+        uint256 jobId,
+        uint256 amount,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external {
         if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
             _acknowledge(msg.sender);
         }
@@ -464,7 +518,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             IStakeManager.Role.Agent,
             amount
         );
-        _applyForJob(jobId);
+        _applyForJob(jobId, subdomain, proof);
     }
 
     /// @notice Agent completes the job; validation outcome stored.

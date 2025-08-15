@@ -137,6 +137,12 @@ describe("multi-operator job lifecycle", function () {
     await registry.connect(agent).acknowledgeTaxPolicy();
     await registry.connect(platform1).acknowledgeTaxPolicy();
     await registry.connect(platform2).acknowledgeTaxPolicy();
+
+    const Verifier = await ethers.getContractFactory(
+      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    );
+    const verifier = await Verifier.deploy();
+    await registry.setENSOwnershipVerifier(await verifier.getAddress());
   });
 
   it("runs job lifecycle and handles multiple staked operators", async () => {
@@ -166,7 +172,7 @@ describe("multi-operator job lifecycle", function () {
       .approve(await stakeManager.getAddress(), reward + fee);
     await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
+    await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).completeJob(jobId);
     await registry.finalize(jobId);
