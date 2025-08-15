@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("multi-operator job lifecycle", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
@@ -125,6 +126,8 @@ describe("multi-operator job lifecycle", function () {
     await registry.setFeePct(feePct);
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
+    await registry.setMaxJobReward(reward);
+    await registry.setJobDurationLimit(86400);
     await stakeManager.setJobRegistry(await registry.getAddress());
     await stakeManager.setDisputeModule(await dispute.getAddress());
     await nft.setJobRegistry(await registry.getAddress());
@@ -170,7 +173,8 @@ describe("multi-operator job lifecycle", function () {
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
-    await registry.connect(employer).createJob(reward, "uri");
+    const deadline = (await time.latest()) + 1000;
+    await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);

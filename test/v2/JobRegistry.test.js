@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, policy;
@@ -82,6 +83,8 @@ describe("JobRegistry integration", function () {
     await registry
       .connect(owner)
       .setJobParameters(reward, stake);
+    await registry.connect(owner).setMaxJobReward(1000000);
+    await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setFeePct(0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
@@ -117,7 +120,8 @@ describe("JobRegistry integration", function () {
 
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await expect(registry.connect(employer).createJob(reward, "uri"))
+    const deadline = (await time.latest()) + 1000;
+    await expect(registry.connect(employer).createJob(reward, deadline, "uri"))
       .to.emit(registry, "JobCreated")
       .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake, 0);
     const jobId = 1;
@@ -143,7 +147,8 @@ describe("JobRegistry integration", function () {
     const [, , , newAgent] = await ethers.getSigners();
     await registry.connect(owner).setJobParameters(reward, 0);
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward, "uri");
+    const deadline = (await time.latest()) + 1000;
+    await registry.connect(employer).createJob(reward, deadline, "uri");
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "AgentApplied")
       .withArgs(1, newAgent.address);
@@ -179,7 +184,8 @@ describe("JobRegistry integration", function () {
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + reward / 10);
-    await registry.connect(employer).createJob(reward, "uri");
+    const deadline = (await time.latest()) + 1000;
+    await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
@@ -198,7 +204,8 @@ describe("JobRegistry integration", function () {
 
   it("allows employer to cancel before completion", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
-    await registry.connect(employer).createJob(reward, "uri");
+    const deadline = (await time.latest()) + 1000;
+    await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
     await expect(registry.connect(employer).cancelJob(jobId))
       .to.emit(registry, "JobCancelled")

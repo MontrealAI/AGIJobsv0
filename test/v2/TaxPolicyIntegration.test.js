@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry tax policy integration", function () {
   let owner, user, registry, policy;
@@ -59,16 +60,19 @@ describe("JobRegistry tax policy integration", function () {
 
   it("requires re-acknowledgement after version bump", async () => {
     await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setMaxJobReward(10);
+    await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(user).acknowledgeTaxPolicy();
     await registry.connect(owner).bumpTaxPolicyVersion();
+    const deadline = (await time.latest()) + 1000;
     await expect(
-      registry.connect(user).createJob(1, "uri")
+      registry.connect(user).createJob(1, deadline, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(registry, "TaxAcknowledged")
       .withArgs(user.address, 2, "ack");
-    await expect(registry.connect(user).createJob(1, "uri"))
+    await expect(registry.connect(user).createJob(1, deadline, "uri"))
       .to.emit(registry, "JobCreated")
       .withArgs(1, user.address, ethers.ZeroAddress, 1, 0, 0);
   });
