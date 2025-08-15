@@ -47,6 +47,8 @@ interface IJobRegistry {
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
     event DisputeModuleUpdated(address module);
+    event MaxJobRewardUpdated(uint256 maxJobReward);
+    event JobDurationLimitUpdated(uint256 limit);
 
     // job lifecycle
     event JobCreated(
@@ -58,9 +60,12 @@ interface IJobRegistry {
         uint256 fee
     );
     event AgentApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, string uri);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
+    event JobCancelled(uint256 indexed jobId);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
 
     // owner wiring of modules
 
@@ -92,6 +97,12 @@ interface IJobRegistry {
     /// @param reward Reward paid upon successful job completion
     /// @param stake Stake required from the agent to accept a job
     function setJobParameters(uint256 reward, uint256 stake) external;
+
+    /// @notice set the maximum allowed job reward
+    function setMaxJobReward(uint256 maxReward) external;
+
+    /// @notice set the maximum allowed job duration in seconds
+    function setJobDurationLimit(uint256 limit) external;
 
     // core job flow
 
@@ -152,8 +163,9 @@ interface IJobRegistry {
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
+    /// @param evidence Supporting evidence for the dispute
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent}
-    function dispute(uint256 jobId) external payable;
+    function dispute(uint256 jobId, string calldata evidence) external;
 
     /// @notice Acknowledge tax policy if needed and raise a dispute with evidence
     /// @param jobId Identifier of the disputed job

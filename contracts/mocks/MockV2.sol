@@ -90,6 +90,8 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
         disputeModule = module;
     }
     function setJobParameters(uint256, uint256) external override {}
+    function setMaxJobReward(uint256) external override {}
+    function setJobDurationLimit(uint256) external override {}
     function createJob(uint256, string calldata) external override returns (uint256) {return 0;}
       function applyForJob(uint256, string calldata, bytes32[] calldata) external override {}
       function stakeAndApply(uint256, uint256, string calldata, bytes32[] calldata) external override {}
@@ -97,7 +99,7 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
       function submit(uint256, string calldata) external override {}
       function acknowledgeAndSubmit(uint256, string calldata) external override {}
       function finalizeAfterValidation(uint256) external override {}
-    function dispute(uint256) external payable override {}
+    function dispute(uint256, string calldata) external override {}
     function acknowledgeAndDispute(uint256, string calldata) external override {}
     function resolveDispute(uint256, bool) external override {}
     function raiseDispute(uint256 jobId, string calldata evidence) external {
