@@ -84,6 +84,17 @@ contract FeePoolTest {
         require(token.balanceOf(address(feePool)) == 1_000_000, "bal");
     }
 
+    function testContribute() public {
+        setUp();
+        token.mint(alice, 500_000);
+        vm.startPrank(alice);
+        token.approve(address(feePool), 500_000);
+        feePool.contribute(500_000);
+        vm.stopPrank();
+        require(token.balanceOf(address(feePool)) == 500_000, "pool bal");
+        require(feePool.pendingFees() == 500_000, "pending");
+    }
+
     function testClaimRewards() public {
         setUp();
         token.mint(address(feePool), 1_500_000);

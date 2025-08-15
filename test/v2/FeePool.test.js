@@ -87,6 +87,17 @@ describe("FeePool", function () {
     ).to.be.revertedWith("decimals");
   });
 
+  it("allows direct contributions", async () => {
+    await token
+      .connect(user1)
+      .approve(await feePool.getAddress(), 100);
+    await expect(feePool.connect(user1).contribute(100))
+      .to.emit(feePool, "RewardPoolContribution")
+      .withArgs(user1.address, 100);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(100n);
+    expect(await feePool.pendingFees()).to.equal(100n);
+  });
+
   it("distributes rewards proportionally", async () => {
     const feeAmount = 100;
     const jobId = ethers.encodeBytes32String("job1");
