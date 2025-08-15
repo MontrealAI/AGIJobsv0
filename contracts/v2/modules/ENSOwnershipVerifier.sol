@@ -49,24 +49,28 @@ contract ENSOwnershipVerifier is Ownable {
     }
 
     /// @notice Update ENS registry address
-    function setENS(IENS _ens) external onlyOwner {
-        ens = _ens;
-        emit ENSUpdated(address(_ens));
+    /// @param ensAddr New ENS registry contract address
+    function setENS(address ensAddr) external onlyOwner {
+        ens = IENS(ensAddr);
+        emit ENSUpdated(ensAddr);
     }
 
     /// @notice Update ENS NameWrapper address
-    function setNameWrapper(INameWrapper _nameWrapper) external onlyOwner {
-        nameWrapper = _nameWrapper;
-        emit NameWrapperUpdated(address(_nameWrapper));
+    /// @param wrapper New ENS NameWrapper contract address
+    function setNameWrapper(address wrapper) external onlyOwner {
+        nameWrapper = INameWrapper(wrapper);
+        emit NameWrapperUpdated(wrapper);
     }
 
     /// @notice Update club root node
-    function setClubRootNode(bytes32 _clubRootNode) external onlyOwner {
-        clubRootNode = _clubRootNode;
-        emit ClubRootNodeUpdated(_clubRootNode);
+    /// @param root New club root node hash
+    function setClubRootNode(bytes32 root) external onlyOwner {
+        clubRootNode = root;
+        emit ClubRootNodeUpdated(root);
     }
 
     /// @notice Update validator Merkle root
+    /// @param root New validator allowlist Merkle root
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
         emit ValidatorMerkleRootUpdated(root);
