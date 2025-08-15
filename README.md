@@ -5,6 +5,12 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 ## Deployment & Configuration
 
+### Deploying legacy v0 with $AGIALPHA
+1. **Token** – deploy the 6‑decimal [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token or reuse an existing deployment.
+2. **AGIJobManagerv0** – from a block explorer's **Write Contract** tab, deploy `legacy/AGIJobManagerv0.sol` passing the `$AGIALPHA` address, base IPFS URI, ENS registry, NameWrapper, and the agent/club root nodes and Merkle roots.
+3. **Owner configuration** – the deployer becomes owner and may later swap the payout token with `updateAGITokenAddress(newToken)` or rotate ENS roots and allowlists without redeploying.
+4. **Usage** – all job posting, application, validation, dispute, and NFT marketplace calls can be executed through the contract's **Write** tab; amounts use 6‑decimal base units.
+
 ### Module sequence
 1. **Deploy** – use [`Deployer.sol`](contracts/v2/Deployer.sol) and call `deployDefaults()` or deploy each module manually.
 2. **Wire modules** – if deploying individually, call `setModules(...)` on `JobRegistry` to provide the addresses of `StakeManager`, `ValidationModule`, `DisputeModule`, and `FeePool`.
