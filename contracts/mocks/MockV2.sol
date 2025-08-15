@@ -113,6 +113,7 @@ contract MockJobRegistry is IJobRegistry, IJobRegistryTax {
 
 contract MockReputationEngine is IReputationEngine {
     mapping(address => uint256) private _rep;
+    mapping(address => bool) private _blacklist;
 
     function add(address user, uint256 amount) external override {
         _rep[user] += amount;
@@ -131,15 +132,17 @@ contract MockReputationEngine is IReputationEngine {
         return _rep[user];
     }
 
-    function isBlacklisted(address) external pure override returns (bool) {
-        return false;
+    function isBlacklisted(address user) external view override returns (bool) {
+        return _blacklist[user];
     }
 
     function setCaller(address, bool) external override {}
 
     function setThreshold(uint256) external override {}
 
-    function setBlacklist(address, bool) external override {}
+    function setBlacklist(address user, bool val) external override {
+        _blacklist[user] = val;
+    }
 
     function getOperatorScore(address user) external view override returns (uint256) {
         return _rep[user];
