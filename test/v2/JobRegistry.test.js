@@ -125,7 +125,8 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "AgentApplied")
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setResult(true);
-    await expect(registry.connect(agent).completeJob(jobId))
+    await registry.connect(agent).submit(jobId, "result");
+    await expect(registry.finalizeAfterValidation(jobId))
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true);
     await expect(registry.connect(employer).finalize(jobId))
@@ -182,7 +183,8 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
-    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).submit(jobId, "result");
+    await registry.finalizeAfterValidation(jobId);
     await registry.connect(employer).finalize(jobId);
 
     // platform operator should be able to claim fee
@@ -202,7 +204,7 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "JobCancelled")
       .withArgs(jobId);
     const job = await registry.jobs(jobId);
-    expect(job.state).to.equal(6); // Cancelled enum value
+    expect(job.state).to.equal(7); // Cancelled enum value
     expect(await token.balanceOf(employer.address)).to.equal(1000);
   });
 

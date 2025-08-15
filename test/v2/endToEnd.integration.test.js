@@ -145,7 +145,8 @@ describe("end-to-end job lifecycle", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
-    await registry.connect(agent).completeJob(jobId);
+    await registry.connect(agent).submit(jobId, "result");
+    await registry.finalizeAfterValidation(jobId);
     await registry.finalize(jobId);
 
     // fee moved to FeePool

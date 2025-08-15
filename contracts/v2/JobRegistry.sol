@@ -34,6 +34,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         None,
         Created,
         Applied,
+        Submitted,
         Completed,
         Disputed,
         Finalized,
@@ -144,6 +145,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 fee
     );
     event AgentApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, string uri);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
@@ -521,25 +523,42 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         _applyForJob(jobId, subdomain, proof);
     }
 
-    /// @notice Agent completes the job; validation outcome stored.
-    function completeJob(uint256 jobId)
+    /// @notice Agent submits work for validation and selects validators.
+    /// @param jobId Identifier of the job being submitted.
+    /// @param uri Metadata URI describing the completed work.
+    function submit(uint256 jobId, string calldata uri)
         public
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
-        bool outcome = validationModule.tally(jobId);
-        job.success = outcome;
-        job.state = State.Completed;
-        emit JobCompleted(jobId, outcome);
+        job.uri = uri;
+        job.state = State.Submitted;
+        emit JobSubmitted(jobId, uri);
+        if (address(validationModule) != address(0)) {
+            validationModule.selectValidators(jobId);
+        }
     }
 
-    /// @notice Acknowledge the tax policy and complete the job in one call.
-    /// @param jobId Identifier of the job being completed
-    function acknowledgeAndCompleteJob(uint256 jobId) external {
+    /// @notice Acknowledge the tax policy and submit work in one call.
+    function acknowledgeAndSubmit(uint256 jobId, string calldata uri) external {
         _acknowledge(msg.sender);
-        completeJob(jobId);
+        submit(jobId, uri);
+    }
+
+    /// @notice Finalize job outcome after validation.
+    /// @param jobId Identifier of the job to finalize post-validation.
+    function finalizeAfterValidation(uint256 jobId)
+        public
+        requiresTaxAcknowledgement
+    {
+        Job storage job = jobs[jobId];
+        require(job.state == State.Submitted, "not submitted");
+        bool outcome = validationModule.tally(jobId);
+        job.success = outcome;
+        job.state = outcome ? State.Completed : State.Disputed;
+        emit JobCompleted(jobId, outcome);
     }
 
     /// @notice Agent disputes a failed job outcome with supporting evidence.
@@ -550,9 +569,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Completed && !job.success, "cannot dispute");
+        require(job.state == State.Disputed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
-        job.state = State.Disputed;
         if (address(disputeModule) != address(0)) {
             disputeModule.raiseDispute(jobId, evidence);
         }
