@@ -43,6 +43,17 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - Guarantee only the owner can update the policy via `setPolicyURI`, `setAcknowledgement`, `setPolicy`, or `bumpTaxPolicyVersion`; unauthorized calls revert.
    - Describe in NatSpec and README that all tax obligations rest solely with AGI Employers, Agents, and Validators; the infrastructure bears no direct, indirect, or theoretical liability.
    - Provide step-by-step Etherscan instructions so non-technical users can view the disclaimer via `acknowledgement`/`acknowledge` and so the owner can update it with `setPolicyURI`/`setAcknowledgement`.
+8. **v1 Feature Parity & ENS Identity**
+   - Port every capability from `legacy/AGIJobManagerv0.sol` into dedicated v2 modules.
+       - `JobRegistry`: `createJob`, `applyForJob`, `submit`, `cancelJob`, `delistJob`, `disputeJob`, and finalization hooks.
+       - `ValidationModule`: validator selection, `commitValidation`, `revealValidation`, approval/disapproval tallies, and threshold checks.
+       - `DisputeModule`: `raiseDispute`, moderator managed `resolve`, and appeal-fee escrow.
+       - `StakeManager`: escrow and release of rewards, slashing, AGIType payout bonuses, and reward/fee percentages.
+       - `ReputationEngine`: logarithmic reputation growth, premium thresholds, and owner‑managed blacklists.
+       - `CertificateNFT`: minting of completion certificates plus the simple marketplace (`list`, `purchase`, `delist`).
+   - Enforce ENS subdomain ownership for agents (`*.agent.agi.eth`) and validators (`*.club.agi.eth`) using the Merkle proof + NameWrapper + resolver fallback sequence. Emit `OwnershipVerified` and `RecoveryInitiated` where appropriate.
+   - Maintain owner‑controlled allowlists (`additionalAgents`, `additionalValidators`), blacklists, and configurable root nodes and Merkle roots with corresponding events.
+   - Mirror v0 administrative setters: validator thresholds, validation reward percentage, job payout and duration caps, AGI type management, terms text, and NFT marketplace controls.
 
 ## Deliverables
 - Verified Solidity contracts under `contracts/v2`.
