@@ -47,6 +47,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint128 reward;
         uint96 stake;
         uint32 feePct;
+        uint64 deadline;
         State state;
         bool success;
         string uri;
@@ -100,6 +101,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     uint96 public constant DEFAULT_JOB_STAKE = 1e6;
     uint256 public feePct;
     uint256 public constant DEFAULT_FEE_PCT = 5;
+    uint256 public maxJobReward;
+    uint256 public jobDurationLimit;
 
     // module configuration events
     event ModuleUpdated(string module, address newAddress);
@@ -157,6 +160,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    event MaxJobRewardUpdated(uint256 maxJobReward);
+    event JobDurationLimitUpdated(uint256 limit);
 
     constructor(
         IValidationModule _validation,
@@ -309,6 +314,18 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit FeePctUpdated(_feePct);
     }
 
+    /// @notice set the maximum allowed job reward
+    function setMaxJobReward(uint256 maxReward) external onlyOwner {
+        maxJobReward = maxReward;
+        emit MaxJobRewardUpdated(maxReward);
+    }
+
+    /// @notice set the maximum allowed job duration in seconds
+    function setJobDurationLimit(uint256 limit) external onlyOwner {
+        jobDurationLimit = limit;
+        emit JobDurationLimitUpdated(limit);
+    }
+
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
     /// bumps the policy version so participants must re-acknowledge.
     /// @dev Only callable by the owner; the policy address cannot be zero and
@@ -404,15 +421,22 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------------
     // Job lifecycle
     // ---------------------------------------------------------------------
-    function _createJob(uint256 reward, string calldata uri)
-        internal
-        requiresTaxAcknowledgement
-        nonReentrant
-        returns (uint256 jobId)
-    {
+    function _createJob(
+        uint256 reward,
+        uint64 deadline,
+        string calldata uri
+    ) internal requiresTaxAcknowledgement nonReentrant returns (uint256 jobId) {
         require(reward > 0 || jobStake > 0, "params not set");
         require(reward <= type(uint128).max, "overflow");
-        unchecked { nextJobId++; }
+        require(reward <= maxJobReward, "reward too high");
+        require(deadline > block.timestamp, "deadline");
+        require(
+            uint256(deadline) - block.timestamp <= jobDurationLimit,
+            "duration"
+        );
+        unchecked {
+            nextJobId++;
+        }
         jobId = nextJobId;
         uint32 feePctSnapshot = uint32(feePct);
         jobs[jobId] = Job({
@@ -421,6 +445,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             reward: uint128(reward),
             stake: jobStake,
             feePct: feePctSnapshot,
+            deadline: deadline,
             state: State.Created,
             success: false,
             uri: uri
@@ -440,11 +465,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         );
     }
 
-    function createJob(uint256 reward, string calldata uri)
-        external
-        returns (uint256 jobId)
-    {
-        jobId = _createJob(reward, uri);
+    function createJob(
+        uint256 reward,
+        uint64 deadline,
+        string calldata uri
+    ) external returns (uint256 jobId) {
+        jobId = _createJob(reward, deadline, uri);
     }
 
     /**
@@ -455,12 +481,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
      * @param uri Metadata URI describing the job.
      * @return jobId Identifier of the newly created job.
      */
-    function acknowledgeAndCreateJob(uint256 reward, string calldata uri)
-        external
-        returns (uint256 jobId)
-    {
+    function acknowledgeAndCreateJob(
+        uint256 reward,
+        uint64 deadline,
+        string calldata uri
+    ) external returns (uint256 jobId) {
         _acknowledge(msg.sender);
-        jobId = _createJob(reward, uri);
+        jobId = _createJob(reward, deadline, uri);
     }
 
     function _applyForJob(
@@ -706,6 +733,23 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             "cannot cancel"
         );
         require(msg.sender == job.employer, "only employer");
+        job.state = State.Cancelled;
+        if (address(stakeManager) != address(0) && job.reward > 0) {
+            uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+            stakeManager.releaseJobFunds(
+                bytes32(jobId),
+                job.employer,
+                uint256(job.reward) + fee
+            );
+        }
+        emit JobCancelled(jobId);
+    }
+
+    /// @notice Owner can delist an unassigned job and refund the employer.
+    /// @param jobId Identifier of the job to cancel.
+    function delistJob(uint256 jobId) external onlyOwner {
+        Job storage job = jobs[jobId];
+        require(job.state == State.Created && job.agent == address(0), "cannot delist");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
