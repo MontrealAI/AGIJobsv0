@@ -57,7 +57,8 @@ interface IStakeManager {
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool feePool
+        IFeePool feePool,
+        address[] calldata validators
     ) external;
 
     /// @notice set the dispute module authorized to manage dispute fees

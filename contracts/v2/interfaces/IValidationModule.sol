@@ -45,5 +45,10 @@ interface IValidationModule {
     /// @notice Reset the validation nonce for a job after it is finalized or disputed
     /// @param jobId Identifier of the job
     function resetJobNonce(uint256 jobId) external;
+
+    /// @notice Return validators selected for a given job
+    /// @param jobId Identifier of the job
+    /// @return validators Array of validator addresses
+    function getValidators(uint256 jobId) external view returns (address[] memory validators);
 }
 

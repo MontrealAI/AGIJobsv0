@@ -477,6 +477,16 @@ contract ValidationModule is IValidationModule, Ownable {
         emit JobNonceReset(jobId);
     }
 
+    /// @notice Return validators selected for a job
+    function getValidators(uint256 jobId)
+        external
+        view
+        override
+        returns (address[] memory validators)
+    {
+        return rounds[jobId].validators;
+    }
+
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
         address[] storage list = rounds[jobId].validators;
         for (uint256 i; i < list.length; ++i) {

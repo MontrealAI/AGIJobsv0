@@ -112,7 +112,8 @@ describe("FeePool", function () {
         user1.address,
         0,
         feeAmount,
-        await feePool.getAddress()
+        await feePool.getAddress(),
+        []
       );
 
     const before1 = await token.balanceOf(user1.address);
@@ -139,7 +140,8 @@ describe("FeePool", function () {
         user1.address,
         0,
         feeAmount,
-        await feePool.getAddress()
+        await feePool.getAddress(),
+        []
       );
 
     const before1 = await token.balanceOf(user1.address);
@@ -171,7 +173,8 @@ describe("FeePool", function () {
         user1.address,
         0,
         feeAmount,
-        await feePool.getAddress()
+        await feePool.getAddress(),
+        []
       );
 
     const before1 = await token2.balanceOf(user1.address);
@@ -197,7 +200,8 @@ describe("FeePool", function () {
         user1.address,
         0,
         feeAmount,
-        await feePool.getAddress()
+        await feePool.getAddress(),
+        []
       );
     await feePool.connect(owner).distributeFees();
     const before = await token.balanceOf(owner.address);
