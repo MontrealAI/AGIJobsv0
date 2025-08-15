@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
+/// @title MockNameWrapper
+/// @notice Simplified ENS NameWrapper mock returning configurable owners.
 contract MockNameWrapper {
-    function ownerOf(uint256) external pure returns (address) {
-        return address(0);
+    mapping(uint256 => address) public owners;
+
+    function ownerOf(uint256 node) external view returns (address) {
+        return owners[node];
+    }
+
+    function setOwner(uint256 node, address owner) external {
+        owners[node] = owner;
     }
 }

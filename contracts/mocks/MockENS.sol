@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
+/// @title MockENS
+/// @notice Basic ENS registry mock returning configurable resolver addresses.
 contract MockENS {
-    function resolver(bytes32) external pure returns (address) {
-        return address(0);
+    mapping(bytes32 => address) public resolvers;
+
+    function resolver(bytes32 node) external view returns (address) {
+        return resolvers[node];
+    }
+
+    function setResolver(bytes32 node, address resolver_) external {
+        resolvers[node] = resolver_;
     }
 }
