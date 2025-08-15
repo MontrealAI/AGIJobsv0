@@ -29,7 +29,7 @@ contract FeePool is Ownable {
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
 
-    /// @notice role whose stakers receive rewards
+    /// @notice role whose stakers receive rewards (defaults to Platform operators)
     IStakeManager.Role public rewardRole;
 
     /// @notice percentage of each fee burned (out of 100)
@@ -63,7 +63,6 @@ contract FeePool is Ownable {
     /// @param _token ERC20 token used for fees and rewards. Defaults to
     /// DEFAULT_TOKEN when zero address.
     /// @param _stakeManager StakeManager tracking staker balances.
-    /// @param _role Staker role whose participants receive rewards.
     /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
     /// DEFAULT_BURN_PCT when set to zero.
     /// @param _treasury Address receiving rounding dust. Defaults to deployer
@@ -71,7 +70,6 @@ contract FeePool is Ownable {
     constructor(
         IERC20 _token,
         IStakeManager _stakeManager,
-        IStakeManager.Role _role,
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
@@ -92,8 +90,8 @@ contract FeePool is Ownable {
             emit ModulesUpdated(address(_stakeManager));
         }
 
-        rewardRole = _role;
-        emit RewardRoleUpdated(_role);
+        rewardRole = IStakeManager.Role.Platform;
+        emit RewardRoleUpdated(IStakeManager.Role.Platform);
 
         burnPct = pct;
         emit BurnPctUpdated(pct);

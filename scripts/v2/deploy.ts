@@ -146,10 +146,12 @@ async function main() {
   const FeePool = await ethers.getContractFactory(
     "contracts/v2/FeePool.sol:FeePool"
   );
+  const burnPct = typeof args.burnPct === "string" ? parseInt(args.burnPct) : 0;
   const feePool = await FeePool.deploy(
     tokenAddress,
     await stake.getAddress(),
-    2 // IStakeManager.Role.Platform
+    burnPct,
+    treasury
   );
   await feePool.waitForDeployment();
 

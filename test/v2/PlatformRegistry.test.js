@@ -269,7 +269,6 @@ describe("PlatformRegistry", function () {
     const feePool = await FeePool.connect(owner).deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
       0,
       treasury.address
     );

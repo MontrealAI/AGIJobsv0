@@ -23,7 +23,7 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 5. Deploy `ReputationEngine(stakeManager)` or `ReputationEngine(address(0))` if wiring later.
 6. Deploy `CertificateNFT("AGI Jobs", "AGIJOB")`.
 7. Deploy `DisputeModule(jobRegistry, 0, owner, owner)`.
-8. Deploy `FeePool(token, stakeManager, 2, burnPct, treasury)`.
+8. Deploy `FeePool(token, stakeManager, burnPct, treasury)`; rewards default to platform stakers.
 9. Deploy `PlatformRegistry(stakeManager, reputationEngine, 0)`.
 10. Deploy `JobRouter(platformRegistry)`.
 11. Deploy `PlatformIncentives(stakeManager, platformRegistry, jobRouter)`.

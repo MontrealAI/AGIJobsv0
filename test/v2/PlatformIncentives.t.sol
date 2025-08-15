@@ -43,7 +43,6 @@ contract PlatformIncentivesTest is Test {
         feePool = new FeePool(
             token,
             IStakeManager(address(stakeManager)),
-            IStakeManager.Role.Platform,
             0,
             address(this)
         );

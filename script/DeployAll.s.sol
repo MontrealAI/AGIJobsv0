@@ -67,7 +67,7 @@ contract DeployAll is Script {
         FeePool feePool = new FeePool(
             IERC20(address(token)),
             IStakeManager(address(stake)),
-            IStakeManager.Role.Platform,
+            0,
             vm.addr(deployer)
         );
 

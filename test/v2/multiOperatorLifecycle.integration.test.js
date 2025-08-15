@@ -84,7 +84,6 @@ describe("multi-operator job lifecycle", function () {
     feePool = await FeePoolF.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
       0,
       owner.address
     );

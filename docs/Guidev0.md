@@ -82,7 +82,7 @@ D3["📦 ValidationModule(jobRegistry, stakeManager, owner=YOU)"]:::step
 D4["📦 ReputationEngine(owner=YOU)"]:::step
 D5["📦 DisputeModule(jobRegistry, stakeManager, reputationEngine, owner=YOU)  (optional)"]:::step
 D6["📦 CertificateNFT(name, symbol, owner=YOU)"]:::step
-D7["📦 FeePool(token=$AGIALPHA, stakeManager, rewardRole=2 (Platform), owner=YOU)"]:::step
+D7["📦 FeePool(token=$AGIALPHA, stakeManager, burnPct=0, owner=YOU)"]:::step
 D8["📦 TaxPolicy(owner=YOU)"]:::step
 D9["📦 JobRouter(stakeManager, reputationEngine, owner=YOU)  (optional, multi‑platform)"]:::step
 end
@@ -97,7 +97,7 @@ L3["JobRegistry.setTaxPolicy(taxPolicy)"]:::step
 L4["StakeManager.setJobRegistry(jobRegistry)"]:::step
 L5["StakeManager.setDisputeModule(dispute)  (if used)"]:::step
 L6["FeePool.setStakeManager(stakeManager)"]:::step
-L7["FeePool.setRewardRole(2)  (Platform)"]:::step
+L7["FeePool.setRewardRole(2)  (optional, defaults to Platform)"]:::step
 L8["DisputeModule.setFeePool(feePool), setTaxPolicy(taxPolicy)  (if used)"]:::step
 L9["JobRouter link StakeManager & ReputationEngine  (if used)"]:::step
 end
@@ -330,11 +330,11 @@ Now, deploy the modules in this recommended order:
 
 * **Contract:** `FeePool` (accumulates fees from jobs and distributes them to stakers). This is effectively the **treasury router** for protocol fees – it will route fees to those who stake as platform operators.
 
-* **Constructor inputs:** `(address token, address stakeManager, uint8 rewardRole, address owner)`.
+* **Constructor inputs:** `(address token, address stakeManager, uint256 burnPct, address owner)`.
 
   * **token:** \$AGIALPHA token address (same one used in StakeManager).
   * **stakeManager:** Address of the StakeManager you deployed.
-  * **rewardRole:** This defines which type of staker will receive the distributed fees. In the StakeManager, roles are defined as: `0 = Agent`, `1 = Validator`, `2 = Platform Operator`. We want platform operators (the third role) to earn the protocol fees, so enter **`2`** here for the reward role (Platform).
+  * **burnPct:** Percentage of each fee burned (0-100). Rewards default to platform operators.
   * **owner:** Your address (owner).
 
 * Deploy FeePool and save the address. (This contract will later be linked to JobRegistry so that a percentage of each job’s reward is diverted as a fee and stored here for distribution.)
@@ -398,7 +398,7 @@ First, connect all the modules so they know about each other’s addresses:
   On **FeePool**’s Write tab, call `setStakeManager(address manager)` with your StakeManager’s address. This ensures the FeePool knows which stake balances to use for reward calculations.
 
 * **FeePool – (Optional) Update Reward Role:**
-  If you did **not** set the correct `rewardRole` in the FeePool constructor, or if you want to change which role earns fees, call `setRewardRole(uint8 role)` on FeePool. For platform operators, use **2** as the role ID. (If you followed the deployment step with `rewardRole = 2`, this is already set. FeePool emits `RewardRoleUpdated` event when changed.)
+  Rewards are paid to platform operators by default. If you want a different role to earn fees, call `setRewardRole(uint8 role)` on FeePool. For platform operators, use **2** as the role ID. FeePool emits `RewardRoleUpdated` when changed.
 
 * **FeePool – Set Treasury (optional):**
   FeePool has an internal `treasury` address for any tiny rounding remainders (“dust”) when distributing fees. By default this is empty. As owner, you can call `setTreasury(address _treasury)` on FeePool to set an address (maybe your treasury or the burn address) to receive these small leftovers. This is not critical; you may set it to the same treasury address used in StakeManager or leave it as zero.

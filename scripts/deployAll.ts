@@ -89,7 +89,7 @@ async function main() {
   const feePool = await FeePool.deploy(
     await token.getAddress(),
     await stake.getAddress(),
-    2, // IStakeManager.Role.Platform
+    0,
     deployer.address
   );
   await feePool.waitForDeployment();
