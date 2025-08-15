@@ -350,9 +350,11 @@ All value transfers occur on-chain while `Ownable` setters let the owner retune 
 - [Incentive Mechanisms for $AGIALPHA](docs/incentive-mechanisms-agialpha.md) – revenue sharing, routing priority, governance rewards, and sybil mitigation.
 - [Coding Sprint: $AGIALPHA Incentive Modules](docs/coding-sprint-agialpha-incentives.md) – tasks for integrating fee pools and discovery incentives.
 - [Coding Sprint: Platform Incentives](docs/coding-sprint-platform-incentives.md) – consolidates operator staking, routing and fee share.
+- [Coding Sprint: ENS Identity & v1 Feature Parity](docs/coding-sprint-ens-parity.md) – tasks for ENS subdomain enforcement and v0 parity.
 - [Production-Scale AGIJobs Platform Sprint Plan](docs/ProductionScaleAGIJobsPlatformSprintPlanv0.md) – background research and
   architectural rationale behind the modular design.
 - [Deployment Guide for $AGIALPHA](docs/deployment-agialpha.md) – non-technical walkthrough for deploying and configuring the suite with the 6‑decimal token.
+- [Deployment Guide: AGIJobManager v0 with $AGIALPHA](docs/deployment-v0-agialpha.md) – step-by-step explorer walkthrough for the monolithic contract.
 - [Tax Obligations & Disclaimer](docs/tax-obligations.md) – participants bear all taxes; contracts and owner remain exempt.
 - [TaxPolicy contract](contracts/v2/TaxPolicy.sol) – owner‑updatable disclaimer with `policyDetails`, `policyVersion`, and `isTaxExempt()` helpers; `JobRegistry.acknowledgeTaxPolicy` emits `TaxAcknowledged(user, version, acknowledgement)` for on‑chain proof.
 - [v2 deployment script](scripts/v2/deploy.ts) – deploys core modules, wires `StakeManager`, and installs the tax‑neutral `TaxPolicy`.
@@ -1436,7 +1438,7 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
-### Deployment Guide (AGIJobsv0 with $AGIALPHA)
+### Deployment Guide (AGIJobs v2 with $AGIALPHA)
 
 $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments, staking, rewards, and dispute fees. All modules allow the owner to update the token or parameters without redeploying contracts.
 
