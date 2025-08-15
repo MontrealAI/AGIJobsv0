@@ -82,11 +82,18 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32 validatorMerkleRoot,
         address nameWrapper
     );
-    event AgentMerkleRootUpdated(bytes32 agentMerkleRoot);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    /// @notice Emitted when an ENS root node is updated.
+    /// @param node Identifier for the root node being modified.
+    /// @param newRoot The new ENS root node hash.
+    event RootNodeUpdated(string node, bytes32 newRoot);
+    /// @notice Emitted when a Merkle root is updated.
+    /// @param root Identifier for the Merkle root being modified.
+    /// @param newRoot The new Merkle root hash.
+    event MerkleRootUpdated(string root, bytes32 newRoot);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
@@ -220,6 +227,7 @@ contract ValidationModule is IValidationModule, Ownable {
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
         ensOwnershipVerifier.setValidatorMerkleRoot(root);
+        emit MerkleRootUpdated("validator", root);
         emit ENSIdentityUpdated(clubRootNode, root, address(nameWrapper));
     }
 
@@ -227,7 +235,7 @@ contract ValidationModule is IValidationModule, Ownable {
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
         ensOwnershipVerifier.setAgentMerkleRoot(root);
-        emit AgentMerkleRootUpdated(root);
+        emit MerkleRootUpdated("agent", root);
     }
 
     /// @notice Set ENS NameWrapper contract reference.
@@ -239,6 +247,8 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set club root node for validator ENS subdomains.
     function setClubRootNode(bytes32 node) external onlyOwner {
         clubRootNode = node;
+        ensOwnershipVerifier.setClubRootNode(node);
+        emit RootNodeUpdated("club", node);
         emit ENSIdentityUpdated(node, validatorMerkleRoot, address(nameWrapper));
     }
 
@@ -374,14 +384,25 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Reveal a previously committed validation vote.
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt)
-        public
-        override
-        requiresTaxAcknowledgement
-    {
+    function revealValidation(
+        uint256 jobId,
+        bool approve,
+        bytes32 salt,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
+        require(
+            ensOwnershipVerifier.verifyOwnership(
+                msg.sender,
+                subdomain,
+                proof,
+                clubRootNode
+            ) || additionalValidators[msg.sender],
+            "Not authorized validator"
+        );
         require(
             !reputationEngine.isBlacklisted(msg.sender),
             "Blacklisted validator"
@@ -415,11 +436,14 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Backwards-compatible wrapper for revealValidation.
-    function revealVote(uint256 jobId, bool approve, bytes32 salt)
-        external
-        requiresTaxAcknowledgement
-    {
-        revealValidation(jobId, approve, salt);
+    function revealVote(
+        uint256 jobId,
+        bool approve,
+        bytes32 salt,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external requiresTaxAcknowledgement {
+        revealValidation(jobId, approve, salt, subdomain, proof);
     }
 
     /// @notice Tally revealed votes and apply slashing/rewards.

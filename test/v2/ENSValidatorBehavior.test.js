@@ -69,6 +69,7 @@ describe("Validator ENS integration", function () {
     );
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());
+    await verifier.transferOwnership(await validation.getAddress());
     await validation.setENSOwnershipVerifier(await verifier.getAddress());
     await validation.setClubRootNode(root);
   });
@@ -120,7 +121,7 @@ describe("Validator ENS integration", function () {
       ["address"],
       [validator.address]
     );
-    await verifier.setValidatorMerkleRoot(leaf);
+    await validation.setValidatorMerkleRoot(leaf);
     const badProof = [ethers.id("bad")];
     await expect(
       verifier.verifyOwnership(validator.address, "v", badProof, root)

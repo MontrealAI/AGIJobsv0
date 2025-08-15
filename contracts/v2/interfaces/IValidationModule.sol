@@ -29,7 +29,15 @@ interface IValidationModule {
     /// @param jobId Identifier of the job
     /// @param approve True to approve, false to reject
     /// @param salt Salt used in the original commitment
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
+    /// @param subdomain ENS subdomain label used for ownership verification
+    /// @param proof Merkle proof validating the subdomain
+    function revealValidation(
+        uint256 jobId,
+        bool approve,
+        bytes32 salt,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Tally revealed votes and determine job outcome
     /// @param jobId Identifier of the job

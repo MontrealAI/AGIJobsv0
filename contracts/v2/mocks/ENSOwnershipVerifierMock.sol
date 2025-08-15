@@ -10,5 +10,11 @@ contract ENSOwnershipVerifierMock {
     ) external pure returns (bool) {
         return true;
     }
+
+    function setClubRootNode(bytes32) external {}
+
+    function setValidatorMerkleRoot(bytes32) external {}
+
+    function setAgentMerkleRoot(bytes32) external {}
 }
 

@@ -514,12 +514,13 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine(stakeManager)` (or pass `0` to wire later), `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, burnPct, treasury)` (payouts default to platform stakers) and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields or addresses as `0` uses sensible defaults and allows wiring via `setModules` or `ModuleInstaller.initialize` later.
 2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate, [extraAcknowledgers])` then `setFeePool(feePool)` and `setFeePct(pct)`. This auto-registers the `StakeManager` and any optional addresses as tax-policy acknowledgers. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
-3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
+3. **Configure identity** – Point `JobRegistry.setAgentRootNode(node)` and `ValidationModule.setClubRootNode(node)` at your ENS parent names. Optional allowlists can be loaded via `setAgentMerkleRoot` and `setValidatorMerkleRoot`, enabling agents and validators to prove membership with Merkle proofs instead of on-chain ENS lookups.
+4. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
    - Agents stake with `depositStake(role, amount)` or one‑shot with `stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` when no stake is required) after approving the stake.
    - Platform operators stake under `Role.Platform` via `depositStake(2, amount)` and register through `JobRouter.registerPlatform(operator)`.
-4. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, feePool, stakeManager, role)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
-5. **Adjust over time** – The owner can update burn rates, stake thresholds or even swap the token using `setToken` on `StakeManager`, `FeePool` and reward modules. All interactions use simple primitive types suitable for the **Write Contract** tab.
+5. **Claim and govern** – Staked operators collect protocol fees with `FeePool.claimRewards()`. For governance bonuses deploy `GovernanceReward(token, feePool, stakeManager, role)`, record voters after each poll and call `finalizeEpoch(totalReward)` so participants can `claim`.
+6. **Adjust over time** – The owner can update burn rates, stake thresholds or even swap the token using `setToken` on `StakeManager`, `FeePool` and reward modules. All interactions use simple primitive types suitable for the **Write Contract** tab.
 
 Each module is deployed once and remains immutable; the owner upgrades components by deploying a replacement and repointing `JobRegistry.setModules` or other owner‑only setters. Token amounts are always passed in base units (1 AGIALPHA = 1e6 units). The owner may replace the token later without redeploying other modules via `StakeManager.setToken(newToken)`.
 
@@ -1694,10 +1695,10 @@ await agiJobManager.connect(validator).validateJob(jobId, "", []);
 
 Owners can refresh allowlists and name-service references without redeploying the contract.
 
-- `setValidatorMerkleRoot(bytes32 newValidatorMerkleRoot)` – rotates the validator allowlist and emits `ValidatorMerkleRootUpdated`.
-- `setAgentMerkleRoot(bytes32 newAgentMerkleRoot)` – updates the agent allowlist and emits `AgentMerkleRootUpdated`.
-- `setClubRootNode(bytes32 newClubRootNode)` – changes the ENS root node used for validator proofs, emitting `ClubRootNodeUpdated`.
-- `setAgentRootNode(bytes32 newAgentRootNode)` – replaces the agent ENS root node and emits `AgentRootNodeUpdated`.
+- `setValidatorMerkleRoot(bytes32 newValidatorMerkleRoot)` – rotates the validator allowlist and emits `MerkleRootUpdated`.
+- `setAgentMerkleRoot(bytes32 newAgentMerkleRoot)` – updates the agent allowlist and emits `MerkleRootUpdated`.
+- `setClubRootNode(bytes32 newClubRootNode)` – changes the ENS root node used for validator proofs, emitting `RootNodeUpdated`.
+- `setAgentRootNode(bytes32 newAgentRootNode)` – replaces the agent ENS root node and emits `RootNodeUpdated`.
 - `setENS(address newEnsAddress)` / `setNameWrapper(address newNameWrapperAddress)` – refresh external contract references and emit `ENSAddressUpdated` / `NameWrapperAddressUpdated`.
 
 **When to update**
