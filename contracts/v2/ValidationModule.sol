@@ -201,6 +201,13 @@ contract ValidationModule is IValidationModule, Ownable {
         ensOwnershipVerifier = verifier;
     }
 
+    /// @notice Return validators selected for a job
+    /// @param jobId Identifier of the job
+    /// @return validators_ Array of validator addresses
+    function validators(uint256 jobId) external view override returns (address[] memory validators_) {
+        validators_ = rounds[jobId].validators;
+    }
+
     /// @notice Configure additional validators that bypass ENS checks.
     function setAdditionalValidators(
         address[] calldata validators,

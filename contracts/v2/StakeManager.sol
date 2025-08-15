@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
@@ -77,6 +78,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
+
+    /// @notice Maximum allowed AGI types to avoid excessive gas
+    uint256 public maxAGITypes = 50;
+
+    struct AGIType {
+        address nft;
+        uint256 payoutPct;
+    }
+
+    AGIType[] public agiTypes;
+
+    event AGITypeUpdated(address indexed nft, uint256 payoutPct);
+    event AGITypeRemoved(address indexed nft);
+    event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
@@ -244,6 +259,61 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function setMaxStakePerAddress(uint256 maxStake) external onlyOwner {
         maxStakePerAddress = maxStake;
         emit MaxStakePerAddressUpdated(maxStake);
+    }
+
+    /// @notice Update the maximum number of AGI types allowed
+    function setMaxAGITypes(uint256 newMax) external onlyOwner {
+        uint256 old = maxAGITypes;
+        maxAGITypes = newMax;
+        emit MaxAGITypesUpdated(old, newMax);
+    }
+
+    /// @notice Add or update an AGI type NFT bonus
+    function addAGIType(address nft, uint256 payoutPct) external onlyOwner {
+        require(nft != address(0) && payoutPct > 0 && payoutPct <= 100, "params");
+        for (uint256 i; i < agiTypes.length; ++i) {
+            if (agiTypes[i].nft == nft) {
+                agiTypes[i].payoutPct = payoutPct;
+                emit AGITypeUpdated(nft, payoutPct);
+                return;
+            }
+        }
+        require(agiTypes.length < maxAGITypes, "max types");
+        agiTypes.push(AGIType({nft: nft, payoutPct: payoutPct}));
+        emit AGITypeUpdated(nft, payoutPct);
+    }
+
+    /// @notice Remove an AGI type
+    function removeAGIType(address nft) external onlyOwner {
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ++i) {
+            if (agiTypes[i].nft == nft) {
+                agiTypes[i] = agiTypes[length - 1];
+                agiTypes.pop();
+                emit AGITypeRemoved(nft);
+                return;
+            }
+        }
+        revert("AGIType: not found");
+    }
+
+    /// @notice Return all AGI types
+    function getAGITypes() external view returns (AGIType[] memory types) {
+        types = agiTypes;
+    }
+
+    /// @notice Determine the highest payout percentage for an agent
+    function getHighestPayoutPercentage(address agent) public view returns (uint256) {
+        uint256 highest = 100;
+        for (uint256 i; i < agiTypes.length; ++i) {
+            if (
+                IERC721(agiTypes[i].nft).balanceOf(agent) > 0 &&
+                agiTypes[i].payoutPct > highest
+            ) {
+                highest = agiTypes[i].payoutPct;
+            }
+        }
+        return highest;
     }
 
     // ---------------------------------------------------------------

@@ -34,6 +34,10 @@ contract ValidationStub is IValidationModule {
         return result;
     }
 
+    function validators(uint256) external pure returns (address[] memory vals) {
+        vals = new address[](0);
+    }
+
     function setCommitRevealWindows(uint256, uint256) external {}
 
     function setValidatorBounds(uint256, uint256) external {}
