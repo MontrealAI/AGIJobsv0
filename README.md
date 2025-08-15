@@ -3,6 +3,42 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` and `FeePool.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+## Deployment & Configuration
+
+### Module sequence
+1. **Deploy** – use [`Deployer.sol`](contracts/v2/Deployer.sol) and call `deployDefaults()` or deploy each module manually.
+2. **Wire modules** – if deploying individually, call `setModules(...)` on `JobRegistry` to provide the addresses of `StakeManager`, `ValidationModule`, `DisputeModule`, and `FeePool`.
+3. **Verify events** – check for `ModulesUpdated` and `TokenUpdated` on each contract before allowing user funds.
+
+### Token setup
+- All modules ship configured for `$AGIALPHA`, which reports `decimals = 6` so values are entered as `1 token = 1_000000`.
+- The owner can swap the payout token by calling `setToken(newToken)` on `StakeManager`, `FeePool`, and any other token-holding module. No redeployment is required.
+
+### Etherscan interaction steps
+**Employers**
+1. Approve `$AGIALPHA` for the `StakeManager`.
+2. In `JobRegistry` **Write**, call `acknowledgeTaxPolicy` then `createJob(reward, uri)`.
+3. After validation, call `finalize(jobId)` to release funds.
+
+**Agents**
+1. In `StakeManager` **Write**, call `depositStake(0, amount)` using 6‑decimal units.
+2. In `JobRegistry`, call `applyForJob(jobId)` and later `submit(jobId, uri)`.
+
+**Validators**
+1. Stake via `depositStake(1, amount)` on `StakeManager`.
+2. In `ValidationModule`, call `commitValidation(jobId, hash)` then `revealValidation(jobId, approve, salt)`.
+
+**Dispute resolution**
+1. Anyone may call `raiseDispute(jobId, evidence)` on `JobRegistry`; it forwards to `DisputeModule.raiseDispute`.
+2. The owner resolves or updates parameters through `DisputeModule` controls as outlined below.
+
+### Owner controls
+The contract owner can reconfigure live deployments without redeployment:
+- **ENS roots** – rotate subdomains or proofs with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper`.
+- **Token addresses** – move between payout tokens via `setToken` on staking, fee, and reward modules.
+- **Stake requirements** – adjust minimums with `setMinStake`, `setMinPlatformStake`, or related setters.
+- **Dispute parameters** – update appeal fees or tax policies through `DisputeModule.setAppealFee` and `DisputeModule.setTaxPolicy`.
+
 ## Non-technical deployment guide
 
 1. **Deploy modules** – on the [`Deployer`](contracts/v2/Deployer.sol) page of a block explorer choose `deployDefaults()`; the caller becomes owner and all modules wire themselves using `$AGIALPHA` with sensible defaults (5% fee, 5% burn, 1‑token minimum stake).
