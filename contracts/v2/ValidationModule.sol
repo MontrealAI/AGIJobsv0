@@ -47,8 +47,6 @@ contract ValidationModule is IValidationModule, Ownable {
     INameWrapper public nameWrapper;
     ENSOwnershipVerifier public ensOwnershipVerifier;
 
-    // mapping of validator address to subdomain namehash
-    mapping(address => bytes32) public validatorNamehash;
     // optional override for validators without ENS identity
     mapping(address => bool) public additionalValidators;
 
@@ -144,39 +142,13 @@ contract ValidationModule is IValidationModule, Ownable {
         }
     }
 
-    /// @notice Update the list of eligible validators with ENS verification.
+    /// @notice Update the list of eligible validators.
     /// @param validators Addresses of validators.
-    /// @param labels Corresponding ENS subdomain labels for each validator.
-    function setValidatorPool(
-        address[] calldata validators,
-        string[] calldata labels
-    ) external onlyOwner {
-        require(validators.length == labels.length, "length");
-        ENSOwnershipVerifier verifier = ensOwnershipVerifier;
-        require(address(verifier) != address(0), "verifier");
-
-        uint256 len = validatorPool.length;
-        for (uint256 i; i < len; ++i) {
-            delete validatorNamehash[validatorPool[i]];
-        }
-        delete validatorPool;
-
-        bytes32[] memory proof = new bytes32[](0);
-        for (uint256 i; i < validators.length; ++i) {
-            require(
-                verifier.verifyOwnership(
-                    validators[i],
-                    labels[i],
-                    proof,
-                    clubRootNode
-                ),
-                "ens verify"
-            );
-            validatorPool.push(validators[i]);
-            validatorNamehash[validators[i]] = keccak256(
-                abi.encodePacked(clubRootNode, keccak256(bytes(labels[i])))
-            );
-        }
+    function setValidatorPool(address[] calldata validators)
+        external
+        onlyOwner
+    {
+        validatorPool = validators;
         emit ValidatorsUpdated(validators);
     }
 
@@ -331,26 +303,31 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Commit a validation hash for a job.
-    function commitValidation(uint256 jobId, bytes32 commitHash)
-        public
-        override
-        requiresTaxAcknowledgement
-    {
+    function commitValidation(
+        uint256 jobId,
+        bytes32 commitHash,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
         require(
             r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        if (!additionalValidators[msg.sender]) {
-            bytes32 node = validatorNamehash[msg.sender];
-            require(node != bytes32(0), "ens");
-            require(
-                address(nameWrapper) != address(0) &&
-                    nameWrapper.ownerOf(uint256(node)) == msg.sender,
-                "ens owner"
-            );
-        }
+        require(
+            ensOwnershipVerifier.verifyOwnership(
+                msg.sender,
+                subdomain,
+                proof,
+                clubRootNode
+            ) || additionalValidators[msg.sender],
+            "Not authorized validator"
+        );
+        require(
+            !reputationEngine.isBlacklisted(msg.sender),
+            "Blacklisted validator"
+        );
         require(validatorStakes[jobId][msg.sender] > 0, "stake");
         uint256 nonce = jobNonce[jobId];
         require(
@@ -371,15 +348,10 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        if (!additionalValidators[msg.sender]) {
-            bytes32 node = validatorNamehash[msg.sender];
-            require(node != bytes32(0), "ens");
-            require(
-                address(nameWrapper) != address(0) &&
-                    nameWrapper.ownerOf(uint256(node)) == msg.sender,
-                "ens owner"
-            );
-        }
+        require(
+            !reputationEngine.isBlacklisted(msg.sender),
+            "Blacklisted validator"
+        );
         uint256 nonce = jobNonce[jobId];
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         require(commitHash != bytes32(0), "no commit");
@@ -399,11 +371,13 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Backwards-compatible wrapper for commitValidation.
-    function commitVote(uint256 jobId, bytes32 commitHash)
-        external
-        requiresTaxAcknowledgement
-    {
-        commitValidation(jobId, commitHash);
+    function commitVote(
+        uint256 jobId,
+        bytes32 commitHash,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external requiresTaxAcknowledgement {
+        commitValidation(jobId, commitHash, subdomain, proof);
     }
 
     /// @notice Backwards-compatible wrapper for revealValidation.

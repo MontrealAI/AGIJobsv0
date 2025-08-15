@@ -74,25 +74,45 @@ describe("Validator ENS integration", function () {
   });
 
   it("rejects validators without subdomains and emits events on success", async () => {
+    await validation.connect(owner).setValidatorPool([validator.address]);
+
+    await stakeManager.setStake(
+      validator.address,
+      1,
+      ethers.parseEther("1")
+    );
+    const job = {
+      employer: owner.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 0,
+      uri: "",
+    };
+    await jobRegistry.setJob(1, job);
+    await validation.selectValidators(1);
+
     await expect(
       validation
-        .connect(owner)
-        .setValidatorPool([validator.address], ["v"])
-    ).to.be.revertedWith("ens verify");
+        .connect(validator)
+        .commitValidation(1, ethers.id("h"), "v", [])
+    ).to.be.revertedWith("Not authorized validator");
 
     await wrapper.setOwner(
       ethers.toBigInt(namehash(root, "v")),
       validator.address
     );
     await resolver.setAddr(namehash(root, "v"), validator.address);
+
     await expect(
       validation
-        .connect(owner)
-        .setValidatorPool([validator.address], ["v"])
+        .connect(validator)
+        .commitValidation(1, ethers.id("h"), "v", [])
     )
       .to.emit(verifier, "OwnershipVerified")
       .withArgs(validator.address, "v")
-      .and.to.emit(validation, "ValidatorsUpdated");
+      .and.to.emit(validation, "VoteCommitted");
   });
 
   it("rejects invalid Merkle proofs", async () => {
@@ -119,7 +139,7 @@ describe("Validator ENS integration", function () {
     const node = namehash(root, "v");
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
-    await validation.setValidatorPool([validator.address], ["v"]);
+    await validation.setValidatorPool([validator.address]);
 
     await stakeManager.setStake(
       validator.address,
@@ -144,8 +164,8 @@ describe("Validator ENS integration", function () {
     await expect(
       validation
         .connect(validator)
-        .commitValidation(1, ethers.id("h"))
-    ).to.be.revertedWith("ens owner");
+        .commitValidation(1, ethers.id("h"), "v", [])
+    ).to.be.revertedWith("Not authorized validator");
 
     // non-owner cannot override
     await expect(
@@ -159,7 +179,9 @@ describe("Validator ENS integration", function () {
       .connect(owner)
       .setAdditionalValidators([validator.address], [true]);
     await expect(
-      validation.connect(validator).commitValidation(1, ethers.id("h"))
+      validation
+        .connect(validator)
+        .commitValidation(1, ethers.id("h"), "v", [])
     ).to.emit(validation, "VoteCommitted");
   });
 
@@ -167,7 +189,7 @@ describe("Validator ENS integration", function () {
     const node = namehash(root, "v");
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
-    await validation.setValidatorPool([validator.address], ["v"]);
+    await validation.setValidatorPool([validator.address]);
     await stakeManager.setStake(
       validator.address,
       1,

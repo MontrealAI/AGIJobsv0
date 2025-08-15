@@ -16,7 +16,14 @@ interface IValidationModule {
     /// @notice Commit a validation hash for a job
     /// @param jobId Identifier of the job being voted on
     /// @param commitHash Hash of the vote and salt
-    function commitValidation(uint256 jobId, bytes32 commitHash) external;
+    /// @param subdomain ENS subdomain label used for ownership verification
+    /// @param proof Merkle proof validating the subdomain
+    function commitValidation(
+        uint256 jobId,
+        bytes32 commitHash,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Reveal a previously committed validation vote
     /// @param jobId Identifier of the job
