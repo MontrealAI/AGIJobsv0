@@ -37,6 +37,22 @@ describe("ValidationModule V2", function () {
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
 
+    const Verifier = await ethers.getContractFactory(
+      "ENSOwnershipVerifierMock"
+    );
+    const verifier = await Verifier.deploy();
+    await verifier.waitForDeployment();
+    await validation
+      .connect(owner)
+      .setENSOwnershipVerifier(await verifier.getAddress());
+    await validation.connect(owner).setClubRootNode(ethers.ZeroHash);
+    await validation
+      .connect(owner)
+      .setAdditionalValidators(
+        [v1.address, v2.address, v3.address],
+        [true, true, true]
+      );
+
     // validator stakes and pool
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
@@ -44,7 +60,10 @@ describe("ValidationModule V2", function () {
 
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address, v2.address, v3.address]);
+      .setValidatorPool(
+        [v1.address, v2.address, v3.address],
+        ["v1", "v2", "v3"]
+      );
 
     // setup job
     const jobStruct = {
@@ -220,7 +239,9 @@ describe("ValidationModule V2", function () {
 
   it("clears commitments when job nonce is reset", async () => {
     await validation.connect(owner).setValidatorBounds(1, 1);
-    await validation.connect(owner).setValidatorPool([v1.address]);
+    await validation
+      .connect(owner)
+      .setValidatorPool([v1.address], ["v1"]);
 
     await validation.selectValidators(1);
     const nonce1 = await validation.jobNonce(1);
