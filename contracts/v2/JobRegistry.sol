@@ -131,6 +131,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param acknowledger Address being granted or revoked the role.
     /// @param allowed True if the address can acknowledge for others.
     event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
+    /// @notice Emitted when an additional agent is added or removed.
+    /// @param agent Address being updated.
+    /// @param allowed True if the agent is whitelisted, false if removed.
+    event AdditionalAgentUpdated(address indexed agent, bool allowed);
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -272,7 +276,23 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(agents.length == allowed.length, "length");
         for (uint256 i; i < agents.length; ++i) {
             additionalAgents[agents[i]] = allowed[i];
+            emit AdditionalAgentUpdated(agents[i], allowed[i]);
         }
+    }
+
+    /// @notice Manually allow an agent to bypass ENS checks.
+    /// @param agent Address to whitelist.
+    function addAdditionalAgent(address agent) external onlyOwner {
+        require(agent != address(0), "agent");
+        additionalAgents[agent] = true;
+        emit AdditionalAgentUpdated(agent, true);
+    }
+
+    /// @notice Remove an agent from the manual allowlist.
+    /// @param agent Address to remove.
+    function removeAdditionalAgent(address agent) external onlyOwner {
+        additionalAgents[agent] = false;
+        emit AdditionalAgentUpdated(agent, false);
     }
 
     /// @notice update the FeePool contract used for revenue sharing

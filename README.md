@@ -1220,10 +1220,10 @@ functions control validation incentives, burn behavior, and system limits.
 | `setReviewWindow(uint256 secs)` | Waiting period before validators vote. | ≥ commit + reveal, typically `3600`–`86400` |
 | `setResolveGracePeriod(uint256 secs)` | Time after reveal before anyone may resolve a stalled job. | `300`–`3600` seconds |
 | `setTimingConfig(uint256 commit, uint256 reveal, uint256 review, uint256 grace)` | Update all timing parameters atomically. | see above |
-| `addAdditionalValidator(address validator)` | Manually whitelist a validator outside the Merkle allowlist; emits `AdditionalValidatorAdded`. | non-zero address |
-| `removeAdditionalValidator(address validator)` | Remove a validator from the manual allowlist; emits `ValidatorRemoved`. | previously added address |
-| `addAdditionalAgent(address agent)` | Manually whitelist an agent; emits `AdditionalAgentAdded`. | non-zero address |
-| `removeAdditionalAgent(address agent)` | Remove an agent from the manual allowlist; emits `AdditionalAgentRemoved`. | previously added address |
+| `addAdditionalValidator(address validator)` | Manually whitelist a validator outside the Merkle allowlist; emits `AdditionalValidatorUpdated`. | non-zero address |
+| `removeAdditionalValidator(address validator)` | Remove a validator from the manual allowlist; emits `AdditionalValidatorUpdated`. | previously added address |
+| `addAdditionalAgent(address agent)` | Manually whitelist an agent; emits `AdditionalAgentUpdated`. | non-zero address |
+| `removeAdditionalAgent(address agent)` | Remove an agent from the manual allowlist; emits `AdditionalAgentUpdated`. | previously added address |
 | `updateAGITokenAddress(address addr)` | Switch to a new $AGI token contract if ever required. | non-zero address |
 
 Validator selection mixes owner‑supplied seeds with on‑chain entropy and purposely avoids any subscription‑based randomness services. No Chainlink VRF is required.
@@ -1554,7 +1554,7 @@ Aims to coordinate trustless labor markets for autonomous agents using the $AGI 
   - Validator reputation gains use a separate `validatorReputationPercentage` so reputation rewards can differ from token rewards.
   - All validator parameters (reward %, reputation %, slashing %, stake requirement,
     approval thresholds, commit/reveal/review windows, validator count, slashed-stake recipient, etc.) are owner-configurable via `onlyOwner` functions.
-  - The contract owner may add or remove validators from the selection pool with `addAdditionalValidator` and `removeAdditionalValidator`; removed validators emit `ValidatorRemoved` and become ineligible for future jobs.
+  - The contract owner may add or remove validators from the selection pool with `addAdditionalValidator` and `removeAdditionalValidator`; updates emit `AdditionalValidatorUpdated` (with `allowed` set accordingly) and validators set to `false` become ineligible for future jobs.
   - The validator pool is limited by `maxValidatorPoolSize` (default 100). Exceeding the cap in `addAdditionalValidator` or `setValidatorPool` reverts. Owners can adjust the limit via `setMaxValidatorPoolSize`, which emits `MaxValidatorPoolSizeUpdated`.
   - Setting the stake requirement or slashing percentage to `0` disables those mechanisms.
 - **Basis-point standardization** – percentage parameters like burns, slashing, and rewards are expressed in basis points for deterministic math.
@@ -1601,7 +1601,7 @@ The v1 prototype destroys a slice of each finalized job's escrow, permanently re
 1. `setBurnConfig(newAddress, newBps)` – set burn destination and rate in one call, or use `setBurnAddress`/`setBurnPercentage` individually.
 2. Maintain a sufficiently large validator pool; selection uses pseudo-randomness and still requires a healthy number of eligible validators to avoid repeated draws.
 3. Ensure each validator has staked at least `computeRequiredValidatorStake(job.payout)` before validating and each agent meets the greater of `agentStakeRequirement` or `payout * agentStakePercentage / 10_000` and `minAgentReputation` before applying.
-4. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `ValidatorRemoved` when pruning the pool and adjust `maxValidatorPoolSize` with `setMaxValidatorPoolSize` if the pool approaches the cap.
+4. Curate the validator set with `addAdditionalValidator` and `removeAdditionalValidator`; listen for `AdditionalValidatorUpdated` with `allowed` set to `false` when pruning the pool and adjust `maxValidatorPoolSize` with `setMaxValidatorPoolSize` if the pool approaches the cap.
 5. Validators may call `withdrawStake` only after all of their jobs finalize without disputes.
 6. Monitor `StakeRequirementUpdated`, `AgentStakeRequirementUpdated`, `SlashingPercentageUpdated`, `ValidationRewardPercentageUpdated`, `MinValidatorReputationUpdated`, `ValidatorsPerJobUpdated` (always ≥ the approval/disapproval thresholds), `MaxValidatorPoolSizeUpdated`, `CommitRevealWindowsUpdated`, `ReviewWindowUpdated` (must remain ≥ `commitDuration + revealDuration`), and `SlashedStakeRecipientUpdated` for configuration changes.
 7. On final validator approval, watch for `JobFinalizedAndBurned` to confirm payout and burn amounts.

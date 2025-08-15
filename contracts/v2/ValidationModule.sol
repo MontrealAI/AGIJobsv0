@@ -83,6 +83,10 @@ contract ValidationModule is IValidationModule, Ownable {
         address nameWrapper
     );
     event AgentMerkleRootUpdated(bytes32 agentMerkleRoot);
+    /// @notice Emitted when an additional validator is added or removed.
+    /// @param validator Address being updated.
+    /// @param allowed True if the validator is whitelisted, false if removed.
+    event AdditionalValidatorUpdated(address indexed validator, bool allowed);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
@@ -193,7 +197,23 @@ contract ValidationModule is IValidationModule, Ownable {
         require(validators.length == allowed.length, "length");
         for (uint256 i; i < validators.length; ++i) {
             additionalValidators[validators[i]] = allowed[i];
+            emit AdditionalValidatorUpdated(validators[i], allowed[i]);
         }
+    }
+
+    /// @notice Manually allow a validator to bypass ENS checks.
+    /// @param validator Address to whitelist.
+    function addAdditionalValidator(address validator) external onlyOwner {
+        require(validator != address(0), "validator");
+        additionalValidators[validator] = true;
+        emit AdditionalValidatorUpdated(validator, true);
+    }
+
+    /// @notice Remove a validator from the manual allowlist.
+    /// @param validator Address to remove.
+    function removeAdditionalValidator(address validator) external onlyOwner {
+        additionalValidators[validator] = false;
+        emit AdditionalValidatorUpdated(validator, false);
     }
 
     /// @notice Set validator Merkle root for identity checks.
