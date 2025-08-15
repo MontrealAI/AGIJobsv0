@@ -628,7 +628,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Agent disputes a failed job outcome with supporting evidence.
     /// @param jobId Identifier of the disputed job.
     /// @param evidence Supporting evidence for the dispute.
-    function raiseDispute(uint256 jobId, string calldata evidence)
+    function dispute(uint256 jobId, string calldata evidence)
         public
         requiresTaxAcknowledgement
     {
@@ -639,6 +639,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             disputeModule.raiseDispute(jobId, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
+    }
+
+    /// @notice Backwards-compatible wrapper for legacy integrations.
+    /// @dev Calls {dispute} with the provided evidence.
+    function raiseDispute(uint256 jobId, string calldata evidence) public {
+        dispute(jobId, evidence);
     }
 
     /**
@@ -653,7 +659,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
             _acknowledge(msg.sender);
         }
-        raiseDispute(jobId, evidence);
+        dispute(jobId, evidence);
     }
 
     /// @notice Owner resolves a dispute, setting the final outcome.
@@ -745,10 +751,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
-        require(
-            job.state == State.Created || job.state == State.Applied,
-            "cannot cancel"
-        );
+        require(job.state == State.Created, "cannot cancel");
         require(msg.sender == job.employer, "only employer");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
