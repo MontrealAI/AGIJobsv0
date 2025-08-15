@@ -6,10 +6,17 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 ## Deployment & Configuration
 
 ### Deploying legacy v0 with $AGIALPHA
-1. **Token** – deploy the 6‑decimal [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token or reuse an existing deployment.
-2. **AGIJobManagerv0** – from a block explorer's **Write Contract** tab, deploy `legacy/AGIJobManagerv0.sol` passing the `$AGIALPHA` address, base IPFS URI, ENS registry, NameWrapper, and the agent/club root nodes and Merkle roots.
-3. **Owner configuration** – the deployer becomes owner and may later swap the payout token with `updateAGITokenAddress(newToken)` or rotate ENS roots and allowlists without redeploying.
-4. **Usage** – all job posting, application, validation, dispute, and NFT marketplace calls can be executed through the contract's **Write** tab; amounts use 6‑decimal base units.
+
+**Prerequisites**
+- `$AGIALPHA` token address (6‑decimal).
+- ENS registry and NameWrapper contract addresses.
+
+**Steps**
+1. Deploy or reuse the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token.
+2. On a block explorer, open `legacy/AGIJobManagerv0.sol` and use the **Deploy** or **Write Contract** interface to provide the constructor fields: token address, base IPFS URI, ENS registry, NameWrapper, agent/club root nodes, and the corresponding Merkle roots.
+3. Submit the transaction; the sender becomes the owner.
+4. After deployment the owner can switch payout tokens with `updateAGITokenAddress(newToken)` and rotate ENS roots or allowlists without redeploying.
+5. All job posting, application, validation, dispute, and NFT marketplace calls happen through the contract's **Write** tab. Enter token amounts using 6‑decimal units (`1 token = 1_000000`).
 
 #### Etherscan deployment steps
 1. Navigate to the verified `AGIJobManagerv0` contract page on a block explorer and open the **Contract → Write Contract** tab.
