@@ -9,7 +9,7 @@ import {JobRegistry} from "contracts/v2/JobRegistry.sol";
 import {ValidationModule} from "contracts/v2/ValidationModule.sol";
 import {ReputationEngine} from "contracts/v2/ReputationEngine.sol";
 import {DisputeModule} from "contracts/v2/modules/DisputeModule.sol";
-import {CertificateNFT} from "contracts/v2/modules/CertificateNFT.sol";
+import {CertificateNFT} from "contracts/v2/CertificateNFT.sol";
 import {ICertificateNFT} from "contracts/v2/interfaces/ICertificateNFT.sol";
 import {FeePool} from "contracts/v2/FeePool.sol";
 import {PlatformRegistry} from "contracts/v2/PlatformRegistry.sol";
@@ -61,7 +61,7 @@ contract DeployAll is Script {
         ReputationEngine reputation = new ReputationEngine(
             IStakeManager(address(stake))
         );
-        CertificateNFT nft = new CertificateNFT("Cert", "CERT", vm.addr(deployer));
+        CertificateNFT nft = new CertificateNFT("Cert", "CERT");
         DisputeModule dispute = new DisputeModule(registry, 0, 0, address(0));
 
         FeePool feePool = new FeePool(
@@ -83,6 +83,8 @@ contract DeployAll is Script {
             vm.addr(deployer)
         );
 
+        nft.setJobRegistry(address(registry));
+        nft.setStakeManager(address(stake));
         stake.setJobRegistry(address(registry));
         registry.setModules(
             validation,
