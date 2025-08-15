@@ -3,6 +3,15 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` and `FeePool.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+## Non-technical deployment guide
+
+1. **Deploy modules** – on the [`Deployer`](contracts/v2/Deployer.sol) page of a block explorer choose `deployDefaults()`; the caller becomes owner and all modules wire themselves using `$AGIALPHA` with sensible defaults (5% fee, 5% burn, 1‑token minimum stake).
+2. **Confirm defaults** – after deployment check emitted `TokenUpdated`, `FeePctUpdated`, and similar events to verify parameters. Constructors fall back to the caller for owner/treasury addresses when inputs are left blank.
+3. **Post jobs** – employers approve `$AGIALPHA` for the `StakeManager` and call `JobRegistry.acknowledgeAndCreateJob(reward, uri)` from the Write tab.
+4. **Stake & apply** – agents approve the stake amount and call `JobRegistry.stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` when no stake is required).
+5. **Register platforms** – operators stake and register in one transaction through `PlatformRegistry.acknowledgeStakeAndRegister(amount)` or use `PlatformIncentives.acknowledgeStakeAndActivate(amount)` to enable routing.
+6. **Claim fees** – stakers withdraw revenue by calling `FeePool.claimRewards()`, which first runs the idempotent `distributeFees` so no extra transaction is needed.
+
 For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md) and [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
 **$AGIALPHA units** – The token powers all fees, stakes, and rewards. It reports `decimals = 6`, so enter amounts in base units (`1` token = `1_000000`).
