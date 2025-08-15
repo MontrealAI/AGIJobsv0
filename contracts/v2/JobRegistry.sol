@@ -619,7 +619,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
-        bool outcome = validationModule.tally(jobId);
+        bool outcome = validationModule.finalize(jobId);
         job.success = outcome;
         job.state = outcome ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, outcome);

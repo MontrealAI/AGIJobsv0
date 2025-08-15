@@ -541,7 +541,7 @@ Steps for an Agent:
    * Click **Write** and confirm. This will mark the job as completed from your side. Under the hood:
 
      * The contract will confirm you are indeed the agent assigned and the job was in Applied state.
-     * Then it triggers the **validation process** by calling the ValidationModule’s internal logic (likely something like selecting validators and starting commit phase). In the code, `completeJob` calls `validationModule.tally(jobId)` immediately. This suggests a slight difference: possibly they intended to call something to pick validators or tally an immediate outcome. It sets `job.success = outcome` and state = Completed right away in code, which is odd (it implies either an automated approval or that `tally` returns a preliminary result if validators aren’t used). Possibly in a fully implemented scenario, you would have a separate step to initiate validation and then later finalize, but in this code it seems to mark Completed and store an outcome boolean.
+     * Then it triggers the **validation process** by calling the ValidationModule’s internal logic (likely something like selecting validators and starting commit phase). In the code, `completeJob` calls `validationModule.finalize(jobId)` immediately. This suggests a slight difference: possibly they intended to call something to pick validators or finalize an immediate outcome. It sets `job.success = outcome` and state = Completed right away in code, which is odd (it implies either an automated approval or that `finalize` returns a preliminary result if validators aren’t used). Possibly in a fully implemented scenario, you would have a separate step to initiate validation and then later finalize, but in this code it seems to mark Completed and store an outcome boolean.
      * Regardless, the job enters the **Completed** state, and a `JobCompleted` event fires with outcome = presumably preliminary success or failure. If the system uses commit-reveal, at this point validators are supposed to vote. The outcome might remain false until validators approve, etc.
    * *Important:* At this stage, **do not assume you are paid yet**. The reward is still in escrow. The job needs to go through validation (and dispute if necessary) before it’s finalized and the funds released.
 
@@ -552,7 +552,7 @@ Steps for an Agent:
    As an agent, you mostly wait. You can monitor the events or state:
 
    * You might see events like `ValidationCommitted` or `ValidationRevealed` (depending on implementation) from the ValidationModule contract.
-   * The job’s data in JobRegistry (`jobs(jobId)`) might not update until finalization, except possibly a flag if validation tally is in or if a dispute is raised.
+   * The job’s data in JobRegistry (`jobs(jobId)`) might not update until finalization, except possibly a flag if validation is finalized or if a dispute is raised.
 
 8. **Job Finalization:** Once validators have voted and the time windows have passed, the outcome is determined. If the majority (or whatever criteria) approve your work, the job outcome will be **success = true**. If they reject, success = false. At this point, the contract (or any user) can call `finalize(jobId)` on JobRegistry to settle the payments. Often, the ValidationModule or DisputeModule might call finalize automatically, but to be sure, you (or the employer) can trigger it:
 
@@ -641,7 +641,7 @@ Steps to operate as a Validator:
    * Click **Write**, confirm the transaction. This will reveal your vote. The contract will verify that `keccak(salt, vote)` equals the commit hash you submitted earlier for this job. If it matches, your vote is counted. If it doesn’t (or you reveal a different vote or wrong salt), your reveal might be rejected and you could be penalized for cheating.
    * Once revealed, an event like `ValidationRevealed(jobId, validator, approve)` might fire, showing how you voted.
 
-6. **Outcome Determination:** After the reveal phase, the ValidationModule will tally the votes (if it wasn’t already done automatically). In some implementations, any validator (or the contract itself) might call a function `finalizeValidation(jobId)` or the JobRegistry might have done so when the agent completed the job (as was hinted in code). In our code, `validationModule.tally(jobId)` was called immediately on job completion, which is unusual – perhaps it selects validators and *predicts* outcome or sets a placeholder. However, typically, after reveals:
+6. **Outcome Determination:** After the reveal phase, the ValidationModule will finalize the votes (if it wasn’t already done automatically). In some implementations, any validator (or the contract itself) might call a function `finalizeValidation(jobId)` or the JobRegistry might have done so when the agent completed the job (as was hinted in code). In our code, `validationModule.finalize(jobId)` was called immediately on job completion, which is unusual – perhaps it selects validators and *predicts* outcome or sets a placeholder. However, typically, after reveals:
 
    * If majority of validators approved, the job outcome becomes success (true).
    * If majority rejected, outcome becomes failure (false).
@@ -653,7 +653,7 @@ Steps to operate as a Validator:
 
    * If you voted with the majority (i.e., you were “correct”), you may receive a **validation reward**. The protocol might give validators a portion of the job’s reward or a fixed incentive for correct votes. For example, if validatorRewardPercentage was set, the StakeManager might transfer you some tokens. Or maybe the reward to validators is the fee portion or an additional cost the employer put (less likely in this design). Check if on finalization events there’s something like `ValidationRewardPaid` or if StakeManager’s `finalizeJobFunds` function handled validator rewards. In this code, it doesn’t explicitly mention paying validators in finalize, but perhaps the ValidationModule or StakeManager handles it behind scenes when outcome is tallied.
    * If you were in the minority (voted incorrectly against the consensus), you might get **slashed**. The contract could confiscate a portion of your validator stake as a penalty for a “wrong” vote (to discourage lazy or malicious validation). This would be according to the `validatorSlashingPercentage` set in ValidationModule parameters. For example, if you staked 50 and slashing pct is 20%, you’d lose 10 tokens, possibly given to treasury or to other party.
-   * The ReputationEngine may also adjust your rep: add points for correct validation, subtract for incorrect. This happens during finalize or tally (the architecture suggests ValidationModule or JobRegistry calls ReputationEngine to add/subtract rep for validators accordingly).
+   * The ReputationEngine may also adjust your rep: add points for correct validation, subtract for incorrect. This happens during finalize (the architecture suggests ValidationModule or JobRegistry calls ReputationEngine to add/subtract rep for validators accordingly).
 
    All of this happens in one transaction when the job is finalized. You can see the effects:
 

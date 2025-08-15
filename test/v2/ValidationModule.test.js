@@ -136,8 +136,8 @@ describe("ValidationModule V2", function () {
         .connect(signerMap[selected[1].toLowerCase()])
         .revealValidation(1, true, salt2, "", []);
     await advance(61);
-    expect(await validation.tally.staticCall(1)).to.equal(true);
-    await validation.tally(1);
+    expect(await validation.finalize.staticCall(1)).to.equal(true);
+    await validation.finalize(1);
     for (const addr of selected) {
       const stake = await stakeManager.stakeOf(addr, 1);
       const expectedStake =
@@ -193,7 +193,7 @@ describe("ValidationModule V2", function () {
         .connect(signerMap[selected[1].toLowerCase()])
         .revealValidation(1, false, salt2, "", []);
     await advance(61);
-    await validation.tally(1);
+    await validation.finalize(1);
     const slashed = stake0 >= stake1 ? selected[1] : selected[0];
     const winner = slashed === selected[0] ? selected[1] : selected[0];
     const slashedStakeBefore = stake0 >= stake1 ? stake1 : stake0;

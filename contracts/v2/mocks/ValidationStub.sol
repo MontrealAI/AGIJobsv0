@@ -30,13 +30,15 @@ contract ValidationStub is IValidationModule {
         bytes32[] calldata
     ) external {}
 
-    function tally(uint256) external view returns (bool success) {
+    function finalize(uint256) external view returns (bool success) {
         return result;
     }
 
     function setCommitRevealWindows(uint256, uint256) external {}
 
     function setValidatorBounds(uint256, uint256) external {}
+
+    function setApprovalThreshold(uint256) external {}
 
     function resetJobNonce(uint256) external {}
 }

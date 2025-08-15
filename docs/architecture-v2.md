@@ -24,7 +24,7 @@ Each component is immutable once deployed yet configurable by the owner through 
 | Module | Core responsibility | Owner‑controllable parameters |
 | --- | --- | --- |
 | JobRegistry | job postings, escrow, lifecycle management | job reward, required agent stake |
-| ValidationModule | validator selection, commit‑reveal voting, tallying | stake ratios, reward/penalty rates, timing windows, validators per job |
+| ValidationModule | validator selection, commit‑reveal voting, finalization | stake ratios, reward/penalty rates, timing windows, validators per job |
 | DisputeModule | optional appeal and moderator decisions | appeal fee, jury size, moderator address |
 | StakeManager | custody of validator/agent collateral and slashing | minimum stakes, slashing percentages, reward recipients |
 | ReputationEngine | reputation tracking and blacklist enforcement | reputation thresholds, authorised caller list |

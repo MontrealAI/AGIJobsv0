@@ -26,7 +26,7 @@ graph LR
 | --- | --- | --- |
 | **JobRegistry** | canonical registry for job metadata and state transitions; routes calls to companion modules | swap module addresses with `setModules`, pause job creation, and adjust global settings |
 | **StakeManager** | holds escrowed rewards and participant stakes; executes payouts and slashing | change ERC‑20 token via `setToken`, tune minimum stakes and slashing percentages |
-| **ValidationModule** | selects validators and runs the commit‑reveal tally | update committee size and timing windows through `setParameters` |
+| **ValidationModule** | selects validators and runs the commit‑reveal finalization | update committee size and timing windows through `setParameters` |
 | **ReputationEngine** | accrues or subtracts reputation; enforces blacklists | alter reputation weights, thresholds and blacklist entries |
 | **DisputeModule** | optional appeal layer for contested jobs | set appeal fees and moderator/jury addresses |
 | **CertificateNFT** | mints ERC‑721 completion certificates | update base URI or registry address |
