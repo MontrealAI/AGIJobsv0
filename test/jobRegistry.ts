@@ -13,10 +13,14 @@ describe("JobRegistry tax policy gating", function () {
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
+    const MockRep = await ethers.getContractFactory(
+      "contracts/mocks/MockV2.sol:MockReputationEngine"
+    );
+    const mockRep = await MockRep.deploy();
     registry = await Registry.deploy(
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
+      await mockRep.getAddress(),
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -32,6 +36,12 @@ describe("JobRegistry tax policy gating", function () {
     policy = await Policy.deploy("ipfs://policy", "ack");
 
     await registry.connect(owner).setJobParameters(0, 0);
+
+    const Verifier = await ethers.getContractFactory(
+      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    );
+    const verifier = await Verifier.deploy();
+    await registry.setENSOwnershipVerifier(await verifier.getAddress());
   });
 
   it("requires acknowledgement before job actions", async () => {
@@ -60,7 +70,7 @@ describe("JobRegistry tax policy gating", function () {
     ).to.emit(registry, "JobCreated").withArgs(1, employer.address, ethers.ZeroAddress, 1, 0, 0);
 
     await expect(
-      registry.connect(agent).applyForJob(1)
+      registry.connect(agent).applyForJob(1, "", [])
     ).to.be.revertedWith("acknowledge tax policy");
 
     await expect(
@@ -70,7 +80,7 @@ describe("JobRegistry tax policy gating", function () {
       .withArgs(agent.address, 1, "ack");
 
     await expect(
-      registry.connect(agent).applyForJob(1)
+      registry.connect(agent).applyForJob(1, "", [])
     ).to.emit(registry, "AgentApplied").withArgs(1, agent.address);
   });
 

@@ -105,6 +105,14 @@ describe("JobRegistry integration", function () {
       .approve(await stakeManager.getAddress(), stake + appealFee);
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
+
+    const Verifier = await ethers.getContractFactory(
+      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    );
+    const verifier = await Verifier.deploy();
+    await registry
+      .connect(owner)
+      .setENSOwnershipVerifier(await verifier.getAddress());
   });
 
   it("runs successful job lifecycle", async () => {
@@ -113,7 +121,7 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "JobCreated")
       .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake, 0);
     const jobId = 1;
-    await expect(registry.connect(agent).applyForJob(jobId))
+    await expect(registry.connect(agent).applyForJob(jobId, "", []))
       .to.emit(registry, "AgentApplied")
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setResult(true);
@@ -135,7 +143,7 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setJobParameters(reward, 0);
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     await registry.connect(employer).createJob(reward, "uri");
-    await expect(registry.connect(newAgent).acknowledgeAndApply(1))
+    await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "AgentApplied")
       .withArgs(1, newAgent.address);
     const version = await registry.taxPolicyVersion();
@@ -172,7 +180,7 @@ describe("JobRegistry integration", function () {
       .approve(await stakeManager.getAddress(), reward + reward / 10);
     await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
+    await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).completeJob(jobId);
     await registry.connect(employer).finalize(jobId);

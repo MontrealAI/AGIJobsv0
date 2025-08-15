@@ -104,17 +104,36 @@ interface IJobRegistry {
 
     /// @notice Agent expresses interest in a job
     /// @param jobId Identifier of the job to apply for
+    /// @param subdomain ENS subdomain label
+    /// @param proof Merkle proof for ENS ownership verification
     /// @dev Reverts with {InvalidStatus} if job is not open for applications
-    function applyForJob(uint256 jobId) external;
+    function applyForJob(
+        uint256 jobId,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Deposit stake and apply for a job in one call
     /// @param jobId Identifier of the job
     /// @param amount Stake amount in $AGIALPHA with 6 decimals
-    function stakeAndApply(uint256 jobId, uint256 amount) external;
+    /// @param subdomain ENS subdomain label
+    /// @param proof Merkle proof for ENS ownership verification
+    function stakeAndApply(
+        uint256 jobId,
+        uint256 amount,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Acknowledge the tax policy and apply for a job in one call
     /// @param jobId Identifier of the job to apply for
-    function acknowledgeAndApply(uint256 jobId) external;
+    /// @param subdomain ENS subdomain label
+    /// @param proof Merkle proof for ENS ownership verification
+    function acknowledgeAndApply(
+        uint256 jobId,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Agent completes the job and triggers validation
     /// @param jobId Identifier of the job being completed

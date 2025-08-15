@@ -105,6 +105,12 @@ describe("Full system integration", function () {
     await registry.connect(v1).acknowledgeTaxPolicy();
     await registry.connect(v2).acknowledgeTaxPolicy();
 
+    const Verifier = await ethers.getContractFactory(
+      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    );
+    const verifier = await Verifier.deploy();
+    await registry.setENSOwnershipVerifier(await verifier.getAddress());
+
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
     await token.mint(v1.address, 1000);
@@ -133,7 +139,7 @@ describe("Full system integration", function () {
   async function startJob() {
     await registry.connect(employer).createJob(reward, "uri");
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId);
+    await registry.connect(agent).applyForJob(jobId, "", []);
     return jobId;
   }
 
