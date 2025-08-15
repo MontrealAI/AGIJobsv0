@@ -257,7 +257,7 @@ describe("PlatformRegistry", function () {
 
   it("owner stakeAndActivate(0) registers with zero score and weight", async () => {
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      "contracts/v2/JobRouter.sol:JobRouter"
     );
     const jobRouter = await JobRouter.connect(owner).deploy(
       await registry.getAddress()

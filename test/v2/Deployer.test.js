@@ -52,7 +52,7 @@ describe("Deployer", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     const DisputeModule = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     const CertificateNFT = await ethers.getContractFactory(
       "contracts/v2/CertificateNFT.sol:CertificateNFT"
@@ -61,7 +61,7 @@ describe("Deployer", function () {
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
     );
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      "contracts/v2/JobRouter.sol:JobRouter"
     );
     const PlatformIncentives = await ethers.getContractFactory(
       "contracts/v2/PlatformIncentives.sol:PlatformIncentives"

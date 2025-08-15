@@ -35,7 +35,7 @@ describe("JobRouter", function () {
     await registry.connect(op2).register();
 
     const Router = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      "contracts/v2/JobRouter.sol:JobRouter"
     );
     router = await Router.deploy(await registry.getAddress());
     await router.connect(op1).register();

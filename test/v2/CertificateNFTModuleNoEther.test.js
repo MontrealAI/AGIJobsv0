@@ -7,7 +7,7 @@ describe("CertificateNFT module ether rejection", function () {
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
     const NFT = await ethers.getContractFactory(
-      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+      "contracts/v2/CertificateNFT.sol:CertificateNFT"
     );
     nft = await NFT.deploy("Cert", "CERT");
     await nft.waitForDeployment();

@@ -52,8 +52,15 @@ graph TD
     ValidationModule -->|escalate| DisputeModule
     DisputeModule -->|final ruling| JobRegistry
     JobRegistry -->|mint| CertificateNFT
+    JobRegistry -->|fees| FeePool
+    JobRegistry -->|tax| TaxPolicy
     StakeManager -->|payout/penalties| Agent
     StakeManager -->|rewards| Validator
+    StakeManager -->|platform stakes| PlatformRegistry
+    ReputationEngine -->|scores| PlatformRegistry
+    JobRegistry -->|route| JobRouter
+    JobRouter -->|query scores| PlatformRegistry
+    FeePool -->|distribute| StakeManager
 ```
 
 ## Job Settlement Flow

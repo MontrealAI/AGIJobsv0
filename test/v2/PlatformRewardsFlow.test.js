@@ -82,7 +82,7 @@ describe("Platform reward flow", function () {
     );
 
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      "contracts/v2/JobRouter.sol:JobRouter"
     );
     jobRouter = await JobRouter.deploy(
       await platformRegistry.getAddress()

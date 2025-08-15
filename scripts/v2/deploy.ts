@@ -119,13 +119,13 @@ async function main() {
   await reputation.waitForDeployment();
 
   const NFT = await ethers.getContractFactory(
-    "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    "contracts/v2/CertificateNFT.sol:CertificateNFT"
   );
   const nft = await NFT.deploy("Cert", "CERT");
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
-    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+    "contracts/v2/DisputeModule.sol:DisputeModule"
   );
   const appealFee = ethers.parseUnits(
     typeof args.appealFee === "string" ? args.appealFee : "0",
@@ -168,7 +168,7 @@ async function main() {
   await platformRegistry.waitForDeployment();
 
   const JobRouter = await ethers.getContractFactory(
-    "contracts/v2/modules/JobRouter.sol:JobRouter"
+    "contracts/v2/JobRouter.sol:JobRouter"
   );
   const jobRouter = await JobRouter.deploy(
     await platformRegistry.getAddress()

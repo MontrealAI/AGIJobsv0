@@ -10,10 +10,10 @@ import {
 import {StakeManager} from "./StakeManager.sol";
 import {ValidationModule} from "./ValidationModule.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
-import {DisputeModule} from "./modules/DisputeModule.sol";
+import {DisputeModule} from "./DisputeModule.sol";
 import {CertificateNFT} from "./CertificateNFT.sol";
 import {PlatformRegistry, IReputationEngine as PRReputationEngine} from "./PlatformRegistry.sol";
-import {JobRouter} from "./modules/JobRouter.sol";
+import {JobRouter} from "./JobRouter.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {FeePool} from "./FeePool.sol";
 import {TaxPolicy} from "./TaxPolicy.sol";

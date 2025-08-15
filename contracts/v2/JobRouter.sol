@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IPlatformRegistry} from "../interfaces/IPlatformRegistry.sol";
+import {IPlatformRegistry} from "./interfaces/IPlatformRegistry.sol";
 
 /// @title JobRouter
 /// @notice Routes jobs to registered platform operators based on stake and reputation scores.

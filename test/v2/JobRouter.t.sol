@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import "contracts/v2/modules/JobRouter.sol";
+import "contracts/v2/JobRouter.sol";
 import "contracts/v2/interfaces/IPlatformRegistry.sol";
 
 // minimal cheatcode interface
