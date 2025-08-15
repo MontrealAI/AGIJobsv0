@@ -26,7 +26,9 @@ contract MockStakeManager is IStakeManager {
     function acknowledgeAndWithdraw(Role, uint256) external override {}
     function withdrawStake(Role, uint256) external override {}
     function lockJobFunds(bytes32, address, uint256) external override {}
+    function lock(address, uint256) external override {}
     function releaseJobFunds(bytes32, address, uint256) external override {}
+    function release(address, uint256) external override {}
     function finalizeJobFunds(bytes32, address, uint256, uint256, IFeePool) external override {}
     function setDisputeModule(address module) external override {
         disputeModule = module;
@@ -35,6 +37,11 @@ contract MockStakeManager is IStakeManager {
     function payDisputeFee(address, uint256) external override {}
 
     function setSlashPercentSumEnforcement(bool) external override {}
+    function setToken(IERC20) external override {}
+    function setMinStake(uint256) external override {}
+    function setSlashingPercentages(uint256, uint256) external override {}
+    function setTreasury(address) external override {}
+    function setMaxStakePerAddress(uint256) external override {}
 
     function slash(address user, Role role, uint256 amount, address)
         external
@@ -54,7 +61,8 @@ contract MockStakeManager is IStakeManager {
         return totalStakes[role];
     }
 
-    function setToken(address) external {}
+    // legacy helper for tests
+    function setTokenLegacy(address) external {}
 }
 
 contract MockJobRegistry is IJobRegistry, IJobRegistryTax {

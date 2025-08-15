@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {IFeePool} from "./IFeePool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title IStakeManager
 /// @notice Interface for staking balances, job escrows and slashing logic
@@ -26,8 +27,11 @@ interface IStakeManager {
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);
-    event TokenUpdated(address token);
-    event ParametersUpdated();
+    event TokenUpdated(address indexed token);
+    event MinStakeUpdated(uint256 minStake);
+    event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event TreasuryUpdated(address indexed treasury);
+    event MaxStakePerAddressUpdated(uint256 maxStake);
     event SlashPercentSumEnforcementUpdated(bool enforced);
 
     /// @notice deposit stake for caller for a specific role
@@ -48,8 +52,14 @@ interface IStakeManager {
     /// @notice lock job funds from an employer
     function lockJobFunds(bytes32 jobId, address from, uint256 amount) external;
 
+    /// @notice generic escrow lock when job ID is managed externally
+    function lock(address from, uint256 amount) external;
+
     /// @notice release locked job funds to recipient
     function releaseJobFunds(bytes32 jobId, address to, uint256 amount) external;
+
+    /// @notice release funds locked via {lock}
+    function release(address to, uint256 amount) external;
 
     /// @notice finalize job funds by paying agent and forwarding fees
     function finalizeJobFunds(
@@ -74,6 +84,13 @@ interface IStakeManager {
 
     /// @notice toggle enforcement requiring slashing percentages to sum to 100
     function setSlashPercentSumEnforcement(bool enforced) external;
+
+    /// @notice owner configuration helpers
+    function setToken(IERC20 newToken) external;
+    function setMinStake(uint256 _minStake) external;
+    function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
+    function setTreasury(address _treasury) external;
+    function setMaxStakePerAddress(uint256 maxStake) external;
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);
