@@ -112,6 +112,11 @@ contract ReputationEngine is Ownable {
         return _blacklisted[user];
     }
 
+    /// @notice Determine whether a user meets the premium access threshold.
+    function canAccessPremium(address user) external view returns (bool) {
+        return _scores[user] >= threshold;
+    }
+
     /// @notice Return the combined operator score based on stake and reputation.
     /// @dev Blacklisted users score 0.
     function getOperatorScore(address operator) external view returns (uint256) {
