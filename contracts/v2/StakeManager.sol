@@ -499,6 +499,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit JobFundsLocked(jobId, from, amount);
     }
 
+    /// @notice Generic escrow lock used when job context is managed externally.
+    /// @dev Transfers `amount` tokens from `from` to this contract without
+    ///      tracking a job identifier. The caller is expected to account for the
+    ///      escrowed balance.
+    /// @param from Address providing the funds; must approve first.
+    /// @param amount Token amount with 6 decimals to lock.
+    function lock(address from, uint256 amount) external onlyJobRegistry {
+        token.safeTransferFrom(from, address(this), amount);
+        emit JobFundsLocked(bytes32(0), from, amount);
+    }
+
     /// @notice release locked job funds to recipient
     /// @param jobId unique job identifier
     /// @param to recipient of the release
@@ -512,6 +523,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
         jobEscrows[jobId] = escrow - amount;
         token.safeTransfer(to, amount);
         emit JobFundsReleased(jobId, to, amount);
+    }
+
+    /// @notice Release funds previously locked via {lock}.
+    /// @dev Does not adjust job-specific escrows; the caller must ensure
+    ///      sufficient balance was locked earlier.
+    /// @param to Recipient receiving the tokens.
+    /// @param amount Token amount with 6 decimals to release.
+    function release(address to, uint256 amount) external onlyJobRegistry {
+        token.safeTransfer(to, amount);
+        emit JobFundsReleased(bytes32(0), to, amount);
     }
 
     /// @notice finalize a job by paying the agent and forwarding protocol fees
