@@ -616,6 +616,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         bytes32 jobKey = bytes32(jobId);
         if (job.success) {
             IFeePool pool = feePool;
+            address[] memory validators;
+            if (address(validationModule) != address(0)) {
+                validators = validationModule.getValidators(jobId);
+            } else {
+                validators = new address[](0);
+            }
             if (address(stakeManager) != address(0)) {
                 uint256 fee;
                 if (address(pool) != address(0) && job.reward > 0) {
@@ -626,7 +632,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                     job.agent,
                     uint256(job.reward),
                     fee,
-                    pool
+                    pool,
+                    validators
                 );
             }
             if (address(reputationEngine) != address(0)) {

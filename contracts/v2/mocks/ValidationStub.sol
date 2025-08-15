@@ -28,6 +28,10 @@ contract ValidationStub is IValidationModule {
         return result;
     }
 
+    function getValidators(uint256) external view returns (address[] memory validators) {
+        return new address[](0);
+    }
+
     function setCommitRevealWindows(uint256, uint256) external {}
 
     function setValidatorBounds(uint256, uint256) external {}

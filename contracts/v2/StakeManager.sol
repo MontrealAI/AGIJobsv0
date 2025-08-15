@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
@@ -78,6 +79,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
+    /// @notice percentage of reward distributed to validators
+    uint256 public validatorRewardPct;
+
+    struct AGIType {
+        address nft;
+        uint256 pct;
+    }
+
+    uint256 public maxAGITypes = 50;
+    AGIType[] public agiTypes;
+
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
     event StakeSlashed(
@@ -103,6 +115,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
+    event ValidatorRewardPctUpdated(uint256 pct);
+    event AGITypeUpdated(address indexed nft, uint256 pct);
+    event MaxAGITypesUpdated(uint256 maxTypes);
+    event ValidatorRewardsPaid(bytes32 indexed jobId, address[] validators, uint256 rewardPerValidator);
 
     /// @notice Deploys the StakeManager.
     /// @param _token ERC20 token used for staking and payouts. Defaults to
@@ -244,6 +260,49 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function setMaxStakePerAddress(uint256 maxStake) external onlyOwner {
         maxStakePerAddress = maxStake;
         emit MaxStakePerAddressUpdated(maxStake);
+    }
+
+    /// @notice update validator reward percentage (0-100)
+    function setValidatorRewardPct(uint256 pct) external onlyOwner {
+        require(pct <= 100, "pct");
+        validatorRewardPct = pct;
+        emit ValidatorRewardPctUpdated(pct);
+    }
+
+    /// @notice set maximum allowed AGI types (0 disables limit)
+    function setMaxAGITypes(uint256 max) external onlyOwner {
+        maxAGITypes = max;
+        emit MaxAGITypesUpdated(max);
+    }
+
+    /// @notice add or update an AGI type eligible for payout percentage
+    function addAGIType(address nft, uint256 pct) external onlyOwner {
+        require(nft != address(0) && pct <= 100, "params");
+        uint256 len = agiTypes.length;
+        for (uint256 i; i < len; ++i) {
+            if (agiTypes[i].nft == nft) {
+                agiTypes[i].pct = pct;
+                emit AGITypeUpdated(nft, pct);
+                return;
+            }
+        }
+        require(maxAGITypes == 0 || len < maxAGITypes, "max agi types");
+        agiTypes.push(AGIType({nft: nft, pct: pct}));
+        emit AGITypeUpdated(nft, pct);
+    }
+
+    /// @notice remove an AGI type
+    function removeAGIType(address nft) external onlyOwner {
+        uint256 len = agiTypes.length;
+        for (uint256 i; i < len; ++i) {
+            if (agiTypes[i].nft == nft) {
+                agiTypes[i] = agiTypes[len - 1];
+                agiTypes.pop();
+                emit AGITypeUpdated(nft, 0);
+                return;
+            }
+        }
+        revert("agi type");
     }
 
     // ---------------------------------------------------------------
@@ -517,28 +576,56 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice finalize a job by paying the agent and forwarding protocol fees
     /// @param jobId unique job identifier
     /// @param agent recipient of the job reward
-    /// @param reward amount paid to the agent with 6 decimals
+    /// @param reward amount paid to participants with 6 decimals
     /// @param fee amount forwarded to the fee pool with 6 decimals
     /// @param feePool fee pool contract receiving protocol fees
+    /// @param validators list of validators sharing the reward
     function finalizeJobFunds(
         bytes32 jobId,
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool feePool
+        IFeePool feePool,
+        address[] memory validators
     ) external onlyJobRegistry {
         uint256 total = reward + fee;
         uint256 escrow = jobEscrows[jobId];
         require(escrow >= total, "escrow");
         jobEscrows[jobId] = escrow - total;
-        if (reward > 0) {
-            token.safeTransfer(agent, reward);
-            emit JobFundsReleased(jobId, agent, reward);
+
+        uint256 validatorShare;
+        uint256 perValidator;
+        uint256 validatorRemainder;
+        uint256 len = validators.length;
+        if (reward > 0 && validatorRewardPct > 0 && len > 0) {
+            validatorShare = (reward * validatorRewardPct) / 100;
+            perValidator = validatorShare / len;
+            uint256 paid = perValidator * len;
+            validatorRemainder = validatorShare - paid;
+            for (uint256 i; i < len; ++i) {
+                if (perValidator > 0) {
+                    token.safeTransfer(validators[i], perValidator);
+                }
+            }
+            if (perValidator > 0) {
+                emit ValidatorRewardsPaid(jobId, validators, perValidator);
+            }
         }
-        if (fee > 0 && address(feePool) != address(0)) {
-            token.safeTransfer(address(feePool), fee);
-            feePool.depositFee(fee);
-            emit JobFundsReleased(jobId, address(feePool), fee);
+
+        uint256 remaining = reward - validatorShare + validatorRemainder;
+        uint256 agentPct = getHighestPayoutPct(agent);
+        uint256 agentAmount = (remaining * agentPct) / 100;
+        uint256 remainder = remaining - agentAmount;
+
+        if (agentAmount > 0) {
+            token.safeTransfer(agent, agentAmount);
+            emit JobFundsReleased(jobId, agent, agentAmount);
+        }
+        uint256 feeTotal = fee + remainder;
+        if (feeTotal > 0 && address(feePool) != address(0)) {
+            token.safeTransfer(address(feePool), feeTotal);
+            feePool.depositFee(feeTotal);
+            emit JobFundsReleased(jobId, address(feePool), feeTotal);
         }
     }
 
@@ -618,6 +705,22 @@ contract StakeManager is Ownable, ReentrancyGuard {
         }
 
         emit StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare);
+    }
+
+    /// @notice Return the highest payout percentage for an agent based on held NFTs
+    /// @param agent address of the agent being checked
+    function getHighestPayoutPct(address agent) public view returns (uint256 highestPct) {
+        uint256 len = agiTypes.length;
+        for (uint256 i; i < len; ) {
+            try IERC721(agiTypes[i].nft).balanceOf(agent) returns (uint256 bal) {
+                if (bal > 0 && agiTypes[i].pct > highestPct) {
+                    highestPct = agiTypes[i].pct;
+                }
+            } catch {
+                // ignore balance errors
+            }
+            unchecked { ++i; }
+        }
     }
 
     /// @notice Return the total stake deposited by a user for a role

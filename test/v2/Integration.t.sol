@@ -69,7 +69,14 @@ contract MockStakeManager is IStakeManager {
     function withdrawStake(Role, uint256) external override {}
     function lockJobFunds(bytes32, address, uint256) external override {}
     function releaseJobFunds(bytes32, address, uint256) external override {}
-    function finalizeJobFunds(bytes32, address, uint256, uint256, IFeePool) external override {}
+    function finalizeJobFunds(
+        bytes32,
+        address,
+        uint256,
+        uint256,
+        IFeePool,
+        address[] calldata
+    ) external override {}
     function setDisputeModule(address) external override {}
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
