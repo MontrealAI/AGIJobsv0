@@ -277,5 +277,21 @@ describe("JobRegistry integration", function () {
 
     expect(await registry.acknowledgers(treasury.address)).to.equal(true);
   });
+
+  it("updates additional agents individually", async () => {
+    await expect(
+      registry.connect(owner).addAdditionalAgent(treasury.address)
+    )
+      .to.emit(registry, "AdditionalAgentUpdated")
+      .withArgs(treasury.address, true);
+    expect(await registry.additionalAgents(treasury.address)).to.equal(true);
+
+    await expect(
+      registry.connect(owner).removeAdditionalAgent(treasury.address)
+    )
+      .to.emit(registry, "AdditionalAgentUpdated")
+      .withArgs(treasury.address, false);
+    expect(await registry.additionalAgents(treasury.address)).to.equal(false);
+  });
 });
 

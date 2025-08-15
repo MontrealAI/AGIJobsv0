@@ -349,4 +349,21 @@ describe("ValidationModule V2", function () {
       validation.connect(val).revealValidation(1, true, salt)
     ).to.emit(validation, "VoteRevealed");
   });
+
+  it("updates additional validators individually", async () => {
+    const [, , , , , extra] = await ethers.getSigners();
+    await expect(
+      validation.connect(owner).addAdditionalValidator(extra.address)
+    )
+      .to.emit(validation, "AdditionalValidatorUpdated")
+      .withArgs(extra.address, true);
+    expect(await validation.additionalValidators(extra.address)).to.equal(true);
+
+    await expect(
+      validation.connect(owner).removeAdditionalValidator(extra.address)
+    )
+      .to.emit(validation, "AdditionalValidatorUpdated")
+      .withArgs(extra.address, false);
+    expect(await validation.additionalValidators(extra.address)).to.equal(false);
+  });
 });

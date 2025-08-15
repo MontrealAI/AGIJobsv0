@@ -28,6 +28,7 @@ interface IJobRegistry {
         uint256 stake,
         uint256 fee
     );
+    event AdditionalAgentUpdated(address indexed agent, bool allowed);
     function createJob(string calldata details, uint256 reward) external;
     function setModules(
         address validation,
@@ -36,6 +37,8 @@ interface IJobRegistry {
         address dispute,
         address certificate
     ) external;
+    function addAdditionalAgent(address agent) external;
+    function removeAdditionalAgent(address agent) external;
 }
 
 interface IStakeManager {
@@ -48,10 +51,13 @@ interface IStakeManager {
 }
 
 interface IValidationModule {
+    event AdditionalValidatorUpdated(address indexed validator, bool allowed);
     function commit(uint256 jobId, bytes32 hash) external;
     function reveal(uint256 jobId, bool verdict, bytes32 salt) external;
     function finalize(uint256 jobId) external;
     function setParameters(uint256 commitWindow, uint256 revealWindow, uint256 minValidators) external;
+    function addAdditionalValidator(address validator) external;
+    function removeAdditionalValidator(address validator) external;
 }
 
 interface IReputationEngine {
