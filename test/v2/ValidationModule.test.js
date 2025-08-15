@@ -60,10 +60,7 @@ describe("ValidationModule V2", function () {
 
     await validation
       .connect(owner)
-      .setValidatorPool(
-        [v1.address, v2.address, v3.address],
-        ["v1", "v2", "v3"]
-      );
+      .setValidatorPool([v1.address, v2.address, v3.address]);
 
     // setup job
     const jobStruct = {
@@ -124,12 +121,12 @@ describe("ValidationModule V2", function () {
     await (
       await validation
         .connect(signerMap[selected[0].toLowerCase()])
-        .commitValidation(1, commit1)
+        .commitValidation(1, commit1, "", [])
     ).wait();
     await (
       await validation
         .connect(signerMap[selected[1].toLowerCase()])
-        .commitValidation(1, commit2)
+        .commitValidation(1, commit2, "", [])
     ).wait();
     await advance(61);
     await validation
@@ -179,12 +176,12 @@ describe("ValidationModule V2", function () {
     await (
       await validation
         .connect(signerMap[selected[0].toLowerCase()])
-        .commitValidation(1, commit1)
+        .commitValidation(1, commit1, "", [])
     ).wait();
     await (
       await validation
         .connect(signerMap[selected[1].toLowerCase()])
-        .commitValidation(1, commit2)
+        .commitValidation(1, commit2, "", [])
     ).wait();
     await advance(61);
     const stake0 = await stakeManager.stakeOf(selected[0], 1);
@@ -227,7 +224,7 @@ describe("ValidationModule V2", function () {
     await (
       await validation
         .connect(signerMap[selected[0].toLowerCase()])
-        .commitValidation(1, commit)
+        .commitValidation(1, commit, "", [])
     ).wait();
     await advance(61);
     await expect(
@@ -241,7 +238,7 @@ describe("ValidationModule V2", function () {
     await validation.connect(owner).setValidatorBounds(1, 1);
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address], ["v1"]);
+      .setValidatorPool([v1.address]);
 
     await validation.selectValidators(1);
     const nonce1 = await validation.jobNonce(1);
@@ -250,10 +247,10 @@ describe("ValidationModule V2", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce1, true, salt]
     );
-    await (await validation.connect(v1).commitValidation(1, commit1)).wait();
+    await (await validation.connect(v1).commitValidation(1, commit1, "", [])).wait();
 
     await expect(
-      validation.connect(v1).commitValidation(1, commit1)
+      validation.connect(v1).commitValidation(1, commit1, "", [])
     ).to.be.revertedWith("already committed");
 
     await validation.connect(owner).resetJobNonce(1);
@@ -268,7 +265,7 @@ describe("ValidationModule V2", function () {
       [1n, nonce2, true, salt]
     );
     await expect(
-      validation.connect(v1).commitValidation(1, commit2)
+      validation.connect(v1).commitValidation(1, commit2, "", [])
     ).to.not.be.reverted;
   });
 
@@ -333,12 +330,12 @@ describe("ValidationModule V2", function () {
     );
 
     await expect(
-      validation.connect(val).commitValidation(1, commit)
+      validation.connect(val).commitValidation(1, commit, "", [])
     ).to.be.revertedWith("acknowledge tax policy");
 
     await jobRegistry.connect(val).acknowledgeTaxPolicy();
     await expect(
-      validation.connect(val).commitValidation(1, commit)
+      validation.connect(val).commitValidation(1, commit, "", [])
     ).to.emit(validation, "VoteCommitted");
 
     await advance(61);

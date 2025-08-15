@@ -15,7 +15,12 @@ contract ValidationStub is IValidationModule {
         return new address[](0);
     }
 
-    function commitValidation(uint256, bytes32) external {}
+    function commitValidation(
+        uint256,
+        bytes32,
+        string calldata,
+        bytes32[] calldata
+    ) external {}
 
     function revealValidation(uint256, bool, bytes32) external {}
 
