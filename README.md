@@ -128,6 +128,11 @@ Use the following quick checklists for common flows (see [docs/etherscan-guide.m
 2. **Helper call** – on `PlatformRegistry` → **Write**, call `acknowledgeStakeAndRegister(amount)`.
 3. **Verify events** – check for `Registered` and any `StakeDeposited` logs.
 
+#### Contribute to the Reward Pool
+1. **Approve** – approve the contribution amount on `$AGIALPHA`.
+2. **Call** – on `FeePool` → **Write**, call `contribute(amount)` using 6‑decimal units.
+3. **Verify events** – check for `RewardPoolContribution` on `FeePool`.
+
 #### Raise a Dispute
 1. **Approve** – approve the appeal fee on `$AGIALPHA`.
 2. **Helper call** – in `JobRegistry` → **Write**, call `acknowledgeAndDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute`.
@@ -174,6 +179,7 @@ Helper functions expose common flows in single calls so Etherscan users do not h
 - `JobEscrow.acknowledgeAndAcceptResult` lets employers acknowledge the policy and release escrow.
 - `FeePool.claimRewards` auto-distributes any pending fees before paying the caller.
 - `FeePool.distributeFees` never reverts; if no stake exists, fees are sent to the treasury after burning.
+- `FeePool.contribute` transfers tokens to the pool and credits `pendingFees`.
 - `StakeManager.acknowledgeAndDeposit` and `acknowledgeAndDepositFor` stake tokens after acknowledging the tax policy, reducing transactions for users and helpers.
 
 All participants opt in by staking `$AGIALPHA`. Staked operators gain routing priority and revenue share, while the main deploying entity is a special case that registers with **stake = 0**, earning no boosts so it remains tax neutral. Because every incentive flows on-chain, operators can participate pseudonymously without creating off‑chain reporting obligations.

@@ -58,6 +58,7 @@ contract FeePool is Ownable {
     event BurnPctUpdated(uint256 pct);
     event TreasuryUpdated(address indexed treasury);
     event OwnerWithdrawal(address indexed to, uint256 amount);
+    event RewardPoolContribution(address indexed contributor, uint256 amount);
 
     /// @notice Deploys the FeePool.
     /// @param _token ERC20 token used for fees and rewards. Defaults to
@@ -115,6 +116,15 @@ contract FeePool is Ownable {
         require(amount > 0, "amount");
         pendingFees += amount;
         emit FeeDeposited(msg.sender, amount);
+    }
+
+    /// @notice Contribute tokens directly to the reward pool.
+    /// @param amount fee amount scaled to 6 decimals.
+    function contribute(uint256 amount) external {
+        require(amount > 0, "amount");
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        pendingFees += amount;
+        emit RewardPoolContribution(msg.sender, amount);
     }
 
     /// @notice Distribute accumulated fees to stakers.
