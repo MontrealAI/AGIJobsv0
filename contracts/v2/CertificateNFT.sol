@@ -92,24 +92,31 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         require(price > 0, "price");
         Listing storage listing = listings[tokenId];
         require(!listing.active, "listed");
-        listings[tokenId] = Listing(msg.sender, price, true);
+        listing.seller = msg.sender;
+        listing.price = price;
+        listing.active = true;
         emit NFTListed(tokenId, msg.sender, price);
     }
 
     function purchase(uint256 tokenId) external {
-        Listing memory listing = listings[tokenId];
+        Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         address seller = listing.seller;
         require(seller != msg.sender, "self");
-        delete listings[tokenId];
         IERC20 token = stakeManager.token();
-        token.safeTransferFrom(msg.sender, seller, listing.price);
+        require(
+            token.allowance(msg.sender, address(this)) >= listing.price,
+            "allowance"
+        );
+        uint256 price = listing.price;
+        delete listings[tokenId];
+        token.safeTransferFrom(msg.sender, seller, price);
         _safeTransfer(seller, msg.sender, tokenId, "");
-        emit NFTPurchased(tokenId, msg.sender, listing.price);
+        emit NFTPurchased(tokenId, msg.sender, price);
     }
 
     function delist(uint256 tokenId) external {
-        Listing memory listing = listings[tokenId];
+        Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         require(listing.seller == msg.sender, "owner");
         delete listings[tokenId];

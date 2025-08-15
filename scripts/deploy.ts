@@ -45,9 +45,9 @@ async function main() {
   const reputation = await Reputation.deploy(deployer.address);
 
   const NFT = await ethers.getContractFactory(
-    "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    "contracts/v2/CertificateNFT.sol:CertificateNFT"
   );
-  const nft = await NFT.deploy("Cert", "CERT", deployer.address);
+  const nft = await NFT.deploy("Cert", "CERT");
 
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/modules/DisputeModule.sol:DisputeModule"
@@ -72,6 +72,7 @@ async function main() {
   await reputation.setCaller(await registry.getAddress(), true);
   await reputation.setThreshold(1);
   await nft.setJobRegistry(await registry.getAddress());
+  await nft.setStakeManager(await stake.getAddress());
   await stake.setJobRegistry(await registry.getAddress());
   await nft.transferOwnership(await registry.getAddress());
   await dispute.setAppealFee(10);

@@ -66,9 +66,9 @@ async function main() {
   await reputation.waitForDeployment();
 
   const NFT = await ethers.getContractFactory(
-    "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    "contracts/v2/CertificateNFT.sol:CertificateNFT"
   );
-  const nft = await NFT.deploy("Cert", "CERT", deployer.address);
+  const nft = await NFT.deploy("Cert", "CERT");
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
@@ -118,6 +118,8 @@ async function main() {
   await platformRegistry.waitForDeployment();
 
   // Wire up modules after deployment.
+  await nft.setJobRegistry(await registry.getAddress());
+  await nft.setStakeManager(await stake.getAddress());
   await stake.setJobRegistry(await registry.getAddress());
   await registry.setModules(
     await validation.getAddress(),
