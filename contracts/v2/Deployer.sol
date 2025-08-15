@@ -25,6 +25,7 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.sol";
 
@@ -32,13 +33,16 @@ import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.s
 /// @notice One shot helper that deploys and wires the core module set.
 /// @dev Each module is deployed with default parameters (zero values) and
 ///      ownership is transferred to the caller once wiring is complete.
-contract Deployer {
+contract Deployer is Ownable {
     bool public deployed;
+
+    constructor() Ownable(msg.sender) {}
 
     /// @notice Economic configuration applied during deployment.
     /// @dev Zero values use each module's baked-in default such as a 5% fee,
     ///      5% burn, 1-day commit/reveal windows and a 1e6 minimum stake.
     struct EconParams {
+        IERC20 token; // custom token for StakeManager and FeePool (defaults to AGIALPHA)
         uint256 feePct; // protocol fee percentage for JobRegistry
         uint256 burnPct; // portion of fees burned by FeePool
         uint256 employerSlashPct; // slashed stake sent to employer
@@ -78,6 +82,7 @@ contract Deployer {
     /// @return taxPolicy Address of the TaxPolicy
     function deploy(EconParams calldata econ)
         external
+        onlyOwner
         returns (
             address stakeManager,
             address jobRegistry,
@@ -110,6 +115,7 @@ contract Deployer {
     /// @return taxPolicy Address of the TaxPolicy (always zero)
     function deployWithoutTaxPolicy(EconParams calldata econ)
         external
+        onlyOwner
         returns (
             address stakeManager,
             address jobRegistry,
@@ -142,6 +148,7 @@ contract Deployer {
     /// @return taxPolicy Address of the TaxPolicy
     function deployDefaults()
         external
+        onlyOwner
         returns (
             address stakeManager,
             address jobRegistry,
@@ -175,6 +182,7 @@ contract Deployer {
     /// @return taxPolicy Address of the TaxPolicy (always zero)
     function deployDefaultsWithoutTaxPolicy()
         external
+        onlyOwner
         returns (
             address stakeManager,
             address jobRegistry,
@@ -211,7 +219,7 @@ contract Deployer {
     {
         require(!deployed, "deployed");
         deployed = true;
-        address owner = msg.sender;
+        address owner_ = owner();
 
         uint256 feePct = econ.feePct == 0 ? 5 : econ.feePct;
         uint256 burnPct = econ.burnPct == 0 ? 5 : econ.burnPct;
@@ -226,13 +234,14 @@ contract Deployer {
             treasurySlashPct = 100;
         }
         uint96 jobStake = econ.jobStake;
+        IERC20 token = econ.token;
 
         StakeManager stake = new StakeManager(
-            IERC20(address(0)),
+            token,
             minStake,
             employerSlashPct,
             treasurySlashPct,
-            owner,
+            owner_,
             address(0),
             address(0)
         );
@@ -269,17 +278,17 @@ contract Deployer {
             IJobRegistry(address(registry)),
             0,
             0,
-            owner
+            owner_
         );
 
         CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
         certificate.setJobRegistry(address(registry));
 
         FeePool pool = new FeePool(
-            IERC20(address(0)),
+            token,
             IStakeManager(address(stake)),
             burnPct,
-            owner
+            owner_
         );
 
         IRInterface repInterface = IRInterface(address(reputation));
@@ -335,18 +344,18 @@ contract Deployer {
         reputation.setCaller(address(validation), true);
 
         // Transfer ownership
-        registry.transferOwnership(owner);
-        stake.transferOwnership(owner);
-        validation.transferOwnership(owner);
-        reputation.transferOwnership(owner);
-        dispute.transferOwnership(owner);
-        certificate.transferOwnership(owner);
-        pRegistry.transferOwnership(owner);
-        router.transferOwnership(owner);
-        incentives.transferOwnership(owner);
-        pool.transferOwnership(owner);
+        registry.transferOwnership(owner_);
+        stake.transferOwnership(owner_);
+        validation.transferOwnership(owner_);
+        reputation.transferOwnership(owner_);
+        dispute.transferOwnership(owner_);
+        certificate.transferOwnership(owner_);
+        pRegistry.transferOwnership(owner_);
+        router.transferOwnership(owner_);
+        incentives.transferOwnership(owner_);
+        pool.transferOwnership(owner_);
         if (address(policy) != address(0)) {
-            policy.transferOwnership(owner);
+            policy.transferOwnership(owner_);
         }
 
         emit Deployed(
