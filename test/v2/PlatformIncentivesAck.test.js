@@ -40,7 +40,7 @@ describe("PlatformIncentives acknowledge", function () {
     );
 
     const Router = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      "contracts/v2/JobRouter.sol:JobRouter"
     );
     const jobRouter = await Router.deploy(await platformRegistry.getAddress());
 

@@ -215,7 +215,7 @@ describe("FeePool", function () {
     );
 
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      "contracts/v2/JobRouter.sol:JobRouter"
     );
     const jobRouter = await JobRouter.connect(owner).deploy(
       await registry.getAddress()

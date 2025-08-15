@@ -2,8 +2,8 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
-import {IStakeManager} from "../interfaces/IStakeManager.sol";
+import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes with evidence and resolves

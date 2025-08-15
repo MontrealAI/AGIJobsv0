@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {PlatformRegistry} from "../../contracts/v2/PlatformRegistry.sol";
-import {JobRouter} from "../../contracts/v2/modules/JobRouter.sol";
+import {JobRouter} from "../../contracts/v2/JobRouter.sol";
 import {IPlatformRegistryFull} from "../../contracts/v2/interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "../../contracts/v2/interfaces/IJobRouter.sol";
 import {IPlatformRegistry} from "../../contracts/v2/interfaces/IPlatformRegistry.sol";

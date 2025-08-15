@@ -7,7 +7,7 @@ describe("ReputationEngine module ether rejection", function () {
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
     const Engine = await ethers.getContractFactory(
-      "contracts/v2/modules/ReputationEngine.sol:ReputationEngine"
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     engine = await Engine.deploy();
     await engine.waitForDeployment();

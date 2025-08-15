@@ -39,7 +39,7 @@ describe("Full system integration", function () {
     rep = await Rep.deploy(await stakeManager.getAddress());
 
     const NFT = await ethers.getContractFactory(
-      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+      "contracts/v2/CertificateNFT.sol:CertificateNFT"
     );
     nft = await NFT.deploy("Cert", "CERT");
 
@@ -60,7 +60,7 @@ describe("Full system integration", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     dispute = await Dispute.deploy(
       await registry.getAddress(),

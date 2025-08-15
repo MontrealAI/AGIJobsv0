@@ -357,7 +357,7 @@ curl -s -X POST https://mainnet.infura.io/v3/YOUR_KEY \
 ### Further Reading
 
 - [FeePool.sol](contracts/v2/FeePool.sol) – revenue sharing module · [tests](test/v2/FeePool.t.sol)
-- [JobRouter.sol](contracts/v2/modules/JobRouter.sol) – stake‑weighted routing · [tests](test/v2/JobRouter.t.sol)
+- [JobRouter.sol](contracts/v2/JobRouter.sol) – stake‑weighted routing · [tests](test/v2/JobRouter.t.sol)
 - [GovernanceReward.sol](contracts/v2/GovernanceReward.sol) – voter bonus distribution · [tests](test/v2/GovernanceReward.test.js)
 
 ## Architecture Diagram
@@ -652,7 +652,7 @@ These principles are encoded on‑chain via the owner‑controlled [`TaxPolicy`]
 
 The sample [deployment script](scripts/v2/deploy.ts) wires the modules, sets the `TaxPolicy`, and points the `StakeManager` at the `JobRegistry`, providing a turnkey, tax‑neutral configuration that non‑technical users can verify on explorers.
 
-For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.sol), [`JobRegistry`](contracts/v2/JobRegistry.sol), [`StakeManager`](contracts/v2/StakeManager.sol), [`ValidationModule`](contracts/v2/ValidationModule.sol), [`ReputationEngine`](contracts/v2/ReputationEngine.sol), [`DisputeModule`](contracts/v2/modules/DisputeModule.sol), and [`CertificateNFT`](contracts/v2/CertificateNFT.sol) each expose `isTaxExempt()` which always returns `true`, signalling that neither these contracts nor the owner can ever accrue tax liability.
+For easy verification on block explorers, [`TaxPolicy`](contracts/v2/TaxPolicy.sol), [`JobRegistry`](contracts/v2/JobRegistry.sol), [`StakeManager`](contracts/v2/StakeManager.sol), [`ValidationModule`](contracts/v2/ValidationModule.sol), [`ReputationEngine`](contracts/v2/ReputationEngine.sol), [`DisputeModule`](contracts/v2/DisputeModule.sol), and [`CertificateNFT`](contracts/v2/CertificateNFT.sol) each expose `isTaxExempt()` which always returns `true`, signalling that neither these contracts nor the owner can ever accrue tax liability.
 
 ### Checking the tax disclaimer on Etherscan
 
