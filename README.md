@@ -11,10 +11,18 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 4. **Stake & apply** – agents approve the stake amount and call `JobRegistry.stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` when no stake is required).
 5. **Register platforms** – operators stake and register in one transaction through `PlatformRegistry.acknowledgeStakeAndRegister(amount)` or use `PlatformIncentives.acknowledgeStakeAndActivate(amount)` to enable routing.
 6. **Claim fees** – stakers withdraw revenue by calling `FeePool.claimRewards()`, which first runs the idempotent `distributeFees` so no extra transaction is needed.
+7. **Reconfigure as needed** – the owner can swap payout tokens via `StakeManager.setToken` and `FeePool.setToken`, or update ENS roots and allowlists with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper`—no redeploy required.
 
 For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment-agialpha.md](docs/deployment-agialpha.md) and [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
 **$AGIALPHA units** – The token powers all fees, stakes, and rewards. It reports `decimals = 6`, so enter amounts in base units (`1` token = `1_000000`).
+
+### ENS subdomain prerequisites
+
+- **Agents** must control an ENS subdomain ending in `.agent.agi.eth`.
+- **Validators** require a subdomain ending in `.club.agi.eth`.
+- Calls like `applyForJob` and `commitValidation` take your subdomain label and a Merkle proof. A valid proof lets `ENSOwnershipVerifier.verifyOwnership` skip on-chain ENS lookups, confirming membership off-chain and saving gas.
+- Owners may rotate ENS roots or allowlists at any time with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper` without redeploying contracts.
 ## Quick Deploy with $AGIALPHA
 
 Call `Deployer.deployDefaults()` to spin up and wire all core modules in one transaction. It applies baked‑in economics (5% fee, 5% burn, 1‑token minimum stake) and makes the caller the owner.
@@ -63,10 +71,21 @@ Use the following quick checklists for common flows (see [docs/etherscan-guide.m
 2. **Helper call** – in `JobRegistry` → **Write**, call `acknowledgeAndCreateJob(reward, uri)`.
 3. **Verify events** – check the transaction log for `JobCreated`.
 
-#### Stake and Apply
-1. **Approve** – approve the stake amount on `$AGIALPHA`.
-2. **Helper call** – use `JobRegistry.stakeAndApply(jobId, amount)` (or `acknowledgeAndApply(jobId)` if no stake required).
-3. **Verify events** – confirm `StakeDeposited` on `StakeManager` and `AgentApplied` on `JobRegistry`.
+#### Verify ENS Ownership
+1. Obtain the Merkle proof for your address from the operator.
+2. On `ENSOwnershipVerifier` → **Write**, call `verifyOwnership(you, subdomain, proof, rootNode)`.
+   - Agents use the root node for `agent.agi.eth`; validators use `club.agi.eth`.
+   - A valid proof bypasses on-chain ENS lookups and emits `OwnershipVerified`.
+
+#### Apply for a Job
+1. **Approve** – approve the stake amount on `$AGIALPHA` if required.
+2. **Call** – in `JobRegistry` → **Write**, call `applyForJob(jobId, subdomain, proof)` (or `stakeAndApply(jobId, amount)` to combine staking).
+3. **Verify events** – confirm `AgentApplied` on `JobRegistry` and any `StakeDeposited` logs on `StakeManager`.
+
+#### Commit a Vote
+1. During the commit window, open `ValidationModule` → **Write**.
+2. Call `commitValidation(jobId, commitHash, subdomain, proof)`.
+3. When the reveal window opens, call `revealValidation(jobId, approve, salt)` from the same tab.
 
 #### Register a Platform
 1. **Approve** – approve a stake for `StakeManager` (owners may pass `0`).
