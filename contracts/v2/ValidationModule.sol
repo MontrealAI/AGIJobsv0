@@ -44,6 +44,7 @@ contract ValidationModule is IValidationModule, Ownable {
     // ENS identity references
     bytes32 public clubRootNode;
     bytes32 public validatorMerkleRoot;
+    bytes32 public agentMerkleRoot;
     INameWrapper public nameWrapper;
     ENSOwnershipVerifier public ensOwnershipVerifier;
 
@@ -81,6 +82,7 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32 validatorMerkleRoot,
         address nameWrapper
     );
+    event AgentMerkleRootUpdated(bytes32 agentMerkleRoot);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
@@ -197,7 +199,15 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set validator Merkle root for identity checks.
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
+        ensOwnershipVerifier.setValidatorMerkleRoot(root);
         emit ENSIdentityUpdated(clubRootNode, root, address(nameWrapper));
+    }
+
+    /// @notice Set agent Merkle root for identity checks.
+    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+        agentMerkleRoot = root;
+        ensOwnershipVerifier.setAgentMerkleRoot(root);
+        emit AgentMerkleRootUpdated(root);
     }
 
     /// @notice Set ENS NameWrapper contract reference.

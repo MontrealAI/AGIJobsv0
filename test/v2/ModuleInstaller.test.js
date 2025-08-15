@@ -24,6 +24,11 @@ describe("ModuleInstaller", function () {
           ethers.ZeroAddress,
           ethers.ZeroAddress,
           ethers.ZeroAddress,
+          ethers.ZeroAddress,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
           []
         )
     ).to.be.revertedWithCustomError(

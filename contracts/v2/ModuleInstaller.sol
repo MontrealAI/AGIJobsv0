@@ -8,8 +8,9 @@ import {
     ICertificateNFT
 } from "./JobRegistry.sol";
 import {StakeManager} from "./StakeManager.sol";
+import {ValidationModule} from "./ValidationModule.sol";
+import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
-import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
@@ -43,7 +44,8 @@ contract ModuleInstaller is Ownable {
         address platformRegistry,
         address jobRouter,
         address feePool,
-        address taxPolicy
+        address taxPolicy,
+        address ensVerifier
     );
 
     /// @notice Sets the deployer as the temporary owner.
@@ -64,7 +66,7 @@ contract ModuleInstaller is Ownable {
     function initialize(
         JobRegistry jobRegistry,
         StakeManager stakeManager,
-        IValidationModule validationModule,
+        ValidationModule validationModule,
         IReputationEngine reputationEngine,
         IDisputeModule disputeModule,
         ICertificateNFT certificateNFT,
@@ -73,6 +75,11 @@ contract ModuleInstaller is Ownable {
         IJobRouter jobRouter,
         IFeePool feePool,
         ITaxPolicy taxPolicy,
+        ENSOwnershipVerifier ensOwnershipVerifier,
+        bytes32 clubRootNode,
+        bytes32 agentRootNode,
+        bytes32 validatorMerkleRoot,
+        bytes32 agentMerkleRoot,
         address[] calldata _ackModules
     ) external onlyOwner {
         require(!initialized, "init");
@@ -90,6 +97,12 @@ contract ModuleInstaller is Ownable {
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
         }
+        jobRegistry.setENSOwnershipVerifier(ensOwnershipVerifier);
+        jobRegistry.setAgentRootNode(agentRootNode);
+        validationModule.setENSOwnershipVerifier(ensOwnershipVerifier);
+        validationModule.setClubRootNode(clubRootNode);
+        validationModule.setValidatorMerkleRoot(validatorMerkleRoot);
+        validationModule.setAgentMerkleRoot(agentMerkleRoot);
         stakeManager.setModules(address(jobRegistry), address(disputeModule));
         platformIncentives.setModules(
             IStakeManager(address(stakeManager)),
@@ -113,6 +126,7 @@ contract ModuleInstaller is Ownable {
         if (address(taxPolicy) != address(0)) {
             IOwnable(address(taxPolicy)).transferOwnership(moduleOwner);
         }
+        IOwnable(address(ensOwnershipVerifier)).transferOwnership(moduleOwner);
 
         emit ModulesInstalled(
             address(jobRegistry),
@@ -125,7 +139,8 @@ contract ModuleInstaller is Ownable {
             address(platformRegistry),
             address(jobRouter),
             address(feePool),
-            address(taxPolicy)
+            address(taxPolicy),
+            address(ensOwnershipVerifier)
         );
     }
 

@@ -14,6 +14,7 @@ import {DisputeModule} from "./modules/DisputeModule.sol";
 import {CertificateNFT} from "./CertificateNFT.sol";
 import {PlatformRegistry, IReputationEngine as PRReputationEngine} from "./PlatformRegistry.sol";
 import {JobRouter} from "./modules/JobRouter.sol";
+import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {FeePool} from "./FeePool.sol";
 import {TaxPolicy} from "./TaxPolicy.sol";
@@ -24,6 +25,8 @@ import {IFeePool} from "./interfaces/IFeePool.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+import {IENS} from "./interfaces/IENS.sol";
+import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -53,6 +56,15 @@ contract Deployer is Ownable {
         uint96 jobStake; // minimum agent stake per job in JobRegistry (6 decimals)
     }
 
+    struct IdentityParams {
+        IENS ens;
+        INameWrapper nameWrapper;
+        bytes32 clubRootNode;
+        bytes32 agentRootNode;
+        bytes32 validatorMerkleRoot;
+        bytes32 agentMerkleRoot;
+    }
+
     event Deployed(
         address stakeManager,
         address jobRegistry,
@@ -64,7 +76,8 @@ contract Deployer is Ownable {
         address jobRouter,
         address platformIncentives,
         address feePool,
-        address taxPolicy
+        address taxPolicy,
+        address ensVerifier
     );
 
     /// @notice Deploy and wire all modules including TaxPolicy.
@@ -80,7 +93,7 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy
-    function deploy(EconParams calldata econ)
+    function deploy(EconParams calldata econ, IdentityParams calldata ids)
         external
         onlyOwner
         returns (
@@ -94,10 +107,11 @@ contract Deployer is Ownable {
             address jobRouter,
             address platformIncentives,
             address feePool,
-            address taxPolicy
+            address taxPolicy,
+            address ensVerifier
         )
     {
-        return _deploy(true, econ);
+        return _deploy(true, econ, ids);
     }
 
     /// @notice Deploy and wire all modules without the TaxPolicy.
@@ -113,7 +127,7 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployWithoutTaxPolicy(EconParams calldata econ)
+    function deployWithoutTaxPolicy(EconParams calldata econ, IdentityParams calldata ids)
         external
         onlyOwner
         returns (
@@ -127,10 +141,11 @@ contract Deployer is Ownable {
             address jobRouter,
             address platformIncentives,
             address feePool,
-            address taxPolicy
+            address taxPolicy,
+            address ensVerifier
         )
     {
-        return _deploy(false, econ);
+        return _deploy(false, econ, ids);
     }
 
     /// @notice Deploy and wire all modules using module defaults.
@@ -146,7 +161,7 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy
-    function deployDefaults()
+    function deployDefaults(IdentityParams calldata ids)
         external
         onlyOwner
         returns (
@@ -160,11 +175,12 @@ contract Deployer is Ownable {
             address jobRouter,
             address platformIncentives,
             address feePool,
-            address taxPolicy
+            address taxPolicy,
+            address ensVerifier
         )
     {
         EconParams memory econ;
-        return _deploy(true, econ);
+        return _deploy(true, econ, ids);
     }
 
     /// @notice Deploy and wire modules with defaults and no TaxPolicy.
@@ -180,7 +196,7 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployDefaultsWithoutTaxPolicy()
+    function deployDefaultsWithoutTaxPolicy(IdentityParams calldata ids)
         external
         onlyOwner
         returns (
@@ -194,14 +210,15 @@ contract Deployer is Ownable {
             address jobRouter,
             address platformIncentives,
             address feePool,
-            address taxPolicy
+            address taxPolicy,
+            address ensVerifier
         )
     {
         EconParams memory econ;
-        return _deploy(false, econ);
+        return _deploy(false, econ, ids);
     }
 
-    function _deploy(bool withTaxPolicy, EconParams memory econ)
+    function _deploy(bool withTaxPolicy, EconParams memory econ, IdentityParams memory ids)
         internal
         returns (
             address stakeManager,
@@ -214,7 +231,8 @@ contract Deployer is Ownable {
             address jobRouter,
             address platformIncentives,
             address feePool,
-            address taxPolicy
+            address taxPolicy,
+            address ensVerifier
         )
     {
         require(!deployed, "deployed");
@@ -291,6 +309,12 @@ contract Deployer is Ownable {
             owner_
         );
 
+        ENSOwnershipVerifier verifier = new ENSOwnershipVerifier(
+            ids.ens,
+            ids.nameWrapper,
+            ids.clubRootNode
+        );
+
         IRInterface repInterface = IRInterface(address(reputation));
         PlatformRegistry pRegistry = new PlatformRegistry(
             IStakeManager(address(stake)),
@@ -331,6 +355,24 @@ contract Deployer is Ownable {
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }
 
+        registry.setENSOwnershipVerifier(verifier);
+        validation.setENSOwnershipVerifier(verifier);
+        if (ids.agentRootNode != bytes32(0)) {
+            registry.setAgentRootNode(ids.agentRootNode);
+        }
+        if (ids.clubRootNode != bytes32(0)) {
+            validation.setClubRootNode(ids.clubRootNode);
+        }
+        if (ids.nameWrapper != INameWrapper(address(0))) {
+            validation.setNameWrapper(ids.nameWrapper);
+        }
+        if (ids.validatorMerkleRoot != bytes32(0)) {
+            validation.setValidatorMerkleRoot(ids.validatorMerkleRoot);
+        }
+        if (ids.agentMerkleRoot != bytes32(0)) {
+            validation.setAgentMerkleRoot(ids.agentMerkleRoot);
+        }
+
         validation.setReputationEngine(repInterface);
         stake.setModules(address(registry), address(dispute));
         incentives.setModules(
@@ -357,6 +399,7 @@ contract Deployer is Ownable {
         if (address(policy) != address(0)) {
             policy.transferOwnership(owner_);
         }
+        verifier.transferOwnership(owner_);
 
         emit Deployed(
             address(stake),
@@ -369,7 +412,8 @@ contract Deployer is Ownable {
             address(router),
             address(incentives),
             address(pool),
-            address(policy)
+            address(policy),
+            address(verifier)
         );
 
         return (
@@ -383,7 +427,8 @@ contract Deployer is Ownable {
             address(router),
             address(incentives),
             address(pool),
-            address(policy)
+            address(policy),
+            address(verifier)
         );
     }
 }
