@@ -35,6 +35,8 @@ contract ValidationModule is IValidationModule, Ownable {
 
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
+    // percentage of total stake required for approval
+    uint256 public approvalThreshold = 50;
 
     // pool of validators
     address[] public validatorPool;
@@ -73,6 +75,7 @@ contract ValidationModule is IValidationModule, Ownable {
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
     event ValidatorSlashingPctUpdated(uint256 pct);
+    event ApprovalThresholdUpdated(uint256 pct);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
@@ -146,6 +149,8 @@ contract ValidationModule is IValidationModule, Ownable {
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
+
+        emit ApprovalThresholdUpdated(approvalThreshold);
 
         require(commitWindow > 0 && revealWindow > 0, "windows");
         require(maxValidators >= minValidators, "bounds");
@@ -276,6 +281,13 @@ contract ValidationModule is IValidationModule, Ownable {
         require(pct <= 100, "pct");
         validatorSlashingPercentage = pct;
         emit ValidatorSlashingPctUpdated(pct);
+    }
+
+    /// @notice Update approval threshold percentage.
+    function setApprovalThreshold(uint256 pct) external onlyOwner {
+        require(pct > 0 && pct <= 100, "pct");
+        approvalThreshold = pct;
+        emit ApprovalThresholdUpdated(pct);
     }
 
     /// @inheritdoc IValidationModule
@@ -447,12 +459,18 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Tally revealed votes and apply slashing/rewards.
-    function tally(uint256 jobId) external override returns (bool success) {
+    function finalize(uint256 jobId) external override returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
         require(block.timestamp > r.revealDeadline, "reveal pending");
 
-        success = r.approvals >= r.rejections;
+        uint256 total;
+        for (uint256 i; i < r.validators.length; ++i) {
+            total += validatorStakes[jobId][r.validators[i]];
+        }
+        if (total > 0) {
+            success = (r.approvals * 100) >= (total * approvalThreshold);
+        }
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
 
         for (uint256 i; i < r.validators.length; ++i) {
@@ -477,6 +495,7 @@ contract ValidationModule is IValidationModule, Ownable {
         }
 
         r.tallied = true;
+        emit ValidationFinalized(jobId, success, r.approvals, r.rejections);
         return success;
     }
 

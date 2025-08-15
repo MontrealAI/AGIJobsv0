@@ -7,6 +7,12 @@ interface IValidationModule {
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event VoteCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
     event VoteRevealed(uint256 indexed jobId, address indexed validator, bool approve);
+    event ValidationFinalized(
+        uint256 indexed jobId,
+        bool success,
+        uint256 approvals,
+        uint256 rejections
+    );
 
     /// @notice Select validators for a given job
     /// @param jobId Identifier of the job
@@ -39,10 +45,10 @@ interface IValidationModule {
         bytes32[] calldata proof
     ) external;
 
-    /// @notice Tally revealed votes and determine job outcome
+    /// @notice Finalize validation round and slash incorrect validators
     /// @param jobId Identifier of the job
     /// @return success True if validators approved the job
-    function tally(uint256 jobId) external returns (bool success);
+    function finalize(uint256 jobId) external returns (bool success);
 
     /// @notice Owner configuration for timing windows
     function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow) external;
@@ -53,5 +59,8 @@ interface IValidationModule {
     /// @notice Reset the validation nonce for a job after it is finalized or disputed
     /// @param jobId Identifier of the job
     function resetJobNonce(uint256 jobId) external;
+
+    /// @notice Update approval threshold percentage
+    function setApprovalThreshold(uint256 pct) external;
 }
 

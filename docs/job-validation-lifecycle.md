@@ -8,7 +8,7 @@ This guide shows how a validator processes one job from commitment to finalizati
 |----------|-----------------|----------------|----------|
 | Commit   | Commitment stored | `commitWindow` seconds after selection | `ValidationModule.commitValidation(jobId, commitHash)` |
 | Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt)` |
-| Finalize | Job settled       | After `revealWindow` closes | `ValidationModule.tally(jobId)` then `JobRegistry.finalize(jobId)` |
+| Finalize | Job settled       | After `revealWindow` closes | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
 
 `commitWindow` and `revealWindow` are owner‑configurable via `ValidationModule.setCommitRevealWindows`.
 
@@ -21,7 +21,7 @@ validationModule.commitValidation(jobId, commitHash);
 // ... wait for the commit window to close
 validationModule.revealValidation(jobId, true, salt);
 // ... wait for the reveal window to close
-validationModule.tally(jobId);
+validationModule.finalize(jobId);
 jobRegistry.finalize(jobId);
 ```
 
@@ -35,7 +35,7 @@ cast send $VALIDATION_MODULE "commitValidation(uint256,bytes32)" $JOB_ID 0xCOMMI
 cast send $VALIDATION_MODULE "revealValidation(uint256,bool,bytes32)" $JOB_ID true 0xSALT --from $VALIDATOR
 
 # Finalize after the reveal window
-cast send $VALIDATION_MODULE "tally(uint256)" $JOB_ID --from $ANYONE
+cast send $VALIDATION_MODULE "finalize(uint256)" $JOB_ID --from $ANYONE
 cast send $JOB_REGISTRY "finalize(uint256)" $JOB_ID --from $ANYONE
 ```
 

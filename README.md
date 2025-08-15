@@ -586,7 +586,7 @@ graph TD
 1. Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing. The transaction emits `TaxAcknowledged(user, version, acknowledgement)` so the accepted disclaimer is permanently logged on‑chain.
 2. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
 3. Agents stake and apply; the assigned agent submits work with `submit`, triggering validator selection.
-4. Validators commit and reveal votes. After tally, anyone calls `finalizeAfterValidation` to record the outcome.
+4. Validators commit and reveal votes. After `ValidationModule.finalize`, anyone calls `finalizeAfterValidation` to record the outcome.
 5. `JobRegistry.finalize` pays the agent and validators or allows `DisputeModule` appeal.
 6. On success, `CertificateNFT` mints proof of completion.
 
@@ -632,7 +632,7 @@ interface IValidationModule {
     event ValidatorsSelected(uint256 jobId, address[] validators);
     function commitValidation(uint256 jobId, bytes32 commitHash) external;
     function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
-    function tally(uint256 jobId) external returns (bool success);
+    function finalize(uint256 jobId) external returns (bool success);
     function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow) external;
 }
 
@@ -676,7 +676,7 @@ Interact with the deployment directly from a block explorer using the **Write** 
 ### Validation
 1. Validators commit with `ValidationModule.commitValidation(jobId, commitHash)` during the commit window.
 2. Validators reveal using `ValidationModule.revealValidation(jobId, approve, salt)`.
-3. After reveals, anyone may call `ValidationModule.tally` and `JobRegistry.finalize` to release rewards.
+3. After reveals, anyone may call `ValidationModule.finalize` and `JobRegistry.finalize` to release rewards.
 
 ### Dispute
 1. If the outcome is contested, call `DisputeModule.raiseDispute(jobId, reason)`.
