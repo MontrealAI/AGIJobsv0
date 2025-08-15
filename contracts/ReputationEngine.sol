@@ -28,11 +28,17 @@ contract ReputationEngine is Ownable {
     uint256 public agentThreshold;
     uint256 public validatorThreshold;
 
+    /// @notice maximum attainable reputation
+    uint256 public constant maxReputation = 88_888;
+
+    /// @notice percentage of agent reputation awarded to validators
+    uint256 public validationRewardPercentage = 8;
+
     /// @notice decay constant in 1e18 fixed point. 0 disables decay.
     uint256 public decayConstant;
 
-    event ReputationUpdated(address indexed user, Role indexed role, int256 delta, uint256 newScore);
-    event BlacklistUpdated(address indexed user, Role indexed role, bool status);
+    event ReputationChanged(address indexed user, Role indexed role, int256 delta, uint256 newScore);
+    event Blacklisted(address indexed user, Role indexed role, bool status);
     event CallerAuthorized(address indexed caller, Role role);
     event AgentThresholdUpdated(uint256 newThreshold);
     event ValidatorThresholdUpdated(uint256 newThreshold);
@@ -56,6 +62,23 @@ contract ReputationEngine is Ownable {
     function setValidatorThreshold(uint256 threshold) external onlyOwner {
         validatorThreshold = threshold;
         emit ValidatorThresholdUpdated(threshold);
+    }
+
+    /// @notice Generic threshold setter to mirror v1 semantics.
+    function setThreshold(Role role, uint256 threshold) external onlyOwner {
+        if (role == Role.Agent) {
+            agentThreshold = threshold;
+            emit AgentThresholdUpdated(threshold);
+        } else if (role == Role.Validator) {
+            validatorThreshold = threshold;
+            emit ValidatorThresholdUpdated(threshold);
+        }
+    }
+
+    /// @notice Set percentage of agent gain given to validators.
+    function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
+        require(percentage <= 100, "invalid percentage");
+        validationRewardPercentage = percentage;
     }
 
     /// @notice Set the decay constant `k` in 1e18 fixed point.
@@ -87,25 +110,38 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Increase reputation for the caller's role.
-    function addReputation(address user, uint256 amount) external {
+    function add(address user, uint256 amount) public {
         Role role = callers[msg.sender];
         require(role != Role.None, "not authorized");
 
         if (role == Role.Agent) {
             _applyDecayAgent(user);
-            uint256 newScore = _agentReputation[user] + amount;
+            uint256 newScore = _enforceReputationGrowth(_agentReputation[user], amount);
             _agentReputation[user] = newScore;
-            emit ReputationUpdated(user, role, int256(amount), newScore);
+            emit ReputationChanged(user, role, int256(amount), newScore);
+            if (agentBlacklisted[user] && newScore >= agentThreshold) {
+                agentBlacklisted[user] = false;
+                emit Blacklisted(user, role, false);
+            }
         } else if (role == Role.Validator) {
             _applyDecayValidator(user);
-            uint256 newScore = _validatorReputation[user] + amount;
+            uint256 newScore = _enforceReputationGrowth(_validatorReputation[user], amount);
             _validatorReputation[user] = newScore;
-            emit ReputationUpdated(user, role, int256(amount), newScore);
+            emit ReputationChanged(user, role, int256(amount), newScore);
+            if (validatorBlacklisted[user] && newScore >= validatorThreshold) {
+                validatorBlacklisted[user] = false;
+                emit Blacklisted(user, role, false);
+            }
         }
     }
 
+    /// @notice Wrapper for backwards compatibility.
+    function addReputation(address user, uint256 amount) external {
+        add(user, amount);
+    }
+
     /// @notice Decrease reputation for the caller's role.
-    function subtractReputation(address user, uint256 amount) external {
+    function subtract(address user, uint256 amount) public {
         Role role = callers[msg.sender];
         require(role != Role.None, "not authorized");
 
@@ -114,22 +150,116 @@ contract ReputationEngine is Ownable {
             uint256 current = _agentReputation[user];
             uint256 newScore = current > amount ? current - amount : 0;
             _agentReputation[user] = newScore;
-            emit ReputationUpdated(user, role, -int256(amount), newScore);
+            emit ReputationChanged(user, role, -int256(amount), newScore);
             if (!agentBlacklisted[user] && newScore < agentThreshold) {
                 agentBlacklisted[user] = true;
-                emit BlacklistUpdated(user, role, true);
+                emit Blacklisted(user, role, true);
             }
         } else if (role == Role.Validator) {
             _applyDecayValidator(user);
             uint256 current = _validatorReputation[user];
             uint256 newScore = current > amount ? current - amount : 0;
             _validatorReputation[user] = newScore;
-            emit ReputationUpdated(user, role, -int256(amount), newScore);
+            emit ReputationChanged(user, role, -int256(amount), newScore);
             if (!validatorBlacklisted[user] && newScore < validatorThreshold) {
                 validatorBlacklisted[user] = true;
-                emit BlacklistUpdated(user, role, true);
+                emit Blacklisted(user, role, true);
             }
         }
+    }
+
+    /// @notice Wrapper for backwards compatibility.
+    function subtractReputation(address user, uint256 amount) external {
+        subtract(user, amount);
+    }
+
+    /// @notice Manually update blacklist status.
+    function blacklist(address user, Role role, bool status) external {
+        require(callers[msg.sender] == role, "not authorized");
+        if (role == Role.Agent) {
+            agentBlacklisted[user] = status;
+        } else if (role == Role.Validator) {
+            validatorBlacklisted[user] = status;
+        }
+        emit Blacklisted(user, role, status);
+    }
+
+    /// @notice Determine if a user meets the premium access threshold.
+    function canAccessPremium(address user, Role role) external view returns (bool) {
+        if (role == Role.Agent) {
+            return _decayed(_agentReputation[user], _agentLastUpdated[user]) >= agentThreshold && !agentBlacklisted[user];
+        } else if (role == Role.Validator) {
+            return _decayed(_validatorReputation[user], _validatorLastUpdated[user]) >= validatorThreshold && !validatorBlacklisted[user];
+        }
+        return false;
+    }
+
+    /// @notice Hook called when an agent applies for a job.
+    function onApply(address agent) external {
+        require(callers[msg.sender] == Role.Agent, "not authorized");
+        _applyDecayAgent(agent);
+        require(!agentBlacklisted[agent], "blacklisted");
+        require(_agentReputation[agent] >= agentThreshold, "insufficient reputation");
+    }
+
+    /// @notice Hook called when a job finalizes for an agent.
+    /// @param agent The agent involved
+    /// @param success Whether the job succeeded
+    function onFinalize(address agent, bool success) external {
+        require(callers[msg.sender] == Role.Agent, "not authorized");
+        _applyDecayAgent(agent);
+        if (!success && _agentReputation[agent] < agentThreshold) {
+            agentBlacklisted[agent] = true;
+            emit Blacklisted(agent, Role.Agent, true);
+        }
+    }
+
+    /// @notice Compute reputation gain based on payout and duration.
+    function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
+        uint256 scaledPayout = payout / 1e18;
+        uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
+        return log2(1 + payoutPoints * 1e6) + duration / 10000;
+    }
+
+    /// @notice Compute validator reputation gain from agent gain.
+    function calculateValidatorReputationPoints(uint256 agentReputationGain) public view returns (uint256) {
+        return (agentReputationGain * validationRewardPercentage) / 100;
+    }
+
+    /// @notice Log base 2 implementation from v1.
+    function log2(uint256 x) public pure returns (uint256 y) {
+        assembly {
+            let arg := x
+            x := sub(x, 1)
+            x := or(x, div(x, 0x02))
+            x := or(x, div(x, 0x04))
+            x := or(x, div(x, 0x10))
+            x := or(x, div(x, 0x100))
+            x := or(x, div(x, 0x10000))
+            x := or(x, div(x, 0x100000000))
+            x := or(x, div(x, 0x10000000000000000))
+            x := or(x, div(x, 0x100000000000000000000000000000000))
+            x := add(x, 1)
+            y := 0
+            for { let shift := 128 } gt(shift, 0) { shift := div(shift, 2) } {
+                let temp := shr(shift, x)
+                if gt(temp, 0) {
+                    x := temp
+                    y := add(y, shift)
+                }
+            }
+        }
+    }
+
+    /// @notice Apply diminishing returns and cap to reputation growth.
+    function _enforceReputationGrowth(uint256 currentReputation, uint256 points) internal pure returns (uint256) {
+        uint256 newReputation = currentReputation + points;
+        uint256 diminishingFactor = 1 + ((newReputation * newReputation) / (maxReputation * maxReputation));
+        uint256 diminishedReputation = newReputation / diminishingFactor;
+        if (diminishedReputation > maxReputation) {
+            return maxReputation;
+        }
+        return diminishedReputation;
     }
 
     /// @notice Retrieve reputation score for a user and role.
