@@ -11,6 +11,17 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 3. **Owner configuration** – the deployer becomes owner and may later swap the payout token with `updateAGITokenAddress(newToken)` or rotate ENS roots and allowlists without redeploying.
 4. **Usage** – all job posting, application, validation, dispute, and NFT marketplace calls can be executed through the contract's **Write** tab; amounts use 6‑decimal base units.
 
+#### Etherscan deployment steps
+1. Navigate to the verified `AGIJobManagerv0` contract page on a block explorer and open the **Contract → Write Contract** tab.
+2. Connect the wallet that will act as the owner and fill in the constructor fields:
+   - `_agiTokenAddress` – `$AGIALPHA` token address.
+   - `_baseIpfsUrl` – base URI for job result metadata.
+   - `_ensAddress` and `_nameWrapperAddress` – official ENS contracts.
+   - `_clubRootNode` / `_agentRootNode` and the corresponding Merkle roots.
+3. Submit the transaction. The deploying account becomes the owner.
+4. In the **Write Contract** tab, use `updateAGITokenAddress`, `addAdditionalAgent`, `addAdditionalValidator`, or blacklist functions to tune the deployment. These settings can be updated later without redeploying.
+5. To rotate tokens in the future, call `updateAGITokenAddress(newToken)`; all accounting continues in 6‑decimal units.
+
 ### Module sequence
 1. **Deploy** – use [`Deployer.sol`](contracts/v2/Deployer.sol) and call `deployDefaults()` or deploy each module manually.
 2. **Wire modules** – if deploying individually, call `setModules(...)` on `JobRegistry` to provide the addresses of `StakeManager`, `ValidationModule`, `DisputeModule`, and `FeePool`.

@@ -45,13 +45,31 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - Provide step-by-step Etherscan instructions so non-technical users can view the disclaimer via `acknowledgement`/`acknowledge` and so the owner can update it with `setPolicyURI`/`setAcknowledgement`.
 8. **v1 Feature Parity & ENS Identity**
    - Port every capability from `legacy/AGIJobManagerv0.sol` into dedicated v2 modules.
-       - `JobRegistry`: `createJob`, `applyForJob`, `submit`, `cancelJob`, `delistJob`, `disputeJob`, and finalization hooks.
-       - `ValidationModule`: validator selection, `commitValidation`, `revealValidation`, approval/disapproval tallies, and threshold checks.
-       - `DisputeModule`: `raiseDispute`, moderator managed `resolve`, and appeal-fee escrow.
-       - `StakeManager`: escrow and release of rewards, slashing, AGIType payout bonuses, and reward/fee percentages.
-       - `ReputationEngine`: logarithmic reputation growth, premium thresholds, and owner‑managed blacklists.
-       - `CertificateNFT`: minting of completion certificates plus the simple marketplace (`list`, `purchase`, `delist`).
+       - `JobRegistry`: `createJob`, `applyForJob`, `submit`, `cancelJob`, `delistJob`, `disputeJob`, `finalize`.
+       - `ValidationModule`: validator selection, `commitValidation`, `revealValidation`, approval/disapproval tallies, quorum check.
+       - `DisputeModule`: `raiseDispute`, moderator `resolve`, appeal-fee escrow.
+       - `StakeManager`: escrow/release rewards, slashing, AGIType payout bonuses, reward & fee percentages.
+       - `ReputationEngine`: logarithmic reputation growth, premium thresholds, owner‑managed blacklists.
+       - `CertificateNFT`: mint completion certificates and marketplace operations (`list`, `purchase`, `delist`).
+   - Map v0 functions to v2 modules to guarantee parity:
+
+       | v0 function | v2 module / function |
+       |-------------|---------------------|
+       | `createJob` | `JobRegistry.createJob` |
+       | `applyForJob` | `JobRegistry.applyForJob` |
+       | `requestJobCompletion` | `JobRegistry.submit` |
+       | `validateJob` / `disapproveJob` | `ValidationModule.commitValidation` + `revealValidation` |
+       | `_completeJob` | `JobRegistry.finalize` + `StakeManager.release` + `CertificateNFT.mint` |
+       | `cancelJob` / `delistJob` | `JobRegistry.cancelJob` / `delistJob` |
+       | `disputeJob` | `JobRegistry.dispute` & `DisputeModule.raiseDispute` |
+       | `resolveDispute` | `DisputeModule.resolve` |
+       | Reputation updates | `ReputationEngine.onApply`, `onFinalize`, `rewardValidator` |
+
    - Enforce ENS subdomain ownership for agents (`*.agent.agi.eth`) and validators (`*.club.agi.eth`) using the Merkle proof + NameWrapper + resolver fallback sequence. Emit `OwnershipVerified` and `RecoveryInitiated` where appropriate.
+       - Build a reusable `ENSOwnershipVerifier` library with `verifyOwnership(address claimant, string subdomain, bytes32[] proof, bytes32 rootNode)` mirroring v0 logic.
+       - Integrate the verifier in `JobRegistry.applyForJob` and `ValidationModule.commitValidation`/`revealValidation`.
+       - Provide owner setters `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, `setNameWrapper` with events.
+       - Maintain allowlists via `addAdditionalAgent/Validator` and blacklists through `ReputationEngine.blacklist`.
    - Maintain owner‑controlled allowlists (`additionalAgents`, `additionalValidators`), blacklists, and configurable root nodes and Merkle roots with corresponding events.
    - Mirror v0 administrative setters: validator thresholds, validation reward percentage, job payout and duration caps, AGI type management, terms text, and NFT marketplace controls.
 
