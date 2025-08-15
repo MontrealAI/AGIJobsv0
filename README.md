@@ -10,6 +10,12 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 2. **Wire modules** – if deploying individually, call `setModules(...)` on `JobRegistry` to provide the addresses of `StakeManager`, `ValidationModule`, `DisputeModule`, and `FeePool`.
 3. **Verify events** – check for `ModulesUpdated` and `TokenUpdated` on each contract before allowing user funds.
 
+### One-shot deployment & token swaps
+1. Open the [`Deployer`](contracts/v2/Deployer.sol) contract on a block explorer and connect your wallet in **Write Contract**.
+2. Execute **deployDefaults(ids)** – leaving struct fields empty uses `$AGIALPHA` and sensible defaults; the caller becomes owner and all modules wire themselves.
+3. To change the payout token later, call [`StakeManager.setToken(newToken)`](contracts/v2/StakeManager.sol) and [`FeePool.setToken(newToken)`](contracts/v2/FeePool.sol); emit `TokenUpdated` to confirm the swap.
+4. Other modules remain untouched, so token rotation never requires redeployment.
+
 ### Token setup
 - All modules ship configured for `$AGIALPHA`, which reports `decimals = 6` so values are entered as `1 token = 1_000000`.
 - The owner can swap the payout token by calling `setToken(newToken)` on `StakeManager`, `FeePool`, and any other token-holding module. No redeployment is required.
@@ -34,10 +40,10 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 ### Owner controls
 The contract owner can reconfigure live deployments without redeployment:
-- **ENS roots** – rotate subdomains or proofs with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper`.
-- **Token addresses** – move between payout tokens via `setToken` on staking, fee, and reward modules.
-- **Stake requirements** – adjust minimums with `setMinStake`, `setMinPlatformStake`, or related setters.
-- **Dispute parameters** – update appeal fees or tax policies through `DisputeModule.setAppealFee` and `DisputeModule.setTaxPolicy`.
+- **ENS roots** – rotate subdomains or proofs with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol), [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol), [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol), and update ENS contract references via [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).
+- **Token addresses** – move between payout tokens with [`StakeManager.setToken`](contracts/v2/StakeManager.sol) and [`FeePool.setToken`](contracts/v2/FeePool.sol).
+- **Stake requirements** – adjust minimums through [`StakeManager.setMinStake`](contracts/v2/StakeManager.sol) and [`PlatformRegistry.setMinPlatformStake`](contracts/v2/PlatformRegistry.sol).
+- **Dispute parameters** – tune appeal fees or tax policy using [`DisputeModule.setAppealFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
 
 ## Non-technical deployment guide
 
@@ -57,7 +63,7 @@ For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment
 
 - **Agents** must control an ENS subdomain ending in `.agent.agi.eth`.
 - **Validators** require a subdomain ending in `.club.agi.eth`.
-- Calls like `applyForJob` and `commitValidation` take your subdomain label and a Merkle proof. A valid proof lets `ENSOwnershipVerifier.verifyOwnership` skip on-chain ENS lookups, confirming membership off-chain and saving gas.
+- Calls like `applyForJob` and `commitValidation` take your subdomain label and a Merkle proof. A valid proof lets [`ENSOwnershipVerifier.verifyOwnership`](contracts/v2/modules/ENSOwnershipVerifier.sol) skip on-chain ENS lookups, confirming membership off-chain and saving gas.
 - Owners may rotate ENS roots or allowlists at any time with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper` without redeploying contracts.
 ## Quick Deploy with $AGIALPHA
 
