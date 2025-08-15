@@ -10,6 +10,7 @@ describe("Deployer", function () {
     const deployer = await Deployer.deploy();
 
     const econ = {
+      token: ethers.ZeroAddress,
       feePct: 0,
       burnPct: 0,
       employerSlashPct: 0,
@@ -127,6 +128,7 @@ describe("Deployer", function () {
     );
     const deployer = await Deployer.deploy();
     const econ = {
+      token: ethers.ZeroAddress,
       feePct: 0,
       burnPct: 0,
       employerSlashPct: 0,
