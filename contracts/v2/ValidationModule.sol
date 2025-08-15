@@ -321,6 +321,10 @@ contract ValidationModule is IValidationModule, Ownable {
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
         require(
+            jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
+            "not submitted"
+        );
+        require(
             r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
             "commit closed"
         );

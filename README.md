@@ -542,8 +542,8 @@ graph TD
 
 1. Employers, agents, and validators must call `JobRegistry.acknowledgeTaxPolicy` before staking, voting, or appealing. The transaction emits `TaxAcknowledged(user, version, acknowledgement)` so the accepted disclaimer is permanently logged on‑chain.
 2. Employer escrows a reward and posts a job via `JobRegistry.createJob`.
-3. Agents stake and apply; one agent submits work with `completeJob`.
-4. `ValidationModule` picks validators who commit and reveal votes.
+3. Agents stake and apply; the assigned agent submits work with `submit`, triggering validator selection.
+4. Validators commit and reveal votes. After tally, anyone calls `finalizeAfterValidation` to record the outcome.
 5. `JobRegistry.finalize` pays the agent and validators or allows `DisputeModule` appeal.
 6. On success, `CertificateNFT` mints proof of completion.
 
@@ -1318,7 +1318,7 @@ The suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f5
 
 | Module | Interface / Key functions |
 | --- | --- |
-| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `completeJob`, `dispute`, `finalize`, `acknowledgeTaxPolicy`, `taxPolicyDetails`, `taxPolicyVersion` |
+| `JobRegistry` | [`IJobRegistry`](contracts/v2/interfaces/IJobRegistry.sol) – `createJob`, `applyForJob`, `submit`, `finalizeAfterValidation`, `dispute`, `finalize`, `acknowledgeTaxPolicy`, `taxPolicyDetails`, `taxPolicyVersion` |
 | `ValidationModule` | [`IValidationModule`](contracts/v2/interfaces/IValidationModule.sol) – `selectValidators`, `commitValidation`, `revealValidation`, `finalize`, `appeal` |
 | `StakeManager` | [`IStakeManager`](contracts/v2/interfaces/IStakeManager.sol) – `depositStake`, `withdrawStake`, `lockStake`, `slash`, `stakeOf` |
 | `ReputationEngine` | [`IReputationEngine`](contracts/v2/interfaces/IReputationEngine.sol) – `addReputation`, `subtractReputation`, `setBlacklist`, `isBlacklisted` |
@@ -1429,7 +1429,7 @@ Role-based quick steps:
 **Agents**
 1. Acknowledge the tax policy and confirm exemptions.
 2. Stake tokens in StakeManager via `depositStake(0, amount)`.
-3. Join a task with JobRegistry `applyForJob(jobId)` and submit results using `completeJob(jobId, data)`.
+3. Join a task with JobRegistry `applyForJob(jobId)` and submit results using `submit(jobId, uri)`. After validators vote, anyone may call `finalizeAfterValidation(jobId)`.
 
 **Validators**
 1. Acknowledge the tax policy and confirm exemptions.

@@ -138,7 +138,7 @@ describe("Protocol core features", function () {
       reward: 0,
       stake: 0,
       success: false,
-      status: 0,
+      status: 5,
       uri: ""
     });
     const tx = await registry

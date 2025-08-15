@@ -8,6 +8,7 @@ interface IJobRegistry {
         None,
         Created,
         Applied,
+        Submitted,
         Completed,
         Disputed,
         Finalized,
@@ -135,14 +136,19 @@ interface IJobRegistry {
         bytes32[] calldata proof
     ) external;
 
-    /// @notice Agent completes the job and triggers validation
-    /// @param jobId Identifier of the job being completed
-    /// @dev Reverts with {InvalidStatus} or {OnlyAgent} accordingly
-    function completeJob(uint256 jobId) external;
+    /// @notice Agent submits completed work for validation.
+    /// @param jobId Identifier of the job being submitted
+    /// @param uri Metadata URI of the submission
+    function submit(uint256 jobId, string calldata uri) external;
 
-    /// @notice Acknowledge tax policy and complete the job in one call
-    /// @param jobId Identifier of the job being completed
-    function acknowledgeAndCompleteJob(uint256 jobId) external;
+    /// @notice Acknowledge tax policy and submit work in one call
+    /// @param jobId Identifier of the job being submitted
+    /// @param uri Metadata URI of the submission
+    function acknowledgeAndSubmit(uint256 jobId, string calldata uri) external;
+
+    /// @notice Finalise a job after validator voting
+    /// @param jobId Identifier of the job being finalised
+    function finalizeAfterValidation(uint256 jobId) external;
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job

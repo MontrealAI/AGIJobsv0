@@ -87,7 +87,7 @@ describe("Validator ENS integration", function () {
       reward: 0,
       stake: 0,
       success: false,
-      status: 0,
+      status: 3,
       uri: "",
     };
     await jobRegistry.setJob(1, job);
@@ -153,7 +153,7 @@ describe("Validator ENS integration", function () {
       reward: 0,
       stake: 0,
       success: false,
-      status: 0,
+      status: 3,
       uri: "",
     };
     await jobRegistry.setJob(1, job);
@@ -202,7 +202,7 @@ describe("Validator ENS integration", function () {
       reward: 0,
       stake: 0,
       success: false,
-      status: 0,
+      status: 3,
       uri: "",
     };
     await jobRegistry.setJob(1, job);
