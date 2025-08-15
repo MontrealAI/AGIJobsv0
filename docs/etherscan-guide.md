@@ -10,6 +10,23 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 
 > **Base units:** $AGIALPHA uses 6 decimals. Enter amounts as integers (`1` token = `1_000000`, `0.5` token = `500000`, `0.1` token = `100000`).
 
+## Deploy v2 Modules
+1. Open the [`Deployer`](../contracts/v2/Deployer.sol) contract on Etherscan and connect a wallet under **Write Contract**.
+2. Execute **deployDefaults(ids)**; blank fields use `$AGIALPHA` and baked‑in economics while wiring all modules. The caller becomes the owner.
+3. To retune payouts, the owner calls [`StakeManager.setToken(newToken)`](../contracts/v2/StakeManager.sol) and [`FeePool.setToken(newToken)`](../contracts/v2/FeePool.sol) – emitting `TokenUpdated` proves the swap. No module redeployment is needed.
+
+## Role Function Quick Reference
+| Role | Required function calls | Example amounts (6 decimals) |
+| --- | --- | --- |
+| Employer | `$AGIALPHA.approve(StakeManager, 1_050000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000, uri)` | approve `1_050000` for a 1‑token reward + 5% fee |
+| Agent | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000)` | stake `1_000000` |
+| Validator | `$AGIALPHA.approve(StakeManager, 1_000000)` → `StakeManager.depositStake(1, 1_000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt)` | stake `1_000000` |
+| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → owner `DisputeModule.resolveDispute(jobId, uphold)` | appeal fee `1_000000` |
+
+## ENS prerequisites
+- Agents need an ENS subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`.
+- Membership can be proven off‑chain by calling [`ENSOwnershipVerifier.verifyOwnership`](../contracts/v2/modules/ENSOwnershipVerifier.sol) with your address, subdomain label, and Merkle proof.
+
 ## Calling Contract Methods via Etherscan
 
 1. **Connect to Web3** – open the contract on Etherscan, select the **Write Contract** tab, click **Connect to Web3**, and approve the connection.
@@ -120,6 +137,32 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 1. Ensure you've acknowledged the tax policy and confirmed **isTaxExempt()** on both `JobRegistry` and `DisputeModule`.
 2. Approve the `StakeManager` for the configured `appealFee` in `$AGIALPHA` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)` from the **Write Contract** tab.
 3. After the ruling, verify **DisputeResolved** in the `DisputeModule` and `JobRegistry` event logs.
+
+## Common Etherscan Flows
+### Approve $AGIALPHA
+1. Navigate to the [$AGIALPHA token](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe#writeContract).
+2. In **Write Contract**, connect your wallet and call **approve(spender, amount)**. Use 6‑decimal base units (e.g., `1_000000` for one token).
+
+### Acknowledge the tax policy
+1. Open `JobRegistry` → **Write**.
+2. Connect and execute **acknowledgeTaxPolicy()**; check the transaction log for `TaxAcknowledged`.
+
+### Apply with subdomain and proof
+1. Verify your ENS ownership via `ENSOwnershipVerifier.verifyOwnership` if needed.
+2. On `JobRegistry` → **Write**, call **applyForJob(jobId, subdomain, proof)** or **stakeAndApply(jobId, amount)** after approving the stake.
+
+### Commit & reveal validation votes
+1. During the commit window open `ValidationModule` → **Write** and call **commitValidation(jobId, hash, subdomain, proof)**.
+2. When the reveal window opens, call **revealValidation(jobId, approve, salt)** from the same address.
+
+### Raise & resolve disputes
+1. Approve the appeal fee on `$AGIALPHA`.
+2. On `JobRegistry` → **Write**, call **acknowledgeAndDispute(jobId, evidence)**.
+3. The owner finalizes by calling **resolveDispute(jobId, uphold)** on `DisputeModule`.
+
+### List & purchase NFTs
+1. To list a certificate, open `CertificateNFT` → **Write** and call **approve(marketplace, tokenId)** or **setApprovalForAll(operator, true)**.
+2. Buyers acquire a token by calling **safeTransferFrom(owner, buyer, tokenId)** after approval.
 
 ## Function Reference
 
