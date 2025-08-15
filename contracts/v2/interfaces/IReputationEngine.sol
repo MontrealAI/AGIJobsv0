@@ -44,6 +44,11 @@ interface IReputationEngine {
     /// @return True if the user is blacklisted
     function isBlacklisted(address user) external view returns (bool);
 
+    /// @notice Determine whether a user meets the premium access threshold
+    /// @param user Address to query
+    /// @return True if the user's reputation meets or exceeds the threshold
+    function canAccessPremium(address user) external view returns (bool);
+
     /// @notice Owner functions
 
     /// @notice Allow or disallow a caller to update reputation

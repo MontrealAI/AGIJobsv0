@@ -414,7 +414,7 @@ The platform’s v2 release decomposes coordination into immutable, single‑pur
 - **JobRegistry** – posts jobs, escrows rewards, and routes calls to companion modules.
 - **ValidationModule** – runs commit–reveal voting and tallies preliminary outcomes.
 - **StakeManager** – holds stakes, escrows payouts, and executes slashing.
-- **ReputationEngine** – accrues or subtracts reputation and manages blacklists.
+- **ReputationEngine** – accrues or subtracts reputation, manages blacklists, and exposes `canAccessPremium(user)` for gating premium features.
 - **DisputeModule** – optional appeal layer for contested jobs.
 - **CertificateNFT** – mints ERC‑721 completion certificates to employers.
 
@@ -598,6 +598,7 @@ interface IReputationEngine {
     function add(address user, uint256 amount) external;
     function subtract(address user, uint256 amount) external;
     function reputation(address user) external view returns (uint256);
+    function canAccessPremium(address user) external view returns (bool);
     function setCaller(address caller, bool allowed) external;
 }
 
