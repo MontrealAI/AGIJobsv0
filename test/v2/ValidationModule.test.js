@@ -129,12 +129,12 @@ describe("ValidationModule V2", function () {
         .commitValidation(1, commit2, "", [])
     ).wait();
     await advance(61);
-    await validation
-      .connect(signerMap[selected[0].toLowerCase()])
-      .revealValidation(1, true, salt1);
-    await validation
-      .connect(signerMap[selected[1].toLowerCase()])
-      .revealValidation(1, true, salt2);
+      await validation
+        .connect(signerMap[selected[0].toLowerCase()])
+        .revealValidation(1, true, salt1, "", []);
+      await validation
+        .connect(signerMap[selected[1].toLowerCase()])
+        .revealValidation(1, true, salt2, "", []);
     await advance(61);
     expect(await validation.tally.staticCall(1)).to.equal(true);
     await validation.tally(1);
@@ -186,12 +186,12 @@ describe("ValidationModule V2", function () {
     await advance(61);
     const stake0 = await stakeManager.stakeOf(selected[0], 1);
     const stake1 = await stakeManager.stakeOf(selected[1], 1);
-    await validation
-      .connect(signerMap[selected[0].toLowerCase()])
-      .revealValidation(1, true, salt1);
-    await validation
-      .connect(signerMap[selected[1].toLowerCase()])
-      .revealValidation(1, false, salt2);
+      await validation
+        .connect(signerMap[selected[0].toLowerCase()])
+        .revealValidation(1, true, salt1, "", []);
+      await validation
+        .connect(signerMap[selected[1].toLowerCase()])
+        .revealValidation(1, false, salt2, "", []);
     await advance(61);
     await validation.tally(1);
     const slashed = stake0 >= stake1 ? selected[1] : selected[0];
@@ -230,7 +230,7 @@ describe("ValidationModule V2", function () {
     await expect(
       validation
         .connect(signerMap[selected[0].toLowerCase()])
-        .revealValidation(1, true, salt)
+        .revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("invalid reveal");
   });
 
@@ -341,12 +341,12 @@ describe("ValidationModule V2", function () {
     await advance(61);
     await jobRegistry.setTaxPolicyVersion(2);
     await expect(
-      validation.connect(val).revealValidation(1, true, salt)
+      validation.connect(val).revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("acknowledge tax policy");
 
     await jobRegistry.connect(val).acknowledgeTaxPolicy();
     await expect(
-      validation.connect(val).revealValidation(1, true, salt)
+      validation.connect(val).revealValidation(1, true, salt, "", [])
     ).to.emit(validation, "VoteRevealed");
   });
 

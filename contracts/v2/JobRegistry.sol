@@ -65,6 +65,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     IFeePool public feePool;
     ENSOwnershipVerifier public ensOwnershipVerifier;
     bytes32 public agentRootNode;
+    bytes32 public agentMerkleRoot;
     mapping(address => bool) public additionalAgents;
 
     /// @notice Current version of the tax policy. Participants must acknowledge
@@ -138,6 +139,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param agent Address being updated.
     /// @param allowed True if the agent is whitelisted, false if removed.
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
+    /// @notice Emitted when an ENS root node is updated.
+    /// @param node Identifier for the root node being modified.
+    /// @param newRoot The new ENS root node hash.
+    event RootNodeUpdated(string node, bytes32 newRoot);
+    /// @notice Emitted when a Merkle root is updated.
+    /// @param root Identifier for the Merkle root being modified.
+    /// @param newRoot The new Merkle root hash.
+    event MerkleRootUpdated(string root, bytes32 newRoot);
 
     // job parameter template event
     event JobParametersUpdated(uint256 reward, uint256 stake);
@@ -271,6 +280,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Set the ENS root node used for agent verification.
     function setAgentRootNode(bytes32 node) external onlyOwner {
         agentRootNode = node;
+        emit RootNodeUpdated("agent", node);
+    }
+
+    /// @notice Set the agent Merkle root used for identity proofs.
+    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+        agentMerkleRoot = root;
+        ensOwnershipVerifier.setAgentMerkleRoot(root);
+        emit MerkleRootUpdated("agent", root);
     }
 
     /// @notice Configure additional agents that bypass ENS checks.

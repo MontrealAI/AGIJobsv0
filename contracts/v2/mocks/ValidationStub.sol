@@ -22,7 +22,13 @@ contract ValidationStub is IValidationModule {
         bytes32[] calldata
     ) external {}
 
-    function revealValidation(uint256, bool, bytes32) external {}
+    function revealValidation(
+        uint256,
+        bool,
+        bytes32,
+        string calldata,
+        bytes32[] calldata
+    ) external {}
 
     function tally(uint256) external view returns (bool success) {
         return result;
