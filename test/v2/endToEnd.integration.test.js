@@ -84,7 +84,6 @@ describe("end-to-end job lifecycle", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
       0,
       owner.address
     );

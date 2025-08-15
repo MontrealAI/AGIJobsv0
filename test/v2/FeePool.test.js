@@ -61,7 +61,6 @@ describe("FeePool", function () {
     feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
       0,
       treasury.address
     );

@@ -278,7 +278,6 @@ contract Deployer {
         FeePool pool = new FeePool(
             IERC20(address(0)),
             IStakeManager(address(stake)),
-            IStakeManager.Role.Platform,
             burnPct,
             owner
         );

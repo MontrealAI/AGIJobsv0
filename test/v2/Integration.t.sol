@@ -101,7 +101,7 @@ contract IntegrationTest {
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
         registry = new MockPlatformRegistry();
-        feePool = new FeePool(token, stakeManager, IStakeManager.Role.Platform, address(this));
+        feePool = new FeePool(token, stakeManager, 0, address(this));
         router = new JobRouter(registry, address(this));
     }
 

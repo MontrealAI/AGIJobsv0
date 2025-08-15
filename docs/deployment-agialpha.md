@@ -23,7 +23,7 @@ Deploy each contract **in the order listed below** from the **Write Contract** t
 5. `ReputationEngine(stakeManager)` – optional reputation weighting (pass `0` to wire later).
 6. `DisputeModule(jobRegistry, appealFee, moderator, jury)` – manages appeals and dispute fees.
 7. `CertificateNFT(name, symbol)` – certifies completed work.
-8. `FeePool(token, stakeManager, role, burnPct, treasury)` – use `address(0)` for `token` to fall back to $AGIALPHA; `burnPct` defaults to `0`.
+8. `FeePool(token, stakeManager, burnPct, treasury)` – rewards default to platform stakers; use `address(0)` for `token` to fall back to $AGIALPHA` and `burnPct` defaults to `0`.
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
 10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
 11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register with routing in one call. For simple flows without `JobRouter`, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` directly.

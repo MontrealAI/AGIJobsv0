@@ -152,7 +152,6 @@ describe("JobRegistry integration", function () {
     const feePool = await FeePool.deploy(
       await token.getAddress(),
       await stakeManager.getAddress(),
-      2,
       0,
       treasury.address
     );

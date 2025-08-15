@@ -337,7 +337,7 @@ For step‑by‑step screenshots of these flows, see [docs/deployment-agialpha.m
 
 ## Quick Start: FeePool, JobRouter & GovernanceReward
 
-1. **Deploy & verify** – deploy `FeePool(token, stakeManager, rewardRole)` and `JobRouter(stakeManager, reputationEngine)`. The deployer automatically becomes the owner. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
+1. **Deploy & verify** – deploy `FeePool(token, stakeManager, burnPct, treasury)` (rewards default to platform stakers) and `JobRouter(stakeManager, reputationEngine)`. The deployer automatically becomes the owner. On Etherscan, open each address, select the **Contract** tab, and use **Verify and Publish** to upload the source code.
 2. **Connect wallet** – from the **Write Contract** tab click **Connect to Web3**. Owners may initialize modules immediately after verification.
 3. **Initialize parameters**
    - On `StakeManager`, call `setToken(token)` if the staking token differs from the constructor value.
@@ -451,7 +451,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 **Etherscan deployment steps**
 
-1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine(stakeManager)` (or pass `0` to wire later), `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, role, burnPct, treasury)` and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields or addresses as `0` uses sensible defaults and allows wiring via `setModules` or `ModuleInstaller.initialize` later.
+1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine(stakeManager)` (or pass `0` to wire later), `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, burnPct, treasury)` (payouts default to platform stakers) and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields or addresses as `0` uses sensible defaults and allows wiring via `setModules` or `ModuleInstaller.initialize` later.
 2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate, [extraAcknowledgers])` then `setFeePool(feePool)` and `setFeePct(pct)`. This auto-registers the `StakeManager` and any optional addresses as tax-policy acknowledgers. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
 3. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
    - Employers post work with `createJob(reward, uri)` or combine acknowledgement via `acknowledgeAndCreateJob(reward, uri)` after approving `reward + fee`.
@@ -1353,7 +1353,7 @@ $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments,
    - `FeePool`, `JobRegistry`, `ValidationModule`, `DisputeModule`, `CertificateNFT`, and `PlatformRegistry` – use the previously deployed module addresses in their constructors.
 2. **Configure staking and rewards**
    - On `StakeManager`, call `setMinStake`, `setSlashingPercentages`, and `setTreasury` as needed.
-   - On `FeePool`, call `setRewardRole(2)` to direct revenue to platform stakers, adjust `setBurnPct` if desired, and `setTreasury(treasury)` to collect any rounding dust from distributions.
+   - On `FeePool`, rewards already flow to platform stakers; owners may call `setRewardRole` to redirect payouts, adjust `setBurnPct` if desired, and `setTreasury(treasury)` to collect any rounding dust from distributions.
    - The deploying entity may register its reference platform without staking; it will appear in `PlatformRegistry` but receive no routing priority or fee share.
       - **Worked example**
         1. The owner skips `depositStake` (amount = `0`) and calls `PlatformRegistry.register()`.
