@@ -161,9 +161,10 @@ interface IJobRegistry {
     /// @param uri Metadata URI of the submission
     function acknowledgeAndSubmit(uint256 jobId, string calldata uri) external;
 
-    /// @notice Finalise a job after validator voting
+    /// @notice Record validation outcome and update job state
     /// @param jobId Identifier of the job being finalised
-    function finalizeAfterValidation(uint256 jobId) external;
+    /// @param success True if validators approved the job
+    function finalizeAfterValidation(uint256 jobId, bool success) external;
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
