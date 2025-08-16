@@ -46,6 +46,7 @@ contract ReputationEngine is Ownable {
     event AgentThresholdUpdated(uint256 newThreshold);
     event ValidatorThresholdUpdated(uint256 newThreshold);
     event DecayConstantUpdated(uint256 newK);
+    event ValidationRewardPercentageUpdated(uint256 newPercentage);
 
     constructor() Ownable(msg.sender) {}
 
@@ -90,6 +91,7 @@ contract ReputationEngine is Ownable {
     function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
         require(percentage <= 100, "invalid percentage");
         validationRewardPercentage = percentage;
+        emit ValidationRewardPercentageUpdated(percentage);
     }
 
     /// @notice Set the decay constant `k` in 1e18 fixed point.

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 interface IValidationModule {
     function validate(uint256 jobId) external view returns (bool);
@@ -40,7 +41,7 @@ interface IDisputeModule {
 
 /// @title JobRegistry
 /// @notice Orchestrates job lifecycle and coordinates with external modules.
-contract JobRegistry is Ownable {
+contract JobRegistry is Ownable, Pausable {
     enum Status { None, Created, Completed, Disputed, Finalized }
 
     struct Job {
@@ -86,6 +87,14 @@ contract JobRegistry is Ownable {
     event FeePctUpdated(uint256 feePct);
     event AgentRootNodeUpdated(bytes32 node);
     event AgentMerkleRootUpdated(bytes32 root);
+    event ModulesUpdated(
+        address validationModule,
+        address reputationEngine,
+        address stakeManager,
+        address certificateNFT,
+        address disputeModule,
+        address feePool
+    );
 
     event JobCreated(
         uint256 indexed jobId,
@@ -101,6 +110,14 @@ contract JobRegistry is Ownable {
     event JobParametersUpdated(uint256 reward, uint256 stake);
 
     constructor() Ownable(msg.sender) {}
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     /// @notice require caller to acknowledge current tax policy
     modifier requiresTaxAcknowledgement() {
@@ -178,13 +195,15 @@ contract JobRegistry is Ownable {
         IReputationEngine _reputationEngine,
         IStakeManager _stakeManager,
         ICertificateNFT _certificateNFT,
-        IDisputeModule _disputeModule
+        IDisputeModule _disputeModule,
+        IFeePool _feePool
     ) external onlyOwner {
         validationModule = _validationModule;
         reputationEngine = _reputationEngine;
         stakeManager = _stakeManager;
         certificateNFT = _certificateNFT;
         disputeModule = _disputeModule;
+        feePool = _feePool;
         emit ValidationModuleUpdated(address(_validationModule));
         emit ModuleUpdated("ValidationModule", address(_validationModule));
         emit ReputationEngineUpdated(address(_reputationEngine));
@@ -195,6 +214,16 @@ contract JobRegistry is Ownable {
         emit ModuleUpdated("CertificateNFT", address(_certificateNFT));
         emit DisputeModuleUpdated(address(_disputeModule));
         emit ModuleUpdated("DisputeModule", address(_disputeModule));
+        emit FeePoolUpdated(address(_feePool));
+        emit ModuleUpdated("FeePool", address(_feePool));
+        emit ModulesUpdated(
+            address(_validationModule),
+            address(_reputationEngine),
+            address(_stakeManager),
+            address(_certificateNFT),
+            address(_disputeModule),
+            address(_feePool)
+        );
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
@@ -207,6 +236,7 @@ contract JobRegistry is Ownable {
     function createJob(address agent)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
         returns (uint256 jobId)
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
@@ -242,6 +272,7 @@ contract JobRegistry is Ownable {
     function completeJob(uint256 jobId, string calldata uri)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "invalid status");
@@ -263,6 +294,7 @@ contract JobRegistry is Ownable {
     function dispute(uint256 jobId)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
@@ -295,6 +327,7 @@ contract JobRegistry is Ownable {
     function finalize(uint256 jobId)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed, "not ready");
