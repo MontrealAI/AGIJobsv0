@@ -24,6 +24,9 @@ contract ReputationEngine is Ownable {
     /// @dev authorised callers mapped to the role they may update
     mapping(address => Role) public callers;
 
+    /// @notice JobRegistry allowed to invoke lifecycle hooks
+    address public jobRegistry;
+
     /// @notice minimum reputation before a user is blacklisted
     uint256 public agentThreshold;
     uint256 public validatorThreshold;
@@ -46,9 +49,17 @@ contract ReputationEngine is Ownable {
 
     constructor() Ownable(msg.sender) {}
 
+    modifier onlyJobRegistry() {
+        require(msg.sender == jobRegistry, "not authorized");
+        _;
+    }
+
     /// @notice Authorize a caller and assign its role.
     function setCaller(address caller, Role role) external onlyOwner {
         callers[caller] = role;
+        if (role == Role.Agent) {
+            jobRegistry = caller;
+        }
         emit CallerAuthorized(caller, role);
     }
 
@@ -173,9 +184,10 @@ contract ReputationEngine is Ownable {
         subtract(user, amount);
     }
 
-    /// @notice Manually update blacklist status.
-    function blacklist(address user, Role role, bool status) external {
-        require(callers[msg.sender] == role, "not authorized");
+    /// @notice Manually update blacklist status for caller's role.
+    function blacklist(address user, bool status) external {
+        Role role = callers[msg.sender];
+        require(role != Role.None, "not authorized");
         if (role == Role.Agent) {
             agentBlacklisted[user] = status;
         } else if (role == Role.Validator) {
@@ -195,8 +207,7 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Hook called when an agent applies for a job.
-    function onApply(address agent) external {
-        require(callers[msg.sender] == Role.Agent, "not authorized");
+    function onApply(address agent) external onlyJobRegistry {
         _applyDecayAgent(agent);
         require(!agentBlacklisted[agent], "blacklisted");
         require(_agentReputation[agent] >= agentThreshold, "insufficient reputation");
@@ -205,12 +216,42 @@ contract ReputationEngine is Ownable {
     /// @notice Hook called when a job finalizes for an agent.
     /// @param agent The agent involved
     /// @param success Whether the job succeeded
-    function onFinalize(address agent, bool success) external {
-        require(callers[msg.sender] == Role.Agent, "not authorized");
+    /// @param payout Job payout in wei
+    /// @param completionTime Duration of the job in seconds
+    function onFinalize(
+        address agent,
+        bool success,
+        uint256 payout,
+        uint256 completionTime
+    ) external onlyJobRegistry {
         _applyDecayAgent(agent);
-        if (!success && _agentReputation[agent] < agentThreshold) {
+        if (success) {
+            uint256 gain = calculateReputationPoints(payout, completionTime);
+            uint256 newScore = _enforceReputationGrowth(_agentReputation[agent], gain);
+            _agentReputation[agent] = newScore;
+            emit ReputationChanged(agent, Role.Agent, int256(gain), newScore);
+            if (agentBlacklisted[agent] && newScore >= agentThreshold) {
+                agentBlacklisted[agent] = false;
+                emit Blacklisted(agent, Role.Agent, false);
+            }
+        } else if (_agentReputation[agent] < agentThreshold) {
             agentBlacklisted[agent] = true;
             emit Blacklisted(agent, Role.Agent, true);
+        }
+    }
+
+    /// @notice Reward a validator based on an agent's reputation gain.
+    /// @param validator The validator address
+    /// @param agentGain Reputation points awarded to the agent
+    function rewardValidator(address validator, uint256 agentGain) external onlyJobRegistry {
+        _applyDecayValidator(validator);
+        uint256 gain = calculateValidatorReputationPoints(agentGain);
+        uint256 newScore = _enforceReputationGrowth(_validatorReputation[validator], gain);
+        _validatorReputation[validator] = newScore;
+        emit ReputationChanged(validator, Role.Validator, int256(gain), newScore);
+        if (validatorBlacklisted[validator] && newScore >= validatorThreshold) {
+            validatorBlacklisted[validator] = false;
+            emit Blacklisted(validator, Role.Validator, false);
         }
     }
 
