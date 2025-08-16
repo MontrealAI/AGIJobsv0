@@ -33,12 +33,22 @@ describe("JobNFT", function () {
       .withArgs(user.address);
   });
 
+  it("allows only owner to set stake manager", async function () {
+    const { nft, jobRegistry, user } = await deployFixture();
+    await expect(nft.connect(jobRegistry).setStakeManager(user.address))
+      .to.be.revertedWithCustomError(nft, "OwnableUnauthorizedAccount")
+      .withArgs(jobRegistry.address);
+    await expect(nft.setStakeManager(user.address))
+      .to.emit(nft, "StakeManagerUpdated")
+      .withArgs(user.address);
+  });
+
   it("mints and burns only via JobRegistry", async function () {
     const { nft, jobRegistry, user } = await deployFixture();
-    await expect(nft.connect(user).mint(user.address, "job1.json"))
+    await expect(nft.connect(user).mint(user.address, 1, "job1.json"))
       .to.be.revertedWith("only JobRegistry");
-    await nft.connect(jobRegistry).mint(user.address, "job1.json");
-    const tokenId = await nft.nextTokenId();
+    await nft.connect(jobRegistry).mint(user.address, 1, "job1.json");
+    const tokenId = 1;
 
     expect(await nft.ownerOf(tokenId)).to.equal(user.address);
     await nft.connect(jobRegistry).burn(tokenId);
@@ -51,9 +61,10 @@ describe("JobNFT", function () {
   it("prefixes tokenURI with base URI", async function () {
     const { nft, jobRegistry, user } = await deployFixture();
     await nft.setBaseURI("ipfs://");
-    await nft.connect(jobRegistry).mint(user.address, "job1.json");
-    const tokenId = await nft.nextTokenId();
+    await nft.connect(jobRegistry).mint(user.address, 1, "job1.json");
+    const tokenId = 1;
 
     expect(await nft.tokenURI(tokenId)).to.equal("ipfs://job1.json");
   });
 });
+
