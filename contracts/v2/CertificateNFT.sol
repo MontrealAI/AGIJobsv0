@@ -19,6 +19,8 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     mapping(uint256 => string) private _tokenURIs;
 
     StakeManager public stakeManager;
+    address public feeRecipient;
+    uint96 public feeBps;
 
     struct Listing {
         address seller;
@@ -31,6 +33,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
+    event FeeUpdated(address recipient, uint96 bps);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
@@ -53,6 +56,13 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     function setStakeManager(address manager) external onlyOwner {
         stakeManager = StakeManager(payable(manager));
         emit StakeManagerUpdated(manager);
+    }
+
+    function setFee(address recipient, uint96 bps) external onlyOwner {
+        require(bps <= 10_000, "bps");
+        feeRecipient = recipient;
+        feeBps = bps;
+        emit FeeUpdated(recipient, bps);
     }
 
     function setBaseURI(string calldata uri) external onlyOwner {
@@ -110,7 +120,14 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         );
         uint256 price = listing.price;
         delete listings[tokenId];
-        token.safeTransferFrom(msg.sender, seller, price);
+        uint256 fee;
+        uint256 payout = price;
+        if (feeRecipient != address(0) && feeBps != 0) {
+            fee = (price * feeBps) / 10_000;
+            payout = price - fee;
+            token.safeTransferFrom(msg.sender, feeRecipient, fee);
+        }
+        token.safeTransferFrom(msg.sender, seller, payout);
         _safeTransfer(seller, msg.sender, tokenId, "");
         emit NFTPurchased(tokenId, msg.sender, price);
     }
