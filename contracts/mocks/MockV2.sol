@@ -61,6 +61,10 @@ contract MockStakeManager is IStakeManager {
         return totalStakes[role];
     }
 
+    function getHighestPayoutPercentage(address) external pure override returns (uint256) {
+        return 100;
+    }
+
     // legacy helper for tests
     function setTokenLegacy(address) external {}
 }

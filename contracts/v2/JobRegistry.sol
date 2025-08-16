@@ -104,6 +104,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     uint256 public constant DEFAULT_FEE_PCT = 5;
     uint256 public maxJobReward;
     uint256 public jobDurationLimit;
+    uint256 public validatorRewardPct;
+    uint256 public constant DEFAULT_VALIDATOR_REWARD_PCT = 8;
 
     // module configuration events
     event ModuleUpdated(string module, address newAddress);
@@ -112,6 +114,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
+    event ValidatorRewardPctUpdated(uint256 pct);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
     /// @param version Incrementing version participants must acknowledge.
@@ -194,6 +197,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(pct <= 100, "pct");
         feePct = pct;
         jobStake = _jobStake == 0 ? DEFAULT_JOB_STAKE : _jobStake;
+        validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
+        emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
             emit ValidationModuleUpdated(address(_validation));
             emit ModuleUpdated("ValidationModule", address(_validation));
@@ -329,6 +334,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(_feePct <= 100, "pct");
         feePct = _feePct;
         emit FeePctUpdated(_feePct);
+    }
+
+    /// @notice update validator reward percentage of job reward
+    function setValidatorRewardPct(uint256 pct) external onlyOwner {
+        require(pct <= 100, "pct");
+        validatorRewardPct = pct;
+        emit ValidatorRewardPctUpdated(pct);
     }
 
     /// @notice set the maximum allowed job reward
@@ -728,13 +740,42 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
+                uint256 agentPct = stakeManager.getHighestPayoutPercentage(
+                    job.agent
+                );
+                uint256 agentReward = (uint256(job.reward) * agentPct) / 100;
+                address[] memory vals;
+                uint256 validatorReward;
+                uint256 perValidator;
+                if (
+                    validatorRewardPct > 0 &&
+                    address(validationModule) != address(0)
+                ) {
+                    vals = validationModule.validators(jobId);
+                    if (vals.length > 0) {
+                        validatorReward =
+                            (uint256(job.reward) * validatorRewardPct) /
+                            100;
+                        perValidator = validatorReward / vals.length;
+                    }
+                }
                 stakeManager.finalizeJobFunds(
                     jobKey,
                     job.agent,
-                    uint256(job.reward),
+                    agentReward,
                     fee,
                     pool
                 );
+                if (validatorReward > 0) {
+                    for (uint256 i; i < vals.length; ++i) {
+                        stakeManager.release(vals[i], perValidator);
+                    }
+                }
+                uint256 leftover =
+                    uint256(job.reward) - agentReward - validatorReward;
+                if (leftover > 0) {
+                    stakeManager.releaseJobFunds(jobKey, job.employer, leftover);
+                }
             }
             if (address(reputationEngine) != address(0)) {
                 reputationEngine.add(job.agent, 1);

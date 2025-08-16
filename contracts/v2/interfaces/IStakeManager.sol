@@ -100,5 +100,8 @@ interface IStakeManager {
 
     /// @notice address of the JobRegistry authorized to deposit fees
     function jobRegistry() external view returns (address);
+
+    /// @notice Highest payout percentage for an agent based on AGI type NFTs
+    function getHighestPayoutPercentage(address agent) external view returns (uint256);
 }
 

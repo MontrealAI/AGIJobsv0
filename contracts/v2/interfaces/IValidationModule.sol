@@ -62,5 +62,10 @@ interface IValidationModule {
 
     /// @notice Update approval threshold percentage
     function setApprovalThreshold(uint256 pct) external;
+
+    /// @notice Return validators selected for a job
+    /// @param jobId Identifier of the job
+    /// @return validators Array of validator addresses
+    function validators(uint256 jobId) external view returns (address[] memory validators);
 }
 
