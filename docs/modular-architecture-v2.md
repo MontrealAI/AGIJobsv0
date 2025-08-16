@@ -28,7 +28,7 @@ graph LR
 | **StakeManager** | holds escrowed rewards and participant stakes; executes payouts and slashing | change ERC‑20 token via `setToken`, tune minimum stakes and slashing percentages |
 | **ValidationModule** | selects validators and runs the commit‑reveal finalization | update committee size and timing windows through `setParameters` |
 | **ReputationEngine** | accrues or subtracts reputation; enforces blacklists | alter reputation weights, thresholds and blacklist entries |
-| **DisputeModule** | optional appeal layer for contested jobs | set appeal fees and moderator/jury addresses |
+| **DisputeModule** | optional dispute layer for contested jobs | set dispute fees and moderator/jury addresses |
 | **CertificateNFT** | mints ERC‑721 completion certificates | update base URI or registry address |
 
 All modules are deployed as **immutable** contracts. Governance upgrades occur by deploying a new module and pointing `JobRegistry` to the replacement. Every setter is protected by `onlyOwner`, enabling parameter updates without exposing control to external parties.
@@ -85,7 +85,7 @@ interface IReputationEngine {
 interface IDisputeModule {
     function raiseDispute(uint256 jobId, string calldata reason) external;
     function resolveDispute(uint256 jobId, bool uphold) external;
-    function setAppealFee(uint256 fee) external;
+    function setDisputeFee(uint256 fee) external;
 }
 
 interface ICertificateNFT {

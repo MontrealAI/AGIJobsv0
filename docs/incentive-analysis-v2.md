@@ -18,7 +18,7 @@ sequenceDiagram
     VM->>JR: result
 ```
 
-Majority approval releases rewards; any minority can escalate to the `DisputeModule` by paying an appeal fee.
+Majority approval releases rewards; any minority can escalate to the `DisputeModule` by paying a dispute fee.
 
 ## Slashing & Redistribution
 Slashing percentages exceed potential rewards. When misbehaviour occurs:

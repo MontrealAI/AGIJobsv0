@@ -128,7 +128,7 @@ describe("Protocol core features", function () {
       0,
       ethers.ZeroAddress
     );
-    await dispute.connect(owner).setAppealFee(5);
+    await dispute.connect(owner).setDisputeFee(5);
     await dispute.connect(owner).setDisputeWindow(0);
     await registry.setDisputeModule(dispute.target);
     const jobId = 1;

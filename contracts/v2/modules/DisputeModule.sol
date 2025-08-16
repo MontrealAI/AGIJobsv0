@@ -16,7 +16,7 @@ contract DisputeModule is Ownable {
 
     /// @notice Fee required to initiate a dispute, in token units (6 decimals).
     /// @dev Defaults to 1 token (1e6 units) if zero is provided to the constructor.
-    uint256 public appealFee;
+    uint256 public disputeFee;
 
     /// @notice Time that must elapse before a dispute can be resolved.
     /// @dev Defaults to 1 day if zero is provided to the constructor.
@@ -37,21 +37,25 @@ contract DisputeModule is Ownable {
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
 
-    event DisputeRaised(uint256 indexed jobId, address indexed caller, string evidence);
+    event DisputeRaised(
+        uint256 indexed jobId,
+        address indexed claimant,
+        string evidence
+    );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event ModeratorUpdated(address moderator);
-    event AppealFeeUpdated(uint256 fee);
+    event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
     event ModulesUpdated(address indexed jobRegistry);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
-    /// @param _appealFee Initial appeal fee in token units (6 decimals); defaults to 1e6.
+    /// @param _disputeFee Initial dispute fee in token units (6 decimals); defaults to 1e6.
     /// @param _disputeWindow Minimum time in seconds before resolution; defaults to 1 day.
     /// @param _moderator Optional moderator address; defaults to the deployer.
     constructor(
         IJobRegistry _jobRegistry,
-        uint256 _appealFee,
+        uint256 _disputeFee,
         uint256 _disputeWindow,
         address _moderator
     ) Ownable(msg.sender) {
@@ -61,8 +65,8 @@ contract DisputeModule is Ownable {
             emit ModulesUpdated(address(_jobRegistry));
         }
 
-        appealFee = _appealFee > 0 ? _appealFee : 1e6;
-        emit AppealFeeUpdated(appealFee);
+        disputeFee = _disputeFee > 0 ? _disputeFee : 1e6;
+        emit DisputeFeeUpdated(disputeFee);
 
         disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
         emit DisputeWindowUpdated(disputeWindow);
@@ -96,11 +100,11 @@ contract DisputeModule is Ownable {
         emit ModeratorUpdated(_moderator);
     }
 
-    /// @notice Configure the appeal fee in token units (6 decimals).
-    /// @param fee New appeal fee; 0 disables the fee.
-    function setAppealFee(uint256 fee) external onlyOwner {
-        appealFee = fee;
-        emit AppealFeeUpdated(fee);
+    /// @notice Configure the dispute fee in token units (6 decimals).
+    /// @param fee New dispute fee; 0 disables the fee.
+    function setDisputeFee(uint256 fee) external onlyOwner {
+        disputeFee = fee;
+        emit DisputeFeeUpdated(fee);
     }
 
     /// @notice Configure the dispute resolution window in seconds.
@@ -110,24 +114,29 @@ contract DisputeModule is Ownable {
         emit DisputeWindowUpdated(window);
     }
 
-    /// @notice Raise a dispute by posting the appeal fee and providing evidence.
+    /// @notice Raise a dispute by posting the dispute fee and providing evidence.
     /// @param jobId Identifier of the job being disputed.
+    /// @param claimant Address of the party raising the dispute.
     /// @param evidence Supporting evidence for the dispute.
-    function raiseDispute(uint256 jobId, string calldata evidence)
-        external
-        onlyJobRegistry
-    {
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external onlyJobRegistry {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address claimant = job.agent;
+        require(
+            claimant == job.agent || claimant == job.employer,
+            "not participant"
+        );
 
         // Lock the dispute fee in the StakeManager if configured.
-        if (appealFee > 0) {
+        if (disputeFee > 0) {
             IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
                 claimant,
-                appealFee
+                disputeFee
             );
         }
 
@@ -136,7 +145,7 @@ contract DisputeModule is Ownable {
             evidence: evidence,
             raisedAt: block.timestamp,
             resolved: false,
-            fee: appealFee
+            fee: disputeFee
         });
 
         emit DisputeRaised(jobId, claimant, evidence);

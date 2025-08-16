@@ -76,7 +76,7 @@ The contract owner can reconfigure live deployments without redeployment:
 - **ENS roots** – rotate subdomains or proofs with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol), [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol), [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol), and update ENS contract references via [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).
 - **Token addresses** – move between payout tokens with [`StakeManager.setToken`](contracts/v2/StakeManager.sol) and [`FeePool.setToken`](contracts/v2/FeePool.sol).
 - **Stake requirements** – adjust minimums through [`StakeManager.setMinStake`](contracts/v2/StakeManager.sol) and [`PlatformRegistry.setMinPlatformStake`](contracts/v2/PlatformRegistry.sol).
-- **Dispute parameters** – tune appeal fees or tax policy using [`DisputeModule.setAppealFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
+- **Dispute parameters** – tune dispute fees or tax policy using [`DisputeModule.setDisputeFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
 
 ## Non-technical deployment guide
 
@@ -190,7 +190,7 @@ Use the following quick checklists for common flows (see [docs/etherscan-guide.m
 3. **Verify events** – check for `RewardPoolContribution` on `FeePool`.
 
 #### Raise a Dispute
-1. **Approve** – approve the appeal fee on `$AGIALPHA`.
+1. **Approve** – approve the dispute fee on `$AGIALPHA`.
 2. **Helper call** – in `JobRegistry` → **Write**, call `acknowledgeAndDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute`.
 3. **Verify events** – confirm `DisputeRaised` on the `DisputeModule`.
 
@@ -413,9 +413,9 @@ The modular v2 suite is deployed module by module and then wired together on‑c
 
 If any addresses were left unset during deployment, transfer ownership of each module to the installer and call `ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)` once from the installer's owner. This `onlyOwner` call wires cross‑links, sets the protocol fee pool and optional tax policy, and automatically returns ownership. Every parameter remains owner‑configurable post‑deployment via module `onlyOwner` setters.
 
-Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `appealFee` in $AGIALPHA and calling `JobRegistry.raiseDispute(jobId, evidence)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
+Authorize a helper such as `PlatformIncentives` with `PlatformRegistry.setRegistrar` and `JobRouter.setRegistrar` so operators can opt in using one transaction. Dispute appeals require approving the `StakeManager` for the `disputeFee` in $AGIALPHA and calling `JobRegistry.raiseDispute(jobId, evidence)`; no ETH is ever sent, the bond stays entirely in `$AGIALPHA`.
 
-Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setAppealFee`, and `FeePool.setBurnPct`.
+Tune economics via `StakeManager.setMinStake`, `StakeManager.setSlashingPercentages`, `ValidationModule.setCommitRevealWindows` (24h defaults) and `ValidationModule.setValidatorBounds`, `DisputeModule.setDisputeFee`, and `FeePool.setBurnPct`.
 
 ### Token units & swapping
 
@@ -570,7 +570,7 @@ When integrating with standard 18‑decimal ERC‑20s, divide amounts by `1e12` 
 
 **Etherscan deployment steps**
 
-1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine(stakeManager)` (or pass `0` to wire later), `DisputeModule(jobRegistry, appealFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, burnPct, treasury)` (payouts default to platform stakers) and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields or addresses as `0` uses sensible defaults and allows wiring via `setModules` or `ModuleInstaller.initialize` later.
+1. **Deploy modules** – From each contract's **Deploy** tab, deploy `StakeManager(token, minStake, employerPct, treasuryPct, treasury, jobRegistry, disputeModule)`, `JobRegistry(validation, stakeManager, reputation, dispute, certificate, feePool, taxPolicy, feePct, jobStake)`, `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators[, validatorPool])`, `ReputationEngine(stakeManager)` (or pass `0` to wire later), `DisputeModule(jobRegistry, disputeFee, moderator, jury)`, `CertificateNFT(name, symbol)`, `FeePool(token, stakeManager, burnPct, treasury)` (payouts default to platform stakers) and `TaxPolicy(uri, acknowledgement)`. The deployer address becomes the owner for every module. Leaving numeric fields or addresses as `0` uses sensible defaults and allows wiring via `setModules` or `ModuleInstaller.initialize` later.
 2. **Wire them together** – If any module addresses were left as `0` during deployment, call `JobRegistry.setModules(validation, stakeManager, reputation, dispute, certificate, [extraAcknowledgers])` then `setFeePool(feePool)` and `setFeePct(pct)`. This auto-registers the `StakeManager` and any optional addresses as tax-policy acknowledgers. Link the `StakeManager` to the registry and dispute module with `setModules(jobRegistry, disputeModule)`.
 3. **Configure identity** – Point `JobRegistry.setAgentRootNode(node)` and `ValidationModule.setClubRootNode(node)` at your ENS parent names. Optional allowlists can be loaded via `setAgentMerkleRoot` and `setValidatorMerkleRoot`, enabling agents and validators to prove membership with Merkle proofs instead of on-chain ENS lookups.
 4. **Approve and stake** – Employers and agents `approve` the `StakeManager` to spend `$AGIALPHA` and then:
@@ -707,7 +707,7 @@ interface IDisputeModule {
     event DisputeRaised(uint256 indexed jobId, address indexed caller);
     function appeal(uint256 jobId) external payable;
     function resolve(uint256 jobId, bool employerWins) external;
-    function setAppealFee(uint256 fee) external;
+    function setDisputeFee(uint256 fee) external;
 }
 ```
 
@@ -927,7 +927,7 @@ Each module exposes owner-only functions for updating parameters:
 - `StakeManager.setToken(token)`, `setMinStake(amount)`, `setSlashingPercentages(empPct, treasPct)`, `setTreasury(addr)`
 - `ReputationEngine.setCaller(caller, allowed)`, `setThreshold(threshold)` and `setBlacklist(user, status)`
 - `CertificateNFT.setBaseURI(uri)`
-- `DisputeModule.setAppealParameters(appealFee, jurySize)`
+- `DisputeModule.setAppealParameters(disputeFee, jurySize)`
 
 These calls can be made directly on Etherscan, giving non‑technical governors fine‑grained control without redeploying contracts.
 
@@ -979,7 +979,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 
 ### Appeals
 1. After a failed job outcome, ensure you have acknowledged the tax policy and confirmed `JobRegistry.isTaxExempt()` and `DisputeModule.isTaxExempt()`.
-2. Approve the `StakeManager` for the `appealFee` in `$AGIALPHA` and then invoke `JobRegistry.raiseDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute(jobId, evidence)` and no ETH is ever sent.
+2. Approve the `StakeManager` for the `disputeFee` in `$AGIALPHA` and then invoke `JobRegistry.raiseDispute(jobId, evidence)`; the registry forwards to `DisputeModule.raiseDispute(jobId, evidence)` and no ETH is ever sent.
 3. Track `DisputeRaised` and `DisputeResolved` events on both contracts to follow the appeal.
 
 ### Moderators
@@ -1077,7 +1077,7 @@ Review `*Updated` events after any call to confirm changes on-chain.
 - `setBaseURI(string uri)` – configure the base token URI for minted certificates. Leave empty for none.
 
 ### DisputeModule
-- `setAppealParameters(uint256 appealFee, uint256 jurySize)` – tune appeal fees and jury size.
+- `setAppealParameters(uint256 disputeFee, uint256 jurySize)` – tune dispute fees and jury size.
 
 ## Validator Selection Randomness
 
@@ -1550,7 +1550,7 @@ The contract owner can retune economics or swap tokens at any time without redep
 | PlatformRegistry | `setStakeManager`, `setReputationEngine`, `setMinPlatformStake` |
 | ReputationEngine | `setCaller`, `setWeights`, `blacklist`, `unblacklist` |
 | GovernanceReward | `setToken`, `recordVoters`, `finalizeEpoch` |
-| DisputeModule | `setAppealFee`, `setTaxPolicy`, `setFeePool` |
+| DisputeModule | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
 | JobRegistry | `setModules`, `setFeePool`, `setTaxPolicy` |
 
 All amounts are entered using the 6‑decimal base units of $AGIALPHA, preserving on‑chain accounting while keeping the owner tax neutral.
@@ -1579,8 +1579,8 @@ Verified contract addresses:
    - ![revealValidation screenshot](https://via.placeholder.com/650x300?text=revealValidation+Write+Contract)
 
 4. **Raise a Dispute**
-   - If validators disagree, open [JobRegistry `dispute`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) with the `jobId` and required appeal fee.
-   - The registry forwards the call to [DisputeModule `appeal`](https://etherscan.io/address/0x0165878A594ca255338adfa4d48449f69242Eb8F#writeContract) for final resolution.
+    - If validators disagree, open [JobRegistry `dispute`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) with the `jobId` and required dispute fee.
+    - The registry forwards the call to [DisputeModule `raiseDispute`](https://etherscan.io/address/0x0165878A594ca255338adfa4d48449f69242Eb8F#writeContract) for final resolution.
    - ![dispute screenshot](https://via.placeholder.com/650x300?text=dispute+Write+Contract)
 
 Review emitted events on each contract to confirm execution.

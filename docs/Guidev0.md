@@ -113,7 +113,7 @@ E4["JobRegistry.setFeePct(protocolFee%)"]:::step
 E5["ValidationModule.setParameters(
 validatorsPerJob, commitSecs, revealSecs,
 validatorStakeReq, validatorReward%, validatorSlash%)"]:::step
-E6["DisputeModule.setAppealFee(amount)  (if used)"]:::step
+E6["DisputeModule.setDisputeFee(amount)  (if used)"]:::step
 E7["FeePool.setBurnPct(burn%)  (optional)"]:::step
 E8["Router/Registry.setMinPlatformStake(amount)  (if present)"]:::step
 end
@@ -404,7 +404,7 @@ First, connect all the modules so they know about each other’s addresses:
   FeePool has an internal `treasury` address for any tiny rounding remainders (“dust”) when distributing fees. By default this is empty. As owner, you can call `setTreasury(address _treasury)` on FeePool to set an address (maybe your treasury or the burn address) to receive these small leftovers. This is not critical; you may set it to the same treasury address used in StakeManager or leave it as zero.
 
 * **DisputeModule – Set FeePool & TaxPolicy:**
-  If using DisputeModule, on its Write tab call `setFeePool(address _feePool)` with the FeePool’s address, so that any appeal fees or slashed amounts can be redirected appropriately (for example, to the FeePool or burned). Also call `setTaxPolicy(address _taxPolicy)` on DisputeModule with the TaxPolicy address so that it’s aware of the tax policy (dispute decisions can then finalize jobs without needing separate user ack). If there’s a function `setAppealFee(uint256 fee)` on DisputeModule, you can set an appeal fee (in \$AGIALPHA base units) required for raising a dispute. For instance, if you want agents to stake a fee to appeal, set this value (e.g., `10_000000` for 10 AGIALPHA). If not using disputes, you can leave it at 0.
+  If using DisputeModule, on its Write tab call `setFeePool(address _feePool)` with the FeePool’s address, so that any dispute fees or slashed amounts can be redirected appropriately (for example, to the FeePool or burned). Also call `setTaxPolicy(address _taxPolicy)` on DisputeModule with the TaxPolicy address so that it’s aware of the tax policy (dispute decisions can then finalize jobs without needing separate user ack). If there’s a function `setDisputeFee(uint256 fee)` on DisputeModule, you can set a dispute fee (in \$AGIALPHA base units) required for raising a dispute. For instance, if you want agents to stake a fee to appeal, set this value (e.g., `10_000000` for 10 AGIALPHA). If not using disputes, you can leave it at 0.
 
 * **Platform Modules (Optional JobRouter/PlatformRegistry):** If you deployed **JobRouter**, check if you need to link it to any module:
 
@@ -441,9 +441,9 @@ Next, set initial parameters like required stakes, fee percentages, and slashing
   * Set these according to the project’s recommendations or leave defaults if you’re unsure. For example, you might set 3 validators per job, 24 hours commit, 24 hours reveal, etc. *(If you have the exact parameters from documentation, use those; otherwise pick reasonable values.)*
   * Execute the `setParameters` call. These ensure the validation process is configured.
 
-* **DisputeModule – Appeal Fee and Jury (if applicable):** If using disputes, you might configure:
+* **DisputeModule – Dispute Fee and Jury (if applicable):** If using disputes, you might configure:
 
-  * `setAppealParameters(uint256 appealFee, uint256 jurySize)` or separate `setAppealFee`. For example, set an appeal fee (in base units) that an agent must pay to start a dispute (this could be equal to some stake or a flat fee) and perhaps set jurySize if the dispute mechanism involves multiple jurors. If the DisputeModule simply delegates to an owner moderator, jurySize might not apply. Use `setAppealFee` to, say, `10_000000` (10 AGIALPHA) or as desired.
+  * `setAppealParameters(uint256 appealFee, uint256 jurySize)` or separate `setDisputeFee`. For example, set a dispute fee (in base units) that an agent must pay to start a dispute (this could be equal to some stake or a flat fee) and perhaps set jurySize if the dispute mechanism involves multiple jurors. If the DisputeModule simply delegates to an owner moderator, jurySize might not apply. Use `setDisputeFee` to, say, `10_000000` (10 AGIALPHA) or as desired.
 
 * **FeePool – Burn Percentage (optional):** The FeePool can automatically **burn** a portion of each fee if desired (to reduce token supply). By default, `burnPct` might be 0. As owner, you can call `setBurnPct(uint256 pct)` on **FeePool** to set a percentage of each collected fee to burn (0-100). For instance, input `10` to burn 10% of fees (meaning 90% will be distributed to stakers). If you don’t want any burn, leave it at 0. (The burn is sent to a `BURN_ADDRESS` defined in the contract.)
 
@@ -507,7 +507,7 @@ As an agent (the AI or worker who will fulfill tasks), you need to stake some to
 
 **Prerequisites for Agents:** Make sure you have:
 
-* Sufficient \$AGIALPHA to stake as collateral if required by the job (plus a bit extra if you need to pay an appeal fee later, etc.). The required stake per job might be configured globally (e.g., JobRegistry’s `jobStake` value) or specified per job. Check with the owner or by reading the job info: if `job.stake` is set (in `jobs(jobId)` read output), that’s the amount you must have staked.
+* Sufficient \$AGIALPHA to stake as collateral if required by the job (plus a bit extra if you need to pay a dispute fee later, etc.). The required stake per job might be configured globally (e.g., JobRegistry’s `jobStake` value) or specified per job. Check with the owner or by reading the job info: if `job.stake` is set (in `jobs(jobId)` read output), that’s the amount you must have staked.
 * Some ETH for gas, as always.
 
 Steps for an Agent:
@@ -577,7 +577,7 @@ Steps for an Agent:
 
 9. **Handling Disputes (if you think you were unfairly failed):** If validators mark your job as failed but you believe you did it correctly, and if the platform has disputes enabled, you (as agent) can appeal:
 
-   * Call `raiseDispute(uint256 jobId)` on JobRegistry during the dispute window (immediately after a failure outcome, before finalize). You might need to pay an **appeal fee** (in ETH or tokens) – check if `DisputeModule.appeal` requires a fee. The JobRegistry’s `raiseDispute` function will forward the call to DisputeModule along with your fee if needed. Only do this if you’re confident; it might cost you and if you lose the appeal, you could lose the fee.
+  * Call `raiseDispute(uint256 jobId)` on JobRegistry during the dispute window (immediately after a failure outcome, before finalize). You might need to pay a **dispute fee** (in ETH or tokens) – check if `DisputeModule.raiseDispute` requires a fee. The JobRegistry’s `raiseDispute` function will forward the call to DisputeModule along with your fee if needed. Only do this if you’re confident; it might cost you and if you lose the dispute, you could lose the fee.
    * After raising a dispute, the job state becomes Disputed. The dispute may be resolved by a moderator or a larger jury (depending on system). Eventually, a resolution will come:
 
      * If the dispute decides in your favor (employer was wrong), the DisputeModule will call `JobRegistry.resolveDispute(jobId, employerWins=false)`, which flips `job.success` back to true. Then finalize would pay you as normal.

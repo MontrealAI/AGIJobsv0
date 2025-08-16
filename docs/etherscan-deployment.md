@@ -53,7 +53,7 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 - `JobRegistry.setFeePct(fee)`
 - `ValidationModule.setCommitRevealWindows(commitWindow, revealWindow)`
 - `FeePool.setBurnPct(pct)`
-- `DisputeModule.setAppealFee(fee)`
+- `DisputeModule.setDisputeFee(fee)`
 
 ## Distribute Fees
 

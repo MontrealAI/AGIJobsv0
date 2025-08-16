@@ -28,7 +28,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
 - **ReputationEngine**
   - Logarithmic reputation growth (`onApply`, `onFinalize`), premium threshold gating and owner-maintained blacklist.
 - **DisputeModule**
-  - `raiseDispute`, moderator or jury based `resolve`, optional appeal fees.
+  - `raiseDispute`, moderator or jury based `resolve`, optional dispute fees.
 - **CertificateNFT**
   - Mint completion certificates and support `list`, `purchase`, `delist` marketplace actions.
 

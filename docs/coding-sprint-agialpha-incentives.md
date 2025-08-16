@@ -46,7 +46,7 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
    - Integrate with parameter change votes so participants get bonuses after
      `finalizeEpoch`.
 7. **Dispute & Burn Hooks**
-   - Appeal deposits denominated in $AGIALPHA via `DisputeModule.setAppealFee`;
+   - Dispute deposits denominated in $AGIALPHA via `DisputeModule.setDisputeFee`;
      slashed fees forwarded to `FeePool` or burned.
    - Owner chooses burn rate to counter sybil farms and avoid accumulating
      taxable treasuries.
