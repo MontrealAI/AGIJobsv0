@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -11,7 +12,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// @notice Simple staking contract supporting multiple participant roles.
 /// @dev All token amounts use 6 decimals. The provided token must implement
 ///      `decimals()` and return `6`.
-contract StakeManager is Ownable, ReentrancyGuard {
+contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice ERC20 token used for staking
@@ -61,9 +62,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @notice emitted when blacklist status changes for an address
     event BlacklistUpdated(address indexed user, bool status);
+    event MinStakeUpdated(uint256 newMin);
+    event MaxStakePerAddressUpdated(uint256 newMax);
+    event SlashingPercentageUpdated(uint8 role, uint256 percent);
 
     constructor() Ownable(msg.sender) {
         treasury = msg.sender;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // ------------------------------------------------------------------
@@ -73,17 +85,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice update minimum stake requirement
     function setMinStake(uint256 newMin) external onlyOwner {
         minStake = newMin;
+        emit MinStakeUpdated(newMin);
     }
 
     /// @notice update maximum stake allowed per address (0 disables limit)
     function setMaxStakePerAddress(uint256 newMax) external onlyOwner {
         maxStakePerAddress = newMax;
+        emit MaxStakePerAddressUpdated(newMax);
     }
 
     /// @notice update allowed slashing percentage for a role
     function setSlashingPercentage(uint8 role, uint256 percent) external onlyOwner {
         require(percent <= 100, "StakeManager: percent > 100");
         slashingPercentages[role] = percent;
+        emit SlashingPercentageUpdated(role, percent);
     }
 
     /// @notice update staking token
@@ -135,6 +150,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         external
         requiresTaxAcknowledgement
         nonReentrant
+        whenNotPaused
     {
         require(amount > 0, "StakeManager: amount 0");
 
@@ -161,6 +177,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         external
         requiresTaxAcknowledgement
         nonReentrant
+        whenNotPaused
     {
         uint256 staked = stakes[msg.sender][role];
         require(staked >= amount, "StakeManager: insufficient");
@@ -180,6 +197,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         external
         onlyOwner
         nonReentrant
+        whenNotPaused
     {
         require(percent > 0, "StakeManager: percent 0");
         require(percent <= slashingPercentages[role], "StakeManager: pct too high");
