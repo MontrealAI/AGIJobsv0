@@ -2,10 +2,16 @@
 pragma solidity ^0.8.25;
 
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
+import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 
 /// @notice Simple validation module stub returning a preset outcome.
 contract ValidationStub is IValidationModule {
     bool public result;
+    address public jobRegistry;
+
+    function setJobRegistry(address registry) external {
+        jobRegistry = registry;
+    }
 
     function setResult(bool _result) external {
         result = _result;
@@ -30,8 +36,11 @@ contract ValidationStub is IValidationModule {
         bytes32[] calldata
     ) external {}
 
-    function finalize(uint256) external view returns (bool success) {
-        return result;
+    function finalize(uint256 jobId) external returns (bool success) {
+        success = result;
+        if (jobRegistry != address(0)) {
+            IJobRegistry(jobRegistry).finalizeAfterValidation(jobId, success);
+        }
     }
 
     function validators(uint256) external pure returns (address[] memory vals) {

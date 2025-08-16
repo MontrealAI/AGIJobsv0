@@ -284,6 +284,34 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
+    /// @notice Individually update commit window duration.
+    function setCommitWindow(uint256 commitDur) external onlyOwner {
+        require(commitDur > 0, "commit");
+        commitWindow = commitDur;
+        emit TimingUpdated(commitDur, revealWindow);
+    }
+
+    /// @notice Individually update reveal window duration.
+    function setRevealWindow(uint256 revealDur) external onlyOwner {
+        require(revealDur > 0, "reveal");
+        revealWindow = revealDur;
+        emit TimingUpdated(commitWindow, revealDur);
+    }
+
+    /// @notice Individually update minimum validators.
+    function setMinValidators(uint256 minVals) external onlyOwner {
+        require(minVals > 0 && minVals <= maxValidators, "bounds");
+        minValidators = minVals;
+        emit ValidatorBoundsUpdated(minVals, maxValidators);
+    }
+
+    /// @notice Individually update maximum validators.
+    function setMaxValidators(uint256 maxVals) external onlyOwner {
+        require(maxVals >= minValidators && maxVals > 0, "bounds");
+        maxValidators = maxVals;
+        emit ValidatorBoundsUpdated(minValidators, maxVals);
+    }
+
     function setValidatorSlashingPct(uint256 pct) external onlyOwner {
         require(pct <= 100, "pct");
         validatorSlashingPercentage = pct;
@@ -325,10 +353,27 @@ contract ValidationModule is IValidationModule, Ownable {
         require(m >= minValidators, "insufficient validators");
         uint256 count = m < maxValidators ? m : maxValidators;
 
-        bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), jobId, block.timestamp)
-        );
+        selected = _selectValidators(jobId, pool, stakes, m, count, totalStake);
 
+        r.validators = selected;
+        r.commitDeadline = block.timestamp + commitWindow;
+        r.revealDeadline = r.commitDeadline + revealWindow;
+
+        emit ValidatorsSelected(jobId, selected);
+        return selected;
+    }
+
+    function _selectValidators(
+        uint256 jobId,
+        address[] memory pool,
+        uint256[] memory stakes,
+        uint256 m,
+        uint256 count,
+        uint256 totalStake
+    ) internal returns (address[] memory selected) {
+        bytes32 seed = keccak256(
+            abi.encodePacked(blockhash(block.number - 1), jobId, jobNonce[jobId])
+        );
         selected = new address[](count);
         uint256 remaining = m;
         for (uint256 i; i < count; ++i) {
@@ -353,12 +398,16 @@ contract ValidationModule is IValidationModule, Ownable {
             remaining--;
         }
 
-        r.validators = selected;
-        r.commitDeadline = block.timestamp + commitWindow;
-        r.revealDeadline = r.commitDeadline + revealWindow;
-
-        emit ValidatorsSelected(jobId, selected);
-        return selected;
+        // sort selected validators by stake for deterministic order
+        for (uint256 i; i < selected.length; ++i) {
+            for (uint256 j = i + 1; j < selected.length; ++j) {
+                if (validatorStakes[jobId][selected[j]] > validatorStakes[jobId][selected[i]]) {
+                    address tmp = selected[i];
+                    selected[i] = selected[j];
+                    selected[j] = tmp;
+                }
+            }
+        }
     }
 
     /// @notice Commit a validation hash for a job.
@@ -465,16 +514,13 @@ contract ValidationModule is IValidationModule, Ownable {
         revealValidation(jobId, approve, salt, subdomain, proof);
     }
 
-    /// @notice Tally revealed votes and apply slashing/rewards.
+    /// @notice Tally revealed votes, apply slashing/rewards, and push result to JobRegistry.
     function finalize(uint256 jobId) external override returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
         require(block.timestamp > r.revealDeadline, "reveal pending");
 
-        uint256 total;
-        for (uint256 i; i < r.validators.length; ++i) {
-            total += validatorStakes[jobId][r.validators[i]];
-        }
+        uint256 total = r.approvals + r.rejections;
         if (total > 0) {
             success = (r.approvals * 100) >= (total * approvalThreshold);
         }
@@ -503,6 +549,8 @@ contract ValidationModule is IValidationModule, Ownable {
 
         r.tallied = true;
         emit ValidationFinalized(jobId, success, r.approvals, r.rejections);
+
+        jobRegistry.finalizeAfterValidation(jobId, success);
         return success;
     }
 

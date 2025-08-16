@@ -80,6 +80,7 @@ describe("JobRegistry integration", function () {
         await nft.getAddress(),
         []
       );
+    await validation.setJobRegistry(await registry.getAddress());
     await registry
       .connect(owner)
       .setJobParameters(reward, stake);
@@ -130,7 +131,7 @@ describe("JobRegistry integration", function () {
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).submit(jobId, "result");
-    await expect(registry.finalizeAfterValidation(jobId))
+    await expect(validation.finalize(jobId))
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true)
       .and.to.emit(registry, "JobFinalized")
@@ -189,7 +190,7 @@ describe("JobRegistry integration", function () {
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).submit(jobId, "result");
-    await registry.finalizeAfterValidation(jobId);
+    await validation.finalize(jobId);
 
     // platform operator should be able to claim fee
     const before = await token.balanceOf(owner.address);

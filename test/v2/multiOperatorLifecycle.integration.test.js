@@ -122,6 +122,7 @@ describe("multi-operator job lifecycle", function () {
       await nft.getAddress(),
       []
     );
+    await validation.setJobRegistry(await registry.getAddress());
     await registry.setFeePool(await feePool.getAddress());
     await registry.setFeePct(feePct);
     await registry.setTaxPolicy(await policy.getAddress());
@@ -179,7 +180,7 @@ describe("multi-operator job lifecycle", function () {
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).submit(jobId, "result");
-    await registry.finalizeAfterValidation(jobId);
+    await validation.finalize(jobId);
 
     expect(await feePool.pendingFees()).to.equal(fee);
     await feePool.distributeFees();

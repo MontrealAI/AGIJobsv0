@@ -80,9 +80,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     mapping(address => bool) public acknowledgers;
 
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
-    /// version for callers other than the owner or dispute module.
+    /// version for callers other than the owner, dispute module, or validation module.
     modifier requiresTaxAcknowledgement() {
-        if (msg.sender != owner() && msg.sender != address(disputeModule)) {
+        if (
+            msg.sender != owner() &&
+            msg.sender != address(disputeModule) &&
+            msg.sender != address(validationModule)
+        ) {
             require(
                 taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
                 "acknowledge tax policy"
@@ -627,18 +631,18 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice Finalize job outcome after validation.
-    /// @param jobId Identifier of the job to finalize post-validation.
-    function finalizeAfterValidation(uint256 jobId)
-        public
-        requiresTaxAcknowledgement
-    {
+    /// @dev Only the ValidationModule may call this entry point with the
+    ///      computed result of the commit-reveal process.
+    /// @param jobId Identifier of the job being finalised.
+    /// @param success True if validators approved the job.
+    function finalizeAfterValidation(uint256 jobId, bool success) external {
+        require(msg.sender == address(validationModule), "only validation");
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
-        bool outcome = validationModule.finalize(jobId);
-        job.success = outcome;
-        job.state = outcome ? State.Completed : State.Disputed;
-        emit JobCompleted(jobId, outcome);
-        if (outcome) {
+        job.success = success;
+        job.state = success ? State.Completed : State.Disputed;
+        emit JobCompleted(jobId, success);
+        if (success) {
             finalize(jobId);
         }
     }
