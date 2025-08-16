@@ -113,17 +113,19 @@ contract DisputeModule is Ownable {
     /// @notice Raise a dispute by posting the appeal fee and providing evidence.
     /// @param jobId Identifier of the job being disputed.
     /// @param evidence Supporting evidence for the dispute.
-    function raiseDispute(uint256 jobId, string calldata evidence)
-        external
-        onlyJobRegistry
-    {
+    /// @dev Callable by the job's employer or agent directly.
+    function raiseDispute(uint256 jobId, string calldata evidence) external {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        address claimant = job.agent;
+        address claimant = msg.sender;
+        require(
+            claimant == job.agent || claimant == job.employer,
+            "only parties"
+        );
 
-        // Lock the dispute fee in the StakeManager if configured.
+        // Lock the dispute fee from the caller in the StakeManager if configured
         if (appealFee > 0) {
             IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
                 claimant,
