@@ -99,6 +99,15 @@ The contract owner can reconfigure live deployments without redeployment:
 - **Stake requirements** – adjust minimums through [`StakeManager.setMinStake`](contracts/v2/StakeManager.sol) and [`PlatformRegistry.setMinPlatformStake`](contracts/v2/PlatformRegistry.sol).
 - **Dispute parameters** – tune dispute fees or tax policy using [`DisputeModule.setDisputeFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
 
+### Ownership transfer sequence
+
+To safeguard administration rights, move ownership of every module to a multisig wallet (e.g. Gnosis Safe) after deployment:
+
+1. **Deploy/choose multisig** – create or identify the multisig address that will administer the system.
+2. **Transfer each module** – from the current owner, call `transferOwnership(multisig)` on `JobRegistry`, `StakeManager`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool`, `TaxPolicy`, and any other live contracts.
+3. **Verify ownership** – confirm the `OwnershipTransferred` event or call `owner()` on each contract to ensure the multisig now controls it.
+4. **Operate via multisig** – execute future admin actions (pause/unpause, root rotations, parameter updates) from the multisig account.
+
 ## Non-technical deployment guide
 
 1. **Deploy modules** – on the [`Deployer`](contracts/v2/Deployer.sol) page of a block explorer choose `deployDefaults()`; the caller becomes owner and all modules wire themselves using `$AGIALPHA` with sensible defaults (5% fee, 5% burn, 1‑token minimum stake).
