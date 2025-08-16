@@ -113,7 +113,7 @@ describe("Validator ENS integration", function () {
     )
       .to.emit(verifier, "OwnershipVerified")
       .withArgs(validator.address, "v")
-      .and.to.emit(validation, "VoteCommitted");
+      .and.to.emit(validation, "ValidationCommitted");
   });
 
   it("rejects invalid Merkle proofs", async () => {
@@ -183,7 +183,7 @@ describe("Validator ENS integration", function () {
       validation
         .connect(validator)
         .commitValidation(1, ethers.id("h"), "v", [])
-    ).to.emit(validation, "VoteCommitted");
+    ).to.emit(validation, "ValidationCommitted");
   });
 
   it("skips blacklisted validators", async () => {

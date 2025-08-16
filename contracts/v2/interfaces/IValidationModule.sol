@@ -5,8 +5,8 @@ pragma solidity ^0.8.25;
 /// @notice Interface for validator selection and commit-reveal voting
 interface IValidationModule {
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
-    event VoteCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
-    event VoteRevealed(uint256 indexed jobId, address indexed validator, bool approve);
+    event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
+    event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);
     event ValidationFinalized(
         uint256 indexed jobId,
         bool success,

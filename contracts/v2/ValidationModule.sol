@@ -338,13 +338,25 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 m;
 
         for (uint256 i; i < n; ++i) {
-            uint256 stake = stakeManager.stakeOf(pool[i], IStakeManager.Role.Validator);
+            address candidate = pool[i];
+            uint256 stake = stakeManager.stakeOf(candidate, IStakeManager.Role.Validator);
             if (address(reputationEngine) != address(0)) {
-                if (reputationEngine.isBlacklisted(pool[i])) continue;
+                if (reputationEngine.isBlacklisted(candidate)) continue;
             }
             if (stake > 0) {
+                bool authorized = additionalValidators[candidate];
+                if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+                    bytes32[] memory proof;
+                    authorized = ensOwnershipVerifier.verifyOwnership(
+                        candidate,
+                        "",
+                        proof,
+                        clubRootNode
+                    );
+                }
+                if (!authorized) continue;
                 stakes[m] = stake;
-                pool[m] = pool[i];
+                pool[m] = candidate;
                 totalStake += stake;
                 m++;
             }
@@ -448,7 +460,7 @@ contract ValidationModule is IValidationModule, Ownable {
         );
 
         commitments[jobId][msg.sender][nonce] = commitHash;
-        emit VoteCommitted(jobId, msg.sender, commitHash);
+        emit ValidationCommitted(jobId, msg.sender, commitHash);
     }
 
     /// @notice Reveal a previously committed validation vote.
@@ -490,7 +502,7 @@ contract ValidationModule is IValidationModule, Ownable {
         votes[jobId][msg.sender] = approve;
         if (approve) r.approvals += stake; else r.rejections += stake;
 
-        emit VoteRevealed(jobId, msg.sender, approve);
+        emit ValidationRevealed(jobId, msg.sender, approve);
     }
 
     /// @notice Backwards-compatible wrapper for commitValidation.

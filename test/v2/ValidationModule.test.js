@@ -336,7 +336,7 @@ describe("ValidationModule V2", function () {
     await jobRegistry.connect(val).acknowledgeTaxPolicy();
     await expect(
       validation.connect(val).commitValidation(1, commit, "", [])
-    ).to.emit(validation, "VoteCommitted");
+    ).to.emit(validation, "ValidationCommitted");
 
     await advance(61);
     await jobRegistry.setTaxPolicyVersion(2);
@@ -347,7 +347,7 @@ describe("ValidationModule V2", function () {
     await jobRegistry.connect(val).acknowledgeTaxPolicy();
     await expect(
       validation.connect(val).revealValidation(1, true, salt, "", [])
-    ).to.emit(validation, "VoteRevealed");
+    ).to.emit(validation, "ValidationRevealed");
   });
 
   it("updates additional validators individually", async () => {
