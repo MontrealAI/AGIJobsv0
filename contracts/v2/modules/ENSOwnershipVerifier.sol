@@ -22,6 +22,7 @@ contract ENSOwnershipVerifier is Ownable {
     INameWrapper public nameWrapper;
 
     bytes32 public clubRootNode;
+    bytes32 public agentRootNode;
     bytes32 public validatorMerkleRoot;
     bytes32 public agentMerkleRoot;
 
@@ -30,6 +31,7 @@ contract ENSOwnershipVerifier is Ownable {
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
     event ClubRootNodeUpdated(bytes32 indexed clubRootNode);
+    event AgentRootNodeUpdated(bytes32 indexed agentRootNode);
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AgentMerkleRootUpdated(bytes32 indexed agentMerkleRoot);
 
@@ -62,11 +64,18 @@ contract ENSOwnershipVerifier is Ownable {
         emit NameWrapperUpdated(wrapper);
     }
 
-    /// @notice Update club root node
+    /// @notice Update club (validator) root node
     /// @param root New club root node hash
     function setClubRootNode(bytes32 root) external onlyOwner {
         clubRootNode = root;
         emit ClubRootNodeUpdated(root);
+    }
+
+    /// @notice Update agent root node
+    /// @param root New agent root node hash
+    function setAgentRootNode(bytes32 root) external onlyOwner {
+        agentRootNode = root;
+        emit AgentRootNodeUpdated(root);
     }
 
     /// @notice Update validator Merkle root
@@ -95,7 +104,14 @@ contract ENSOwnershipVerifier is Ownable {
         bytes32 rootNode
     ) external returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(claimant));
-        bytes32 merkleRoot = rootNode == clubRootNode ? validatorMerkleRoot : agentMerkleRoot;
+        bytes32 merkleRoot;
+        if (rootNode == clubRootNode) {
+            merkleRoot = validatorMerkleRoot;
+        } else if (rootNode == agentRootNode) {
+            merkleRoot = agentMerkleRoot;
+        } else {
+            return false;
+        }
         if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
             emit OwnershipVerified(claimant, subdomain);
             return true;
