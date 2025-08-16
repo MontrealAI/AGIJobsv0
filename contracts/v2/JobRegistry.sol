@@ -551,7 +551,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             ) || additionalAgents[msg.sender];
         require(authorized, "Not authorized agent");
         emit OwnershipVerified(msg.sender, subdomain);
-        require(!reputationEngine.isBlacklisted(msg.sender), "Blacklisted agent");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted agent"
+            );
+        }
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
