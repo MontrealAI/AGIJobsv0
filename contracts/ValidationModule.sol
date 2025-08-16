@@ -7,6 +7,10 @@ interface IStakeManager {
     function lockReward(address from, uint256 amount) external;
 }
 
+interface IReputationEngine {
+    function isBlacklisted(address user) external view returns (bool);
+}
+
 /// @title ValidationModule
 /// @notice Returns predetermined validation outcomes and supports result challenges.
 contract ValidationModule is Ownable {
@@ -14,6 +18,9 @@ contract ValidationModule is Ownable {
 
     /// @notice stake manager used to lock dispute bonds
     IStakeManager public stakeManager;
+    IReputationEngine public reputationEngine;
+    bytes32 public clubRootNode;
+    bytes32 public validatorMerkleRoot;
     /// @notice bond required to challenge a result
     uint256 public disputeBond;
     /// @notice period during which challenges are accepted
@@ -32,6 +39,9 @@ contract ValidationModule is Ownable {
     event DisputeBondUpdated(uint256 bond);
     event ChallengeWindowUpdated(uint256 window);
     event DisputeResolutionUpdated(address resolver);
+    event ReputationEngineUpdated(address engine);
+    event ClubRootNodeUpdated(bytes32 node);
+    event ValidatorMerkleRootUpdated(bytes32 root);
 
     constructor() Ownable(msg.sender) {}
 
@@ -55,6 +65,21 @@ contract ValidationModule is Ownable {
         emit DisputeResolutionUpdated(resolver);
     }
 
+    function setReputationEngine(IReputationEngine engine) external onlyOwner {
+        reputationEngine = engine;
+        emit ReputationEngineUpdated(address(engine));
+    }
+
+    function setClubRootNode(bytes32 node) external onlyOwner {
+        clubRootNode = node;
+        emit ClubRootNodeUpdated(node);
+    }
+
+    function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
+        validatorMerkleRoot = root;
+        emit ValidatorMerkleRootUpdated(root);
+    }
+
     /// @notice Set the validation outcome for a job.
     function setOutcome(uint256 jobId, bool success) external onlyOwner {
         outcomes[jobId] = success;
@@ -72,6 +97,9 @@ contract ValidationModule is Ownable {
     function challenge(uint256 jobId) external {
         require(block.timestamp <= challengeDeadline[jobId], "expired");
         require(challenger[jobId] == address(0), "challenged");
+        if (address(reputationEngine) != address(0)) {
+            require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted");
+        }
         stakeManager.lockReward(msg.sender, disputeBond);
         challenger[jobId] = msg.sender;
         emit OutcomeChallenged(jobId, msg.sender);

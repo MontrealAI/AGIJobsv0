@@ -10,6 +10,7 @@ interface IValidationModule {
 interface IReputationEngine {
     function addReputation(address user, uint256 amount) external;
     function subtractReputation(address user, uint256 amount) external;
+    function isBlacklisted(address user) external view returns (bool);
 }
 
 interface IStakeManager {
@@ -66,6 +67,8 @@ contract JobRegistry is Ownable {
     uint256 public jobReward;
     uint256 public jobStake;
     uint256 public feePct;
+    bytes32 public agentRootNode;
+    bytes32 public agentMerkleRoot;
 
     /// @notice tracks which addresses acknowledged the tax policy
     mapping(address => bool) private _taxAcknowledged;
@@ -81,6 +84,8 @@ contract JobRegistry is Ownable {
     event DisputeModuleUpdated(address module);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    event AgentRootNodeUpdated(bytes32 node);
+    event AgentMerkleRootUpdated(bytes32 root);
 
     event JobCreated(
         uint256 indexed jobId,
@@ -158,6 +163,16 @@ contract JobRegistry is Ownable {
         emit FeePctUpdated(_feePct);
     }
 
+    function setAgentRootNode(bytes32 node) external onlyOwner {
+        agentRootNode = node;
+        emit AgentRootNodeUpdated(node);
+    }
+
+    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+        agentMerkleRoot = root;
+        emit AgentMerkleRootUpdated(root);
+    }
+
     function setModules(
         IValidationModule _validationModule,
         IReputationEngine _reputationEngine,
@@ -196,6 +211,16 @@ contract JobRegistry is Ownable {
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
         require(agent != msg.sender, "self");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "blacklisted employer"
+            );
+            require(
+                !reputationEngine.isBlacklisted(agent),
+                "blacklisted agent"
+            );
+        }
         require(stakeManager.stakes(agent) >= jobStake, "stake missing");
         jobId = ++nextJobId;
         uint256 fee = (jobReward * feePct) / 100;
@@ -221,6 +246,12 @@ contract JobRegistry is Ownable {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "invalid status");
         require(msg.sender == job.agent, "only agent");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "blacklisted agent"
+            );
+        }
         bool outcome = validationModule.validate(jobId);
         job.success = outcome;
         job.status = Status.Completed;
@@ -236,6 +267,12 @@ contract JobRegistry is Ownable {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
         require(msg.sender == job.agent, "only agent");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "blacklisted agent"
+            );
+        }
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
             disputeModule.raiseDispute(jobId);
@@ -261,6 +298,20 @@ contract JobRegistry is Ownable {
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed, "not ready");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "blacklisted"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.agent),
+                "blacklisted agent"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.employer),
+                "blacklisted employer"
+            );
+        }
         job.status = Status.Finalized;
         if (job.success) {
             uint256 payout = job.reward;
