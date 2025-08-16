@@ -52,6 +52,7 @@ contract ValidationModule is IValidationModule, Ownable {
 
     // optional override for validators without ENS identity
     mapping(address => bool) public additionalValidators;
+    mapping(address => string) public validatorSubdomains;
 
     struct Round {
         address[] validators;
@@ -161,13 +162,13 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Update the list of eligible validators.
-    /// @param validators Addresses of validators.
-    function setValidatorPool(address[] calldata validators)
+    /// @param newPool Addresses of validators.
+    function setValidatorPool(address[] calldata newPool)
         external
         onlyOwner
     {
-        validatorPool = validators;
-        emit ValidatorsUpdated(validators);
+        validatorPool = newPool;
+        emit ValidatorsUpdated(newPool);
     }
 
     /// @notice Update the reputation engine used for validator feedback.
@@ -210,13 +211,27 @@ contract ValidationModule is IValidationModule, Ownable {
 
     /// @notice Configure additional validators that bypass ENS checks.
     function setAdditionalValidators(
-        address[] calldata validators,
+        address[] calldata accounts,
         bool[] calldata allowed
     ) external onlyOwner {
-        require(validators.length == allowed.length, "length");
-        for (uint256 i; i < validators.length; ++i) {
-            additionalValidators[validators[i]] = allowed[i];
-            emit AdditionalValidatorUpdated(validators[i], allowed[i]);
+        require(accounts.length == allowed.length, "length");
+        for (uint256 i; i < accounts.length; ++i) {
+            additionalValidators[accounts[i]] = allowed[i];
+            emit AdditionalValidatorUpdated(accounts[i], allowed[i]);
+        }
+    }
+
+    /// @notice Map validators to their ENS subdomains for selection-time checks.
+    /// @param accounts Validator addresses to configure.
+    /// @param subdomains ENS labels owned by each validator.
+    function setValidatorSubdomains(
+        address[] calldata accounts,
+        string[] calldata subdomains
+    ) external onlyOwner {
+        require(accounts.length == subdomains.length, "length");
+        for (uint256 i; i < accounts.length; ++i) {
+            validatorSubdomains[accounts[i]] = subdomains[i];
+            emit ValidatorSubdomainUpdated(accounts[i], subdomains[i]);
         }
     }
 
@@ -347,12 +362,15 @@ contract ValidationModule is IValidationModule, Ownable {
                 bool authorized = additionalValidators[candidate];
                 if (!authorized && address(ensOwnershipVerifier) != address(0)) {
                     bytes32[] memory proof;
-                    authorized = ensOwnershipVerifier.verifyOwnership(
-                        candidate,
-                        "",
-                        proof,
-                        clubRootNode
-                    );
+                    string memory subdomain = validatorSubdomains[candidate];
+                    if (bytes(subdomain).length != 0) {
+                        authorized = ensOwnershipVerifier.verifyOwnership(
+                            candidate,
+                            subdomain,
+                            proof,
+                            clubRootNode
+                        );
+                    }
                 }
                 if (!authorized) continue;
                 stakes[m] = stake;

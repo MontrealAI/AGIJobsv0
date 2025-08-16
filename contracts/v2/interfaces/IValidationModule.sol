@@ -13,6 +13,7 @@ interface IValidationModule {
         uint256 approvals,
         uint256 rejections
     );
+    event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
 
     /// @notice Select validators for a given job
     /// @param jobId Identifier of the job
@@ -62,6 +63,12 @@ interface IValidationModule {
 
     /// @notice Update approval threshold percentage
     function setApprovalThreshold(uint256 pct) external;
+
+    /// @notice Map validators to ENS subdomains for selection
+    function setValidatorSubdomains(
+        address[] calldata accounts,
+        string[] calldata subdomains
+    ) external;
 
     /// @notice Return validators selected for a job
     /// @param jobId Identifier of the job

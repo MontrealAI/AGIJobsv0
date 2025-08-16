@@ -53,6 +53,11 @@ contract ValidationStub is IValidationModule {
 
     function setApprovalThreshold(uint256) external {}
 
+    function setValidatorSubdomains(
+        address[] calldata,
+        string[] calldata
+    ) external {}
+
     function resetJobNonce(uint256) external {}
 }
 

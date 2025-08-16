@@ -92,20 +92,18 @@ describe("Validator ENS integration", function () {
       uri: "",
     };
     await jobRegistry.setJob(1, job);
-    await validation.selectValidators(1);
+    await expect(validation.selectValidators(1)).to.be.revertedWith(
+      "insufficient validators"
+    );
 
-    await expect(
-      validation
-        .connect(validator)
-        .commitValidation(1, ethers.id("h"), "v", [])
-    ).to.be.revertedWith("Not authorized validator");
-
+    await validation.setValidatorSubdomains([validator.address], ["v"]);
     await wrapper.setOwner(
       ethers.toBigInt(namehash(root, "v")),
       validator.address
     );
     await resolver.setAddr(namehash(root, "v"), validator.address);
 
+    await validation.selectValidators(1);
     await expect(
       validation
         .connect(validator)
@@ -141,6 +139,7 @@ describe("Validator ENS integration", function () {
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
     await validation.setValidatorPool([validator.address]);
+    await validation.setValidatorSubdomains([validator.address], ["v"]);
 
     await stakeManager.setStake(
       validator.address,
@@ -191,6 +190,7 @@ describe("Validator ENS integration", function () {
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
     await validation.setValidatorPool([validator.address]);
+    await validation.setValidatorSubdomains([validator.address], ["v"]);
     await stakeManager.setStake(
       validator.address,
       1,
