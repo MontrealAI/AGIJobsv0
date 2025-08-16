@@ -180,7 +180,6 @@ describe("multi-operator job lifecycle", function () {
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).submit(jobId, "result");
     await registry.finalizeAfterValidation(jobId);
-    await registry.finalize(jobId);
 
     expect(await feePool.pendingFees()).to.equal(fee);
     await feePool.distributeFees();
