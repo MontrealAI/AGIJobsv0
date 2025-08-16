@@ -182,8 +182,7 @@ describe("multi-operator job lifecycle", function () {
     await registry.connect(agent).submit(jobId, "result");
     await validation.finalize(jobId);
 
-    expect(await feePool.pendingFees()).to.equal(fee);
-    await feePool.distributeFees();
+    expect(await feePool.pendingFees()).to.equal(0);
     const before1 = await token.balanceOf(platform1.address);
     const before2 = await token.balanceOf(platform2.address);
     await feePool.connect(platform1).claimRewards();

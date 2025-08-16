@@ -36,6 +36,9 @@ interface IStakeManager {
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event SlashPercentSumEnforcementUpdated(bool enforced);
+    event FeePctUpdated(uint256 pct);
+    event BurnPctUpdated(uint256 pct);
+    event FeePoolUpdated(address indexed feePool);
 
     /// @notice deposit stake for caller for a specific role
     function depositStake(Role role, uint256 amount) external;
@@ -95,6 +98,9 @@ interface IStakeManager {
     function setTreasury(address _treasury) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
     function setMaxAGITypes(uint256 newMax) external;
+    function setFeePct(uint256 pct) external;
+    function setFeePool(IFeePool pool) external;
+    function setBurnPct(uint256 pct) external;
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);
