@@ -150,6 +150,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param agent Address being updated.
     /// @param allowed True if the agent is whitelisted, false if removed.
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
+    /// @notice Emitted when agent ENS ownership is verified or bypassed.
+    /// @param agent Address claiming ownership.
+    /// @param subdomain ENS subdomain label.
+    event OwnershipVerified(address indexed agent, string subdomain);
     /// @notice Emitted when an ENS root node is updated.
     /// @param node Identifier for the root node being modified.
     /// @param newRoot The new ENS root node hash.
@@ -296,6 +300,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Set the ENS root node used for agent verification.
     function setAgentRootNode(bytes32 node) external onlyOwner {
         agentRootNode = node;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setAgentRootNode(node);
+        }
         emit RootNodeUpdated("agent", node);
     }
 
@@ -535,15 +542,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        require(
+        bool authorized =
             ensOwnershipVerifier.verifyOwnership(
                 msg.sender,
                 subdomain,
                 proof,
                 agentRootNode
-            ) || additionalAgents[msg.sender],
-            "Not authorized agent"
-        );
+            ) || additionalAgents[msg.sender];
+        require(authorized, "Not authorized agent");
+        emit OwnershipVerified(msg.sender, subdomain);
         require(!reputationEngine.isBlacklisted(msg.sender), "Blacklisted agent");
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");

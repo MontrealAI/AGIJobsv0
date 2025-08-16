@@ -90,6 +90,10 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    /// @notice Emitted when validator ENS ownership is verified or bypassed.
+    /// @param validator Address claiming ownership.
+    /// @param subdomain ENS subdomain label.
+    event OwnershipVerified(address indexed validator, string subdomain);
     /// @notice Emitted when an ENS root node is updated.
     /// @param node Identifier for the root node being modified.
     /// @param newRoot The new ENS root node hash.
@@ -457,15 +461,15 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        require(
+        bool authorized =
             ensOwnershipVerifier.verifyOwnership(
                 msg.sender,
                 subdomain,
                 proof,
                 clubRootNode
-            ) || additionalValidators[msg.sender],
-            "Not authorized validator"
-        );
+            ) || additionalValidators[msg.sender];
+        require(authorized, "Not authorized validator");
+        emit OwnershipVerified(msg.sender, subdomain);
         require(
             !reputationEngine.isBlacklisted(msg.sender),
             "Blacklisted validator"
@@ -492,15 +496,15 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        require(
+        bool authorized =
             ensOwnershipVerifier.verifyOwnership(
                 msg.sender,
                 subdomain,
                 proof,
                 clubRootNode
-            ) || additionalValidators[msg.sender],
-            "Not authorized validator"
-        );
+            ) || additionalValidators[msg.sender];
+        require(authorized, "Not authorized validator");
+        emit OwnershipVerified(msg.sender, subdomain);
         require(
             !reputationEngine.isBlacklisted(msg.sender),
             "Blacklisted validator"
