@@ -10,6 +10,7 @@ interface IStakeManager {
 interface IReputationEngine {
     function addReputation(address user, uint256 amount) external;
     function subtractReputation(address user, uint256 amount) external;
+    function isBlacklisted(address user) external view returns (bool);
 }
 
 interface IValidationModule {
@@ -41,6 +42,16 @@ contract DisputeResolution is Ownable {
         require(challengerAddr != address(0), "no challenge");
         address validator = validationModule.owner();
         uint256 bond = validationModule.disputeBond();
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(challengerAddr),
+                "challenger blacklisted"
+            );
+            require(
+                !reputationEngine.isBlacklisted(validator),
+                "validator blacklisted"
+            );
+        }
 
         if (validatorWins) {
             stakeManager.slash(challengerAddr, validator, bond);
