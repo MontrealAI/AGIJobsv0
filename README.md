@@ -5,6 +5,8 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
 
+For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
+
 ## Deployment & Configuration
 
 ### Deploying legacy v0 with $AGIALPHA
@@ -43,8 +45,11 @@ All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Sho
 4. Other modules remain untouched, so token rotation never requires redeployment.
 
 ### Token setup
-- All modules ship configured for `$AGIALPHA`, which reports `decimals = 6` so values are entered as `1 token = 1_000000`.
-- The owner can swap the payout token by calling `setToken(newToken)` on `StakeManager`, `FeePool`, and any other token-holding module. No redeployment is required.
+- All modules default to `$AGIALPHA` (6 decimals) for fees, staking, and rewards.
+- To change the token later:
+  1. On `StakeManager` → **Write**, call `setToken(newToken)`.
+  2. On `FeePool` → **Write**, call `setToken(newToken)`.
+  3. Wait for `TokenUpdated` on both contracts before proceeding.
 
 ### Etherscan interaction steps
 **Employers**
@@ -60,9 +65,11 @@ All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Sho
 1. Stake via `depositStake(1, amount)` on `StakeManager`.
 2. In `ValidationModule`, call `commitValidation(jobId, hash)` then `revealValidation(jobId, approve, salt)`.
 
-**Dispute resolution**
-1. Anyone may call `raiseDispute(jobId, evidence)` on `JobRegistry`; it forwards to `DisputeModule.raiseDispute`.
-2. The owner resolves or updates parameters through `DisputeModule` controls as outlined below.
+**Moderators**
+1. Watch for `JobDisputed` events on `JobRegistry`.
+2. Review evidence off-chain.
+3. In `DisputeModule` → **Write**, call `resolveDispute(jobId, employerWins)`.
+4. Confirm `DisputeResolved` in the transaction log.
 
 ### Owner controls
 The contract owner can reconfigure live deployments without redeployment:
@@ -91,6 +98,23 @@ For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment
 - **Validators** require a subdomain ending in `.club.agi.eth`.
 - Calls like `applyForJob` and `commitValidation` take your subdomain label and a Merkle proof. A valid proof lets [`ENSOwnershipVerifier.verifyOwnership`](contracts/v2/modules/ENSOwnershipVerifier.sol) skip on-chain ENS lookups, confirming membership off-chain and saving gas.
 - Owners may rotate ENS roots or allowlists at any time with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper` without redeploying contracts.
+
+Sample `verifyOwnership` call:
+
+```solidity
+ENSOwnershipVerifier.verifyOwnership(
+    0xYourAddress,
+    "alice",
+    [0xabc..., 0xdef...],
+    agentRootNode
+);
+```
+
+Troubleshooting tips:
+- Ensure the subdomain label matches the ENS name exactly (case-sensitive).
+- Use the correct root node: `agentRootNode` for agents, `clubRootNode` for validators.
+- If a proof fails, verify your address is in the operator's allowlist and that the proof order matches.
+- Wrapped names require the `NameWrapper` address to be set; otherwise the lookup falls back to the resolver.
 ## Quick Deploy with $AGIALPHA
 
 Call `Deployer.deployDefaults()` to spin up and wire all core modules in one transaction. It applies baked‑in economics (5% fee, 5% burn, 1‑token minimum stake) and makes the caller the owner.
