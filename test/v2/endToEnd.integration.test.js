@@ -151,7 +151,6 @@ describe("end-to-end job lifecycle", function () {
     await validation.connect(owner).setResult(true);
     await registry.connect(agent).submit(jobId, "result");
     await registry.finalizeAfterValidation(jobId);
-    await registry.finalize(jobId);
 
     // fee moved to FeePool
     expect(await feePool.pendingFees()).to.equal(fee);

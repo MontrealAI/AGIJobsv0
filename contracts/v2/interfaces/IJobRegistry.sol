@@ -47,8 +47,12 @@ interface IJobRegistry {
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
     event DisputeModuleUpdated(address module);
-    event MaxJobRewardUpdated(uint256 maxJobReward);
-    event JobDurationLimitUpdated(uint256 limit);
+    event JobParametersUpdated(
+        uint256 reward,
+        uint256 stake,
+        uint256 maxJobReward,
+        uint256 jobDurationLimit
+    );
 
     // job lifecycle
     event JobCreated(

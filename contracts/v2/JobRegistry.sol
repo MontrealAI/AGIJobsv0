@@ -152,7 +152,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event MerkleRootUpdated(string root, bytes32 newRoot);
 
     // job parameter template event
-    event JobParametersUpdated(uint256 reward, uint256 stake);
+    event JobParametersUpdated(
+        uint256 reward,
+        uint256 stake,
+        uint256 maxJobReward,
+        uint256 jobDurationLimit
+    );
 
     // job lifecycle events
     event JobCreated(
@@ -172,8 +177,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
-    event MaxJobRewardUpdated(uint256 maxJobReward);
-    event JobDurationLimitUpdated(uint256 limit);
 
     constructor(
         IValidationModule _validation,
@@ -346,13 +349,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external onlyOwner {
         maxJobReward = maxReward;
-        emit MaxJobRewardUpdated(maxReward);
+        emit JobParametersUpdated(0, jobStake, maxReward, jobDurationLimit);
     }
 
     /// @notice set the maximum allowed job duration in seconds
     function setJobDurationLimit(uint256 limit) external onlyOwner {
         jobDurationLimit = limit;
-        emit JobDurationLimitUpdated(limit);
+        emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
     }
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
@@ -444,7 +447,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
         require(stake <= type(uint96).max, "overflow");
         jobStake = uint96(stake);
-        emit JobParametersUpdated(reward, stake);
+        emit JobParametersUpdated(reward, stake, maxJobReward, jobDurationLimit);
     }
 
     // ---------------------------------------------------------------------
@@ -635,6 +638,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         job.success = outcome;
         job.state = outcome ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, outcome);
+        if (outcome) {
+            finalize(jobId);
+        }
     }
 
     /// @notice Agent disputes a failed job outcome with supporting evidence.
