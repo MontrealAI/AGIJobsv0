@@ -269,8 +269,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice Add or update an AGI type NFT bonus
+    /// @dev `payoutPct` is expressed as a percentage where `100` represents no
+    ///      bonus and values above 100 increase the payout. Values below 100 can
+    ///      be used to provide a discount.
     function addAGIType(address nft, uint256 payoutPct) external onlyOwner {
-        require(nft != address(0) && payoutPct > 0 && payoutPct <= 100, "params");
+        require(nft != address(0) && payoutPct > 0, "params");
         for (uint256 i; i < agiTypes.length; ++i) {
             if (agiTypes[i].nft == nft) {
                 agiTypes[i].payoutPct = payoutPct;
@@ -303,14 +306,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     /// @notice Determine the highest payout percentage for an agent
+    /// @dev Iterates through registered AGI types and selects the highest payout
+    ///      percentage from NFTs held by the agent. Reverts from malicious NFT
+    ///      contracts are ignored.
     function getHighestPayoutPercentage(address agent) public view returns (uint256) {
         uint256 highest = 100;
-        for (uint256 i; i < agiTypes.length; ++i) {
-            if (
-                IERC721(agiTypes[i].nft).balanceOf(agent) > 0 &&
-                agiTypes[i].payoutPct > highest
-            ) {
-                highest = agiTypes[i].payoutPct;
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ++i) {
+            AGIType memory t = agiTypes[i];
+            try IERC721(t.nft).balanceOf(agent) returns (uint256 bal) {
+                if (bal > 0 && t.payoutPct > highest) {
+                    highest = t.payoutPct;
+                }
+            } catch {
+                // ignore tokens with failing balanceOf
             }
         }
         return highest;
@@ -580,19 +589,21 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit JobFundsLocked(bytes32(0), from, amount);
     }
 
-    /// @notice release locked job funds to recipient
+    /// @notice release locked job funds to recipient applying any AGI type bonus
     /// @param jobId unique job identifier
-    /// @param to recipient of the release
-    /// @param amount token amount with 6 decimals
+    /// @param to recipient of the release (typically the agent)
+    /// @param amount base token amount with 6 decimals before AGI bonus
     function releaseJobFunds(bytes32 jobId, address to, uint256 amount)
         external
         onlyJobRegistry
     {
+        uint256 pct = getHighestPayoutPercentage(to);
+        uint256 payout = (amount * pct) / 100;
         uint256 escrow = jobEscrows[jobId];
-        require(escrow >= amount, "escrow");
-        jobEscrows[jobId] = escrow - amount;
-        token.safeTransfer(to, amount);
-        emit JobFundsReleased(jobId, to, amount);
+        require(escrow >= payout, "escrow");
+        jobEscrows[jobId] = escrow - payout;
+        token.safeTransfer(to, payout);
+        emit JobFundsReleased(jobId, to, payout);
     }
 
     /// @notice Release funds previously locked via {lock}.
@@ -608,7 +619,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice finalize a job by paying the agent and forwarding protocol fees
     /// @param jobId unique job identifier
     /// @param agent recipient of the job reward
-    /// @param reward amount paid to the agent with 6 decimals
+    /// @param reward base amount paid to the agent with 6 decimals before AGI bonus
     /// @param fee amount forwarded to the fee pool with 6 decimals
     /// @param feePool fee pool contract receiving protocol fees
     function finalizeJobFunds(
@@ -618,13 +629,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 fee,
         IFeePool feePool
     ) external onlyJobRegistry {
-        uint256 total = reward + fee;
+        uint256 pct = getHighestPayoutPercentage(agent);
+        uint256 payout = (reward * pct) / 100;
+        uint256 total = payout + fee;
         uint256 escrow = jobEscrows[jobId];
         require(escrow >= total, "escrow");
         jobEscrows[jobId] = escrow - total;
-        if (reward > 0) {
-            token.safeTransfer(agent, reward);
-            emit JobFundsReleased(jobId, agent, reward);
+        if (payout > 0) {
+            token.safeTransfer(agent, payout);
+            emit JobFundsReleased(jobId, agent, payout);
         }
         if (fee > 0 && address(feePool) != address(0)) {
             token.safeTransfer(address(feePool), fee);
