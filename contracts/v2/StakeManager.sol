@@ -37,8 +37,21 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice default minimum stake when constructor param is zero
     uint256 public constant DEFAULT_MIN_STAKE = 1e6;
 
+    /// @notice canonical burn address
+    address public constant BURN_ADDRESS =
+        0x000000000000000000000000000000000000dEaD;
+
     /// @notice ERC20 token used for staking and payouts
     IERC20 public token;
+
+    /// @notice percentage of released amount sent to FeePool (0-100)
+    uint256 public feePct;
+
+    /// @notice percentage of released amount burned (0-100)
+    uint256 public burnPct;
+
+    /// @notice FeePool receiving protocol fees
+    IFeePool public feePool;
 
     /// @notice address receiving the treasury share of slashed stake
     address public treasury;
@@ -118,6 +131,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
+    event FeePctUpdated(uint256 pct);
+    event BurnPctUpdated(uint256 pct);
+    event FeePoolUpdated(address indexed feePool);
 
     /// @notice Deploys the StakeManager.
     /// @param _token ERC20 token used for staking and payouts. Defaults to
@@ -252,6 +268,29 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit JobRegistryUpdated(_jobRegistry);
         emit DisputeModuleUpdated(_disputeModule);
         emit ModulesUpdated(_jobRegistry, _disputeModule);
+    }
+
+    /// @notice update protocol fee percentage
+    /// @param pct percentage of released amount sent to FeePool (0-100)
+    function setFeePct(uint256 pct) external onlyOwner {
+        require(pct + burnPct <= 100, "pct");
+        feePct = pct;
+        emit FeePctUpdated(pct);
+    }
+
+    /// @notice update FeePool contract
+    /// @param pool FeePool receiving protocol fees
+    function setFeePool(IFeePool pool) external onlyOwner {
+        feePool = pool;
+        emit FeePoolUpdated(address(pool));
+    }
+
+    /// @notice update burn percentage applied on release
+    /// @param pct percentage of released amount burned (0-100)
+    function setBurnPct(uint256 pct) external onlyOwner {
+        require(feePct + pct <= 100, "pct");
+        burnPct = pct;
+        emit BurnPctUpdated(pct);
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
@@ -612,8 +651,23 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @param to Recipient receiving the tokens.
     /// @param amount Token amount with 6 decimals to release.
     function release(address to, uint256 amount) external onlyJobRegistry {
-        token.safeTransfer(to, amount);
-        emit JobFundsReleased(bytes32(0), to, amount);
+        uint256 feeAmount = (amount * feePct) / 100;
+        uint256 burnAmount = (amount * burnPct) / 100;
+        uint256 payout = amount - feeAmount - burnAmount;
+        if (feeAmount > 0 && address(feePool) != address(0)) {
+            token.safeTransfer(address(feePool), feeAmount);
+            feePool.depositFee(feeAmount);
+            feePool.distributeFees();
+            emit JobFundsReleased(bytes32(0), address(feePool), feeAmount);
+        }
+        if (burnAmount > 0) {
+            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            emit JobFundsReleased(bytes32(0), BURN_ADDRESS, burnAmount);
+        }
+        if (payout > 0) {
+            token.safeTransfer(to, payout);
+            emit JobFundsReleased(bytes32(0), to, payout);
+        }
     }
 
     /// @notice finalize a job by paying the agent and forwarding protocol fees
@@ -621,13 +675,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @param agent recipient of the job reward
     /// @param reward base amount paid to the agent with 6 decimals before AGI bonus
     /// @param fee amount forwarded to the fee pool with 6 decimals
-    /// @param feePool fee pool contract receiving protocol fees
+    /// @param _feePool fee pool contract receiving protocol fees
     function finalizeJobFunds(
         bytes32 jobId,
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool feePool
+        IFeePool _feePool
     ) external onlyJobRegistry {
         uint256 pct = getHighestPayoutPercentage(agent);
         uint256 payout = (reward * pct) / 100;
@@ -639,10 +693,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
             token.safeTransfer(agent, payout);
             emit JobFundsReleased(jobId, agent, payout);
         }
-        if (fee > 0 && address(feePool) != address(0)) {
-            token.safeTransfer(address(feePool), fee);
-            feePool.depositFee(fee);
-            emit JobFundsReleased(jobId, address(feePool), fee);
+        if (fee > 0 && address(_feePool) != address(0)) {
+            token.safeTransfer(address(_feePool), fee);
+            _feePool.depositFee(fee);
+            _feePool.distributeFees();
+            emit JobFundsReleased(jobId, address(_feePool), fee);
         }
     }
 
