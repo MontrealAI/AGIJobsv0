@@ -8,7 +8,7 @@ describe("JobRegistry integration", function () {
 
   const reward = 100;
   const stake = 200;
-  const appealFee = 0;
+  const disputeFee = 0;
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
@@ -64,7 +64,7 @@ describe("JobRegistry integration", function () {
       0,
       ethers.ZeroAddress
     );
-    await dispute.connect(owner).setAppealFee(appealFee);
+    await dispute.connect(owner).setDisputeFee(disputeFee);
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -106,7 +106,7 @@ describe("JobRegistry integration", function () {
 
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), stake + appealFee);
+      .approve(await stakeManager.getAddress(), stake + disputeFee);
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
 
@@ -233,7 +233,7 @@ describe("JobRegistry integration", function () {
     ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
 
     await expect(
-      dispute.connect(agent).setAppealFee(1)
+      dispute.connect(agent).setDisputeFee(1)
     ).to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount");
   });
 

@@ -6,7 +6,7 @@ describe("Full system integration", function () {
   let owner, employer, agent, v1, v2;
   const reward = 100;
   const stake = 200;
-  const appealFee = 10;
+  const disputeFee = 10;
 
   beforeEach(async () => {
     [owner, employer, agent, v1, v2] = await ethers.getSigners();
@@ -68,7 +68,7 @@ describe("Full system integration", function () {
       0,
       ethers.ZeroAddress
     );
-    await dispute.connect(owner).setAppealFee(appealFee);
+    await dispute.connect(owner).setDisputeFee(disputeFee);
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -122,7 +122,7 @@ describe("Full system integration", function () {
     await stakeManager.connect(agent).depositStake(0, stake);
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), appealFee);
+      .approve(await stakeManager.getAddress(), disputeFee);
     await token
       .connect(v1)
       .approve(await stakeManager.getAddress(), stake);

@@ -16,7 +16,11 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId, string calldata evidence) external;
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external;
     function resolveDispute(uint256 jobId, bool employerWins) external;
 }
 
@@ -647,7 +651,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice Agent disputes a failed job outcome with supporting evidence.
+    /// @notice Agent or employer disputes a job outcome with supporting evidence.
     /// @param jobId Identifier of the disputed job.
     /// @param evidence Supporting evidence for the dispute.
     function dispute(uint256 jobId, string calldata evidence)
@@ -655,10 +659,20 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Disputed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent, "only agent");
+        require(
+            msg.sender == job.agent || msg.sender == job.employer,
+            "only participant"
+        );
+        require(
+            job.state == State.Completed ||
+                (job.state == State.Disputed && !job.success),
+            "cannot dispute"
+        );
+        if (job.state == State.Completed) {
+            job.state = State.Disputed;
+        }
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, evidence);
+            disputeModule.raiseDispute(jobId, msg.sender, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
     }

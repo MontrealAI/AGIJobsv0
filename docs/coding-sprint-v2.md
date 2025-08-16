@@ -6,7 +6,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
 - Implement immutable, ownable modules for job coordination, validation, staking, reputation, disputes and certificate NFTs.
 - Optimise for gas efficiency and composability while keeping explorer interactions simple for non‑technical users.
 - Align incentives so honest behaviour is the dominant strategy for agents, validators and employers.
-- Default to the $AGIALPHA token (6 decimals) for all payments, stakes and appeal fees while allowing the owner to swap tokens via `StakeManager.setToken`.
+- Default to the $AGIALPHA token (6 decimals) for all payments, stakes and dispute fees while allowing the owner to swap tokens via `StakeManager.setToken`.
 - Publish an on-chain tax disclaimer that leaves all liabilities with employers, agents and validators while the owner remains exempt.
 
 ## Tasks
@@ -18,7 +18,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - `ValidationModule`: pseudo‑random selection, commit‑reveal voting, outcome reporting.
    - `StakeManager`: token custody, slashing, reward release.
    - `ReputationEngine`: reputation tracking, threshold enforcement, owner-managed blacklist.
-   - `DisputeModule`: optional appeal flow and final ruling with appeal fees paid in the configured ERC‑20.
+   - `DisputeModule`: optional dispute flow and final ruling with dispute fees paid in the configured ERC‑20.
    - `CertificateNFT`: ERC‑721 minting with owner‑settable base URI.
    - Wire `StakeManager` into all modules and expose `setToken` so the owner can replace $AGIALPHA without redeploying.
 3. **Incentive Calibration**

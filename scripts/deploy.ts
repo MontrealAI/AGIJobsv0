@@ -75,7 +75,7 @@ async function main() {
   await nft.setStakeManager(await stake.getAddress());
   await stake.setJobRegistry(await registry.getAddress());
   await nft.transferOwnership(await registry.getAddress());
-  await dispute.setAppealFee(10);
+  await dispute.setDisputeFee(10);
 
   const addresses = {
     jobRegistry: await registry.getAddress(),

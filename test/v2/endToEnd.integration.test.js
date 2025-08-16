@@ -9,7 +9,7 @@ describe("end-to-end job lifecycle", function () {
   const stakeRequired = ethers.parseUnits("200", 6);
   const platformStake = ethers.parseUnits("500", 6);
   const feePct = 10;
-  const appealFee = 0n;
+  const disputeFee = 0n;
 
   beforeEach(async () => {
     [owner, employer, agent, platform] = await ethers.getSigners();
@@ -77,7 +77,7 @@ describe("end-to-end job lifecycle", function () {
       0,
       ethers.ZeroAddress
     );
-    await dispute.connect(owner).setAppealFee(appealFee);
+    await dispute.connect(owner).setDisputeFee(disputeFee);
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"

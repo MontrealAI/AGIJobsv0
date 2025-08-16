@@ -21,7 +21,7 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 | Employer | `$AGIALPHA.approve(StakeManager, 1_050000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000, uri)` | approve `1_050000` for a 1‑token reward + 5% fee |
 | Agent | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000)` | stake `1_000000` |
 | Validator | `$AGIALPHA.approve(StakeManager, 1_000000)` → `StakeManager.depositStake(1, 1_000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt)` | stake `1_000000` |
-| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → owner `DisputeModule.resolveDispute(jobId, uphold)` | appeal fee `1_000000` |
+| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → owner `DisputeModule.resolveDispute(jobId, uphold)` | dispute fee `1_000000` |
 
 ## ENS prerequisites
 - Agents need an ENS subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`.
@@ -156,7 +156,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 2. When the reveal window opens, call **revealValidation(jobId, approve, salt)** from the same address.
 
 ### Raise & resolve disputes
-1. Approve the appeal fee on `$AGIALPHA`.
+1. Approve the dispute fee on `$AGIALPHA`.
 2. On `JobRegistry` → **Write**, call **acknowledgeAndDispute(jobId, evidence)**.
 3. The owner finalizes by calling **resolveDispute(jobId, uphold)** on `DisputeModule`.
 
@@ -192,7 +192,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | --- | --- | --- |
 | `raiseDispute(uint256 jobId, string reason)` | jobId, reason URI | Participant appeals a validation outcome. |
 | `resolveDispute(uint256 jobId, bool uphold)` | jobId, `uphold` – sustain original result? | Moderator issues a final ruling. |
-| `setAppealFee(uint256 fee)` | fee amount | Owner adjusts the dispute bond charged on appeals. |
+| `setDisputeFee(uint256 fee)` | fee amount | Owner adjusts the dispute bond charged on disputes. |
 
 ## Parameter Glossary
 

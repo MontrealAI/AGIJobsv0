@@ -233,7 +233,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         Job storage job = _jobs[jobId];
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, evidence);
+            disputeModule.raiseDispute(jobId, msg.sender, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
     }

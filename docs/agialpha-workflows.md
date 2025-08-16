@@ -26,10 +26,10 @@ This guide summarises common on-chain interactions for the $AGIALPHA-based AGIJo
 
 ## 4. Dispute a Job
 
-1. Ensure you have approved the `StakeManager` for at least the appeal fee. Example fee of 10 tokens → approve `10_000000`.
-2. On [DisputeModule Read](https://etherscan.io/address/<DisputeModuleAddress>#readContract) check `appealFee()` and `disputeWindow()`.
-3. Call `raiseDispute(jobId, evidence)` on [DisputeModule Write](https://etherscan.io/address/<DisputeModuleAddress>#writeContract) before the dispute window ends. The StakeManager will lock the `appealFee` from your wallet.
-4. After the window elapses, an authorised arbiter resolves the case with `resolveDispute(jobId)`. Depending on the outcome, the appeal fee is returned or paid out via `StakeManager.payDisputeFee`.
+1. Ensure you have approved the `StakeManager` for at least the dispute fee. Example fee of 10 tokens → approve `10_000000`.
+2. On [DisputeModule Read](https://etherscan.io/address/<DisputeModuleAddress>#readContract) check `disputeFee()` and `disputeWindow()`.
+3. Call `raiseDispute(jobId, evidence)` on [DisputeModule Write](https://etherscan.io/address/<DisputeModuleAddress>#writeContract) before the dispute window ends. The StakeManager will lock the `disputeFee` from your wallet.
+4. After the window elapses, an authorised arbiter resolves the case with `resolveDispute(jobId)`. Depending on the outcome, the dispute fee is returned or paid out via `StakeManager.payDisputeFee`.
 
 ---
 
