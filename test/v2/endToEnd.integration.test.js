@@ -153,9 +153,8 @@ describe("end-to-end job lifecycle", function () {
     await registry.connect(agent).submit(jobId, "result");
     await validation.finalize(jobId);
 
-    // fee moved to FeePool
-    expect(await feePool.pendingFees()).to.equal(fee);
-    await feePool.distributeFees();
+    // fee distributed to stakers
+    expect(await feePool.pendingFees()).to.equal(0);
     const before = await token.balanceOf(platform.address);
     await feePool.connect(platform).claimRewards();
     const after = await token.balanceOf(platform.address);
