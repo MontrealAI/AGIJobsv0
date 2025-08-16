@@ -750,10 +750,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
-                uint256 agentPct = stakeManager.getHighestPayoutPercentage(
-                    job.agent
-                );
-                uint256 agentReward = (uint256(job.reward) * agentPct) / 100;
+
+                // determine validator payout before calculating agent reward
                 address[] memory vals;
                 uint256 validatorReward;
                 uint256 perValidator;
@@ -769,6 +767,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                         perValidator = validatorReward / vals.length;
                     }
                 }
+
+                // agent payout is based on remaining reward after validator share
+                uint256 agentPct = stakeManager.getHighestPayoutPercentage(
+                    job.agent
+                );
+                uint256 rewardAfterValidator =
+                    uint256(job.reward) - validatorReward;
+                uint256 agentReward =
+                    (rewardAfterValidator * agentPct) / 100;
+
                 stakeManager.finalizeJobFunds(
                     jobKey,
                     job.agent,
@@ -776,13 +784,19 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                     fee,
                     pool
                 );
+
                 if (validatorReward > 0) {
                     for (uint256 i; i < vals.length; ++i) {
-                        stakeManager.release(vals[i], perValidator);
+                        stakeManager.releaseJobFunds(
+                            jobKey,
+                            vals[i],
+                            perValidator
+                        );
                     }
                 }
+
                 uint256 leftover =
-                    uint256(job.reward) - agentReward - validatorReward;
+                    rewardAfterValidator - agentReward;
                 if (leftover > 0) {
                     stakeManager.releaseJobFunds(jobKey, job.employer, leftover);
                 }

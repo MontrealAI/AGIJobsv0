@@ -21,8 +21,10 @@ interface IStakeManager {
     event StakeSlashed(
         address indexed user,
         Role indexed role,
-        uint256 amount,
-        address indexed employer
+        address indexed employer,
+        address treasury,
+        uint256 employerShare,
+        uint256 treasuryShare
     );
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
@@ -32,6 +34,7 @@ interface IStakeManager {
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
     event MaxStakePerAddressUpdated(uint256 maxStake);
+    event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event SlashPercentSumEnforcementUpdated(bool enforced);
 
     /// @notice deposit stake for caller for a specific role
@@ -91,6 +94,7 @@ interface IStakeManager {
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setTreasury(address _treasury) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
+    function setMaxAGITypes(uint256 newMax) external;
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);
