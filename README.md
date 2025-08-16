@@ -7,6 +7,20 @@ All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Sho
 
 For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
 
+## v2 Modular Contract Overview
+
+The v2 release splits the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system:
+
+- **JobRegistry** – canonical job storage and router for companion modules; owner may swap module addresses with `setModules`.
+- **StakeManager** – escrows rewards and stakes, distributes payouts, and supports token swaps via `setToken`.
+- **ValidationModule** – selects validators and enforces commit/reveal finalization windows.
+- **ReputationEngine** – tracks reputation and exposes `blacklist(user, status)` for owner‑managed access control.
+- **DisputeModule** – optional appeals layer for contested jobs.
+- **CertificateNFT** – mints ERC‑721 completion certificates after successful finalization.
+- **FeePool** and **TaxPolicy** – collect protocol fees and burn or route them according to owner‑set percentages.
+
+Owners retain `onlyOwner` control over parameters, letting them reconfigure live deployments without redeploying the suite.
+
 ## Deployment & Configuration
 
 ### Deploying legacy v0 with $AGIALPHA
@@ -71,10 +85,17 @@ For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v
 3. In `DisputeModule` → **Write**, call `resolveDispute(jobId, employerWins)`.
 4. Confirm `DisputeResolved` in the transaction log.
 
+#### End-to-End Etherscan Flow
+1. **Create job** – employer approves `$AGIALPHA` and calls `acknowledgeAndCreateJob(reward, uri)` on `JobRegistry`.
+2. **Apply** – agent stakes if required and calls `applyForJob(jobId, subdomain, proof)` (or `stakeAndApply(jobId, amount)`).
+3. **Validate** – selected validators call `commitValidation(jobId, hash, subdomain, proof)` and later `revealValidation(jobId, approve, salt)`.
+4. **Finalize** – after the reveal window the employer calls `finalize(jobId)` (or any validator can finalize once the window closes); rewards and stakes settle automatically.
+
 ### Owner controls
 The contract owner can reconfigure live deployments without redeployment:
-- **ENS roots** – rotate subdomains or proofs with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol), [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol), [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol), and update ENS contract references via [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).
-- **Token addresses** – move between payout tokens with [`StakeManager.setToken`](contracts/v2/StakeManager.sol) and [`FeePool.setToken`](contracts/v2/FeePool.sol).
+- **ENS roots & Merkle proofs** – rotate subdomains with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), and update allowlists via [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol). Watch for `RootNodeUpdated` or `MerkleRootUpdated` events. Update ENS contract references through [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).
+- **Token addresses** – call [`StakeManager.setToken`](contracts/v2/StakeManager.sol) then [`FeePool.setToken`](contracts/v2/FeePool.sol) to swap the ERC‑20 used for stakes and fees. Wait for `TokenUpdated` events on both contracts.
+- **Blacklists** – manage participation with [`ReputationEngine.blacklist(address user, bool status)`](contracts/v2/ReputationEngine.sol); blacklisted addresses cannot apply or validate until removed.
 - **Stake requirements** – adjust minimums through [`StakeManager.setMinStake`](contracts/v2/StakeManager.sol) and [`PlatformRegistry.setMinPlatformStake`](contracts/v2/PlatformRegistry.sol).
 - **Dispute parameters** – tune dispute fees or tax policy using [`DisputeModule.setDisputeFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
 
@@ -98,6 +119,7 @@ For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment
 - **Validators** require a subdomain ending in `.club.agi.eth`.
 - Calls like `applyForJob` and `commitValidation` take your subdomain label and a Merkle proof. A valid proof lets [`ENSOwnershipVerifier.verifyOwnership`](contracts/v2/modules/ENSOwnershipVerifier.sol) skip on-chain ENS lookups, confirming membership off-chain and saving gas.
 - Owners may rotate ENS roots or allowlists at any time with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper` without redeploying contracts.
+- **Getting a subdomain** – open `agi.eth` in the [ENS Manager](https://app.ens.domains), create `yourname.agent.agi.eth` or `yourname.club.agi.eth`, and point it to your wallet address. If creation is restricted, request a subdomain from the AGI operators.
 
 Sample `verifyOwnership` call:
 
