@@ -63,4 +63,36 @@ describe("CertificateNFT marketplace", function () {
       .to.emit(nft, "NFTDelisted")
       .withArgs(2);
   });
+
+  it("restricts setters and minting", async () => {
+    await expect(nft.connect(seller).setJobRegistry(seller.address))
+      .to.be.revertedWithCustomError(nft, "OwnableUnauthorizedAccount")
+      .withArgs(seller.address);
+
+    await expect(nft.connect(seller).setStakeManager(seller.address))
+      .to.be.revertedWithCustomError(nft, "OwnableUnauthorizedAccount")
+      .withArgs(seller.address);
+
+    await expect(
+      nft.connect(seller).mint(seller.address, 2, "ipfs://2")
+    )
+      .to.be.revertedWithCustomError(nft, "NotJobRegistry")
+      .withArgs(seller.address);
+  });
+
+  it("splits fees when configured", async () => {
+    const feeBps = 500n; // 5%
+    const start = await token.balanceOf(owner.address);
+    await nft.setFee(owner.address, Number(feeBps));
+    await nft.connect(seller).list(1, price);
+    await token.connect(buyer).approve(await nft.getAddress(), price);
+    await nft.connect(buyer).purchase(1);
+
+    const fee = (price * feeBps) / 10000n;
+    const end = await token.balanceOf(owner.address);
+    expect(end - start).to.equal(fee);
+    expect(await token.balanceOf(seller.address)).to.equal(
+      price * 2n - fee
+    );
+  });
 });

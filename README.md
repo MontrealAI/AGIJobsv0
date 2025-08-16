@@ -1620,18 +1620,13 @@ For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md)
 
 See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and interface definitions; the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
-### Marketplace Flow via Etherscan
+### Certificate Marketplace
 
-1. **List a certificate**
-   - Open the deployed `CertificateNFT` on Etherscan and switch to the **Write** tab.
-   - Call `list(tokenId, price)` with the token ID and sale price (6‑decimals).
-2. **Purchase a certificate**
-   - Buyer approves the `CertificateNFT` contract to spend the required amount of the staking token.
-   - Call `purchase(tokenId)` to transfer tokens and the NFT in a single transaction.
-3. **Delist a certificate**
-   - If the seller changes their mind, call `delist(tokenId)` to remove the listing.
+1. **List** – open the deployed `CertificateNFT` on Etherscan and call `list(tokenId, price)` with the token ID and sale price (6‑decimals).
+2. **Purchase** – the buyer first approves the `CertificateNFT` contract to spend the required amount of the staking token, then calls `purchase(tokenId)` to transfer funds and the NFT in one transaction. If the owner has configured `setFee(recipient, bps)`, a portion of the sale price is sent to `recipient`.
+3. **Delist** – the seller may call `delist(tokenId)` at any time to remove the listing.
 
-Each call emits `NFTListed`, `NFTPurchased`, or `NFTDelisted`, allowing marketplace activity to be tracked directly from event logs.
+Each action emits `NFTListed`, `NFTPurchased`, or `NFTDelisted` for easy tracking.
 
 ## Incentive Design
 
