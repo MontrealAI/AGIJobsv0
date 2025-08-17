@@ -461,19 +461,23 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        bool authorized =
-            ensOwnershipVerifier.verifyOwnership(
+        bool authorized = additionalValidators[msg.sender];
+        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+            authorized = ensOwnershipVerifier.verifyOwnership(
                 msg.sender,
                 subdomain,
                 proof,
                 clubRootNode
-            ) || additionalValidators[msg.sender];
+            );
+        }
         require(authorized, "Not authorized validator");
         emit OwnershipVerified(msg.sender, subdomain);
-        require(
-            !reputationEngine.isBlacklisted(msg.sender),
-            "Blacklisted validator"
-        );
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted validator"
+            );
+        }
         require(validatorStakes[jobId][msg.sender] > 0, "stake");
         uint256 nonce = jobNonce[jobId];
         require(
@@ -496,19 +500,23 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        bool authorized =
-            ensOwnershipVerifier.verifyOwnership(
+        bool authorized = additionalValidators[msg.sender];
+        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+            authorized = ensOwnershipVerifier.verifyOwnership(
                 msg.sender,
                 subdomain,
                 proof,
                 clubRootNode
-            ) || additionalValidators[msg.sender];
+            );
+        }
         require(authorized, "Not authorized validator");
         emit OwnershipVerified(msg.sender, subdomain);
-        require(
-            !reputationEngine.isBlacklisted(msg.sender),
-            "Blacklisted validator"
-        );
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted validator"
+            );
+        }
         uint256 nonce = jobNonce[jobId];
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         require(commitHash != bytes32(0), "no commit");
