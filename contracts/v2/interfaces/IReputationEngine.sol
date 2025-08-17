@@ -10,7 +10,7 @@ interface IReputationEngine {
     /// @dev Reverts when attempting to act on a blacklisted user
     error BlacklistedUser(address user);
 
-    event ReputationChanged(address indexed user, int256 delta, uint256 newScore);
+    event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
     event Blacklisted(address indexed user, bool status);
     event StakeManagerUpdated(address stakeManager);
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
@@ -35,9 +35,10 @@ interface IReputationEngine {
     function reputation(address user) external view returns (uint256);
 
     /// @notice Alias for {reputation} for backwards compatibility
-    /// @param user Address to query
-    /// @return The current reputation score of the user
     function getReputation(address user) external view returns (uint256);
+
+    /// @notice Alternate view to mirror v1 naming
+    function reputationOf(address user) external view returns (uint256);
 
     /// @notice Check if a user is blacklisted
     /// @param user Address to query
@@ -57,13 +58,20 @@ interface IReputationEngine {
     function setCaller(address caller, bool allowed) external;
 
     /// @notice Set the minimum score threshold for certain actions
-    /// @param newThreshold New reputation threshold value
     function setThreshold(uint256 newThreshold) external;
+
+    /// @notice Set premium reputation threshold
+    function setPremiumThreshold(uint256 newThreshold) external;
 
     /// @notice Add or remove a user from the blacklist
     /// @param user Address to update
     /// @param status True to blacklist the user, false to remove
     function setBlacklist(address user, bool status) external;
+
+    /// @notice Job lifecycle hooks
+    function onApply(address user) external;
+
+    function onFinalize(address user, bool success, uint256 payout, uint256 duration) external;
 
     /// @notice Retrieve combined operator score using stake and reputation
     /// @param operator Address to query

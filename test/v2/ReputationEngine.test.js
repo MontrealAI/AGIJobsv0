@@ -11,19 +11,19 @@ describe("ReputationEngine", function () {
     );
     engine = await Engine.deploy(ethers.ZeroAddress);
     await engine.connect(owner).setCaller(caller.address, true);
-    await engine.connect(owner).setThreshold(2);
+    await engine.connect(owner).setPremiumThreshold(2);
   });
 
   it("applies reputation gains and decay with blacklisting", async () => {
     await engine.connect(caller).add(user.address, 3);
-    expect(await engine.reputation(user.address)).to.equal(3);
+    expect(await engine.reputationOf(user.address)).to.equal(3);
 
     await engine.connect(caller).subtract(user.address, 2);
-    expect(await engine.reputation(user.address)).to.equal(1);
+    expect(await engine.reputationOf(user.address)).to.equal(1);
     expect(await engine.isBlacklisted(user.address)).to.equal(true);
 
     await engine.connect(caller).add(user.address, 2);
-    expect(await engine.reputation(user.address)).to.equal(3);
+    expect(await engine.reputationOf(user.address)).to.equal(3);
     expect(await engine.isBlacklisted(user.address)).to.equal(false);
   });
 
@@ -34,9 +34,34 @@ describe("ReputationEngine", function () {
   });
 
   it("allows authorized caller to manually set blacklist status", async () => {
-    await engine.connect(caller).blacklist(user.address, true);
+    await engine.connect(caller).setBlacklist(user.address, true);
     expect(await engine.isBlacklisted(user.address)).to.equal(true);
-    await engine.connect(caller).blacklist(user.address, false);
+    await engine.connect(caller).setBlacklist(user.address, false);
     expect(await engine.isBlacklisted(user.address)).to.equal(false);
+  });
+
+  it("handles onApply and onFinalize hooks", async () => {
+    const payout = ethers.parseEther("1");
+    const duration = 1000;
+    await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
+      "insufficient reputation"
+    );
+    await engine.connect(caller).add(user.address, 3);
+    await expect(engine.connect(caller).onApply(user.address)).to.not.be.reverted;
+    const gain = await engine.calculateReputationPoints(payout, duration);
+    const max = 88888n;
+    const enforceGrowth = (current, points) => {
+      let newRep = current + points;
+      let factor = 1n + (newRep * newRep) / (max * max);
+      let diminished = newRep / factor;
+      return diminished > max ? max : diminished;
+    };
+    const expected = enforceGrowth(3n, gain);
+    await expect(
+      engine.connect(caller).onFinalize(user.address, true, payout, duration)
+    )
+      .to.emit(engine, "ReputationUpdated")
+      .withArgs(user.address, gain, expected);
+    expect(await engine.reputationOf(user.address)).to.equal(expected);
   });
 });

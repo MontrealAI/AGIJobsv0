@@ -354,6 +354,10 @@ contract MockReputationEngine is IReputationEngine {
         return _rep[user];
     }
 
+    function reputationOf(address user) external view override returns (uint256) {
+        return _rep[user];
+    }
+
     function isBlacklisted(address user) external view override returns (bool) {
         return _blacklist[user];
     }
@@ -368,8 +372,25 @@ contract MockReputationEngine is IReputationEngine {
         threshold = t;
     }
 
+    function setPremiumThreshold(uint256 t) external override {
+        threshold = t;
+    }
+
     function setBlacklist(address user, bool val) external override {
         _blacklist[user] = val;
+    }
+
+    function onApply(address user) external override {
+        require(!_blacklist[user], "blacklisted");
+        require(_rep[user] >= threshold, "insufficient reputation");
+    }
+
+    function onFinalize(address user, bool success, uint256, uint256) external override {
+        if (success) {
+            _rep[user] += 1;
+        } else if (_rep[user] < threshold) {
+            _blacklist[user] = true;
+        }
     }
 
     function getOperatorScore(address user) external view override returns (uint256) {
