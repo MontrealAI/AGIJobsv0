@@ -14,7 +14,7 @@ import {DisputeModule} from "./modules/DisputeModule.sol";
 import {CertificateNFT} from "./CertificateNFT.sol";
 import {PlatformRegistry, IReputationEngine as PRReputationEngine} from "./PlatformRegistry.sol";
 import {JobRouter} from "./modules/JobRouter.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
+import {IdentityVerifier} from "./modules/IdentityVerifier.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {FeePool} from "./FeePool.sol";
 import {TaxPolicy} from "./TaxPolicy.sol";
@@ -309,11 +309,16 @@ contract Deployer is Ownable {
             owner_
         );
 
-        ENSOwnershipVerifier verifier = new ENSOwnershipVerifier(
-            ids.ens,
-            ids.nameWrapper,
-            ids.clubRootNode
-        );
+        IdentityVerifier verifier = new IdentityVerifier();
+        if (address(ids.ens) != address(0)) {
+            verifier.setENS(address(ids.ens));
+        }
+        if (address(ids.nameWrapper) != address(0)) {
+            verifier.setNameWrapper(address(ids.nameWrapper));
+        }
+        if (ids.clubRootNode != bytes32(0)) {
+            verifier.setClubRootNode(ids.clubRootNode);
+        }
 
         IRInterface repInterface = IRInterface(address(reputation));
         PlatformRegistry pRegistry = new PlatformRegistry(

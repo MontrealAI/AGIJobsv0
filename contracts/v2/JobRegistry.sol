@@ -7,7 +7,7 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
+import {IdentityVerifier} from "./modules/IdentityVerifier.sol";
 
 interface IReputationEngine {
     function add(address user, uint256 amount) external;
@@ -68,10 +68,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
-    ENSOwnershipVerifier public ensOwnershipVerifier;
+    IdentityVerifier public identityVerifier;
     bytes32 public agentRootNode;
     bytes32 public agentMerkleRoot;
-    mapping(address => bool) public additionalAgents;
+
+    function additionalAgents(address agent) public view returns (bool) {
+        return identityVerifier.additionalAgents(agent);
+    }
 
     /// @notice Current version of the tax policy. Participants must acknowledge
     /// this version before interacting. The contract owner remains exempt.
@@ -292,17 +295,23 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice Update the ENS ownership verifier contract.
-    function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
-        ensOwnershipVerifier = verifier;
-        emit ModuleUpdated("ENSOwnershipVerifier", address(verifier));
+    /// @notice Update the identity verifier contract.
+    function setIdentityVerifier(IdentityVerifier verifier) external onlyOwner {
+        identityVerifier = verifier;
+        emit ModuleUpdated("IdentityVerifier", address(verifier));
+    }
+
+    /// @notice Backwards-compatible setter for legacy deployments.
+    function setENSOwnershipVerifier(IdentityVerifier verifier) external onlyOwner {
+        identityVerifier = verifier;
+        emit ModuleUpdated("IdentityVerifier", address(verifier));
     }
 
     /// @notice Set the ENS root node used for agent verification.
     function setAgentRootNode(bytes32 node) external onlyOwner {
         agentRootNode = node;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setAgentRootNode(node);
+        if (address(identityVerifier) != address(0)) {
+            identityVerifier.setAgentRootNode(node);
         }
         emit RootNodeUpdated("agent", node);
     }
@@ -310,7 +319,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Set the agent Merkle root used for identity proofs.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
-        ensOwnershipVerifier.setAgentMerkleRoot(root);
+        if (address(identityVerifier) != address(0)) {
+            identityVerifier.setAgentMerkleRoot(root);
+        }
         emit MerkleRootUpdated("agent", root);
     }
 
@@ -321,7 +332,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ) external onlyOwner {
         require(agents.length == allowed.length, "length");
         for (uint256 i; i < agents.length; ++i) {
-            additionalAgents[agents[i]] = allowed[i];
+            if (allowed[i]) {
+                identityVerifier.addAdditionalAgent(agents[i]);
+            } else {
+                identityVerifier.removeAdditionalAgent(agents[i]);
+            }
             emit AdditionalAgentUpdated(agents[i], allowed[i]);
         }
     }
@@ -330,14 +345,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param agent Address to whitelist.
     function addAdditionalAgent(address agent) external onlyOwner {
         require(agent != address(0), "agent");
-        additionalAgents[agent] = true;
+        identityVerifier.addAdditionalAgent(agent);
         emit AdditionalAgentUpdated(agent, true);
     }
 
     /// @notice Remove an agent from the manual allowlist.
     /// @param agent Address to remove.
     function removeAdditionalAgent(address agent) external onlyOwner {
-        additionalAgents[agent] = false;
+        identityVerifier.removeAdditionalAgent(agent);
         emit AdditionalAgentUpdated(agent, false);
     }
 
@@ -544,15 +559,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        bool authorized =
-            ensOwnershipVerifier.verifyOwnership(
-                msg.sender,
-                subdomain,
-                proof,
-                agentRootNode
-            ) || additionalAgents[msg.sender];
+        bool authorized = identityVerifier.verifyAgent(
+            msg.sender,
+            subdomain,
+            proof
+        );
         require(authorized, "Not authorized agent");
-        emit OwnershipVerified(msg.sender, subdomain);
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),

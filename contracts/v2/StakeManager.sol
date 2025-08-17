@@ -11,6 +11,8 @@ import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
+import {IdentityVerifier} from "./modules/IdentityVerifier.sol";
+import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -58,6 +60,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @notice JobRegistry contract tracking tax policy acknowledgements
     address public jobRegistry;
+
+    /// @notice Identity verifier for agent and validator ENS checks
+    IdentityVerifier public identityVerifier;
+
+    /// @notice Reputation engine for blacklist checks
+    IReputationEngine public reputationEngine;
 
     /// @notice minimum required stake
     uint256 public minStake;
@@ -126,6 +134,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
     event JobRegistryUpdated(address indexed registry);
+    event IdentityVerifierUpdated(address indexed verifier);
+    event ReputationEngineUpdated(address indexed engine);
     event SlashPercentSumEnforcementUpdated(bool enforced);
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
@@ -264,6 +274,18 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function setJobRegistry(address _jobRegistry) external onlyOwner {
         jobRegistry = _jobRegistry;
         emit JobRegistryUpdated(_jobRegistry);
+    }
+
+    /// @notice set the identity verifier contract
+    function setIdentityVerifier(IdentityVerifier verifier) external onlyOwner {
+        identityVerifier = verifier;
+        emit IdentityVerifierUpdated(address(verifier));
+    }
+
+    /// @notice set the reputation engine contract
+    function setReputationEngine(IReputationEngine engine) external onlyOwner {
+        reputationEngine = engine;
+        emit ReputationEngineUpdated(address(engine));
     }
 
     /// @notice set the dispute module authorized to manage dispute fees
@@ -489,6 +511,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
     {
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
+        if (address(identityVerifier) != address(0)) {
+            bytes32[] memory proof;
+            if (role == Role.Agent) {
+                identityVerifier.verifyAgent(msg.sender, "", proof);
+            } else if (role == Role.Validator) {
+                identityVerifier.verifyValidator(msg.sender, "", proof);
+            }
+        }
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "blacklisted"
+            );
+        }
         _deposit(msg.sender, role, amount);
     }
 
