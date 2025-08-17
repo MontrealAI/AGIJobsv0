@@ -732,38 +732,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         Job storage job = jobs[jobId];
         require(job.state == State.Disputed, "no dispute");
 
-        if (employerWins) {
-            job.success = false;
-            job.state = State.Finalized;
-            bytes32 jobKey = bytes32(jobId);
-            if (address(stakeManager) != address(0)) {
-                uint256 fee = (uint256(job.reward) * job.feePct) / 100;
-                if (job.reward > 0) {
-                    stakeManager.releaseJobFunds(
-                        jobKey,
-                        job.employer,
-                        uint256(job.reward) + fee
-                    );
-                }
-                if (job.stake > 0) {
-                    stakeManager.slash(
-                        job.agent,
-                        IStakeManager.Role.Agent,
-                        uint256(job.stake),
-                        job.employer
-                    );
-                }
-            }
-            if (address(reputationEngine) != address(0)) {
-                reputationEngine.subtract(job.agent, 1);
-            }
-            emit DisputeResolved(jobId, true);
-            emit JobFinalized(jobId, false);
-        } else {
-            job.success = true;
-            job.state = State.Completed;
-            emit DisputeResolved(jobId, false);
-        }
+        job.success = !employerWins;
+        job.state = State.Completed;
+        emit DisputeResolved(jobId, employerWins);
+        finalize(jobId);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
