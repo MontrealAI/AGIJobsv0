@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IStakeManager {
-    function slash(address user, address recipient, uint256 amount) external;
+    function slash(address user, uint256 amount, address recipient) external;
 }
 
 interface IReputationEngine {
@@ -54,11 +54,11 @@ contract DisputeResolution is Ownable {
         }
 
         if (validatorWins) {
-            stakeManager.slash(challengerAddr, validator, bond);
+            stakeManager.slash(challengerAddr, bond, validator);
             reputationEngine.subtractReputation(challengerAddr, 1);
             reputationEngine.addReputation(validator, 1);
         } else {
-            stakeManager.slash(validator, challengerAddr, bond);
+            stakeManager.slash(validator, bond, challengerAddr);
             reputationEngine.subtractReputation(validator, 1);
             reputationEngine.addReputation(challengerAddr, 1);
         }

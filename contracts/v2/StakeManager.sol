@@ -214,6 +214,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit MinStakeUpdated(_minStake);
     }
 
+    /// @dev internal helper to update slashing percentages
+    function _setSlashingPercentages(
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct
+    ) internal {
+        require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
+        employerSlashPct = _employerSlashPct;
+        treasurySlashPct = _treasurySlashPct;
+        emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
+    }
+
     /// @notice update slashing percentage splits
     /// @param _employerSlashPct percentage sent to employer (0-100)
     /// @param _treasurySlashPct percentage sent to treasury (0-100)
@@ -221,10 +232,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
     ) external onlyOwner {
-        require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
-        employerSlashPct = _employerSlashPct;
-        treasurySlashPct = _treasurySlashPct;
-        emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
+        _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
+    }
+
+    /// @notice update slashing percentages (alias)
+    /// @param _employerSlashPct percentage sent to employer (0-100)
+    /// @param _treasurySlashPct percentage sent to treasury (0-100)
+    function setSlashingParameters(
+        uint256 _employerSlashPct,
+        uint256 _treasurySlashPct
+    ) external onlyOwner {
+        _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
     /// @notice toggle enforcement that slashing percentages must sum to 100
@@ -734,22 +752,20 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // slashing logic
     // ---------------------------------------------------------------
 
-    /// @notice slash stake from a user for a specific role and distribute shares
-    /// @param user address whose stake will be reduced
-    /// @param role participant role of the slashed stake
-    /// @param amount token amount with 6 decimals to slash
-    /// @param employer recipient of the employer share
-    function slash(address user, Role role, uint256 amount, address employer)
-        external
-        onlyJobRegistry
-    {
+    /// @dev internal slashing routine used by dispute and job slashing
+    function _slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address recipient
+    ) internal {
         require(role <= Role.Platform, "role");
         uint256 staked = stakes[user][role];
         require(staked >= amount, "stake");
 
-        uint256 employerShare = (amount * employerSlashPct) / 100;
+        uint256 recipientShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
-        uint256 total = employerShare + treasuryShare;
+        uint256 total = recipientShare + treasuryShare;
 
         if (enforceSlashPercentSum100) {
             require(total == amount, "pct");
@@ -769,14 +785,46 @@ contract StakeManager is Ownable, ReentrancyGuard {
             }
         }
 
-        if (employerShare > 0) {
-            token.safeTransfer(employer, employerShare);
+        if (recipientShare > 0) {
+            token.safeTransfer(recipient, recipientShare);
         }
         if (treasuryShare > 0) {
             token.safeTransfer(treasury, treasuryShare);
         }
 
-        emit StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare);
+        emit StakeSlashed(
+            user,
+            role,
+            recipient,
+            treasury,
+            recipientShare,
+            treasuryShare
+        );
+    }
+
+    /// @notice slash stake from a user for a specific role and distribute shares
+    /// @param user address whose stake will be reduced
+    /// @param role participant role of the slashed stake
+    /// @param amount token amount with 6 decimals to slash
+    /// @param employer recipient of the employer share
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer
+    ) external onlyJobRegistry {
+        _slash(user, role, amount, employer);
+    }
+
+    /// @notice slash a validator's stake during dispute resolution
+    /// @param user address whose stake will be reduced
+    /// @param amount token amount with 6 decimals to slash
+    /// @param recipient address receiving the slashed share
+    function slash(address user, uint256 amount, address recipient)
+        external
+        onlyDisputeModule
+    {
+        _slash(user, Role.Validator, amount, recipient);
     }
 
     /// @notice Return the total stake deposited by a user for a role
