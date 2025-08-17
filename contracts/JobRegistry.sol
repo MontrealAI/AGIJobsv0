@@ -8,8 +8,14 @@ interface IValidationModule {
 }
 
 interface IReputationEngine {
-    function addReputation(address user, uint256 amount) external;
-    function subtractReputation(address user, uint256 amount) external;
+    function onApply(address agent) external;
+    function onFinalize(
+        address agent,
+        bool success,
+        uint256 payout,
+        uint256 completionTime
+    ) external;
+    function blacklist(address user, bool status) external;
     function isBlacklisted(address user) external view returns (bool);
 }
 
@@ -52,6 +58,7 @@ contract JobRegistry is Ownable {
         bool success;
         Status status;
         string outputURI;
+        uint256 createdAt;
     }
 
     uint256 public nextJobId;
@@ -203,6 +210,11 @@ contract JobRegistry is Ownable {
         emit JobParametersUpdated(reward, stake);
     }
 
+    /// @notice Forward blacklist updates to the reputation engine.
+    function blacklist(address user, bool status) external onlyOwner {
+        reputationEngine.blacklist(user, status);
+    }
+
     /// @notice Create a new job.
     function createJob(address agent)
         external
@@ -216,10 +228,8 @@ contract JobRegistry is Ownable {
                 !reputationEngine.isBlacklisted(msg.sender),
                 "blacklisted employer"
             );
-            require(
-                !reputationEngine.isBlacklisted(agent),
-                "blacklisted agent"
-            );
+            require(!reputationEngine.isBlacklisted(agent), "blacklisted agent");
+            reputationEngine.onApply(agent);
         }
         require(stakeManager.stakes(agent) >= jobStake, "stake missing");
         jobId = ++nextJobId;
@@ -232,7 +242,8 @@ contract JobRegistry is Ownable {
             fee: fee,
             success: false,
             status: Status.Created,
-            outputURI: ""
+            outputURI: "",
+            createdAt: block.timestamp
         });
         stakeManager.lockReward(msg.sender, jobReward + fee);
         emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake, fee);
@@ -324,13 +335,13 @@ contract JobRegistry is Ownable {
             }
             stakeManager.payReward(job.agent, payout);
             stakeManager.releaseStake(job.agent, job.stake);
-            reputationEngine.addReputation(job.agent, 1);
             certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
         } else {
             stakeManager.payReward(job.employer, job.reward + job.fee);
             stakeManager.slash(job.agent, job.employer, job.stake);
-            reputationEngine.subtractReputation(job.agent, 1);
         }
+        uint256 duration = block.timestamp - job.createdAt;
+        reputationEngine.onFinalize(job.agent, job.success, job.reward, duration);
         emit JobFinalized(jobId, job.success);
     }
 }

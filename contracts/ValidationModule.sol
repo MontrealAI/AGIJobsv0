@@ -10,6 +10,7 @@ interface IStakeManager {
 
 interface IReputationEngine {
     function isBlacklisted(address user) external view returns (bool);
+    function blacklist(address user, bool status) external;
 }
 
 /// @title ValidationModule
@@ -122,6 +123,11 @@ contract ValidationModule is Ownable {
     function setReputationEngine(IReputationEngine engine) external onlyOwner {
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
+    }
+
+    /// @notice Forward blacklist updates to the reputation engine.
+    function blacklist(address user, bool status) external onlyOwner {
+        reputationEngine.blacklist(user, status);
     }
 
     function setClubRootNode(bytes32 node) external onlyOwner {
