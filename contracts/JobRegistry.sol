@@ -16,7 +16,8 @@ interface IReputationEngine {
 interface IStakeManager {
     function lockReward(address from, uint256 amount) external;
     function payReward(address to, uint256 amount) external;
-    function slash(address user, uint256 amount, address recipient) external;
+    enum Role { Agent, Validator, Platform }
+    function slash(address user, Role role, uint256 amount, address employer) external;
     function releaseStake(address user, uint256 amount) external;
     function stakes(address user) external view returns (uint256);
 }
@@ -328,7 +329,7 @@ contract JobRegistry is Ownable {
             certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
         } else {
             stakeManager.payReward(job.employer, job.reward + job.fee);
-            stakeManager.slash(job.agent, job.stake, job.employer);
+            stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, job.employer);
             reputationEngine.subtractReputation(job.agent, 1);
         }
         emit JobFinalized(jobId, job.success);

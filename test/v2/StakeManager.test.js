@@ -87,7 +87,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .slash(user.address, 0, 100, employer.address)
+        ["slash(address,uint8,uint256,address)"](user.address, 0, 100, employer.address)
     ).to.emit(stakeManager, "StakeSlashed").withArgs(
       user.address,
       0,
@@ -136,7 +136,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(user)
-        .slash(user.address, 0, 10, employer.address)
+        ["slash(address,uint8,uint256,address)"](user.address, 0, 10, employer.address)
     ).to.be.revertedWith("only job registry");
 
     const registryAddr = await jobRegistry.getAddress();
@@ -146,7 +146,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .slash(user.address, 0, 200, employer.address)
+        ["slash(address,uint8,uint256,address)"](user.address, 0, 200, employer.address)
     ).to.be.revertedWith("stake");
   });
 
@@ -192,7 +192,7 @@ describe("StakeManager", function () {
       expect(await stakeManager.stakes(user.address, role)).to.equal(100n);
       await stakeManager
         .connect(registrySigner)
-        .slash(user.address, role, 50, employer.address);
+        ["slash(address,uint8,uint256,address)"](user.address, role, 50, employer.address);
       expect(await stakeManager.stakes(user.address, role)).to.equal(50n);
     }
   });
@@ -242,7 +242,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .slash(user.address, 3, 1, employer.address)
+        ["slash(address,uint8,uint256,address)"](user.address, 3, 1, employer.address)
     ).to.be.revertedWithoutReason();
   });
 
@@ -445,7 +445,7 @@ describe("StakeManager", function () {
     await stakeManager.connect(owner).depositStake(0, 100);
     await stakeManager
       .connect(owner)
-      .slash(owner.address, 0, 100, employer.address);
+      ["slash(address,uint8,uint256,address)"](owner.address, 0, 100, employer.address);
     expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
     expect(await token.balanceOf(employer.address)).to.equal(1060n);
     expect(await token.balanceOf(treasury.address)).to.equal(20n);
@@ -461,7 +461,7 @@ describe("StakeManager", function () {
     await stakeManager.connect(owner).depositStake(0, 100);
     await stakeManager
       .connect(owner)
-      .slash(owner.address, 0, 100, employer.address);
+      ["slash(address,uint8,uint256,address)"](owner.address, 0, 100, employer.address);
     expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
     expect(await token.balanceOf(employer.address)).to.equal(1070n);
     expect(await token.balanceOf(treasury.address)).to.equal(30n);
@@ -487,7 +487,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(owner)
-        .slash(owner.address, 0, 100, employer.address)
+        ["slash(address,uint8,uint256,address)"](owner.address, 0, 100, employer.address)
     ).to.be.revertedWith("pct");
   });
 
@@ -609,7 +609,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .slash(user.address, 0, 100, employer.address)
+        ["slash(address,uint8,uint256,address)"](user.address, 0, 100, employer.address)
     )
       .to.emit(stakeManager, "StakeSlashed")
       .withArgs(user.address, 0, employer.address, treasury.address, 50, 50)
@@ -689,7 +689,7 @@ describe("StakeManager", function () {
 
     await stakeManager
       .connect(registrySigner)
-      .slash(user.address, 0, 100, employer.address);
+      ["slash(address,uint8,uint256,address)"](user.address, 0, 100, employer.address);
     await stakeManager.connect(user).withdrawStake(0, 100);
 
     expect(await stakeManager.stakes(user.address, 0)).to.equal(0n);
@@ -778,7 +778,7 @@ describe("StakeManager", function () {
 
     await stakeManager
       .connect(registrySigner)
-      .slash(user.address, 0, amount, employer.address);
+      ["slash(address,uint8,uint256,address)"](user.address, 0, amount, employer.address);
 
     const employerAfter = await token.balanceOf(employer.address);
     const treasuryAfter = await token.balanceOf(treasury.address);
