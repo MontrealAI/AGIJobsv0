@@ -12,19 +12,20 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 ### 1. Identity Verification Library
 - Build `ENSOwnershipVerifier` with Merkle proof, NameWrapper and resolver fallback.
 - Emit `OwnershipVerified` and `RecoveryInitiated` events.
-- Add owner setters for ENS registry, NameWrapper, root nodes and Merkle roots, emitting update events for audit trails.
-- Maintain `additionalAgents`/`additionalValidators` allow‑lists.
+- Store `agentRootNode`, `clubRootNode`, `agentMerkleRoot` and `validatorMerkleRoot`; owner setters (`setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`) fire `RootNodeUpdated`/`MerkleRootUpdated` events.
+- Provide `addAdditionalAgent`/`addAdditionalValidator` and removal counterparts so the owner can override identity checks.
+- Expose helper `isAuthorizedAgent`/`isAuthorizedValidator` that consults allow‑lists and `ReputationEngine.isBlacklisted`.
 
 ### 2. JobRegistry
 - Port `createJob`, `applyForJob`, `submit`, `finalize`, `cancelJob`, `dispute` and `forceCancel`.
-- On `applyForJob` call the verifier and check blacklists via `ReputationEngine`.
+- On `applyForJob` use `isAuthorizedAgent` and reject blacklisted addresses via `ReputationEngine`.
 - Require tax policy acknowledgement before any state‑changing action.
 - Enforce owner‑set `maxJobReward` and `maxJobDuration` limits.
 - Mirror v1 event names and cross‑check `docs/v1-v2-function-map.md` to ensure feature parity.
 
 ### 3. ValidationModule
 - Select validator committees and record commits & reveals.
-- Accept votes only from identities passing the verifier or in the allow‑list.
+- Accept votes only from identities passing `isAuthorizedValidator`.
 - Finalise results once quorum or the reveal window ends.
 - Report outcomes back to `JobRegistry`.
 - Use deterministic on‑chain randomness; avoid Chainlink VRF or subscription services.
