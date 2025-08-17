@@ -88,6 +88,9 @@ interface IStakeManager {
     /// @notice slash stake from a user for a specific role
     function slash(address user, Role role, uint256 amount, address employer) external;
 
+    /// @notice slash validator stake during dispute resolution
+    function slash(address user, uint256 amount, address recipient) external;
+
     /// @notice toggle enforcement requiring slashing percentages to sum to 100
     function setSlashPercentSumEnforcement(bool enforced) external;
 
@@ -95,6 +98,7 @@ interface IStakeManager {
     function setToken(IERC20 newToken) external;
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
+    function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setTreasury(address _treasury) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
     function setMaxAGITypes(uint256 newMax) external;

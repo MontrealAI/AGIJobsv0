@@ -20,7 +20,7 @@ contract StubStakeManager {
 
     function payReward(address, uint256) external {}
 
-    function slash(address user, address recipient, uint256 amount) external {
+    function slash(address user, uint256 amount, address recipient) external {
         slashed[user][recipient] += amount;
     }
 

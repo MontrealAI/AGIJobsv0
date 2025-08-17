@@ -43,6 +43,7 @@ contract MockStakeManager is IStakeManager {
     function setToken(IERC20) external override {}
     function setMinStake(uint256) external override {}
     function setSlashingPercentages(uint256, uint256) external override {}
+    function setSlashingParameters(uint256, uint256) external override {}
     function setTreasury(address) external override {}
     function setMaxStakePerAddress(uint256) external override {}
     function setMaxAGITypes(uint256) external override {}
@@ -58,6 +59,16 @@ contract MockStakeManager is IStakeManager {
         require(st >= amount, "stake");
         _stakes[user][role] = st - amount;
         totalStakes[role] -= amount;
+    }
+
+    function slash(address user, uint256 amount, address)
+        external
+        override
+    {
+        uint256 st = _stakes[user][Role.Validator];
+        require(st >= amount, "stake");
+        _stakes[user][Role.Validator] = st - amount;
+        totalStakes[Role.Validator] -= amount;
     }
 
     function stakeOf(address user, Role role) external view override returns (uint256) {
