@@ -8,8 +8,8 @@ interface IStakeManager {
 }
 
 interface IReputationEngine {
-    function addReputation(address user, uint256 amount) external;
-    function subtractReputation(address user, uint256 amount) external;
+    function add(address user, uint256 amount) external;
+    function subtract(address user, uint256 amount) external;
     function isBlacklisted(address user) external view returns (bool);
 }
 
@@ -55,12 +55,12 @@ contract DisputeResolution is Ownable {
 
         if (validatorWins) {
             stakeManager.slash(challengerAddr, bond, validator);
-            reputationEngine.subtractReputation(challengerAddr, 1);
-            reputationEngine.addReputation(validator, 1);
+            reputationEngine.subtract(challengerAddr, 1);
+            reputationEngine.add(validator, 1);
         } else {
             stakeManager.slash(validator, bond, challengerAddr);
-            reputationEngine.subtractReputation(validator, 1);
-            reputationEngine.addReputation(challengerAddr, 1);
+            reputationEngine.subtract(validator, 1);
+            reputationEngine.add(challengerAddr, 1);
         }
 
         validationModule.clearChallenge(jobId);

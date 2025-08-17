@@ -5,11 +5,11 @@ contract StubReputationEngine {
     mapping(address => uint256) public reputation;
     mapping(address => bool) public blacklist;
 
-    function addReputation(address user, uint256 amount) external {
+    function add(address user, uint256 amount) external {
         reputation[user] += amount;
     }
 
-    function subtractReputation(address user, uint256 amount) external {
+    function subtract(address user, uint256 amount) external {
         uint256 rep = reputation[user];
         reputation[user] = rep > amount ? rep - amount : 0;
     }

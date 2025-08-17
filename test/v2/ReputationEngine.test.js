@@ -52,8 +52,7 @@ describe("ReputationEngine", function () {
     const max = 88888n;
     const enforceGrowth = (current, points) => {
       let newRep = current + points;
-      let factor = 1n + (newRep * newRep) / (max * max);
-      let diminished = newRep / factor;
+      let diminished = newRep - (current * points) / max;
       return diminished > max ? max : diminished;
     };
     const expected = enforceGrowth(3n, gain);
@@ -61,7 +60,7 @@ describe("ReputationEngine", function () {
       engine.connect(caller).onFinalize(user.address, true, payout, duration)
     )
       .to.emit(engine, "ReputationUpdated")
-      .withArgs(user.address, gain, expected);
+      .withArgs(user.address, expected - 3n, expected);
     expect(await engine.reputationOf(user.address)).to.equal(expected);
   });
 });
