@@ -12,7 +12,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 ### 1. Identity Verification Library
 - Build `ENSOwnershipVerifier` with Merkle proof, NameWrapper and resolver fallback.
 - Emit `OwnershipVerified` and `RecoveryInitiated` events.
-- Add owner setters for ENS registry, NameWrapper, root nodes and Merkle roots.
+- Add owner setters for ENS registry, NameWrapper, root nodes and Merkle roots, emitting update events for audit trails.
 - Maintain `additionalAgents`/`additionalValidators` allow‑lists.
 
 ### 2. JobRegistry
@@ -20,17 +20,20 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 - On `applyForJob` call the verifier and check blacklists via `ReputationEngine`.
 - Require tax policy acknowledgement before any state‑changing action.
 - Enforce owner‑set `maxJobReward` and `maxJobDuration` limits.
+- Mirror v1 event names and cross‑check `docs/v1-v2-function-map.md` to ensure feature parity.
 
 ### 3. ValidationModule
 - Select validator committees and record commits & reveals.
 - Accept votes only from identities passing the verifier or in the allow‑list.
 - Finalise results once quorum or the reveal window ends.
 - Report outcomes back to `JobRegistry`.
+- Use deterministic on‑chain randomness; avoid Chainlink VRF or subscription services.
 
 ### 4. StakeManager
 - Custody all funds in $AGIALPHA (6 decimals) with owner‑settable token address.
 - Handle deposits, withdrawals, escrow locking, releases and slashing.
 - Apply protocol fees and validator rewards; support AGIType payout bonuses.
+- Provide a `contribute` function for reward‑pool top‑ups to match v1's `contributeToRewardPool`.
 
 ### 5. ReputationEngine
 - Implement logarithmic reputation growth with diminishing returns.
@@ -51,6 +54,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 - Update `README.md` with an AGIALPHA deployment guide and Etherscan walkthrough.
 - Add Hardhat tests covering identity checks, job lifecycle, validation, disputes and NFT marketplace.
 - Run `npx solhint 'contracts/**/*.sol'`, `npx eslint .` and `npx hardhat test` until green.
+- Verify coverage against `docs/v1-v2-function-map.md` so every v1 function has a v2 counterpart.
 
 ## Definition of Done
 - All v1 capabilities available through modular contracts.
