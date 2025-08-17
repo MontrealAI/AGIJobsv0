@@ -85,7 +85,11 @@ contract JobRegistry is Ownable {
     event DisputeModuleUpdated(address module);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    /// @notice Emitted when the ENS root node for agents changes.
+    /// @param node The new ENS root node.
     event AgentRootNodeUpdated(bytes32 node);
+    /// @notice Emitted when the agent allowlist Merkle root changes.
+    /// @param root The new Merkle root.
     event AgentMerkleRootUpdated(bytes32 root);
 
     event JobCreated(
@@ -164,11 +168,15 @@ contract JobRegistry is Ownable {
         emit FeePctUpdated(_feePct);
     }
 
+    /// @notice Update the ENS root node for agent identities.
+    /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
     function setAgentRootNode(bytes32 node) external onlyOwner {
         agentRootNode = node;
         emit AgentRootNodeUpdated(node);
     }
 
+    /// @notice Update the Merkle root for the agent allowlist.
+    /// @param root Merkle root of approved agent addresses.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
         emit AgentMerkleRootUpdated(root);

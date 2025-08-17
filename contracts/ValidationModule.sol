@@ -72,7 +72,11 @@ contract ValidationModule is Ownable {
     event ChallengeWindowUpdated(uint256 window);
     event DisputeResolutionUpdated(address resolver);
     event ReputationEngineUpdated(address engine);
+    /// @notice Emitted when the ENS root node for validators changes.
+    /// @param node The new ENS root node.
     event ClubRootNodeUpdated(bytes32 node);
+    /// @notice Emitted when the validator allowlist Merkle root changes.
+    /// @param root The new Merkle root.
     event ValidatorMerkleRootUpdated(bytes32 root);
 
     // events for commit–reveal validation
@@ -124,11 +128,15 @@ contract ValidationModule is Ownable {
         emit ReputationEngineUpdated(address(engine));
     }
 
+    /// @notice Update the ENS root node for validator clubs.
+    /// @param node Namehash of the validator parent node (e.g. `club.agi.eth`).
     function setClubRootNode(bytes32 node) external onlyOwner {
         clubRootNode = node;
         emit ClubRootNodeUpdated(node);
     }
 
+    /// @notice Update the Merkle root for the validator allowlist.
+    /// @param root Merkle root of approved validator addresses.
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
         emit ValidatorMerkleRootUpdated(root);
