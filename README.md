@@ -203,7 +203,7 @@ Use the following quick checklists for common flows (see [docs/etherscan-guide.m
 #### Apply for a Job
 1. **Approve** – approve the stake amount on `$AGIALPHA` if required.
 2. **Call** – in `JobRegistry` → **Write**, call `applyForJob(jobId, subdomain, proof)` (or `stakeAndApply(jobId, amount)` to combine staking).
-3. **Verify events** – confirm `AgentApplied` on `JobRegistry` and any `StakeDeposited` logs on `StakeManager`.
+3. **Verify events** – confirm `JobApplied` on `JobRegistry` and any `StakeDeposited` logs on `StakeManager`.
 
 #### Commit a Vote
 1. During the commit window, open `ValidationModule` → **Write**.
@@ -526,7 +526,7 @@ flowchart TD
     Employer -->|createJob| JobRegistry
     JobRegistry --> JobCreated((JobCreated))
     Agent -->|applyForJob| JobRegistry
-    JobRegistry --> AgentApplied((AgentApplied))
+    JobRegistry --> JobApplied((JobApplied))
     JobRegistry -->|selectValidators| ValidationModule
     ValidationModule --> ValidationCommitted((ValidationCommitted))
     ValidationModule -->|stake| StakeManager
@@ -1080,7 +1080,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 | `premiumReputationThreshold` | `setPremiumReputationThreshold(uint256)` | Reputation needed for premium tier |
 | `maxReputation` | `setMaxReputation(uint256)` | Upper bound on reputation |
 | `maxJobPayout` | `setMaxJobPayout(uint256)` | Maximum allowed job payout |
-| `jobDurationLimit` | `setJobDurationLimit(uint256)` | Maximum job duration |
+| `maxJobDuration` | `setMaxJobDuration(uint256)` | Maximum job duration |
 | `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
 | `validatorBlacklistThreshold` | `setValidatorBlacklistThreshold(uint256)` | Penalties before automatic validator blacklist |
 | `maxValidatorPoolSize` | `setMaxValidatorPoolSize(uint256)` | Cap on validator pool size |
@@ -1821,7 +1821,7 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `setRequiredValidatorDisapprovals(uint256 count)` → `RequiredValidatorDisapprovalsUpdated`
 - `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
 - `setMaxJobPayout(uint256 newMax)` → `MaxJobPayoutUpdated`
-- `setJobDurationLimit(uint256 newLimit)` → `JobDurationLimitUpdated`
+- `setMaxJobDuration(uint256 newLimit)` → `JobDurationLimitUpdated`
 - `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; the existing `reviewWindow` must be at least `commitWindow + revealWindow`. Zero values are rejected.
 - `setCommitDuration(uint256 newCommit)` or `setRevealDuration(uint256 newReveal)` → `CommitRevealWindowsUpdated` – tweak individual phase lengths; `reviewWindow` must remain ≥ `commitDuration + revealDuration`.
 - `setReviewWindow(uint256 newWindow)` → `ReviewWindowUpdated` – defines the mandatory wait after completion requests and must be greater than or equal to `commitDuration + revealDuration`.

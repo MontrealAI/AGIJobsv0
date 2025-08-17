@@ -45,7 +45,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
    - Provide step-by-step Etherscan instructions so non-technical users can view the disclaimer via `acknowledgement`/`acknowledge` and so the owner can update it with `setPolicyURI`/`setAcknowledgement`.
 8. **v1 Feature Parity & ENS Identity**
    - Port every capability from `legacy/AGIJobManagerv0.sol` into dedicated v2 modules.
-       - `JobRegistry`: `createJob`, `applyForJob`, `submit`, `cancelJob`, `delistJob`, `disputeJob`, `finalize`.
+      - `JobRegistry`: `createJob`, `applyForJob`, `submit`, `cancelJob`, `forceCancel`, `disputeJob`, `finalize`.
        - `ValidationModule`: validator selection, `commitValidation`, `revealValidation`, approval/disapproval tallies, quorum check.
        - `DisputeModule`: `raiseDispute`, moderator `resolve`, appeal-fee escrow.
        - `StakeManager`: escrow/release rewards, slashing, AGIType payout bonuses, reward & fee percentages.
@@ -60,7 +60,7 @@ This sprint turns the v2 architecture into production-ready code. Each task refe
        | `requestJobCompletion` | `JobRegistry.submit` |
        | `validateJob` / `disapproveJob` | `ValidationModule.commitValidation` + `revealValidation` |
        | `_completeJob` | `JobRegistry.finalize` + `StakeManager.release` + `CertificateNFT.mint` |
-       | `cancelJob` / `delistJob` | `JobRegistry.cancelJob` / `delistJob` |
+      | `cancelJob` / `forceCancel` | `JobRegistry.cancelJob` / `forceCancel` |
        | `disputeJob` | `JobRegistry.dispute` & `DisputeModule.raiseDispute` |
        | `resolveDispute` | `DisputeModule.resolve` |
        | Reputation updates | `ReputationEngine.onApply`, `onFinalize`, `rewardValidator` |

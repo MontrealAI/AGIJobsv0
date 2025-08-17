@@ -16,7 +16,7 @@ This sprint ports every capability from `legacy/AGIJobManagerv0.sol` into the mo
 - Call the verifier from `JobRegistry.applyForJob` and validator commit/reveal functions in `ValidationModule`.
 
 ### 2. Job Lifecycle
-- **JobRegistry**: implement `createJob`, `applyForJob`, `submit`, `finalize`, `cancelJob`, `delistJob`, and `dispute` mirroring v0 semantics. Enforce max payout/duration caps and tax‑policy acknowledgement.
+- **JobRegistry**: implement `createJob`, `applyForJob`, `submit`, `finalize`, `cancelJob`, `forceCancel`, and `dispute` mirroring v0 semantics. Enforce max payout/duration caps and tax‑policy acknowledgement.
 - **ValidationModule**: pseudo‑random validator selection, `commitValidation`, `revealValidation`, tallying approvals/disapprovals, and notifying `JobRegistry` of outcomes.
 - **DisputeModule**: `raiseDispute` and moderator `resolve` with appeal‑fee escrow.
 - **CertificateNFT**: `mint` on completion plus marketplace functions `list`, `purchase`, and `delist`.

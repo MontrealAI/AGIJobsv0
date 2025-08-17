@@ -529,7 +529,7 @@ Steps for an Agent:
 
    * Go to **JobRegistry**’s Write tab, find `applyForJob(uint256 jobId)`.
    * Enter the Job ID you want to take on (from the employer’s posting).
-   * Click **Write** and confirm. The contract will check that the job exists and is in an open state, and that no one else has taken it yet. It will also verify that you (the caller) have staked at least the required `jobStake` amount as an agent in StakeManager. If all good, it assigns you as the job’s agent and changes the job state to “Applied” (meaning an agent is working on it). A `AgentApplied` event will be emitted, recording the jobId and your address.
+   * Click **Write** and confirm. The contract will check that the job exists and is in an open state, and that no one else has taken it yet. It will also verify that you (the caller) have staked at least the required `jobStake` amount as an agent in StakeManager. If all good, it assigns you as the job’s agent and changes the job state to “Applied” (meaning an agent is working on it). A `JobApplied` event will be emitted, recording the jobId and your address.
    * If the transaction succeeds, congrats – you are now the assigned agent for that job. The job is no longer open to others. (If someone else beat you to it, the apply might fail or the job state might already be Applied, so only the first agent can get it.)
 
 4. **Do the Work Off-Chain:** Now you perform the actual task off-chain as per the job’s instructions (e.g., label data, run AI inference, etc.). There’s no on-chain action for the work itself; you’ll gather the result (perhaps a file, text, or model output). Once you have the result ready to deliver, you’ll mark the job as completed on-chain.

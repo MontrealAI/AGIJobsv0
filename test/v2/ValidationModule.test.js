@@ -71,6 +71,7 @@ describe("ValidationModule V2", function () {
       success: false,
        status: 3,
       uri: "",
+      result: "",
     };
     await jobRegistry.setJob(1, jobStruct);
   });

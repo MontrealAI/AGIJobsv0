@@ -55,6 +55,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         State state;
         bool success;
         string uri;
+        string result;
     }
 
     uint256 public nextJobId;
@@ -111,7 +112,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     uint256 public feePct;
     uint256 public constant DEFAULT_FEE_PCT = 5;
     uint256 public maxJobReward;
-    uint256 public jobDurationLimit;
+    uint256 public maxJobDuration;
     uint256 public validatorRewardPct;
     uint256 public constant DEFAULT_VALIDATOR_REWARD_PCT = 8;
 
@@ -168,7 +169,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 reward,
         uint256 stake,
         uint256 maxJobReward,
-        uint256 jobDurationLimit
+        uint256 maxJobDuration
     );
 
     // job lifecycle events
@@ -180,8 +181,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 stake,
         uint256 fee
     );
-    event AgentApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, string uri);
+    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, string result);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
@@ -364,12 +365,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external onlyOwner {
         maxJobReward = maxReward;
-        emit JobParametersUpdated(0, jobStake, maxReward, jobDurationLimit);
+        emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration);
     }
 
     /// @notice set the maximum allowed job duration in seconds
-    function setJobDurationLimit(uint256 limit) external onlyOwner {
-        jobDurationLimit = limit;
+    function setMaxJobDuration(uint256 limit) external onlyOwner {
+        maxJobDuration = limit;
         emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
     }
 
@@ -462,7 +463,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
         require(stake <= type(uint96).max, "overflow");
         jobStake = uint96(stake);
-        emit JobParametersUpdated(reward, stake, maxJobReward, jobDurationLimit);
+        emit JobParametersUpdated(reward, stake, maxJobReward, maxJobDuration);
     }
 
     // ---------------------------------------------------------------------
@@ -478,7 +479,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(reward <= maxJobReward, "reward too high");
         require(deadline > block.timestamp, "deadline");
         require(
-            uint256(deadline) - block.timestamp <= jobDurationLimit,
+            uint256(deadline) - block.timestamp <= maxJobDuration,
             "duration"
         );
         unchecked {
@@ -495,7 +496,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             deadline: deadline,
             state: State.Created,
             success: false,
-            uri: uri
+            uri: uri,
+            result: ""
         });
         uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
@@ -568,7 +570,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
         job.agent = msg.sender;
         job.state = State.Applied;
-        emit AgentApplied(jobId, msg.sender);
+        if (address(reputationEngine) != address(0)) {
+            reputationEngine.add(msg.sender, 1);
+        }
+        emit JobApplied(jobId, msg.sender);
     }
 
     function applyForJob(
@@ -578,6 +583,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ) external {
         _applyForJob(jobId, subdomain, proof);
     }
+
 
     /**
      * @notice Acknowledge the current tax policy and apply for a job.
@@ -624,26 +630,26 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Agent submits work for validation and selects validators.
     /// @param jobId Identifier of the job being submitted.
-    /// @param uri Metadata URI describing the completed work.
-    function submit(uint256 jobId, string calldata uri)
+    /// @param result Metadata URI describing the completed work.
+    function submit(uint256 jobId, string calldata result)
         public
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
-        job.uri = uri;
+        job.result = result;
         job.state = State.Submitted;
-        emit JobSubmitted(jobId, uri);
+        emit JobSubmitted(jobId, result);
         if (address(validationModule) != address(0)) {
             validationModule.selectValidators(jobId);
         }
     }
 
     /// @notice Acknowledge the tax policy and submit work in one call.
-    function acknowledgeAndSubmit(uint256 jobId, string calldata uri) external {
+    function acknowledgeAndSubmit(uint256 jobId, string calldata result) external {
         _acknowledge(msg.sender);
-        submit(jobId, uri);
+        submit(jobId, result);
     }
 
     /// @notice Finalize job outcome after validation.
@@ -879,7 +885,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Created, "cannot cancel");
+        require(job.state == State.Created && job.agent == address(0), "cannot cancel");
         require(msg.sender == job.employer, "only employer");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
@@ -893,11 +899,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit JobCancelled(jobId);
     }
 
-    /// @notice Owner can delist an unassigned job and refund the employer.
+    /// @notice Owner can force-cancel an unassigned job and refund the employer.
     /// @param jobId Identifier of the job to cancel.
-    function delistJob(uint256 jobId) external onlyOwner {
+    function forceCancel(uint256 jobId) external onlyOwner {
         Job storage job = jobs[jobId];
-        require(job.state == State.Created && job.agent == address(0), "cannot delist");
+        require(job.state == State.Created && job.agent == address(0), "cannot cancel");
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;

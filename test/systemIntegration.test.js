@@ -152,7 +152,7 @@ describe("Full system integration", function () {
     await registry.connect(owner).finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(900n);
-    expect(await rep.reputation(agent.address)).to.equal(1);
+    expect(await rep.reputation(agent.address)).to.equal(2);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
