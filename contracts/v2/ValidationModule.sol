@@ -9,7 +9,7 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IVRF} from "./interfaces/IVRF.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
+import {IdentityVerifier} from "./modules/IdentityVerifier.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -48,11 +48,14 @@ contract ValidationModule is IValidationModule, Ownable {
     bytes32 public validatorMerkleRoot;
     bytes32 public agentMerkleRoot;
     INameWrapper public nameWrapper;
-    ENSOwnershipVerifier public ensOwnershipVerifier;
+    IdentityVerifier public identityVerifier;
 
     // optional override for validators without ENS identity
-    mapping(address => bool) public additionalValidators;
     mapping(address => string) public validatorSubdomains;
+
+    function additionalValidators(address validator) public view returns (bool) {
+        return identityVerifier.additionalValidators(validator);
+    }
 
     struct Round {
         address[] validators;
@@ -201,9 +204,14 @@ contract ValidationModule is IValidationModule, Ownable {
         emit VRFUpdated(address(provider));
     }
 
-    /// @notice Update the ENS ownership verifier contract.
-    function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
-        ensOwnershipVerifier = verifier;
+    /// @notice Update the identity verifier contract.
+    function setIdentityVerifier(IdentityVerifier verifier) external onlyOwner {
+        identityVerifier = verifier;
+    }
+
+    /// @notice Backwards-compatible setter for legacy deployments.
+    function setENSOwnershipVerifier(IdentityVerifier verifier) external onlyOwner {
+        identityVerifier = verifier;
     }
 
     /// @notice Return validators selected for a job
@@ -220,7 +228,11 @@ contract ValidationModule is IValidationModule, Ownable {
     ) external onlyOwner {
         require(accounts.length == allowed.length, "length");
         for (uint256 i; i < accounts.length; ++i) {
-            additionalValidators[accounts[i]] = allowed[i];
+            if (allowed[i]) {
+                identityVerifier.addAdditionalValidator(accounts[i]);
+            } else {
+                identityVerifier.removeAdditionalValidator(accounts[i]);
+            }
             emit AdditionalValidatorUpdated(accounts[i], allowed[i]);
         }
     }
@@ -243,21 +255,23 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param validator Address to whitelist.
     function addAdditionalValidator(address validator) external onlyOwner {
         require(validator != address(0), "validator");
-        additionalValidators[validator] = true;
+        identityVerifier.addAdditionalValidator(validator);
         emit AdditionalValidatorUpdated(validator, true);
     }
 
     /// @notice Remove a validator from the manual allowlist.
     /// @param validator Address to remove.
     function removeAdditionalValidator(address validator) external onlyOwner {
-        additionalValidators[validator] = false;
+        identityVerifier.removeAdditionalValidator(validator);
         emit AdditionalValidatorUpdated(validator, false);
     }
 
     /// @notice Set validator Merkle root for identity checks.
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
-        ensOwnershipVerifier.setValidatorMerkleRoot(root);
+        if (address(identityVerifier) != address(0)) {
+            identityVerifier.setValidatorMerkleRoot(root);
+        }
         emit MerkleRootUpdated("validator", root);
         emit ENSIdentityUpdated(clubRootNode, root, address(nameWrapper));
     }
@@ -265,7 +279,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set agent Merkle root for identity checks.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
-        ensOwnershipVerifier.setAgentMerkleRoot(root);
+        if (address(identityVerifier) != address(0)) {
+            identityVerifier.setAgentMerkleRoot(root);
+        }
         emit MerkleRootUpdated("agent", root);
     }
 
@@ -278,7 +294,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set club root node for validator ENS subdomains.
     function setClubRootNode(bytes32 node) external onlyOwner {
         clubRootNode = node;
-        ensOwnershipVerifier.setClubRootNode(node);
+        if (address(identityVerifier) != address(0)) {
+            identityVerifier.setClubRootNode(node);
+        }
         emit RootNodeUpdated("club", node);
         emit ENSIdentityUpdated(node, validatorMerkleRoot, address(nameWrapper));
     }
@@ -363,16 +381,15 @@ contract ValidationModule is IValidationModule, Ownable {
                 if (reputationEngine.isBlacklisted(candidate)) continue;
             }
             if (stake > 0) {
-                bool authorized = additionalValidators[candidate];
-                if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+                bool authorized = additionalValidators(candidate);
+                if (!authorized && address(identityVerifier) != address(0)) {
                     bytes32[] memory proof;
                     string memory subdomain = validatorSubdomains[candidate];
                     if (bytes(subdomain).length != 0) {
-                        authorized = ensOwnershipVerifier.verifyOwnership(
+                        authorized = identityVerifier.verifyValidator(
                             candidate,
                             subdomain,
-                            proof,
-                            clubRootNode
+                            proof
                         );
                     }
                 }
@@ -462,12 +479,11 @@ contract ValidationModule is IValidationModule, Ownable {
         );
         require(_isValidator(jobId, msg.sender), "not validator");
         bool authorized =
-            ensOwnershipVerifier.verifyOwnership(
+            identityVerifier.verifyValidator(
                 msg.sender,
                 subdomain,
-                proof,
-                clubRootNode
-            ) || additionalValidators[msg.sender];
+                proof
+            ) || additionalValidators(msg.sender);
         require(authorized, "Not authorized validator");
         emit OwnershipVerified(msg.sender, subdomain);
         require(
@@ -497,12 +513,11 @@ contract ValidationModule is IValidationModule, Ownable {
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
         bool authorized =
-            ensOwnershipVerifier.verifyOwnership(
+            identityVerifier.verifyValidator(
                 msg.sender,
                 subdomain,
-                proof,
-                clubRootNode
-            ) || additionalValidators[msg.sender];
+                proof
+            ) || additionalValidators(msg.sender);
         require(authorized, "Not authorized validator");
         emit OwnershipVerified(msg.sender, subdomain);
         require(

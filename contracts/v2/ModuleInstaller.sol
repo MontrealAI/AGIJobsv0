@@ -9,7 +9,7 @@ import {
 } from "./JobRegistry.sol";
 import {StakeManager} from "./StakeManager.sol";
 import {ValidationModule} from "./ValidationModule.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
+import {IdentityVerifier} from "./modules/IdentityVerifier.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
@@ -75,7 +75,7 @@ contract ModuleInstaller is Ownable {
         IJobRouter jobRouter,
         IFeePool feePool,
         ITaxPolicy taxPolicy,
-        ENSOwnershipVerifier ensOwnershipVerifier,
+        IdentityVerifier ensOwnershipVerifier,
         bytes32 clubRootNode,
         bytes32 agentRootNode,
         bytes32 validatorMerkleRoot,

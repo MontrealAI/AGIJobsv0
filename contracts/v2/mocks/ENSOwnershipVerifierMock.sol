@@ -11,6 +11,22 @@ contract ENSOwnershipVerifierMock {
         return true;
     }
 
+    function verifyAgent(
+        address,
+        string calldata,
+        bytes32[] calldata
+    ) external pure returns (bool) {
+        return true;
+    }
+
+    function verifyValidator(
+        address,
+        string calldata,
+        bytes32[] calldata
+    ) external pure returns (bool) {
+        return true;
+    }
+
     function setClubRootNode(bytes32) external {}
 
     function setValidatorMerkleRoot(bytes32) external {}
