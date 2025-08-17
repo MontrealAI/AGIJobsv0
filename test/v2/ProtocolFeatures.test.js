@@ -139,7 +139,8 @@ describe("Protocol core features", function () {
       stake: 0,
       success: false,
       status: 5,
-      uri: ""
+      uri: "",
+      result: "",
     });
     const tx = await registry
       .connect(agent)

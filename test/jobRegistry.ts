@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry tax policy gating", function () {
   let owner;
@@ -36,6 +37,8 @@ describe("JobRegistry tax policy gating", function () {
     policy = await Policy.deploy("ipfs://policy", "ack");
 
     await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setMaxJobReward(1000);
+    await registry.connect(owner).setMaxJobDuration(86400);
 
     const Verifier = await ethers.getContractFactory(
       "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
@@ -45,8 +48,9 @@ describe("JobRegistry tax policy gating", function () {
   });
 
   it("requires acknowledgement before job actions", async () => {
+    const deadline1 = (await time.latest()) + 1000;
     await expect(
-      registry.connect(employer).createJob(1, "uri")
+      registry.connect(employer).createJob(1, deadline1, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
 
     await expect(
@@ -55,8 +59,9 @@ describe("JobRegistry tax policy gating", function () {
       .to.emit(registry, "TaxPolicyUpdated")
       .withArgs(await policy.getAddress(), 1);
 
+    const deadline2 = (await time.latest()) + 1000;
     await expect(
-      registry.connect(employer).createJob(1, "uri")
+      registry.connect(employer).createJob(1, deadline2, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
 
     await expect(
@@ -65,9 +70,12 @@ describe("JobRegistry tax policy gating", function () {
       .to.emit(registry, "TaxAcknowledged")
       .withArgs(employer.address, 1, "ack");
 
+    const deadline3 = (await time.latest()) + 1000;
     await expect(
-      registry.connect(employer).createJob(1, "uri")
-    ).to.emit(registry, "JobCreated").withArgs(1, employer.address, ethers.ZeroAddress, 1, 0, 0);
+      registry.connect(employer).createJob(1, deadline3, "uri")
+    )
+      .to.emit(registry, "JobCreated")
+      .withArgs(1, employer.address, ethers.ZeroAddress, 1, 0, 0);
 
     await expect(
       registry.connect(agent).applyForJob(1, "", [])
@@ -81,7 +89,7 @@ describe("JobRegistry tax policy gating", function () {
 
     await expect(
       registry.connect(agent).applyForJob(1, "", [])
-    ).to.emit(registry, "AgentApplied").withArgs(1, agent.address);
+    ).to.emit(registry, "JobApplied").withArgs(1, agent.address);
   });
 
   it("only owner can set tax policy", async () => {

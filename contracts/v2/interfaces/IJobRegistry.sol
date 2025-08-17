@@ -23,6 +23,7 @@ interface IJobRegistry {
         bool success;
         Status status;
         string uri;
+        string result;
     }
 
     /// @dev Reverts when job creation parameters have not been configured
@@ -51,7 +52,7 @@ interface IJobRegistry {
         uint256 reward,
         uint256 stake,
         uint256 maxJobReward,
-        uint256 jobDurationLimit
+        uint256 maxJobDuration
     );
 
     // job lifecycle
@@ -63,8 +64,8 @@ interface IJobRegistry {
         uint256 stake,
         uint256 fee
     );
-    event AgentApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, string uri);
+    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, string result);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
@@ -106,17 +107,20 @@ interface IJobRegistry {
     function setMaxJobReward(uint256 maxReward) external;
 
     /// @notice set the maximum allowed job duration in seconds
-    function setJobDurationLimit(uint256 limit) external;
+    function setMaxJobDuration(uint256 limit) external;
 
     // core job flow
 
-    /// @notice Create a new job specifying reward and metadata URI
+    /// @notice Create a new job specifying reward, deadline and metadata URI
     /// @param reward Amount escrowed as payment for the job
+    /// @param deadline Timestamp after which the job expires
     /// @param uri Metadata describing the job
     /// @return jobId Identifier of the newly created job
-    function createJob(uint256 reward, string calldata uri)
-        external
-        returns (uint256 jobId);
+    function createJob(
+        uint256 reward,
+        uint64 deadline,
+        string calldata uri
+    ) external returns (uint256 jobId);
 
     /// @notice Agent expresses interest in a job
     /// @param jobId Identifier of the job to apply for
@@ -153,13 +157,13 @@ interface IJobRegistry {
 
     /// @notice Agent submits completed work for validation.
     /// @param jobId Identifier of the job being submitted
-    /// @param uri Metadata URI of the submission
-    function submit(uint256 jobId, string calldata uri) external;
+    /// @param result Metadata URI of the submission
+    function submit(uint256 jobId, string calldata result) external;
 
     /// @notice Acknowledge tax policy and submit work in one call
     /// @param jobId Identifier of the job being submitted
-    /// @param uri Metadata URI of the submission
-    function acknowledgeAndSubmit(uint256 jobId, string calldata uri) external;
+    /// @param result Metadata URI of the submission
+    function acknowledgeAndSubmit(uint256 jobId, string calldata result) external;
 
     /// @notice Record validation outcome and update job state
     /// @param jobId Identifier of the job being finalised
@@ -196,6 +200,10 @@ interface IJobRegistry {
     /// @param jobId Identifier of the job to cancel
     /// @dev Reverts with {OnlyEmployer} or {InvalidStatus}
     function cancelJob(uint256 jobId) external;
+
+    /// @notice Owner can force-cancel an unassigned job
+    /// @param jobId Identifier of the job to cancel
+    function forceCancel(uint256 jobId) external;
 
     // view helper
 

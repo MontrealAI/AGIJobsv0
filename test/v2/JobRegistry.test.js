@@ -85,7 +85,7 @@ describe("JobRegistry integration", function () {
       .connect(owner)
       .setJobParameters(reward, stake);
     await registry.connect(owner).setMaxJobReward(1000000);
-    await registry.connect(owner).setJobDurationLimit(86400);
+    await registry.connect(owner).setMaxJobDuration(86400);
     await registry.connect(owner).setFeePct(0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
     await rep.connect(owner).setCaller(await registry.getAddress(), true);
@@ -127,10 +127,12 @@ describe("JobRegistry integration", function () {
       .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake, 0);
     const jobId = 1;
     await expect(registry.connect(agent).applyForJob(jobId, "", []))
-      .to.emit(registry, "AgentApplied")
+      .to.emit(registry, "JobApplied")
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setResult(true);
-    await registry.connect(agent).submit(jobId, "result");
+    await expect(registry.connect(agent).submit(jobId, "result"))
+      .to.emit(registry, "JobSubmitted")
+      .withArgs(jobId, "result");
     await expect(validation.finalize(jobId))
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true)
@@ -138,7 +140,7 @@ describe("JobRegistry integration", function () {
       .withArgs(jobId, true);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
-    expect(await rep.reputation(agent.address)).to.equal(1);
+    expect(await rep.reputation(agent.address)).to.equal(2);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
@@ -150,7 +152,7 @@ describe("JobRegistry integration", function () {
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
-      .to.emit(registry, "AgentApplied")
+      .to.emit(registry, "JobApplied")
       .withArgs(1, newAgent.address);
     const version = await registry.taxPolicyVersion();
     expect(
@@ -212,6 +214,18 @@ describe("JobRegistry integration", function () {
     const job = await registry.jobs(jobId);
     expect(job.state).to.equal(7); // Cancelled enum value
     expect(await token.balanceOf(employer.address)).to.equal(1000);
+  });
+
+  it("allows owner to force cancel unassigned job", async () => {
+    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const jobId = 1;
+    await expect(registry.connect(owner).forceCancel(jobId))
+      .to.emit(registry, "JobCancelled")
+      .withArgs(jobId);
+    const job = await registry.jobs(jobId);
+    expect(job.state).to.equal(7);
   });
 
   it("enforces owner-only controls", async () => {

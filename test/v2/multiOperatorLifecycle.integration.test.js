@@ -128,7 +128,7 @@ describe("multi-operator job lifecycle", function () {
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await registry.setMaxJobReward(reward);
-    await registry.setJobDurationLimit(86400);
+    await registry.setMaxJobDuration(86400);
     await stakeManager.setJobRegistry(await registry.getAddress());
     await stakeManager.setDisputeModule(await dispute.getAddress());
     await nft.setJobRegistry(await registry.getAddress());

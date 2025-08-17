@@ -90,7 +90,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     uint256 public jobStake;
     uint256 public maxJobReward;
-    uint256 public jobDurationLimit;
+    uint256 public maxJobDuration;
     uint256 public nextJobId;
     mapping(uint256 => uint256) public deadlines;
 
@@ -142,16 +142,21 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         maxJobReward = maxReward;
     }
 
-    function setJobDurationLimit(uint256 limit) external override {
-        jobDurationLimit = limit;
+    function setMaxJobDuration(uint256 limit) external override {
+        maxJobDuration = limit;
     }
 
-    function createJob(uint256 reward, string calldata uri)
-        external
-        override
-        returns (uint256 jobId)
-    {
+    function createJob(
+        uint256 reward,
+        uint64 deadline,
+        string calldata uri
+    ) external override returns (uint256 jobId) {
         require(reward <= maxJobReward, "reward");
+        require(deadline > block.timestamp, "deadline");
+        require(
+            uint256(deadline) - block.timestamp <= maxJobDuration,
+            "duration"
+        );
         jobId = ++nextJobId;
         _jobs[jobId] = Job({
             employer: msg.sender,
@@ -160,9 +165,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             stake: jobStake,
             success: false,
             status: Status.Created,
-            uri: uri
+            uri: uri,
+            result: ""
         });
-        deadlines[jobId] = block.timestamp + jobDurationLimit;
+        deadlines[jobId] = deadline;
         if (address(_stakeManager) != address(0) && reward > 0) {
             _stakeManager.lock(msg.sender, reward);
         }
@@ -181,7 +187,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         }
         job.agent = msg.sender;
         job.status = Status.Applied;
-        emit AgentApplied(jobId, msg.sender);
+        emit JobApplied(jobId, msg.sender);
     }
 
     function stakeAndApply(
@@ -201,23 +207,23 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         applyForJob(jobId, subdomain, proof);
     }
 
-    function submit(uint256 jobId, string calldata uri) public override {
+    function submit(uint256 jobId, string calldata result) public override {
         Job storage job = _jobs[jobId];
         require(job.status == Status.Applied, "state");
         require(msg.sender == job.agent, "agent");
-        job.uri = uri;
+        job.result = result;
         job.status = Status.Submitted;
-        emit JobSubmitted(jobId, uri);
+        emit JobSubmitted(jobId, result);
         if (address(validationModule) != address(0)) {
             validationModule.selectValidators(jobId);
         }
     }
 
-    function acknowledgeAndSubmit(uint256 jobId, string calldata uri)
+    function acknowledgeAndSubmit(uint256 jobId, string calldata result)
         external
         override
     {
-        submit(jobId, uri);
+        submit(jobId, result);
     }
 
     function finalizeAfterValidation(uint256 jobId, bool success) external override {
@@ -308,6 +314,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             _stakeManager.release(job.employer, job.reward);
         }
         emit JobCancelled(jobId);
+    }
+
+    function forceCancel(uint256 jobId) external override {
+        cancelJob(jobId);
     }
 }
 
