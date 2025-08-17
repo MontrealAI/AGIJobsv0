@@ -93,6 +93,13 @@ Owners retain `onlyOwner` control over parameters, letting them reconfigure live
 3. **Validate** – selected validators call `commitValidation(jobId, hash, subdomain, proof)` and later `revealValidation(jobId, approve, salt)`.
 4. **Finalize** – after the reveal window the employer calls `finalize(jobId)` (or any validator can finalize once the window closes); rewards and stakes settle automatically.
 
+### NFT marketplace
+`JobNFT` and `CertificateNFT` include minimal listing helpers for peer-to-peer sales. All prices use 6-decimal `$AGIALPHA` units (e.g., `ethers.parseUnits("1", 6)` for `1.000000`).
+
+1. **List** – token owner calls `list(tokenId, price)`.
+2. **Purchase** – buyer approves the NFT contract for `price` and calls `purchase(tokenId)`; the contract transfers `price` tokens to the seller and moves the NFT to the buyer.
+3. **Delist** – seller removes an active listing via `delist(tokenId)`.
+
 ### Owner controls
 The contract owner can reconfigure live deployments without redeployment:
 - **ENS roots & Merkle proofs** – rotate subdomains with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), and update allowlists via [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol). Watch for `RootNodeUpdated` or `MerkleRootUpdated` events. Update ENS contract references through [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).

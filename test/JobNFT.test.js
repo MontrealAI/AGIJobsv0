@@ -67,6 +67,9 @@ describe("JobNFT", function () {
 
     await nft.connect(jobRegistry).mint(seller.address, 1);
 
+    const sellerStart = await token.balanceOf(seller.address);
+    const buyerStart = await token.balanceOf(buyer.address);
+
     await expect(nft.connect(seller).list(1, price))
       .to.emit(nft, "NFTListed")
       .withArgs(1, seller.address, price);
@@ -82,6 +85,11 @@ describe("JobNFT", function () {
       .withArgs(1, buyer.address, price);
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
 
+    expect(await token.balanceOf(seller.address)).to.equal(
+      sellerStart + price
+    );
+    expect(await token.balanceOf(buyer.address)).to.equal(buyerStart - price);
+
     await nft.connect(jobRegistry).mint(seller.address, 2);
     await expect(nft.connect(seller).list(2, price))
       .to.emit(nft, "NFTListed")
@@ -89,6 +97,47 @@ describe("JobNFT", function () {
     await expect(nft.connect(seller).delist(2))
       .to.emit(nft, "NFTDelisted")
       .withArgs(2);
+    await expect(nft.connect(seller).delist(2)).to.be.revertedWith("not listed");
+  });
+
+  it("rejects invalid listings", async function () {
+    const { nft, token, jobRegistry, seller, buyer, price } = await deployFixture();
+
+    await nft.connect(jobRegistry).mint(seller.address, 1);
+
+    await expect(nft.connect(buyer).list(1, price)).to.be.revertedWith("owner");
+    await expect(nft.connect(seller).list(1, 0)).to.be.revertedWith("price");
+
+    await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith("not listed");
+
+    await nft.connect(seller).list(1, price);
+    await expect(nft.connect(buyer).delist(1)).to.be.revertedWith("owner");
+    await expect(nft.connect(seller).list(1, price)).to.be.revertedWith("listed");
+
+    await token.connect(buyer).approve(await nft.getAddress(), price);
+    await expect(nft.connect(buyer).purchase(1))
+      .to.emit(nft, "NFTPurchased")
+      .withArgs(1, buyer.address, price);
+  });
+
+  it("guards purchase against reentrancy", async function () {
+    const { nft, token, jobRegistry, seller, price } = await deployFixture();
+
+    await nft.connect(jobRegistry).mint(seller.address, 1);
+    await nft.connect(seller).list(1, price);
+
+    const Reenter = await ethers.getContractFactory(
+      "contracts/mocks/ReentrantBuyer.sol:ReentrantBuyer"
+    );
+    const attacker = await Reenter.deploy(await nft.getAddress());
+
+    await token.transfer(await attacker.getAddress(), price);
+    await attacker.approveToken(await token.getAddress(), price);
+
+    await expect(attacker.buy(1))
+      .to.emit(nft, "NFTPurchased")
+      .withArgs(1, await attacker.getAddress(), price);
+    expect(await nft.ownerOf(1)).to.equal(await attacker.getAddress());
   });
 });
 
