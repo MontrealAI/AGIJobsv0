@@ -62,3 +62,63 @@ describe("ENSOwnershipVerifier setters", function () {
   });
 });
 
+describe("ENSOwnershipVerifier verification", function () {
+  let owner, agent, ens, resolver, wrapper, verifier;
+  const root = ethers.id("agi");
+
+  beforeEach(async () => {
+    [owner, agent] = await ethers.getSigners();
+    const ENS = await ethers.getContractFactory("MockENS");
+    ens = await ENS.deploy();
+    const Resolver = await ethers.getContractFactory("MockResolver");
+    resolver = await Resolver.deploy();
+    const Wrapper = await ethers.getContractFactory("MockNameWrapper");
+    wrapper = await Wrapper.deploy();
+    await ens.setResolver(root, await resolver.getAddress());
+    const Verifier = await ethers.getContractFactory(
+      "contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier"
+    );
+    verifier = await Verifier.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      ethers.ZeroHash
+    );
+    await verifier.waitForDeployment();
+    await verifier.setAgentRootNode(root);
+  });
+
+  function namehash(root, label) {
+    return ethers.keccak256(
+      ethers.solidityPacked(
+        ["bytes32", "bytes32"],
+        [root, ethers.keccak256(ethers.toUtf8Bytes(label))]
+      )
+    );
+  }
+
+  it("verifies merkle proof", async () => {
+    const leaf = ethers.solidityPackedKeccak256(["address"], [agent.address]);
+    await verifier.setAgentMerkleRoot(leaf);
+    expect(
+      await verifier.verifyOwnership.staticCall(agent.address, "a", [], root)
+    ).to.equal(true);
+  });
+
+  it("verifies via NameWrapper", async () => {
+    const node = namehash(root, "a");
+    await wrapper.setOwner(ethers.toBigInt(node), agent.address);
+    expect(
+      await verifier.verifyOwnership.staticCall(agent.address, "a", [], root)
+    ).to.equal(true);
+  });
+
+  it("verifies via resolver", async () => {
+    const node = namehash(root, "a");
+    await ens.setResolver(node, await resolver.getAddress());
+    await resolver.setAddr(node, agent.address);
+    expect(
+      await verifier.verifyOwnership.staticCall(agent.address, "a", [], root)
+    ).to.equal(true);
+  });
+});
+

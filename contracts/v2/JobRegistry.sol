@@ -544,15 +544,18 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        bool authorized =
+        bool ownershipVerified =
             ensOwnershipVerifier.verifyOwnership(
                 msg.sender,
                 subdomain,
                 proof,
                 agentRootNode
-            ) || additionalAgents[msg.sender];
+            );
+        bool authorized = ownershipVerified || additionalAgents[msg.sender];
         require(authorized, "Not authorized agent");
-        emit OwnershipVerified(msg.sender, subdomain);
+        if (ownershipVerified) {
+            emit OwnershipVerified(msg.sender, subdomain);
+        }
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
