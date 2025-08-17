@@ -124,6 +124,45 @@ describe("FeePool", function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
+  it("distributes rewards to validators when configured", async () => {
+    // additional validator stakes
+    await token
+      .connect(user1)
+      .approve(await stakeManager.getAddress(), 100);
+    await token
+      .connect(user2)
+      .approve(await stakeManager.getAddress(), 300);
+    await stakeManager.connect(user1).depositStake(1, 100);
+    await stakeManager.connect(user2).depositStake(1, 300);
+    await feePool.connect(owner).setRewardRole(1);
+
+    const feeAmount = 100;
+    const jobId = ethers.encodeBytes32String("jobV");
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockJobFunds(jobId, employer.address, feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .finalizeJobFunds(
+        jobId,
+        user1.address,
+        0,
+        feeAmount,
+        await feePool.getAddress()
+      );
+
+    const before1 = await token.balanceOf(user1.address);
+    const before2 = await token.balanceOf(user2.address);
+    await feePool.connect(owner).distributeFees();
+    await feePool.connect(user1).claimRewards();
+    await feePool.connect(user2).claimRewards();
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
+  });
+
   it("burns configured percentage of fees", async () => {
     await feePool.connect(owner).setBurnPct(25);
     const feeAmount = 80;
