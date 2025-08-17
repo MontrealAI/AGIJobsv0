@@ -85,9 +85,11 @@ contract ReputationEngine is Ownable {
 
     /// @notice Increase reputation for a user.
     function add(address user, uint256 amount) external onlyCaller {
-        uint256 newScore = _scores[user] + amount;
+        uint256 current = _scores[user];
+        uint256 newScore = _enforceReputationGrowth(current, amount);
+        uint256 delta = newScore - current;
         _scores[user] = newScore;
-        emit ReputationUpdated(user, int256(amount), newScore);
+        emit ReputationUpdated(user, int256(delta), newScore);
 
         if (_blacklisted[user] && newScore >= threshold) {
             _blacklisted[user] = false;
@@ -201,12 +203,11 @@ contract ReputationEngine is Ownable {
     /// @notice Apply diminishing returns and cap to reputation growth.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = current + points;
-        uint256 diminishingFactor = 1 + ((newReputation * newReputation) / (maxReputation * maxReputation));
-        uint256 diminishedReputation = newReputation / diminishingFactor;
-        if (diminishedReputation > maxReputation) {
+        uint256 diminished = newReputation - ((current * points) / maxReputation);
+        if (diminished > maxReputation) {
             return maxReputation;
         }
-        return diminishedReputation;
+        return diminished;
     }
 
     /// @notice Return the combined operator score based on stake and reputation.
