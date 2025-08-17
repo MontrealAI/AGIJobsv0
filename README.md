@@ -7,6 +7,8 @@ All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Sho
 
 For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
 
+For step‑by‑step instructions on deploying the legacy manager with `$AGIALPHA`, see [docs/deployment-v0-agialpha.md](docs/deployment-v0-agialpha.md). The guide uses block‑explorer write tabs so non‑technical owners can configure the contract without additional tooling.
+
 ## v2 Modular Contract Overview
 
 The v2 release splits the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system:
