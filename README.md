@@ -32,10 +32,10 @@ Owners retain `onlyOwner` control over parameters, letting them reconfigure live
 - ENS registry and NameWrapper contract addresses.
 
 **Steps**
-1. Deploy or reuse the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token.
+1. Deploy or reuse the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token; it powers job payouts, agent/validator stakes, validation rewards and dispute fees by default.
 2. On a block explorer, open `legacy/AGIJobManagerv0.sol` and use the **Deploy** or **Write Contract** interface to provide the constructor fields: token address, base IPFS URI, ENS registry, NameWrapper, agent/club root nodes, and the corresponding Merkle roots.
 3. Submit the transaction; the sender becomes the owner.
-4. After deployment the owner can switch payout tokens with `updateAGITokenAddress(newToken)` and rotate ENS roots or allowlists without redeploying.
+4. After deployment the owner can switch payout, staking and reward tokens with `updateAGITokenAddress(newToken)` and rotate ENS roots or allowlists without redeploying.
 5. All job posting, application, validation, dispute, and NFT marketplace calls happen through the contract's **Write** tab. Enter token amounts using 6‑decimal units (`1 token = 1_000000`).
 
 #### Etherscan deployment steps
