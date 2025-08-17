@@ -2,12 +2,25 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 async function deployFixture() {
-  const [owner, jobRegistry, user] = await ethers.getSigners();
+  const [owner, jobRegistry, seller, buyer] = await ethers.getSigners();
+
+  const AGI = await ethers.getContractFactory(
+    "contracts/AGIALPHAToken.sol:AGIALPHAToken"
+  );
+  const initialSupply = ethers.parseUnits("1000", 6);
+  const token = await AGI.deploy("AGI ALPHA", "AGIA", initialSupply);
+
   const JobNFT = await ethers.getContractFactory("JobNFT");
-  const nft = await JobNFT.deploy();
+  const nft = await JobNFT.deploy(await token.getAddress());
   await nft.waitForDeployment();
   await nft.setJobRegistry(jobRegistry.address);
-  return { nft, owner, jobRegistry, user };
+
+  // distribute tokens
+  const price = ethers.parseUnits("1", 6);
+  await token.transfer(seller.address, price);
+  await token.transfer(buyer.address, price);
+
+  return { nft, token, owner, jobRegistry, seller, buyer, price };
 }
 
 describe("JobNFT", function () {
@@ -22,38 +35,60 @@ describe("JobNFT", function () {
   });
 
   it("allows only owner to set job registry", async function () {
-    const { nft, jobRegistry, user } = await deployFixture();
-    await expect(
-      nft.connect(jobRegistry).setJobRegistry(user.address)
-    )
+    const { nft, jobRegistry, buyer } = await deployFixture();
+    await expect(nft.connect(jobRegistry).setJobRegistry(buyer.address))
       .to.be.revertedWithCustomError(nft, "OwnableUnauthorizedAccount")
       .withArgs(jobRegistry.address);
-    await expect(nft.setJobRegistry(user.address))
+    await expect(nft.setJobRegistry(buyer.address))
       .to.emit(nft, "JobRegistryUpdated")
-      .withArgs(user.address);
+      .withArgs(buyer.address);
   });
 
-  it("mints and burns only via JobRegistry", async function () {
-    const { nft, jobRegistry, user } = await deployFixture();
-    await expect(nft.connect(user).mint(user.address, "job1.json"))
-      .to.be.revertedWith("only JobRegistry");
-    await nft.connect(jobRegistry).mint(user.address, "job1.json");
-    const tokenId = await nft.nextTokenId();
-
-    expect(await nft.ownerOf(tokenId)).to.equal(user.address);
-    await nft.connect(jobRegistry).burn(tokenId);
-    await expect(nft.ownerOf(tokenId)).to.be.revertedWithCustomError(
-      nft,
-      "ERC721NonexistentToken"
-    ).withArgs(tokenId);
+  it("mints only via JobRegistry", async function () {
+    const { nft, jobRegistry, seller } = await deployFixture();
+    await expect(nft.connect(seller).mint(seller.address, 1)).to.be.revertedWith(
+      "only JobRegistry"
+    );
+    await expect(nft.connect(jobRegistry).mint(seller.address, 1))
+      .to.emit(nft, "NFTIssued")
+      .withArgs(seller.address, 1);
+    expect(await nft.ownerOf(1)).to.equal(seller.address);
   });
 
   it("prefixes tokenURI with base URI", async function () {
-    const { nft, jobRegistry, user } = await deployFixture();
+    const { nft, jobRegistry, seller } = await deployFixture();
     await nft.setBaseURI("ipfs://");
-    await nft.connect(jobRegistry).mint(user.address, "job1.json");
-    const tokenId = await nft.nextTokenId();
+    await nft.connect(jobRegistry).mint(seller.address, 1);
+    expect(await nft.tokenURI(1)).to.equal("ipfs://1");
+  });
 
-    expect(await nft.tokenURI(tokenId)).to.equal("ipfs://job1.json");
+  it("lists, purchases and delists with $AGIALPHA", async function () {
+    const { nft, token, jobRegistry, seller, buyer, price } = await deployFixture();
+
+    await nft.connect(jobRegistry).mint(seller.address, 1);
+
+    await expect(nft.connect(seller).list(1, price))
+      .to.emit(nft, "NFTListed")
+      .withArgs(1, seller.address, price);
+
+    await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
+      token,
+      "ERC20InsufficientAllowance"
+    );
+
+    await token.connect(buyer).approve(await nft.getAddress(), price);
+    await expect(nft.connect(buyer).purchase(1))
+      .to.emit(nft, "NFTPurchased")
+      .withArgs(1, buyer.address, price);
+    expect(await nft.ownerOf(1)).to.equal(buyer.address);
+
+    await nft.connect(jobRegistry).mint(seller.address, 2);
+    await expect(nft.connect(seller).list(2, price))
+      .to.emit(nft, "NFTListed")
+      .withArgs(2, seller.address, price);
+    await expect(nft.connect(seller).delist(2))
+      .to.emit(nft, "NFTDelisted")
+      .withArgs(2);
   });
 });
+

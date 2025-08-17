@@ -24,8 +24,12 @@ describe("Legacy contract ether rejection", function () {
   });
 
   it("JobNFT", async () => {
+    const Token = await ethers.getContractFactory(
+      "contracts/AGIALPHAToken.sol:AGIALPHAToken"
+    );
+    const token = await Token.deploy("AGI ALPHA", "AGIA", 0);
     const Factory = await ethers.getContractFactory("JobNFT");
-    const nft = await Factory.deploy();
+    const nft = await Factory.deploy(await token.getAddress());
     await nft.waitForDeployment();
     await expectReject(nft);
   });
