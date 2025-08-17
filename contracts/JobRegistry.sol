@@ -8,8 +8,8 @@ interface IValidationModule {
 }
 
 interface IReputationEngine {
-    function addReputation(address user, uint256 amount) external;
-    function subtractReputation(address user, uint256 amount) external;
+    function add(address user, uint256 amount) external;
+    function subtract(address user, uint256 amount) external;
     function isBlacklisted(address user) external view returns (bool);
 }
 
@@ -333,12 +333,12 @@ contract JobRegistry is Ownable {
             }
             stakeManager.payReward(job.agent, payout);
             stakeManager.releaseStake(job.agent, job.stake);
-            reputationEngine.addReputation(job.agent, 1);
+            reputationEngine.add(job.agent, 1);
             certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
         } else {
             stakeManager.payReward(job.employer, job.reward + job.fee);
             stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, job.employer);
-            reputationEngine.subtractReputation(job.agent, 1);
+            reputationEngine.subtract(job.agent, 1);
         }
         emit JobFinalized(jobId, job.success);
     }
