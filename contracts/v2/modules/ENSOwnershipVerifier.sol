@@ -30,10 +30,14 @@ contract ENSOwnershipVerifier is Ownable {
     event RecoveryInitiated(string reason);
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
+    // legacy granular events retained for backward compatibility
     event ClubRootNodeUpdated(bytes32 indexed clubRootNode);
     event AgentRootNodeUpdated(bytes32 indexed agentRootNode);
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AgentMerkleRootUpdated(bytes32 indexed agentMerkleRoot);
+    // generic update events
+    event RootNodeUpdated(string node, bytes32 newRoot);
+    event MerkleRootUpdated(string root, bytes32 newRoot);
 
     constructor(IENS _ens, INameWrapper _nameWrapper, bytes32 _clubRootNode) Ownable(msg.sender) {
         ens = _ens;
@@ -64,6 +68,26 @@ contract ENSOwnershipVerifier is Ownable {
         emit NameWrapperUpdated(wrapper);
     }
 
+    /// @notice Update both agent and club root nodes in a single call.
+    function setRootNodes(bytes32 agentRoot, bytes32 clubRoot) external onlyOwner {
+        agentRootNode = agentRoot;
+        clubRootNode = clubRoot;
+        emit AgentRootNodeUpdated(agentRoot);
+        emit ClubRootNodeUpdated(clubRoot);
+        emit RootNodeUpdated("agent", agentRoot);
+        emit RootNodeUpdated("club", clubRoot);
+    }
+
+    /// @notice Update both agent and validator Merkle roots in a single call.
+    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyOwner {
+        agentMerkleRoot = agentRoot;
+        validatorMerkleRoot = validatorRoot;
+        emit AgentMerkleRootUpdated(agentRoot);
+        emit ValidatorMerkleRootUpdated(validatorRoot);
+        emit MerkleRootUpdated("agent", agentRoot);
+        emit MerkleRootUpdated("validator", validatorRoot);
+    }
+
     /// @notice Update club (validator) root node
     /// @param root New club root node hash
     function setClubRootNode(bytes32 root) external onlyOwner {
@@ -89,20 +113,34 @@ contract ENSOwnershipVerifier is Ownable {
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
         emit AgentMerkleRootUpdated(root);
+        emit MerkleRootUpdated("agent", root);
     }
 
-    /// @notice Verify ENS ownership for a claimant and subdomain
-    /// @param claimant Address claiming ownership
-    /// @param subdomain ENS subdomain label
-    /// @param proof Merkle proof for optional off-chain allowlists
-    /// @param rootNode ENS namehash for the root domain
-    /// @return True if ownership verified by any method
-    function verifyOwnership(
+    /// @notice Verify agent ownership of an ENS subdomain.
+    function verifyAgent(
         address claimant,
         string calldata subdomain,
+        bytes32[] calldata proof
+    ) external returns (bool) {
+        return _verifyOwnership(claimant, subdomain, proof, agentRootNode);
+    }
+
+    /// @notice Verify validator ownership of an ENS subdomain.
+    function verifyValidator(
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external returns (bool) {
+        return _verifyOwnership(claimant, subdomain, proof, clubRootNode);
+    }
+
+    /// @notice Internal ownership verification logic shared by agents and validators.
+    function _verifyOwnership(
+        address claimant,
+        string memory subdomain,
         bytes32[] calldata proof,
         bytes32 rootNode
-    ) external returns (bool) {
+    ) internal returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(claimant));
         bytes32 merkleRoot;
         if (rootNode == clubRootNode) {
