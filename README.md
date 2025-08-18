@@ -3,7 +3,7 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. The legacy v0 deployment transacts in $AGI, while the modular v2 suite defaults to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The contract owner can swap this token at any time via `StakeManager.setToken` and `FeePool.setToken` without redeploying other modules. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
-All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
+All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Agents must control an ENS subdomain ending in `.agent.agi.eth`, while validators require one ending in `.club.agi.eth`. Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
 
 For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
 
@@ -60,6 +60,17 @@ Owners retain `onlyOwner` control over parameters, letting them reconfigure live
 2. Execute **deployDefaults(ids)** – leaving struct fields empty uses `$AGIALPHA` and sensible defaults; the caller becomes owner and all modules wire themselves.
 3. To change the payout token later, call [`StakeManager.setToken(newToken)`](contracts/v2/StakeManager.sol) and [`FeePool.setToken(newToken)`](contracts/v2/FeePool.sol); emit `TokenUpdated` to confirm the swap.
 4. Other modules remain untouched, so token rotation never requires redeployment.
+
+```ts
+// deploy everything with sensible defaults
+const Deployer = await ethers.getContractFactory("Deployer");
+const deployer = await Deployer.deploy();
+await deployer.deployDefaults({});
+
+// swap the ERC-20 used for fees, stakes, and rewards
+await stakeManager.setToken("0xNewToken");
+await feePool.setToken("0xNewToken");
+```
 
 ### Token setup
 - All modules default to `$AGIALPHA` (6 decimals) for fees, staking, and rewards.
