@@ -5,6 +5,7 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {StakeManager} from "./StakeManager.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 
@@ -12,7 +13,7 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 /// @notice ERC721 certificate minted upon successful job completion.
 /// @dev Holds no ether so neither the contract nor its owner ever custodies
 ///      assets or accrues taxable exposure in any jurisdiction.
-contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
+contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
     address public jobRegistry;
     string private baseTokenURI;
@@ -98,7 +99,8 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         emit NFTListed(tokenId, msg.sender, price);
     }
 
-    function purchase(uint256 tokenId) external {
+    /// @notice Purchase a listed certificate using 6‑decimal $AGIALPHA tokens.
+    function purchase(uint256 tokenId) external nonReentrant {
         Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         address seller = listing.seller;

@@ -1604,6 +1604,7 @@ The contract owner can retune economics or swap tokens at any time without redep
 | GovernanceReward | `setToken`, `recordVoters`, `finalizeEpoch` |
 | DisputeModule | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
 | JobRegistry | `setModules`, `setFeePool`, `setTaxPolicy` |
+| CertificateNFT | `setJobRegistry`, `setStakeManager`, `setBaseURI` |
 
 All amounts are entered using the 6‑decimal base units of $AGIALPHA, preserving on‑chain accounting while keeping the owner tax neutral.
 
