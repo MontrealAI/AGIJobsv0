@@ -22,9 +22,8 @@ contract DisputeModule is Ownable {
     /// @dev Defaults to 1 day if zero is provided to the constructor.
     uint256 public disputeWindow;
 
-    /// @notice Optional moderator address that can resolve disputes.
-    /// @dev Defaults to the deployer address if zero is provided to the constructor.
-    address public moderator;
+    /// @notice Owner‑appointed addresses allowed to resolve disputes.
+    mapping(address => bool) public moderators;
 
     struct Dispute {
         address claimant;
@@ -43,7 +42,7 @@ contract DisputeModule is Ownable {
         string evidence
     );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
-    event ModeratorUpdated(address moderator);
+    event ModeratorUpdated(address moderator, bool enabled);
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
@@ -71,12 +70,18 @@ contract DisputeModule is Ownable {
         disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
         emit DisputeWindowUpdated(disputeWindow);
 
-        moderator = _moderator != address(0) ? _moderator : msg.sender;
+        address initialModerator =
+            _moderator != address(0) ? _moderator : msg.sender;
+        moderators[initialModerator] = true;
+        emit ModeratorUpdated(initialModerator, true);
     }
 
     /// @notice Modifier restricting calls to the owner or moderator.
     modifier onlyArbiter() {
-        require(msg.sender == owner() || msg.sender == moderator, "not authorized");
+        require(
+            msg.sender == owner() || moderators[msg.sender],
+            "not authorized"
+        );
         _;
     }
 
@@ -94,10 +99,15 @@ contract DisputeModule is Ownable {
         emit ModulesUpdated(address(newRegistry));
     }
 
-    /// @notice Set the moderator address.
-    function setModerator(address _moderator) external onlyOwner {
-        moderator = _moderator;
-        emit ModeratorUpdated(_moderator);
+    /// @notice Add or remove a moderator address.
+    /// @param _moderator Address of the moderator.
+    /// @param enabled True to grant, false to revoke.
+    function setModerator(address _moderator, bool enabled)
+        external
+        onlyOwner
+    {
+        moderators[_moderator] = enabled;
+        emit ModeratorUpdated(_moderator, enabled);
     }
 
     /// @notice Configure the dispute fee in token units (6 decimals).
