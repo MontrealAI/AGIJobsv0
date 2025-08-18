@@ -257,10 +257,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set validator Merkle root for identity checks.
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
-        ensOwnershipVerifier.setMerkleRoots(
-            agentMerkleRoot,
-            root
-        );
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setMerkleRoots(agentMerkleRoot, root);
+        }
         emit MerkleRootUpdated("validator", root);
         emit ENSIdentityUpdated(clubRootNode, root, address(nameWrapper));
     }
@@ -268,10 +267,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set agent Merkle root for identity checks.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
-        ensOwnershipVerifier.setMerkleRoots(
-            root,
-            validatorMerkleRoot
-        );
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setMerkleRoots(root, validatorMerkleRoot);
+        }
         emit MerkleRootUpdated("agent", root);
     }
 
@@ -284,10 +282,12 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set club root node for validator ENS subdomains.
     function setClubRootNode(bytes32 node) external onlyOwner {
         clubRootNode = node;
-        ensOwnershipVerifier.setRootNodes(
-            ensOwnershipVerifier.agentRootNode(),
-            node
-        );
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setRootNodes(
+                ensOwnershipVerifier.agentRootNode(),
+                node
+            );
+        }
         emit RootNodeUpdated("club", node);
         emit ENSIdentityUpdated(node, validatorMerkleRoot, address(nameWrapper));
     }

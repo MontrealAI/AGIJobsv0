@@ -60,6 +60,34 @@ describe("ENSOwnershipVerifier setters", function () {
       .to.emit(verifier, "ValidatorMerkleRootUpdated")
       .withArgs(root);
   });
+
+  it("allows bulk root node updates", async function () {
+    const agentRoot = ethers.id("agent");
+    const clubRoot = ethers.id("club");
+    await expect(verifier.connect(other).setRootNodes(agentRoot, clubRoot))
+      .to.be.revertedWithCustomError(verifier, "OwnableUnauthorizedAccount")
+      .withArgs(other.address);
+    await expect(verifier.setRootNodes(agentRoot, clubRoot))
+      .to.emit(verifier, "RootNodeUpdated")
+      .withArgs("agent", agentRoot)
+      .and.to.emit(verifier, "RootNodeUpdated")
+      .withArgs("club", clubRoot);
+  });
+
+  it("allows bulk Merkle root updates", async function () {
+    const agentRoot = ethers.id("agentRoot");
+    const validatorRoot = ethers.id("validatorRoot");
+    await expect(
+      verifier.connect(other).setMerkleRoots(agentRoot, validatorRoot)
+    )
+      .to.be.revertedWithCustomError(verifier, "OwnableUnauthorizedAccount")
+      .withArgs(other.address);
+    await expect(verifier.setMerkleRoots(agentRoot, validatorRoot))
+      .to.emit(verifier, "MerkleRootUpdated")
+      .withArgs("agent", agentRoot)
+      .and.to.emit(verifier, "MerkleRootUpdated")
+      .withArgs("validator", validatorRoot);
+  });
 });
 
 describe("ENSOwnershipVerifier verification", function () {
@@ -97,10 +125,12 @@ describe("ENSOwnershipVerifier verification", function () {
   }
 
   it("verifies merkle proof", async () => {
-    const leaf = ethers.solidityPackedKeccak256(["address"], [agent.address]);
+    const leaf = ethers.solidityPackedKeccak256([
+      "address",
+    ], [agent.address]);
     await verifier.setAgentMerkleRoot(leaf);
     expect(
-      await verifier.verifyOwnership.staticCall(agent.address, "a", [], root)
+      await verifier.verifyAgent.staticCall(agent.address, "a", [])
     ).to.equal(true);
   });
 
@@ -108,7 +138,7 @@ describe("ENSOwnershipVerifier verification", function () {
     const node = namehash(root, "a");
     await wrapper.setOwner(ethers.toBigInt(node), agent.address);
     expect(
-      await verifier.verifyOwnership.staticCall(agent.address, "a", [], root)
+      await verifier.verifyAgent.staticCall(agent.address, "a", [])
     ).to.equal(true);
   });
 
@@ -117,7 +147,7 @@ describe("ENSOwnershipVerifier verification", function () {
     await ens.setResolver(node, await resolver.getAddress());
     await resolver.setAddr(node, agent.address);
     expect(
-      await verifier.verifyOwnership.staticCall(agent.address, "a", [], root)
+      await verifier.verifyAgent.staticCall(agent.address, "a", [])
     ).to.equal(true);
   });
 });

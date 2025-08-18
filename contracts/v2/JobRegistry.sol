@@ -301,22 +301,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Set the ENS root node used for agent verification.
     function setAgentRootNode(bytes32 node) external onlyOwner {
         agentRootNode = node;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setRootNodes(
-                node,
-                ensOwnershipVerifier.clubRootNode()
-            );
-        }
         emit RootNodeUpdated("agent", node);
     }
 
     /// @notice Set the agent Merkle root used for identity proofs.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
-        ensOwnershipVerifier.setMerkleRoots(
-            root,
-            ensOwnershipVerifier.validatorMerkleRoot()
-        );
         emit MerkleRootUpdated("agent", root);
     }
 
