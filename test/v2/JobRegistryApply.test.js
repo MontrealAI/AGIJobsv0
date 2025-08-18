@@ -68,6 +68,23 @@ describe("JobRegistry agent gating", function () {
     return 1;
   }
 
+  it("syncs ENS roots and merkle updates to verifier", async () => {
+    const newRoot = ethers.id("root");
+    await expect(
+      registry.connect(agent).setAgentRootNode(newRoot)
+    ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+    await expect(registry.setAgentRootNode(newRoot))
+      .to.emit(registry, "RootNodeUpdated")
+      .withArgs("agent", newRoot);
+    expect(await verifier.agentRootNode()).to.equal(newRoot);
+
+    const merkle = ethers.id("merkle");
+    await expect(registry.setAgentMerkleRoot(merkle))
+      .to.emit(registry, "MerkleRootUpdated")
+      .withArgs("agent", merkle);
+    expect(await verifier.agentMerkleRoot()).to.equal(merkle);
+  });
+
   it("rejects unverified agents", async () => {
     const jobId = await createJob();
     await expect(

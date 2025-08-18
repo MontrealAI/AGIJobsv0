@@ -11,7 +11,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable {
     mapping(address => uint256) private _scores;
-    mapping(address => bool) private _blacklisted;
+    mapping(address => bool) public isBlacklisted;
     mapping(address => bool) public callers;
     uint256 public threshold;
     IStakeManager public stakeManager;
@@ -80,7 +80,7 @@ contract ReputationEngine is Ownable {
 
     /// @notice Update blacklist status for a user.
     function blacklist(address user, bool status) public onlyOwner {
-        _blacklisted[user] = status;
+        isBlacklisted[user] = status;
         emit BlacklistUpdated(user, status);
     }
 
@@ -92,8 +92,8 @@ contract ReputationEngine is Ownable {
         _scores[user] = newScore;
         emit ReputationUpdated(user, int256(delta), newScore);
 
-        if (_blacklisted[user] && newScore >= threshold) {
-            _blacklisted[user] = false;
+        if (isBlacklisted[user] && newScore >= threshold) {
+            isBlacklisted[user] = false;
             emit BlacklistUpdated(user, false);
         }
     }
@@ -105,8 +105,8 @@ contract ReputationEngine is Ownable {
         _scores[user] = newScore;
         emit ReputationUpdated(user, -int256(amount), newScore);
 
-        if (!_blacklisted[user] && newScore < threshold) {
-            _blacklisted[user] = true;
+        if (!isBlacklisted[user] && newScore < threshold) {
+            isBlacklisted[user] = true;
             emit BlacklistUpdated(user, true);
         }
     }
@@ -125,11 +125,6 @@ contract ReputationEngine is Ownable {
         return _scores[user];
     }
 
-    /// @notice Check blacklist status for a user.
-    function isBlacklisted(address user) external view returns (bool) {
-        return _blacklisted[user];
-    }
-
     /// @notice Determine whether a user meets the premium access threshold.
     function canAccessPremium(address user) external view returns (bool) {
         return _scores[user] >= threshold;
@@ -141,7 +136,7 @@ contract ReputationEngine is Ownable {
 
     /// @notice Ensure an applicant meets premium requirements and is not blacklisted.
     function onApply(address user) external onlyCaller {
-        require(!_blacklisted[user], "blacklisted");
+        require(!isBlacklisted[user], "blacklisted");
         require(_scores[user] >= threshold, "insufficient reputation");
     }
 
@@ -157,12 +152,12 @@ contract ReputationEngine is Ownable {
             uint256 newScore = _enforceReputationGrowth(_scores[user], gain);
             _scores[user] = newScore;
             emit ReputationUpdated(user, int256(gain), newScore);
-            if (_blacklisted[user] && newScore >= threshold) {
-                _blacklisted[user] = false;
+            if (isBlacklisted[user] && newScore >= threshold) {
+                isBlacklisted[user] = false;
                 emit BlacklistUpdated(user, false);
             }
         } else if (_scores[user] < threshold) {
-            _blacklisted[user] = true;
+            isBlacklisted[user] = true;
             emit BlacklistUpdated(user, true);
         }
     }
@@ -175,8 +170,8 @@ contract ReputationEngine is Ownable {
         uint256 newScore = _enforceReputationGrowth(_scores[validator], gain);
         _scores[validator] = newScore;
         emit ReputationUpdated(validator, int256(gain), newScore);
-        if (_blacklisted[validator] && newScore >= threshold) {
-            _blacklisted[validator] = false;
+        if (isBlacklisted[validator] && newScore >= threshold) {
+            isBlacklisted[validator] = false;
             emit BlacklistUpdated(validator, false);
         }
     }
@@ -233,7 +228,7 @@ contract ReputationEngine is Ownable {
     /// @notice Return the combined operator score based on stake and reputation.
     /// @dev Blacklisted users score 0.
     function getOperatorScore(address operator) external view returns (uint256) {
-        if (_blacklisted[operator]) return 0;
+        if (isBlacklisted[operator]) return 0;
         uint256 stake;
         if (address(stakeManager) != address(0)) {
             stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
