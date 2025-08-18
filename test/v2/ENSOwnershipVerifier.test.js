@@ -150,5 +150,33 @@ describe("ENSOwnershipVerifier verification", function () {
       await verifier.verifyAgent.staticCall(agent.address, "a", [])
     ).to.equal(true);
   });
+
+  it("rejects invalid merkle proof", async () => {
+    const leaf = ethers.solidityPackedKeccak256([
+      "address",
+    ], [agent.address]);
+    await verifier.setAgentMerkleRoot(leaf);
+    const badProof = [ethers.id("bad")];
+    expect(
+      await verifier.verifyAgent.staticCall(agent.address, "a", badProof)
+    ).to.equal(false);
+  });
+
+  it("returns false without resolver", async () => {
+    expect(
+      await verifier.verifyAgent.staticCall(agent.address, "missing", [])
+    ).to.equal(false);
+  });
+
+  it("emits recovery when NameWrapper reverts", async () => {
+    const BadWrapper = await ethers.getContractFactory(
+      "contracts/mocks/RevertingNameWrapper.sol:RevertingNameWrapper"
+    );
+    const bad = await BadWrapper.deploy();
+    await verifier.setNameWrapper(await bad.getAddress());
+    await expect(
+      verifier.verifyAgent(agent.address, "a", [])
+    ).to.emit(verifier, "RecoveryInitiated");
+  });
 });
 
