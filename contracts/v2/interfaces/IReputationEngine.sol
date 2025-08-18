@@ -11,7 +11,7 @@ interface IReputationEngine {
     error BlacklistedUser(address user);
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
-    event Blacklisted(address indexed user, bool status);
+    event BlacklistUpdated(address indexed user, bool status);
     event StakeManagerUpdated(address stakeManager);
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
 
@@ -55,7 +55,7 @@ interface IReputationEngine {
     /// @notice Allow or disallow a caller to update reputation
     /// @param caller Address of the caller to configure
     /// @param allowed True to authorise the caller, false to revoke
-    function setCaller(address caller, bool allowed) external;
+    function setAuthorizedCaller(address caller, bool allowed) external;
 
     /// @notice Set the minimum score threshold for certain actions
     function setThreshold(uint256 newThreshold) external;
@@ -66,12 +66,14 @@ interface IReputationEngine {
     /// @notice Add or remove a user from the blacklist
     /// @param user Address to update
     /// @param status True to blacklist the user, false to remove
-    function setBlacklist(address user, bool status) external;
+    function blacklist(address user, bool status) external;
 
     /// @notice Job lifecycle hooks
     function onApply(address user) external;
 
     function onFinalize(address user, bool success, uint256 payout, uint256 duration) external;
+
+    function rewardValidator(address validator, uint256 agentGain) external;
 
     /// @notice Retrieve combined operator score using stake and reputation
     /// @param operator Address to query

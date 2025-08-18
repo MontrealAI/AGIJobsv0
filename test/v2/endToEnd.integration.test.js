@@ -117,7 +117,7 @@ describe("end-to-end job lifecycle", function () {
     await stakeManager.setDisputeModule(await dispute.getAddress());
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
-    await rep.setCaller(await registry.getAddress(), true);
+    await rep.setAuthorizedCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);
     await nft.transferOwnership(await registry.getAddress());
 

@@ -17,9 +17,10 @@ contract ReputationEngine is Ownable {
     IStakeManager public stakeManager;
     uint256 public stakeWeight = 1e18;
     uint256 public reputationWeight = 1e18;
+    uint256 public validationRewardPercentage = 8;
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
-    event Blacklisted(address indexed user, bool status);
+    event BlacklistUpdated(address indexed user, bool status);
     event CallerUpdated(address indexed caller, bool allowed);
     event ThresholdUpdated(uint256 newThreshold);
     event StakeManagerUpdated(address stakeManager);
@@ -39,7 +40,7 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Authorize or revoke a caller.
-    function setCaller(address caller, bool allowed) external onlyOwner {
+    function setAuthorizedCaller(address caller, bool allowed) external onlyOwner {
         callers[caller] = allowed;
         emit CallerUpdated(caller, allowed);
     }
@@ -60,6 +61,12 @@ contract ReputationEngine is Ownable {
         emit ScoringWeightsUpdated(stakeW, repW);
     }
 
+    /// @notice Set percentage of agent gain given to validators.
+    function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
+        require(percentage <= 100, "invalid percentage");
+        validationRewardPercentage = percentage;
+    }
+
     /// @notice Set reputation threshold for premium access.
     function setPremiumThreshold(uint256 newThreshold) public onlyOwner {
         threshold = newThreshold;
@@ -72,15 +79,9 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Update blacklist status for a user.
-    /// @dev Only authorised modules may call this function.
-    function setBlacklist(address user, bool status) public onlyCaller {
+    function blacklist(address user, bool status) public onlyOwner {
         _blacklisted[user] = status;
-        emit Blacklisted(user, status);
-    }
-
-    /// @notice Backwards compatible blacklist setter.
-    function blacklist(address user, bool status) external onlyCaller {
-        setBlacklist(user, status);
+        emit BlacklistUpdated(user, status);
     }
 
     /// @notice Increase reputation for a user.
@@ -93,7 +94,7 @@ contract ReputationEngine is Ownable {
 
         if (_blacklisted[user] && newScore >= threshold) {
             _blacklisted[user] = false;
-            emit Blacklisted(user, false);
+            emit BlacklistUpdated(user, false);
         }
     }
 
@@ -106,7 +107,7 @@ contract ReputationEngine is Ownable {
 
         if (!_blacklisted[user] && newScore < threshold) {
             _blacklisted[user] = true;
-            emit Blacklisted(user, true);
+            emit BlacklistUpdated(user, true);
         }
     }
 
@@ -144,7 +145,7 @@ contract ReputationEngine is Ownable {
         require(_scores[user] >= threshold, "insufficient reputation");
     }
 
-    /// @notice Finalise a job and update reputation using v1 formulas.
+    /// @notice Finalise a job and update reputation using v0 formulas.
     function onFinalize(
         address user,
         bool success,
@@ -158,11 +159,25 @@ contract ReputationEngine is Ownable {
             emit ReputationUpdated(user, int256(gain), newScore);
             if (_blacklisted[user] && newScore >= threshold) {
                 _blacklisted[user] = false;
-                emit Blacklisted(user, false);
+                emit BlacklistUpdated(user, false);
             }
         } else if (_scores[user] < threshold) {
             _blacklisted[user] = true;
-            emit Blacklisted(user, true);
+            emit BlacklistUpdated(user, true);
+        }
+    }
+
+    /// @notice Reward a validator based on an agent's reputation gain.
+    /// @param validator The validator address
+    /// @param agentGain Reputation points awarded to the agent
+    function rewardValidator(address validator, uint256 agentGain) external onlyCaller {
+        uint256 gain = calculateValidatorReputationPoints(agentGain);
+        uint256 newScore = _enforceReputationGrowth(_scores[validator], gain);
+        _scores[validator] = newScore;
+        emit ReputationUpdated(validator, int256(gain), newScore);
+        if (_blacklisted[validator] && newScore >= threshold) {
+            _blacklisted[validator] = false;
+            emit BlacklistUpdated(validator, false);
         }
     }
 
@@ -171,6 +186,11 @@ contract ReputationEngine is Ownable {
         uint256 scaledPayout = payout / 1e18;
         uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
         return log2(1 + payoutPoints * 1e6) + duration / 10000;
+    }
+
+    /// @notice Compute validator reputation gain from agent gain.
+    function calculateValidatorReputationPoints(uint256 agentReputationGain) public view returns (uint256) {
+        return (agentReputationGain * validationRewardPercentage) / 100;
     }
 
     /// @notice Log base 2 implementation from v1.

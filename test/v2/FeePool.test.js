@@ -252,7 +252,7 @@ describe("FeePool", function () {
     );
     const rep = await Rep.connect(owner).deploy(ethers.ZeroAddress);
     await rep.setStakeManager(await stakeManager.getAddress());
-    await rep.setCaller(owner.address, true);
+    await rep.setAuthorizedCaller(owner.address, true);
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"

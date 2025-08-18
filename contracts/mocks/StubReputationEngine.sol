@@ -3,7 +3,7 @@ pragma solidity ^0.8.21;
 
 contract StubReputationEngine {
     mapping(address => uint256) public reputation;
-    mapping(address => bool) public blacklist;
+    mapping(address => bool) public _blacklist;
 
     function add(address user, uint256 amount) external {
         reputation[user] += amount;
@@ -15,10 +15,10 @@ contract StubReputationEngine {
     }
 
     function isBlacklisted(address user) external view returns (bool) {
-        return blacklist[user];
+        return _blacklist[user];
     }
 
-    function setBlacklist(address user, bool val) external {
-        blacklist[user] = val;
+    function blacklist(address user, bool val) external {
+        _blacklist[user] = val;
     }
 }

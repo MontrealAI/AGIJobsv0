@@ -366,7 +366,7 @@ contract MockReputationEngine is IReputationEngine {
         return _rep[user] >= threshold;
     }
 
-    function setCaller(address, bool) external override {}
+    function setAuthorizedCaller(address, bool) external override {}
 
     function setThreshold(uint256 t) external override {
         threshold = t;
@@ -376,7 +376,7 @@ contract MockReputationEngine is IReputationEngine {
         threshold = t;
     }
 
-    function setBlacklist(address user, bool val) external override {
+    function blacklist(address user, bool val) external override {
         _blacklist[user] = val;
     }
 
@@ -391,6 +391,10 @@ contract MockReputationEngine is IReputationEngine {
         } else if (_rep[user] < threshold) {
             _blacklist[user] = true;
         }
+    }
+
+    function rewardValidator(address user, uint256) external override {
+        _rep[user] += 1;
     }
 
     function getOperatorScore(address user) external view override returns (uint256) {
