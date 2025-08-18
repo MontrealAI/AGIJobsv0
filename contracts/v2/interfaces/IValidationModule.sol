@@ -32,6 +32,9 @@ interface IValidationModule {
         bytes32[] calldata proof
     ) external;
 
+    /// @notice Commit a validation hash without ENS parameters (legacy wrapper)
+    function commitValidation(uint256 jobId, bytes32 commitHash) external;
+
     /// @notice Reveal a previously committed validation vote
     /// @param jobId Identifier of the job
     /// @param approve True to approve, false to reject
@@ -46,13 +49,22 @@ interface IValidationModule {
         bytes32[] calldata proof
     ) external;
 
+    /// @notice Reveal a previously committed validation vote (legacy wrapper)
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
+
     /// @notice Finalize validation round and slash incorrect validators
     /// @param jobId Identifier of the job
     /// @return success True if validators approved the job
     function finalize(uint256 jobId) external returns (bool success);
 
+    /// @notice Alias for finalize using legacy naming.
+    function finalizeValidation(uint256 jobId) external returns (bool success);
+
     /// @notice Owner configuration for timing windows
     function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow) external;
+
+    /// @notice Convenience wrapper for timing configuration.
+    function setTiming(uint256 commitWindow, uint256 revealWindow) external;
 
     /// @notice Owner configuration for validator counts
     function setValidatorBounds(uint256 minValidators, uint256 maxValidators) external;
@@ -63,6 +75,18 @@ interface IValidationModule {
 
     /// @notice Update approval threshold percentage
     function setApprovalThreshold(uint256 pct) external;
+
+    /// @notice Manually allow a validator to bypass ENS checks.
+    function addAdditionalValidator(address validator) external;
+
+    /// @notice Remove a validator from the manual allowlist.
+    function removeAdditionalValidator(address validator) external;
+
+    /// @notice Update ENS root nodes for agents and validators.
+    function setENSRoots(bytes32 agentRoot, bytes32 clubRoot) external;
+
+    /// @notice Update Merkle roots for agents and validators.
+    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external;
 
     /// @notice Map validators to ENS subdomains for selection
     function setValidatorSubdomains(
