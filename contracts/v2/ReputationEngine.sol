@@ -68,20 +68,30 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Set reputation threshold for premium access.
-    function setPremiumThreshold(uint256 newThreshold) public onlyOwner {
+    function setPremiumReputationThreshold(uint256 newThreshold) public onlyOwner {
         threshold = newThreshold;
         emit ThresholdUpdated(newThreshold);
     }
 
     /// @notice Backwards compatible threshold setter.
     function setThreshold(uint256 newThreshold) external onlyOwner {
-        setPremiumThreshold(newThreshold);
+        setPremiumReputationThreshold(newThreshold);
+    }
+
+    /// @notice Wrapper to mirror legacy naming.
+    function setPremiumThreshold(uint256 newThreshold) external onlyOwner {
+        setPremiumReputationThreshold(newThreshold);
     }
 
     /// @notice Update blacklist status for a user.
-    function blacklist(address user, bool status) public onlyOwner {
+    function setBlacklist(address user, bool status) public onlyOwner {
         isBlacklisted[user] = status;
         emit BlacklistUpdated(user, status);
+    }
+
+    /// @notice Backwards compatible blacklist setter.
+    function blacklist(address user, bool status) external onlyOwner {
+        setBlacklist(user, status);
     }
 
     /// @notice Increase reputation for a user.
@@ -126,6 +136,11 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Determine whether a user meets the premium access threshold.
+    function meetsThreshold(address user) external view returns (bool) {
+        return _scores[user] >= threshold;
+    }
+
+    /// @notice Backwards compatible view for legacy naming.
     function canAccessPremium(address user) external view returns (bool) {
         return _scores[user] >= threshold;
     }

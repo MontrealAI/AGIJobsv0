@@ -116,7 +116,7 @@ await feePool.setToken("0xNewToken");
 The contract owner can reconfigure live deployments without redeployment:
 - **ENS roots & Merkle proofs** – rotate subdomains with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), and update allowlists via [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol). Watch for `RootNodeUpdated` or `MerkleRootUpdated` events. Update ENS contract references through [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).
 - **Token addresses** – call [`StakeManager.setToken`](contracts/v2/StakeManager.sol) then [`FeePool.setToken`](contracts/v2/FeePool.sol) to swap the ERC‑20 used for stakes and fees. Wait for `TokenUpdated` events on both contracts.
-- **Blacklists** – manage participation with [`ReputationEngine.blacklist(address user, bool status)`](contracts/v2/ReputationEngine.sol); blacklisted addresses cannot apply or validate until removed.
+- **Blacklists** – manage participation with [`ReputationEngine.setBlacklist(address user, bool status)`](contracts/v2/ReputationEngine.sol); blacklisted addresses cannot apply or validate until removed.
 - **Stake requirements** – adjust minimums through [`StakeManager.setMinStake`](contracts/v2/StakeManager.sol) and [`PlatformRegistry.setMinPlatformStake`](contracts/v2/PlatformRegistry.sol).
 - **Dispute parameters** – tune dispute fees or tax policy using [`DisputeModule.setDisputeFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
 

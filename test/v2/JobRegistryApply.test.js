@@ -104,7 +104,7 @@ describe("JobRegistry agent gating", function () {
 
   it("rejects blacklisted agents", async () => {
     await verifier.setResult(true);
-    await rep.connect(owner).blacklist(agent.address, true);
+    await rep.connect(owner).setBlacklist(agent.address, true);
     const jobId = await createJob();
     await expect(
       registry.connect(agent).applyForJob(jobId, "a", [])
