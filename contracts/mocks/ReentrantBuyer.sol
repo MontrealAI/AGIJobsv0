@@ -5,7 +5,7 @@ import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Recei
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IMarketplaceNFT {
-    function purchase(uint256 tokenId) external;
+    function purchaseNFT(uint256 tokenId) external;
 }
 
 /// @dev Buyer contract that attempts to reenter the marketplace during a purchase.
@@ -23,7 +23,7 @@ contract ReentrantBuyer is IERC721Receiver {
 
     /// @notice Initiate a purchase which triggers the reentrancy attempt.
     function buy(uint256 tokenId) external {
-        nft.purchase(tokenId);
+        nft.purchaseNFT(tokenId);
     }
 
     /// @dev During receipt of the NFT, attempt to purchase again.
@@ -35,7 +35,7 @@ contract ReentrantBuyer is IERC721Receiver {
     ) external returns (bytes4) {
         // Swallow any failure – the second call should revert because the
         // listing was cleared before transfer.
-        try nft.purchase(tokenId) {} catch {}
+        try nft.purchaseNFT(tokenId) {} catch {}
         return this.onERC721Received.selector;
     }
 }
