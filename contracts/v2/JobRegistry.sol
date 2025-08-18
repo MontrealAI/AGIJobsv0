@@ -478,6 +478,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             uint256(deadline) - block.timestamp <= maxJobDuration,
             "duration"
         );
+        require(feePct + validatorRewardPct <= 100, "pct");
         unchecked {
             nextJobId++;
         }
