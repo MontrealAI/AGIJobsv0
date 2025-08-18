@@ -115,7 +115,7 @@ describe("job finalization integration", function () {
     await stakeManager.setDisputeModule(await dispute.getAddress());
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
-    await rep.setCaller(await registry.getAddress(), true);
+    await rep.setAuthorizedCaller(await registry.getAddress(), true);
     await rep.setThreshold(1);
     await nft.transferOwnership(await registry.getAddress());
 
@@ -163,7 +163,7 @@ describe("job finalization integration", function () {
 
   it("finalizes failed job after employer dispute", async () => {
     // seed reputation to observe subtraction
-    await rep.connect(owner).setCaller(owner.address, true);
+    await rep.connect(owner).setAuthorizedCaller(owner.address, true);
     await rep.connect(owner).add(agent.address, 5);
 
     const { jobId, fee } = await setupJob(false);

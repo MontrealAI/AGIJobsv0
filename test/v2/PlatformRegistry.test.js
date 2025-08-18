@@ -39,7 +39,7 @@ describe("PlatformRegistry", function () {
       await stakeManager.getAddress()
     );
     await reputationEngine.setStakeManager(await stakeManager.getAddress());
-    await reputationEngine.setCaller(owner.address, true);
+    await reputationEngine.setAuthorizedCaller(owner.address, true);
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"

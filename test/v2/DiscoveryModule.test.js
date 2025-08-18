@@ -13,7 +13,9 @@ describe("DiscoveryModule", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     engine = await Engine.deploy(ethers.ZeroAddress);
-    await engine.connect(owner).setCaller(owner.address, true);
+    await engine
+      .connect(owner)
+      .setAuthorizedCaller(owner.address, true);
     await engine.connect(owner).setStakeManager(await stakeManager.getAddress());
 
     const Discovery = await ethers.getContractFactory(

@@ -41,8 +41,10 @@ describe("JobRegistry agent gating", function () {
     );
     await registry.connect(owner).setENSOwnershipVerifier(await verifier.getAddress());
 
-    await rep.connect(owner).setCaller(await registry.getAddress(), true);
-    await rep.connect(owner).setCaller(owner.address, true);
+    await rep
+      .connect(owner)
+      .setAuthorizedCaller(await registry.getAddress(), true);
+    await rep.connect(owner).setAuthorizedCaller(owner.address, true);
 
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -85,7 +87,7 @@ describe("JobRegistry agent gating", function () {
 
   it("rejects blacklisted agents", async () => {
     await verifier.setResult(true);
-    await rep.connect(owner).setBlacklist(agent.address, true);
+    await rep.connect(owner).blacklist(agent.address, true);
     const jobId = await createJob();
     await expect(
       registry.connect(agent).applyForJob(jobId, "a", [])

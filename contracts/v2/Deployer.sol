@@ -382,8 +382,8 @@ contract Deployer is Ownable {
         );
         pRegistry.setRegistrar(address(incentives), true);
         router.setRegistrar(address(incentives), true);
-        reputation.setCaller(address(registry), true);
-        reputation.setCaller(address(validation), true);
+        reputation.setAuthorizedCaller(address(registry), true);
+        reputation.setAuthorizedCaller(address(validation), true);
 
         // Transfer ownership
         registry.transferOwnership(owner_);

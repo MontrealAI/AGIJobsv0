@@ -69,7 +69,7 @@ async function main() {
   );
 
   await validation.setReputationEngine(await reputation.getAddress());
-  await reputation.setCaller(await registry.getAddress(), true);
+  await reputation.setAuthorizedCaller(await registry.getAddress(), true);
   await reputation.setThreshold(1);
   await nft.setJobRegistry(await registry.getAddress());
   await nft.setStakeManager(await stake.getAddress());

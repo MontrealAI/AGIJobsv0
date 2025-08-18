@@ -88,7 +88,9 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setMaxJobDuration(86400);
     await registry.connect(owner).setFeePct(0);
     await nft.connect(owner).setJobRegistry(await registry.getAddress());
-    await rep.connect(owner).setCaller(await registry.getAddress(), true);
+    await rep
+      .connect(owner)
+      .setAuthorizedCaller(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(1);
     await stakeManager
       .connect(owner)

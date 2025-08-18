@@ -197,7 +197,7 @@ describe("Validator ENS integration", function () {
       1,
       ethers.parseEther("1")
     );
-    await reputation.setBlacklist(validator.address, true);
+    await reputation.blacklist(validator.address, true);
     const job = {
       employer: owner.address,
       agent: ethers.ZeroAddress,

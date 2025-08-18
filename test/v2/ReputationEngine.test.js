@@ -10,7 +10,9 @@ describe("ReputationEngine", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     engine = await Engine.deploy(ethers.ZeroAddress);
-    await engine.connect(owner).setCaller(caller.address, true);
+    await engine
+      .connect(owner)
+      .setAuthorizedCaller(caller.address, true);
     await engine.connect(owner).setPremiumThreshold(2);
   });
 
@@ -33,10 +35,10 @@ describe("ReputationEngine", function () {
     );
   });
 
-  it("allows authorized caller to manually set blacklist status", async () => {
-    await engine.connect(caller).setBlacklist(user.address, true);
+  it("allows owner to manually set blacklist status", async () => {
+    await engine.connect(owner).blacklist(user.address, true);
     expect(await engine.isBlacklisted(user.address)).to.equal(true);
-    await engine.connect(caller).setBlacklist(user.address, false);
+    await engine.connect(owner).blacklist(user.address, false);
     expect(await engine.isBlacklisted(user.address)).to.equal(false);
   });
 
@@ -62,5 +64,16 @@ describe("ReputationEngine", function () {
       .to.emit(engine, "ReputationUpdated")
       .withArgs(user.address, expected - 3n, expected);
     expect(await engine.reputationOf(user.address)).to.equal(expected);
+  });
+
+  it("rewards validators based on agent gain", async () => {
+    const agentGain = 100n;
+    const expectedGain = (agentGain * 8n) / 100n;
+    await expect(
+      engine.connect(caller).rewardValidator(user.address, agentGain)
+    )
+      .to.emit(engine, "ReputationUpdated")
+      .withArgs(user.address, expectedGain, expectedGain);
+    expect(await engine.reputationOf(user.address)).to.equal(expectedGain);
   });
 });
