@@ -138,17 +138,17 @@ describe("ValidationModule access controls", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, true, salt]
     );
-    await reputation.blacklist(val, true);
+    await reputation.setBlacklist(val, true);
     await expect(
       validation.connect(v1).commitValidation(1, commit, "", [])
     ).to.be.revertedWith("Blacklisted validator");
 
-    await reputation.blacklist(val, false);
+    await reputation.setBlacklist(val, false);
     await (
       await validation.connect(v1).commitValidation(1, commit, "", [])
     ).wait();
     await advance(61);
-    await reputation.blacklist(val, true);
+    await reputation.setBlacklist(val, true);
     await expect(
       validation.connect(v1).revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("Blacklisted validator");

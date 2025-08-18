@@ -362,7 +362,7 @@ contract MockReputationEngine is IReputationEngine {
         return _blacklist[user];
     }
 
-    function canAccessPremium(address user) external view override returns (bool) {
+    function meetsThreshold(address user) external view override returns (bool) {
         return _rep[user] >= threshold;
     }
 
@@ -372,11 +372,11 @@ contract MockReputationEngine is IReputationEngine {
         threshold = t;
     }
 
-    function setPremiumThreshold(uint256 t) external override {
+    function setPremiumReputationThreshold(uint256 t) external override {
         threshold = t;
     }
 
-    function blacklist(address user, bool val) external override {
+    function setBlacklist(address user, bool val) external override {
         _blacklist[user] = val;
     }
 

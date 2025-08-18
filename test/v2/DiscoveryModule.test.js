@@ -61,7 +61,7 @@ describe("DiscoveryModule", function () {
   it("excludes blacklisted platforms", async () => {
     await stakeManager.setStake(p1.address, 2, 100);
     await discovery.registerPlatform(p1.address);
-    await engine.connect(owner).blacklist(p1.address, true);
+    await engine.connect(owner).setBlacklist(p1.address, true);
     const top = await discovery.getPlatforms(0, 1);
     expect(top.length).to.equal(0);
   });

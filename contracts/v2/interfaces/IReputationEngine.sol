@@ -48,7 +48,7 @@ interface IReputationEngine {
     /// @notice Determine whether a user meets the premium access threshold
     /// @param user Address to query
     /// @return True if the user's reputation meets or exceeds the threshold
-    function canAccessPremium(address user) external view returns (bool);
+    function meetsThreshold(address user) external view returns (bool);
 
     /// @notice Owner functions
 
@@ -61,12 +61,12 @@ interface IReputationEngine {
     function setThreshold(uint256 newThreshold) external;
 
     /// @notice Set premium reputation threshold
-    function setPremiumThreshold(uint256 newThreshold) external;
+    function setPremiumReputationThreshold(uint256 newThreshold) external;
 
     /// @notice Add or remove a user from the blacklist
     /// @param user Address to update
     /// @param status True to blacklist the user, false to remove
-    function blacklist(address user, bool status) external;
+    function setBlacklist(address user, bool status) external;
 
     /// @notice Job lifecycle hooks
     function onApply(address user) external;
