@@ -667,11 +667,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @dev Does not adjust job-specific escrows; the caller must ensure
     ///      sufficient balance was locked earlier.
     /// @param to Recipient receiving the tokens.
-    /// @param amount Token amount with 6 decimals to release.
+    /// @param amount Base token amount with 6 decimals before AGI bonus.
     function release(address to, uint256 amount) external onlyJobRegistry {
-        uint256 feeAmount = (amount * feePct) / 100;
-        uint256 burnAmount = (amount * burnPct) / 100;
-        uint256 payout = amount - feeAmount - burnAmount;
+        // apply AGI type payout modifier
+        uint256 pct = getHighestPayoutPercentage(to);
+        uint256 modified = (amount * pct) / 100;
+
+        // apply protocol fees and burn on the modified amount
+        uint256 feeAmount = (modified * feePct) / 100;
+        uint256 burnAmount = (modified * burnPct) / 100;
+        uint256 payout = modified - feeAmount - burnAmount;
+
         if (feeAmount > 0 && address(feePool) != address(0)) {
             token.safeTransfer(address(feePool), feeAmount);
             feePool.depositFee(feeAmount);
