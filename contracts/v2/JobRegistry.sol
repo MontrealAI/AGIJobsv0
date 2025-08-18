@@ -301,16 +301,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Set the ENS root node used for agent verification.
     function setAgentRootNode(bytes32 node) external onlyOwner {
         agentRootNode = node;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setAgentRootNode(node);
-        }
         emit RootNodeUpdated("agent", node);
     }
 
     /// @notice Set the agent Merkle root used for identity proofs.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
-        ensOwnershipVerifier.setAgentMerkleRoot(root);
         emit MerkleRootUpdated("agent", root);
     }
 
@@ -544,14 +540,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        bool ownershipVerified =
-            ensOwnershipVerifier.verifyOwnership(
+        bool ownershipVerified;
+        bool authorized = additionalAgents[msg.sender];
+        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+            ownershipVerified = ensOwnershipVerifier.verifyAgent(
                 msg.sender,
                 subdomain,
-                proof,
-                agentRootNode
+                proof
             );
-        bool authorized = ownershipVerified || additionalAgents[msg.sender];
+            authorized = ownershipVerified;
+        }
         require(authorized, "Not authorized agent");
         if (ownershipVerified) {
             emit OwnershipVerified(msg.sender, subdomain);

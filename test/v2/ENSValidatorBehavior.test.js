@@ -123,14 +123,13 @@ describe("Validator ENS integration", function () {
     await validation.setValidatorMerkleRoot(leaf);
     const badProof = [ethers.id("bad")];
     await expect(
-      verifier.verifyOwnership(validator.address, "v", badProof, root)
+      verifier.verifyValidator(validator.address, "v", badProof)
     ).to.not.emit(verifier, "OwnershipVerified");
     expect(
-      await verifier.verifyOwnership.staticCall(
+      await verifier.verifyValidator.staticCall(
         validator.address,
         "v",
-        badProof,
-        root
+        badProof
       )
     ).to.equal(false);
   });

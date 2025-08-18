@@ -257,7 +257,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set validator Merkle root for identity checks.
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
-        ensOwnershipVerifier.setValidatorMerkleRoot(root);
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setMerkleRoots(agentMerkleRoot, root);
+        }
         emit MerkleRootUpdated("validator", root);
         emit ENSIdentityUpdated(clubRootNode, root, address(nameWrapper));
     }
@@ -265,7 +267,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set agent Merkle root for identity checks.
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
-        ensOwnershipVerifier.setAgentMerkleRoot(root);
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setMerkleRoots(root, validatorMerkleRoot);
+        }
         emit MerkleRootUpdated("agent", root);
     }
 
@@ -278,7 +282,12 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Set club root node for validator ENS subdomains.
     function setClubRootNode(bytes32 node) external onlyOwner {
         clubRootNode = node;
-        ensOwnershipVerifier.setClubRootNode(node);
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setRootNodes(
+                ensOwnershipVerifier.agentRootNode(),
+                node
+            );
+        }
         emit RootNodeUpdated("club", node);
         emit ENSIdentityUpdated(node, validatorMerkleRoot, address(nameWrapper));
     }
@@ -368,11 +377,10 @@ contract ValidationModule is IValidationModule, Ownable {
                     bytes32[] memory proof;
                     string memory subdomain = validatorSubdomains[candidate];
                     if (bytes(subdomain).length != 0) {
-                        authorized = ensOwnershipVerifier.verifyOwnership(
+                        authorized = ensOwnershipVerifier.verifyValidator(
                             candidate,
                             subdomain,
-                            proof,
-                            clubRootNode
+                            proof
                         );
                     }
                 }
@@ -463,11 +471,10 @@ contract ValidationModule is IValidationModule, Ownable {
         require(_isValidator(jobId, msg.sender), "not validator");
         bool authorized = additionalValidators[msg.sender];
         if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-            authorized = ensOwnershipVerifier.verifyOwnership(
+            authorized = ensOwnershipVerifier.verifyValidator(
                 msg.sender,
                 subdomain,
-                proof,
-                clubRootNode
+                proof
             );
         }
         require(authorized, "Not authorized validator");
@@ -502,11 +509,10 @@ contract ValidationModule is IValidationModule, Ownable {
         require(block.timestamp <= r.revealDeadline, "reveal closed");
         bool authorized = additionalValidators[msg.sender];
         if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-            authorized = ensOwnershipVerifier.verifyOwnership(
+            authorized = ensOwnershipVerifier.verifyValidator(
                 msg.sender,
                 subdomain,
-                proof,
-                clubRootNode
+                proof
             );
         }
         require(authorized, "Not authorized validator");
