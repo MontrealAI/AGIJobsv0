@@ -17,7 +17,7 @@ contract ValidationStub is IValidationModule {
         result = _result;
     }
 
-    function selectValidators(uint256) external pure returns (address[] memory) {
+    function selectValidators(uint256) external pure override returns (address[] memory) {
         return new address[](0);
     }
 
@@ -26,7 +26,9 @@ contract ValidationStub is IValidationModule {
         bytes32,
         string calldata,
         bytes32[] calldata
-    ) external {}
+    ) external override {}
+
+    function commitValidation(uint256, bytes32) external override {}
 
     function revealValidation(
         uint256,
@@ -34,30 +36,46 @@ contract ValidationStub is IValidationModule {
         bytes32,
         string calldata,
         bytes32[] calldata
-    ) external {}
+    ) external override {}
 
-    function finalize(uint256 jobId) external returns (bool success) {
+    function revealValidation(uint256, bool, bytes32) external override {}
+
+    function finalize(uint256 jobId) external override returns (bool success) {
         success = result;
         if (jobRegistry != address(0)) {
             IJobRegistry(jobRegistry).finalizeAfterValidation(jobId, success);
         }
     }
 
-    function validators(uint256) external pure returns (address[] memory vals) {
+    function finalizeValidation(uint256 jobId) external override returns (bool success) {
+        return this.finalize(jobId);
+    }
+
+    function validators(uint256) external pure override returns (address[] memory vals) {
         vals = new address[](0);
     }
 
-    function setCommitRevealWindows(uint256, uint256) external {}
+    function setCommitRevealWindows(uint256, uint256) external override {}
 
-    function setValidatorBounds(uint256, uint256) external {}
+    function setTiming(uint256, uint256) external override {}
 
-    function setApprovalThreshold(uint256) external {}
+    function setValidatorBounds(uint256, uint256) external override {}
+
+    function setApprovalThreshold(uint256) external override {}
+
+    function addAdditionalValidator(address) external override {}
+
+    function removeAdditionalValidator(address) external override {}
+
+    function setENSRoots(bytes32, bytes32) external override {}
+
+    function setMerkleRoots(bytes32, bytes32) external override {}
 
     function setValidatorSubdomains(
         address[] calldata,
         string[] calldata
-    ) external {}
+    ) external override {}
 
-    function resetJobNonce(uint256) external {}
+    function resetJobNonce(uint256) external override {}
 }
 

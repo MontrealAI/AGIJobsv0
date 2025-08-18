@@ -45,6 +45,8 @@ contract ValidationModule is IValidationModule, Ownable {
 
     // ENS identity references
     bytes32 public clubRootNode;
+    /// @notice ENS root node for agents (for completeness when updating roots)
+    bytes32 public agentRootNode;
     bytes32 public validatorMerkleRoot;
     bytes32 public agentMerkleRoot;
     INameWrapper public nameWrapper;
@@ -304,6 +306,18 @@ contract ValidationModule is IValidationModule, Ownable {
         emit TimingUpdated(commitDur, revealDur);
     }
 
+    /// @notice Convenience wrapper matching original API naming.
+    /// @dev Alias for {setCommitRevealWindows}.
+    function setTiming(uint256 commitDur, uint256 revealDur)
+        external
+        onlyOwner
+    {
+        require(commitDur > 0 && revealDur > 0, "windows");
+        commitWindow = commitDur;
+        revealWindow = revealDur;
+        emit TimingUpdated(commitDur, revealDur);
+    }
+
     /// @notice Set minimum and maximum validators per round.
     function setValidatorBounds(uint256 minVals, uint256 maxVals) external override onlyOwner {
         require(minVals > 0 && maxVals >= minVals, "bounds");
@@ -338,6 +352,34 @@ contract ValidationModule is IValidationModule, Ownable {
         require(maxVals >= minValidators && maxVals > 0, "bounds");
         maxValidators = maxVals;
         emit ValidatorBoundsUpdated(minValidators, maxVals);
+    }
+
+    /// @notice Update both ENS root nodes in a single call.
+    /// @param agentRoot Root node for agent identities.
+    /// @param clubRoot Root node for validator club identities.
+    function setENSRoots(bytes32 agentRoot, bytes32 clubRoot) external onlyOwner {
+        agentRootNode = agentRoot;
+        clubRootNode = clubRoot;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setRootNodes(agentRoot, clubRoot);
+        }
+        emit RootNodeUpdated("agent", agentRoot);
+        emit RootNodeUpdated("club", clubRoot);
+        emit ENSIdentityUpdated(clubRoot, validatorMerkleRoot, address(nameWrapper));
+    }
+
+    /// @notice Update both agent and validator Merkle roots in a single call.
+    /// @param agentRoot Merkle root for agent allowlist.
+    /// @param validatorRoot Merkle root for validator allowlist.
+    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyOwner {
+        agentMerkleRoot = agentRoot;
+        validatorMerkleRoot = validatorRoot;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setMerkleRoots(agentRoot, validatorRoot);
+        }
+        emit MerkleRootUpdated("agent", agentRoot);
+        emit MerkleRootUpdated("validator", validatorRoot);
+        emit ENSIdentityUpdated(clubRootNode, validatorRoot, address(nameWrapper));
     }
 
     function setValidatorSlashingPct(uint256 pct) external onlyOwner {
@@ -496,6 +538,18 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationCommitted(jobId, msg.sender, commitHash);
     }
 
+    /// @notice Backwards-compatible commit function without ENS parameters.
+    /// @param jobId Identifier of the job.
+    /// @param commitHash Hash of the vote and salt.
+    function commitValidation(uint256 jobId, bytes32 commitHash)
+        public
+        override
+        requiresTaxAcknowledgement
+    {
+        bytes32[] memory proof;
+        this.commitValidation(jobId, commitHash, "", proof);
+    }
+
     /// @notice Reveal a previously committed validation vote.
     function revealValidation(
         uint256 jobId,
@@ -539,6 +593,19 @@ contract ValidationModule is IValidationModule, Ownable {
         if (approve) r.approvals += stake; else r.rejections += stake;
 
         emit ValidationRevealed(jobId, msg.sender, approve);
+    }
+
+    /// @notice Backwards-compatible reveal function without ENS parameters.
+    /// @param jobId Identifier of the job.
+    /// @param approve True to approve, false to reject.
+    /// @param salt Salt used in the original commitment.
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt)
+        public
+        override
+        requiresTaxAcknowledgement
+    {
+        bytes32[] memory proof;
+        this.revealValidation(jobId, approve, salt, "", proof);
     }
 
     /// @notice Backwards-compatible wrapper for commitValidation.
@@ -600,6 +667,17 @@ contract ValidationModule is IValidationModule, Ownable {
 
         jobRegistry.finalizeAfterValidation(jobId, success);
         return success;
+    }
+
+    /// @notice Alias for {finalize} using legacy naming.
+    /// @param jobId Identifier of the job.
+    /// @return success True if validators approved the job.
+    function finalizeValidation(uint256 jobId)
+        external
+        override
+        returns (bool success)
+    {
+        return this.finalize(jobId);
     }
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
