@@ -76,6 +76,9 @@ interface IValidationModule {
     /// @notice Update approval threshold percentage
     function setApprovalThreshold(uint256 pct) external;
 
+    /// @notice Update percentage of stake slashed for incorrect validator votes
+    function setValidatorSlashingPct(uint256 pct) external;
+
     /// @notice Manually allow a validator to bypass ENS checks.
     function addAdditionalValidator(address validator) external;
 
