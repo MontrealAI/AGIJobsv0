@@ -549,7 +549,7 @@ describe("StakeManager", function () {
         .connect(registrySigner)
         .lockStake(user.address, 200, Number(lockDuration))
     )
-      .to.emit(stakeManager, "StakeLocked")
+      .to.emit(stakeManager, "StakeLocked(address,uint256,uint64)")
       .withArgs(user.address, 200n, expectedUnlock);
 
     await expect(

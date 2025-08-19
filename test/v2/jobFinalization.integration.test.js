@@ -107,11 +107,13 @@ describe("job finalization integration", function () {
     await validation.setJobRegistry(await registry.getAddress());
     await registry.setFeePool(await feePool.getAddress());
     await registry.setFeePct(feePct);
+    await registry.setValidatorRewardPct(0);
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await registry.setMaxJobReward(reward);
     await registry.setMaxJobDuration(86400);
     await stakeManager.setJobRegistry(await registry.getAddress());
+    await stakeManager.setValidationModule(await validation.getAddress());
     await stakeManager.setDisputeModule(await dispute.getAddress());
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
