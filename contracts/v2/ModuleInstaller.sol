@@ -16,6 +16,7 @@ import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IOwnable {
@@ -91,14 +92,13 @@ contract ModuleInstaller is Ownable {
             reputationEngine,
             disputeModule,
             certificateNFT,
+            IIdentityRegistry(address(0)),
             _ackModules
         );
         jobRegistry.setFeePool(feePool);
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
         }
-        jobRegistry.setENSOwnershipVerifier(ensOwnershipVerifier);
-        jobRegistry.setAgentRootNode(agentRootNode);
         validationModule.setENSOwnershipVerifier(ensOwnershipVerifier);
         validationModule.setClubRootNode(clubRootNode);
         validationModule.setValidatorMerkleRoot(validatorMerkleRoot);
