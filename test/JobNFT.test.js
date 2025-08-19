@@ -74,13 +74,13 @@ describe("JobNFT", function () {
       .to.emit(nft, "NFTListed")
       .withArgs(1, seller.address, price);
 
-    await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
+    await expect(nft.connect(buyer).purchase(1, ethers.ZeroHash)).to.be.revertedWithCustomError(
       token,
       "ERC20InsufficientAllowance"
     );
 
     await token.connect(buyer).approve(await nft.getAddress(), price);
-    await expect(nft.connect(buyer).purchase(1))
+    await expect(nft.connect(buyer).purchase(1, ethers.ZeroHash))
       .to.emit(nft, "NFTPurchased")
       .withArgs(1, buyer.address, price);
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
@@ -108,14 +108,14 @@ describe("JobNFT", function () {
     await expect(nft.connect(buyer).list(1, price)).to.be.revertedWith("owner");
     await expect(nft.connect(seller).list(1, 0)).to.be.revertedWith("price");
 
-    await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith("not listed");
+    await expect(nft.connect(buyer).purchase(1, ethers.ZeroHash)).to.be.revertedWith("not listed");
 
     await nft.connect(seller).list(1, price);
     await expect(nft.connect(buyer).delist(1)).to.be.revertedWith("owner");
     await expect(nft.connect(seller).list(1, price)).to.be.revertedWith("listed");
 
     await token.connect(buyer).approve(await nft.getAddress(), price);
-    await expect(nft.connect(buyer).purchase(1))
+    await expect(nft.connect(buyer).purchase(1, ethers.ZeroHash))
       .to.emit(nft, "NFTPurchased")
       .withArgs(1, buyer.address, price);
   });

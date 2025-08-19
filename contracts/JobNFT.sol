@@ -6,6 +6,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+interface IStakeManager {
+    function releaseJobFunds(bytes32 jobId, address to, uint256 amount) external;
+}
+
 /// @title JobNFT
 /// @notice ERC721 token representing jobs with simple marketplace mechanics.
 /// @dev Minting and burning are restricted to the JobRegistry contract.
@@ -24,6 +28,9 @@ contract JobNFT is ERC721, Ownable {
 
     /// @notice ERC20 token used for purchases ($AGIALPHA).
     IERC20 public immutable agiAlpha;
+
+    /// @notice Optional StakeManager used to release escrowed job funds.
+    IStakeManager public stakeManager;
 
     /// @notice Listing information for marketplace functionality.
     struct Listing {
@@ -80,6 +87,11 @@ contract JobNFT is ERC721, Ownable {
         emit BaseURIUpdated(uri);
     }
 
+    /// @notice Configure StakeManager for escrow-based purchases.
+    function setStakeManager(address manager) external onlyOwner {
+        stakeManager = IStakeManager(manager);
+    }
+
     // ---------------------------------------------------------------------
     // Mint/Burn
     // ---------------------------------------------------------------------
@@ -126,7 +138,9 @@ contract JobNFT is ERC721, Ownable {
     }
 
     /// @notice Purchase a listed token using $AGIALPHA.
-    function purchase(uint256 tokenId) external {
+    /// @param tokenId Token being purchased.
+    /// @param jobId Optional job identifier to release funds from StakeManager.
+    function purchase(uint256 tokenId, bytes32 jobId) external {
         Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         address seller = listing.seller;
@@ -135,7 +149,11 @@ contract JobNFT is ERC721, Ownable {
 
         delete listings[tokenId];
 
-        agiAlpha.safeTransferFrom(msg.sender, seller, price);
+        if (jobId != bytes32(0) && address(stakeManager) != address(0)) {
+            stakeManager.releaseJobFunds(jobId, seller, price);
+        } else {
+            agiAlpha.safeTransferFrom(msg.sender, seller, price);
+        }
         _safeTransfer(seller, msg.sender, tokenId, "");
 
         emit NFTPurchased(tokenId, msg.sender, price);

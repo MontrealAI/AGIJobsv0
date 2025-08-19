@@ -34,6 +34,10 @@ interface ICertificateNFT {
     ) external returns (uint256);
 }
 
+interface IJobNFT {
+    function mint(address to, uint256 jobId) external returns (uint256);
+}
+
 interface IDisputeModule {
     function raiseDispute(uint256 jobId) external;
     function resolve(uint256 jobId, bool employerWins) external;
@@ -64,6 +68,7 @@ contract JobRegistry is Ownable {
     ICertificateNFT public certificateNFT;
     IDisputeModule public disputeModule;
     IFeePool public feePool;
+    IJobNFT public jobNFT;
 
     uint256 public jobReward;
     uint256 public jobStake;
@@ -82,6 +87,7 @@ contract JobRegistry is Ownable {
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
+    event JobNFTUpdated(address nft);
     event DisputeModuleUpdated(address module);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
@@ -148,6 +154,12 @@ contract JobRegistry is Ownable {
         certificateNFT = nft;
         emit CertificateNFTUpdated(address(nft));
         emit ModuleUpdated("CertificateNFT", address(nft));
+    }
+
+    function setJobNFT(IJobNFT nft) external onlyOwner {
+        jobNFT = nft;
+        emit JobNFTUpdated(address(nft));
+        emit ModuleUpdated("JobNFT", address(nft));
     }
 
     function setDisputeModule(IDisputeModule module) external onlyOwner {
@@ -335,6 +347,9 @@ contract JobRegistry is Ownable {
             stakeManager.releaseStake(job.agent, job.stake);
             reputationEngine.add(job.agent, 1);
             certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
+            if (address(jobNFT) != address(0)) {
+                jobNFT.mint(job.employer, jobId);
+            }
         } else {
             stakeManager.payReward(job.employer, job.reward + job.fee);
             stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, job.employer);
