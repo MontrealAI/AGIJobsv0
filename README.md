@@ -50,6 +50,16 @@ Owners retain `onlyOwner` control over parameters, letting them reconfigure live
 4. In the **Write Contract** tab, use `updateAGITokenAddress`, `addAdditionalAgent`, `addAdditionalValidator`, or blacklist functions to tune the deployment. These settings can be updated later without redeploying.
 5. To rotate tokens in the future, call `updateAGITokenAddress(newToken)`; all accounting continues in 6‑decimal units.
 
+### Etherscan Deployment Checklist
+
+1. **Deploy `$AGIALPHAToken`** – a 6‑decimal ERC‑20 that powers stakes, rewards, and fees. When entering amounts on block explorers, supply integers (`1 token = 1_000000`).
+2. **Deploy core modules** – `JobRegistry`, `StakeManager`, `ValidationModule`, `FeePool`, `TaxPolicy`, and any extras. Use [`Deployer.deployDefaults()`](contracts/v2/Deployer.sol) for a one‑shot setup or deploy each contract individually.
+3. **Wire modules** – on `JobRegistry` → **Write Contract**, call `setModules(stakeManager, validationModule, disputeModule, feePool)` with the deployed addresses.
+4. **Configure parameters** – from each module’s **Write** tab set tokens with `StakeManager.setToken` and `FeePool.setToken`; load ENS root nodes and allowlists via `JobRegistry.setAgentRootNode`, `ValidationModule.setClubRootNode`, `JobRegistry.setAgentMerkleRoot`, and `ValidationModule.setValidatorMerkleRoot`; initialize validator pools; and point `JobRegistry`/`DisputeModule` to a `TaxPolicy` using `setTaxPolicy`. Every setting is owner‑only and can be updated later without redeployment.
+5. **Verify & interact** – verify sources for each address on Etherscan, then use the **Write Contract** tabs for staking, posting jobs, claiming rewards, and future admin updates.
+
+> **ENS note:** Agents must control a `.agent.agi.eth` subdomain and validators a `.club.agi.eth` subdomain. Obtain the Merkle proof for your address from AGI operators or generate it from the published allowlist, then include the label and proof when calling `applyForJob` or `commitValidation`. See [ENS subdomain prerequisites](#ens-subdomain-prerequisites) for details.
+
 ### Module sequence
 1. **Deploy** – use [`Deployer.sol`](contracts/v2/Deployer.sol) and call `deployDefaults()` or deploy each module manually.
 2. **Wire modules** – if deploying individually, call `setModules(...)` on `JobRegistry` to provide the addresses of `StakeManager`, `ValidationModule`, `DisputeModule`, and `FeePool`.
