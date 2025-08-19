@@ -86,7 +86,10 @@ describe("Ownable modules", function () {
       [StakeManager.attach(stake), (inst, signer) => inst.connect(signer).setFeePct(1)],
       [JobRegistry.attach(registry), (inst, signer) => inst.connect(signer).setFeePct(1)],
       [ValidationModule.attach(validation), (inst, signer) => inst.connect(signer).setCommitWindow(1)],
-      [ReputationEngine.attach(reputation), (inst, signer) => inst.connect(signer).setWeights(0, 0)],
+      [
+        ReputationEngine.attach(reputation),
+        (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
+      ],
       [DisputeModule.attach(dispute), (inst, signer) => inst.connect(signer).setDisputeFee(0)],
       [CertificateNFT.attach(certificate), (inst, signer) => inst.connect(signer).setBaseURI("ipfs://new")],
       [PlatformRegistry.attach(platformRegistry), (inst, signer) => inst.connect(signer).setMinPlatformStake(0)],
