@@ -667,7 +667,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ///      computed result of the commit-reveal process.
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
-    function finalizeAfterValidation(uint256 jobId, bool success) external {
+    function finalizeAfterValidation(uint256 jobId, bool success) public {
         require(msg.sender == address(validationModule), "only validation");
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
@@ -677,6 +677,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (success) {
             finalize(jobId);
         }
+    }
+
+    function validationComplete(uint256 jobId, bool success) external {
+        finalizeAfterValidation(jobId, success);
     }
 
     /// @notice Agent or employer disputes a job outcome with supporting evidence.
