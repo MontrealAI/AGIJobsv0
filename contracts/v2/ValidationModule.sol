@@ -425,40 +425,53 @@ contract ValidationModule is IValidationModule, Ownable {
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
         uint256[] memory stakes = new uint256[](n);
-        uint256 totalStake;
         uint256 m;
 
         for (uint256 i; i < n; ++i) {
             address candidate = pool[i];
             uint256 stake = stakeManager.stakeOf(candidate, IStakeManager.Role.Validator);
+            if (stake == 0) continue;
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) continue;
             }
-            if (stake > 0) {
-                bool authorized = additionalValidators[candidate];
-                if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-                    bytes32[] memory proof;
-                    string memory subdomain = validatorSubdomains[candidate];
-                    if (bytes(subdomain).length != 0) {
-                        authorized = ensOwnershipVerifier.verifyValidator(
-                            candidate,
-                            subdomain,
-                            proof
-                        );
-                    }
+            bool authorized = additionalValidators[candidate];
+            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+                bytes32[] memory proof;
+                string memory subdomain = validatorSubdomains[candidate];
+                if (bytes(subdomain).length != 0) {
+                    authorized = ensOwnershipVerifier.verifyValidator(
+                        candidate,
+                        subdomain,
+                        proof
+                    );
                 }
-                if (!authorized) continue;
-                stakes[m] = stake;
-                pool[m] = candidate;
-                totalStake += stake;
-                m++;
             }
+            if (!authorized) continue;
+            pool[m] = candidate;
+            stakes[m] = stake;
+            m++;
         }
 
         require(m >= minValidators, "insufficient validators");
         uint256 count = m < maxValidators ? m : maxValidators;
 
-        selected = _selectValidators(jobId, pool, stakes, m, count, totalStake);
+        // pseudo-randomly shuffle eligible validators
+        bytes32 seed = keccak256(
+            abi.encodePacked(blockhash(block.number - 1), jobId, jobNonce[jobId])
+        );
+        for (uint256 i; i < m; ++i) {
+            seed = keccak256(abi.encodePacked(seed, i));
+            uint256 j = i + (uint256(seed) % (m - i));
+            (pool[i], pool[j]) = (pool[j], pool[i]);
+            (stakes[i], stakes[j]) = (stakes[j], stakes[i]);
+        }
+
+        selected = new address[](count);
+        for (uint256 i; i < count; ++i) {
+            address val = pool[i];
+            selected[i] = val;
+            validatorStakes[jobId][val] = stakes[i];
+        }
 
         r.validators = selected;
         r.commitDeadline = block.timestamp + commitWindow;
@@ -466,53 +479,6 @@ contract ValidationModule is IValidationModule, Ownable {
 
         emit ValidatorsSelected(jobId, selected);
         return selected;
-    }
-
-    function _selectValidators(
-        uint256 jobId,
-        address[] memory pool,
-        uint256[] memory stakes,
-        uint256 m,
-        uint256 count,
-        uint256 totalStake
-    ) internal returns (address[] memory selected) {
-        bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), jobId, jobNonce[jobId])
-        );
-        selected = new address[](count);
-        uint256 remaining = m;
-        for (uint256 i; i < count; ++i) {
-            seed = keccak256(abi.encodePacked(seed, i));
-            uint256 rnum = uint256(seed) % totalStake;
-            uint256 cumulative;
-            uint256 idx;
-            for (uint256 j; j < remaining; ++j) {
-                cumulative += stakes[j];
-                if (rnum < cumulative) {
-                    idx = j;
-                    break;
-                }
-            }
-            address val = pool[idx];
-            selected[i] = val;
-            validatorStakes[jobId][val] = stakes[idx];
-
-            totalStake -= stakes[idx];
-            pool[idx] = pool[remaining - 1];
-            stakes[idx] = stakes[remaining - 1];
-            remaining--;
-        }
-
-        // sort selected validators by stake for deterministic order
-        for (uint256 i; i < selected.length; ++i) {
-            for (uint256 j = i + 1; j < selected.length; ++j) {
-                if (validatorStakes[jobId][selected[j]] > validatorStakes[jobId][selected[i]]) {
-                    address tmp = selected[i];
-                    selected[i] = selected[j];
-                    selected[j] = tmp;
-                }
-            }
-        }
     }
 
     /// @notice Commit a validation hash for a job.
@@ -706,7 +672,7 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationFinalized(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
-        jobRegistry.validationComplete(jobId, success);
+        jobRegistry.finalizeAfterValidation(jobId, success);
         return success;
     }
 
