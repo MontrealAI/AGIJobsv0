@@ -275,6 +275,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("IdentityRegistry", address(registry));
     }
 
+    /// @notice Legacy getter retained for backwards compatibility.
+    /// @dev Returns the address of the current IdentityRegistry.
+    function ensOwnershipVerifier() external view returns (address) {
+        return address(identityRegistry);
+    }
+
     /// @notice update the FeePool contract used for revenue sharing
     function setFeePool(IFeePool _feePool) external onlyOwner {
         feePool = _feePool;
