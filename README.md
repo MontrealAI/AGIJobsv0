@@ -27,6 +27,42 @@ Owners retain `onlyOwner` control over parameters, letting them reconfigure live
 
 ## Deployment & Configuration
 
+### Scripted deployment
+
+For automated setups the repository ships with Hardhat and Foundry scripts.
+Running them deploys the `$AGIALPHA` token and all core modules, wires
+dependencies, transfers ownership to an optional multisig and writes contract
+addresses to `docs/deployment-addresses.json`.
+
+#### Hardhat
+
+```bash
+npx hardhat run scripts/deployAll.ts --network <network>
+# transfer ownership to a multisig
+MULTISIG=0xYourSafe npx hardhat run scripts/deployAll.ts --network <network>
+```
+
+#### Foundry
+
+```bash
+PRIVATE_KEY=<hex> OWNER=0xYourSafe \
+forge script script/DeployAll.s.sol --broadcast --rpc-url $RPC_URL
+```
+
+#### Updating parameters post‑deployment
+
+Rotate ENS roots or Merkle roots without redeploying:
+
+```bash
+# Hardhat
+AGENT_ROOT=0x.. CLUB_ROOT=0x.. \
+npx hardhat run scripts/updateParams.ts --network <network>
+
+# Foundry
+AGENT_ROOT=0x.. CLUB_ROOT=0x.. \
+forge script script/UpdateParams.s.sol --broadcast --rpc-url $RPC_URL --private-key $PRIVATE_KEY
+```
+
 ### Deploying legacy v0 with $AGIALPHA
 
 **Prerequisites**

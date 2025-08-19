@@ -1,5 +1,6 @@
 import { writeFileSync } from "fs";
 import { join } from "path";
+import { ethers } from "hardhat";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
