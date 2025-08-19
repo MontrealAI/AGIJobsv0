@@ -42,20 +42,20 @@ describe("CertificateNFT marketplace", function () {
       const sellerStart = await token.balanceOf(seller.address);
       const buyerStart = await token.balanceOf(buyer.address);
 
-      await expect(nft.connect(seller).list(1, price))
+      await expect(nft.connect(seller).listNFT(1, price))
         .to.emit(nft, "NFTListed")
         .withArgs(1, seller.address, price);
 
-      await expect(nft.connect(seller).list(1, price)).to.be.revertedWith(
+      await expect(nft.connect(seller).listNFT(1, price)).to.be.revertedWith(
         "listed"
       );
 
-      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
+      await expect(nft.connect(buyer).purchaseNFT(1)).to.be.revertedWith(
         "allowance"
       );
 
       await token.connect(buyer).approve(await nft.getAddress(), price);
-      await expect(nft.connect(buyer).purchase(1))
+      await expect(nft.connect(buyer).purchaseNFT(1))
         .to.emit(nft, "NFTPurchased")
         .withArgs(1, buyer.address, price);
       expect(await nft.ownerOf(1)).to.equal(buyer.address);
@@ -68,31 +68,31 @@ describe("CertificateNFT marketplace", function () {
       );
 
       await nft.mint(seller.address, 2, "ipfs://2");
-      await nft.connect(seller).list(2, price);
-      await expect(nft.connect(seller).delist(2))
+      await nft.connect(seller).listNFT(2, price);
+      await expect(nft.connect(seller).delistNFT(2))
         .to.emit(nft, "NFTDelisted")
         .withArgs(2);
     });
 
   it("rejects invalid listings", async () => {
-      await expect(nft.connect(buyer).list(1, price)).to.be.revertedWith(
+      await expect(nft.connect(buyer).listNFT(1, price)).to.be.revertedWith(
         "owner"
       );
-      await expect(nft.connect(seller).list(1, 0)).to.be.revertedWith("price");
+      await expect(nft.connect(seller).listNFT(1, 0)).to.be.revertedWith("price");
 
-      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
+      await expect(nft.connect(buyer).purchaseNFT(1)).to.be.revertedWith(
         "not listed"
       );
 
-      await nft.connect(seller).list(1, price);
-      await expect(nft.connect(buyer).delist(1)).to.be.revertedWith("owner");
-      await expect(nft.connect(seller).list(1, price)).to.be.revertedWith(
+      await nft.connect(seller).listNFT(1, price);
+      await expect(nft.connect(buyer).delistNFT(1)).to.be.revertedWith("owner");
+      await expect(nft.connect(seller).listNFT(1, price)).to.be.revertedWith(
         "listed"
       );
     });
 
   it("guards purchase against reentrancy", async () => {
-      await nft.connect(seller).list(1, price);
+      await nft.connect(seller).listNFT(1, price);
 
       const Reenter = await ethers.getContractFactory(
         "contracts/mocks/ReentrantBuyer.sol:ReentrantBuyer"

@@ -91,7 +91,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         return custom;
     }
 
-    function list(uint256 tokenId, uint256 price) external {
+    function listNFT(uint256 tokenId, uint256 price) external {
         require(ownerOf(tokenId) == msg.sender, "owner");
         require(price > 0, "price");
         Listing storage listing = listings[tokenId];
@@ -102,7 +102,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         emit NFTListed(tokenId, msg.sender, price);
     }
 
-    function purchase(uint256 tokenId) external {
+    function purchaseNFT(uint256 tokenId) external {
         Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         address seller = listing.seller;
@@ -119,7 +119,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         emit NFTPurchased(tokenId, msg.sender, price);
     }
 
-    function delist(uint256 tokenId) external {
+    function delistNFT(uint256 tokenId) external {
         Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         require(listing.seller == msg.sender, "owner");
