@@ -95,7 +95,7 @@ describe("StakeManager AGIType bonuses", function () {
         .connect(registrySigner)
         .releaseJobFunds(jobId, agent.address, 100)
     )
-      .to.emit(stakeManager, "JobFundsReleased")
+      .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, agent.address, 175);
 
     expect(await token.balanceOf(agent.address)).to.equal(175n);
@@ -120,7 +120,7 @@ describe("StakeManager AGIType bonuses", function () {
         .connect(registrySigner)
         .releaseJobFunds(jobId, agent.address, 100)
     )
-      .to.emit(stakeManager, "JobFundsReleased")
+      .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, agent.address, 100);
   });
 

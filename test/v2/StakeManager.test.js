@@ -81,7 +81,7 @@ describe("StakeManager", function () {
 
     await expect(
       stakeManager.connect(registrySigner).releaseJobFunds(jobId, user.address, 200)
-    ).to.emit(stakeManager, "JobFundsReleased").withArgs(jobId, user.address, 200);
+    ).to.emit(stakeManager, "StakeReleased").withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 
     await expect(
@@ -399,7 +399,7 @@ describe("StakeManager", function () {
         .connect(registrySigner2)
         .releaseJobFunds(jobId, user.address, 100)
     )
-      .to.emit(stakeManager, "JobFundsReleased")
+      .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, user.address, 100);
 
     // balances reflect only the new token being used
