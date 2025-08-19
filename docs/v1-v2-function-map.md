@@ -47,3 +47,16 @@ The table below maps common public functions from the monolithic `AGIJobManagerV
 | `setCommitDuration` / `setRevealDuration` | `ValidationModule` | `setCommitWindow` / `setRevealWindow` |
 
 This list focuses on externally callable functions. Internal helpers and purely informational getters in v1 are omitted or replaced by public state variables in v2.
+
+## Event name mapping
+
+To aid log filtering during migration, v2 preserves the familiar event names from v1.
+
+| v1 event | v2 event |
+| --- | --- |
+| `JobCreated` | `JobCreated` |
+| `JobApplied` | `JobApplied` |
+| `JobSubmitted` | `JobSubmitted` |
+| `JobCompleted` | `JobCompleted` |
+| `JobFinalized` | `JobFinalized` |
+
