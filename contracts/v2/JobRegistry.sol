@@ -7,26 +7,10 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
-
-interface IReputationEngine {
-    function add(address user, uint256 amount) external;
-    function subtract(address user, uint256 amount) external;
-    function isBlacklisted(address user) external view returns (bool);
-}
-
-interface IDisputeModule {
-    function raiseDispute(
-        uint256 jobId,
-        address claimant,
-        string calldata evidence
-    ) external;
-    function resolveDispute(uint256 jobId, bool employerWins) external;
-}
-
-interface ICertificateNFT {
-    function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
-}
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
+import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
+import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -52,6 +36,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint96 stake;
         uint32 feePct;
         uint64 deadline;
+        uint64 start;
         State state;
         bool success;
         string uri;
@@ -68,10 +53,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
-    ENSOwnershipVerifier public ensOwnershipVerifier;
-    bytes32 public agentRootNode;
-    bytes32 public agentMerkleRoot;
-    mapping(address => bool) public additionalAgents;
+    IIdentityRegistry public identityRegistry;
 
     /// @notice Current version of the tax policy. Participants must acknowledge
     /// this version before interacting. The contract owner remains exempt.
@@ -147,22 +129,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param acknowledger Address being granted or revoked the role.
     /// @param allowed True if the address can acknowledge for others.
     event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
-    /// @notice Emitted when an additional agent is added or removed.
-    /// @param agent Address being updated.
-    /// @param allowed True if the agent is whitelisted, false if removed.
-    event AdditionalAgentUpdated(address indexed agent, bool allowed);
-    /// @notice Emitted when agent ENS ownership is verified or bypassed.
-    /// @param agent Address claiming ownership.
-    /// @param subdomain ENS subdomain label.
-    event OwnershipVerified(address indexed agent, string subdomain);
-    /// @notice Emitted when an ENS root node is updated.
-    /// @param node Identifier for the root node being modified.
-    /// @param newRoot The new ENS root node hash.
-    event RootNodeUpdated(string node, bytes32 newRoot);
-    /// @notice Emitted when a Merkle root is updated.
-    /// @param root Identifier for the Merkle root being modified.
-    /// @param newRoot The new Merkle root hash.
-    event MerkleRootUpdated(string root, bytes32 newRoot);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -197,6 +163,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IReputationEngine _reputation,
         IDisputeModule _dispute,
         ICertificateNFT _certNFT,
+        IIdentityRegistry _identity,
         IFeePool _feePool,
         ITaxPolicy _policy,
         uint256 _feePct,
@@ -208,6 +175,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         reputationEngine = _reputation;
         disputeModule = _dispute;
         certificateNFT = _certNFT;
+        identityRegistry = _identity;
         feePool = _feePool;
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
         require(pct <= 100, "pct");
@@ -234,6 +202,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (address(_certNFT) != address(0)) {
             emit CertificateNFTUpdated(address(_certNFT));
             emit ModuleUpdated("CertificateNFT", address(_certNFT));
+        }
+        if (address(_identity) != address(0)) {
+            emit ModuleUpdated("IdentityRegistry", address(_identity));
         }
         if (address(_feePool) != address(0)) {
             emit FeePoolUpdated(address(_feePool));
@@ -263,6 +234,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IReputationEngine _reputation,
         IDisputeModule _dispute,
         ICertificateNFT _certNFT,
+        IIdentityRegistry _identity,
         address[] calldata _ackModules
     ) external onlyOwner {
         require(address(_validation) != address(0), "validation");
@@ -270,6 +242,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(address(_reputation) != address(0), "reputation");
         require(address(_dispute) != address(0), "dispute");
         require(address(_certNFT) != address(0), "nft");
+        require(address(_identity) != address(0), "identity");
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -278,6 +251,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         reputationEngine = _reputation;
         disputeModule = _dispute;
         certificateNFT = _certNFT;
+        identityRegistry = _identity;
         emit ValidationModuleUpdated(address(_validation));
         emit ModuleUpdated("ValidationModule", address(_validation));
         emit StakeManagerUpdated(address(_stakeMgr));
@@ -288,61 +262,17 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("DisputeModule", address(_dispute));
         emit CertificateNFTUpdated(address(_certNFT));
         emit ModuleUpdated("CertificateNFT", address(_certNFT));
+        emit ModuleUpdated("IdentityRegistry", address(_identity));
         for (uint256 i; i < _ackModules.length; i++) {
             acknowledgers[_ackModules[i]] = true;
             emit AcknowledgerUpdated(_ackModules[i], true);
         }
     }
 
-    /// @notice Update the ENS ownership verifier contract.
-    function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
-        ensOwnershipVerifier = verifier;
-        emit ModuleUpdated("ENSOwnershipVerifier", address(verifier));
-    }
-
-    /// @notice Set the ENS root node used for agent verification.
-    function setAgentRootNode(bytes32 node) external onlyOwner {
-        agentRootNode = node;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setAgentRootNode(node);
-        }
-        emit RootNodeUpdated("agent", node);
-    }
-
-    /// @notice Set the agent Merkle root used for identity proofs.
-    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
-        agentMerkleRoot = root;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setAgentMerkleRoot(root);
-        }
-        emit MerkleRootUpdated("agent", root);
-    }
-
-    /// @notice Configure additional agents that bypass ENS checks.
-    function setAdditionalAgents(
-        address[] calldata agents,
-        bool[] calldata allowed
-    ) external onlyOwner {
-        require(agents.length == allowed.length, "length");
-        for (uint256 i; i < agents.length; ++i) {
-            additionalAgents[agents[i]] = allowed[i];
-            emit AdditionalAgentUpdated(agents[i], allowed[i]);
-        }
-    }
-
-    /// @notice Manually allow an agent to bypass ENS checks.
-    /// @param agent Address to whitelist.
-    function addAdditionalAgent(address agent) external onlyOwner {
-        require(agent != address(0), "agent");
-        additionalAgents[agent] = true;
-        emit AdditionalAgentUpdated(agent, true);
-    }
-
-    /// @notice Remove an agent from the manual allowlist.
-    /// @param agent Address to remove.
-    function removeAdditionalAgent(address agent) external onlyOwner {
-        additionalAgents[agent] = false;
-        emit AdditionalAgentUpdated(agent, false);
+    /// @notice Update the identity registry contract used for agent authorization.
+    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+        identityRegistry = registry;
+        emit ModuleUpdated("IdentityRegistry", address(registry));
     }
 
     /// @notice update the FeePool contract used for revenue sharing
@@ -499,6 +429,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             stake: jobStake,
             feePct: feePctSnapshot,
             deadline: deadline,
+            start: uint64(block.timestamp),
             state: State.Created,
             success: false,
             uri: uri,
@@ -549,25 +480,22 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        bool ownershipVerified;
-        bool authorized = additionalAgents[msg.sender];
-        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-            ownershipVerified = ensOwnershipVerifier.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
+        if (address(identityRegistry) != address(0)) {
+            require(
+                identityRegistry.isAuthorizedAgent(
+                    msg.sender,
+                    subdomain,
+                    proof
+                ),
+                "Not authorized agent"
             );
-            authorized = ownershipVerified;
-        }
-        require(authorized, "Not authorized agent");
-        if (ownershipVerified) {
-            emit OwnershipVerified(msg.sender, subdomain);
         }
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
                 "Blacklisted agent"
             );
+            reputationEngine.onApply(msg.sender);
         }
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
@@ -580,9 +508,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
         job.agent = msg.sender;
         job.state = State.Applied;
-        if (address(reputationEngine) != address(0)) {
-            reputationEngine.add(msg.sender, 1);
-        }
         emit JobApplied(jobId, msg.sender);
     }
 
@@ -641,13 +566,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Agent submits work for validation and selects validators.
     /// @param jobId Identifier of the job being submitted.
     /// @param result Metadata URI describing the completed work.
-    function submit(uint256 jobId, string calldata result)
+    function submitJob(uint256 jobId, string calldata result)
         public
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
+        require(block.timestamp <= job.deadline, "deadline passed");
         job.result = result;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, result);
@@ -656,18 +582,21 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
     }
 
+    /// @notice Legacy wrapper for `submitJob`.
+    function submit(uint256 jobId, string calldata result) public {
+        submitJob(jobId, result);
+    }
+
     /// @notice Acknowledge the tax policy and submit work in one call.
     function acknowledgeAndSubmit(uint256 jobId, string calldata result) external {
         _acknowledge(msg.sender);
-        submit(jobId, result);
+        submitJob(jobId, result);
     }
 
-    /// @notice Finalize job outcome after validation.
-    /// @dev Only the ValidationModule may call this entry point with the
-    ///      computed result of the commit-reveal process.
+    /// @notice Callback invoked by the validation module when voting concludes.
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
-    function finalizeAfterValidation(uint256 jobId, bool success) external {
+    function validationComplete(uint256 jobId, bool success) public {
         require(msg.sender == address(validationModule), "only validation");
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
@@ -677,6 +606,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (success) {
             finalize(jobId);
         }
+    }
+
+    /// @notice Legacy wrapper for {validationComplete}.
+    function finalizeAfterValidation(uint256 jobId, bool success) external {
+        validationComplete(jobId, success);
     }
 
     /// @notice Agent or employer disputes a job outcome with supporting evidence.
@@ -757,8 +691,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(job.state == State.Completed, "not ready");
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
+        uint256 duration = block.timestamp - uint256(job.start);
         if (job.success) {
             IFeePool pool = feePool;
+            uint256 agentReward = uint256(job.reward);
             if (address(stakeManager) != address(0)) {
                 uint256 fee;
                 if (address(pool) != address(0) && job.reward > 0) {
@@ -788,8 +724,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 );
                 uint256 rewardAfterValidator =
                     uint256(job.reward) - validatorReward;
-                uint256 agentReward =
-                    (rewardAfterValidator * agentPct) / 100;
+                agentReward = (rewardAfterValidator * agentPct) / 100;
 
                 stakeManager.finalizeJobFunds(
                     jobKey,
@@ -816,7 +751,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                reputationEngine.add(job.agent, 1);
+                reputationEngine.onFinalize(
+                    job.agent,
+                    true,
+                    agentReward,
+                    duration
+                );
             }
             if (address(certificateNFT) != address(0)) {
                 certificateNFT.mint(job.agent, jobId, job.uri);
@@ -841,7 +781,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                reputationEngine.subtract(job.agent, 1);
+                reputationEngine.onFinalize(job.agent, false, 0, duration);
             }
         }
         emit JobFinalized(jobId, job.success);
