@@ -45,6 +45,10 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         emit AcknowledgementUpdated(ack);
         emit PolicyVersionUpdated(1);
     }
+    
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
 
     /// @notice Updates the off-chain policy URI.
     /// @param uri New URI pointing to policy text (e.g., IPFS hash).

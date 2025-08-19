@@ -91,6 +91,10 @@ contract DisputeModule is Ownable {
         _;
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Update the JobRegistry reference.
     /// @param newRegistry New JobRegistry contract implementing IJobRegistry.
     function setJobRegistry(IJobRegistry newRegistry) external onlyOwner {

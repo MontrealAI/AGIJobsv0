@@ -52,6 +52,10 @@ contract DiscoveryModule is Ownable {
         emit PlatformRegistered(operator);
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Deregister a platform
     function deregisterPlatform(address operator) external onlyOwner {
         if (!isPlatform[operator]) return;

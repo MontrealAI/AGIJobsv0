@@ -41,6 +41,17 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
    ![claim-rewards](https://via.placeholder.com/650x150?text=claimRewards)
 6. **acknowledgeAndDispute** – if contesting a job, approve the `StakeManager` for the `appealFee` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)`.
 
+### Sample Owner Parameters
+
+When using the **Write Contract** tab as the owner, populate fields with explicit values:
+
+| Contract | Function | Example parameters |
+| --- | --- | --- |
+| `StakeManager` | `setFeePct(pct)` | `20` |
+| `JobRegistry` | `setFeePct(pct)` | `5` |
+| `TaxPolicy` | `setPolicyURI("ipfs://Qm...")` | `ipfs://QmPolicyHash` |
+| `FeePool` | `ownerWithdraw(to, amount)` | `0x1111111111111111111111111111111111111111`, `1000000` |
+
 ## Module Addresses & Roles
 | Module | Address | Role |
 | --- | --- | --- |

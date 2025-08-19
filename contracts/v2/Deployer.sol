@@ -93,6 +93,10 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy
+    // ---------------------------------------------------------------------
+    // Deployment entrypoints (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     function deploy(EconParams calldata econ, IdentityParams calldata ids)
         external
         onlyOwner

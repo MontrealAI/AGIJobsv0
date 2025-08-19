@@ -23,6 +23,10 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         _;
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
     }

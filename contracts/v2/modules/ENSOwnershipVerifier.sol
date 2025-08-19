@@ -54,6 +54,10 @@ contract ENSOwnershipVerifier is Ownable {
         }
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Update ENS registry address
     /// @param ensAddr New ENS registry contract address
     function setENS(address ensAddr) external onlyOwner {

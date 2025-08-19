@@ -39,6 +39,10 @@ contract ReputationEngine is Ownable {
         _;
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Authorize or revoke a caller.
     function setAuthorizedCaller(address caller, bool allowed) external onlyOwner {
         callers[caller] = allowed;

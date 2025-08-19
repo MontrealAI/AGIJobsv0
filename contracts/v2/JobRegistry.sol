@@ -255,6 +255,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------------
     // Owner configuration
     // ---------------------------------------------------------------------
+    // Setters below are executed manually via Etherscan's "Write Contract"
+    // tab using the authorized owner account.
     function setModules(
         IValidationModule _validation,
         IStakeManager _stakeMgr,
