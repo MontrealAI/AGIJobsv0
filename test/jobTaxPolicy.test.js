@@ -18,12 +18,23 @@ describe("JobRegistry tax policy integration", function () {
     const RegistryFactory = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
+    );
+    const identity = await Identity.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
     registry = await RegistryFactory.deploy(
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
+      await identity.getAddress(),
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       0,
