@@ -105,6 +105,10 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param newRoot The new Merkle root hash.
     event MerkleRootUpdated(string root, bytes32 newRoot);
 
+    /// @notice Emitted when the ENS ownership verifier module is updated.
+    /// @param verifier Address of the new ENSOwnershipVerifier contract.
+    event ENSOwnershipVerifierUpdated(address verifier);
+
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
         if (msg.sender != owner()) {
@@ -208,8 +212,10 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @notice Update the ENS ownership verifier contract.
+    /// @dev Emits {ENSOwnershipVerifierUpdated} for off-chain tracking.
     function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
         ensOwnershipVerifier = verifier;
+        emit ENSOwnershipVerifierUpdated(address(verifier));
     }
 
     /// @notice Return validators selected for a job

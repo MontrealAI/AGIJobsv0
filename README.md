@@ -3,6 +3,8 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. Both the legacy v0 contract and the modular v2 suite default to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The token address is stored on-chain and the contract owner may replace it at any time (`AGIJobManagerv0.updateAGITokenAddress` or `StakeManager.setToken` / `FeePool.setToken`) without redeploying any module. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+Non‑technical owners can deploy and configure the legacy contract entirely from a web browser. The [deployment guide](docs/deployment-v0-agialpha.md) walks through using block‑explorer "Write" tabs to initialise `$AGIALPHA` for payments, staking, rewards and dispute resolution, all of which remain owner‑configurable without redeployment.
+
 All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Agents must control an ENS subdomain ending in `.agent.agi.eth`, while validators require one ending in `.club.agi.eth`. Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
 
 For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
