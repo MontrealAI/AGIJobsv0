@@ -57,6 +57,8 @@ interface IReputationEngine {
     /// @param allowed True to authorise the caller, false to revoke
     function setAuthorizedCaller(address caller, bool allowed) external;
 
+    function setCaller(address caller, bool allowed) external;
+
     /// @notice Set the minimum score threshold for certain actions
     function setThreshold(uint256 newThreshold) external;
 
@@ -71,7 +73,7 @@ interface IReputationEngine {
     /// @notice Job lifecycle hooks
     function onApply(address user) external;
 
-    function onFinalize(address user, bool success, uint256 payout, uint256 duration) external;
+    function onFinalize(address user, bool success, uint256 payout, uint256 duration, address[] calldata validators) external;
 
     function rewardValidator(address validator, uint256 agentGain) external;
 

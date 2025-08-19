@@ -374,6 +374,8 @@ contract MockReputationEngine is IReputationEngine {
 
     function setAuthorizedCaller(address, bool) external override {}
 
+    function setCaller(address, bool) external override {}
+
     function setThreshold(uint256 t) external override {
         threshold = t;
     }
@@ -388,12 +390,20 @@ contract MockReputationEngine is IReputationEngine {
 
     function onApply(address user) external override {
         require(!_blacklist[user], "blacklisted");
-        require(_rep[user] >= threshold, "insufficient reputation");
     }
 
-    function onFinalize(address user, bool success, uint256, uint256) external override {
+    function onFinalize(
+        address user,
+        bool success,
+        uint256,
+        uint256,
+        address[] calldata validators
+    ) external override {
         if (success) {
             _rep[user] += 1;
+            for (uint256 i = 0; i < validators.length; i++) {
+                _rep[validators[i]] += 1;
+            }
         } else if (_rep[user] < threshold) {
             _blacklist[user] = true;
         }
