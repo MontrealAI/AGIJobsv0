@@ -2,18 +2,9 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {IENS} from "../interfaces/IENS.sol";
 import {INameWrapper} from "../interfaces/INameWrapper.sol";
-
-/// @title Resolver interface
-/// @notice Interface to query addresses from ENS records.
-interface IResolver {
-    /// @notice Get the address associated with an ENS node.
-    /// @param node The ENS node hash.
-    /// @return resolvedAddress The resolved payable address for `node`.
-    function addr(bytes32 node) external view returns (address payable resolvedAddress);
-}
+import {VerifyOwnership} from "./VerifyOwnership.sol";
 
 /// @title ENSOwnershipVerifier
 /// @notice Verifies ownership of ENS subdomains via Merkle proofs or on-chain lookups
@@ -145,47 +136,25 @@ contract ENSOwnershipVerifier is Ownable {
         bytes32[] calldata proof,
         bytes32 rootNode
     ) internal returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(claimant));
-        bytes32 merkleRoot;
-        if (rootNode == clubRootNode) {
-            merkleRoot = validatorMerkleRoot;
-        } else if (rootNode == agentRootNode) {
-            merkleRoot = agentMerkleRoot;
-        } else {
-            return false;
-        }
-        if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
+        (bool ok, string memory reason) = VerifyOwnership.verifyOwnership(
+            claimant,
+            subdomain,
+            proof,
+            rootNode,
+            clubRootNode,
+            agentRootNode,
+            validatorMerkleRoot,
+            agentMerkleRoot,
+            ens,
+            nameWrapper
+        );
+        if (ok) {
             emit OwnershipVerified(claimant, subdomain);
             return true;
         }
-
-        bytes32 subnode = keccak256(abi.encodePacked(rootNode, keccak256(bytes(subdomain))));
-        try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
-            if (actualOwner == claimant) {
-                emit OwnershipVerified(claimant, subdomain);
-                return true;
-            }
-        } catch Error(string memory reason) {
+        if (bytes(reason).length != 0) {
             emit RecoveryInitiated(reason);
-        } catch {
-            emit RecoveryInitiated("NameWrapper call failed without a specified reason.");
         }
-
-        address resolverAddr = ens.resolver(subnode);
-        if (resolverAddr != address(0)) {
-            IResolver resolver = IResolver(resolverAddr);
-            try resolver.addr(subnode) returns (address payable resolvedAddress) {
-                if (resolvedAddress == claimant) {
-                    emit OwnershipVerified(claimant, subdomain);
-                    return true;
-                }
-            } catch {
-                emit RecoveryInitiated("Resolver call failed without a specified reason.");
-            }
-        } else {
-            emit RecoveryInitiated("Resolver address not found for node.");
-        }
-
         return false;
     }
 
