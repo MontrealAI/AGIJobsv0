@@ -237,7 +237,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         submit(jobId, result);
     }
 
-    function finalizeAfterValidation(uint256 jobId, bool success) external override {
+    function finalizeAfterValidation(uint256 jobId, bool success) public override {
         Job storage job = _jobs[jobId];
         require(job.status == Status.Submitted, "state");
         job.success = success;
@@ -247,6 +247,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         } else {
             emit JobDisputed(jobId, msg.sender);
         }
+    }
+
+    function validationComplete(uint256 jobId, bool success) external override {
+        finalizeAfterValidation(jobId, success);
     }
 
     function dispute(uint256 jobId, string calldata evidence) public override {

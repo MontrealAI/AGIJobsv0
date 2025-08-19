@@ -170,6 +170,9 @@ interface IJobRegistry {
     /// @param success True if validators approved the job
     function finalizeAfterValidation(uint256 jobId, bool success) external;
 
+    /// @notice Alias for {finalizeAfterValidation} for backwards compatibility
+    function validationComplete(uint256 jobId, bool success) external;
+
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
     /// @param evidence Supporting evidence for the dispute

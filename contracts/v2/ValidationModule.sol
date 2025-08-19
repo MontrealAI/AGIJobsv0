@@ -9,6 +9,7 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IVRF} from "./interfaces/IVRF.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 
 /// @title ValidationModule
@@ -19,6 +20,7 @@ contract ValidationModule is IValidationModule, Ownable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
+    IIdentityRegistry public identityRegistry;
 
     // timing configuration
     uint256 public commitWindow;
@@ -58,6 +60,7 @@ contract ValidationModule is IValidationModule, Ownable {
 
     struct Round {
         address[] validators;
+        address[] participants;
         uint256 commitDeadline;
         uint256 revealDeadline;
         uint256 approvals;
@@ -108,6 +111,7 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Emitted when the ENS ownership verifier module is updated.
     /// @param verifier Address of the new ENSOwnershipVerifier contract.
     event ENSOwnershipVerifierUpdated(address verifier);
+    event IdentityRegistryUpdated(address registry);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
@@ -191,6 +195,12 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ReputationEngineUpdated(address(engine));
     }
 
+    /// @notice Update the identity registry used for validator authorization.
+    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+        identityRegistry = registry;
+        emit IdentityRegistryUpdated(address(registry));
+    }
+
     /// @notice Update the JobRegistry reference.
     function setJobRegistry(IJobRegistry registry) external onlyOwner {
         jobRegistry = registry;
@@ -222,7 +232,8 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param jobId Identifier of the job
     /// @return validators_ Array of validator addresses
     function validators(uint256 jobId) external view override returns (address[] memory validators_) {
-        validators_ = rounds[jobId].validators;
+        Round storage r = rounds[jobId];
+        validators_ = r.tallied ? r.participants : r.validators;
     }
 
     /// @notice Configure additional validators that bypass ENS checks.
@@ -521,13 +532,22 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        bool authorized = additionalValidators[msg.sender];
-        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-            authorized = ensOwnershipVerifier.verifyValidator(
+        bool authorized;
+        if (address(identityRegistry) != address(0)) {
+            authorized = identityRegistry.isAuthorizedValidator(
                 msg.sender,
                 subdomain,
                 proof
             );
+        } else {
+            authorized = additionalValidators[msg.sender];
+            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+                authorized = ensOwnershipVerifier.verifyValidator(
+                    msg.sender,
+                    subdomain,
+                    proof
+                );
+            }
         }
         require(authorized, "Not authorized validator");
         emit OwnershipVerified(msg.sender, subdomain);
@@ -571,13 +591,22 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        bool authorized = additionalValidators[msg.sender];
-        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-            authorized = ensOwnershipVerifier.verifyValidator(
+        bool authorized;
+        if (address(identityRegistry) != address(0)) {
+            authorized = identityRegistry.isAuthorizedValidator(
                 msg.sender,
                 subdomain,
                 proof
             );
+        } else {
+            authorized = additionalValidators[msg.sender];
+            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+                authorized = ensOwnershipVerifier.verifyValidator(
+                    msg.sender,
+                    subdomain,
+                    proof
+                );
+            }
         }
         require(authorized, "Not authorized validator");
         emit OwnershipVerified(msg.sender, subdomain);
@@ -600,6 +629,7 @@ contract ValidationModule is IValidationModule, Ownable {
         require(stake > 0, "stake");
         revealed[jobId][msg.sender] = true;
         votes[jobId][msg.sender] = approve;
+        r.participants.push(msg.sender);
         if (approve) r.approvals += stake; else r.rejections += stake;
 
         emit ValidationRevealed(jobId, msg.sender, approve);
@@ -674,8 +704,9 @@ contract ValidationModule is IValidationModule, Ownable {
 
         r.tallied = true;
         emit ValidationFinalized(jobId, success, r.approvals, r.rejections);
+        emit ValidationResult(jobId, success);
 
-        jobRegistry.finalizeAfterValidation(jobId, success);
+        jobRegistry.validationComplete(jobId, success);
         return success;
     }
 

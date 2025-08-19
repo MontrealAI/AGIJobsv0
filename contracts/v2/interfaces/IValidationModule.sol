@@ -13,6 +13,7 @@ interface IValidationModule {
         uint256 approvals,
         uint256 rejections
     );
+    event ValidationResult(uint256 indexed jobId, bool success);
     event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
 
     /// @notice Select validators for a given job
