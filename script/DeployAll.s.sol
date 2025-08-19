@@ -13,6 +13,7 @@ import {CertificateNFT} from "contracts/v2/CertificateNFT.sol";
 import {ICertificateNFT} from "contracts/v2/interfaces/ICertificateNFT.sol";
 import {FeePool} from "contracts/v2/FeePool.sol";
 import {PlatformRegistry} from "contracts/v2/PlatformRegistry.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "contracts/v2/interfaces/IStakeManager.sol";
 import {IReputationEngine} from "contracts/v2/interfaces/IReputationEngine.sol";
 import {IFeePool} from "contracts/v2/interfaces/IFeePool.sol";
@@ -24,25 +25,30 @@ import {RevenueDistributor} from "contracts/v2/modules/RevenueDistributor.sol";
 contract DeployAll is Script {
     function run() external {
         uint256 deployer = vm.envUint("PRIVATE_KEY");
+        address owner;
+        try owner = vm.envAddress("OWNER") {
+        } catch {
+            owner = vm.addr(deployer);
+        }
         vm.startBroadcast(deployer);
 
-        AGIALPHAToken token = new AGIALPHAToken(vm.addr(deployer));
-        token.mint(vm.addr(deployer), 1_000_000e6);
+        AGIALPHAToken token = new AGIALPHAToken();
+        token.mint(owner, 1_000_000e6);
 
         StakeManager stake = new StakeManager(
             IERC20(address(token)),
             0,
             0,
             0,
-            vm.addr(deployer),
+            owner,
             address(0),
             address(0)
         );
 
-        JobRegistry registry = new JobRegistry(vm.addr(deployer));
+        JobRegistry registry = new JobRegistry(owner);
 
         TaxPolicy tax = new TaxPolicy(
-            vm.addr(deployer),
+            owner,
             "ipfs://policy",
             "All taxes on participants; contract and owner exempt"
         );
@@ -68,19 +74,19 @@ contract DeployAll is Script {
             IERC20(address(token)),
             IStakeManager(address(stake)),
             0,
-            vm.addr(deployer)
+            owner
         );
 
         RevenueDistributor distributor = new RevenueDistributor(
             stake,
-            vm.addr(deployer)
+            owner
         );
 
         PlatformRegistry platformRegistry = new PlatformRegistry(
             IStakeManager(address(stake)),
             IReputationEngine(address(reputation)),
             1_000e6,
-            vm.addr(deployer)
+            owner
         );
 
         nft.setJobRegistry(address(registry));
@@ -96,6 +102,51 @@ contract DeployAll is Script {
         );
         registry.setFeePool(IFeePool(address(feePool)));
         registry.setFeePct(5);
+
+        address[] memory contracts = new address[](11);
+        contracts[0] = address(token);
+        contracts[1] = address(stake);
+        contracts[2] = address(registry);
+        contracts[3] = address(validation);
+        contracts[4] = address(reputation);
+        contracts[5] = address(dispute);
+        contracts[6] = address(nft);
+        contracts[7] = address(feePool);
+        contracts[8] = address(distributor);
+        contracts[9] = address(platformRegistry);
+        contracts[10] = address(tax);
+        for (uint256 i = 0; i < contracts.length; i++) {
+            Ownable(contracts[i]).transferOwnership(owner);
+        }
+
+        string memory json = vm.serializeAddress(
+            "contracts",
+            "agiAlphaToken",
+            address(token)
+        );
+        json = vm.serializeAddress("contracts", "stakeManager", address(stake));
+        json = vm.serializeAddress("contracts", "jobRegistry", address(registry));
+        json = vm.serializeAddress("contracts", "validationModule", address(validation));
+        json = vm.serializeAddress(
+            "contracts",
+            "reputationEngine",
+            address(reputation)
+        );
+        json = vm.serializeAddress("contracts", "disputeModule", address(dispute));
+        json = vm.serializeAddress("contracts", "certificateNFT", address(nft));
+        json = vm.serializeAddress("contracts", "platformRegistry", address(platformRegistry));
+        json = vm.serializeAddress("contracts", "feePool", address(feePool));
+        json = vm.serializeAddress(
+            "contracts",
+            "revenueDistributor",
+            address(distributor)
+        );
+        json = vm.serializeAddress("contracts", "taxPolicy", address(tax));
+        string memory path = string.concat(
+            vm.projectRoot(),
+            "/docs/deployment-addresses.json"
+        );
+        vm.writeJson(json, path);
 
         vm.stopBroadcast();
     }

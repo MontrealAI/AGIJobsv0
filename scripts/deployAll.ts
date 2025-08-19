@@ -4,6 +4,7 @@ import { join } from "path";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const multisig = process.env.MULTISIG || deployer.address;
 
   // ---------------------------------------------------------------------------
   // Deploy token with 6 decimals so on-chain math aligns with StakeManager.
@@ -11,7 +12,7 @@ async function main() {
   const Token = await ethers.getContractFactory(
     "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
   );
-  const token = await Token.deploy(deployer.address);
+  const token = await Token.deploy();
   await token.waitForDeployment();
   await token.mint(deployer.address, ethers.parseUnits("1000000", 6));
 
@@ -133,6 +134,26 @@ async function main() {
   // Route protocol fees to FeePool and set a 5% fee cut.
   await registry.setFeePool(await feePool.getAddress());
   await registry.setFeePct(5);
+
+  // Transfer ownership to multisig if provided.
+  const contracts = [
+    token,
+    stake,
+    registry,
+    validation,
+    reputation,
+    dispute,
+    nft,
+    feePool,
+    distributor,
+    platformRegistry,
+    tax,
+  ];
+  for (const c of contracts) {
+    if ((await c.owner()) !== multisig) {
+      await c.transferOwnership(multisig);
+    }
+  }
 
   const addresses = {
     agiAlphaToken: await token.getAddress(),
