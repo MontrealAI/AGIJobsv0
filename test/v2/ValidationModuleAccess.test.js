@@ -82,6 +82,8 @@ describe("ValidationModule access controls", function () {
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     ).args[1];
     const val = selected[0];
+    const signer =
+      val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
 
     const Toggle = await ethers.getContractFactory(
       "ENSOwnershipVerifierToggle"
@@ -103,7 +105,7 @@ describe("ValidationModule access controls", function () {
       [1n, nonce, true, salt]
     );
     await expect(
-      validation.connect(v1).commitValidation(1, commit, "", [])
+      validation.connect(signer).commitValidation(1, commit, "", [])
     ).to.be.revertedWith("Not authorized validator");
 
     // allow commit then block reveal
@@ -112,7 +114,7 @@ describe("ValidationModule access controls", function () {
       .setAdditionalValidators([val], [true]);
     await toggle.setResult(true);
     await (
-      await validation.connect(v1).commitValidation(1, commit, "", [])
+      await validation.connect(signer).commitValidation(1, commit, "", [])
     ).wait();
     await advance(61);
     await validation
@@ -120,7 +122,7 @@ describe("ValidationModule access controls", function () {
       .setAdditionalValidators([val], [false]);
     await toggle.setResult(false);
     await expect(
-      validation.connect(v1).revealValidation(1, true, salt, "", [])
+      validation.connect(signer).revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("Not authorized validator");
   });
 
@@ -131,6 +133,8 @@ describe("ValidationModule access controls", function () {
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     ).args[1];
     const val = selected[0];
+    const signer =
+      val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
 
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const nonce = await validation.jobNonce(1);
@@ -140,17 +144,17 @@ describe("ValidationModule access controls", function () {
     );
     await reputation.setBlacklist(val, true);
     await expect(
-      validation.connect(v1).commitValidation(1, commit, "", [])
+      validation.connect(signer).commitValidation(1, commit, "", [])
     ).to.be.revertedWith("Blacklisted validator");
 
     await reputation.setBlacklist(val, false);
     await (
-      await validation.connect(v1).commitValidation(1, commit, "", [])
+      await validation.connect(signer).commitValidation(1, commit, "", [])
     ).wait();
     await advance(61);
     await reputation.setBlacklist(val, true);
     await expect(
-      validation.connect(v1).revealValidation(1, true, salt, "", [])
+      validation.connect(signer).revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("Blacklisted validator");
   });
 

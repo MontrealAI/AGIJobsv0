@@ -26,7 +26,7 @@ The table below maps common public functions from the monolithic `AGIJobManagerV
 | `updateAGITokenAddress` | `StakeManager` / `FeePool` | `setToken` on each module |
 | `blacklistAgent` / `clearAgentBlacklist` | `ReputationEngine` | `blacklist(user, status)` |
 | `blacklistValidator` / `clearValidatorBlacklist` | `ReputationEngine` | `blacklist(user, status)` |
-| `addModerator` / `removeModerator` | `DisputeModule` | `setModerator(address)` |
+| `addModerator` / `removeModerator` | `DisputeModule` | `addModerator` / `removeModerator` |
 | `setPremiumReputationThreshold` | `ReputationEngine` | `setThreshold` |
 | `setMaxJobPayout` | `JobRegistry` | `setMaxJobReward` |
 | `setJobDurationLimit` | `JobRegistry` | `setJobDurationLimit` |
