@@ -571,6 +571,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
+        require(block.timestamp <= job.deadline, "deadline");
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             require(
                 stakeManager.stakeOf(msg.sender, IStakeManager.Role.Agent) >=
@@ -648,6 +649,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
+        require(block.timestamp <= job.deadline, "deadline");
         job.result = result;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, result);
