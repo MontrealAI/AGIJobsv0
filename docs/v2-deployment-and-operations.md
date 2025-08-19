@@ -13,30 +13,31 @@ validators—and supply the subdomain label plus Merkle proof when
 interacting. The verifier checks ownership via NameWrapper and the ENS
 resolver, emitting `OwnershipVerified` on success.
 
+## Module Responsibilities & Addresses
+| Module | Responsibility | Address |
+| --- | --- | --- |
+| `$AGIALPHA` Token | 6‑decimal ERC‑20 used for payments and staking | `0x2e8fb54C3eC41F55F06c1F082c081A609eAa4eBE` |
+| StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | `TBD` |
+| ReputationEngine | Tracks reputation scores and blacklist status | `TBD` |
+| IdentityRegistry | Verifies ENS subdomains and Merkle allowlists | `TBD` |
+| ValidationModule | Runs commit–reveal validation and selects committees | `TBD` |
+| DisputeModule | Escrows dispute fees and finalises appeals | `TBD` |
+| CertificateNFT | Issues ERC‑721 certificates for completed jobs | `TBD` |
+| JobRegistry | Orchestrates job lifecycle and wires all modules | `TBD` |
+
 ## Step-by-Step Deployment
-1. **Deploy `StakeManager`** with constructor parameters:
-   - `_token` – ERC‑20 used for staking. Pass `0` to default to
-     $AGIALPHA (`0x2e8fb54C3eC41F55F06c1F082c081A609eAa4eBE`).
-   - `_minStake` – minimum stake for validators and platforms (6 decimals).
-   - `_employerSlashPct` / `_treasurySlashPct` – split of slashed stake.
-   - `_treasury` – address receiving treasury share.
-   - `_jobRegistry` and `_disputeModule` – optional module addresses.
-2. **Deploy `JobRegistry`** (no constructor params) then call
-   `setModules(validation, stake, reputation, dispute, certificate)` to
-   wire the ecosystem.
-3. **Deploy `ValidationModule`** with constructor parameters:
-   - `_jobRegistry`, `_stakeManager`, `_reputationEngine` addresses.
-   - `_commitWindow` and `_revealWindow` – phase durations in seconds.
-4. **Deploy `ReputationEngine`, `DisputeModule` and `CertificateNFT`**
-   supplying their respective constructor arguments.
-5. **Configure ownership** – the deployer becomes `owner` for every
-   module; transfer to a multisig if desired using `transferOwnership`.
-6. **Set ENS roots** – on `ENSOwnershipVerifier` call
-   `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, and
-   `setValidatorMerkleRoot` with the namehashes and allowlist roots for
-   your subdomains.
-7. **Verify events** – confirm `ModulesUpdated`, `TokenUpdated` and
-   `RootNodeUpdated` are emitted before allowing user funds.
+1. **Deploy `$AGIALPHA` token** with 6 decimals if it does not already exist.
+2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
+3. **Deploy `ReputationEngine`** passing the `StakeManager` address.
+4. **Deploy `IdentityRegistry`** with the ENS registry, NameWrapper, `ReputationEngine` address and the namehashes for `agent.agi.eth` and `club.agi.eth`.
+5. **Deploy `ValidationModule`** with `jobRegistry = 0`, the `StakeManager` address and desired timing/validator settings.
+6. **Deploy `DisputeModule`** with `jobRegistry = 0` and any custom fee or window.
+7. **Deploy `CertificateNFT`** supplying a name and symbol.
+8. **Deploy `JobRegistry`** (no constructor params) then wire modules by calling
+   `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, new address[](0))`.
+9. **Point modules back to `JobRegistry`** by calling `setJobRegistry` on `StakeManager`, `ValidationModule`, `DisputeModule` and `CertificateNFT`, and `setIdentityRegistry` on `ValidationModule`.
+10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
+11. **Transfer ownership** of each module to a multisig with `transferOwnership` if desired and verify events before accepting user funds.
 
 ## Interacting via Etherscan
 ### Job Creation
@@ -56,6 +57,10 @@ resolver, emitting `OwnershipVerified` on success.
    `stakeAndApply(jobId, amount, subdomain, proof)`.
 3. `JobApplied(jobId, agent)` will be emitted.
 
+### Submitting Work
+1. The selected agent calls `JobRegistry.submit(jobId, resultURI)` when the task is complete.
+2. `JobSubmitted(jobId, resultURI)` confirms the submission and triggers validation.
+
 ### Validation
 1. During commit phase, validators call
    `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`.
@@ -74,6 +79,12 @@ resolver, emitting `OwnershipVerified` on success.
 2. Buyers call `purchase(tokenId)` after approving the token amount.
 3. `TokenPurchased(buyer, tokenId, price)` confirms the sale.
 
+## Owner Administration
+- **Swap the token:** call `StakeManager.setToken(newToken)` (and any mirrored module setters) from the owner account.
+- **Adjust parameters:** examples include `StakeManager.setMinStake(amount)`, `JobRegistry.setFeePct(pct)`, `ValidationModule.setCommitWindow(seconds)`, `ValidationModule.setRevealWindow(seconds)` and `DisputeModule.setDisputeFee(fee)`.
+- **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
+- **Transfer ownership:** every module inherits `Ownable`; call `transferOwnership(multisig)` to hand control to a multisig.
+
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at
   `0x2e8fb54C3eC41F55F06c1F082c081A609eAa4eBE` (6 decimals).
@@ -90,6 +101,24 @@ resolver, emitting `OwnershipVerified` on success.
   `JobRegistry` before staking or disputing.
 - **Wrong decimals** – `setToken` only accepts ERC‑20 tokens with
   exactly 6 decimals.
+
+## Identity Requirements & Merkle Proofs
+Agents must control an `*.agent.agi.eth` subdomain and validators a `*.club.agi.eth` subdomain. When applying or validating, supply the subdomain label and a Merkle proof showing your address is allow‑listed.
+
+To generate proofs:
+1. Compile a list of permitted addresses and normalise to lowercase.
+2. Install dependencies with `npm install merkletreejs keccak256`.
+3. Build the tree and extract the root and proofs:
+   ```js
+   const {MerkleTree} = require('merkletreejs');
+   const keccak256 = require('keccak256');
+   const whitelist = ['0x1234...', '0xabcd...'];
+   const leaves = whitelist.map(a => keccak256(a));
+   const tree = new MerkleTree(leaves, keccak256, {sortPairs: true});
+   console.log('root:', tree.getHexRoot());
+   console.log('proof for first address:', tree.getHexProof(leaves[0]));
+   ```
+4. Set the root on `IdentityRegistry` using `setAgentMerkleRoot` or `setValidatorMerkleRoot` and supply the proof when interacting with protocol functions.
 
 ## Event & Function Glossary
 | Event | Emitted by | Meaning |
