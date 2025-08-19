@@ -26,6 +26,7 @@ contract ReputationEngine is Ownable {
     event StakeManagerUpdated(address stakeManager);
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
     event ModulesUpdated(address indexed stakeManager);
+    event ValidationRewardPercentageUpdated(uint256 percentage);
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
         if (address(_stakeManager) != address(0)) {
             stakeManager = _stakeManager;
@@ -69,6 +70,7 @@ contract ReputationEngine is Ownable {
     function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
         require(percentage <= 100, "invalid percentage");
         validationRewardPercentage = percentage;
+        emit ValidationRewardPercentageUpdated(percentage);
     }
 
     /// @notice Set reputation threshold for premium access.
