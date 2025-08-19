@@ -22,5 +22,6 @@ interface IDisputeModule {
     function resolveDispute(uint256 jobId, bool employerWins) external;
     function setDisputeFee(uint256 fee) external;
     function setDisputeWindow(uint256 window) external;
-    function setModerator(address moderator, bool enabled) external;
+    function addModerator(address moderator) external;
+    function removeModerator(address moderator) external;
 }

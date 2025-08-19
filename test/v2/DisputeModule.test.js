@@ -43,6 +43,17 @@ describe("DisputeModule", function () {
         .to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount")
         .withArgs(other.address);
     });
+
+    it("allows owner to add and remove moderators", async () => {
+      await expect(dispute.connect(owner).addModerator(other.address))
+        .to.emit(dispute, "ModeratorUpdated")
+        .withArgs(other.address, true);
+      expect(await dispute.moderators(other.address)).to.equal(true);
+      await expect(dispute.connect(owner).removeModerator(other.address))
+        .to.emit(dispute, "ModeratorUpdated")
+        .withArgs(other.address, false);
+      expect(await dispute.moderators(other.address)).to.equal(false);
+    });
   });
 
   describe("dispute resolution", function () {

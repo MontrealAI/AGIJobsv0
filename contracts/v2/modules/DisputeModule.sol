@@ -103,15 +103,18 @@ contract DisputeModule is Ownable {
         emit ModulesUpdated(address(newRegistry));
     }
 
-    /// @notice Add or remove a moderator address.
-    /// @param _moderator Address of the moderator.
-    /// @param enabled True to grant, false to revoke.
-    function setModerator(address _moderator, bool enabled)
-        external
-        onlyOwner
-    {
-        moderators[_moderator] = enabled;
-        emit ModeratorUpdated(_moderator, enabled);
+    /// @notice Add a moderator address.
+    /// @param _moderator Address to grant moderator rights.
+    function addModerator(address _moderator) external onlyOwner {
+        moderators[_moderator] = true;
+        emit ModeratorUpdated(_moderator, true);
+    }
+
+    /// @notice Remove a moderator address.
+    /// @param _moderator Address to revoke moderator rights from.
+    function removeModerator(address _moderator) external onlyOwner {
+        moderators[_moderator] = false;
+        emit ModeratorUpdated(_moderator, false);
     }
 
     /// @notice Configure the dispute fee in token units (6 decimals).
