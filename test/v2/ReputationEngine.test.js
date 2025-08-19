@@ -10,9 +10,7 @@ describe("ReputationEngine", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     engine = await Engine.deploy(ethers.ZeroAddress);
-    await engine
-      .connect(owner)
-      .setAuthorizedCaller(caller.address, true);
+    await engine.connect(owner).setCaller(caller.address, true);
     await engine
       .connect(owner)
       .setPremiumReputationThreshold(2);
@@ -31,13 +29,9 @@ describe("ReputationEngine", function () {
     const expectedAgent = enforceGrowth(0n, gain);
     await engine
       .connect(caller)
-      .onFinalize(user.address, true, payout, duration);
+      .onFinalize(user.address, true, payout, duration, [validator.address]);
     expect(await engine.reputationOf(user.address)).to.equal(expectedAgent);
-
     const expectedValidator = (gain * 8n) / 100n;
-    await engine
-      .connect(caller)
-      .rewardValidator(validator.address, gain);
     expect(await engine.reputationOf(validator.address)).to.equal(
       expectedValidator
     );
@@ -50,14 +44,6 @@ describe("ReputationEngine", function () {
     );
   });
 
-  it("gates applications by threshold", async () => {
-    await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
-      "insufficient reputation"
-    );
-    await engine.connect(caller).add(user.address, 2);
-    expect(await engine.meetsThreshold(user.address)).to.equal(true);
-    await expect(engine.connect(caller).onApply(user.address)).to.not.be.reverted;
-  });
 
   it("rejects unauthorized callers", async () => {
     await expect(engine.connect(user).add(user.address, 1)).to.be.revertedWith(

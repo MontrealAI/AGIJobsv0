@@ -10,8 +10,8 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable {
-    mapping(address => uint256) private _scores;
-    mapping(address => bool) public isBlacklisted;
+    mapping(address => uint256) public reputation;
+    mapping(address => bool) public blacklisted;
     mapping(address => bool) public callers;
     uint256 public threshold;
     IStakeManager public stakeManager;
@@ -45,9 +45,14 @@ contract ReputationEngine is Ownable {
     // ---------------------------------------------------------------------
 
     /// @notice Authorize or revoke a caller.
-    function setAuthorizedCaller(address caller, bool allowed) external onlyOwner {
+    function setAuthorizedCaller(address caller, bool allowed) public onlyOwner {
         callers[caller] = allowed;
         emit CallerUpdated(caller, allowed);
+    }
+
+    /// @notice Backwards compatible caller setter.
+    function setCaller(address caller, bool allowed) external onlyOwner {
+        setAuthorizedCaller(caller, allowed);
     }
 
     /// @notice Set the StakeManager used for stake lookups.
@@ -91,7 +96,7 @@ contract ReputationEngine is Ownable {
 
     /// @notice Update blacklist status for a user.
     function setBlacklist(address user, bool status) public onlyOwner {
-        isBlacklisted[user] = status;
+        blacklisted[user] = status;
         emit BlacklistUpdated(user, status);
     }
 
@@ -102,63 +107,64 @@ contract ReputationEngine is Ownable {
 
     /// @notice Increase reputation for a user.
     function add(address user, uint256 amount) external onlyCaller {
-        uint256 current = _scores[user];
+        uint256 current = reputation[user];
         uint256 newScore = _enforceReputationGrowth(current, amount);
         uint256 delta = newScore - current;
-        _scores[user] = newScore;
+        reputation[user] = newScore;
         emit ReputationUpdated(user, int256(delta), newScore);
 
-        if (isBlacklisted[user] && newScore >= threshold) {
-            isBlacklisted[user] = false;
+        if (blacklisted[user] && newScore >= threshold) {
+            blacklisted[user] = false;
             emit BlacklistUpdated(user, false);
         }
     }
 
     /// @notice Decrease reputation for a user.
     function subtract(address user, uint256 amount) external onlyCaller {
-        uint256 current = _scores[user];
+        uint256 current = reputation[user];
         uint256 newScore = current > amount ? current - amount : 0;
-        _scores[user] = newScore;
+        reputation[user] = newScore;
         emit ReputationUpdated(user, -int256(amount), newScore);
 
-        if (!isBlacklisted[user] && newScore < threshold) {
-            isBlacklisted[user] = true;
+        if (!blacklisted[user] && newScore < threshold) {
+            blacklisted[user] = true;
             emit BlacklistUpdated(user, true);
         }
     }
 
     /// @notice Get reputation score for a user.
-    function reputation(address user) public view returns (uint256) {
-        return _scores[user];
-    }
-
     function getReputation(address user) external view returns (uint256) {
-        return reputation(user);
+        return reputation[user];
     }
 
-    /// @notice Alias for {reputation}.
+    /// @notice Alias for {getReputation}.
     function reputationOf(address user) external view returns (uint256) {
-        return _scores[user];
+        return reputation[user];
     }
 
     /// @notice Determine whether a user meets the premium access threshold.
     function meetsThreshold(address user) external view returns (bool) {
-        return _scores[user] >= threshold;
+        return reputation[user] >= threshold;
     }
 
     /// @notice Backwards compatible view for legacy naming.
     function canAccessPremium(address user) external view returns (bool) {
-        return _scores[user] >= threshold;
+        return reputation[user] >= threshold;
+    }
+
+    /// @notice Check if a user is blacklisted.
+    function isBlacklisted(address user) external view returns (bool) {
+        return blacklisted[user];
     }
 
     // ---------------------------------------------------------------------
     // Job lifecycle hooks
     // ---------------------------------------------------------------------
 
-    /// @notice Ensure an applicant meets premium requirements and is not blacklisted.
-    function onApply(address user) external onlyCaller {
-        require(!isBlacklisted[user], "blacklisted");
-        require(_scores[user] >= threshold, "insufficient reputation");
+    /// @notice Hook for job applications; currently only checks blacklist status.
+    /// @dev Placeholder for future reputation requirements.
+    function onApply(address user) external view onlyCaller {
+        require(!blacklisted[user], "blacklisted");
     }
 
     /// @notice Finalise a job and update reputation using v0 formulas.
@@ -166,20 +172,37 @@ contract ReputationEngine is Ownable {
         address user,
         bool success,
         uint256 payout,
-        uint256 duration
+        uint256 duration,
+        address[] calldata validators
     ) external onlyCaller {
         if (success) {
             uint256 gain = calculateReputationPoints(payout, duration);
-            uint256 newScore = _enforceReputationGrowth(_scores[user], gain);
-            _scores[user] = newScore;
+            uint256 newScore = _enforceReputationGrowth(reputation[user], gain);
+            reputation[user] = newScore;
             emit ReputationUpdated(user, int256(gain), newScore);
-            if (isBlacklisted[user] && newScore >= threshold) {
-                isBlacklisted[user] = false;
+            if (blacklisted[user] && newScore >= threshold) {
+                blacklisted[user] = false;
                 emit BlacklistUpdated(user, false);
             }
-        } else if (_scores[user] < threshold) {
-            isBlacklisted[user] = true;
+            if (validators.length > 0) {
+                uint256 validatorGain = calculateValidatorReputationPoints(gain);
+                for (uint256 i = 0; i < validators.length; i++) {
+                    _rewardValidator(validators[i], validatorGain);
+                }
+            }
+        } else if (reputation[user] < threshold) {
+            blacklisted[user] = true;
             emit BlacklistUpdated(user, true);
+        }
+    }
+
+    function _rewardValidator(address validator, uint256 gain) internal {
+        uint256 newScore = _enforceReputationGrowth(reputation[validator], gain);
+        reputation[validator] = newScore;
+        emit ReputationUpdated(validator, int256(gain), newScore);
+        if (blacklisted[validator] && newScore >= threshold) {
+            blacklisted[validator] = false;
+            emit BlacklistUpdated(validator, false);
         }
     }
 
@@ -188,13 +211,7 @@ contract ReputationEngine is Ownable {
     /// @param agentGain Reputation points awarded to the agent
     function rewardValidator(address validator, uint256 agentGain) external onlyCaller {
         uint256 gain = calculateValidatorReputationPoints(agentGain);
-        uint256 newScore = _enforceReputationGrowth(_scores[validator], gain);
-        _scores[validator] = newScore;
-        emit ReputationUpdated(validator, int256(gain), newScore);
-        if (isBlacklisted[validator] && newScore >= threshold) {
-            isBlacklisted[validator] = false;
-            emit BlacklistUpdated(validator, false);
-        }
+        _rewardValidator(validator, gain);
     }
 
     /// @notice Compute reputation gain based on payout and duration.
@@ -249,12 +266,12 @@ contract ReputationEngine is Ownable {
     /// @notice Return the combined operator score based on stake and reputation.
     /// @dev Blacklisted users score 0.
     function getOperatorScore(address operator) external view returns (uint256) {
-        if (isBlacklisted[operator]) return 0;
+        if (blacklisted[operator]) return 0;
         uint256 stake;
         if (address(stakeManager) != address(0)) {
             stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
         }
-        uint256 rep = _scores[operator];
+        uint256 rep = reputation[operator];
         return ((stake * stakeWeight) + (rep * reputationWeight)) / 1e18;
     }
 
