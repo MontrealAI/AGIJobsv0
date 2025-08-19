@@ -40,7 +40,8 @@ contract JobNFT is ERC721, Ownable {
 
     event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
-    event NFTIssued(address indexed to, uint256 indexed jobId);
+    /// @notice Emitted when a new NFT is minted.
+    event NFTMinted(address indexed to, uint256 indexed jobId);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
@@ -90,7 +91,7 @@ contract JobNFT is ERC721, Ownable {
         tokenId = jobId;
         require(_ownerOf(tokenId) == address(0), "exists");
         _safeMint(to, tokenId);
-        emit NFTIssued(to, tokenId);
+        emit NFTMinted(to, tokenId);
     }
 
     /// @notice Burn a token, invalidating the associated job.
