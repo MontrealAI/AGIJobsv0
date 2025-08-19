@@ -167,6 +167,10 @@ contract ValidationModule is IValidationModule, Ownable {
         }
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Update the list of eligible validators.
     /// @param newPool Addresses of validators.
     function setValidatorPool(address[] calldata newPool)

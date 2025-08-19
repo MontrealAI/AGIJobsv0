@@ -57,6 +57,10 @@ contract JobEscrow is Ownable {
                 : _token;
         routingModule = _routing;
     }
+    
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
 
     function setToken(IERC20 newToken) external onlyOwner {
         IERC20Metadata meta = IERC20Metadata(address(newToken));

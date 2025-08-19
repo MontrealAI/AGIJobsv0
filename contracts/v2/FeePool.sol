@@ -184,8 +184,13 @@ contract FeePool is Ownable {
         emit RewardsClaimed(msg.sender, owed);
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice owner-only emergency escape hatch to withdraw tokens
-    /// @dev Amount uses 6 decimal units.
+    /// @dev Intended for stuck-token recovery via Etherscan. Routine fees flow
+    ///      to this pool or the burn address. Amount uses 6 decimal units.
     /// @param to recipient address
     /// @param amount token amount with 6 decimals
     function ownerWithdraw(address to, uint256 amount) external onlyOwner {

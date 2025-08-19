@@ -74,6 +74,10 @@ contract JobRouter is Ownable {
         cooldown[msg.sender] = uint64(block.number + COOLDOWN_BLOCKS);
         emit Deregistered(msg.sender);
     }
+    
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
 
     /// @notice Authorize or revoke a registrar address.
     function setRegistrar(address registrar, bool allowed) external onlyOwner {

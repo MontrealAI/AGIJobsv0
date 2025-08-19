@@ -20,6 +20,10 @@ contract AGIALPHAToken is ERC20, Ownable {
         return DECIMALS;
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Mint new tokens to an address.
     /// @param to recipient of minted tokens
     /// @param amount token amount with 6 decimals

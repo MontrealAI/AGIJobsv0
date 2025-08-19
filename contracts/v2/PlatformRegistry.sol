@@ -243,6 +243,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------
     // Owner functions
     // ---------------------------------------------------------------
+    // Use Etherscan's "Write Contract" tab to invoke these setters.
 
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;

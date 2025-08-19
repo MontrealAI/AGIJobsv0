@@ -50,6 +50,10 @@ contract PlatformIncentives is Ownable {
         }
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Update module addresses.
     function setModules(
         IStakeManager _stakeManager,

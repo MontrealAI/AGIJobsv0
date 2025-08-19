@@ -195,8 +195,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------
-    // owner functions
+    // Owner setters
     // ---------------------------------------------------------------
+    // These helpers are intended for manual use via Etherscan's
+    // "Write Contract" tab by the authorized owner.
 
     /// @notice update the staking/payout token
     /// @param newToken ERC20 token address using 6 decimals

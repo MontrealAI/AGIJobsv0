@@ -34,6 +34,10 @@ contract RevenueDistributor is Ownable {
         emit OperatorRegistered(msg.sender);
     }
 
+    // ---------------------------------------------------------------------
+    // Owner setters (use Etherscan's "Write Contract" tab)
+    // ---------------------------------------------------------------------
+
     /// @notice Deregister an operator. Only owner may remove.
     function deregister(address operator) external onlyOwner {
         if (!isOperator[operator]) return;
