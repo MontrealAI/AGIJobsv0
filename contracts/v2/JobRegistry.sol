@@ -780,19 +780,17 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                         100;
                 }
 
-                // agent payout is based on remaining reward after validator share
+                uint256 rewardAfterValidator =
+                    uint256(job.reward) - validatorReward;
                 uint256 agentPct = stakeManager.getHighestPayoutPercentage(
                     job.agent
                 );
-                uint256 rewardAfterValidator =
-                    uint256(job.reward) - validatorReward;
-                uint256 agentReward =
-                    (rewardAfterValidator * agentPct) / 100;
+                uint256 agentBase = (rewardAfterValidator * agentPct) / 100;
 
                 stakeManager.finalizeJobFunds(
                     jobKey,
                     job.agent,
-                    agentReward,
+                    rewardAfterValidator,
                     fee,
                     pool
                 );
@@ -804,8 +802,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                     );
                 }
 
-                uint256 leftover =
-                    rewardAfterValidator - agentReward;
+                uint256 leftover = rewardAfterValidator - agentBase;
                 if (leftover > 0) {
                     stakeManager.releaseJobFunds(jobKey, job.employer, leftover);
                 }

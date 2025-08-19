@@ -722,8 +722,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
         IFeePool _feePool
     ) external onlyJobRegistry {
         uint256 pct = getHighestPayoutPercentage(agent);
-        uint256 payout = (reward * pct) / 100;
-        uint256 total = payout + fee;
+        uint256 modified = (reward * pct) / 100;
+        uint256 burnAmount = (modified * burnPct) / 100;
+        uint256 payout = modified - burnAmount;
+        uint256 total = payout + fee + burnAmount;
         uint256 escrow = jobEscrows[jobId];
         require(escrow >= total, "escrow");
         jobEscrows[jobId] = escrow - total;
@@ -736,6 +738,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
             _feePool.depositFee(fee);
             _feePool.distributeFees();
             emit StakeReleased(jobId, address(_feePool), fee);
+        }
+        if (burnAmount > 0) {
+            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
         }
     }
 
@@ -834,7 +840,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
         }
 
         if (recipientShare > 0) {
-            token.safeTransfer(recipient, recipientShare);
+            if (recipient == address(feePool) && address(feePool) != address(0)) {
+                token.safeTransfer(address(feePool), recipientShare);
+                feePool.depositFee(recipientShare);
+                feePool.distributeFees();
+            } else {
+                token.safeTransfer(recipient, recipientShare);
+            }
         }
         if (treasuryShare > 0) {
             token.safeTransfer(treasury, treasuryShare);
