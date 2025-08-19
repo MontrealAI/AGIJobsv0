@@ -90,11 +90,11 @@ describe("StakeManager release", function () {
     await expect(
       stakeManager.connect(registrySigner).release(user1.address, 100)
     )
-      .to.emit(stakeManager, "JobFundsReleased")
+      .to.emit(stakeManager, "StakeReleased")
       .withArgs(ethers.ZeroHash, await feePool.getAddress(), 20)
-      .and.to.emit(stakeManager, "JobFundsReleased")
+      .and.to.emit(stakeManager, "StakeReleased")
       .withArgs(ethers.ZeroHash, burnAddr, 10)
-      .and.to.emit(stakeManager, "JobFundsReleased")
+      .and.to.emit(stakeManager, "StakeReleased")
       .withArgs(ethers.ZeroHash, user1.address, 70);
 
     expect((await token.balanceOf(user1.address)) - before1).to.equal(70n);

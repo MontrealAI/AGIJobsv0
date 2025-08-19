@@ -770,20 +770,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 }
 
                 // determine validator payout before calculating agent reward
-                address[] memory vals;
                 uint256 validatorReward;
-                uint256 perValidator;
                 if (
                     validatorRewardPct > 0 &&
                     address(validationModule) != address(0)
                 ) {
-                    vals = validationModule.validators(jobId);
-                    if (vals.length > 0) {
-                        validatorReward =
-                            (uint256(job.reward) * validatorRewardPct) /
-                            100;
-                        perValidator = validatorReward / vals.length;
-                    }
+                    validatorReward =
+                        (uint256(job.reward) * validatorRewardPct) /
+                        100;
                 }
 
                 // agent payout is based on remaining reward after validator share
@@ -804,13 +798,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 );
 
                 if (validatorReward > 0) {
-                    for (uint256 i; i < vals.length; ++i) {
-                        stakeManager.releaseJobFunds(
-                            jobKey,
-                            vals[i],
-                            perValidator
-                        );
-                    }
+                    stakeManager.distributeValidatorRewards(
+                        jobKey,
+                        validatorReward
+                    );
                 }
 
                 uint256 leftover =

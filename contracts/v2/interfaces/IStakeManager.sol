@@ -16,8 +16,8 @@ interface IStakeManager {
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
-    event JobFundsLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
-    event JobFundsReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event StakeLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
+    event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     event StakeSlashed(
         address indexed user,
         Role indexed role,
@@ -29,6 +29,7 @@ interface IStakeManager {
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);
+    event ValidationModuleUpdated(address module);
     event TokenUpdated(address indexed token);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
@@ -76,8 +77,14 @@ interface IStakeManager {
         IFeePool feePool
     ) external;
 
+    /// @notice distribute validator rewards equally among selected validators
+    function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
+
     /// @notice set the dispute module authorized to manage dispute fees
     function setDisputeModule(address module) external;
+
+    /// @notice set the validation module used for validator lookups
+    function setValidationModule(address module) external;
 
     /// @notice lock a dispute fee from the payer
     function lockDisputeFee(address payer, uint256 amount) external;

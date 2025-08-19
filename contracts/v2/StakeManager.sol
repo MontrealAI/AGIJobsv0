@@ -11,6 +11,7 @@ import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
+import {IValidationModule} from "./interfaces/IValidationModule.sol";
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -58,6 +59,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     /// @notice JobRegistry contract tracking tax policy acknowledgements
     address public jobRegistry;
+
+    /// @notice ValidationModule providing validator lists
+    IValidationModule public validationModule;
 
     /// @notice minimum required stake
     uint256 public minStake;
@@ -116,11 +120,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 employerShare,
         uint256 treasuryShare
     );
-    event JobFundsLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
-    event JobFundsReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event StakeLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
+    event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
+    event ValidationModuleUpdated(address indexed module);
     event TokenUpdated(address indexed newToken);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
@@ -273,6 +278,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function setDisputeModule(address module) external onlyOwner {
         disputeModule = module;
         emit DisputeModuleUpdated(module);
+    }
+
+    /// @notice set the validation module used to source validator lists
+    /// @param module ValidationModule contract address
+    function setValidationModule(address module) external onlyOwner {
+        validationModule = IValidationModule(module);
+        emit ValidationModuleUpdated(module);
     }
 
     /// @notice update job registry and dispute module in one call
@@ -634,7 +646,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     {
         token.safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
-        emit JobFundsLocked(jobId, from, amount);
+        emit StakeLocked(jobId, from, amount);
     }
 
     /// @notice Generic escrow lock used when job context is managed externally.
@@ -645,7 +657,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @param amount Token amount with 6 decimals to lock.
     function lock(address from, uint256 amount) external onlyJobRegistry {
         token.safeTransferFrom(from, address(this), amount);
-        emit JobFundsLocked(bytes32(0), from, amount);
+        emit StakeLocked(bytes32(0), from, amount);
     }
 
     /// @notice release locked job funds to recipient applying any AGI type bonus
@@ -662,7 +674,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         require(escrow >= payout, "escrow");
         jobEscrows[jobId] = escrow - payout;
         token.safeTransfer(to, payout);
-        emit JobFundsReleased(jobId, to, payout);
+        emit StakeReleased(jobId, to, payout);
     }
 
     /// @notice Release funds previously locked via {lock}.
@@ -684,15 +696,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
             token.safeTransfer(address(feePool), feeAmount);
             feePool.depositFee(feeAmount);
             feePool.distributeFees();
-            emit JobFundsReleased(bytes32(0), address(feePool), feeAmount);
+            emit StakeReleased(bytes32(0), address(feePool), feeAmount);
         }
         if (burnAmount > 0) {
             token.safeTransfer(BURN_ADDRESS, burnAmount);
-            emit JobFundsReleased(bytes32(0), BURN_ADDRESS, burnAmount);
+            emit StakeReleased(bytes32(0), BURN_ADDRESS, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
-            emit JobFundsReleased(bytes32(0), to, payout);
+            emit StakeReleased(bytes32(0), to, payout);
         }
     }
 
@@ -717,13 +729,41 @@ contract StakeManager is Ownable, ReentrancyGuard {
         jobEscrows[jobId] = escrow - total;
         if (payout > 0) {
             token.safeTransfer(agent, payout);
-            emit JobFundsReleased(jobId, agent, payout);
+            emit StakeReleased(jobId, agent, payout);
         }
         if (fee > 0 && address(_feePool) != address(0)) {
             token.safeTransfer(address(_feePool), fee);
             _feePool.depositFee(fee);
             _feePool.distributeFees();
-            emit JobFundsReleased(jobId, address(_feePool), fee);
+            emit StakeReleased(jobId, address(_feePool), fee);
+        }
+    }
+
+    /// @notice Distribute validator rewards evenly using the ValidationModule
+    /// @param jobId unique job identifier
+    /// @param amount total validator reward pool
+    function distributeValidatorRewards(bytes32 jobId, uint256 amount)
+        external
+        onlyJobRegistry
+    {
+        if (amount == 0) return;
+        address vm = address(validationModule);
+        require(vm != address(0), "validation module");
+        address[] memory vals = validationModule.validators(uint256(jobId));
+        uint256 count = vals.length;
+        require(count > 0, "validators");
+        uint256 escrow = jobEscrows[jobId];
+        require(escrow >= amount, "escrow");
+        jobEscrows[jobId] = escrow - amount;
+        uint256 perValidator = amount / count;
+        uint256 remainder = amount - perValidator * count;
+        for (uint256 i; i < count; ++i) {
+            token.safeTransfer(vals[i], perValidator);
+            emit StakeReleased(jobId, vals[i], perValidator);
+        }
+        if (remainder > 0) {
+            token.safeTransfer(vals[0], remainder);
+            emit StakeReleased(jobId, vals[0], remainder);
         }
     }
 
