@@ -680,8 +680,15 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 agentGain;
         if (address(reputationEngine) != address(0) && success) {
             uint256 payout = uint256(job.reward) * 1e12;
-            agentGain = ReputationEngine(payable(address(reputationEngine)))
-                .calculateReputationPoints(payout, 0);
+            // attempt to derive validator reward from reputation engine
+            try
+                ReputationEngine(payable(address(reputationEngine)))
+                    .calculateReputationPoints(payout, 0)
+            returns (uint256 points) {
+                agentGain = points;
+            } catch {
+                agentGain = 1;
+            }
         }
 
         for (uint256 i; i < r.validators.length; ++i) {
