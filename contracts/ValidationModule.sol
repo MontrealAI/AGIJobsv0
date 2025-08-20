@@ -47,6 +47,8 @@ contract ValidationModule is Ownable {
 
     /// @notice global pool of potential validators
     address[] public validatorPool;
+    /// @notice manually permitted validators bypassing ENS/Merkle checks
+    mapping(address => bool) public additionalValidators;
 
     /// @dev selected validators for a job
     mapping(uint256 => address[]) public jobValidators;
@@ -78,6 +80,7 @@ contract ValidationModule is Ownable {
     /// @notice Emitted when the validator allowlist Merkle root changes.
     /// @param root The new Merkle root.
     event ValidatorMerkleRootUpdated(bytes32 root);
+    event AdditionalValidatorUpdated(address indexed validator, bool allowed);
 
     // events for commit–reveal validation
     event ValidatorsPerJobUpdated(uint256 count);
@@ -162,8 +165,31 @@ contract ValidationModule is Ownable {
 
     /// @notice Update the pool of potential validators.
     function setValidatorPool(address[] calldata pool) external onlyOwner {
+        if (address(reputationEngine) != address(0)) {
+            for (uint256 i; i < pool.length; ++i) {
+                require(!reputationEngine.isBlacklisted(pool[i]), "blacklisted");
+            }
+        }
         validatorPool = pool;
         emit ValidatorPoolUpdated(pool);
+    }
+
+    /// @notice Manually allow a validator to bypass identity checks.
+    /// @param validator Address to whitelist.
+    function addAdditionalValidator(address validator) external onlyOwner {
+        require(validator != address(0), "validator");
+        if (address(reputationEngine) != address(0)) {
+            require(!reputationEngine.isBlacklisted(validator), "blacklisted");
+        }
+        additionalValidators[validator] = true;
+        emit AdditionalValidatorUpdated(validator, true);
+    }
+
+    /// @notice Remove a validator from the manual allowlist.
+    /// @param validator Address to remove.
+    function removeAdditionalValidator(address validator) external onlyOwner {
+        additionalValidators[validator] = false;
+        emit AdditionalValidatorUpdated(validator, false);
     }
 
     /// @notice Set the validation outcome for a job.
@@ -263,6 +289,9 @@ contract ValidationModule is Ownable {
         require(isValidator[jobId][msg.sender], "not validator");
         require(block.timestamp <= commitDeadline[jobId], "commit over");
         require(commitments[jobId][msg.sender] == bytes32(0), "committed");
+        if (address(reputationEngine) != address(0)) {
+            require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted");
+        }
         commitments[jobId][msg.sender] = commitHash;
         emit ValidationCommitted(jobId, msg.sender, commitHash);
     }
@@ -279,6 +308,9 @@ contract ValidationModule is Ownable {
         bytes32 commitment = commitments[jobId][msg.sender];
         require(commitment != bytes32(0), "no commit");
         require(!revealed[jobId][msg.sender], "revealed");
+        if (address(reputationEngine) != address(0)) {
+            require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted");
+        }
         bytes32 expected = keccak256(
             abi.encodePacked(msg.sender, jobId, approve, salt)
         );

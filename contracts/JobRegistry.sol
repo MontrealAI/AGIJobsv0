@@ -72,6 +72,9 @@ contract JobRegistry is Ownable, Pausable {
     bytes32 public agentRootNode;
     bytes32 public agentMerkleRoot;
 
+    /// @notice manually permitted agents bypassing ENS/Merkle checks
+    mapping(address => bool) public additionalAgents;
+
     /// @notice tracks which addresses acknowledged the tax policy
     mapping(address => bool) private _taxAcknowledged;
 
@@ -93,6 +96,7 @@ contract JobRegistry is Ownable, Pausable {
     event DisputeModuleUpdated(address module);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    event AdditionalAgentUpdated(address indexed agent, bool allowed);
     /// @notice Emitted when the ENS root node for agents changes.
     /// @param node The new ENS root node.
     event AgentRootNodeUpdated(bytes32 node);
@@ -196,6 +200,24 @@ contract JobRegistry is Ownable, Pausable {
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
         emit AgentMerkleRootUpdated(root);
+    }
+
+    /// @notice Manually allow an agent to bypass identity checks.
+    /// @param agent Address to whitelist.
+    function addAdditionalAgent(address agent) external onlyOwner {
+        require(agent != address(0), "agent");
+        if (address(reputationEngine) != address(0)) {
+            require(!reputationEngine.isBlacklisted(agent), "blacklisted");
+        }
+        additionalAgents[agent] = true;
+        emit AdditionalAgentUpdated(agent, true);
+    }
+
+    /// @notice Remove an agent from the manual allowlist.
+    /// @param agent Address to remove.
+    function removeAdditionalAgent(address agent) external onlyOwner {
+        additionalAgents[agent] = false;
+        emit AdditionalAgentUpdated(agent, false);
     }
 
     function setModules(
