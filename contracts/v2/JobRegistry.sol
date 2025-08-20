@@ -508,6 +508,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             );
         }
         require(feePct + validatorRewardPct <= 100, "pct");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted employer"
+            );
+        }
         unchecked {
             nextJobId++;
         }
@@ -585,11 +591,19 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
         bool authorized = ownershipVerified || additionalAgents[msg.sender];
         require(authorized, "Not authorized agent");
-        if (address(reputationEngine) != address(0)) {
-            reputationEngine.onApply(msg.sender);
-        }
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted agent"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.employer),
+                "Blacklisted employer"
+            );
+            reputationEngine.onApply(msg.sender);
+        }
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             require(
                 stakeManager.stakeOf(msg.sender, IStakeManager.Role.Agent) >=
@@ -683,6 +697,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             ownershipVerified || additionalAgents[msg.sender],
             "Not authorized agent"
         );
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted agent"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.employer),
+                "Blacklisted employer"
+            );
+        }
         job.result = result;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, result);
@@ -743,6 +767,20 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (job.state == State.Completed) {
             job.state = State.Disputed;
         }
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.agent),
+                "Blacklisted agent"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.employer),
+                "Blacklisted employer"
+            );
+        }
         if (address(disputeModule) != address(0)) {
             disputeModule.raiseDispute(jobId, msg.sender, evidence);
         }
@@ -799,6 +837,20 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.agent),
+                "Blacklisted agent"
+            );
+            require(
+                !reputationEngine.isBlacklisted(job.employer),
+                "Blacklisted employer"
+            );
+        }
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
         if (job.success) {
@@ -908,8 +960,17 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         requiresTaxAcknowledgement
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Created && job.agent == address(0), "cannot cancel");
+        require(
+            job.state == State.Created && job.agent == address(0),
+            "cannot cancel"
+        );
         require(msg.sender == job.employer, "only employer");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted employer"
+            );
+        }
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
