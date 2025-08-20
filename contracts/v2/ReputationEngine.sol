@@ -119,7 +119,8 @@ contract ReputationEngine is Ownable {
         uint256 current = _scores[user];
         uint256 newScore = current > amount ? current - amount : 0;
         _scores[user] = newScore;
-        emit ReputationUpdated(user, -int256(amount), newScore);
+        uint256 delta = current - newScore;
+        emit ReputationUpdated(user, -int256(delta), newScore);
 
         if (!isBlacklisted[user] && newScore < threshold) {
             isBlacklisted[user] = true;
@@ -170,9 +171,11 @@ contract ReputationEngine is Ownable {
     ) external onlyCaller {
         if (success) {
             uint256 gain = calculateReputationPoints(payout, duration);
-            uint256 newScore = _enforceReputationGrowth(_scores[user], gain);
+            uint256 current = _scores[user];
+            uint256 newScore = _enforceReputationGrowth(current, gain);
             _scores[user] = newScore;
-            emit ReputationUpdated(user, int256(gain), newScore);
+            uint256 delta = newScore - current;
+            emit ReputationUpdated(user, int256(delta), newScore);
             if (isBlacklisted[user] && newScore >= threshold) {
                 isBlacklisted[user] = false;
                 emit BlacklistUpdated(user, false);
@@ -188,9 +191,11 @@ contract ReputationEngine is Ownable {
     /// @param agentGain Reputation points awarded to the agent
     function rewardValidator(address validator, uint256 agentGain) external onlyCaller {
         uint256 gain = calculateValidatorReputationPoints(agentGain);
-        uint256 newScore = _enforceReputationGrowth(_scores[validator], gain);
+        uint256 current = _scores[validator];
+        uint256 newScore = _enforceReputationGrowth(current, gain);
         _scores[validator] = newScore;
-        emit ReputationUpdated(validator, int256(gain), newScore);
+        uint256 delta = newScore - current;
+        emit ReputationUpdated(validator, int256(delta), newScore);
         if (isBlacklisted[validator] && newScore >= threshold) {
             isBlacklisted[validator] = false;
             emit BlacklistUpdated(validator, false);
