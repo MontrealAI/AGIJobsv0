@@ -18,15 +18,17 @@ The v2 release splits the monolithic manager into single‑purpose modules. Each
 1. [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) – 6‑decimal ERC‑20 used for stakes, rewards, and fees.
 2. [`StakeManager`](contracts/v2/StakeManager.sol)
 3. [`ReputationEngine`](contracts/v2/ReputationEngine.sol)
-4. [`ValidationModule`](contracts/v2/ValidationModule.sol)
-5. [`DisputeModule`](contracts/v2/modules/DisputeModule.sol)
-6. [`CertificateNFT`](contracts/v2/CertificateNFT.sol)
-7. [`JobRegistry`](contracts/v2/JobRegistry.sol)
+4. [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol)
+5. [`ValidationModule`](contracts/v2/ValidationModule.sol)
+6. [`DisputeModule`](contracts/v2/modules/DisputeModule.sol)
+7. [`CertificateNFT`](contracts/v2/CertificateNFT.sol)
+8. [`JobRegistry`](contracts/v2/JobRegistry.sol)
 
 Each subsequent constructor accepts addresses from earlier steps, so deploying in this order avoids placeholder values.
 
 - **JobRegistry** – canonical job storage and router for companion modules; owner may swap module addresses with `setModules`.
 - **StakeManager** – escrows rewards and stakes, distributes payouts, and supports token swaps via `setToken`.
+- **IdentityRegistry** – verifies that agents and validators control the required ENS subdomains or are manually allowlisted.
 - **ValidationModule** – selects validators and enforces commit/reveal finalization windows.
 - **ReputationEngine** – tracks reputation and exposes `blacklist(user, status)` for owner‑managed access control.
 - **DisputeModule** – optional appeals layer for contested jobs.
@@ -107,12 +109,13 @@ forge script script/UpdateParams.s.sol --broadcast --rpc-url $RPC_URL --private-
 1. **Deploy `$AGIALPHA`** – open the verified [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) on Etherscan, connect your wallet, and use **Contract → Deploy**. The token reports `decimals = 6`, so later amounts use base units (`1 token = 1_000000`).
 2. **Deploy `StakeManager`** – on its contract page provide the token address and any desired fee or treasury parameters; leave module addresses zero for now.
 3. **Deploy `ReputationEngine`** – supply the `StakeManager` address so reputation calculations can read staked balances.
-4. **Deploy `ValidationModule`** – pass the `StakeManager` address and defaults for timing and validator bounds. The `JobRegistry` address may be `0` at this stage.
-5. **Deploy `DisputeModule`** – constructor takes the `JobRegistry` (optional for now), dispute fee (6‑decimal units) and window length.
-6. **Deploy `CertificateNFT`** – provide name and symbol; the owner can later set the `JobRegistry` and `StakeManager` addresses via `setJobRegistry` and `setStakeManager`.
-7. **Deploy `JobRegistry`** – supply addresses of the previously deployed modules along with any fee or stake defaults. Verify each contract source before proceeding.
-8. **Wire modules and configure** – from each contract’s **Write Contract** tab call `JobRegistry.setModules(...)`, set ENS roots (`JobRegistry.setAgentRootNode`, `ValidationModule.setClubRootNode`), and load Merkle roots. Enter all token amounts in 6‑decimal units.
-9. **Rotate tokens later** – the owner may swap to a new ERC‑20 at any time by calling `StakeManager.setToken(newToken)` (and `FeePool.setToken` if used); no modules need redeployment.
+4. **Deploy `IdentityRegistry`** – provide ENS registry, NameWrapper, and root nodes so agents and validators can prove ownership.
+5. **Deploy `ValidationModule`** – pass the `StakeManager` address and defaults for timing and validator bounds. The `JobRegistry` address may be `0` at this stage.
+6. **Deploy `DisputeModule`** – constructor takes the `JobRegistry` (optional for now), dispute fee (6‑decimal units) and window length.
+7. **Deploy `CertificateNFT`** – provide name and symbol; the owner can later set the `JobRegistry` and `StakeManager` addresses via `setJobRegistry` and `setStakeManager`.
+8. **Deploy `JobRegistry`** – supply addresses of the previously deployed modules along with any fee or stake defaults. Verify each contract source before proceeding.
+9. **Wire modules and configure** – from each contract’s **Write Contract** tab call `JobRegistry.setModules(...)`, set ENS roots (`JobRegistry.setAgentRootNode`, `ValidationModule.setClubRootNode`), load Merkle roots, and register the identity registry using `JobRegistry.setIdentityRegistry` and `ValidationModule.setIdentityRegistry`. Enter all token amounts in 6‑decimal units.
+10. **Rotate tokens later** – the owner may swap to a new ERC‑20 at any time by calling `StakeManager.setToken(newToken)` (and `FeePool.setToken` if used); no modules need redeployment.
 
 ### Owner configuration via Write tabs
 
