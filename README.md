@@ -161,12 +161,75 @@ await feePool.setToken("0xNewToken");
 3. **Delist** – seller removes an active listing via `delist(tokenId)`.
 
 ### Owner controls
-The contract owner can reconfigure live deployments without redeployment:
-- **ENS roots & Merkle proofs** – rotate subdomains with [`JobRegistry.setAgentRootNode`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setClubRootNode`](contracts/v2/ValidationModule.sol), and update allowlists via [`JobRegistry.setAgentMerkleRoot`](contracts/v2/JobRegistry.sol) and [`ValidationModule.setValidatorMerkleRoot`](contracts/v2/ValidationModule.sol). Watch for `RootNodeUpdated` or `MerkleRootUpdated` events. Update ENS contract references through [`ENSOwnershipVerifier.setENS`](contracts/v2/modules/ENSOwnershipVerifier.sol) and [`setNameWrapper`](contracts/v2/modules/ENSOwnershipVerifier.sol).
-- **Token addresses** – call [`StakeManager.setToken`](contracts/v2/StakeManager.sol) then [`FeePool.setToken`](contracts/v2/FeePool.sol) to swap the ERC‑20 used for stakes and fees. Wait for `TokenUpdated` events on both contracts.
-- **Blacklists** – manage participation with [`ReputationEngine.setBlacklist(address user, bool status)`](contracts/v2/ReputationEngine.sol); blacklisted addresses cannot apply or validate until removed.
-- **Stake requirements** – adjust minimums through [`StakeManager.setMinStake`](contracts/v2/StakeManager.sol) and [`PlatformRegistry.setMinPlatformStake`](contracts/v2/PlatformRegistry.sol).
-- **Dispute parameters** – tune dispute fees or tax policy using [`DisputeModule.setDisputeFee`](contracts/v2/DisputeModule.sol) and [`DisputeModule.setTaxPolicy`](contracts/v2/DisputeModule.sol).
+The contract owner can reconfigure live deployments without redeployment. Use a block explorer's **Write Contract** tab to call the setters below.
+
+#### JobRegistry
+- `setValidationModule(address)`
+- `setReputationEngine(address)`
+- `setStakeManager(address)`
+- `setCertificateNFT(address)`
+- `setDisputeModule(address)`
+- `setFeePool(address)`
+- `setFeePct(uint256)`
+- `setAgentRootNode(bytes32)`
+- `setAgentMerkleRoot(bytes32)`
+- `setJobParameters(uint256 reward, uint256 stake)`
+- `setModules(address validationModule, address reputationEngine, address stakeManager, address certificateNFT, address disputeModule)` – emits `ModulesUpdated`
+- `pause()` / `unpause()`
+
+#### StakeManager
+- `setMinStake(uint256)`
+- `setMaxStakePerAddress(uint256)`
+- `setSlashingPercentage(uint8 role, uint256 pct)`
+- `setToken(address)`
+- `setTreasury(address)`
+- `setBlacklist(address, bool)`
+- `pause()` / `unpause()`
+
+#### ValidationModule
+- `setStakeManager(address)`
+- `setDisputeBond(uint256)`
+- `setChallengeWindow(uint256)`
+- `setDisputeResolution(address)`
+- `setReputationEngine(address)`
+- `setClubRootNode(bytes32)`
+- `setValidatorMerkleRoot(bytes32)`
+- `setValidatorsPerJob(uint256)`
+- `setCommitWindow(uint256)`
+- `setRevealWindow(uint256)`
+- `setValidatorPool(address[])`
+- `setOutcome(uint256 jobId, bool success)`
+
+#### ReputationEngine
+- `setCaller(address, Role)`
+- `setAgentThreshold(uint256)`
+- `setValidatorThreshold(uint256)`
+- `setThreshold(Role, uint256)`
+- `setValidationRewardPercentage(uint256)`
+- `setDecayConstant(uint256)`
+
+#### DisputeModule
+- `setStakeManager(address)`
+- `setReputationEngine(address)`
+- `setValidationModule(address)`
+
+#### CertificateNFT
+- `setBaseURI(string)`
+- `setMinter(address, bool)`
+
+#### FeePool
+- `ownerWithdraw(address to, uint256 amount)`
+- `setToken(address)`
+- `setStakeManager(address)`
+- `setRewardRole(uint8 role)`
+- `setBurnPct(uint256)`
+- `setTreasury(address)`
+
+#### TaxPolicy
+- `setPolicyURI(string)`
+- `setAcknowledgement(string)`
+- `setPolicy(string uri, string text)`
+- `bumpPolicyVersion()`
 
 ### Ownership transfer sequence
 
