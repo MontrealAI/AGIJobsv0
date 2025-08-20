@@ -184,12 +184,7 @@ contract ReputationEngine is Ownable {
             }
         } else {
             uint256 current = _scores[user];
-            uint256 newScore = current > 1 ? current - 1 : 0;
-            if (current != newScore) {
-                _scores[user] = newScore;
-                emit ReputationUpdated(user, -int256(current - newScore), newScore);
-            }
-            if (!isBlacklisted[user] && newScore < threshold) {
+            if (!isBlacklisted[user] && current < threshold) {
                 isBlacklisted[user] = true;
                 emit BlacklistUpdated(user, true);
             }
@@ -217,7 +212,7 @@ contract ReputationEngine is Ownable {
     function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
         uint256 scaledPayout = payout / 1e18;
         uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
-        return log2(1 + payoutPoints * 1e6) - 1 + duration / 10000;
+        return log2(1 + payoutPoints * 1e6) + duration / 10000;
     }
 
     /// @notice Compute validator reputation gain from agent gain.
