@@ -136,7 +136,7 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "JobApplied")
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setResult(true);
-    await expect(registry.connect(agent).submit(jobId, "result"))
+    await expect(registry.connect(agent).submit(jobId, "result", "", []))
       .to.emit(registry, "JobSubmitted")
       .withArgs(jobId, "result");
     await expect(validation.finalize(jobId))
@@ -197,7 +197,7 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
-    await registry.connect(agent).submit(jobId, "result");
+    await registry.connect(agent).submit(jobId, "result", "", []);
     await validation.finalize(jobId);
 
     // platform operator should be able to claim fee

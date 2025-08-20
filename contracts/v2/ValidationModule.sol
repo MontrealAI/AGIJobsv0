@@ -99,6 +99,9 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param validator Address claiming ownership.
     /// @param subdomain ENS subdomain label.
     event OwnershipVerified(address indexed validator, string subdomain);
+    /// @notice Emitted when a validator proceeds without ENS verification.
+    /// @param reason Explanation for the recovery path.
+    event RecoveryInitiated(string reason);
     /// @notice Emitted when an ENS root node is updated.
     /// @param node Identifier for the root node being modified.
     /// @param newRoot The new ENS root node hash.
@@ -315,6 +318,15 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ENSIdentityUpdated(node, validatorMerkleRoot, address(nameWrapper));
     }
 
+    /// @notice Set agent root node for completeness when updating roots.
+    function setAgentRootNode(bytes32 node) external onlyOwner {
+        agentRootNode = node;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ensOwnershipVerifier.setRootNodes(node, clubRootNode);
+        }
+        emit RootNodeUpdated("agent", node);
+    }
+
     /// @notice Update the commit and reveal windows.
     function setCommitRevealWindows(uint256 commitDur, uint256 revealDur)
         external
@@ -434,18 +446,22 @@ contract ValidationModule is IValidationModule, Ownable {
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) continue;
             }
-            bool authorized = additionalValidators[candidate];
-            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-                bytes32[] memory proof;
-                string memory subdomain = validatorSubdomains[candidate];
-                if (bytes(subdomain).length != 0) {
-                    authorized = ensOwnershipVerifier.verifyValidator(
-                        candidate,
-                        subdomain,
-                        proof
-                    );
+            bytes32[] memory proof;
+            string memory subdomain = validatorSubdomains[candidate];
+            bool ownershipVerified;
+            if (address(ensOwnershipVerifier) != address(0)) {
+                ownershipVerified = ensOwnershipVerifier.verifyValidator(
+                    candidate,
+                    subdomain,
+                    proof
+                );
+                if (ownershipVerified) {
+                    emit OwnershipVerified(candidate, subdomain);
+                } else {
+                    emit RecoveryInitiated("validator verification failed");
                 }
             }
+            bool authorized = ownershipVerified || additionalValidators[candidate];
             if (!authorized) continue;
             pool[m] = candidate;
             stakes[m] = stake;
@@ -498,25 +514,28 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        bool authorized;
-        if (address(identityRegistry) != address(0)) {
+        bool ownershipVerified;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ownershipVerified = ensOwnershipVerifier.verifyValidator(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (ownershipVerified) {
+                emit OwnershipVerified(msg.sender, subdomain);
+            } else {
+                emit RecoveryInitiated("validator verification failed");
+            }
+        }
+        bool authorized = ownershipVerified || additionalValidators[msg.sender];
+        if (!authorized && address(identityRegistry) != address(0)) {
             authorized = identityRegistry.isAuthorizedValidator(
                 msg.sender,
                 subdomain,
                 proof
             );
-        } else {
-            authorized = additionalValidators[msg.sender];
-            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-                authorized = ensOwnershipVerifier.verifyValidator(
-                    msg.sender,
-                    subdomain,
-                    proof
-                );
-            }
         }
         require(authorized, "Not authorized validator");
-        emit OwnershipVerified(msg.sender, subdomain);
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
@@ -557,25 +576,28 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        bool authorized;
-        if (address(identityRegistry) != address(0)) {
+        bool ownershipVerified;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ownershipVerified = ensOwnershipVerifier.verifyValidator(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (ownershipVerified) {
+                emit OwnershipVerified(msg.sender, subdomain);
+            } else {
+                emit RecoveryInitiated("validator verification failed");
+            }
+        }
+        bool authorized = ownershipVerified || additionalValidators[msg.sender];
+        if (!authorized && address(identityRegistry) != address(0)) {
             authorized = identityRegistry.isAuthorizedValidator(
                 msg.sender,
                 subdomain,
                 proof
             );
-        } else {
-            authorized = additionalValidators[msg.sender];
-            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-                authorized = ensOwnershipVerifier.verifyValidator(
-                    msg.sender,
-                    subdomain,
-                    proof
-                );
-            }
         }
         require(authorized, "Not authorized validator");
-        emit OwnershipVerified(msg.sender, subdomain);
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),

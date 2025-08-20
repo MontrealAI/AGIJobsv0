@@ -220,7 +220,12 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         applyForJob(jobId, subdomain, proof);
     }
 
-    function submit(uint256 jobId, string calldata result) public override {
+    function submit(
+        uint256 jobId,
+        string calldata result,
+        string calldata,
+        bytes32[] calldata
+    ) public override {
         Job storage job = _jobs[jobId];
         require(job.status == Status.Applied, "state");
         require(msg.sender == job.agent, "agent");
@@ -232,11 +237,13 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         }
     }
 
-    function acknowledgeAndSubmit(uint256 jobId, string calldata result)
-        external
-        override
-    {
-        submit(jobId, result);
+    function acknowledgeAndSubmit(
+        uint256 jobId,
+        string calldata result,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external override {
+        submit(jobId, result, subdomain, proof);
     }
 
     function finalizeAfterValidation(uint256 jobId, bool success) public override {
