@@ -34,6 +34,9 @@ contract JobNFT is ERC721, Ownable {
 
     mapping(uint256 => Listing) public listings;
 
+    /// @notice Price granularity enforcing 6-decimal units for $AGIALPHA.
+    uint256 private constant PRICE_UNIT = 1e6;
+
     // ---------------------------------------------------------------------
     // Events
     // ---------------------------------------------------------------------
@@ -116,6 +119,7 @@ contract JobNFT is ERC721, Ownable {
     function list(uint256 tokenId, uint256 price) external {
         require(ownerOf(tokenId) == msg.sender, "owner");
         require(price > 0, "price");
+        require(price % PRICE_UNIT == 0, "decimals");
         Listing storage listing = listings[tokenId];
         require(!listing.active, "listed");
 
@@ -133,6 +137,8 @@ contract JobNFT is ERC721, Ownable {
         address seller = listing.seller;
         require(seller != msg.sender, "self");
         uint256 price = listing.price;
+
+        require(agiAlpha.allowance(msg.sender, address(this)) >= price, "allowance");
 
         delete listings[tokenId];
 
