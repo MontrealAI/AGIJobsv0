@@ -7,7 +7,7 @@ interface IValidationModule {
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
     event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);
-    event ValidationFinalized(
+    event ValidationTallied(
         uint256 indexed jobId,
         bool success,
         uint256 approvals,
