@@ -2,6 +2,36 @@
 
 All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPHA = 1_000_000 units**). Convert values before entering them on Etherscan.
 
+## Deploying AGIJobsv0 with $AGIALPHA
+
+1. Open the verified
+   [AGIJobManager v0 contract](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
+   on Etherscan and select **Contract → Deploy**.
+2. Supply constructor parameters:
+   - `_agiTokenAddress` – [$AGIALPHA token](https://etherscan.io/token/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D).
+     Remember that 6‑decimal base units are required (e.g. `10.5` tokens = `10_500000`).
+   - `_baseIpfsUrl` – common prefix for job metadata such as `ipfs://`.
+   - `_ensAddress` – [ENS Registry](https://etherscan.io/address/0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e).
+   - `_nameWrapperAddress` – [ENS NameWrapper](https://etherscan.io/address/0x253553366Da8546fC250F225fe3d25d0C782303b).
+   - `_clubRootNode` and `_agentRootNode` – namehashes for `club.agi.eth` and `agent.agi.eth`; use
+     `0x00` if no ENS gating is desired.
+   - `_validatorMerkleRoot` and `_agentMerkleRoot` – allowlist roots or `0x00` for open access.
+3. Submit the transaction; the deploying wallet becomes the owner.
+4. Post‑deployment owner actions appear under **Write Contract**:
+   - `updateAGITokenAddress(newToken)` swaps the payout token without redeploying
+     ([example](https://etherscan.io/tx/0x9efa2044bc0d0112f21724baacecf72719297c9db1d97e49a9281863684a668a)).
+   - `setRootNodes(clubRootNode, agentRootNode)` and `setMerkleRoots(validatorRoot, agentRoot)` adjust
+     ENS and Merkle allowlists as policies evolve.
+   - `addAdditionalAgent(address)` whitelists specific addresses; the paired `addAdditionalValidator`
+     provides similar overrides.
+   - `blacklist(address, true)` blocks misbehaving agents or validators.
+   - Token transfers and payouts use 6‑decimal units, as illustrated by
+     [this 10 666.56 AGIALPHA transfer](https://etherscan.io/tx/0x7d16c9a27d2d852c04ccca086d32fcc03f6931635ff63a7ab37dc8d24f659fee).
+5. These setters mirror module controls in the v2 architecture—`StakeManager.setToken`,
+   `ENSOwnershipVerifier.setRootNodes`, `IdentityRegistry.setMerkleRoots`, `JobRegistry.addAdditionalAgent`,
+   and `ReputationEngine.blacklist`—demonstrating that the owner can retune parameters or swap tokens
+   without redeploying contracts.
+
 ## One-click Etherscan deployment
 
 ### Recommended constructor parameters
