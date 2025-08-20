@@ -76,12 +76,11 @@ contract DisputeModule is Ownable {
         emit ModeratorUpdated(initialModerator, true);
     }
 
-    /// @notice Modifier restricting calls to the owner or moderator.
-    modifier onlyArbiter() {
-        require(
-            msg.sender == owner() || moderators[msg.sender],
-            "not authorized"
-        );
+    /// @notice Restrict calls to approved moderators.
+    /// @dev The owner can grant or revoke moderator status via
+    ///      {addModerator} and {removeModerator}.
+    modifier onlyModerator() {
+        require(moderators[msg.sender], "not authorized");
         _;
     }
 
@@ -173,7 +172,7 @@ contract DisputeModule is Ownable {
     /// @param employerWins True if the employer prevails.
     function resolveDispute(uint256 jobId, bool employerWins)
         external
-        onlyArbiter
+        onlyModerator
     {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
