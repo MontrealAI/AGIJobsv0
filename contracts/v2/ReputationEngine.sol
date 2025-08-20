@@ -182,9 +182,17 @@ contract ReputationEngine is Ownable {
                 isBlacklisted[user] = false;
                 emit BlacklistUpdated(user, false);
             }
-        } else if (_scores[user] < threshold) {
-            isBlacklisted[user] = true;
-            emit BlacklistUpdated(user, true);
+        } else {
+            uint256 current = _scores[user];
+            uint256 newScore = current > 1 ? current - 1 : 0;
+            if (current != newScore) {
+                _scores[user] = newScore;
+                emit ReputationUpdated(user, -int256(current - newScore), newScore);
+            }
+            if (!isBlacklisted[user] && newScore < threshold) {
+                isBlacklisted[user] = true;
+                emit BlacklistUpdated(user, true);
+            }
         }
     }
 
@@ -209,7 +217,7 @@ contract ReputationEngine is Ownable {
     function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
         uint256 scaledPayout = payout / 1e18;
         uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
-        return log2(1 + payoutPoints * 1e6) + duration / 10000;
+        return log2(1 + payoutPoints * 1e6) - 1 + duration / 10000;
     }
 
     /// @notice Compute validator reputation gain from agent gain.
@@ -244,17 +252,17 @@ contract ReputationEngine is Ownable {
 
     uint256 public constant maxReputation = 88_888;
 
-    /// @notice Apply diminishing returns and cap to reputation growth.
-    /// @dev Uses a simple logarithmic style curve: each additional point has less
-    ///      impact as the score approaches {maxReputation}.
+    /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = current + points;
-        // Diminishing returns: reduce the gain proportionally to current score.
-        uint256 diminished = newReputation - (current * points) / maxReputation;
-        if (diminished > maxReputation) {
+        uint256 numerator = newReputation * newReputation * 1e18;
+        uint256 denominator = maxReputation * maxReputation;
+        uint256 factor = 1e18 + (numerator / denominator);
+        uint256 diminishedReputation = (newReputation * 1e18) / factor;
+        if (diminishedReputation > maxReputation) {
             return maxReputation;
         }
-        return diminished;
+        return diminishedReputation;
     }
 
     /// @notice Return the combined operator score based on stake and reputation.
