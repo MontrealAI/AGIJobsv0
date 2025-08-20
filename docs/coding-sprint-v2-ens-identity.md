@@ -10,31 +10,32 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 ## Tasks
 
 ### 1. Identity Verification Library
-- Build `ENSOwnershipVerifier` with Merkle proof, NameWrapper and resolver fallback.
-- Emit `OwnershipVerified` and `RecoveryInitiated` events.
+- Build `ENSOwnershipVerifier` mirroring v0's `_verifyOwnership`: first attempt Merkle proof, then check NameWrapper `ownerOf`, and finally fall back to resolver `addr` lookup.
+- Emit `OwnershipVerified` and `RecoveryInitiated` events on success or failed external calls.
 - Store `agentRootNode`, `clubRootNode`, `agentMerkleRoot` and `validatorMerkleRoot`; owner setters (`setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`) fire `RootNodeUpdated`/`MerkleRootUpdated` events.
 - Provide `addAdditionalAgent`/`addAdditionalValidator` and removal counterparts so the owner can override identity checks.
-- Expose helper `isAuthorizedAgent`/`isAuthorizedValidator` that consults allow‑lists and `ReputationEngine.isBlacklisted`.
+- Expose helper `isAuthorizedAgent`/`isAuthorizedValidator` that consults allow‑lists and `ReputationEngine.isBlacklisted` before allowing any action.
 
 ### 2. JobRegistry
 - Port `createJob`, `applyForJob`, `submit`, `finalize`, `cancelJob`, `dispute` and `forceCancel`.
-- On `applyForJob` use `isAuthorizedAgent` and reject blacklisted addresses via `ReputationEngine`.
+- On `applyForJob` use `isAuthorizedAgent`; ensure `ReputationEngine.isBlacklisted` blocks flagged addresses and respect `additionalAgents` allow‑list toggles.
 - Require tax policy acknowledgement before any state‑changing action.
 - Enforce owner‑set `maxJobReward` and `maxJobDuration` limits.
+- After successful validation call `StakeManager.release` for payouts, `ReputationEngine.onFinalize` for reputation, and `CertificateNFT.mint` for credentials.
 - Mirror v1 event names and cross‑check `docs/v1-v2-function-map.md` to ensure feature parity.
 
 ### 3. ValidationModule
 - Select validator committees and record commits & reveals.
-- Accept votes only from identities passing `isAuthorizedValidator`.
-- Finalise results once quorum or the reveal window ends.
-- Report outcomes back to `JobRegistry`.
+- Accept votes only from identities passing `isAuthorizedValidator` (allow‑list or ENS ownership and not blacklisted).
+- Finalise results once quorum or the reveal window ends, tallying approvals vs. disapprovals against owner‑set thresholds.
+- Report outcomes back to `JobRegistry` for payout or dispute routing.
 - Use deterministic on‑chain randomness; avoid Chainlink VRF or subscription services.
 
 ### 4. StakeManager
 - Custody all funds in $AGIALPHA (6 decimals) with owner‑settable token address.
 - Handle deposits, withdrawals, escrow locking, releases and slashing.
-- Apply protocol fees and validator rewards; support AGIType payout bonuses.
-- Provide a `contribute` function for reward‑pool top‑ups to match v1's `contributeToRewardPool`.
+- Apply protocol fees and validator rewards; support AGIType payout bonuses and per‑job validator splits.
+- Provide a `contribute` function for reward‑pool top‑ups to match v1's `contributeToRewardPool` and emit `RewardPoolContribution`.
 
 ### 5. ReputationEngine
 - Implement logarithmic reputation growth with diminishing returns.
@@ -48,8 +49,8 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 
 ### 7. CertificateNFT & Marketplace
 - Mint one certificate per completed job to the worker.
-- Add `list`, `purchase`, and `delist` functions using $AGIALPHA.
-- Owner can set base URI and `JobRegistry` address.
+- Add `list`, `purchase`, and `delist` functions using $AGIALPHA`; transfer proceeds to the seller.
+- Owner can set base URI, `JobRegistry` address, and swap payout token via `StakeManager.setToken`.
 
 ### 8. Documentation & Tests
 - Update `README.md` with an AGIALPHA deployment guide and Etherscan walkthrough.
