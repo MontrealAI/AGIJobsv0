@@ -41,7 +41,7 @@ contract ReputationEngine is Ownable {
     uint256 public decayConstant;
 
     event ReputationChanged(address indexed user, Role indexed role, int256 delta, uint256 newScore);
-    event Blacklisted(address indexed user, Role indexed role, bool status);
+    event BlacklistUpdated(address indexed user, Role indexed role, bool status);
     event CallerAuthorized(address indexed caller, Role role);
     event AgentThresholdUpdated(uint256 newThreshold);
     event ValidatorThresholdUpdated(uint256 newThreshold);
@@ -132,7 +132,7 @@ contract ReputationEngine is Ownable {
             emit ReputationChanged(user, role, int256(amount), newScore);
             if (agentBlacklisted[user] && newScore >= agentThreshold) {
                 agentBlacklisted[user] = false;
-                emit Blacklisted(user, role, false);
+                emit BlacklistUpdated(user, role, false);
             }
         } else if (role == Role.Validator) {
             _applyDecayValidator(user);
@@ -141,7 +141,7 @@ contract ReputationEngine is Ownable {
             emit ReputationChanged(user, role, int256(amount), newScore);
             if (validatorBlacklisted[user] && newScore >= validatorThreshold) {
                 validatorBlacklisted[user] = false;
-                emit Blacklisted(user, role, false);
+                emit BlacklistUpdated(user, role, false);
             }
         }
     }
@@ -164,7 +164,7 @@ contract ReputationEngine is Ownable {
             emit ReputationChanged(user, role, -int256(amount), newScore);
             if (!agentBlacklisted[user] && newScore < agentThreshold) {
                 agentBlacklisted[user] = true;
-                emit Blacklisted(user, role, true);
+                emit BlacklistUpdated(user, role, true);
             }
         } else if (role == Role.Validator) {
             _applyDecayValidator(user);
@@ -174,7 +174,7 @@ contract ReputationEngine is Ownable {
             emit ReputationChanged(user, role, -int256(amount), newScore);
             if (!validatorBlacklisted[user] && newScore < validatorThreshold) {
                 validatorBlacklisted[user] = true;
-                emit Blacklisted(user, role, true);
+                emit BlacklistUpdated(user, role, true);
             }
         }
     }
@@ -193,7 +193,7 @@ contract ReputationEngine is Ownable {
         } else if (role == Role.Validator) {
             validatorBlacklisted[user] = status;
         }
-        emit Blacklisted(user, role, status);
+        emit BlacklistUpdated(user, role, status);
     }
 
     /// @notice Determine if a user meets the premium access threshold.
@@ -232,11 +232,11 @@ contract ReputationEngine is Ownable {
             emit ReputationChanged(agent, Role.Agent, int256(gain), newScore);
             if (agentBlacklisted[agent] && newScore >= agentThreshold) {
                 agentBlacklisted[agent] = false;
-                emit Blacklisted(agent, Role.Agent, false);
+                emit BlacklistUpdated(agent, Role.Agent, false);
             }
         } else if (_agentReputation[agent] < agentThreshold) {
             agentBlacklisted[agent] = true;
-            emit Blacklisted(agent, Role.Agent, true);
+            emit BlacklistUpdated(agent, Role.Agent, true);
         }
     }
 
@@ -251,7 +251,7 @@ contract ReputationEngine is Ownable {
         emit ReputationChanged(validator, Role.Validator, int256(gain), newScore);
         if (validatorBlacklisted[validator] && newScore >= validatorThreshold) {
             validatorBlacklisted[validator] = false;
-            emit Blacklisted(validator, Role.Validator, false);
+            emit BlacklistUpdated(validator, Role.Validator, false);
         }
     }
 
