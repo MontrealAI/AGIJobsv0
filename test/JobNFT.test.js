@@ -74,9 +74,8 @@ describe("JobNFT", function () {
       .to.emit(nft, "NFTListed")
       .withArgs(1, seller.address, price);
 
-    await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
-      token,
-      "ERC20InsufficientAllowance"
+    await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
+      "allowance"
     );
 
     await token.connect(buyer).approve(await nft.getAddress(), price);
@@ -107,6 +106,9 @@ describe("JobNFT", function () {
 
     await expect(nft.connect(buyer).list(1, price)).to.be.revertedWith("owner");
     await expect(nft.connect(seller).list(1, 0)).to.be.revertedWith("price");
+    await expect(nft.connect(seller).list(1, price - 1n)).to.be.revertedWith(
+      "decimals"
+    );
 
     await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith("not listed");
 
