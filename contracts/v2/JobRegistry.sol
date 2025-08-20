@@ -7,6 +7,7 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 
 interface IReputationEngine {
@@ -79,6 +80,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
     ENSOwnershipVerifier public ensOwnershipVerifier;
+    IIdentityRegistry public identityRegistry;
     bytes32 public agentRootNode;
     bytes32 public agentMerkleRoot;
     mapping(address => bool) public additionalAgents;
@@ -133,6 +135,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
+    event IdentityRegistryUpdated(address registry);
     event ValidatorRewardPctUpdated(uint256 pct);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
@@ -311,6 +314,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
         ensOwnershipVerifier = verifier;
         emit ModuleUpdated("ENSOwnershipVerifier", address(verifier));
+    }
+
+    /// @notice Update the identity registry used for agent authorization.
+    /// @param registry Address of the IdentityRegistry contract.
+    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+        identityRegistry = registry;
+        emit IdentityRegistryUpdated(address(registry));
+        emit ModuleUpdated("IdentityRegistry", address(registry));
     }
 
     /// @notice Set the ENS root node used for agent verification.
@@ -577,7 +588,18 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
         bool ownershipVerified;
-        if (address(ensOwnershipVerifier) != address(0)) {
+        if (address(identityRegistry) != address(0)) {
+            ownershipVerified = identityRegistry.verifyAgent(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (ownershipVerified) {
+                emit OwnershipVerified(msg.sender, subdomain);
+            } else {
+                emit RecoveryInitiated("agent verification failed");
+            }
+        } else if (address(ensOwnershipVerifier) != address(0)) {
             ownershipVerified = ensOwnershipVerifier.verifyAgent(
                 msg.sender,
                 subdomain,
@@ -590,6 +612,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             }
         }
         bool authorized = ownershipVerified || additionalAgents[msg.sender];
+        if (!authorized && address(identityRegistry) != address(0)) {
+            authorized = identityRegistry.isAuthorizedAgent(
+                msg.sender,
+                subdomain,
+                proof
+            );
+        }
         require(authorized, "Not authorized agent");
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
@@ -681,7 +710,18 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         bool ownershipVerified;
-        if (address(ensOwnershipVerifier) != address(0)) {
+        if (address(identityRegistry) != address(0)) {
+            ownershipVerified = identityRegistry.verifyAgent(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (ownershipVerified) {
+                emit OwnershipVerified(msg.sender, subdomain);
+            } else {
+                emit RecoveryInitiated("agent verification failed");
+            }
+        } else if (address(ensOwnershipVerifier) != address(0)) {
             ownershipVerified = ensOwnershipVerifier.verifyAgent(
                 msg.sender,
                 subdomain,
@@ -693,10 +733,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 emit RecoveryInitiated("agent verification failed");
             }
         }
-        require(
-            ownershipVerified || additionalAgents[msg.sender],
-            "Not authorized agent"
-        );
+        bool authorized = ownershipVerified || additionalAgents[msg.sender];
+        if (!authorized && address(identityRegistry) != address(0)) {
+            authorized = identityRegistry.isAuthorizedAgent(
+                msg.sender,
+                subdomain,
+                proof
+            );
+        }
+        require(authorized, "Not authorized agent");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
