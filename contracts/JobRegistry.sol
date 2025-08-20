@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 interface IValidationModule {
     function validate(uint256 jobId) external view returns (bool);
@@ -41,7 +42,7 @@ interface IDisputeModule {
 
 /// @title JobRegistry
 /// @notice Orchestrates job lifecycle and coordinates with external modules.
-contract JobRegistry is Ownable {
+contract JobRegistry is Ownable, Pausable {
     enum Status { None, Created, Completed, Disputed, Finalized }
 
     struct Job {
@@ -78,6 +79,13 @@ contract JobRegistry is Ownable {
     event TaxPolicyAcknowledged(address indexed user);
 
     event ModuleUpdated(string module, address newAddress);
+    event ModulesUpdated(
+        address validationModule,
+        address reputationEngine,
+        address stakeManager,
+        address certificateNFT,
+        address disputeModule
+    );
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
@@ -124,6 +132,14 @@ contract JobRegistry is Ownable {
     /// @notice returns whether msg.sender has acknowledged the tax policy
     function isTaxExempt() external view returns (bool) {
         return _taxAcknowledged[msg.sender];
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     function setValidationModule(IValidationModule module) external onlyOwner {
@@ -204,6 +220,13 @@ contract JobRegistry is Ownable {
         emit ModuleUpdated("CertificateNFT", address(_certificateNFT));
         emit DisputeModuleUpdated(address(_disputeModule));
         emit ModuleUpdated("DisputeModule", address(_disputeModule));
+        emit ModulesUpdated(
+            address(_validationModule),
+            address(_reputationEngine),
+            address(_stakeManager),
+            address(_certificateNFT),
+            address(_disputeModule)
+        );
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
@@ -216,6 +239,7 @@ contract JobRegistry is Ownable {
     function createJob(address agent)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
         returns (uint256 jobId)
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
@@ -251,6 +275,7 @@ contract JobRegistry is Ownable {
     function completeJob(uint256 jobId, string calldata uri)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "invalid status");
@@ -272,6 +297,7 @@ contract JobRegistry is Ownable {
     function dispute(uint256 jobId)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
@@ -304,6 +330,7 @@ contract JobRegistry is Ownable {
     function finalize(uint256 jobId)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed, "not ready");

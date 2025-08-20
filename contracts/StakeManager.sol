@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -11,7 +12,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 /// @notice Simple staking contract supporting multiple participant roles.
 /// @dev All token amounts use 6 decimals. The provided token must implement
 ///      `decimals()` and return `6`.
-contract StakeManager is Ownable, ReentrancyGuard {
+contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice ERC20 token used for staking
@@ -69,6 +70,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // ------------------------------------------------------------------
     // Owner functions
     // ------------------------------------------------------------------
+
+    /// @notice pause staking deposits and withdrawals
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice resume staking deposits and withdrawals
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     /// @notice update minimum stake requirement
     function setMinStake(uint256 newMin) external onlyOwner {
@@ -134,6 +145,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function depositStake(uint8 role, uint256 amount)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
         nonReentrant
     {
         require(amount > 0, "StakeManager: amount 0");
@@ -160,6 +172,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function withdrawStake(uint8 role, uint256 amount)
         external
         requiresTaxAcknowledgement
+        whenNotPaused
         nonReentrant
     {
         uint256 staked = stakes[msg.sender][role];
