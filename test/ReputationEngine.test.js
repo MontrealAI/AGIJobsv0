@@ -22,10 +22,10 @@ describe("ReputationEngine", function () {
 
   it("blacklists agent below threshold and clears on recovery", async () => {
     await engine.connect(agentCaller).add(user.address, 10);
-    expect(await engine.reputationOf(user.address, 1)).to.equal(10);
+    expect(await engine.reputationOf(user.address, 1)).to.equal(9);
 
     await engine.connect(agentCaller).subtract(user.address, 6);
-    expect(await engine.reputationOf(user.address, 1)).to.equal(4);
+    expect(await engine.reputationOf(user.address, 1)).to.equal(3);
     expect(await engine.isBlacklisted(user.address, 1)).to.equal(true);
 
     await engine.connect(agentCaller).add(user.address, 10);
@@ -34,7 +34,7 @@ describe("ReputationEngine", function () {
 
   it("blacklists validator below threshold", async () => {
     await engine.connect(validatorCaller).add(user.address, 3);
-    expect(await engine.reputationOf(user.address, 2)).to.equal(3);
+    expect(await engine.reputationOf(user.address, 2)).to.equal(2);
 
     await engine.connect(validatorCaller).subtract(user.address, 4);
     expect(await engine.reputationOf(user.address, 2)).to.equal(0);

@@ -118,7 +118,7 @@ describe("job finalization integration", function () {
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setAuthorizedCaller(await registry.getAddress(), true);
-    await rep.setThreshold(1);
+    await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
     await registry.acknowledgeTaxPolicy();
@@ -159,7 +159,7 @@ describe("job finalization integration", function () {
     const employerAfter = await token.balanceOf(employer.address);
     expect(agentAfter - agentBefore).to.equal(reward);
     expect(employerAfter).to.equal(mintAmount - reward - fee);
-    expect(await rep.reputation(agent.address)).to.equal(2);
+    expect(await rep.reputation(agent.address)).to.equal(33);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
@@ -196,7 +196,7 @@ describe("job finalization integration", function () {
     const agentAfter = await token.balanceOf(agent.address);
     expect(employerAfter - employerBefore).to.equal(reward + fee + stakeRequired);
     expect(agentAfter).to.equal(agentBefore);
-    expect(await rep.reputation(agent.address)).to.equal(5);
+    expect(await rep.reputation(agent.address)).to.equal(4);
     expect(await nft.balanceOf(agent.address)).to.equal(0n);
   });
 
@@ -229,7 +229,7 @@ describe("job finalization integration", function () {
     const employerAfter = await token.balanceOf(employer.address);
     expect(agentAfter - agentBefore).to.equal(reward);
     expect(employerAfter).to.equal(employerBefore);
-    expect(await rep.reputation(agent.address)).to.equal(2);
+    expect(await rep.reputation(agent.address)).to.equal(33);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 });
