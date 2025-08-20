@@ -95,10 +95,6 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
-    /// @notice Emitted when validator ENS ownership is verified or bypassed.
-    /// @param validator Address claiming ownership.
-    /// @param subdomain ENS subdomain label.
-    event OwnershipVerified(address indexed validator, string subdomain);
     /// @notice Emitted when an ENS root node is updated.
     /// @param node Identifier for the root node being modified.
     /// @param newRoot The new ENS root node hash.
@@ -498,25 +494,23 @@ contract ValidationModule is IValidationModule, Ownable {
             "commit closed"
         );
         require(_isValidator(jobId, msg.sender), "not validator");
-        bool authorized;
-        if (address(identityRegistry) != address(0)) {
-            authorized = identityRegistry.isAuthorizedValidator(
+        bool authorized = additionalValidators[msg.sender];
+        if (!authorized && address(identityRegistry) != address(0)) {
+            bool ownershipVerified = identityRegistry.verifyValidator(
                 msg.sender,
                 subdomain,
                 proof
             );
-        } else {
-            authorized = additionalValidators[msg.sender];
-            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-                authorized = ensOwnershipVerifier.verifyValidator(
-                    msg.sender,
-                    subdomain,
-                    proof
-                );
-            }
+            authorized =
+                ownershipVerified || identityRegistry.additionalValidators(msg.sender);
+        } else if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+            authorized = ensOwnershipVerifier.verifyValidator(
+                msg.sender,
+                subdomain,
+                proof
+            );
         }
         require(authorized, "Not authorized validator");
-        emit OwnershipVerified(msg.sender, subdomain);
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
@@ -557,25 +551,23 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        bool authorized;
-        if (address(identityRegistry) != address(0)) {
-            authorized = identityRegistry.isAuthorizedValidator(
+        bool authorized = additionalValidators[msg.sender];
+        if (!authorized && address(identityRegistry) != address(0)) {
+            bool ownershipVerified = identityRegistry.verifyValidator(
                 msg.sender,
                 subdomain,
                 proof
             );
-        } else {
-            authorized = additionalValidators[msg.sender];
-            if (!authorized && address(ensOwnershipVerifier) != address(0)) {
-                authorized = ensOwnershipVerifier.verifyValidator(
-                    msg.sender,
-                    subdomain,
-                    proof
-                );
-            }
+            authorized =
+                ownershipVerified || identityRegistry.additionalValidators(msg.sender);
+        } else if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+            authorized = ensOwnershipVerifier.verifyValidator(
+                msg.sender,
+                subdomain,
+                proof
+            );
         }
         require(authorized, "Not authorized validator");
-        emit OwnershipVerified(msg.sender, subdomain);
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),

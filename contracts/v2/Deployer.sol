@@ -27,6 +27,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -276,6 +277,7 @@ contract Deployer is Ownable {
             JIDisputeModule(address(0)),
             JICertificateNFT(address(0)),
             IFeePool(address(0)),
+            IIdentityRegistry(address(0)),
             ITaxPolicy(address(0)),
             feePct,
             jobStake,
@@ -352,6 +354,7 @@ contract Deployer is Ownable {
             JIReputationEngine(address(reputation)),
             JIDisputeModule(address(dispute)),
             JICertificateNFT(address(certificate)),
+            IIdentityRegistry(address(0)),
             acks
         );
         registry.setFeePool(IFeePool(address(pool)));
@@ -359,11 +362,7 @@ contract Deployer is Ownable {
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }
 
-        registry.setENSOwnershipVerifier(verifier);
         validation.setENSOwnershipVerifier(verifier);
-        if (ids.agentRootNode != bytes32(0)) {
-            registry.setAgentRootNode(ids.agentRootNode);
-        }
         if (ids.clubRootNode != bytes32(0)) {
             validation.setClubRootNode(ids.clubRootNode);
         }
