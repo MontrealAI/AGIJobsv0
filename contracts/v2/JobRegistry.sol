@@ -165,6 +165,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param agent Address claiming ownership.
     /// @param subdomain ENS subdomain label.
     event OwnershipVerified(address indexed agent, string subdomain);
+    /// @notice Emitted when an agent proceeds without ENS verification.
+    /// @param reason Explanation for the recovery path.
+    event RecoveryInitiated(string reason);
     /// @notice Emitted when an ENS root node is updated.
     /// @param node Identifier for the root node being modified.
     /// @param newRoot The new ENS root node hash.
@@ -560,19 +563,20 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
         bool ownershipVerified;
-        bool authorized = additionalAgents[msg.sender];
-        if (!authorized && address(ensOwnershipVerifier) != address(0)) {
+        if (address(ensOwnershipVerifier) != address(0)) {
             ownershipVerified = ensOwnershipVerifier.verifyAgent(
                 msg.sender,
                 subdomain,
                 proof
             );
-            authorized = ownershipVerified;
+            if (ownershipVerified) {
+                emit OwnershipVerified(msg.sender, subdomain);
+            } else {
+                emit RecoveryInitiated("agent verification failed");
+            }
         }
+        bool authorized = ownershipVerified || additionalAgents[msg.sender];
         require(authorized, "Not authorized agent");
-        if (ownershipVerified) {
-            emit OwnershipVerified(msg.sender, subdomain);
-        }
         if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
         }
@@ -645,13 +649,32 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Agent submits work for validation and selects validators.
     /// @param jobId Identifier of the job being submitted.
     /// @param result Metadata URI describing the completed work.
-    function submit(uint256 jobId, string calldata result)
-        public
-        requiresTaxAcknowledgement
-    {
+    function submit(
+        uint256 jobId,
+        string calldata result,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public requiresTaxAcknowledgement {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
+        bool ownershipVerified;
+        if (address(ensOwnershipVerifier) != address(0)) {
+            ownershipVerified = ensOwnershipVerifier.verifyAgent(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (ownershipVerified) {
+                emit OwnershipVerified(msg.sender, subdomain);
+            } else {
+                emit RecoveryInitiated("agent verification failed");
+            }
+        }
+        require(
+            ownershipVerified || additionalAgents[msg.sender],
+            "Not authorized agent"
+        );
         job.result = result;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, result);
@@ -661,9 +684,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice Acknowledge the tax policy and submit work in one call.
-    function acknowledgeAndSubmit(uint256 jobId, string calldata result) external {
+    function acknowledgeAndSubmit(
+        uint256 jobId,
+        string calldata result,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external {
         _acknowledge(msg.sender);
-        submit(jobId, result);
+        submit(jobId, result, subdomain, proof);
     }
 
     /// @notice Finalize job outcome after validation.

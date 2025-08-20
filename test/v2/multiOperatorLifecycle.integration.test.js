@@ -181,7 +181,7 @@ describe("multi-operator job lifecycle", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
-    await registry.connect(agent).submit(jobId, "result");
+    await registry.connect(agent).submit(jobId, "result", "", []);
     await validation.finalize(jobId);
 
     expect(await feePool.pendingFees()).to.equal(0);

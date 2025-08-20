@@ -158,12 +158,26 @@ interface IJobRegistry {
     /// @notice Agent submits completed work for validation.
     /// @param jobId Identifier of the job being submitted
     /// @param result Metadata URI of the submission
-    function submit(uint256 jobId, string calldata result) external;
+    /// @param subdomain ENS subdomain label
+    /// @param proof Merkle proof for ENS ownership verification
+    function submit(
+        uint256 jobId,
+        string calldata result,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Acknowledge tax policy and submit work in one call
     /// @param jobId Identifier of the job being submitted
     /// @param result Metadata URI of the submission
-    function acknowledgeAndSubmit(uint256 jobId, string calldata result) external;
+    /// @param subdomain ENS subdomain label
+    /// @param proof Merkle proof for ENS ownership verification
+    function acknowledgeAndSubmit(
+        uint256 jobId,
+        string calldata result,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) external;
 
     /// @notice Record validation outcome and update job state
     /// @param jobId Identifier of the job being finalised
