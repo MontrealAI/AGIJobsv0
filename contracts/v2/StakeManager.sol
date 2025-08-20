@@ -208,10 +208,14 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice update the staking/payout token
     /// @param newToken ERC20 token address using 6 decimals
     function setToken(IERC20 newToken) external onlyOwner {
-        IERC20Metadata meta = IERC20Metadata(address(newToken));
-        require(meta.decimals() == 6, "decimals");
-        token = newToken;
-        emit TokenUpdated(address(newToken));
+        if (address(newToken) == address(0)) {
+            token = IERC20(DEFAULT_TOKEN);
+        } else {
+            IERC20Metadata meta = IERC20Metadata(address(newToken));
+            require(meta.decimals() == 6, "decimals");
+            token = newToken;
+        }
+        emit TokenUpdated(address(token));
     }
 
     /// @notice update the minimum stake required

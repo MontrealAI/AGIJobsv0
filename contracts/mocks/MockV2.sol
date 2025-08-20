@@ -38,6 +38,7 @@ contract MockStakeManager is IStakeManager {
         disputeModule = module;
     }
     function setValidationModule(address) external override {}
+    function setModules(address, address) external override {}
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
 

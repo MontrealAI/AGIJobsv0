@@ -422,6 +422,65 @@ describe("StakeManager", function () {
     expect(await stakeManager.minStake()).to.equal(1n);
   });
 
+  it("enforces min stake on deposits and withdrawals for agent and validator", async () => {
+    // set min stake to 100
+    await stakeManager.connect(owner).setMinStake(100);
+
+    // wire job registry so user can stake
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 400);
+
+    // deposits below min stake revert for both roles
+    await expect(
+      stakeManager.connect(user).depositStake(0, 50)
+    ).to.be.revertedWith("min stake");
+    await expect(
+      stakeManager.connect(user).depositStake(1, 50)
+    ).to.be.revertedWith("min stake");
+
+    // deposits meeting min stake succeed
+    await stakeManager.connect(user).depositStake(0, 100);
+    await stakeManager.connect(user).depositStake(1, 100);
+
+    // partial withdrawals leaving below min stake revert
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 10)
+    ).to.be.revertedWith("min stake");
+    await expect(
+      stakeManager.connect(user).withdrawStake(1, 10)
+    ).to.be.revertedWith("min stake");
+
+    // full withdrawals succeed
+    await stakeManager.connect(user).withdrawStake(0, 100);
+    await stakeManager.connect(user).withdrawStake(1, 100);
+  });
+
   it("restricts slashing percentage updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setSlashingPercentages(60, 30)
