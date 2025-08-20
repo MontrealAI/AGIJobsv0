@@ -6,6 +6,7 @@ import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IVRF} from "./interfaces/IVRF.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
@@ -462,6 +463,13 @@ contract ValidationModule is IValidationModule, Ownable {
                 }
             }
             bool authorized = ownershipVerified || additionalValidators[candidate];
+            if (!authorized && address(identityRegistry) != address(0)) {
+                authorized = identityRegistry.isAuthorizedValidator(
+                    candidate,
+                    subdomain,
+                    proof
+                );
+            }
             if (!authorized) continue;
             pool[m] = candidate;
             stakes[m] = stake;
@@ -664,10 +672,24 @@ contract ValidationModule is IValidationModule, Ownable {
         require(block.timestamp > r.revealDeadline, "reveal pending");
 
         uint256 total = r.approvals + r.rejections;
-        if (total > 0) {
+        bool quorum = r.participants.length >= minValidators;
+        if (quorum && total > 0) {
             success = (r.approvals * 100) >= (total * approvalThreshold);
         }
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        uint256 agentGain;
+        if (address(reputationEngine) != address(0) && success) {
+            uint256 payout = uint256(job.reward) * 1e12;
+            // attempt to derive validator reward from reputation engine
+            try
+                ReputationEngine(payable(address(reputationEngine)))
+                    .calculateReputationPoints(payout, 0)
+            returns (uint256 points) {
+                agentGain = points;
+            } catch {
+                agentGain = 1;
+            }
+        }
 
         for (uint256 i; i < r.validators.length; ++i) {
             address val = r.validators[i];
@@ -686,12 +708,12 @@ contract ValidationModule is IValidationModule, Ownable {
                     reputationEngine.subtract(val, 1);
                 }
             } else if (address(reputationEngine) != address(0)) {
-                reputationEngine.add(val, 1);
+                reputationEngine.rewardValidator(val, agentGain);
             }
         }
 
         r.tallied = true;
-        emit ValidationFinalized(jobId, success, r.approvals, r.rejections);
+        emit ValidationTallied(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
         jobRegistry.finalizeAfterValidation(jobId, success);
