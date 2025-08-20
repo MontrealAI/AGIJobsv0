@@ -78,6 +78,7 @@ forge script script/UpdateParams.s.sol --broadcast --rpc-url $RPC_URL --private-
 **Prerequisites**
 - `$AGIALPHA` token address (6‑decimal).
 - ENS registry and NameWrapper contract addresses.
+- ENS subdomain roots for `.agent.agi.eth` and `.club.agi.eth`; participants must control matching subdomains.
 
 **Steps**
 1. Deploy or reuse the [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) token; it powers job payouts, agent/validator stakes, validation rewards and dispute fees by default.
@@ -88,25 +89,30 @@ forge script script/UpdateParams.s.sol --broadcast --rpc-url $RPC_URL --private-
 6. For a screenshot walkthrough tailored to non‑technical users, consult [docs/etherscan-guide.md](docs/etherscan-guide.md).
 
 #### Etherscan deployment steps
-1. Navigate to the verified `AGIJobManagerv0` contract page on a block explorer and open the **Contract → Write Contract** tab.
-2. Connect the wallet that will act as the owner and fill in the constructor fields:
-   - `_agiTokenAddress` – `$AGIALPHA` token address.
-   - `_baseIpfsUrl` – base URI for job result metadata.
-   - `_ensAddress` and `_nameWrapperAddress` – official ENS contracts.
-   - `_clubRootNode` / `_agentRootNode` and the corresponding Merkle roots.
-3. Submit the transaction. The deploying account becomes the owner.
-4. In the **Write Contract** tab, use `updateAGITokenAddress`, `addAdditionalAgent`, `addAdditionalValidator`, or blacklist functions to tune the deployment. These settings can be updated later without redeploying.
-5. To rotate tokens in the future, call `updateAGITokenAddress(newToken)`; all accounting continues in 6‑decimal units.
+1. Browse to the verified `AGIJobManagerv0` contract on a block explorer and open **Contract → Write Contract**.
+2. Connect the wallet that will own the deployment.
+3. In the constructor section, supply `_agiTokenAddress` (6‑decimal `$AGIALPHA`), `_baseIpfsUrl`, `_ensAddress`, `_nameWrapperAddress`, `_clubRootNode`, `_agentRootNode`, and their Merkle roots.
+4. Send the transaction; the sender becomes `owner`.
+5. Still in **Write Contract**, the owner may update parameters at any time – e.g., `updateAGITokenAddress`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, or blacklist calls. Enter token amounts in 6‑decimal units.
+6. To migrate to a different ERC‑20 later, call `updateAGITokenAddress(newToken)`; state persists and no redeployment is required.
 
 ### Manual v2 deployment via Etherscan
 
-1. **Deploy `$AGIALPHA`** – open the verified [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) on Etherscan, switch to **Contract → Deploy**, and submit the transaction. The token reports `decimals = 6`, so later amounts use base units (`1 token = 1_000000`).
+**Prerequisites**
+- `$AGIALPHA` token address (6‑decimal) or another ERC‑20 to stake with.
+- ENS registry and NameWrapper contract addresses.
+- ENS root nodes for `.agent.agi.eth` and `.club.agi.eth`; only addresses with matching subdomains may participate.
+
+**Steps**
+1. **Deploy `$AGIALPHA`** – open the verified [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) on Etherscan, connect your wallet, and use **Contract → Deploy**. The token reports `decimals = 6`, so later amounts use base units (`1 token = 1_000000`).
 2. **Deploy `StakeManager`** – on its contract page provide the token address and any desired fee or treasury parameters; leave module addresses zero for now.
 3. **Deploy `ReputationEngine`** – supply the `StakeManager` address so reputation calculations can read staked balances.
 4. **Deploy `ValidationModule`** – pass the `StakeManager` address and defaults for timing and validator bounds. The `JobRegistry` address may be `0` at this stage.
 5. **Deploy `DisputeModule`** – constructor takes the `JobRegistry` (optional for now), dispute fee (6‑decimal units) and window length.
-6. **Deploy `CertificateNFT`** – provide name and symbol; owner can later set the `JobRegistry` and `StakeManager` addresses via `setJobRegistry` and `setStakeManager`.
+6. **Deploy `CertificateNFT`** – provide name and symbol; the owner can later set the `JobRegistry` and `StakeManager` addresses via `setJobRegistry` and `setStakeManager`.
 7. **Deploy `JobRegistry`** – supply addresses of the previously deployed modules along with any fee or stake defaults. Verify each contract source before proceeding.
+8. **Wire modules and configure** – from each contract’s **Write Contract** tab call `JobRegistry.setModules(...)`, set ENS roots (`JobRegistry.setAgentRootNode`, `ValidationModule.setClubRootNode`), and load Merkle roots. Enter all token amounts in 6‑decimal units.
+9. **Rotate tokens later** – the owner may swap to a new ERC‑20 at any time by calling `StakeManager.setToken(newToken)` (and `FeePool.setToken` if used); no modules need redeployment.
 
 ### Owner configuration via Write tabs
 
