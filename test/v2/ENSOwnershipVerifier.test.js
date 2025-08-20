@@ -61,6 +61,16 @@ describe("ENSOwnershipVerifier setters", function () {
       .withArgs(root);
   });
 
+  it("allows only owner to update agent Merkle root", async function () {
+    const root = ethers.id("agent");
+    await expect(verifier.connect(other).setAgentMerkleRoot(root))
+      .to.be.revertedWithCustomError(verifier, "OwnableUnauthorizedAccount")
+      .withArgs(other.address);
+    await expect(verifier.setAgentMerkleRoot(root))
+      .to.emit(verifier, "AgentMerkleRootUpdated")
+      .withArgs(root);
+  });
+
   it("allows bulk root node updates", async function () {
     const agentRoot = ethers.id("agent");
     const clubRoot = ethers.id("club");
@@ -91,11 +101,12 @@ describe("ENSOwnershipVerifier setters", function () {
 });
 
 describe("ENSOwnershipVerifier verification", function () {
-  let owner, agent, ens, resolver, wrapper, verifier;
+  let owner, agent, validator, ens, resolver, wrapper, verifier;
   const root = ethers.id("agi");
+  const club = ethers.id("club");
 
   beforeEach(async () => {
-    [owner, agent] = await ethers.getSigners();
+    [owner, agent, validator] = await ethers.getSigners();
     const ENS = await ethers.getContractFactory("MockENS");
     ens = await ENS.deploy();
     const Resolver = await ethers.getContractFactory("MockResolver");
@@ -113,6 +124,7 @@ describe("ENSOwnershipVerifier verification", function () {
     );
     await verifier.waitForDeployment();
     await verifier.setAgentRootNode(root);
+    await verifier.setClubRootNode(club);
   });
 
   function namehash(root, label) {
@@ -124,14 +136,44 @@ describe("ENSOwnershipVerifier verification", function () {
     );
   }
 
-  it("verifies merkle proof", async () => {
-    const leaf = ethers.solidityPackedKeccak256([
-      "address",
-    ], [agent.address]);
-    await verifier.setAgentMerkleRoot(leaf);
+  it("requires merkle proof without subdomain and invalidates on root update", async () => {
     expect(
-      await verifier.verifyAgent.staticCall(agent.address, "a", [])
+      await verifier.verifyAgent.staticCall(agent.address, "", [])
+    ).to.equal(false);
+    expect(
+      await verifier.verifyValidator.staticCall(validator.address, "", [])
+    ).to.equal(false);
+
+    const agentLeaf = ethers.solidityPackedKeccak256(["address"], [agent.address]);
+    const validatorLeaf = ethers.solidityPackedKeccak256(
+      ["address"],
+      [validator.address]
+    );
+    await verifier.setAgentMerkleRoot(agentLeaf);
+    await verifier.setValidatorMerkleRoot(validatorLeaf);
+
+    const txA = await verifier.verifyAgent(agent.address, "", []);
+    await txA.wait();
+    const txV = await verifier.verifyValidator(validator.address, "", []);
+    await txV.wait();
+
+    expect(
+      await verifier.verifyAgent.staticCall(agent.address, "", [])
     ).to.equal(true);
+    expect(
+      await verifier.verifyValidator.staticCall(validator.address, "", [])
+    ).to.equal(true);
+
+    const newRoot = ethers.id("newRoot");
+    await verifier.setAgentMerkleRoot(newRoot);
+    await verifier.setValidatorMerkleRoot(newRoot);
+
+    expect(
+      await verifier.verifyAgent.staticCall(agent.address, "", [])
+    ).to.equal(false);
+    expect(
+      await verifier.verifyValidator.staticCall(validator.address, "", [])
+    ).to.equal(false);
   });
 
   it("verifies via NameWrapper", async () => {
