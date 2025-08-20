@@ -1663,6 +1663,24 @@ graph TD
     JobRegistry -->|mint| CertificateNFT
 ```
 
+### Deployment Guide (AGIJobManager v0 with $AGIALPHA)
+
+The legacy monolithic manager can be deployed directly from a block explorer without scripts. All amounts use six‑decimal `$AGIALPHA` units and the owner may update any setting later without redeploying.
+
+1. **Constructor inputs** – on `AGIJobManagerv0` supply:
+   - `_agiTokenAddress`: `$AGIALPHA` token.
+   - `_baseIpfsUrl`: prefix for result metadata, e.g. `ipfs://`.
+   - `_ensAddress` and `_nameWrapperAddress`: official ENS contracts.
+   - `_clubRootNode`, `_agentRootNode`, `_validatorMerkleRoot`, `_agentMerkleRoot`: namehashes or `0x00`.
+2. **Post‑deployment configuration** – from the **Write Contract** tab the owner can:
+   - Swap payout tokens via `updateAGITokenAddress`.
+   - Manage allowlists with `addAdditionalAgent` / `addAdditionalValidator` and control blacklists.
+   - Tune parameters like `setRequiredValidatorApprovals`, `setValidationRewardPercentage`, `setMaxJobPayout`, and `setJobDurationLimit`.
+   - Update ENS roots or Merkle proofs as identity policies evolve.
+3. **Usage** – employers approve `$AGIALPHA` and call `createJob`; agents call `applyForJob(subdomain, proof)`; validators use `validateJob` / `disapproveJob`; disputes are handled via `disputeJob` and `resolveDispute`.
+
+See [docs/deployment-v0-agialpha.md](docs/deployment-v0-agialpha.md) for a screenshot walkthrough.
+
 ### Deployment Guide (AGIJobs v2 with $AGIALPHA)
 
 $AGIALPHA is a 6‑decimal ERC‑20 token used across the platform for payments, staking, rewards, and dispute fees. All modules allow the owner to update the token or parameters without redeploying contracts.
