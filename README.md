@@ -13,7 +13,17 @@ For step‑by‑step instructions on deploying the legacy manager with `$AGIALPH
 
 ## v2 Modular Contract Overview
 
-The v2 release splits the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system:
+The v2 release splits the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system. Deploy modules sequentially in the following order:
+
+1. [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) – 6‑decimal ERC‑20 used for stakes, rewards, and fees.
+2. [`StakeManager`](contracts/v2/StakeManager.sol)
+3. [`ReputationEngine`](contracts/v2/ReputationEngine.sol)
+4. [`ValidationModule`](contracts/v2/ValidationModule.sol)
+5. [`DisputeModule`](contracts/v2/modules/DisputeModule.sol)
+6. [`CertificateNFT`](contracts/v2/CertificateNFT.sol)
+7. [`JobRegistry`](contracts/v2/JobRegistry.sol)
+
+Each subsequent constructor accepts addresses from earlier steps, so deploying in this order avoids placeholder values.
 
 - **JobRegistry** – canonical job storage and router for companion modules; owner may swap module addresses with `setModules`.
 - **StakeManager** – escrows rewards and stakes, distributes payouts, and supports token swaps via `setToken`.
@@ -87,6 +97,26 @@ forge script script/UpdateParams.s.sol --broadcast --rpc-url $RPC_URL --private-
 3. Submit the transaction. The deploying account becomes the owner.
 4. In the **Write Contract** tab, use `updateAGITokenAddress`, `addAdditionalAgent`, `addAdditionalValidator`, or blacklist functions to tune the deployment. These settings can be updated later without redeploying.
 5. To rotate tokens in the future, call `updateAGITokenAddress(newToken)`; all accounting continues in 6‑decimal units.
+
+### Manual v2 deployment via Etherscan
+
+1. **Deploy `$AGIALPHA`** – open the verified [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) on Etherscan, switch to **Contract → Deploy**, and submit the transaction. The token reports `decimals = 6`, so later amounts use base units (`1 token = 1_000000`).
+2. **Deploy `StakeManager`** – on its contract page provide the token address and any desired fee or treasury parameters; leave module addresses zero for now.
+3. **Deploy `ReputationEngine`** – supply the `StakeManager` address so reputation calculations can read staked balances.
+4. **Deploy `ValidationModule`** – pass the `StakeManager` address and defaults for timing and validator bounds. The `JobRegistry` address may be `0` at this stage.
+5. **Deploy `DisputeModule`** – constructor takes the `JobRegistry` (optional for now), dispute fee (6‑decimal units) and window length.
+6. **Deploy `CertificateNFT`** – provide name and symbol; owner can later set the `JobRegistry` and `StakeManager` addresses via `setJobRegistry` and `setStakeManager`.
+7. **Deploy `JobRegistry`** – supply addresses of the previously deployed modules along with any fee or stake defaults. Verify each contract source before proceeding.
+
+### Owner configuration via Write tabs
+
+After deployment, owners wire modules and tune parameters directly from block‑explorer **Write Contract** tabs:
+
+- **Token address** – call `StakeManager.setToken(token)` (and `FeePool.setToken` if used) to register the 6‑decimal payout token.
+- **ENS roots** – update identity anchors with `JobRegistry.setAgentRootNode` and `ValidationModule.setClubRootNode`.
+- **Merkle roots** – load allowlists via `JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`.
+- **Fees & thresholds** – adjust economics using `DisputeModule.setDisputeFee`, `StakeManager.setFeePct`, and `ValidationModule.setApprovalThreshold` / `setValidatorBounds`.
+- **Module wiring** – from `JobRegistry` call `setModules(stakeManager, validationModule, disputeModule, certificateNFT, reputationEngine, feePool)` and update the reverse pointers on `StakeManager`, `ValidationModule`, and `CertificateNFT` with their respective setters.
 
 ### Etherscan Deployment Checklist
 
@@ -260,7 +290,7 @@ For narrated walkthroughs and block‑explorer screenshots, see [docs/deployment
 - **Validators** require a subdomain ending in `.club.agi.eth`.
 - Calls like `applyForJob` and `commitValidation` take your subdomain label and a Merkle proof. A valid proof lets [`ENSOwnershipVerifier.verifyOwnership`](contracts/v2/modules/ENSOwnershipVerifier.sol) skip on-chain ENS lookups, confirming membership off-chain and saving gas.
 - Owners may rotate ENS roots or allowlists at any time with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setENS`, and `setNameWrapper` without redeploying contracts.
-- **Getting a subdomain** – open `agi.eth` in the [ENS Manager](https://app.ens.domains), create `yourname.agent.agi.eth` or `yourname.club.agi.eth`, and point it to your wallet address. If creation is restricted, request a subdomain from the AGI operators.
+- **Getting a subdomain** – open `agi.eth` in the [ENS Manager](https://app.ens.domains), create `yourname.agent.agi.eth` or `yourname.club.agi.eth`, and point it to your wallet address. If creation is restricted, request a subdomain from the AGI operators. For more on managing subdomains, see the [ENS documentation](https://docs.ens.domains/fundamentals/subdomains).
 
 Sample `verifyOwnership` call:
 
@@ -1726,26 +1756,12 @@ Verified contract addresses:
 - [AGIJobManager v0](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
 - [$AGI Token](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D#code)
 
-1. **Post a Job**
-   - Open [JobRegistry `createJob`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) and connect an employer wallet.
-   - Fill `reward` and `uri`, then click **Write**.
-   - ![createJob screenshot](https://via.placeholder.com/650x300?text=createJob+Write+Contract)
-
-2. **Stake Tokens**
-   - Visit [StakeManager `depositStake`](https://etherscan.io/address/0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512#writeContract).
-   - After approving AGI, call `depositStake(role, amount)` (`0` = Agent, `1` = Validator).
-   - ![depositStake screenshot](https://via.placeholder.com/650x300?text=depositStake+Write+Contract)
-
-3. **Validate Work**
-   - During the commit window, go to [ValidationModule `commitValidation`](https://etherscan.io/address/0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9#writeContract) and submit `jobId` and `commitHash`.
-   - ![commitValidation screenshot](https://via.placeholder.com/650x300?text=commitValidation+Write+Contract)
-   - When the reveal window opens, call `revealValidation(jobId, approve, salt)` from the same tab.
-   - ![revealValidation screenshot](https://via.placeholder.com/650x300?text=revealValidation+Write+Contract)
-
-4. **Raise a Dispute**
-    - If validators disagree, open [JobRegistry `dispute`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) with the `jobId` and required dispute fee.
-    - The registry forwards the call to [DisputeModule `raiseDispute`](https://etherscan.io/address/0x0165878A594ca255338adfa4d48449f69242Eb8F#writeContract) for final resolution.
-   - ![dispute screenshot](https://via.placeholder.com/650x300?text=dispute+Write+Contract)
+1. **Create job** – open [JobRegistry `createJob`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) and supply the reward in 6‑decimal `$AGIALPHA` units along with an IPFS URI.
+2. **Stake & apply** – after approving the token, call [StakeManager `depositStake`](https://etherscan.io/address/0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512#writeContract) (`0` = Agent, `1` = Validator) using base units, then [JobRegistry `applyForJob`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract).
+3. **Submit work** – the chosen agent uploads results and calls [`submit(jobId, uri)`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract).
+4. **Commit & reveal** – validators execute [`commitValidation(jobId, hash)`](https://etherscan.io/address/0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9#writeContract) and later [`revealValidation(jobId, approve, salt)`](https://etherscan.io/address/0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9#writeContract).
+5. **Finalize** – once the reveal window closes, anyone may call [`finalize(jobId)`](https://etherscan.io/address/0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9#writeContract) on the ValidationModule to release `$AGIALPHA` rewards to the agent and validator set.
+6. **Dispute** – if results are challenged, call [JobRegistry `raiseDispute(jobId, evidence)`](https://etherscan.io/address/0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0#writeContract) with the dispute fee (6‑decimals); the registry forwards to the [DisputeModule](https://etherscan.io/address/0x0165878A594ca255338adfa4d48449f69242Eb8F#writeContract) for resolution.
 
 Review emitted events on each contract to confirm execution.
 
@@ -1754,6 +1770,8 @@ For detailed walkthroughs see [docs/etherscan-guide.md](docs/etherscan-guide.md)
 See [docs/architecture-v2.md](docs/architecture-v2.md) for expanded diagrams and interface definitions; the development plan appears in [docs/coding-sprint-v2.md](docs/coding-sprint-v2.md).
 
 ### Marketplace Flow via Etherscan
+
+Browse existing certificates on [OpenSea](https://opensea.io/collection/agijobs).
 
 1. **List a certificate**
    - Open the deployed `CertificateNFT` on Etherscan and switch to the **Write** tab.
