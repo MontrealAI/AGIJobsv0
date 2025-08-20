@@ -102,6 +102,7 @@ contract ENSOwnershipVerifier is Ownable {
     function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
         emit ValidatorMerkleRootUpdated(root);
+        emit MerkleRootUpdated("validator", root);
     }
 
     /// @notice Update agent Merkle root
