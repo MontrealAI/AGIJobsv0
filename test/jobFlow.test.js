@@ -133,5 +133,95 @@ describe("AGI job flow", function () {
     expect(before - after).to.equal(ethers.parseEther("1"));
     await expect(manager.ownerOf(0)).to.be.reverted;
   });
+
+  it("runs full flow with NFT sale and blacklist check", async function () {
+    const { token, manager, owner, employer, agent, v1, v2 } =
+      await deployFixture();
+    await manager.blacklistAgent(agent.address, true);
+    await token
+      .connect(employer)
+      .approve(await manager.getAddress(), ethers.parseEther("100"));
+    await manager
+      .connect(employer)
+      .createJob("jobhash", ethers.parseEther("100"), 1000, "details");
+    await expect(manager.connect(agent).applyForJob(0, "", []))
+      .to.be.revertedWithCustomError(manager, "Unauthorized");
+    await manager.blacklistAgent(agent.address, false);
+    await manager.connect(agent).applyForJob(0, "", []);
+    const tx = await manager
+      .connect(agent)
+      .requestJobCompletion(0, "result");
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    );
+    expect(event.args[1]).to.include.members([v1.address, v2.address]);
+    const salt1 = ethers.id("s1");
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [v1.address, 0, true, salt1]
+    );
+    const salt2 = ethers.id("s2");
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [v2.address, 0, true, salt2]
+    );
+    await manager.connect(v1).commitValidation(0, commit1, "", []);
+    await manager.connect(v2).commitValidation(0, commit2, "", []);
+    await time.increase(1);
+    await manager.connect(v1).revealValidation(0, true, salt1);
+    await manager.connect(v2).revealValidation(0, true, salt2);
+    await time.increase(6);
+    await manager.connect(v1).validateJob(0, "", []);
+
+    const JobNFT = await ethers.getContractFactory("JobNFT");
+    const nft = await JobNFT.deploy(await token.getAddress());
+    await nft.setJobRegistry(owner.address);
+    await nft.connect(owner).mint(agent.address, 1);
+    const price = ethers.parseEther("1");
+    await nft.connect(agent).list(1, price);
+    await token.connect(employer).approve(await nft.getAddress(), price);
+    await expect(nft.connect(employer).purchase(1))
+      .to.emit(nft, "NFTPurchased")
+      .withArgs(1, employer.address, price);
+    expect(await nft.ownerOf(1)).to.equal(employer.address);
+  });
+
+  it("handles validator rejection with dispute resolution", async function () {
+    const { token, manager, owner, employer, agent, v1, v2 } =
+      await deployFixture();
+    const payout = ethers.parseEther("100");
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager
+      .connect(employer)
+      .createJob("jobhash", payout, 1000, "details");
+    await manager.connect(agent).applyForJob(0, "", []);
+    await manager.connect(agent).requestJobCompletion(0, "result");
+    const salt1 = ethers.id("a");
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [v1.address, 0, false, salt1]
+    );
+    const salt2 = ethers.id("b");
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [v2.address, 0, false, salt2]
+    );
+    await manager.connect(v1).commitValidation(0, commit1, "", []);
+    await manager.connect(v2).commitValidation(0, commit2, "", []);
+    await time.increase(1);
+    await manager.connect(v1).revealValidation(0, false, salt1);
+    await manager.connect(v2).revealValidation(0, false, salt2);
+    await time.increase(6);
+    await manager.connect(v1).disapproveJob(0, "", []);
+    await manager.connect(v2).disapproveJob(0, "", []);
+    await expect(
+      manager.connect(v1).resolveDispute(0, 1)
+    ).to.be.revertedWithCustomError(manager, "Unauthorized");
+    const before = await manager.agentStake(agent.address);
+    await manager.connect(owner).resolveDispute(0, 1);
+    const after = await manager.agentStake(agent.address);
+    expect(before - after).to.equal(ethers.parseEther("1"));
+  });
 });
 
