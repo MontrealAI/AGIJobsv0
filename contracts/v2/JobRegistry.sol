@@ -10,8 +10,18 @@ import {IFeePool} from "./interfaces/IFeePool.sol";
 import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 
 interface IReputationEngine {
-    function add(address user, uint256 amount) external;
-    function subtract(address user, uint256 amount) external;
+    function onApply(address user) external;
+    function onFinalize(
+        address user,
+        bool success,
+        uint256 payout,
+        uint256 duration
+    ) external;
+    function rewardValidator(address validator, uint256 agentGain) external;
+    function calculateReputationPoints(
+        uint256 payout,
+        uint256 duration
+    ) external view returns (uint256);
     function isBlacklisted(address user) external view returns (bool);
 }
 
@@ -564,10 +574,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             emit OwnershipVerified(msg.sender, subdomain);
         }
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted agent"
-            );
+            reputationEngine.onApply(msg.sender);
         }
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
@@ -580,9 +587,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
         job.agent = msg.sender;
         job.state = State.Applied;
-        if (address(reputationEngine) != address(0)) {
-            reputationEngine.add(msg.sender, 1);
-        }
         emit JobApplied(jobId, msg.sender);
     }
 
@@ -808,7 +812,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                reputationEngine.add(job.agent, 1);
+                uint256 payout = uint256(job.reward) * 1e12;
+                uint256 agentGain = reputationEngine.calculateReputationPoints(payout, 0);
+                reputationEngine.onFinalize(job.agent, true, payout, 0);
+                if (address(validationModule) != address(0)) {
+                    address[] memory validators = validationModule.validators(jobId);
+                    uint256 len = validators.length;
+                    for (uint256 i = 0; i < len; i++) {
+                        reputationEngine.rewardValidator(validators[i], agentGain);
+                    }
+                }
             }
             if (address(certificateNFT) != address(0)) {
                 certificateNFT.mint(job.agent, jobId, job.uri);
@@ -833,7 +846,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                reputationEngine.subtract(job.agent, 1);
+                reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
         emit JobFinalized(jobId, job.success);

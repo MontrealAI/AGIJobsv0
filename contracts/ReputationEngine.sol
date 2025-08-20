@@ -295,11 +295,13 @@ contract ReputationEngine is Ownable {
     /// @notice Apply diminishing returns and cap to reputation growth.
     function _enforceReputationGrowth(uint256 currentReputation, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = currentReputation + points;
-        uint256 diminished = newReputation - ((currentReputation * points) / maxReputation);
-        if (diminished > maxReputation) {
+        uint256 diminishingFactor =
+            1 + ((newReputation * newReputation) / (maxReputation * maxReputation));
+        uint256 diminishedReputation = newReputation / diminishingFactor;
+        if (diminishedReputation > maxReputation) {
             return maxReputation;
         }
-        return diminished;
+        return diminishedReputation;
     }
 
     /// @notice Retrieve reputation score for a user and role.

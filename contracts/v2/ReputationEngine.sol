@@ -236,14 +236,15 @@ contract ReputationEngine is Ownable {
 
     uint256 public constant maxReputation = 88_888;
 
-    /// @notice Apply diminishing returns and cap to reputation growth.
+    /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = current + points;
-        uint256 diminished = newReputation - ((current * points) / maxReputation);
-        if (diminished > maxReputation) {
+        uint256 diminishingFactor = 1 + ((newReputation * newReputation) / (maxReputation * maxReputation));
+        uint256 diminishedReputation = newReputation / diminishingFactor;
+        if (diminishedReputation > maxReputation) {
             return maxReputation;
         }
-        return diminished;
+        return diminishedReputation;
     }
 
     /// @notice Return the combined operator score based on stake and reputation.
