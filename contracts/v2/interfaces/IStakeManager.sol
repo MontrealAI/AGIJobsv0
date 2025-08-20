@@ -30,6 +30,7 @@ interface IStakeManager {
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);
     event ValidationModuleUpdated(address module);
+    event ModulesUpdated(address jobRegistry, address disputeModule);
     event TokenUpdated(address indexed token);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
@@ -85,6 +86,9 @@ interface IStakeManager {
 
     /// @notice set the validation module used for validator lookups
     function setValidationModule(address module) external;
+
+    /// @notice update job registry and dispute module in one call
+    function setModules(address _jobRegistry, address _disputeModule) external;
 
     /// @notice lock a dispute fee from the payer
     function lockDisputeFee(address payer, uint256 amount) external;
