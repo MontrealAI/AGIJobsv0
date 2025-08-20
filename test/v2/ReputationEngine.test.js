@@ -46,7 +46,7 @@ describe("ReputationEngine", function () {
   it("blocks blacklisted users", async () => {
     await engine.connect(owner).setBlacklist(user.address, true);
     await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
-      "blacklisted"
+      "Blacklisted agent"
     );
   });
 
@@ -54,7 +54,7 @@ describe("ReputationEngine", function () {
     await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
       "insufficient reputation"
     );
-    await engine.connect(caller).add(user.address, 2);
+    await engine.connect(caller).add(user.address, 3);
     expect(await engine.meetsThreshold(user.address)).to.equal(true);
     await expect(engine.connect(caller).onApply(user.address)).to.not.be.reverted;
   });

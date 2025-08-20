@@ -209,7 +209,7 @@ contract ReputationEngine is Ownable {
     /// @notice Hook called when an agent applies for a job.
     function onApply(address agent) external onlyJobRegistry {
         _applyDecayAgent(agent);
-        require(!agentBlacklisted[agent], "blacklisted");
+        require(!agentBlacklisted[agent], "Blacklisted agent");
         require(_agentReputation[agent] >= agentThreshold, "insufficient reputation");
     }
 
@@ -295,9 +295,10 @@ contract ReputationEngine is Ownable {
     /// @notice Apply diminishing returns and cap to reputation growth.
     function _enforceReputationGrowth(uint256 currentReputation, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = currentReputation + points;
-        uint256 diminishingFactor =
-            1 + ((newReputation * newReputation) / (maxReputation * maxReputation));
-        uint256 diminishedReputation = newReputation / diminishingFactor;
+        uint256 numerator = newReputation * newReputation * 1e18;
+        uint256 denominator = maxReputation * maxReputation;
+        uint256 factor = 1e18 + (numerator / denominator);
+        uint256 diminishedReputation = (newReputation * 1e18) / factor;
         if (diminishedReputation > maxReputation) {
             return maxReputation;
         }

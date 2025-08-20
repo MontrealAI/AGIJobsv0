@@ -36,8 +36,8 @@ describe("DiscoveryModule", function () {
     await discovery.registerPlatform(p1.address);
     await discovery.registerPlatform(p2.address);
 
-    await engine.connect(owner).add(p1.address, 1);
-    await engine.connect(owner).add(p2.address, 2);
+    await engine.connect(owner).add(p1.address, 2);
+    await engine.connect(owner).add(p2.address, 3);
 
     let list = await discovery.getPlatforms(0, 2);
     expect(list[0]).to.equal(p2.address);

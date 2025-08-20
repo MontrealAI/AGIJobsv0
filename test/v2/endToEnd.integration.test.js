@@ -120,7 +120,7 @@ describe("end-to-end job lifecycle", function () {
     await stakeManager.setSlashingPercentages(100, 0);
     await nft.setJobRegistry(await registry.getAddress());
     await rep.setAuthorizedCaller(await registry.getAddress(), true);
-    await rep.setThreshold(1);
+    await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
     await registry.acknowledgeTaxPolicy();

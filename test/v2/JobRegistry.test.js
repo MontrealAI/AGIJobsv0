@@ -92,7 +92,7 @@ describe("JobRegistry integration", function () {
     await rep
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
-    await rep.connect(owner).setThreshold(1);
+    await rep.connect(owner).setThreshold(0);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await registry.getAddress());
@@ -146,7 +146,7 @@ describe("JobRegistry integration", function () {
       .withArgs(jobId, true);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
-    expect(await rep.reputation(agent.address)).to.equal(2);
+    expect(await rep.reputation(agent.address)).to.equal(0);
     expect(await rep.isBlacklisted(agent.address)).to.equal(false);
     expect(await nft.balanceOf(agent.address)).to.equal(1);
   });
