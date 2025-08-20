@@ -72,9 +72,10 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 
 ### Job posting, staking, and activation via Etherscan
 
-1. **Post a job:** Approve the `StakeManager` to transfer `reward + fee`. On `JobRegistry`, call `acknowledgeAndCreateJob(reward, uri)`.
-2. **Stake tokens:** After approving tokens, call `StakeManager.depositStake(role, amount)` (`0` = Agent, `1` = Validator, `2` = Platform).
-3. **Activate a platform:** On `PlatformIncentives`, call `stakeAndActivate(amount)` to stake and register in one transaction.
+1. **Post a job:** Approve the `StakeManager` to transfer `reward + fee`. On `JobRegistry`, call `acknowledgeAndCreateJob(reward, deadline, uri)` (use a Unix timestamp for `deadline`).
+2. **Stake tokens:** After approving tokens, call `StakeManager.depositStake(role, amount)` (`0` = Agent, `1` = Validator, `2` = Platform`).
+3. **Apply with stake:** Agents can combine staking and application via `JobRegistry.stakeAndApply(jobId, amount, subdomain, proof)`. Leave `subdomain` empty and `proof` as an empty array when ENS verification is not required.
+4. **Activate a platform:** On `PlatformIncentives`, call `stakeAndActivate(amount)` to stake and register in one transaction.
 
 ### Owner-only setters
 
