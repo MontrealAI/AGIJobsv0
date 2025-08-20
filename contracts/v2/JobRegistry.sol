@@ -365,6 +365,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("FeePool", address(_feePool));
     }
 
+    /// @notice update the required agent stake for each job
+    function setJobStake(uint96 stake) external onlyOwner {
+        jobStake = stake;
+        emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration);
+    }
+
     /// @notice update the percentage of each job reward taken as a protocol fee
     function setFeePct(uint256 _feePct) external onlyOwner {
         require(_feePct <= 100, "pct");
@@ -493,12 +499,14 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ) internal requiresTaxAcknowledgement nonReentrant returns (uint256 jobId) {
         require(reward > 0 || jobStake > 0, "params not set");
         require(reward <= type(uint128).max, "overflow");
-        require(reward <= maxJobReward, "reward too high");
+        require(maxJobReward == 0 || reward <= maxJobReward, "reward too high");
         require(deadline > block.timestamp, "deadline");
-        require(
-            uint256(deadline) - block.timestamp <= maxJobDuration,
-            "duration"
-        );
+        if (maxJobDuration > 0) {
+            require(
+                uint256(deadline) - block.timestamp <= maxJobDuration,
+                "duration"
+            );
+        }
         require(feePct + validatorRewardPct <= 100, "pct");
         unchecked {
             nextJobId++;

@@ -103,11 +103,20 @@ interface IJobRegistry {
     /// @param stake Stake required from the agent to accept a job
     function setJobParameters(uint256 reward, uint256 stake) external;
 
+    /// @notice set the required agent stake for each job
+    function setJobStake(uint96 stake) external;
+
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external;
 
     /// @notice set the maximum allowed job duration in seconds
     function setMaxJobDuration(uint256 limit) external;
+
+    /// @notice update the percentage of each job reward taken as a protocol fee
+    function setFeePct(uint256 feePct) external;
+
+    /// @notice update validator reward percentage of job reward
+    function setValidatorRewardPct(uint256 pct) external;
 
     // core job flow
 
