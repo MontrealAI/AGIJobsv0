@@ -2,6 +2,9 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IStakeManager {
     function lockReward(address from, uint256 amount) external;
@@ -14,7 +17,8 @@ interface IReputationEngine {
 
 /// @title ValidationModule
 /// @notice Returns predetermined validation outcomes and supports result challenges.
-contract ValidationModule is Ownable {
+contract ValidationModule is Ownable, Pausable {
+    using SafeERC20 for IERC20;
     mapping(uint256 => bool) public outcomes;
 
     /// @notice stake manager used to lock dispute bonds and verify stake
@@ -46,6 +50,8 @@ contract ValidationModule is Ownable {
     uint256 public revealWindow = 1 days;
     /// @notice percentage of approvals required for success (0-100)
     uint256 public approvalThreshold = 50;
+    /// @notice absolute number of validator approvals required
+    uint256 public requiredValidatorApprovals;
 
     /// @notice global pool of potential validators
     address[] public validatorPool;
@@ -93,7 +99,9 @@ contract ValidationModule is Ownable {
     event ValidatorsPerJobUpdated(uint256 count);
     event CommitWindowUpdated(uint256 window);
     event RevealWindowUpdated(uint256 window);
+    event CommitRevealWindowsUpdated(uint256 commitWindow, uint256 revealWindow);
     event ApprovalThresholdUpdated(uint256 threshold);
+    event RequiredValidatorApprovalsUpdated(uint256 count);
     event ValidatorPoolUpdated(address[] pool);
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(
@@ -113,6 +121,14 @@ contract ValidationModule is Ownable {
     );
 
     constructor() Ownable(msg.sender) {}
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     function setStakeManager(IStakeManager manager) external onlyOwner {
         stakeManager = manager;
@@ -137,6 +153,17 @@ contract ValidationModule is Ownable {
     function setReputationEngine(IReputationEngine engine) external onlyOwner {
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
+    }
+
+    /// @notice Set the required number of validator approvals.
+    function setRequiredValidatorApprovals(uint256 count) external onlyOwner {
+        require(count <= validatorsPerJob, "approvals");
+        requiredValidatorApprovals = count;
+        if (validatorsPerJob > 0) {
+            approvalThreshold = (count * 100) / validatorsPerJob;
+            emit ApprovalThresholdUpdated(approvalThreshold);
+        }
+        emit RequiredValidatorApprovalsUpdated(count);
     }
 
     /// @notice Update the ENS root node for validator clubs.
@@ -169,6 +196,15 @@ contract ValidationModule is Ownable {
     function setRevealWindow(uint256 window) external onlyOwner {
         revealWindow = window;
         emit RevealWindowUpdated(window);
+    }
+
+    /// @notice Set commit and reveal phase durations.
+    function setCommitRevealWindows(uint256 commit, uint256 reveal) external onlyOwner {
+        commitWindow = commit;
+        revealWindow = reveal;
+        emit CommitWindowUpdated(commit);
+        emit RevealWindowUpdated(reveal);
+        emit CommitRevealWindowsUpdated(commit, reveal);
     }
 
     /// @notice Set the approval threshold percentage.
@@ -233,7 +269,7 @@ contract ValidationModule is Ownable {
     }
 
     /// @notice Challenge a validation result by locking a dispute bond.
-    function challenge(uint256 jobId) external {
+    function challenge(uint256 jobId) external whenNotPaused {
         require(block.timestamp <= challengeDeadline[jobId], "expired");
         require(challenger[jobId] == address(0), "challenged");
         if (address(reputationEngine) != address(0)) {
@@ -263,6 +299,7 @@ contract ValidationModule is Ownable {
     function selectValidators(uint256 jobId)
         external
         onlyOwner
+        whenNotPaused
         returns (address[] memory selected)
     {
         uint256 poolLength = validatorPool.length;
@@ -315,7 +352,7 @@ contract ValidationModule is Ownable {
     }
 
     /// @notice Commit to a validation vote.
-    function commitValidation(uint256 jobId, bytes32 commitHash) external {
+    function commitValidation(uint256 jobId, bytes32 commitHash) external whenNotPaused {
         require(isValidator[jobId][msg.sender], "not validator");
         require(block.timestamp <= commitDeadline[jobId], "commit over");
         require(commitments[jobId][msg.sender] == bytes32(0), "committed");
@@ -331,7 +368,7 @@ contract ValidationModule is Ownable {
         uint256 jobId,
         bool approve,
         bytes32 salt
-    ) external {
+    ) external whenNotPaused {
         require(isValidator[jobId][msg.sender], "not validator");
         require(block.timestamp > commitDeadline[jobId], "commit phase");
         require(block.timestamp <= revealDeadline[jobId], "reveal over");
@@ -360,6 +397,7 @@ contract ValidationModule is Ownable {
     /// @return participants Validators that revealed their votes
     function finalizeValidation(uint256 jobId)
         external
+        whenNotPaused
         returns (bool success, address[] memory participants)
     {
         require(
@@ -394,6 +432,11 @@ contract ValidationModule is Ownable {
     /// @notice Confirms the contract and owner are tax-exempt.
     function isTaxExempt() external pure returns (bool) {
         return true;
+    }
+
+    /// @notice Recover ERC20 tokens sent to this contract by mistake.
+    function withdrawEmergency(address token, uint256 amount) external onlyOwner {
+        IERC20(token).safeTransfer(owner(), amount);
     }
 
     receive() external payable {

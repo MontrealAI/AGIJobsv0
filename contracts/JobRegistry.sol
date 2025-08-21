@@ -3,6 +3,8 @@ pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IValidationModule {
     function validate(uint256 jobId) external view returns (bool);
@@ -43,6 +45,7 @@ interface IDisputeModule {
 /// @title JobRegistry
 /// @notice Orchestrates job lifecycle and coordinates with external modules.
 contract JobRegistry is Ownable, Pausable {
+    using SafeERC20 for IERC20;
     enum Status { None, Created, Completed, Disputed, Finalized }
 
     struct Job {
@@ -69,6 +72,7 @@ contract JobRegistry is Ownable, Pausable {
     uint256 public jobReward;
     uint256 public jobStake;
     uint256 public feePct;
+    uint256 public maxJobReward;
     bytes32 public agentRootNode;
     bytes32 public agentMerkleRoot;
 
@@ -87,8 +91,7 @@ contract JobRegistry is Ownable, Pausable {
         address reputationEngine,
         address stakeManager,
         address certificateNFT,
-        address disputeModule,
-        address feePool
+        address disputeModule
     );
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
@@ -97,6 +100,7 @@ contract JobRegistry is Ownable, Pausable {
     event DisputeModuleUpdated(address module);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    event MaxJobRewardUpdated(uint256 maxReward);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     /// @notice Emitted when the ENS root node for agents changes.
     /// @param node The new ENS root node.
@@ -226,15 +230,13 @@ contract JobRegistry is Ownable, Pausable {
         IReputationEngine _reputationEngine,
         IStakeManager _stakeManager,
         ICertificateNFT _certificateNFT,
-        IDisputeModule _disputeModule,
-        IFeePool _feePool
+        IDisputeModule _disputeModule
     ) external onlyOwner {
         validationModule = _validationModule;
         reputationEngine = _reputationEngine;
         stakeManager = _stakeManager;
         certificateNFT = _certificateNFT;
         disputeModule = _disputeModule;
-        feePool = _feePool;
         emit ValidationModuleUpdated(address(_validationModule));
         emit ModuleUpdated("ValidationModule", address(_validationModule));
         emit ReputationEngineUpdated(address(_reputationEngine));
@@ -245,22 +247,25 @@ contract JobRegistry is Ownable, Pausable {
         emit ModuleUpdated("CertificateNFT", address(_certificateNFT));
         emit DisputeModuleUpdated(address(_disputeModule));
         emit ModuleUpdated("DisputeModule", address(_disputeModule));
-        emit FeePoolUpdated(address(_feePool));
-        emit ModuleUpdated("FeePool", address(_feePool));
         emit ModulesUpdated(
             address(_validationModule),
             address(_reputationEngine),
             address(_stakeManager),
             address(_certificateNFT),
-            address(_disputeModule),
-            address(_feePool)
+            address(_disputeModule)
         );
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
+        require(maxJobReward == 0 || reward <= maxJobReward, "reward too high");
         jobReward = reward;
         jobStake = stake;
         emit JobParametersUpdated(reward, stake);
+    }
+
+    function setMaxJobReward(uint256 maxReward) external onlyOwner {
+        maxJobReward = maxReward;
+        emit MaxJobRewardUpdated(maxReward);
     }
 
     /// @notice Create a new job.
@@ -271,6 +276,7 @@ contract JobRegistry is Ownable, Pausable {
         returns (uint256 jobId)
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
+        require(maxJobReward == 0 || jobReward <= maxJobReward, "reward too high");
         require(agent != msg.sender, "self");
         if (address(reputationEngine) != address(0)) {
             require(
@@ -396,6 +402,11 @@ contract JobRegistry is Ownable, Pausable {
             reputationEngine.subtract(job.agent, 1);
         }
         emit JobFinalized(jobId, job.success);
+    }
+
+    /// @notice Recover ERC20 tokens sent to this contract by mistake.
+    function withdrawEmergency(address token, uint256 amount) external onlyOwner {
+        IERC20(token).safeTransfer(owner(), amount);
     }
 }
 
