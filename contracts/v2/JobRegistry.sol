@@ -989,9 +989,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             if (address(reputationEngine) != address(0)) {
                 uint256 agentPct = 100;
                 if (address(stakeManager) != address(0)) {
-                    agentPct = stakeManager.getHighestPayoutPercentage(
-                        job.agent
-                    );
+                    agentPct = stakeManager.getAgentPayoutPct(job.agent);
                 }
                 uint256 agentModified =
                     (rewardAfterValidator * agentPct) / 100;

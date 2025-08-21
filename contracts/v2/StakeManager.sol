@@ -380,11 +380,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
         types = agiTypes;
     }
 
-    /// @notice Determine the highest payout percentage for an agent
+    /// @notice Determine the payout percentage for an agent based on AGI type NFTs
     /// @dev Iterates through registered AGI types and selects the highest payout
     ///      percentage from NFTs held by the agent. Reverts from malicious NFT
     ///      contracts are ignored.
-    function getHighestPayoutPercentage(address agent) public view returns (uint256) {
+    function getAgentPayoutPct(address agent) public view returns (uint256) {
         uint256 highest = 100;
         uint256 length = agiTypes.length;
         for (uint256 i; i < length; ++i) {
@@ -672,7 +672,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         external
         onlyJobRegistry
     {
-        uint256 pct = getHighestPayoutPercentage(to);
+        uint256 pct = getAgentPayoutPct(to);
         uint256 payout = (amount * pct) / 100;
         uint256 escrow = jobEscrows[jobId];
         require(escrow >= payout, "escrow");
@@ -688,7 +688,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @param amount Base token amount with 6 decimals before AGI bonus.
     function release(address to, uint256 amount) external onlyJobRegistry {
         // apply AGI type payout modifier
-        uint256 pct = getHighestPayoutPercentage(to);
+        uint256 pct = getAgentPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
 
         // apply protocol fees and burn on the modified amount
@@ -725,7 +725,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 fee,
         IFeePool _feePool
     ) external onlyJobRegistry {
-        uint256 pct = getHighestPayoutPercentage(agent);
+        uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
