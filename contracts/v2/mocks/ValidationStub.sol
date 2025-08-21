@@ -8,6 +8,7 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 contract ValidationStub is IValidationModule {
     bool public result;
     address public jobRegistry;
+    address[] public validatorList;
 
     function setJobRegistry(address registry) external {
         jobRegistry = registry;
@@ -17,8 +18,12 @@ contract ValidationStub is IValidationModule {
         result = _result;
     }
 
-    function selectValidators(uint256) public pure override returns (address[] memory) {
-        return new address[](0);
+    function setValidators(address[] calldata vals) external {
+        validatorList = vals;
+    }
+
+    function selectValidators(uint256) public view override returns (address[] memory) {
+        return validatorList;
     }
 
     function startValidation(uint256 jobId, string calldata)
@@ -59,8 +64,8 @@ contract ValidationStub is IValidationModule {
         return this.finalize(jobId);
     }
 
-    function validators(uint256) external pure override returns (address[] memory vals) {
-        vals = new address[](0);
+    function validators(uint256) external view override returns (address[] memory vals) {
+        vals = validatorList;
     }
 
     function votes(uint256, address)
