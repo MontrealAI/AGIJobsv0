@@ -88,12 +88,12 @@ describe("StakeManager AGIType bonuses", function () {
       .approve(await stakeManager.getAddress(), 200);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, 200);
+      .lockReward(jobId, employer.address, 200);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseJobFunds(jobId, agent.address, 100)
+        .releaseReward(jobId, agent.address, 100)
     )
       .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, agent.address, 175);
@@ -113,12 +113,12 @@ describe("StakeManager AGIType bonuses", function () {
       .approve(await stakeManager.getAddress(), 100);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, 100);
+      .lockReward(jobId, employer.address, 100);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseJobFunds(jobId, agent.address, 100)
+        .releaseReward(jobId, agent.address, 100)
     )
       .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, agent.address, 100);
@@ -136,12 +136,12 @@ describe("StakeManager AGIType bonuses", function () {
       .approve(await stakeManager.getAddress(), 100);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, 100);
+      .lockReward(jobId, employer.address, 100);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseJobFunds(jobId, agent.address, 100)
+        .releaseReward(jobId, agent.address, 100)
     ).to.be.revertedWith("escrow");
   });
 });

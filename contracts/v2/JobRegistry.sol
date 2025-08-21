@@ -496,7 +496,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
             fee = (reward * feePctSnapshot) / 100;
-            stakeManager.lockJobFunds(bytes32(jobId), msg.sender, reward + fee);
+            stakeManager.lockReward(bytes32(jobId), msg.sender, reward + fee);
         }
         emit JobCreated(
             jobId,
@@ -827,12 +827,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                             validatorReward
                         );
                     } else {
-                        stakeManager.releaseJobFunds(
+                        stakeManager.releaseReward(
                             jobKey,
                             job.employer,
                             validatorReward
                         );
                     }
+                }
+                if (job.stake > 0) {
+                    stakeManager.releaseStake(job.agent, uint256(job.stake));
                 }
             }
             if (address(reputationEngine) != address(0)) {
@@ -875,7 +878,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             if (address(stakeManager) != address(0)) {
                 uint256 fee = (uint256(job.reward) * job.feePct) / 100;
                 if (job.reward > 0) {
-                    stakeManager.releaseJobFunds(
+                    stakeManager.releaseReward(
                         jobKey,
                         job.employer,
                         uint256(job.reward) + fee
@@ -934,7 +937,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
-            stakeManager.releaseJobFunds(
+            stakeManager.releaseReward(
                 bytes32(jobId),
                 job.employer,
                 uint256(job.reward) + fee

@@ -77,10 +77,10 @@ describe("StakeManager", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), 300);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, 300);
+      .lockReward(jobId, employer.address, 300);
 
     await expect(
-      stakeManager.connect(registrySigner).releaseJobFunds(jobId, user.address, 200)
+      stakeManager.connect(registrySigner).releaseReward(jobId, user.address, 200)
     ).to.emit(stakeManager, "StakeReleased").withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 
@@ -381,7 +381,7 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner2)
-        .lockJobFunds(jobId, employer.address, 100)
+        .lockReward(jobId, employer.address, 100)
     )
       .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
       .withArgs(await stakeManager.getAddress(), 0n, 100n);
@@ -393,11 +393,11 @@ describe("StakeManager", function () {
       .approve(await stakeManager.getAddress(), 100);
     await stakeManager
       .connect(registrySigner2)
-      .lockJobFunds(jobId, employer.address, 100);
+      .lockReward(jobId, employer.address, 100);
     await expect(
       stakeManager
         .connect(registrySigner2)
-        .releaseJobFunds(jobId, user.address, 100)
+        .releaseReward(jobId, user.address, 100)
     )
       .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, user.address, 100);
@@ -624,6 +624,59 @@ describe("StakeManager", function () {
       .withArgs(user.address, 200n)
       .and.to.emit(stakeManager, "StakeWithdrawn")
       .withArgs(user.address, 0, 50n);
+  });
+
+  it("allows early stake release by JobRegistry", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry
+      .connect(owner)
+      .setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await stakeManager.connect(user).depositStake(0, 200);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await stakeManager
+      .connect(registrySigner)
+      .lockStake(user.address, 100, 3600);
+
+    await expect(
+      stakeManager.connect(registrySigner).releaseStake(user.address, 100)
+    )
+      .to.emit(stakeManager, "StakeUnlocked")
+      .withArgs(user.address, 100n);
+
+    await expect(
+      stakeManager.connect(user).withdrawStake(0, 100)
+    ).to.emit(stakeManager, "StakeWithdrawn").withArgs(user.address, 0, 100n);
   });
 
   it("allows slashing during active lock", async () => {

@@ -135,7 +135,7 @@ describe("Platform reward flow", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), REWARD + FEE);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, REWARD + FEE);
+      .lockReward(jobId, employer.address, REWARD + FEE);
 
     const aliceBeforeReward = await token.balanceOf(alice.address);
     await stakeManager
@@ -173,7 +173,7 @@ describe("Platform reward flow", function () {
     await token2.connect(employer).approve(await stakeManager.getAddress(), FEE2);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId2, employer.address, FEE2);
+      .lockReward(jobId2, employer.address, FEE2);
     await stakeManager
       .connect(registrySigner)
       .finalizeJobFunds(jobId2, bob.address, 0, FEE2, await feePool.getAddress());

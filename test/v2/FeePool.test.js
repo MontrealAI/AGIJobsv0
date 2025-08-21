@@ -104,7 +104,7 @@ describe("FeePool", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, feeAmount);
+      .lockReward(jobId, employer.address, feeAmount);
     await stakeManager
       .connect(registrySigner)
       .finalizeJobFunds(
@@ -143,7 +143,7 @@ describe("FeePool", function () {
       .approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, feeAmount);
+      .lockReward(jobId, employer.address, feeAmount);
     await stakeManager
       .connect(registrySigner)
       .finalizeJobFunds(
@@ -170,7 +170,7 @@ describe("FeePool", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, feeAmount);
+      .lockReward(jobId, employer.address, feeAmount);
     await stakeManager
       .connect(registrySigner)
       .finalizeJobFunds(
@@ -202,7 +202,7 @@ describe("FeePool", function () {
     await token2.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, feeAmount);
+      .lockReward(jobId, employer.address, feeAmount);
     await stakeManager
       .connect(registrySigner)
       .finalizeJobFunds(
@@ -228,7 +228,7 @@ describe("FeePool", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, employer.address, feeAmount);
+      .lockReward(jobId, employer.address, feeAmount);
     await stakeManager
       .connect(registrySigner)
       .finalizeJobFunds(

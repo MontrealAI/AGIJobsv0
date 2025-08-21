@@ -18,6 +18,8 @@ interface IStakeManager {
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
     event StakeLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
+    event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
         address indexed user,
         Role indexed role,
@@ -63,14 +65,17 @@ interface IStakeManager {
     /// @param lockTime seconds until the stake unlocks
     function lockStake(address user, uint256 amount, uint64 lockTime) external;
 
-    /// @notice lock job funds from an employer
-    function lockJobFunds(bytes32 jobId, address from, uint256 amount) external;
+    /// @notice lock job reward from an employer
+    function lockReward(bytes32 jobId, address from, uint256 amount) external;
 
     /// @notice generic escrow lock when job ID is managed externally
     function lock(address from, uint256 amount) external;
 
-    /// @notice release locked job funds to recipient
-    function releaseJobFunds(bytes32 jobId, address to, uint256 amount) external;
+    /// @notice release locked job reward to recipient
+    function releaseReward(bytes32 jobId, address to, uint256 amount) external;
+
+    /// @notice release previously locked stake for a user
+    function releaseStake(address user, uint256 amount) external;
 
     /// @notice release funds locked via {lock}
     function release(address to, uint256 amount) external;
