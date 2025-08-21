@@ -91,9 +91,9 @@ contract ModuleInstaller is Ownable {
             reputationEngine,
             disputeModule,
             certificateNFT,
+            feePool,
             _ackModules
         );
-        jobRegistry.setFeePool(feePool);
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
         }

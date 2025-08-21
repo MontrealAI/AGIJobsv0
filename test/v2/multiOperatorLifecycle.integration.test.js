@@ -120,10 +120,10 @@ describe("multi-operator job lifecycle", function () {
       await rep.getAddress(),
       await dispute.getAddress(),
       await nft.getAddress(),
+      await feePool.getAddress(),
       []
     );
     await validation.setJobRegistry(await registry.getAddress());
-    await registry.setFeePool(await feePool.getAddress());
     await registry.setFeePct(feePct);
     await registry.setValidatorRewardPct(0);
     await registry.setTaxPolicy(await policy.getAddress());

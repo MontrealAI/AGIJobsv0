@@ -59,12 +59,23 @@ async function main() {
     ethers.ZeroAddress
   );
 
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await token.getAddress(),
+    await stake.getAddress(),
+    0,
+    ethers.ZeroAddress
+  );
+
   await registry.setModules(
     await validation.getAddress(),
     await stake.getAddress(),
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
+    await feePool.getAddress(),
     []
   );
 
@@ -84,6 +95,7 @@ async function main() {
     reputationEngine: await reputation.getAddress(),
     disputeModule: await dispute.getAddress(),
     certificateNFT: await nft.getAddress(),
+    feePool: await feePool.getAddress(),
     token: await token.getAddress(),
   };
 
@@ -93,6 +105,7 @@ async function main() {
   console.log("ReputationEngine:", addresses.reputationEngine);
   console.log("DisputeModule:", addresses.disputeModule);
   console.log("CertificateNFT:", addresses.certificateNFT);
+  console.log("FeePool:", addresses.feePool);
 
   const doc = `# Deployment Addresses\n\n` +
     `- JobRegistry: ${addresses.jobRegistry}\n` +

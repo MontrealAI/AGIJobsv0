@@ -85,6 +85,17 @@ async function main() {
   const nft = await NFT.deploy("Cert", "CERT");
   await nft.waitForDeployment();
 
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await token.getAddress(),
+    await stake.getAddress(),
+    0,
+    deployer.address
+  );
+  await feePool.waitForDeployment();
+
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/modules/DisputeModule.sol:DisputeModule"
   );
@@ -104,6 +115,7 @@ async function main() {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
+    await feePool.getAddress(),
     []
   );
 
@@ -113,6 +125,7 @@ async function main() {
   console.log("ReputationEngine:", await reputation.getAddress());
   console.log("DisputeModule:", await dispute.getAddress());
   console.log("CertificateNFT:", await nft.getAddress());
+  console.log("FeePool:", await feePool.getAddress());
   console.log("TaxPolicy:", await tax.getAddress());
 
   await verify(await stake.getAddress(), [await token.getAddress(), deployer.address]);

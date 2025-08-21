@@ -78,6 +78,7 @@ describe("JobRegistry integration", function () {
         await rep.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
+        ethers.ZeroAddress,
         []
       );
     await validation.setJobRegistry(await registry.getAddress());
@@ -244,6 +245,7 @@ describe("JobRegistry integration", function () {
           await rep.getAddress(),
           await dispute.getAddress(),
           await nft.getAddress(),
+          ethers.ZeroAddress,
           []
         )
     ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
@@ -267,6 +269,7 @@ describe("JobRegistry integration", function () {
           await rep.getAddress(),
           await dispute.getAddress(),
           await nft.getAddress(),
+          ethers.ZeroAddress,
           []
         )
     )
@@ -298,6 +301,7 @@ describe("JobRegistry integration", function () {
         await rep.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
+        ethers.ZeroAddress,
         [treasury.address]
       );
 

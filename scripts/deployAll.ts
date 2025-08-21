@@ -128,11 +128,11 @@ async function main() {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
+    await feePool.getAddress(),
     []
   );
 
   // Route protocol fees to FeePool and set a 5% fee cut.
-  await registry.setFeePool(await feePool.getAddress());
   await registry.setFeePct(5);
 
   // Transfer ownership to multisig if provided.

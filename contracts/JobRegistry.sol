@@ -87,7 +87,8 @@ contract JobRegistry is Ownable, Pausable {
         address reputationEngine,
         address stakeManager,
         address certificateNFT,
-        address disputeModule
+        address disputeModule,
+        address feePool
     );
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
@@ -225,13 +226,15 @@ contract JobRegistry is Ownable, Pausable {
         IReputationEngine _reputationEngine,
         IStakeManager _stakeManager,
         ICertificateNFT _certificateNFT,
-        IDisputeModule _disputeModule
+        IDisputeModule _disputeModule,
+        IFeePool _feePool
     ) external onlyOwner {
         validationModule = _validationModule;
         reputationEngine = _reputationEngine;
         stakeManager = _stakeManager;
         certificateNFT = _certificateNFT;
         disputeModule = _disputeModule;
+        feePool = _feePool;
         emit ValidationModuleUpdated(address(_validationModule));
         emit ModuleUpdated("ValidationModule", address(_validationModule));
         emit ReputationEngineUpdated(address(_reputationEngine));
@@ -242,12 +245,15 @@ contract JobRegistry is Ownable, Pausable {
         emit ModuleUpdated("CertificateNFT", address(_certificateNFT));
         emit DisputeModuleUpdated(address(_disputeModule));
         emit ModuleUpdated("DisputeModule", address(_disputeModule));
+        emit FeePoolUpdated(address(_feePool));
+        emit ModuleUpdated("FeePool", address(_feePool));
         emit ModulesUpdated(
             address(_validationModule),
             address(_reputationEngine),
             address(_stakeManager),
             address(_certificateNFT),
-            address(_disputeModule)
+            address(_disputeModule),
+            address(_feePool)
         );
     }
 
