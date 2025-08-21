@@ -25,5 +25,24 @@ interface IIdentityRegistry {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external returns (bool);
+
+    // owner configuration
+    function setENS(address ensAddr) external;
+    function setNameWrapper(address wrapper) external;
+    function setReputationEngine(address engine) external;
+    function setAgentRootNode(bytes32 root) external;
+    function setClubRootNode(bytes32 root) external;
+    function setAgentMerkleRoot(bytes32 root) external;
+    function setValidatorMerkleRoot(bytes32 root) external;
+
+    // manual allowlists
+    function addAdditionalAgent(address agent) external;
+    function removeAdditionalAgent(address agent) external;
+    function addAdditionalValidator(address validator) external;
+    function removeAdditionalValidator(address validator) external;
+
+    // views
+    function additionalAgents(address account) external view returns (bool);
+    function additionalValidators(address account) external view returns (bool);
 }
 

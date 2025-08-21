@@ -87,14 +87,6 @@ contract ValidationStub is IValidationModule {
 
     function setValidatorSlashingPct(uint256) external override {}
 
-    function addAdditionalValidator(address) external override {}
-
-    function removeAdditionalValidator(address) external override {}
-
-    function setRootNodes(bytes32, bytes32) external override {}
-
-    function setMerkleRoots(bytes32, bytes32) external override {}
-
     function setValidatorSubdomains(
         address[] calldata,
         string[] calldata

@@ -9,7 +9,7 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IVRF} from "./interfaces/IVRF.sol";
-import {IIdentityLib} from "./interfaces/IIdentityLib.sol";
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -19,7 +19,7 @@ contract ValidationModule is IValidationModule, Ownable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
-    IIdentityLib public identityLib;
+    IIdentityRegistry public identityRegistry;
 
     // timing configuration
     uint256 public commitWindow;
@@ -78,15 +78,6 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
-    event AdditionalValidatorUpdated(address indexed validator, bool allowed);
-    /// @notice Emitted when an ENS root node is updated.
-    /// @param node Identifier for the root node being modified.
-    /// @param newRoot The new ENS root node hash.
-    event RootNodeUpdated(string node, bytes32 newRoot);
-    /// @notice Emitted when a Merkle root is updated.
-    /// @param root Identifier for the Merkle root being modified.
-    /// @param newRoot The new Merkle root hash.
-    event MerkleRootUpdated(string root, bytes32 newRoot);
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
     modifier requiresTaxAcknowledgement() {
@@ -190,51 +181,9 @@ contract ValidationModule is IValidationModule, Ownable {
         emit VRFUpdated(address(provider));
     }
 
-    /// @notice Update the identity library used for validator verification.
-    function setIdentityLib(IIdentityLib lib) external onlyOwner {
-        identityLib = lib;
-    }
-
-    /// @notice Update ENS and club root nodes in the shared identity module.
-    function setRootNodes(bytes32 agentRoot, bytes32 clubRoot) external onlyOwner {
-        identityLib.updateRootNodes(agentRoot, clubRoot);
-        emit RootNodeUpdated("agent", agentRoot);
-        emit RootNodeUpdated("club", clubRoot);
-    }
-
-    /// @notice Update Merkle roots for agent and validator allowlists.
-    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyOwner {
-        identityLib.updateMerkleRoots(agentRoot, validatorRoot);
-        emit MerkleRootUpdated("agent", agentRoot);
-        emit MerkleRootUpdated("validator", validatorRoot);
-    }
-
-    /// @notice Configure additional validators that bypass identity checks.
-    function setAdditionalValidators(
-        address[] calldata accounts,
-        bool[] calldata allowed
-    ) external onlyOwner {
-        require(accounts.length == allowed.length, "length");
-        for (uint256 i; i < accounts.length; ++i) {
-            if (allowed[i]) {
-                identityLib.addAdditionalValidator(accounts[i]);
-            } else {
-                identityLib.removeAdditionalValidator(accounts[i]);
-            }
-            emit AdditionalValidatorUpdated(accounts[i], allowed[i]);
-        }
-    }
-
-    /// @notice Manually allow a validator to bypass identity checks.
-    function addAdditionalValidator(address validator) external onlyOwner {
-        identityLib.addAdditionalValidator(validator);
-        emit AdditionalValidatorUpdated(validator, true);
-    }
-
-    /// @notice Remove a validator from the manual allowlist.
-    function removeAdditionalValidator(address validator) external onlyOwner {
-        identityLib.removeAdditionalValidator(validator);
-        emit AdditionalValidatorUpdated(validator, false);
+    /// @notice Update the identity registry used for validator verification.
+    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+        identityRegistry = registry;
     }
 
     /// @notice Return validators selected for a job
@@ -336,7 +285,7 @@ contract ValidationModule is IValidationModule, Ownable {
     function selectValidators(uint256 jobId) public override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
-        require(address(identityLib) != address(0), "identity lib");
+        require(address(identityRegistry) != address(0), "identity reg");
         jobNonce[jobId] += 1;
 
         address[] memory pool = validatorPool;
@@ -354,8 +303,8 @@ contract ValidationModule is IValidationModule, Ownable {
             bytes32[] memory proof;
             string memory subdomain = validatorSubdomains[candidate];
             bool authorized;
-            if (address(identityLib) != address(0)) {
-                authorized = identityLib.verifyValidator(
+            if (address(identityRegistry) != address(0)) {
+                authorized = identityRegistry.verifyValidator(
                     candidate,
                     subdomain,
                     proof
@@ -413,7 +362,7 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32[] calldata proof
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
-        require(address(identityLib) != address(0), "identity lib");
+        require(address(identityRegistry) != address(0), "identity reg");
         require(
             jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
             "not submitted"
@@ -424,8 +373,8 @@ contract ValidationModule is IValidationModule, Ownable {
         );
         require(_isValidator(jobId, msg.sender), "not validator");
         bool authorized;
-        if (address(identityLib) != address(0)) {
-            authorized = identityLib.verifyValidator(
+        if (address(identityRegistry) != address(0)) {
+            authorized = identityRegistry.verifyValidator(
                 msg.sender,
                 subdomain,
                 proof
@@ -470,12 +419,12 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32[] calldata proof
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
-        require(address(identityLib) != address(0), "identity lib");
+        require(address(identityRegistry) != address(0), "identity reg");
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
         bool authorized;
-        if (address(identityLib) != address(0)) {
-            authorized = identityLib.verifyValidator(
+        if (address(identityRegistry) != address(0)) {
+            authorized = identityRegistry.verifyValidator(
                 msg.sender,
                 subdomain,
                 proof

@@ -88,18 +88,6 @@ interface IValidationModule {
     /// @notice Update percentage of stake slashed for incorrect validator votes
     function setValidatorSlashingPct(uint256 pct) external;
 
-    /// @notice Manually allow a validator to bypass ENS checks.
-    function addAdditionalValidator(address validator) external;
-
-    /// @notice Remove a validator from the manual allowlist.
-    function removeAdditionalValidator(address validator) external;
-
-    /// @notice Update ENS root nodes for agents and validators.
-    function setRootNodes(bytes32 agentRoot, bytes32 clubRoot) external;
-
-    /// @notice Update Merkle roots for agents and validators.
-    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external;
-
     /// @notice Map validators to ENS subdomains for selection
     function setValidatorSubdomains(
         address[] calldata accounts,

@@ -7,7 +7,7 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
-import {IIdentityLib} from "./interfaces/IIdentityLib.sol";
+import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 
 interface IReputationEngine {
     function onApply(address user) external;
@@ -75,7 +75,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
-    IIdentityLib public identityLib;
+    IIdentityRegistry public identityRegistry;
 
     /// @notice Current version of the tax policy. Participants must acknowledge
     /// this version before interacting. The contract owner remains exempt.
@@ -127,7 +127,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
-    event IdentityLibUpdated(address identityLib);
+    event IdentityRegistryUpdated(address identityRegistry);
     event ValidatorRewardPctUpdated(uint256 pct);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
@@ -152,18 +152,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param acknowledger Address being granted or revoked the role.
     /// @param allowed True if the address can acknowledge for others.
     event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
-    /// @notice Emitted when an additional agent is added or removed.
-    /// @param agent Address being updated.
-    /// @param allowed True if the agent is whitelisted, false if removed.
-    event AdditionalAgentUpdated(address indexed agent, bool allowed);
-    /// @notice Emitted when an ENS root node is updated.
-    /// @param node Identifier for the root node being modified.
-    /// @param newRoot The new ENS root node hash.
-    event RootNodeUpdated(string node, bytes32 newRoot);
-    /// @notice Emitted when a Merkle root is updated.
-    /// @param root Identifier for the Merkle root being modified.
-    /// @param newRoot The new Merkle root hash.
-    event MerkleRootUpdated(string root, bytes32 newRoot);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -302,56 +290,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice Update the identity library used for agent verification.
-    /// @param lib Address of the IdentityLib contract.
-    function setIdentityLib(IIdentityLib lib) external onlyOwner {
-        identityLib = lib;
-        emit IdentityLibUpdated(address(lib));
-        emit ModuleUpdated("IdentityLib", address(lib));
-    }
-
-    /// @notice Update ENS and club root nodes used for identity checks.
-    function setRootNodes(bytes32 agentRoot, bytes32 clubRoot) external onlyOwner {
-        identityLib.updateRootNodes(agentRoot, clubRoot);
-        emit RootNodeUpdated("agent", agentRoot);
-        emit RootNodeUpdated("club", clubRoot);
-    }
-
-    /// @notice Update Merkle roots for agent and validator allowlists.
-    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyOwner {
-        identityLib.updateMerkleRoots(agentRoot, validatorRoot);
-        emit MerkleRootUpdated("agent", agentRoot);
-        emit MerkleRootUpdated("validator", validatorRoot);
-    }
-
-    /// @notice Configure additional agents that bypass identity checks.
-    function setAdditionalAgents(
-        address[] calldata agents,
-        bool[] calldata allowed
-    ) external onlyOwner {
-        require(agents.length == allowed.length, "length");
-        for (uint256 i; i < agents.length; ++i) {
-            if (allowed[i]) {
-                identityLib.addAdditionalAgent(agents[i]);
-            } else {
-                identityLib.removeAdditionalAgent(agents[i]);
-            }
-            emit AdditionalAgentUpdated(agents[i], allowed[i]);
-        }
-    }
-
-    /// @notice Manually allow an agent to bypass identity checks.
-    /// @param agent Address to whitelist.
-    function addAdditionalAgent(address agent) external onlyOwner {
-        identityLib.addAdditionalAgent(agent);
-        emit AdditionalAgentUpdated(agent, true);
-    }
-
-    /// @notice Remove an agent from the manual allowlist.
-    /// @param agent Address to remove.
-    function removeAdditionalAgent(address agent) external onlyOwner {
-        identityLib.removeAdditionalAgent(agent);
-        emit AdditionalAgentUpdated(agent, false);
+    /// @notice Update the identity registry used for agent verification.
+    /// @param registry Address of the IdentityRegistry contract.
+    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+        identityRegistry = registry;
+        emit IdentityRegistryUpdated(address(registry));
+        emit ModuleUpdated("IdentityRegistry", address(registry));
     }
 
     /// @notice update the FeePool contract used for revenue sharing
@@ -575,8 +519,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        require(address(identityLib) != address(0), "identity lib");
-        bool authorized = identityLib.verifyAgent(
+        require(address(identityRegistry) != address(0), "identity reg");
+        bool authorized = identityRegistry.verifyAgent(
             msg.sender,
             subdomain,
             proof
@@ -669,8 +613,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         require(block.timestamp <= job.deadline, "deadline");
-        require(address(identityLib) != address(0), "identity lib");
-        bool authorized = identityLib.verifyAgent(
+        require(address(identityRegistry) != address(0), "identity reg");
+        bool authorized = identityRegistry.verifyAgent(
             msg.sender,
             subdomain,
             proof
