@@ -8,7 +8,7 @@ describe("comprehensive job flows", function () {
   const feePct = 10;
   const disputeFee = 0n;
 
-  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
+  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy, identity;
   let owner, employer, agent, platform, buyer;
 
   beforeEach(async () => {
@@ -110,10 +110,10 @@ describe("comprehensive job flows", function () {
     );
     await validation.setJobRegistry(await registry.getAddress());
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );
-    const identity = await Identity.deploy();
-    await registry.setIdentityLib(await identity.getAddress());
+    identity = await Identity.deploy();
+    await registry.setIdentityRegistry(await identity.getAddress());
     await registry.setFeePct(feePct);
     await registry.setValidatorRewardPct(0);
     await registry.setTaxPolicy(await policy.getAddress());
@@ -139,7 +139,7 @@ describe("comprehensive job flows", function () {
 
   it("executes successful job flow with certificate trade", async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
-    await registry.addAdditionalAgent(agent.address);
+    await identity.addAdditionalAgent(agent.address);
     await token
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);
@@ -164,11 +164,11 @@ describe("comprehensive job flows", function () {
 
   it("rejects unverified agent identities", async () => {
     const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityLibToggle.sol:IdentityLibToggle"
+      "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
     );
     const verifier = await Verifier.deploy();
     await verifier.setResult(false);
-    await registry.setIdentityLib(await verifier.getAddress());
+    await registry.setIdentityRegistry(await verifier.getAddress());
     await token
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);
@@ -186,7 +186,7 @@ describe("comprehensive job flows", function () {
 
   it("resolves disputes with stake slashing", async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
-    await registry.addAdditionalAgent(agent.address);
+    await identity.addAdditionalAgent(agent.address);
     await token
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);
@@ -221,7 +221,7 @@ describe("comprehensive job flows", function () {
 
   it("blocks blacklisted agents", async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
-    await registry.addAdditionalAgent(agent.address);
+    await identity.addAdditionalAgent(agent.address);
     await token
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);

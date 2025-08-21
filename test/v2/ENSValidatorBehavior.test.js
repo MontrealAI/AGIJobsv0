@@ -46,7 +46,7 @@ describe("Validator ENS integration", function () {
     await reputation.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/modules/IdentityLib.sol:IdentityLib"
+      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
     );
     identity = await Identity.deploy(
       await ens.getAddress(),
@@ -71,12 +71,7 @@ describe("Validator ENS integration", function () {
     );
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());
-    await identity.setModules(
-      await jobRegistry.getAddress(),
-      await validation.getAddress()
-    );
-    await validation.setIdentityLib(await identity.getAddress());
-    await validation.setRootNodes(ethers.ZeroHash, root);
+    await validation.setIdentityRegistry(await identity.getAddress());
   });
 
   it("rejects validators without subdomains and emits events on success", async () => {
@@ -121,11 +116,11 @@ describe("Validator ENS integration", function () {
   });
 
   it("rejects invalid Merkle proofs", async () => {
-    const leaf = ethers.solidityPackedKeccak256(
-      ["address"],
-      [validator.address]
-    );
-    await validation.setMerkleRoots(ethers.ZeroHash, leaf);
+      const leaf = ethers.solidityPackedKeccak256(
+        ["address"],
+        [validator.address]
+      );
+      await identity.setValidatorMerkleRoot(leaf);
     const badProof = [ethers.id("bad")];
     await expect(
       identity.verifyValidator(validator.address, "v", badProof)
@@ -175,15 +170,14 @@ describe("Validator ENS integration", function () {
 
     // non-owner cannot override
     await expect(
-      validation
-        .connect(other)
-        .setAdditionalValidators([validator.address], [true])
-    ).to.be.revertedWithCustomError(validation, "OwnableUnauthorizedAccount");
+      identity.connect(other).addAdditionalValidator(validator.address)
+    ).to.be.revertedWithCustomError(
+      identity,
+      "OwnableUnauthorizedAccount"
+    );
 
     // owner override and commit succeeds
-    await validation
-      .connect(owner)
-      .setAdditionalValidators([validator.address], [true]);
+    await identity.addAdditionalValidator(validator.address);
     await expect(
       validation
         .connect(validator)

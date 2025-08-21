@@ -3,21 +3,26 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @notice Simple identity registry mock that always authorizes.
-contract IdentityRegistryMock is Ownable {
-    address public ens;
-    address public nameWrapper;
-    address public reputationEngine;
-
-    bytes32 public agentRootNode;
+/// @notice Identity registry mock with toggled verification result.
+contract IdentityRegistryToggle is Ownable {
+    bool public result;
     bytes32 public clubRootNode;
-    bytes32 public agentMerkleRoot;
+    bytes32 public agentRootNode;
     bytes32 public validatorMerkleRoot;
+    bytes32 public agentMerkleRoot;
 
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
 
     constructor() Ownable(msg.sender) {}
+
+    function setResult(bool r) external onlyOwner {
+        result = r;
+    }
+
+    function setENS(address) external onlyOwner {}
+    function setNameWrapper(address) external onlyOwner {}
+    function setReputationEngine(address) external onlyOwner {}
 
     event AgentRootNodeUpdated(bytes32 indexed agentRootNode);
     event ClubRootNodeUpdated(bytes32 indexed clubRootNode);
@@ -26,54 +31,42 @@ contract IdentityRegistryMock is Ownable {
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
 
-    function setENS(address _ens) external {
-        ens = _ens;
-    }
-
-    function setNameWrapper(address _wrapper) external {
-        nameWrapper = _wrapper;
-    }
-
-    function setReputationEngine(address engine) external {
-        reputationEngine = engine;
-    }
-
-    function setAgentRootNode(bytes32 root) external {
+    function setAgentRootNode(bytes32 root) external onlyOwner {
         agentRootNode = root;
         emit AgentRootNodeUpdated(root);
     }
 
-    function setClubRootNode(bytes32 root) external {
+    function setClubRootNode(bytes32 root) external onlyOwner {
         clubRootNode = root;
         emit ClubRootNodeUpdated(root);
     }
 
-    function setAgentMerkleRoot(bytes32 root) external {
+    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
         agentMerkleRoot = root;
         emit AgentMerkleRootUpdated(root);
     }
 
-    function setValidatorMerkleRoot(bytes32 root) external {
+    function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
         validatorMerkleRoot = root;
         emit ValidatorMerkleRootUpdated(root);
     }
 
-    function addAdditionalAgent(address agent) external {
+    function addAdditionalAgent(address agent) external onlyOwner {
         additionalAgents[agent] = true;
         emit AdditionalAgentUpdated(agent, true);
     }
 
-    function removeAdditionalAgent(address agent) external {
+    function removeAdditionalAgent(address agent) external onlyOwner {
         additionalAgents[agent] = false;
         emit AdditionalAgentUpdated(agent, false);
     }
 
-    function addAdditionalValidator(address validator) external {
+    function addAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = true;
         emit AdditionalValidatorUpdated(validator, true);
     }
 
-    function removeAdditionalValidator(address validator) external {
+    function removeAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = false;
         emit AdditionalValidatorUpdated(validator, false);
     }
@@ -83,8 +76,10 @@ contract IdentityRegistryMock is Ownable {
         string calldata,
         bytes32[] calldata
     ) external view returns (bool) {
-        claimant; // silence unused
-        return true;
+        if (additionalAgents[claimant]) {
+            return true;
+        }
+        return result;
     }
 
     function isAuthorizedValidator(
@@ -92,8 +87,10 @@ contract IdentityRegistryMock is Ownable {
         string calldata,
         bytes32[] calldata
     ) external view returns (bool) {
-        claimant; // silence unused
-        return true;
+        if (additionalValidators[claimant]) {
+            return true;
+        }
+        return result;
     }
 
     function verifyAgent(
@@ -101,8 +98,10 @@ contract IdentityRegistryMock is Ownable {
         string calldata,
         bytes32[] calldata
     ) external returns (bool) {
-        claimant; // silence unused
-        return true;
+        if (additionalAgents[claimant]) {
+            return true;
+        }
+        return result;
     }
 
     function verifyValidator(
@@ -110,8 +109,10 @@ contract IdentityRegistryMock is Ownable {
         string calldata,
         bytes32[] calldata
     ) external returns (bool) {
-        claimant; // silence unused
-        return true;
+        if (additionalValidators[claimant]) {
+            return true;
+        }
+        return result;
     }
 }
 

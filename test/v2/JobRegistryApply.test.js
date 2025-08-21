@@ -20,7 +20,7 @@ describe("JobRegistry agent gating", function () {
     rep = await Rep.deploy(await stakeManager.getAddress());
 
     const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityLibToggle.sol:IdentityLibToggle"
+      "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
     );
     verifier = await Verifier.deploy();
 
@@ -39,7 +39,7 @@ describe("JobRegistry agent gating", function () {
       0,
       []
     );
-    await registry.connect(owner).setIdentityLib(await verifier.getAddress());
+    await registry.connect(owner).setIdentityRegistry(await verifier.getAddress());
 
     await rep
       .connect(owner)
@@ -58,9 +58,7 @@ describe("JobRegistry agent gating", function () {
     await registry.connect(owner).setMaxJobDuration(1000);
     await registry.connect(owner).setFeePct(0);
     await registry.connect(owner).setJobParameters(0, 0);
-    await registry
-      .connect(owner)
-      .setRootNodes(ethers.id("agi"), ethers.ZeroHash);
+    await verifier.setAgentRootNode(ethers.id("agi"));
     await verifier.setResult(false);
   });
 
@@ -73,20 +71,20 @@ describe("JobRegistry agent gating", function () {
   it("syncs ENS roots and merkle updates to verifier", async () => {
     const newRoot = ethers.id("root");
     await expect(
-      registry.connect(agent).setRootNodes(newRoot, ethers.ZeroHash)
+      verifier.connect(agent).setAgentRootNode(newRoot)
     ).to.be.revertedWithCustomError(
-      registry,
+      verifier,
       "OwnableUnauthorizedAccount"
     );
-    await expect(registry.setRootNodes(newRoot, ethers.ZeroHash))
-      .to.emit(registry, "RootNodeUpdated")
-      .withArgs("agent", newRoot);
+    await expect(verifier.setAgentRootNode(newRoot))
+      .to.emit(verifier, "AgentRootNodeUpdated")
+      .withArgs(newRoot);
     expect(await verifier.agentRootNode()).to.equal(newRoot);
 
     const merkle = ethers.id("merkle");
-    await expect(registry.setMerkleRoots(merkle, ethers.ZeroHash))
-      .to.emit(registry, "MerkleRootUpdated")
-      .withArgs("agent", merkle);
+    await expect(verifier.setAgentMerkleRoot(merkle))
+      .to.emit(verifier, "AgentMerkleRootUpdated")
+      .withArgs(merkle);
     expect(await verifier.agentMerkleRoot()).to.equal(merkle);
   });
 
@@ -98,9 +96,7 @@ describe("JobRegistry agent gating", function () {
   });
 
   it("allows manual allowlisted agents", async () => {
-    await registry
-      .connect(owner)
-      .setAdditionalAgents([agent.address], [true]);
+    await verifier.addAdditionalAgent(agent.address);
     const jobId = await createJob();
     await expect(registry.connect(agent).applyForJob(jobId, "a", []))
       .to.emit(registry, "JobApplied")

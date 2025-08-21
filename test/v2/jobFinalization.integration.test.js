@@ -126,10 +126,10 @@ describe("job finalization integration", function () {
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );
     const identity = await Identity.deploy();
-    await registry.setIdentityLib(await identity.getAddress());
+    await registry.setIdentityRegistry(await identity.getAddress());
     await validation.setValidators([validator1.address, validator2.address]);
   });
 

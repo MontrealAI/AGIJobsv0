@@ -118,10 +118,12 @@ describe("JobRegistry integration", function () {
     await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );
     identity = await Identity.deploy();
-    await registry.connect(owner).setIdentityLib(await identity.getAddress());
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await identity.getAddress());
   });
 
   it("runs successful job lifecycle", async () => {
@@ -318,19 +320,15 @@ describe("JobRegistry integration", function () {
   });
 
   it("updates additional agents individually", async () => {
-    await expect(
-      registry.connect(owner).addAdditionalAgent(treasury.address)
-    )
-      .to.emit(registry, "AdditionalAgentUpdated")
+    await expect(identity.addAdditionalAgent(treasury.address))
+      .to.emit(identity, "AdditionalAgentUpdated")
       .withArgs(treasury.address, true);
-      expect(await identity.additionalAgents(treasury.address)).to.equal(true);
+    expect(await identity.additionalAgents(treasury.address)).to.equal(true);
 
-    await expect(
-      registry.connect(owner).removeAdditionalAgent(treasury.address)
-    )
-      .to.emit(registry, "AdditionalAgentUpdated")
+    await expect(identity.removeAdditionalAgent(treasury.address))
+      .to.emit(identity, "AdditionalAgentUpdated")
       .withArgs(treasury.address, false);
-      expect(await identity.additionalAgents(treasury.address)).to.equal(false);
+    expect(await identity.additionalAgents(treasury.address)).to.equal(false);
   });
 });
 

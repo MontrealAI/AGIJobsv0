@@ -120,10 +120,10 @@ describe("Full system integration", function () {
     await registry.connect(v2).acknowledgeTaxPolicy();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );
     const identity = await Identity.deploy();
-    await registry.setIdentityLib(await identity.getAddress());
+    await registry.setIdentityRegistry(await identity.getAddress());
 
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
