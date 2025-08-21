@@ -172,6 +172,12 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         disputeModule = IDisputeModule(module);
     }
 
+    function setIdentityRegistry(address) external override {}
+
+    function setAgentRootNode(bytes32) external override {}
+
+    function setAgentMerkleRoot(bytes32) external override {}
+
     function setJobParameters(uint256, uint256 stake) external override {
         jobStake = stake;
     }
