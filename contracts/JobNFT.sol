@@ -8,6 +8,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 /// @title JobNFT
 /// @notice ERC721 token representing jobs with simple marketplace mechanics.
+/// Owner can authorize a JobRegistry for minting via {setJobRegistry} and
+/// update metadata with {setBaseURI}. The authorized JobRegistry calls
+/// {mint} to create tokens. A lightweight marketplace allows holders to
+/// list, purchase, and delist NFTs using $AGIALPHA while emitting
+/// {NFTListed}, {NFTPurchased}, and {NFTDelisted} events.
 /// @dev Minting and burning are restricted to the JobRegistry contract.
 contract JobNFT is ERC721, Ownable {
     using SafeERC20 for IERC20;
