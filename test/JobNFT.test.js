@@ -9,7 +9,9 @@ async function deployFixture() {
   );
   const initialSupply = ethers.parseUnits("1000", 6);
   const token = await AGI.deploy("AGI ALPHA", "AGIA", initialSupply);
-  const StakeManager = await ethers.getContractFactory("StakeManager");
+  const StakeManager = await ethers.getContractFactory(
+    "contracts/StakeManager.sol:StakeManager"
+  );
   const stakeManager = await StakeManager.deploy();
   await stakeManager.waitForDeployment();
   await stakeManager.setToken(await token.getAddress());

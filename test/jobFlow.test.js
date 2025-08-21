@@ -179,7 +179,9 @@ describe("AGI job flow", function () {
     );
     const initialSupply = ethers.parseUnits("1000", 6);
     const saleToken = await AGI.deploy("AGI ALPHA", "AGIA", initialSupply);
-    const StakeManager = await ethers.getContractFactory("StakeManager");
+    const StakeManager = await ethers.getContractFactory(
+      "contracts/StakeManager.sol:StakeManager"
+    );
     const stakeManager = await StakeManager.deploy();
     await stakeManager.setToken(await saleToken.getAddress());
     const JobNFT = await ethers.getContractFactory("JobNFT");
