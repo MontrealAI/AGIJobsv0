@@ -8,6 +8,7 @@ import "../v2/interfaces/IReputationEngine.sol";
 import "../v2/interfaces/IDisputeModule.sol";
 import "../v2/interfaces/IValidationModule.sol";
 import "../v2/interfaces/ICertificateNFT.sol";
+import "../v2/interfaces/ITaxPolicy.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockStakeManager is IStakeManager {
@@ -96,6 +97,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public taxPolicyVersion;
     mapping(address => uint256) public taxAcknowledgedVersion;
 
+    ITaxPolicy public taxPolicy;
+
     IStakeManager private _stakeManager;
     IValidationModule public validationModule;
     IReputationEngine public reputationEngine;
@@ -110,6 +113,13 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public nextJobId;
     mapping(uint256 => uint256) public deadlines;
 
+    event JobCreated(
+        uint256 indexed jobId,
+        address indexed client,
+        uint256 reward,
+        uint256 deadline
+    );
+
     function setJob(uint256 jobId, Job calldata job) external {
         _jobs[jobId] = job;
     }
@@ -119,7 +129,14 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     }
 
     function acknowledgeTaxPolicy() external {
+        if (address(taxPolicy) != address(0)) {
+            taxPolicy.acknowledge(msg.sender);
+        }
         taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
+    }
+
+    function setTaxPolicy(address policy) external {
+        taxPolicy = ITaxPolicy(policy);
     }
 
     function setTaxPolicyVersion(uint256 version) external {
@@ -179,6 +196,16 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         uint64 deadline,
         string calldata uri
     ) external override returns (uint256 jobId) {
+        require(
+            taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
+            "acknowledge tax policy"
+        );
+        if (address(taxPolicy) != address(0)) {
+            require(
+                taxPolicy.acknowledged(msg.sender),
+                "acknowledge tax policy"
+            );
+        }
         require(reward <= maxJobReward, "reward");
         require(deadline > block.timestamp, "deadline");
         require(
@@ -200,7 +227,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         if (address(_stakeManager) != address(0) && reward > 0) {
             _stakeManager.lock(msg.sender, reward);
         }
-        emit JobCreated(jobId, msg.sender, address(0), reward, jobStake, 0);
+        emit JobCreated(jobId, msg.sender, reward, deadline);
     }
 
     function applyForJob(
