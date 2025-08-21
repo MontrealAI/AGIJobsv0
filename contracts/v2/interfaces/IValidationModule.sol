@@ -110,5 +110,14 @@ interface IValidationModule {
     /// @param jobId Identifier of the job
     /// @return validators Array of validator addresses
     function validators(uint256 jobId) external view returns (address[] memory validators);
+
+    /// @notice Retrieve a validator's vote outcome for a job
+    /// @param jobId Identifier of the job
+    /// @param validator Address of the validator
+    /// @return approved True if the validator approved the job
+    function votes(
+        uint256 jobId,
+        address validator
+    ) external view returns (bool approved);
 }
 

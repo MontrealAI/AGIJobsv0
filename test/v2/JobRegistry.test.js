@@ -144,7 +144,7 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true)
       .and.to.emit(registry, "JobFinalized")
-      .withArgs(jobId, true);
+      .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
     expect(await rep.reputation(agent.address)).to.equal(0);

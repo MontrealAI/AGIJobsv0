@@ -63,6 +63,15 @@ contract ValidationStub is IValidationModule {
         vals = new address[](0);
     }
 
+    function votes(uint256, address)
+        external
+        view
+        override
+        returns (bool approved)
+    {
+        approved = result;
+    }
+
     function setCommitRevealWindows(uint256, uint256) external override {}
 
     function setTiming(uint256, uint256) external override {}

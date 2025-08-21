@@ -88,6 +88,10 @@ contract MockStakeManager is IStakeManager {
         return 100;
     }
 
+    function burnPct() external pure override returns (uint256) {
+        return 0;
+    }
+
     // legacy helper for tests
     function setTokenLegacy(address) external {}
 }
@@ -350,7 +354,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             }
         }
         emit DisputeResolved(jobId, employerWins);
-        emit JobFinalized(jobId, job.success);
+        emit JobFinalized(jobId, job.agent);
     }
 
     function finalize(uint256 jobId) public override {
@@ -366,7 +370,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         if (address(certificateNFT) != address(0)) {
             certificateNFT.mint(job.agent, jobId, job.uri);
         }
-        emit JobFinalized(jobId, true);
+        emit JobFinalized(jobId, job.agent);
     }
 
     function acknowledgeAndFinalize(uint256 jobId) external override {

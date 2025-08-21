@@ -87,6 +87,9 @@ interface IStakeManager {
     /// @notice distribute validator rewards equally among selected validators
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
 
+    /// @notice Current burn percentage applied to rewards
+    function burnPct() external view returns (uint256);
+
     /// @notice set the dispute module authorized to manage dispute fees
     function setDisputeModule(address module) external;
 
