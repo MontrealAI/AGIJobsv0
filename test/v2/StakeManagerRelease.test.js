@@ -116,14 +116,14 @@ describe("StakeManager release", function () {
     const before1 = await token.balanceOf(user1.address);
     await stakeManager
       .connect(registrySigner)
-      .lockJobFunds(jobId, user2.address, 100);
+      .lockReward(jobId, user2.address, 100);
     const before2 = await token.balanceOf(user2.address);
     const beforeBurn = await token.balanceOf(burnAddr);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseJobFunds(jobId, user1.address, 100)
+        .releaseReward(jobId, user1.address, 100)
     )
       .to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, await feePool.getAddress(), 20)

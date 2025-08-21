@@ -450,6 +450,22 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeLocked(user, amount, unlockTime[user]);
     }
 
+    /// @notice release previously locked stake for a user
+    /// @param user address whose stake is being unlocked
+    /// @param amount token amount with 6 decimals to unlock
+    function releaseStake(address user, uint256 amount)
+        external
+        onlyJobRegistry
+    {
+        uint256 locked = lockedStakes[user];
+        require(locked >= amount, "locked");
+        lockedStakes[user] = locked - amount;
+        if (lockedStakes[user] == 0) {
+            unlockTime[user] = 0;
+        }
+        emit StakeUnlocked(user, amount);
+    }
+
     /// @dev internal stake deposit routine shared by deposit helpers
     function _deposit(address user, Role role, uint256 amount) internal {
         uint256 newStake = stakes[user][role] + amount;
@@ -639,12 +655,12 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // job escrow logic
     // ---------------------------------------------------------------
 
-    /// @notice lock job funds from an employer for later release via
-    ///         `releaseJobFunds` or `finalizeJobFunds`
+    /// @notice lock job reward funds from an employer for later release via
+    ///         `releaseReward` or `finalizeJobFunds`
     /// @param jobId unique job identifier
     /// @param from employer providing the escrow
     /// @param amount token amount with 6 decimals; employer must approve first
-    function lockJobFunds(bytes32 jobId, address from, uint256 amount)
+    function lockReward(bytes32 jobId, address from, uint256 amount)
         external
         onlyJobRegistry
     {
@@ -664,11 +680,11 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeLocked(bytes32(0), from, amount);
     }
 
-    /// @notice release locked job funds to recipient applying any AGI type bonus
+    /// @notice release locked job reward to recipient applying any AGI type bonus
     /// @param jobId unique job identifier
     /// @param to recipient of the release (typically the agent)
     /// @param amount base token amount with 6 decimals before AGI bonus
-    function releaseJobFunds(bytes32 jobId, address to, uint256 amount)
+    function releaseReward(bytes32 jobId, address to, uint256 amount)
         external
         onlyJobRegistry
     {
