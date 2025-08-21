@@ -41,7 +41,7 @@ async function deployFixture() {
   await registry.setCertificateNFT(await cert.getAddress());
   await registry.setJobParameters(1, 1);
 
-  await cert.setMinter(await registry.getAddress(), true);
+  await cert.setJobRegistry(await registry.getAddress());
   await cert.setBaseURI("ipfs://");
 
   return { owner, employer, agent, other, validation, reputation, stake, cert, registry };
@@ -76,6 +76,6 @@ describe("JobRegistry and CertificateNFT", function () {
     const { cert, agent } = await deployFixture();
     await expect(
       cert.connect(agent).mintCertificate(agent.address, 1, "foo")
-    ).to.be.revertedWith("not minter");
+    ).to.be.revertedWith("only JobRegistry");
   });
 });

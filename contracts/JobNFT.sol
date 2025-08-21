@@ -5,6 +5,7 @@ import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {StakeManager} from "./StakeManager.sol";
 
 /// @title JobNFT
 /// @notice ERC721 token representing jobs with simple marketplace mechanics.
@@ -27,8 +28,8 @@ contract JobNFT is ERC721, Ownable {
     /// @notice Base URI for token metadata.
     string private baseTokenURI;
 
-    /// @notice ERC20 token used for purchases ($AGIALPHA).
-    IERC20 public immutable agiAlpha;
+    /// @notice StakeManager providing the $AGIALPHA token.
+    StakeManager public stakeManager;
 
     /// @notice Listing information for marketplace functionality.
     struct Listing {
@@ -48,6 +49,7 @@ contract JobNFT is ERC721, Ownable {
 
     event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
+    event StakeManagerUpdated(address manager);
     /// @notice Emitted when a new NFT is minted.
     event NFTMinted(address indexed to, uint256 indexed jobId);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
@@ -58,10 +60,7 @@ contract JobNFT is ERC721, Ownable {
     // Constructor
     // ---------------------------------------------------------------------
 
-    /// @param agiAlpha_ Address of the $AGIALPHA ERC20 token.
-    constructor(address agiAlpha_) ERC721("Job", "JOB") Ownable(msg.sender) {
-        agiAlpha = IERC20(agiAlpha_);
-    }
+    constructor() ERC721("Job", "JOB") Ownable(msg.sender) {}
 
     // ---------------------------------------------------------------------
     // Modifiers
@@ -81,6 +80,12 @@ contract JobNFT is ERC721, Ownable {
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
+    }
+
+    /// @notice Set the StakeManager used to transfer $AGIALPHA.
+    function setStakeManager(address manager) external onlyOwner {
+        stakeManager = StakeManager(payable(manager));
+        emit StakeManagerUpdated(manager);
     }
 
     /// @notice Set the base URI for all tokens.
@@ -143,11 +148,15 @@ contract JobNFT is ERC721, Ownable {
         require(seller != msg.sender, "self");
         uint256 price = listing.price;
 
-        require(agiAlpha.allowance(msg.sender, address(this)) >= price, "allowance");
+        require(price > 0, "price");
+        require(ownerOf(tokenId) == seller, "owner");
+
+        IERC20 token = stakeManager.token();
+        require(token.allowance(msg.sender, address(this)) >= price, "allowance");
 
         delete listings[tokenId];
 
-        agiAlpha.safeTransferFrom(msg.sender, seller, price);
+        token.safeTransferFrom(msg.sender, seller, price);
         _safeTransfer(seller, msg.sender, tokenId, "");
 
         emit NFTPurchased(tokenId, msg.sender, price);
@@ -158,6 +167,7 @@ contract JobNFT is ERC721, Ownable {
         Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
         require(listing.seller == msg.sender, "owner");
+        require(ownerOf(tokenId) == msg.sender, "owner");
 
         delete listings[tokenId];
 

@@ -8,16 +8,18 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @notice ERC721 certificate minted upon successful job completion.
 contract CertificateNFT is ERC721, Ownable {
     string private baseTokenURI;
-    mapping(address => bool) public minters;
+    address public jobRegistry;
     mapping(uint256 => string) private _tokenURIs;
 
     event BaseURIUpdated(string newURI);
-    event MinterUpdated(address minter, bool allowed);
+    event JobRegistryUpdated(address registry);
+    /// @notice Emitted when a certificate is minted.
+    event CertificateMinted(address indexed to, uint256 indexed jobId);
 
     constructor() ERC721("Cert", "CERT") Ownable(msg.sender) {}
 
-    modifier onlyMinter() {
-        require(minters[msg.sender], "not minter");
+    modifier onlyJobRegistry() {
+        require(msg.sender == jobRegistry, "only JobRegistry");
         _;
     }
 
@@ -27,10 +29,10 @@ contract CertificateNFT is ERC721, Ownable {
         emit BaseURIUpdated(uri);
     }
 
-    /// @notice Authorize or remove a minter (e.g., JobRegistry).
-    function setMinter(address minter, bool allowed) external onlyOwner {
-        minters[minter] = allowed;
-        emit MinterUpdated(minter, allowed);
+    /// @notice Configure the authorized JobRegistry.
+    function setJobRegistry(address registry) external onlyOwner {
+        jobRegistry = registry;
+        emit JobRegistryUpdated(registry);
     }
 
     /// @notice Mint a new certificate to `to` for `jobId`.
@@ -39,12 +41,13 @@ contract CertificateNFT is ERC721, Ownable {
         address to,
         uint256 jobId,
         string calldata uri
-    ) external onlyMinter returns (uint256 tokenId) {
+    ) external onlyJobRegistry returns (uint256 tokenId) {
         tokenId = jobId;
         _safeMint(to, tokenId);
         if (bytes(uri).length != 0) {
             _tokenURIs[tokenId] = uri;
         }
+        emit CertificateMinted(to, tokenId);
     }
 
     function _baseURI() internal view override returns (string memory) {

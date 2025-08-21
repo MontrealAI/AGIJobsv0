@@ -254,7 +254,7 @@ The contract owner can reconfigure live deployments without redeployment. Use a 
 
 #### CertificateNFT
 - `setBaseURI(string)`
-- `setMinter(address, bool)`
+- `setJobRegistry(address)`
 
 #### FeePool
 - `ownerWithdraw(address to, uint256 amount)`

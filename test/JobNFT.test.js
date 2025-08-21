@@ -9,11 +9,16 @@ async function deployFixture() {
   );
   const initialSupply = ethers.parseUnits("1000", 6);
   const token = await AGI.deploy("AGI ALPHA", "AGIA", initialSupply);
+  const StakeManager = await ethers.getContractFactory("StakeManager");
+  const stakeManager = await StakeManager.deploy();
+  await stakeManager.waitForDeployment();
+  await stakeManager.setToken(await token.getAddress());
 
   const JobNFT = await ethers.getContractFactory("JobNFT");
-  const nft = await JobNFT.deploy(await token.getAddress());
+  const nft = await JobNFT.deploy();
   await nft.waitForDeployment();
   await nft.setJobRegistry(jobRegistry.address);
+  await nft.setStakeManager(await stakeManager.getAddress());
 
   // distribute tokens
   const price = ethers.parseUnits("1", 6);
