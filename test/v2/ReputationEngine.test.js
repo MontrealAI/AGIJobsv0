@@ -21,7 +21,7 @@ describe("ReputationEngine", function () {
     const duration = 100000;
     const gain = await engine.calculateReputationPoints(payout, duration);
     const enforceGrowth = (current, points) => {
-      const max = 88_888n;
+      const max = 88888n;
       const newRep = current + points;
       const numerator = newRep * newRep * 10n ** 18n;
       const denominator = max * max;
