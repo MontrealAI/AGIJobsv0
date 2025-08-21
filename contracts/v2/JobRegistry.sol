@@ -202,7 +202,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 fee
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, string result);
+    event JobSubmitted(uint256 indexed jobId, address indexed worker, string result);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobCancelled(uint256 indexed jobId);
@@ -736,6 +736,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
+        require(block.timestamp <= job.deadline, "deadline");
         bool ownershipVerified;
         if (address(identityRegistry) != address(0)) {
             ownershipVerified = identityRegistry.verifyAgent(
@@ -781,9 +782,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
         job.result = result;
         job.state = State.Submitted;
-        emit JobSubmitted(jobId, result);
+        emit JobSubmitted(jobId, msg.sender, result);
         if (address(validationModule) != address(0)) {
-            validationModule.selectValidators(jobId);
+            validationModule.startValidation(jobId, result);
         }
     }
 

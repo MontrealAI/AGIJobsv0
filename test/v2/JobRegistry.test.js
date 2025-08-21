@@ -139,7 +139,7 @@ describe("JobRegistry integration", function () {
     await validation.connect(owner).setResult(true);
     await expect(registry.connect(agent).submit(jobId, "result", "", []))
       .to.emit(registry, "JobSubmitted")
-      .withArgs(jobId, "result");
+      .withArgs(jobId, agent.address, "result");
     await expect(validation.finalize(jobId))
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true)
