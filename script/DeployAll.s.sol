@@ -98,9 +98,9 @@ contract DeployAll is Script {
             IReputationEngine(address(reputation)),
             IDisputeModule(address(dispute)),
             ICertificateNFT(address(nft)),
+            IFeePool(address(feePool)),
             new address[](0)
         );
-        registry.setFeePool(IFeePool(address(feePool)));
         registry.setFeePct(5);
 
         address[] memory contracts = new address[](11);

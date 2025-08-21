@@ -64,6 +64,17 @@ async function main() {
   const nft = await NFT.deploy("Cert", "CERT");
   await nft.waitForDeployment();
 
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await token.getAddress(),
+    await stake.getAddress(),
+    0,
+    owner.address
+  );
+  await feePool.waitForDeployment();
+
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
@@ -87,6 +98,7 @@ async function main() {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
+    await feePool.getAddress(),
     []
   );
 

@@ -279,6 +279,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         IReputationEngine _reputation,
         IDisputeModule _dispute,
         ICertificateNFT _certNFT,
+        IFeePool _feePool,
         address[] calldata _ackModules
     ) external onlyOwner {
         require(address(_validation) != address(0), "validation");
@@ -294,6 +295,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         reputationEngine = _reputation;
         disputeModule = _dispute;
         certificateNFT = _certNFT;
+        feePool = _feePool;
         emit ValidationModuleUpdated(address(_validation));
         emit ModuleUpdated("ValidationModule", address(_validation));
         emit StakeManagerUpdated(address(_stakeMgr));
@@ -304,6 +306,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("DisputeModule", address(_dispute));
         emit CertificateNFTUpdated(address(_certNFT));
         emit ModuleUpdated("CertificateNFT", address(_certNFT));
+        emit FeePoolUpdated(address(_feePool));
+        emit ModuleUpdated("FeePool", address(_feePool));
         for (uint256 i; i < _ackModules.length; i++) {
             acknowledgers[_ackModules[i]] = true;
             emit AcknowledgerUpdated(_ackModules[i], true);

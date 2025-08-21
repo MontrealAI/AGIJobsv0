@@ -352,9 +352,9 @@ contract Deployer is Ownable {
             JIReputationEngine(address(reputation)),
             JIDisputeModule(address(dispute)),
             JICertificateNFT(address(certificate)),
+            IFeePool(address(pool)),
             acks
         );
-        registry.setFeePool(IFeePool(address(pool)));
         if (address(policy) != address(0)) {
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }

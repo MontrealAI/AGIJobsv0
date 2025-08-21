@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Full system integration", function () {
-  let token, stakeManager, rep, validation, nft, registry, dispute, policy;
+  let token, stakeManager, rep, validation, nft, registry, dispute, policy, feePool;
   let owner, employer, agent, v1, v2;
   const reward = 100;
   const stake = 200;
@@ -43,6 +43,17 @@ describe("Full system integration", function () {
     );
     nft = await NFT.deploy("Cert", "CERT");
 
+    const FeePool = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
+    feePool = await FeePool.deploy(
+      await token.getAddress(),
+      await stakeManager.getAddress(),
+      0,
+      owner.address
+    );
+    await feePool.setBurnPct(0);
+
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
@@ -52,7 +63,7 @@ describe("Full system integration", function () {
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      ethers.ZeroAddress,
+      await feePool.getAddress(),
       ethers.ZeroAddress,
       0,
       0,
@@ -83,6 +94,7 @@ describe("Full system integration", function () {
         await rep.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
+        await feePool.getAddress(),
         []
       );
     await registry.connect(owner).setJobParameters(reward, stake);

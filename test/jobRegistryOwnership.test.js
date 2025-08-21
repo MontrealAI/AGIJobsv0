@@ -22,6 +22,7 @@ describe("JobRegistry ownership", function () {
           user.address,
           user.address,
           user.address,
+          user.address,
           user.address
         )
     )
