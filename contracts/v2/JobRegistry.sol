@@ -7,8 +7,6 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
-import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
 import {IIdentityLib} from "./interfaces/IIdentityLib.sol";
 
 interface IReputationEngine {
@@ -77,12 +75,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ICertificateNFT public certificateNFT;
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
-    ENSOwnershipVerifier public ensOwnershipVerifier;
-    IIdentityRegistry public identityRegistry;
     IIdentityLib public identityLib;
-    bytes32 public agentRootNode;
-    bytes32 public agentMerkleRoot;
-    mapping(address => bool) public additionalAgents;
 
     /// @notice Current version of the tax policy. Participants must acknowledge
     /// this version before interacting. The contract owner remains exempt.
@@ -134,7 +127,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event ReputationEngineUpdated(address engine);
     event DisputeModuleUpdated(address module);
     event CertificateNFTUpdated(address nft);
-    event IdentityRegistryUpdated(address registry);
     event IdentityLibUpdated(address identityLib);
     event ValidatorRewardPctUpdated(uint256 pct);
     /// @notice Emitted when the tax policy reference or version changes.
@@ -164,13 +156,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param agent Address being updated.
     /// @param allowed True if the agent is whitelisted, false if removed.
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
-    /// @notice Emitted when agent ENS ownership is verified or bypassed.
-    /// @param agent Address claiming ownership.
-    /// @param subdomain ENS subdomain label.
-    event OwnershipVerified(address indexed agent, string subdomain);
-    /// @notice Emitted when an agent proceeds without ENS verification.
-    /// @param reason Explanation for the recovery path.
-    event RecoveryInitiated(string reason);
     /// @notice Emitted when an ENS root node is updated.
     /// @param node Identifier for the root node being modified.
     /// @param newRoot The new ENS root node hash.
@@ -317,20 +302,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         }
     }
 
-    /// @notice Update the ENS ownership verifier contract.
-    function setENSOwnershipVerifier(ENSOwnershipVerifier verifier) external onlyOwner {
-        ensOwnershipVerifier = verifier;
-        emit ModuleUpdated("ENSOwnershipVerifier", address(verifier));
-    }
-
-    /// @notice Update the identity registry used for agent authorization.
-    /// @param registry Address of the IdentityRegistry contract.
-    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
-        identityRegistry = registry;
-        emit IdentityRegistryUpdated(address(registry));
-        emit ModuleUpdated("IdentityRegistry", address(registry));
-    }
-
     /// @notice Update the identity library used for agent verification.
     /// @param lib Address of the IdentityLib contract.
     function setIdentityLib(IIdentityLib lib) external onlyOwner {
@@ -339,48 +310,47 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit ModuleUpdated("IdentityLib", address(lib));
     }
 
-    /// @notice Set the ENS root node used for agent verification.
-    function setAgentRootNode(bytes32 node) external onlyOwner {
-        agentRootNode = node;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setAgentRootNode(node);
-        }
-        emit RootNodeUpdated("agent", node);
+    /// @notice Update ENS and club root nodes used for identity checks.
+    function setRootNodes(bytes32 agentRoot, bytes32 clubRoot) external onlyOwner {
+        identityLib.updateRootNodes(agentRoot, clubRoot);
+        emit RootNodeUpdated("agent", agentRoot);
+        emit RootNodeUpdated("club", clubRoot);
     }
 
-    /// @notice Set the agent Merkle root used for identity proofs.
-    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
-        agentMerkleRoot = root;
-        if (address(ensOwnershipVerifier) != address(0)) {
-            ensOwnershipVerifier.setAgentMerkleRoot(root);
-        }
-        emit MerkleRootUpdated("agent", root);
+    /// @notice Update Merkle roots for agent and validator allowlists.
+    function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyOwner {
+        identityLib.updateMerkleRoots(agentRoot, validatorRoot);
+        emit MerkleRootUpdated("agent", agentRoot);
+        emit MerkleRootUpdated("validator", validatorRoot);
     }
 
-    /// @notice Configure additional agents that bypass ENS checks.
+    /// @notice Configure additional agents that bypass identity checks.
     function setAdditionalAgents(
         address[] calldata agents,
         bool[] calldata allowed
     ) external onlyOwner {
         require(agents.length == allowed.length, "length");
         for (uint256 i; i < agents.length; ++i) {
-            additionalAgents[agents[i]] = allowed[i];
+            if (allowed[i]) {
+                identityLib.addAdditionalAgent(agents[i]);
+            } else {
+                identityLib.removeAdditionalAgent(agents[i]);
+            }
             emit AdditionalAgentUpdated(agents[i], allowed[i]);
         }
     }
 
-    /// @notice Manually allow an agent to bypass ENS checks.
+    /// @notice Manually allow an agent to bypass identity checks.
     /// @param agent Address to whitelist.
     function addAdditionalAgent(address agent) external onlyOwner {
-        require(agent != address(0), "agent");
-        additionalAgents[agent] = true;
+        identityLib.addAdditionalAgent(agent);
         emit AdditionalAgentUpdated(agent, true);
     }
 
     /// @notice Remove an agent from the manual allowlist.
     /// @param agent Address to remove.
     function removeAdditionalAgent(address agent) external onlyOwner {
-        additionalAgents[agent] = false;
+        identityLib.removeAdditionalAgent(agent);
         emit AdditionalAgentUpdated(agent, false);
     }
 
@@ -603,51 +573,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        bool authorized;
-        if (address(identityLib) != address(0)) {
-            authorized = identityLib.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
-            if (authorized) {
-                emit OwnershipVerified(msg.sender, subdomain);
-            } else {
-                emit RecoveryInitiated("agent verification failed");
-            }
-        } else if (address(identityRegistry) != address(0)) {
-            authorized = identityRegistry.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
-            if (authorized) {
-                emit OwnershipVerified(msg.sender, subdomain);
-            } else {
-                emit RecoveryInitiated("agent verification failed");
-            }
-            if (!authorized) {
-                authorized = identityRegistry.isAuthorizedAgent(
-                    msg.sender,
-                    subdomain,
-                    proof
-                );
-            }
-        } else if (address(ensOwnershipVerifier) != address(0)) {
-            authorized = ensOwnershipVerifier.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
-            if (authorized) {
-                emit OwnershipVerified(msg.sender, subdomain);
-            } else {
-                emit RecoveryInitiated("agent verification failed");
-            }
-        }
-        if (!authorized) {
-            authorized = additionalAgents[msg.sender];
-        }
+        require(address(identityLib) != address(0), "identity lib");
+        bool authorized = identityLib.verifyAgent(
+            msg.sender,
+            subdomain,
+            proof
+        );
         require(authorized, "Not authorized agent");
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
@@ -736,38 +667,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         require(block.timestamp <= job.deadline, "deadline");
-        bool ownershipVerified;
-        if (address(identityRegistry) != address(0)) {
-            ownershipVerified = identityRegistry.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
-            if (ownershipVerified) {
-                emit OwnershipVerified(msg.sender, subdomain);
-            } else {
-                emit RecoveryInitiated("agent verification failed");
-            }
-        } else if (address(ensOwnershipVerifier) != address(0)) {
-            ownershipVerified = ensOwnershipVerifier.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
-            if (ownershipVerified) {
-                emit OwnershipVerified(msg.sender, subdomain);
-            } else {
-                emit RecoveryInitiated("agent verification failed");
-            }
-        }
-        bool authorized = ownershipVerified || additionalAgents[msg.sender];
-        if (!authorized && address(identityRegistry) != address(0)) {
-            authorized = identityRegistry.isAuthorizedAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
-        }
+        require(address(identityLib) != address(0), "identity lib");
+        bool authorized = identityLib.verifyAgent(
+            msg.sender,
+            subdomain,
+            proof
+        );
         require(authorized, "Not authorized agent");
         if (address(reputationEngine) != address(0)) {
             require(

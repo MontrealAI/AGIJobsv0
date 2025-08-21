@@ -19,6 +19,10 @@ contract IdentityLib is Ownable {
     INameWrapper public nameWrapper;
     IReputationEngine public reputationEngine;
 
+    /// @notice Contracts allowed to update configuration alongside the owner
+    address public jobRegistry;
+    address public validationModule;
+
     bytes32 public agentRootNode;
     bytes32 public clubRootNode;
     bytes32 public agentMerkleRoot;
@@ -85,38 +89,54 @@ contract IdentityLib is Ownable {
         emit ReputationEngineUpdated(engine);
     }
 
-    function updateRootNodes(bytes32 agentRoot, bytes32 clubRoot) external onlyOwner {
+    /// @notice Set the JobRegistry and ValidationModule allowed to manage settings
+    function setModules(address _jobRegistry, address _validationModule) external onlyOwner {
+        jobRegistry = _jobRegistry;
+        validationModule = _validationModule;
+    }
+
+    modifier onlyAuthorized() {
+        require(
+            msg.sender == owner() ||
+                msg.sender == jobRegistry ||
+                msg.sender == validationModule,
+            "not authorized"
+        );
+        _;
+    }
+
+    function updateRootNodes(bytes32 agentRoot, bytes32 clubRoot) external onlyAuthorized {
         agentRootNode = agentRoot;
         clubRootNode = clubRoot;
         emit RootNodeUpdated("agent", agentRoot);
         emit RootNodeUpdated("club", clubRoot);
     }
 
-    function updateMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyOwner {
+    function updateMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external onlyAuthorized {
         agentMerkleRoot = agentRoot;
         validatorMerkleRoot = validatorRoot;
         emit MerkleRootUpdated("agent", agentRoot);
         emit MerkleRootUpdated("validator", validatorRoot);
     }
 
-    function addAdditionalAgent(address agent) external onlyOwner {
+    function addAdditionalAgent(address agent) external onlyAuthorized {
         require(agent != address(0), "agent");
         additionalAgents[agent] = true;
         emit AdditionalAgentUpdated(agent, true);
     }
 
-    function removeAdditionalAgent(address agent) external onlyOwner {
+    function removeAdditionalAgent(address agent) external onlyAuthorized {
         additionalAgents[agent] = false;
         emit AdditionalAgentUpdated(agent, false);
     }
 
-    function addAdditionalValidator(address validator) external onlyOwner {
+    function addAdditionalValidator(address validator) external onlyAuthorized {
         require(validator != address(0), "validator");
         additionalValidators[validator] = true;
         emit AdditionalValidatorUpdated(validator, true);
     }
 
-    function removeAdditionalValidator(address validator) external onlyOwner {
+    function removeAdditionalValidator(address validator) external onlyAuthorized {
         additionalValidators[validator] = false;
         emit AdditionalValidatorUpdated(validator, false);
     }

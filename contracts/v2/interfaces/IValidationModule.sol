@@ -95,7 +95,7 @@ interface IValidationModule {
     function removeAdditionalValidator(address validator) external;
 
     /// @notice Update ENS root nodes for agents and validators.
-    function setENSRoots(bytes32 agentRoot, bytes32 clubRoot) external;
+    function setRootNodes(bytes32 agentRoot, bytes32 clubRoot) external;
 
     /// @notice Update Merkle roots for agents and validators.
     function setMerkleRoots(bytes32 agentRoot, bytes32 validatorRoot) external;
