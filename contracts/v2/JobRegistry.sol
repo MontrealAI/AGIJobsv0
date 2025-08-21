@@ -370,6 +370,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice update the percentage of each job reward taken as a protocol fee
     function setFeePct(uint256 _feePct) external onlyOwner {
         require(_feePct <= 100, "pct");
+        require(_feePct + validatorRewardPct <= 100, "pct");
         feePct = _feePct;
         emit FeePctUpdated(_feePct);
     }
@@ -377,6 +378,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice update validator reward percentage of job reward
     function setValidatorRewardPct(uint256 pct) external onlyOwner {
         require(pct <= 100, "pct");
+        require(feePct + pct <= 100, "pct");
         validatorRewardPct = pct;
         emit ValidatorRewardPctUpdated(pct);
     }
@@ -832,22 +834,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         bytes32 jobKey = bytes32(jobId);
         if (job.success) {
             IFeePool pool = feePool;
-            uint256 validatorReward;
             address[] memory validators;
-            uint256 honest;
-            if (
-                validatorRewardPct > 0 &&
-                address(validationModule) != address(0)
-            ) {
-                validatorReward =
-                    (uint256(job.reward) * validatorRewardPct) /
-                    100;
+            uint256 validatorReward;
+            if (address(validationModule) != address(0)) {
                 validators = validationModule.validators(jobId);
-                uint256 vlen = validators.length;
-                for (uint256 i; i < vlen; ++i) {
-                    if (validationModule.votes(jobId, validators[i])) {
-                        honest++;
-                    }
+                if (validatorRewardPct > 0) {
+                    validatorReward =
+                        (uint256(job.reward) * validatorRewardPct) / 100;
                 }
             }
 
@@ -867,21 +860,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 );
 
                 if (validatorReward > 0) {
-                    if (honest > 0) {
-                        uint256 per = validatorReward / honest;
-                        uint256 rem = validatorReward - per * honest;
-                        bool paidRemainder;
-                        for (uint256 i; i < validators.length; ++i) {
-                            address val = validators[i];
-                            if (validationModule.votes(jobId, val)) {
-                                uint256 amount = per;
-                                if (!paidRemainder) {
-                                    amount += rem;
-                                    paidRemainder = true;
-                                }
-                                stakeManager.releaseJobFunds(jobKey, val, amount);
-                            }
-                        }
+                    if (validators.length > 0) {
+                        stakeManager.distributeValidatorRewards(
+                            jobKey,
+                            validatorReward
+                        );
                     } else {
                         stakeManager.releaseJobFunds(
                             jobKey,

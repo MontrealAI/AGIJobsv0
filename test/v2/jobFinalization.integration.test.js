@@ -4,14 +4,15 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("job finalization integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
-  let owner, employer, agent;
+  let owner, employer, agent, validator1, validator2;
   const reward = ethers.parseUnits("1000", 6);
   const stakeRequired = ethers.parseUnits("200", 6);
   const feePct = 10;
+  const validatorRewardPct = 10;
   const mintAmount = ethers.parseUnits("10000", 6);
 
   beforeEach(async () => {
-    [owner, employer, agent] = await ethers.getSigners();
+    [owner, employer, agent, validator1, validator2] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory(
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
@@ -107,7 +108,7 @@ describe("job finalization integration", function () {
   );
   await validation.setJobRegistry(await registry.getAddress());
   await registry.setFeePct(feePct);
-    await registry.setValidatorRewardPct(0);
+    await registry.setValidatorRewardPct(validatorRewardPct);
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await registry.setMaxJobReward(reward);
@@ -129,10 +130,12 @@ describe("job finalization integration", function () {
     );
     const identity = await Identity.deploy();
     await registry.setIdentityLib(await identity.getAddress());
+    await validation.setValidators([validator1.address, validator2.address]);
   });
 
   async function setupJob(result) {
     const fee = (reward * BigInt(feePct)) / 100n;
+    const vReward = (reward * BigInt(validatorRewardPct)) / 100n;
     await token.connect(agent).approve(await stakeManager.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     await token
@@ -144,11 +147,11 @@ describe("job finalization integration", function () {
     await registry.connect(agent).acknowledgeAndApply(jobId, "", []);
     await validation.setResult(result);
     await registry.connect(agent).submit(jobId, "result", "", []);
-    return { jobId, fee };
+    return { jobId, fee, vReward };
   }
 
   it("finalizes successful job", async () => {
-    const { jobId, fee } = await setupJob(true);
+    const { jobId, fee, vReward } = await setupJob(true);
     const agentBefore = await token.balanceOf(agent.address);
     await expect(validation.finalize(jobId))
       .to.emit(registry, "JobCompleted")
@@ -157,9 +160,13 @@ describe("job finalization integration", function () {
       .withArgs(jobId, agent.address);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
-    expect(agentAfter - agentBefore).to.equal(reward);
+    const v1Bal = await token.balanceOf(validator1.address);
+    const v2Bal = await token.balanceOf(validator2.address);
+    expect(agentAfter - agentBefore).to.equal(reward - vReward);
     expect(employerAfter).to.equal(mintAmount - reward - fee);
-    expect(await rep.reputation(agent.address)).to.equal(33);
+    expect(v1Bal).to.equal(vReward / 2n);
+    expect(v2Bal).to.equal(vReward / 2n);
+    expect(await rep.reputation(agent.address)).to.equal(32);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
@@ -201,7 +208,7 @@ describe("job finalization integration", function () {
   });
 
   it("finalizes job in agent's favour after dispute", async () => {
-    const { jobId } = await setupJob(false);
+    const { jobId, vReward } = await setupJob(false);
     await expect(validation.finalize(jobId))
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, false);
@@ -227,9 +234,13 @@ describe("job finalization integration", function () {
     });
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
-    expect(agentAfter - agentBefore).to.equal(reward);
+    const v1Bal = await token.balanceOf(validator1.address);
+    const v2Bal = await token.balanceOf(validator2.address);
+    expect(agentAfter - agentBefore).to.equal(reward - vReward);
     expect(employerAfter).to.equal(employerBefore);
-    expect(await rep.reputation(agent.address)).to.equal(33);
+    expect(v1Bal).to.equal(vReward / 2n);
+    expect(v2Bal).to.equal(vReward / 2n);
+    expect(await rep.reputation(agent.address)).to.equal(32);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 });

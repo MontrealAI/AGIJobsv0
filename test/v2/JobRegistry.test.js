@@ -257,6 +257,17 @@ describe("JobRegistry integration", function () {
     ).to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount");
   });
 
+  it("validates fee percentage caps", async () => {
+    await registry.connect(owner).setValidatorRewardPct(60);
+    await expect(
+      registry.connect(owner).setFeePct(50)
+    ).to.be.revertedWith("pct");
+    await registry.connect(owner).setFeePct(40);
+    await expect(
+      registry.connect(owner).setValidatorRewardPct(70)
+    ).to.be.revertedWith("pct");
+  });
+
   it("emits events when setting modules", async () => {
     await expect(
       registry
