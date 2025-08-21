@@ -25,6 +25,28 @@ resolver, emitting `OwnershipVerified` on success.
 | CertificateNFT | Issues ERC‑721 certificates for completed jobs | `TBD` |
 | JobRegistry | Orchestrates job lifecycle and wires all modules | `TBD` |
 
+## Deployment Script Outline
+For a scripted deployment the repository ships with
+[`scripts/v2/deployDefaults.ts`](../scripts/v2/deployDefaults.ts). Run:
+
+```bash
+npx hardhat run scripts/v2/deployDefaults.ts --network <network>
+```
+
+The helper deploys and wires every module using `$AGIALPHA` as the
+staking token. Pass `--no-tax` to omit the optional `TaxPolicy` module.
+To customise the token, protocol fees or ENS roots edit the script to call
+`deployer.deploy(econ, ids)` and provide:
+
+- `econ.token` – ERC‑20 used by `StakeManager` and `FeePool`
+- `econ.feePct` / `econ.burnPct` – protocol fee and burn percentages
+- `ids.agentRootNode` / `ids.clubRootNode` – namehashes for
+  `agent.agi.eth` and `club.agi.eth`
+- `ids.agentMerkleRoot` / `ids.validatorMerkleRoot` – optional allowlist
+  roots
+
+The script prints module addresses and verifies source on Etherscan.
+
 ## Step-by-Step Deployment
 1. **Deploy `$AGIALPHA` token** with 6 decimals if it does not already exist.
 2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
@@ -39,7 +61,26 @@ resolver, emitting `OwnershipVerified` on success.
 10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
 11. **Transfer ownership** of each module to a multisig with `transferOwnership` if desired and verify events before accepting user funds.
 
+## Owner Configuration Steps
+After deployment the owner can fine‑tune the system without redeploying:
+
+1. **Configure `$AGIALPHA`** – ensure `StakeManager` and `FeePool` point
+   to the desired ERC‑20 via `setToken`.
+2. **Set ENS roots** – on `IdentityRegistry` call `setAgentRootNode`,
+   `setClubRootNode` and, if using allowlists, `setAgentMerkleRoot` and
+   `setValidatorMerkleRoot`.
+3. **Update parameters** – adjust economic settings through `setFeePct`,
+   `setBurnPct`, `setMinStake`, timing windows and other owner‑only
+   setters or the helper script `scripts/updateParams.ts`.
+4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(uri)` and
+   instruct participants to acknowledge via
+   `JobRegistry.acknowledgeTaxPolicy()` before staking or disputing.
+
 ## Interacting via Etherscan
+Before any user interaction, open `JobRegistry` → **Write Contract** and
+execute `acknowledgeTaxPolicy()` once per address. Subsequent actions can
+then be performed through the "Write" tabs on each module.
+
 ### Job Creation
 1. Approve the job reward on the staking token.
 2. In `JobRegistry` → **Write**, call `createJob(reward, uri)`.
@@ -74,10 +115,22 @@ resolver, emitting `OwnershipVerified` on success.
 4. Monitor `DisputeRaised` and `DisputeResolved` events.
 
 ### NFT Marketplace
-1. `CertificateNFT` holders list tokens by approving the marketplace and
-   calling `list(tokenId, price)`.
-2. Buyers call `purchase(tokenId)` after approving the token amount.
-3. `TokenPurchased(buyer, tokenId, price)` confirms the sale.
+  1. `CertificateNFT` holders list tokens by approving the marketplace and
+     calling `list(tokenId, price)`.
+  2. Buyers call `purchase(tokenId)` after approving the token amount.
+  3. `TokenPurchased(buyer, tokenId, price)` confirms the sale.
+
+### Minimal Write Transactions
+| Action | Contract / Function | Notes |
+| --- | --- | --- |
+| Accept tax terms | `JobRegistry.acknowledgeTaxPolicy()` | Must be called once before staking or disputing |
+| Stake as agent | `StakeManager.depositStake(0, amount)` | `amount` uses 6‑decimal `$AGIALPHA` units |
+| Post a job | `JobRegistry.createJob(reward, uri)` | `reward` in base units; token must be approved |
+| Commit vote | `ValidationModule.commitValidation(jobId, hash, subdomain, proof)` | `hash = keccak256(approve, salt)` |
+| Reveal vote | `ValidationModule.revealValidation(jobId, approve, salt)` | Call after commit phase closes |
+| Raise dispute | `JobRegistry.raiseDispute(jobId, evidence)` | Requires prior fee approval |
+| List certificate | `CertificateNFT.list(tokenId, price)` | Price in base units |
+| Buy certificate | `CertificateNFT.purchase(tokenId)` | Buyer approves token first |
 
 ## Owner Administration
 - **Swap the token:** call `StakeManager.setToken(newToken)` (and any mirrored module setters) from the owner account.
