@@ -17,13 +17,16 @@ describe("ReputationEngine", function () {
   });
 
   it("accumulates reputation and rewards validators", async () => {
-    const payout = ethers.parseEther("1");
-    const duration = 1000;
+    const payout = ethers.parseEther("100");
+    const duration = 100000;
     const gain = await engine.calculateReputationPoints(payout, duration);
     const enforceGrowth = (current, points) => {
       const max = 88888n;
-      let newRep = current + points;
-      let diminished = newRep - (current * points) / max;
+      const newRep = current + points;
+      const numerator = newRep * newRep * 10n ** 18n;
+      const denominator = max * max;
+      const factor = 10n ** 18n + numerator / denominator;
+      const diminished = (newRep * 10n ** 18n) / factor;
       return diminished > max ? max : diminished;
     };
     const expectedAgent = enforceGrowth(0n, gain);
@@ -32,7 +35,8 @@ describe("ReputationEngine", function () {
       .onFinalize(user.address, true, payout, duration);
     expect(await engine.reputationOf(user.address)).to.equal(expectedAgent);
 
-    const expectedValidator = (gain * 8n) / 100n;
+    const validatorGain = (gain * 8n) / 100n;
+    const expectedValidator = enforceGrowth(0n, validatorGain);
     await engine
       .connect(caller)
       .rewardValidator(validator.address, gain);
