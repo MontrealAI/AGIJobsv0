@@ -110,6 +110,63 @@ describe("StakeManager release", function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(15n);
   });
 
+  it("splits job fund release with fee and burn", async () => {
+    const burnAddr = "0x000000000000000000000000000000000000dEaD";
+    const jobId = ethers.encodeBytes32String("jobA");
+    const before1 = await token.balanceOf(user1.address);
+    await stakeManager
+      .connect(registrySigner)
+      .lockJobFunds(jobId, user2.address, 100);
+    const before2 = await token.balanceOf(user2.address);
+    const beforeBurn = await token.balanceOf(burnAddr);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .releaseJobFunds(jobId, user1.address, 100)
+    )
+      .to.emit(stakeManager, "StakeReleased")
+      .withArgs(jobId, await feePool.getAddress(), 20)
+      .and.to.emit(stakeManager, "StakeReleased")
+      .withArgs(jobId, burnAddr, 10)
+      .and.to.emit(stakeManager, "StakeReleased")
+      .withArgs(jobId, user1.address, 70);
+
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(70n);
+    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(10n);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(20n);
+
+    await feePool.connect(user1).claimRewards();
+    await feePool.connect(user2).claimRewards();
+
+    expect((await token.balanceOf(user1.address)) - (before1 + 70n)).to.equal(
+      5n
+    );
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(15n);
+  });
+
+  it("burns fee when fee pool unset", async () => {
+    const burnAddr = "0x000000000000000000000000000000000000dEaD";
+    await stakeManager.connect(owner).setFeePool(ethers.ZeroAddress);
+
+    const before1 = await token.balanceOf(user1.address);
+    const beforeBurn = await token.balanceOf(burnAddr);
+
+    await expect(
+      stakeManager.connect(registrySigner).release(user1.address, 100)
+    )
+      .to.emit(stakeManager, "StakeReleased")
+      .withArgs(ethers.ZeroHash, burnAddr, 20)
+      .and.to.emit(stakeManager, "StakeReleased")
+      .withArgs(ethers.ZeroHash, burnAddr, 10)
+      .and.to.emit(stakeManager, "StakeReleased")
+      .withArgs(ethers.ZeroHash, user1.address, 70);
+
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(70n);
+    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(30n);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(0n);
+  });
+
   it("restricts fee configuration to owner", async () => {
     await expect(stakeManager.connect(user1).setFeePct(1))
       .to.be.revertedWithCustomError(

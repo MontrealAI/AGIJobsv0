@@ -673,12 +673,34 @@ contract StakeManager is Ownable, ReentrancyGuard {
         onlyJobRegistry
     {
         uint256 pct = getAgentPayoutPct(to);
-        uint256 payout = (amount * pct) / 100;
+        uint256 modified = (amount * pct) / 100;
+        uint256 feeAmount = (modified * feePct) / 100;
+        uint256 burnAmount = (modified * burnPct) / 100;
+        uint256 payout = modified - feeAmount - burnAmount;
+        uint256 total = payout + feeAmount + burnAmount;
         uint256 escrow = jobEscrows[jobId];
-        require(escrow >= payout, "escrow");
-        jobEscrows[jobId] = escrow - payout;
-        token.safeTransfer(to, payout);
-        emit StakeReleased(jobId, to, payout);
+        require(escrow >= total, "escrow");
+        jobEscrows[jobId] = escrow - total;
+
+        if (feeAmount > 0) {
+            if (address(feePool) != address(0)) {
+                token.safeTransfer(address(feePool), feeAmount);
+                feePool.depositFee(feeAmount);
+                feePool.distributeFees();
+                emit StakeReleased(jobId, address(feePool), feeAmount);
+            } else {
+                token.safeTransfer(BURN_ADDRESS, feeAmount);
+                emit StakeReleased(jobId, BURN_ADDRESS, feeAmount);
+            }
+        }
+        if (burnAmount > 0) {
+            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
+        }
+        if (payout > 0) {
+            token.safeTransfer(to, payout);
+            emit StakeReleased(jobId, to, payout);
+        }
     }
 
     /// @notice Release funds previously locked via {lock}.
@@ -696,11 +718,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - feeAmount - burnAmount;
 
-        if (feeAmount > 0 && address(feePool) != address(0)) {
-            token.safeTransfer(address(feePool), feeAmount);
-            feePool.depositFee(feeAmount);
-            feePool.distributeFees();
-            emit StakeReleased(bytes32(0), address(feePool), feeAmount);
+        if (feeAmount > 0) {
+            if (address(feePool) != address(0)) {
+                token.safeTransfer(address(feePool), feeAmount);
+                feePool.depositFee(feeAmount);
+                feePool.distributeFees();
+                emit StakeReleased(bytes32(0), address(feePool), feeAmount);
+            } else {
+                token.safeTransfer(BURN_ADDRESS, feeAmount);
+                emit StakeReleased(bytes32(0), BURN_ADDRESS, feeAmount);
+            }
         }
         if (burnAmount > 0) {
             token.safeTransfer(BURN_ADDRESS, burnAmount);
@@ -737,11 +764,16 @@ contract StakeManager is Ownable, ReentrancyGuard {
             token.safeTransfer(agent, payout);
             emit StakeReleased(jobId, agent, payout);
         }
-        if (fee > 0 && address(_feePool) != address(0)) {
-            token.safeTransfer(address(_feePool), fee);
-            _feePool.depositFee(fee);
-            _feePool.distributeFees();
-            emit StakeReleased(jobId, address(_feePool), fee);
+        if (fee > 0) {
+            if (address(_feePool) != address(0)) {
+                token.safeTransfer(address(_feePool), fee);
+                _feePool.depositFee(fee);
+                _feePool.distributeFees();
+                emit StakeReleased(jobId, address(_feePool), fee);
+            } else {
+                token.safeTransfer(BURN_ADDRESS, fee);
+                emit StakeReleased(jobId, BURN_ADDRESS, fee);
+            }
         }
         if (burnAmount > 0) {
             token.safeTransfer(BURN_ADDRESS, burnAmount);
