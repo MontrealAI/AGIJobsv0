@@ -4,7 +4,11 @@ pragma solidity ^0.8.25;
 /// @title IDisputeModule
 /// @notice Interface for raising and resolving disputes
 interface IDisputeModule {
-    event DisputeRaised(uint256 indexed jobId, address indexed claimant);
+    event DisputeRaised(
+        uint256 indexed jobId,
+        address indexed claimant,
+        string evidence
+    );
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -14,7 +18,11 @@ interface IDisputeModule {
     event ModeratorUpdated(address moderator, bool enabled);
     event DisputeWindowUpdated(uint256 window);
 
-    function raiseDispute(uint256 jobId, address claimant) external;
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external;
     function resolve(uint256 jobId, bool employerWins) external;
     function setDisputeFee(uint256 fee) external;
     function setDisputeWindow(uint256 window) external;

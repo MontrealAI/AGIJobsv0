@@ -59,7 +59,8 @@ describe("DisputeModule", function () {
   describe("dispute resolution", function () {
     let owner, employer, agent, outsider;
     let token, stakeManager, registry, dispute;
-    const fee = 100n;
+    const fee = 100n * 1_000_000n;
+    const stakeAmount = 500n * 1_000_000n;
 
     beforeEach(async () => {
       [owner, employer, agent, outsider] = await ethers.getSigners();
@@ -90,6 +91,7 @@ describe("DisputeModule", function () {
       await stakeManager
         .connect(owner)
         .setJobRegistry(await registry.getAddress());
+      await registry.acknowledge(agent.address);
 
       const Dispute = await ethers.getContractFactory(
         "contracts/v2/modules/DisputeModule.sol:DisputeModule"
@@ -107,22 +109,29 @@ describe("DisputeModule", function () {
         .connect(owner)
         .setDisputeModule(await dispute.getAddress());
 
-      // mint tokens and approve for dispute fee
-      await token.mint(agent.address, fee);
+      // mint tokens and approve for dispute fee and stake
+      await token.mint(agent.address, fee + stakeAmount);
       await token.mint(employer.address, fee);
       await token
         .connect(agent)
-        .approve(await stakeManager.getAddress(), fee);
+        .approve(await stakeManager.getAddress(), fee + stakeAmount);
       await token
         .connect(employer)
         .approve(await stakeManager.getAddress(), fee);
+      await stakeManager
+        .connect(agent)
+        .depositStake(0, stakeAmount);
+
+      await stakeManager
+        .connect(owner)
+        .setJobRegistry(await dispute.getAddress());
 
       // initialise job in completed state
       await registry.setJob(1, {
         employer: employer.address,
         agent: agent.address,
         reward: 0,
-        stake: 0,
+        stake: stakeAmount,
         success: false,
         status: 4, // Completed
         uri: "",
@@ -130,12 +139,14 @@ describe("DisputeModule", function () {
       });
     });
 
-    it("transfers fee to employer when employer wins", async () => {
-      const employerStart = await token.balanceOf(employer.address);
+    it("stores evidence and slashes stake when employer wins", async () => {
       await registry.connect(agent).dispute(1, "evidence");
+      const stored = await dispute.disputes(1);
+      expect(stored.evidence).to.equal("evidence");
+      const employerStart = await token.balanceOf(employer.address);
       expect(
         await token.balanceOf(await stakeManager.getAddress())
-      ).to.equal(fee);
+      ).to.equal(stakeAmount + fee);
       await time.increase(1);
       await expect(dispute.connect(owner).resolve(1, true))
         .to.emit(dispute, "DisputeResolved")
@@ -145,6 +156,9 @@ describe("DisputeModule", function () {
       );
       expect(
         await token.balanceOf(await stakeManager.getAddress())
+      ).to.equal(0);
+      expect(
+        await stakeManager.stakeOf(agent.address, 0)
       ).to.equal(0);
     });
 
@@ -158,7 +172,10 @@ describe("DisputeModule", function () {
       expect(await token.balanceOf(agent.address)).to.equal(agentStart);
       expect(
         await token.balanceOf(await stakeManager.getAddress())
-      ).to.equal(0);
+      ).to.equal(stakeAmount);
+      expect(
+        await stakeManager.stakeOf(agent.address, 0)
+      ).to.equal(stakeAmount);
     });
 
     it("rejects unauthorized resolve attempts", async () => {

@@ -26,7 +26,11 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId, address claimant) external;
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external;
     function resolve(uint256 jobId, bool employerWins) external;
 }
 
@@ -722,7 +726,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             );
         }
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, msg.sender);
+            disputeModule.raiseDispute(jobId, msg.sender, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
     }
