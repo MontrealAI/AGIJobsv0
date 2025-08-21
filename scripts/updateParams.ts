@@ -20,32 +20,30 @@ async function main() {
   const agentMerkle = process.env.AGENT_MERKLE_ROOT;
   const validatorMerkle = process.env.VALIDATOR_MERKLE_ROOT;
 
-  if (agentRoot) {
-    const tx = await registry.setAgentRootNode(agentRoot);
-    await tx.wait();
-  }
-
-  if (clubRoot || agentRoot) {
-    const currentAgentRoot = agentRoot || (await validation.agentRootNode());
-    const currentClubRoot = clubRoot || (await validation.clubRootNode());
-    const tx = await validation.setENSRoots(currentAgentRoot, currentClubRoot);
-    await tx.wait();
-  }
-
-  if (agentMerkle) {
-    const tx = await registry.setAgentMerkleRoot(agentMerkle);
-    await tx.wait();
+  if (agentRoot || clubRoot) {
+    const tx1 = await registry.setRootNodes(
+      agentRoot || ethers.ZeroHash,
+      clubRoot || ethers.ZeroHash
+    );
+    await tx1.wait();
+    const tx2 = await validation.setRootNodes(
+      agentRoot || ethers.ZeroHash,
+      clubRoot || ethers.ZeroHash
+    );
+    await tx2.wait();
   }
 
   if (agentMerkle || validatorMerkle) {
-    const currentAgentMerkle = agentMerkle || (await validation.agentMerkleRoot());
-    const currentValidatorMerkle =
-      validatorMerkle || (await validation.validatorMerkleRoot());
-    const tx = await validation.setMerkleRoots(
-      currentAgentMerkle,
-      currentValidatorMerkle
+    const tx1 = await registry.setMerkleRoots(
+      agentMerkle || ethers.ZeroHash,
+      validatorMerkle || ethers.ZeroHash
     );
-    await tx.wait();
+    await tx1.wait();
+    const tx2 = await validation.setMerkleRoots(
+      agentMerkle || ethers.ZeroHash,
+      validatorMerkle || ethers.ZeroHash
+    );
+    await tx2.wait();
   }
 
   console.log("Parameters updated");

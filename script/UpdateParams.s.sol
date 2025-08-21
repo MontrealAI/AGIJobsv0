@@ -32,38 +32,18 @@ contract UpdateParams is Script {
 
         vm.startBroadcast(key);
 
-        if (agentRoot != bytes32(0)) {
-            JobRegistry(registryAddr).setAgentRootNode(agentRoot);
-        }
         if (agentRoot != bytes32(0) || clubRoot != bytes32(0)) {
-            bytes32 currentAgent =
-                agentRoot != bytes32(0)
-                    ? agentRoot
-                    : ValidationModule(validationAddr).agentRootNode();
-            bytes32 currentClub =
-                clubRoot != bytes32(0)
-                    ? clubRoot
-                    : ValidationModule(validationAddr).clubRootNode();
-            ValidationModule(validationAddr).setENSRoots(
-                currentAgent,
-                currentClub
-            );
-        }
-        if (agentMerkle != bytes32(0)) {
-            JobRegistry(registryAddr).setAgentMerkleRoot(agentMerkle);
+            JobRegistry(registryAddr).setRootNodes(agentRoot, clubRoot);
+            ValidationModule(validationAddr).setRootNodes(agentRoot, clubRoot);
         }
         if (agentMerkle != bytes32(0) || validatorMerkle != bytes32(0)) {
-            bytes32 currentAgentMerkle =
-                agentMerkle != bytes32(0)
-                    ? agentMerkle
-                    : ValidationModule(validationAddr).agentMerkleRoot();
-            bytes32 currentValidatorMerkle =
-                validatorMerkle != bytes32(0)
-                    ? validatorMerkle
-                    : ValidationModule(validationAddr).validatorMerkleRoot();
+            JobRegistry(registryAddr).setMerkleRoots(
+                agentMerkle,
+                validatorMerkle
+            );
             ValidationModule(validationAddr).setMerkleRoots(
-                currentAgentMerkle,
-                currentValidatorMerkle
+                agentMerkle,
+                validatorMerkle
             );
         }
 

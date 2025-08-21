@@ -109,6 +109,11 @@ describe("comprehensive job flows", function () {
       []
     );
     await validation.setJobRegistry(await registry.getAddress());
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
+    );
+    const identity = await Identity.deploy();
+    await registry.setIdentityLib(await identity.getAddress());
     await registry.setFeePct(feePct);
     await registry.setValidatorRewardPct(0);
     await registry.setTaxPolicy(await policy.getAddress());
@@ -159,11 +164,11 @@ describe("comprehensive job flows", function () {
 
   it("rejects unverified agent identities", async () => {
     const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierToggle.sol:ENSOwnershipVerifierToggle"
+      "contracts/v2/mocks/IdentityLibToggle.sol:IdentityLibToggle"
     );
     const verifier = await Verifier.deploy();
     await verifier.setResult(false);
-    await registry.setENSOwnershipVerifier(await verifier.getAddress());
+    await registry.setIdentityLib(await verifier.getAddress());
     await token
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);

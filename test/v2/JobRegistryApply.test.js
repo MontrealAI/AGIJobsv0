@@ -20,7 +20,7 @@ describe("JobRegistry agent gating", function () {
     rep = await Rep.deploy(await stakeManager.getAddress());
 
     const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierToggle.sol:ENSOwnershipVerifierToggle"
+      "contracts/v2/mocks/IdentityLibToggle.sol:IdentityLibToggle"
     );
     verifier = await Verifier.deploy();
 
@@ -39,7 +39,7 @@ describe("JobRegistry agent gating", function () {
       0,
       []
     );
-    await registry.connect(owner).setENSOwnershipVerifier(await verifier.getAddress());
+    await registry.connect(owner).setIdentityLib(await verifier.getAddress());
 
     await rep
       .connect(owner)
@@ -58,7 +58,9 @@ describe("JobRegistry agent gating", function () {
     await registry.connect(owner).setMaxJobDuration(1000);
     await registry.connect(owner).setFeePct(0);
     await registry.connect(owner).setJobParameters(0, 0);
-    await registry.connect(owner).setAgentRootNode(ethers.id("agi"));
+    await registry
+      .connect(owner)
+      .setRootNodes(ethers.id("agi"), ethers.ZeroHash);
     await verifier.setResult(false);
   });
 
@@ -71,15 +73,18 @@ describe("JobRegistry agent gating", function () {
   it("syncs ENS roots and merkle updates to verifier", async () => {
     const newRoot = ethers.id("root");
     await expect(
-      registry.connect(agent).setAgentRootNode(newRoot)
-    ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
-    await expect(registry.setAgentRootNode(newRoot))
+      registry.connect(agent).setRootNodes(newRoot, ethers.ZeroHash)
+    ).to.be.revertedWithCustomError(
+      registry,
+      "OwnableUnauthorizedAccount"
+    );
+    await expect(registry.setRootNodes(newRoot, ethers.ZeroHash))
       .to.emit(registry, "RootNodeUpdated")
       .withArgs("agent", newRoot);
     expect(await verifier.agentRootNode()).to.equal(newRoot);
 
     const merkle = ethers.id("merkle");
-    await expect(registry.setAgentMerkleRoot(merkle))
+    await expect(registry.setMerkleRoots(merkle, ethers.ZeroHash))
       .to.emit(registry, "MerkleRootUpdated")
       .withArgs("agent", merkle);
     expect(await verifier.agentMerkleRoot()).to.equal(merkle);

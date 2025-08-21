@@ -119,11 +119,11 @@ describe("Full system integration", function () {
     await registry.connect(v1).acknowledgeTaxPolicy();
     await registry.connect(v2).acknowledgeTaxPolicy();
 
-    const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
     );
-    const verifier = await Verifier.deploy();
-    await registry.setENSOwnershipVerifier(await verifier.getAddress());
+    const identity = await Identity.deploy();
+    await registry.setIdentityLib(await identity.getAddress());
 
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);

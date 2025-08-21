@@ -31,13 +31,13 @@ async function setup() {
   await validation.waitForDeployment();
   await validation.connect(owner).setReputationEngine(await reputation.getAddress());
 
-  const Verifier = await ethers.getContractFactory("ENSOwnershipVerifierMock");
-  const verifier = await Verifier.deploy();
-  await verifier.waitForDeployment();
+  const Identity = await ethers.getContractFactory("IdentityLibMock");
+  const identity = await Identity.deploy();
+  await identity.waitForDeployment();
   await validation
     .connect(owner)
-    .setENSOwnershipVerifier(await verifier.getAddress());
-  await validation.connect(owner).setClubRootNode(ethers.ZeroHash);
+    .setIdentityLib(await identity.getAddress());
+  await validation.connect(owner).setRootNodes(ethers.ZeroHash, ethers.ZeroHash);
   await validation
     .connect(owner)
     .setAdditionalValidators([v1.address, v2.address], [true, true]);

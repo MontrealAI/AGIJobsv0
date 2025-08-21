@@ -9,7 +9,7 @@ import {
 } from "./JobRegistry.sol";
 import {StakeManager} from "./StakeManager.sol";
 import {ValidationModule} from "./ValidationModule.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
+import {IIdentityLib} from "./interfaces/IIdentityLib.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
@@ -45,7 +45,7 @@ contract ModuleInstaller is Ownable {
         address jobRouter,
         address feePool,
         address taxPolicy,
-        address ensVerifier
+        address identityLibAddr
     );
 
     /// @notice Sets the deployer as the temporary owner.
@@ -75,7 +75,7 @@ contract ModuleInstaller is Ownable {
         IJobRouter jobRouter,
         IFeePool feePool,
         ITaxPolicy taxPolicy,
-        ENSOwnershipVerifier ensOwnershipVerifier,
+        IIdentityLib identityLib,
         bytes32 clubRootNode,
         bytes32 agentRootNode,
         bytes32 validatorMerkleRoot,
@@ -97,12 +97,13 @@ contract ModuleInstaller is Ownable {
         if (address(taxPolicy) != address(0)) {
             jobRegistry.setTaxPolicy(taxPolicy);
         }
-        jobRegistry.setENSOwnershipVerifier(ensOwnershipVerifier);
-        jobRegistry.setAgentRootNode(agentRootNode);
-        validationModule.setENSOwnershipVerifier(ensOwnershipVerifier);
-        validationModule.setClubRootNode(clubRootNode);
-        validationModule.setValidatorMerkleRoot(validatorMerkleRoot);
-        validationModule.setAgentMerkleRoot(agentMerkleRoot);
+        jobRegistry.setIdentityLib(identityLib);
+        validationModule.setIdentityLib(identityLib);
+        jobRegistry.setRootNodes(agentRootNode, clubRootNode);
+        validationModule.setRootNodes(agentRootNode, clubRootNode);
+        identityLib.updateMerkleRoots(agentMerkleRoot, validatorMerkleRoot);
+        jobRegistry.setMerkleRoots(agentMerkleRoot, validatorMerkleRoot);
+        validationModule.setMerkleRoots(agentMerkleRoot, validatorMerkleRoot);
         stakeManager.setModules(address(jobRegistry), address(disputeModule));
         platformIncentives.setModules(
             IStakeManager(address(stakeManager)),
@@ -126,7 +127,7 @@ contract ModuleInstaller is Ownable {
         if (address(taxPolicy) != address(0)) {
             IOwnable(address(taxPolicy)).transferOwnership(moduleOwner);
         }
-        IOwnable(address(ensOwnershipVerifier)).transferOwnership(moduleOwner);
+        IOwnable(address(identityLib)).transferOwnership(moduleOwner);
 
         emit ModulesInstalled(
             address(jobRegistry),
@@ -140,7 +141,7 @@ contract ModuleInstaller is Ownable {
             address(jobRouter),
             address(feePool),
             address(taxPolicy),
-            address(ensOwnershipVerifier)
+            address(identityLib)
         );
     }
 

@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry integration", function () {
-  let token, stakeManager, rep, validation, nft, registry, dispute, policy;
+  let token, stakeManager, rep, validation, nft, registry, dispute, policy, identity;
   let owner, employer, agent, treasury;
 
   const reward = 100;
@@ -117,13 +117,11 @@ describe("JobRegistry integration", function () {
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
 
-    const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
     );
-    const verifier = await Verifier.deploy();
-    await registry
-      .connect(owner)
-      .setENSOwnershipVerifier(await verifier.getAddress());
+    identity = await Identity.deploy();
+    await registry.connect(owner).setIdentityLib(await identity.getAddress());
   });
 
   it("runs successful job lifecycle", async () => {
@@ -314,14 +312,14 @@ describe("JobRegistry integration", function () {
     )
       .to.emit(registry, "AdditionalAgentUpdated")
       .withArgs(treasury.address, true);
-    expect(await registry.additionalAgents(treasury.address)).to.equal(true);
+      expect(await identity.additionalAgents(treasury.address)).to.equal(true);
 
     await expect(
       registry.connect(owner).removeAdditionalAgent(treasury.address)
     )
       .to.emit(registry, "AdditionalAgentUpdated")
       .withArgs(treasury.address, false);
-    expect(await registry.additionalAgents(treasury.address)).to.equal(false);
+      expect(await identity.additionalAgents(treasury.address)).to.equal(false);
   });
 });
 

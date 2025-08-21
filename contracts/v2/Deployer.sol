@@ -14,7 +14,8 @@ import {DisputeModule} from "./modules/DisputeModule.sol";
 import {CertificateNFT} from "./CertificateNFT.sol";
 import {PlatformRegistry, IReputationEngine as PRReputationEngine} from "./PlatformRegistry.sol";
 import {JobRouter} from "./modules/JobRouter.sol";
-import {ENSOwnershipVerifier} from "./modules/ENSOwnershipVerifier.sol";
+import {IdentityLib} from "./modules/IdentityLib.sol";
+import {IIdentityLib} from "./interfaces/IIdentityLib.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {FeePool} from "./FeePool.sol";
 import {TaxPolicy} from "./TaxPolicy.sol";
@@ -77,7 +78,7 @@ contract Deployer is Ownable {
         address platformIncentives,
         address feePool,
         address taxPolicy,
-        address ensVerifier
+        address identityLibAddr
     );
 
     /// @notice Deploy and wire all modules including TaxPolicy.
@@ -112,7 +113,7 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address ensVerifier
+            address identityLibAddr
         )
     {
         return _deploy(true, econ, ids);
@@ -146,7 +147,7 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address ensVerifier
+            address identityLibAddr
         )
     {
         return _deploy(false, econ, ids);
@@ -180,7 +181,7 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address ensVerifier
+            address identityLibAddr
         )
     {
         EconParams memory econ;
@@ -215,7 +216,7 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address ensVerifier
+            address identityLibAddr
         )
     {
         EconParams memory econ;
@@ -236,7 +237,7 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address ensVerifier
+            address identityLibAddr
         )
     {
         require(!deployed, "deployed");
@@ -313,9 +314,11 @@ contract Deployer is Ownable {
             owner_
         );
 
-        ENSOwnershipVerifier verifier = new ENSOwnershipVerifier(
+        IdentityLib identity = new IdentityLib(
             ids.ens,
             ids.nameWrapper,
+            IRInterface(address(reputation)),
+            ids.agentRootNode,
             ids.clubRootNode
         );
 
@@ -359,22 +362,17 @@ contract Deployer is Ownable {
             registry.setTaxPolicy(ITaxPolicy(address(policy)));
         }
 
-        registry.setENSOwnershipVerifier(verifier);
-        validation.setENSOwnershipVerifier(verifier);
-        if (ids.agentRootNode != bytes32(0)) {
-            registry.setAgentRootNode(ids.agentRootNode);
+        identity.setModules(address(registry), address(validation));
+        registry.setIdentityLib(IIdentityLib(address(identity)));
+        validation.setIdentityLib(IIdentityLib(address(identity)));
+        if (ids.agentRootNode != bytes32(0) || ids.clubRootNode != bytes32(0)) {
+            registry.setRootNodes(ids.agentRootNode, ids.clubRootNode);
+            validation.setRootNodes(ids.agentRootNode, ids.clubRootNode);
         }
-        if (ids.clubRootNode != bytes32(0)) {
-            validation.setClubRootNode(ids.clubRootNode);
-        }
-        if (ids.nameWrapper != INameWrapper(address(0))) {
-            validation.setNameWrapper(ids.nameWrapper);
-        }
-        if (ids.validatorMerkleRoot != bytes32(0)) {
-            validation.setValidatorMerkleRoot(ids.validatorMerkleRoot);
-        }
-        if (ids.agentMerkleRoot != bytes32(0)) {
-            validation.setAgentMerkleRoot(ids.agentMerkleRoot);
+        if (ids.agentMerkleRoot != bytes32(0) || ids.validatorMerkleRoot != bytes32(0)) {
+            identity.updateMerkleRoots(ids.agentMerkleRoot, ids.validatorMerkleRoot);
+            registry.setMerkleRoots(ids.agentMerkleRoot, ids.validatorMerkleRoot);
+            validation.setMerkleRoots(ids.agentMerkleRoot, ids.validatorMerkleRoot);
         }
 
         validation.setReputationEngine(repInterface);
@@ -403,7 +401,7 @@ contract Deployer is Ownable {
         if (address(policy) != address(0)) {
             policy.transferOwnership(owner_);
         }
-        verifier.transferOwnership(owner_);
+        identity.transferOwnership(owner_);
 
         emit Deployed(
             address(stake),
@@ -417,7 +415,7 @@ contract Deployer is Ownable {
             address(incentives),
             address(pool),
             address(policy),
-            address(verifier)
+            address(identity)
         );
 
         return (
@@ -432,7 +430,7 @@ contract Deployer is Ownable {
             address(incentives),
             address(pool),
             address(policy),
-            address(verifier)
+            address(identity)
         );
     }
 }

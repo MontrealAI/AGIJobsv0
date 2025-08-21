@@ -86,7 +86,7 @@ contract ValidationStub is IValidationModule {
 
     function removeAdditionalValidator(address) external override {}
 
-    function setENSRoots(bytes32, bytes32) external override {}
+    function setRootNodes(bytes32, bytes32) external override {}
 
     function setMerkleRoots(bytes32, bytes32) external override {}
 

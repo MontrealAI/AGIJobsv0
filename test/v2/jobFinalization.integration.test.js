@@ -124,11 +124,11 @@ describe("job finalization integration", function () {
     await registry.acknowledgeTaxPolicy();
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
-    const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
     );
-    const verifier = await Verifier.deploy();
-    await registry.setENSOwnershipVerifier(await verifier.getAddress());
+    const identity = await Identity.deploy();
+    await registry.setIdentityLib(await identity.getAddress());
   });
 
   async function setupJob(result) {

@@ -12,7 +12,7 @@ function namehash(root, label) {
 
 describe("Validator ENS integration", function () {
   let owner, validator, other;
-  let ens, resolver, wrapper, verifier;
+  let ens, resolver, wrapper, identity;
   let stakeManager, jobRegistry, reputation, validation;
   const root = ethers.id("agi");
 
@@ -33,16 +33,6 @@ describe("Validator ENS integration", function () {
 
     await ens.setResolver(root, await resolver.getAddress());
 
-    const Verifier = await ethers.getContractFactory(
-      "contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier"
-    );
-    verifier = await Verifier.deploy(
-      await ens.getAddress(),
-      await wrapper.getAddress(),
-      root
-    );
-    await verifier.waitForDeployment();
-
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stakeManager = await StakeMock.deploy();
     await stakeManager.waitForDeployment();
@@ -54,6 +44,18 @@ describe("Validator ENS integration", function () {
     const RepMock = await ethers.getContractFactory("MockReputationEngine");
     reputation = await RepMock.deploy();
     await reputation.waitForDeployment();
+
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/modules/IdentityLib.sol:IdentityLib"
+    );
+    identity = await Identity.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      await reputation.getAddress(),
+      ethers.ZeroHash,
+      root
+    );
+    await identity.waitForDeployment();
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
@@ -69,9 +71,12 @@ describe("Validator ENS integration", function () {
     );
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());
-    await verifier.transferOwnership(await validation.getAddress());
-    await validation.setENSOwnershipVerifier(await verifier.getAddress());
-    await validation.setClubRootNode(root);
+    await identity.setModules(
+      await jobRegistry.getAddress(),
+      await validation.getAddress()
+    );
+    await validation.setIdentityLib(await identity.getAddress());
+    await validation.setRootNodes(ethers.ZeroHash, root);
   });
 
   it("rejects validators without subdomains and emits events on success", async () => {
@@ -110,7 +115,7 @@ describe("Validator ENS integration", function () {
         .connect(validator)
         .commitValidation(1, ethers.id("h"), "v", [])
     )
-      .to.emit(verifier, "OwnershipVerified")
+      .to.emit(identity, "OwnershipVerified")
       .withArgs(validator.address, "v")
       .and.to.emit(validation, "ValidationCommitted");
   });
@@ -120,13 +125,13 @@ describe("Validator ENS integration", function () {
       ["address"],
       [validator.address]
     );
-    await validation.setValidatorMerkleRoot(leaf);
+    await validation.setMerkleRoots(ethers.ZeroHash, leaf);
     const badProof = [ethers.id("bad")];
     await expect(
-      verifier.verifyValidator(validator.address, "v", badProof)
-    ).to.not.emit(verifier, "OwnershipVerified");
+      identity.verifyValidator(validator.address, "v", badProof)
+    ).to.not.emit(identity, "OwnershipVerified");
     expect(
-      await verifier.verifyValidator.staticCall(
+      await identity.verifyValidator.staticCall(
         validator.address,
         "v",
         badProof
