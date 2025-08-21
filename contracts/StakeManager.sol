@@ -116,6 +116,11 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
         emit BlacklistUpdated(user, status);
     }
 
+    /// @notice Recover ERC20 tokens sent to this contract by mistake.
+    function withdrawEmergency(address token, uint256 amount) external onlyOwner {
+        IERC20(token).safeTransfer(owner(), amount);
+    }
+
     // ------------------------------------------------------------------
     // Staking logic
     // ------------------------------------------------------------------

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IStakeManager {
     function slash(address user, uint256 amount, address recipient) external;
@@ -22,7 +24,7 @@ interface IValidationModule {
 
 /// @title DisputeResolution
 /// @notice Resolves validation challenges, distributes bonds and updates reputation
-contract DisputeResolution is Ownable {
+contract DisputeResolution is Ownable, Pausable {
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
     IValidationModule public validationModule;
@@ -34,10 +36,18 @@ contract DisputeResolution is Ownable {
 
     constructor() Ownable(msg.sender) {}
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     /// @notice Resolve a challenged result and distribute bonds accordingly
     /// @param jobId Identifier of the disputed job
     /// @param validatorWins True if the original validator outcome is upheld
-    function resolve(uint256 jobId, bool validatorWins) external onlyOwner {
+    function resolve(uint256 jobId, bool validatorWins) external onlyOwner whenNotPaused {
         address challengerAddr = validationModule.challenger(jobId);
         require(challengerAddr != address(0), "no challenge");
         address validator = validationModule.owner();
@@ -80,6 +90,11 @@ contract DisputeResolution is Ownable {
     function setValidationModule(IValidationModule module) external onlyOwner {
         validationModule = module;
         emit ValidationModuleUpdated(address(module));
+    }
+
+    /// @notice Recover ERC20 tokens sent to this contract by mistake.
+    function withdrawEmergency(address token, uint256 amount) external onlyOwner {
+        IERC20(token).transfer(owner(), amount);
     }
 
     /// @notice Confirms the contract and owner are tax-exempt.

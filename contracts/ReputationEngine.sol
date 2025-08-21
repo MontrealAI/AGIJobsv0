@@ -2,12 +2,13 @@
 pragma solidity ^0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {SD59x18} from "@prb/math/src/sd59x18/ValueType.sol";
 import {sd} from "@prb/math/src/sd59x18/Casting.sol";
 
 /// @title ReputationEngine
 /// @notice Tracks reputation for agents and validators with blacklist support.
-contract ReputationEngine is Ownable {
+contract ReputationEngine is Ownable, Pausable {
     enum Role { None, Agent, Validator }
 
     /// @dev reputation score per role
@@ -48,6 +49,14 @@ contract ReputationEngine is Ownable {
     event DecayConstantUpdated(uint256 newK);
 
     constructor() Ownable(msg.sender) {}
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     modifier onlyJobRegistry() {
         require(msg.sender == jobRegistry, "not authorized");
@@ -121,7 +130,7 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Increase reputation for the caller's role.
-    function add(address user, uint256 amount) public {
+    function add(address user, uint256 amount) public whenNotPaused {
         Role role = callers[msg.sender];
         require(role != Role.None, "not authorized");
 
@@ -147,12 +156,12 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Wrapper for backwards compatibility.
-    function addReputation(address user, uint256 amount) external {
+    function addReputation(address user, uint256 amount) external whenNotPaused {
         add(user, amount);
     }
 
     /// @notice Decrease reputation for the caller's role.
-    function subtract(address user, uint256 amount) public {
+    function subtract(address user, uint256 amount) public whenNotPaused {
         Role role = callers[msg.sender];
         require(role != Role.None, "not authorized");
 
@@ -180,12 +189,12 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Wrapper for backwards compatibility.
-    function subtractReputation(address user, uint256 amount) external {
+    function subtractReputation(address user, uint256 amount) external whenNotPaused {
         subtract(user, amount);
     }
 
     /// @notice Manually update blacklist status for caller's role.
-    function blacklist(address user, bool status) external {
+    function blacklist(address user, bool status) external whenNotPaused {
         Role role = callers[msg.sender];
         require(role != Role.None, "not authorized");
         if (role == Role.Agent) {
