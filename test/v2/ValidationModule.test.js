@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("ValidationModule V2", function () {
   let owner, employer, v1, v2, v3;
-  let validation, stakeManager, jobRegistry, reputation;
+  let validation, stakeManager, jobRegistry, reputation, identity;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -37,15 +37,13 @@ describe("ValidationModule V2", function () {
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
 
-    const Verifier = await ethers.getContractFactory(
-      "ENSOwnershipVerifierMock"
-    );
-    const verifier = await Verifier.deploy();
-    await verifier.waitForDeployment();
+    const Identity = await ethers.getContractFactory("IdentityLibMock");
+    identity = await Identity.deploy();
+    await identity.waitForDeployment();
     await validation
       .connect(owner)
-      .setENSOwnershipVerifier(await verifier.getAddress());
-    await validation.connect(owner).setClubRootNode(ethers.ZeroHash);
+      .setIdentityLib(await identity.getAddress());
+    await validation.connect(owner).setRootNodes(ethers.ZeroHash, ethers.ZeroHash);
     await validation
       .connect(owner)
       .setAdditionalValidators(
@@ -358,13 +356,13 @@ describe("ValidationModule V2", function () {
     )
       .to.emit(validation, "AdditionalValidatorUpdated")
       .withArgs(extra.address, true);
-    expect(await validation.additionalValidators(extra.address)).to.equal(true);
+      expect(await identity.additionalValidators(extra.address)).to.equal(true);
 
     await expect(
       validation.connect(owner).removeAdditionalValidator(extra.address)
     )
       .to.emit(validation, "AdditionalValidatorUpdated")
       .withArgs(extra.address, false);
-    expect(await validation.additionalValidators(extra.address)).to.equal(false);
+      expect(await identity.additionalValidators(extra.address)).to.equal(false);
   });
 });

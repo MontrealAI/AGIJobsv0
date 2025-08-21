@@ -40,11 +40,11 @@ describe("JobRegistry tax policy gating", function () {
     await registry.connect(owner).setMaxJobReward(1000);
     await registry.connect(owner).setMaxJobDuration(86400);
 
-    const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
     );
-    const verifier = await Verifier.deploy();
-    await registry.setENSOwnershipVerifier(await verifier.getAddress());
+    const identity = await Identity.deploy();
+    await registry.setIdentityLib(await identity.getAddress());
   });
 
   it("requires acknowledgement before job actions", async () => {

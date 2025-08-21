@@ -144,11 +144,11 @@ describe("multi-operator job lifecycle", function () {
     await registry.connect(platform1).acknowledgeTaxPolicy();
     await registry.connect(platform2).acknowledgeTaxPolicy();
 
-    const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/ENSOwnershipVerifierMock.sol:ENSOwnershipVerifierMock"
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityLibMock.sol:IdentityLibMock"
     );
-    const verifier = await Verifier.deploy();
-    await registry.setENSOwnershipVerifier(await verifier.getAddress());
+    const identity = await Identity.deploy();
+    await registry.setIdentityLib(await identity.getAddress());
   });
 
   it("runs job lifecycle and handles multiple staked operators", async () => {

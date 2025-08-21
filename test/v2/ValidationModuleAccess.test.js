@@ -37,15 +37,15 @@ describe("ValidationModule access controls", function () {
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
 
-    const Verifier = await ethers.getContractFactory(
-      "ENSOwnershipVerifierMock"
+    const Identity = await ethers.getContractFactory(
+      "IdentityLibMock"
     );
-    const verifier = await Verifier.deploy();
-    await verifier.waitForDeployment();
+    const identity = await Identity.deploy();
+    await identity.waitForDeployment();
     await validation
       .connect(owner)
-      .setENSOwnershipVerifier(await verifier.getAddress());
-    await validation.connect(owner).setClubRootNode(ethers.ZeroHash);
+      .setIdentityLib(await identity.getAddress());
+    await validation.connect(owner).setRootNodes(ethers.ZeroHash, ethers.ZeroHash);
     await validation
       .connect(owner)
       .setAdditionalValidators([v1.address, v2.address], [true, true]);
@@ -86,13 +86,13 @@ describe("ValidationModule access controls", function () {
       val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
 
     const Toggle = await ethers.getContractFactory(
-      "ENSOwnershipVerifierToggle"
+      "IdentityLibToggle"
     );
     const toggle = await Toggle.deploy();
     await toggle.waitForDeployment();
     await validation
       .connect(owner)
-      .setENSOwnershipVerifier(await toggle.getAddress());
+      .setIdentityLib(await toggle.getAddress());
     await toggle.setResult(false);
     await validation
       .connect(owner)

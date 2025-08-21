@@ -46,7 +46,7 @@ describe("Deployer", function () {
       incentives,
       feePool,
       taxPolicy,
-      ensVerifier,
+      identityLibAddr,
     ] = addresses;
 
     const StakeManager = await ethers.getContractFactory(
@@ -82,8 +82,8 @@ describe("Deployer", function () {
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const ENSVerifier = await ethers.getContractFactory(
-      "contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier"
+    const IdentityLib = await ethers.getContractFactory(
+      "contracts/v2/modules/IdentityLib.sol:IdentityLib"
     );
 
     const stakeC = StakeManager.attach(stake);
@@ -97,7 +97,7 @@ describe("Deployer", function () {
     const incentivesC = PlatformIncentives.attach(incentives);
     const feePoolC = FeePool.attach(feePool);
     const taxPolicyC = TaxPolicy.attach(taxPolicy);
-    const ensVerifierC = ENSVerifier.attach(ensVerifier);
+    const identityLibC = IdentityLib.attach(identityLibAddr);
 
     // ownership
     expect(await stakeC.owner()).to.equal(owner.address);
@@ -111,7 +111,7 @@ describe("Deployer", function () {
     expect(await incentivesC.owner()).to.equal(owner.address);
     expect(await feePoolC.owner()).to.equal(owner.address);
     expect(await taxPolicyC.owner()).to.equal(owner.address);
-    expect(await ensVerifierC.owner()).to.equal(owner.address);
+    expect(await identityLibC.owner()).to.equal(owner.address);
 
     // wiring
     expect(await stakeC.jobRegistry()).to.equal(registry);
@@ -123,11 +123,11 @@ describe("Deployer", function () {
     expect(await registryC.certificateNFT()).to.equal(certificate);
     expect(await registryC.feePool()).to.equal(feePool);
     expect(await registryC.taxPolicy()).to.equal(taxPolicy);
-    expect(await registryC.ensOwnershipVerifier()).to.equal(ensVerifier);
+    expect(await registryC.identityLib()).to.equal(identityLibAddr);
     expect(await validationC.jobRegistry()).to.equal(registry);
     expect(await validationC.stakeManager()).to.equal(stake);
     expect(await validationC.reputationEngine()).to.equal(reputation);
-    expect(await validationC.ensOwnershipVerifier()).to.equal(ensVerifier);
+    expect(await validationC.identityLib()).to.equal(identityLibAddr);
     expect(await reputationC.callers(registry)).to.equal(true);
     expect(await reputationC.callers(validation)).to.equal(true);
     expect(await certificateC.jobRegistry()).to.equal(registry);
