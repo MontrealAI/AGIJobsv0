@@ -336,6 +336,7 @@ contract ValidationModule is IValidationModule, Ownable {
     function selectValidators(uint256 jobId) public override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
+        require(address(identityLib) != address(0), "identity lib");
         jobNonce[jobId] += 1;
 
         address[] memory pool = validatorPool;
@@ -412,6 +413,7 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32[] calldata proof
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
+        require(address(identityLib) != address(0), "identity lib");
         require(
             jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
             "not submitted"
@@ -468,6 +470,7 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32[] calldata proof
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
+        require(address(identityLib) != address(0), "identity lib");
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
         bool authorized;
