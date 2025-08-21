@@ -44,11 +44,15 @@ contract ValidationModule is Ownable {
     uint256 public commitWindow = 1 days;
     /// @notice duration of the reveal phase in seconds
     uint256 public revealWindow = 1 days;
+    /// @notice percentage of approvals required for success (0-100)
+    uint256 public approvalThreshold = 50;
 
     /// @notice global pool of potential validators
     address[] public validatorPool;
     /// @notice manually permitted validators bypassing ENS/Merkle checks
     mapping(address => bool) public additionalValidators;
+    /// @notice track validators that have provided valid ENS identity
+    mapping(address => bool) public validatorIdentity;
 
     /// @dev selected validators for a job
     mapping(uint256 => address[]) public jobValidators;
@@ -64,6 +68,8 @@ contract ValidationModule is Ownable {
     mapping(uint256 => mapping(address => bool)) public revealed;
     /// @dev approvals count per job
     mapping(uint256 => uint256) public approvals;
+    /// @dev rejections count per job
+    mapping(uint256 => uint256) public rejections;
     /// @dev total revealed votes per job
     mapping(uint256 => uint256) public totalReveals;
 
@@ -81,11 +87,13 @@ contract ValidationModule is Ownable {
     /// @param root The new Merkle root.
     event ValidatorMerkleRootUpdated(bytes32 root);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    event ValidatorIdentityUpdated(address indexed validator, bool hasIdentity);
 
     // events for commit–reveal validation
     event ValidatorsPerJobUpdated(uint256 count);
     event CommitWindowUpdated(uint256 window);
     event RevealWindowUpdated(uint256 window);
+    event ApprovalThresholdUpdated(uint256 threshold);
     event ValidatorPoolUpdated(address[] pool);
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(
@@ -163,6 +171,14 @@ contract ValidationModule is Ownable {
         emit RevealWindowUpdated(window);
     }
 
+    /// @notice Set the approval threshold percentage.
+    /// @param threshold Percentage (0-100) required for success.
+    function setApprovalThreshold(uint256 threshold) external onlyOwner {
+        require(threshold <= 100, "threshold");
+        approvalThreshold = threshold;
+        emit ApprovalThresholdUpdated(threshold);
+    }
+
     /// @notice Update the pool of potential validators.
     function setValidatorPool(address[] calldata pool) external onlyOwner {
         if (address(reputationEngine) != address(0)) {
@@ -190,6 +206,17 @@ contract ValidationModule is Ownable {
     function removeAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = false;
         emit AdditionalValidatorUpdated(validator, false);
+    }
+
+    /// @notice Set whether a validator has a valid ENS identity.
+    /// @param validator Address of the validator.
+    /// @param hasIdentity True if the validator passed identity checks.
+    function setValidatorIdentity(address validator, bool hasIdentity)
+        external
+        onlyOwner
+    {
+        validatorIdentity[validator] = hasIdentity;
+        emit ValidatorIdentityUpdated(validator, hasIdentity);
     }
 
     /// @notice Set the validation outcome for a job.
@@ -246,6 +273,9 @@ contract ValidationModule is Ownable {
             bool ok = stakeManager.stakes(v) > 0;
             if (ok && address(reputationEngine) != address(0)) {
                 ok = !reputationEngine.isBlacklisted(v);
+            }
+            if (ok && !(validatorIdentity[v] || additionalValidators[v])) {
+                ok = false;
             }
             if (ok) {
                 pool[eligible] = v;
@@ -318,6 +348,8 @@ contract ValidationModule is Ownable {
         revealed[jobId][msg.sender] = true;
         if (approve) {
             approvals[jobId] += 1;
+        } else {
+            rejections[jobId] += 1;
         }
         totalReveals[jobId] += 1;
         emit ValidationRevealed(jobId, msg.sender, approve);
@@ -330,8 +362,12 @@ contract ValidationModule is Ownable {
         external
         returns (bool success, address[] memory participants)
     {
-        require(block.timestamp > revealDeadline[jobId], "reveal pending");
-        uint256 reveals = totalReveals[jobId];
+        require(
+            block.timestamp > revealDeadline[jobId] ||
+                totalReveals[jobId] == jobValidators[jobId].length,
+            "reveal pending"
+        );
+        uint256 reveals = approvals[jobId] + rejections[jobId];
         participants = new address[](reveals);
         address[] storage vals = jobValidators[jobId];
         uint256 idx;
@@ -344,9 +380,12 @@ contract ValidationModule is Ownable {
             delete commitments[jobId][v];
             delete revealed[jobId][v];
         }
-        success = approvals[jobId] * 2 >= reveals && reveals > 0;
+        success =
+            approvals[jobId] * 100 >= reveals * approvalThreshold &&
+            reveals > 0;
         outcomes[jobId] = success;
         delete approvals[jobId];
+        delete rejections[jobId];
         delete totalReveals[jobId];
         delete jobValidators[jobId];
         emit ValidationResult(jobId, success, participants);

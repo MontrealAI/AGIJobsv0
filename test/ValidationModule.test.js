@@ -1,12 +1,13 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
 describe("ValidationModule", function () {
-  let validation, owner, challenger, stakeManager, validator;
+  let validation, owner, challenger, stakeManager, validator, validator2;
 
   beforeEach(async () => {
-    [owner, challenger, validator] = await ethers.getSigners();
+    [owner, challenger, validator, validator2] = await ethers.getSigners();
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/mocks/StubStakeManager.sol:StubStakeManager"
@@ -22,6 +23,7 @@ describe("ValidationModule", function () {
     await validation.connect(owner).setChallengeWindow(1000);
     await validation.connect(owner).setDisputeBond(50);
     await stakeManager.setStake(validator.address, 1);
+    await stakeManager.setStake(validator2.address, 1);
   });
 
   it("returns preset outcomes", async () => {
@@ -50,6 +52,9 @@ describe("ValidationModule", function () {
     await validation.connect(owner).setValidatorsPerJob(1);
     await validation.connect(owner).setCommitWindow(5);
     await validation.connect(owner).setRevealWindow(5);
+    await validation
+      .connect(owner)
+      .setValidatorIdentity(validator.address, true);
     await validation
       .connect(owner)
       .setValidatorPool([validator.address]);
@@ -81,6 +86,46 @@ describe("ValidationModule", function () {
       "ValidationResult"
     );
     expect(await validation.outcomes(1)).to.equal(true);
+  });
+
+  it("applies approval threshold and finalizes early", async () => {
+    await validation.connect(owner).setValidatorsPerJob(2);
+    await validation.connect(owner).setCommitWindow(5);
+    await validation.connect(owner).setRevealWindow(5);
+    await validation.connect(owner).setApprovalThreshold(60);
+    await validation
+      .connect(owner)
+      .setValidatorIdentity(validator.address, true);
+    await validation
+      .connect(owner)
+      .setValidatorIdentity(validator2.address, true);
+    await validation
+      .connect(owner)
+      .setValidatorPool([validator.address, validator2.address]);
+    await validation.connect(owner).selectValidators(1);
+
+    const salt1 = ethers.encodeBytes32String("salt1");
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, 1, true, salt1]
+    );
+    const salt2 = ethers.encodeBytes32String("salt2");
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator2.address, 1, false, salt2]
+    );
+    await validation.connect(validator).commitValidation(1, commit1);
+    await validation.connect(validator2).commitValidation(1, commit2);
+
+    await time.increase(6);
+
+    await validation.connect(validator).revealValidation(1, true, salt1);
+    await validation.connect(validator2).revealValidation(1, false, salt2);
+
+    await expect(validation.finalizeValidation(1))
+      .to.emit(validation, "ValidationResult")
+      .withArgs(1, false, anyValue);
+    expect(await validation.outcomes(1)).to.equal(false);
   });
 });
 
