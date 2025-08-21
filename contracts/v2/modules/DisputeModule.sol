@@ -30,12 +30,17 @@ contract DisputeModule is Ownable {
         uint256 raisedAt;
         bool resolved;
         uint256 fee;
+        string evidence;
     }
 
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
 
-    event DisputeRaised(uint256 indexed jobId, address indexed claimant);
+    event DisputeRaised(
+        uint256 indexed jobId,
+        address indexed claimant,
+        string evidence
+    );
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -132,10 +137,12 @@ contract DisputeModule is Ownable {
     /// @notice Raise a dispute by posting the dispute fee.
     /// @param jobId Identifier of the job being disputed.
     /// @param claimant Address of the party raising the dispute.
-    function raiseDispute(uint256 jobId, address claimant)
-        external
-        onlyJobRegistry
-    {
+    /// @param evidence Evidence URI or hash supporting the dispute.
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external onlyJobRegistry {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
@@ -158,10 +165,11 @@ contract DisputeModule is Ownable {
                 claimant: claimant,
                 raisedAt: block.timestamp,
                 resolved: false,
-                fee: disputeFee
+                fee: disputeFee,
+                evidence: evidence
             });
 
-        emit DisputeRaised(jobId, claimant);
+        emit DisputeRaised(jobId, claimant, evidence);
     }
 
     /// @notice Resolve an existing dispute after the dispute window elapses.
@@ -177,13 +185,21 @@ contract DisputeModule is Ownable {
 
         d.resolved = true;
 
-        address recipient = employerWins
-            ? jobRegistry.jobs(jobId).employer
-            : d.claimant;
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        address recipient = employerWins ? job.employer : d.claimant;
         uint256 fee = d.fee;
         delete disputes[jobId];
 
         jobRegistry.resolveDispute(jobId, employerWins);
+
+        if (employerWins && job.stake > 0) {
+            IStakeManager(jobRegistry.stakeManager()).slash(
+                job.agent,
+                IStakeManager.Role.Agent,
+                uint256(job.stake),
+                job.employer
+            );
+        }
 
         if (fee > 0) {
             IStakeManager(jobRegistry.stakeManager()).payDisputeFee(
