@@ -57,6 +57,12 @@ interface IStakeManager {
     /// @notice acknowledge the tax policy and withdraw stake in one call
     function acknowledgeAndWithdraw(Role role, uint256 amount) external;
 
+    /// @notice lock a portion of a user's stake for a period of time
+    /// @param user address whose stake is being locked
+    /// @param amount token amount with 6 decimals
+    /// @param lockTime seconds until the stake unlocks
+    function lockStake(address user, uint256 amount, uint64 lockTime) external;
+
     /// @notice lock job funds from an employer
     function lockJobFunds(bytes32 jobId, address from, uint256 amount) external;
 
