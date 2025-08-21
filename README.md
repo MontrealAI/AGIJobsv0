@@ -5,6 +5,14 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 Non‑technical owners can deploy and configure the legacy contract entirely from a web browser. The [deployment guide](docs/deployment-v0-agialpha.md) walks through using block‑explorer "Write" tabs to initialise `$AGIALPHA` for payments, staking, rewards and dispute resolution, all of which remain owner‑configurable without redeployment.
 
+### Legacy v0 Deployment Quickstart
+
+1. Gather prerequisites: the 6‑decimal `$AGIALPHA` token address, ENS registry and NameWrapper addresses, namehashes for `agent.agi.eth` and `club.agi.eth`, optional Merkle roots, and a base IPFS URI.
+2. Visit the verified `AGIJobManagerv0` contract on a block explorer and open **Contract → Deploy** (or **Write Contract**).
+3. Enter the constructor fields with the values above and submit the transaction; the sender becomes `owner`.
+4. Post‑deployment, the owner may swap tokens with `updateAGITokenAddress`, rotate ENS roots and allowlists, or blacklist addresses without redeploying.
+5. All escrow, staking, rewards and dispute fees use 6‑decimal units (`1 token = 1_000000`). Supply amounts in these base units when interacting through the explorer.
+
 All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Agents must control an ENS subdomain ending in `.agent.agi.eth`, while validators require one ending in `.club.agi.eth`. Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
 
 For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
