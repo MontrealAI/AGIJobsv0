@@ -31,16 +31,18 @@ async function setup() {
   await validation.waitForDeployment();
   await validation.connect(owner).setReputationEngine(await reputation.getAddress());
 
-  const Identity = await ethers.getContractFactory("IdentityLibMock");
+  const Identity = await ethers.getContractFactory(
+    "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+  );
   const identity = await Identity.deploy();
   await identity.waitForDeployment();
   await validation
     .connect(owner)
-    .setIdentityLib(await identity.getAddress());
-  await validation.connect(owner).setRootNodes(ethers.ZeroHash, ethers.ZeroHash);
-  await validation
-    .connect(owner)
-    .setAdditionalValidators([v1.address, v2.address], [true, true]);
+    .setIdentityRegistry(await identity.getAddress());
+  await identity.setClubRootNode(ethers.ZeroHash);
+  await identity.setAgentRootNode(ethers.ZeroHash);
+  await identity.addAdditionalValidator(v1.address);
+  await identity.addAdditionalValidator(v2.address);
 
   await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
   await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
@@ -59,7 +61,16 @@ async function setup() {
     result: "",
   };
   await jobRegistry.setJob(1, jobStruct);
-  return { owner, employer, v1, v2, validation, stakeManager, jobRegistry };
+  return {
+    owner,
+    employer,
+    v1,
+    v2,
+    validation,
+    stakeManager,
+    jobRegistry,
+    identity,
+  };
 }
 
 async function advance(seconds) {

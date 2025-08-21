@@ -178,6 +178,10 @@ contract IdentityRegistry is Ownable {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external returns (bool) {
+        if (additionalAgents[claimant]) {
+            emit OwnershipVerified(claimant, subdomain);
+            return true;
+        }
         return _verifyOwnership(claimant, subdomain, proof, agentRootNode);
     }
 
@@ -186,6 +190,10 @@ contract IdentityRegistry is Ownable {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external returns (bool) {
+        if (additionalValidators[claimant]) {
+            emit OwnershipVerified(claimant, subdomain);
+            return true;
+        }
         return _verifyOwnership(claimant, subdomain, proof, clubRootNode);
     }
 

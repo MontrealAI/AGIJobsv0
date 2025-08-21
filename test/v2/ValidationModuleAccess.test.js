@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("ValidationModule access controls", function () {
   let owner, employer, v1, v2;
-  let validation, stakeManager, jobRegistry, reputation;
+  let validation, stakeManager, jobRegistry, reputation, identity;
 
   beforeEach(async () => {
     [owner, employer, v1, v2] = await ethers.getSigners();
@@ -38,17 +38,17 @@ describe("ValidationModule access controls", function () {
       .setReputationEngine(await reputation.getAddress());
 
     const Identity = await ethers.getContractFactory(
-      "IdentityLibMock"
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );
-    const identity = await Identity.deploy();
+    identity = await Identity.deploy();
     await identity.waitForDeployment();
     await validation
       .connect(owner)
-      .setIdentityLib(await identity.getAddress());
-    await validation.connect(owner).setRootNodes(ethers.ZeroHash, ethers.ZeroHash);
-    await validation
-      .connect(owner)
-      .setAdditionalValidators([v1.address, v2.address], [true, true]);
+      .setIdentityRegistry(await identity.getAddress());
+    await identity.setClubRootNode(ethers.ZeroHash);
+    await identity.setAgentRootNode(ethers.ZeroHash);
+    await identity.addAdditionalValidator(v1.address);
+    await identity.addAdditionalValidator(v2.address);
 
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
@@ -86,17 +86,15 @@ describe("ValidationModule access controls", function () {
       val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
 
     const Toggle = await ethers.getContractFactory(
-      "IdentityLibToggle"
+      "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
     );
     const toggle = await Toggle.deploy();
     await toggle.waitForDeployment();
     await validation
       .connect(owner)
-      .setIdentityLib(await toggle.getAddress());
+      .setIdentityRegistry(await toggle.getAddress());
     await toggle.setResult(false);
-    await validation
-      .connect(owner)
-      .setAdditionalValidators([val], [false]);
+    await identity.removeAdditionalValidator(val);
 
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const nonce = await validation.jobNonce(1);
@@ -109,17 +107,13 @@ describe("ValidationModule access controls", function () {
     ).to.be.revertedWith("Not authorized validator");
 
     // allow commit then block reveal
-    await validation
-      .connect(owner)
-      .setAdditionalValidators([val], [true]);
+    await identity.addAdditionalValidator(val);
     await toggle.setResult(true);
     await (
       await validation.connect(signer).commitValidation(1, commit, "", [])
     ).wait();
     await advance(61);
-    await validation
-      .connect(owner)
-      .setAdditionalValidators([val], [false]);
+    await identity.removeAdditionalValidator(val);
     await toggle.setResult(false);
     await expect(
       validation.connect(signer).revealValidation(1, true, salt, "", [])

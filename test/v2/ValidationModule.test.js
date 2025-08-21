@@ -37,19 +37,19 @@ describe("ValidationModule V2", function () {
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
 
-    const Identity = await ethers.getContractFactory("IdentityLibMock");
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+    );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
     await validation
       .connect(owner)
-      .setIdentityLib(await identity.getAddress());
-    await validation.connect(owner).setRootNodes(ethers.ZeroHash, ethers.ZeroHash);
-    await validation
-      .connect(owner)
-      .setAdditionalValidators(
-        [v1.address, v2.address, v3.address],
-        [true, true, true]
-      );
+      .setIdentityRegistry(await identity.getAddress());
+    await identity.setClubRootNode(ethers.ZeroHash);
+    await identity.setAgentRootNode(ethers.ZeroHash);
+    await identity.addAdditionalValidator(v1.address);
+    await identity.addAdditionalValidator(v2.address);
+    await identity.addAdditionalValidator(v3.address);
 
     // validator stakes and pool
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
@@ -349,20 +349,16 @@ describe("ValidationModule V2", function () {
     ).to.emit(validation, "ValidationRevealed");
   });
 
-  it("updates additional validators individually", async () => {
-    const [, , , , , extra] = await ethers.getSigners();
-    await expect(
-      validation.connect(owner).addAdditionalValidator(extra.address)
-    )
-      .to.emit(validation, "AdditionalValidatorUpdated")
-      .withArgs(extra.address, true);
+    it("updates additional validators individually", async () => {
+      const [, , , , , extra] = await ethers.getSigners();
+      await expect(identity.addAdditionalValidator(extra.address))
+        .to.emit(identity, "AdditionalValidatorUpdated")
+        .withArgs(extra.address, true);
       expect(await identity.additionalValidators(extra.address)).to.equal(true);
 
-    await expect(
-      validation.connect(owner).removeAdditionalValidator(extra.address)
-    )
-      .to.emit(validation, "AdditionalValidatorUpdated")
-      .withArgs(extra.address, false);
+      await expect(identity.removeAdditionalValidator(extra.address))
+        .to.emit(identity, "AdditionalValidatorUpdated")
+        .withArgs(extra.address, false);
       expect(await identity.additionalValidators(extra.address)).to.equal(false);
-  });
+    });
 });
