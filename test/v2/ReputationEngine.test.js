@@ -10,9 +10,7 @@ describe("ReputationEngine", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     engine = await Engine.deploy(ethers.ZeroAddress);
-    await engine
-      .connect(owner)
-      .setAuthorizedCaller(caller.address, true);
+    await engine.connect(owner).setCaller(caller.address, true);
     await engine
       .connect(owner)
       .setPremiumReputationThreshold(2);

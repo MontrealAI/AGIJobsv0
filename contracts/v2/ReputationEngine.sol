@@ -45,9 +45,14 @@ contract ReputationEngine is Ownable {
     // ---------------------------------------------------------------------
 
     /// @notice Authorize or revoke a caller.
-    function setAuthorizedCaller(address caller, bool allowed) external onlyOwner {
+    function setCaller(address caller, bool allowed) public onlyOwner {
         callers[caller] = allowed;
         emit CallerUpdated(caller, allowed);
+    }
+
+    /// @notice Backwards compatible alias for {setCaller}.
+    function setAuthorizedCaller(address caller, bool allowed) external onlyOwner {
+        setCaller(caller, allowed);
     }
 
     /// @notice Set the StakeManager used for stake lookups.

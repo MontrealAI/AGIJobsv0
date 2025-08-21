@@ -427,6 +427,8 @@ contract MockReputationEngine is IReputationEngine {
         return _rep[user] >= threshold;
     }
 
+    function setCaller(address, bool) external override {}
+
     function setAuthorizedCaller(address, bool) external override {}
 
     function setThreshold(uint256 t) external override {
