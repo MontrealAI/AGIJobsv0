@@ -48,6 +48,9 @@ interface IJobRegistry {
     event StakeManagerUpdated(address manager);
     event CertificateNFTUpdated(address nft);
     event DisputeModuleUpdated(address module);
+    event IdentityRegistryUpdated(address identityRegistry);
+    event AgentRootNodeUpdated(bytes32 node);
+    event AgentMerkleRootUpdated(bytes32 root);
     event JobParametersUpdated(
         uint256 reward,
         uint256 stake,
@@ -96,6 +99,16 @@ interface IJobRegistry {
     /// @notice Set the dispute module contract handling appeals
     /// @param module Address of the dispute module contract
     function setDisputeModule(address module) external;
+
+    /// @notice Set the identity registry used for agent verification
+    /// @param registry Address of the identity registry contract
+    function setIdentityRegistry(address registry) external;
+
+    /// @notice Update the ENS root node used for agent verification
+    function setAgentRootNode(bytes32 node) external;
+
+    /// @notice Update the agent allowlist Merkle root
+    function setAgentMerkleRoot(bytes32 root) external;
 
     /// @notice Retrieve the StakeManager contract handling collateral
     /// @return Address of the StakeManager

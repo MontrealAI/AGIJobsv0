@@ -153,6 +153,9 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param allowed True if the address can acknowledge for others.
     event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
 
+    event AgentRootNodeUpdated(bytes32 node);
+    event AgentMerkleRootUpdated(bytes32 root);
+
     // job parameter template event
     event JobParametersUpdated(
         uint256 reward,
@@ -296,6 +299,22 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
         emit ModuleUpdated("IdentityRegistry", address(registry));
+    }
+
+    /// @notice Update the ENS root node used for agent verification.
+    /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
+    function setAgentRootNode(bytes32 node) external onlyOwner {
+        require(address(identityRegistry) != address(0), "identity reg");
+        identityRegistry.setAgentRootNode(node);
+        emit AgentRootNodeUpdated(node);
+    }
+
+    /// @notice Update the Merkle root for the agent allowlist.
+    /// @param root Merkle root of approved agent addresses.
+    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+        require(address(identityRegistry) != address(0), "identity reg");
+        identityRegistry.setAgentMerkleRoot(root);
+        emit AgentMerkleRootUpdated(root);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
@@ -589,9 +608,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external {
-        if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
-            _acknowledge(msg.sender);
-        }
+        _acknowledge(msg.sender);
         stakeManager.depositStakeFor(
             msg.sender,
             IStakeManager.Role.Agent,
@@ -904,7 +921,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             job.state == State.Created && job.agent == address(0),
             "cannot cancel"
         );
-        require(msg.sender == job.employer, "only employer");
+        require(
+            msg.sender == job.employer || msg.sender == owner(),
+            "only employer or owner"
+        );
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
@@ -926,18 +946,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Owner can force-cancel an unassigned job and refund the employer.
     /// @param jobId Identifier of the job to cancel.
     function forceCancel(uint256 jobId) external onlyOwner {
-        Job storage job = jobs[jobId];
-        require(job.state == State.Created && job.agent == address(0), "cannot cancel");
-        job.state = State.Cancelled;
-        if (address(stakeManager) != address(0) && job.reward > 0) {
-            uint256 fee = (uint256(job.reward) * job.feePct) / 100;
-            stakeManager.releaseJobFunds(
-                bytes32(jobId),
-                job.employer,
-                uint256(job.reward) + fee
-            );
-        }
-        emit JobCancelled(jobId);
+        cancelJob(jobId);
     }
 
     // ---------------------------------------------------------------------
