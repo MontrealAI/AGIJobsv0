@@ -154,7 +154,7 @@ describe("job finalization integration", function () {
       .to.emit(registry, "JobCompleted")
       .withArgs(jobId, true)
       .and.to.emit(registry, "JobFinalized")
-      .withArgs(jobId, true);
+      .withArgs(jobId, agent.address);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
     expect(agentAfter - agentBefore).to.equal(reward);
@@ -187,7 +187,7 @@ describe("job finalization integration", function () {
       registry.connect(disputeSigner).resolveDispute(jobId, true)
     )
       .to.emit(registry, "JobFinalized")
-      .withArgs(jobId, false);
+      .withArgs(jobId, agent.address);
     await network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [dispute.target],
@@ -220,7 +220,7 @@ describe("job finalization integration", function () {
       registry.connect(disputeSigner).resolveDispute(jobId, false)
     )
       .to.emit(registry, "JobFinalized")
-      .withArgs(jobId, true);
+      .withArgs(jobId, agent.address);
     await network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [dispute.target],

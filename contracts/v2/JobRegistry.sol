@@ -204,7 +204,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event JobApplied(uint256 indexed jobId, address indexed agent);
     event JobSubmitted(uint256 indexed jobId, address indexed worker, string result);
     event JobCompleted(uint256 indexed jobId, bool success);
-    event JobFinalized(uint256 indexed jobId, bool success);
+    /// @notice Emitted when a job is finalized
+    /// @param jobId Identifier of the job
+    /// @param worker Agent who performed the job
+    event JobFinalized(uint256 indexed jobId, address worker);
     event JobCancelled(uint256 indexed jobId);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
@@ -928,30 +931,32 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         bytes32 jobKey = bytes32(jobId);
         if (job.success) {
             IFeePool pool = feePool;
+            uint256 validatorReward;
+            address[] memory validators;
+            uint256 honest;
+            if (
+                validatorRewardPct > 0 &&
+                address(validationModule) != address(0)
+            ) {
+                validatorReward =
+                    (uint256(job.reward) * validatorRewardPct) /
+                    100;
+                validators = validationModule.validators(jobId);
+                uint256 vlen = validators.length;
+                for (uint256 i; i < vlen; ++i) {
+                    if (validationModule.votes(jobId, validators[i])) {
+                        honest++;
+                    }
+                }
+            }
+
+            uint256 rewardAfterValidator =
+                uint256(job.reward) - validatorReward;
             if (address(stakeManager) != address(0)) {
                 uint256 fee;
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
-
-                // determine validator payout before calculating agent reward
-                uint256 validatorReward;
-                if (
-                    validatorRewardPct > 0 &&
-                    address(validationModule) != address(0)
-                ) {
-                    validatorReward =
-                        (uint256(job.reward) * validatorRewardPct) /
-                        100;
-                }
-
-                uint256 rewardAfterValidator =
-                    uint256(job.reward) - validatorReward;
-                uint256 agentPct = stakeManager.getHighestPayoutPercentage(
-                    job.agent
-                );
-                uint256 agentBase = (rewardAfterValidator * agentPct) / 100;
-
                 stakeManager.finalizeJobFunds(
                     jobKey,
                     job.agent,
@@ -961,26 +966,62 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 );
 
                 if (validatorReward > 0) {
-                    stakeManager.distributeValidatorRewards(
-                        jobKey,
-                        validatorReward
-                    );
-                }
-
-                uint256 leftover = rewardAfterValidator - agentBase;
-                if (leftover > 0) {
-                    stakeManager.releaseJobFunds(jobKey, job.employer, leftover);
+                    if (honest > 0) {
+                        uint256 per = validatorReward / honest;
+                        uint256 rem = validatorReward - per * honest;
+                        bool paidRemainder;
+                        for (uint256 i; i < validators.length; ++i) {
+                            address val = validators[i];
+                            if (validationModule.votes(jobId, val)) {
+                                uint256 amount = per;
+                                if (!paidRemainder) {
+                                    amount += rem;
+                                    paidRemainder = true;
+                                }
+                                stakeManager.releaseJobFunds(jobKey, val, amount);
+                            }
+                        }
+                    } else {
+                        stakeManager.releaseJobFunds(
+                            jobKey,
+                            job.employer,
+                            validatorReward
+                        );
+                    }
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                uint256 payout = uint256(job.reward) * 1e12;
-                uint256 agentGain = reputationEngine.calculateReputationPoints(payout, 0);
-                reputationEngine.onFinalize(job.agent, true, payout, 0);
-                if (address(validationModule) != address(0)) {
-                    address[] memory validators = validationModule.validators(jobId);
-                    uint256 len = validators.length;
-                    for (uint256 i = 0; i < len; i++) {
-                        reputationEngine.rewardValidator(validators[i], agentGain);
+                uint256 agentPct = 100;
+                if (address(stakeManager) != address(0)) {
+                    agentPct = stakeManager.getHighestPayoutPercentage(
+                        job.agent
+                    );
+                }
+                uint256 agentModified =
+                    (rewardAfterValidator * agentPct) / 100;
+                uint256 burn = 0;
+                if (address(stakeManager) != address(0)) {
+                    burn = (agentModified * stakeManager.burnPct()) / 100;
+                }
+                uint256 agentAmount = agentModified - burn;
+                uint256 completionTime = block.timestamp - job.assignedAt;
+                uint256 payout = agentAmount * 1e12;
+                uint256 agentGain = reputationEngine.calculateReputationPoints(
+                    payout,
+                    completionTime
+                );
+                reputationEngine.onFinalize(
+                    job.agent,
+                    true,
+                    payout,
+                    completionTime
+                );
+                if (validators.length > 0) {
+                    for (uint256 i; i < validators.length; ++i) {
+                        address val = validators[i];
+                        if (validationModule.votes(jobId, val)) {
+                            reputationEngine.rewardValidator(val, agentGain);
+                        }
                     }
                 }
             }
@@ -1010,7 +1051,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
-        emit JobFinalized(jobId, job.success);
+        emit JobFinalized(jobId, job.agent);
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.
