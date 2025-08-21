@@ -70,7 +70,7 @@ resolver, emitting `OwnershipVerified` on success.
 ### Dispute
 1. Approve the dispute fee on `$AGIALPHA`.
 2. Call `JobRegistry.raiseDispute(jobId, evidence)`.
-3. Owner resolves via `DisputeModule.resolveDispute(jobId, uphold)`.
+3. Owner resolves via `DisputeModule.resolve(jobId, uphold)`.
 4. Monitor `DisputeRaised` and `DisputeResolved` events.
 
 ### NFT Marketplace

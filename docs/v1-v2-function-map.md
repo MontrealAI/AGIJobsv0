@@ -12,7 +12,7 @@ The table below maps common public functions from the monolithic `AGIJobManagerV
 | `validateJob` | `ValidationModule` | `revealValidation(approve=true)` |
 | `disapproveJob` | `ValidationModule` | `revealValidation(approve=false)` |
 | `disputeJob` | `JobRegistry` | `raiseDispute` |
-| `resolveDispute` | `DisputeModule` | `resolveDispute` |
+| `resolveDispute` | `DisputeModule` | `resolve` |
 | `resolveStalledJob` | `JobRegistry` | `finalize` |
 | `cancelJob` / `cancelExpiredJob` | `JobRegistry` | `cancelJob` |
 | `stake` | `StakeManager` | `depositStake(role)` |

@@ -137,9 +137,9 @@ describe("DisputeModule", function () {
         await token.balanceOf(await stakeManager.getAddress())
       ).to.equal(fee);
       await time.increase(1);
-      await expect(dispute.connect(owner).resolveDispute(1, true))
+      await expect(dispute.connect(owner).resolve(1, true))
         .to.emit(dispute, "DisputeResolved")
-        .withArgs(1, true);
+        .withArgs(1, owner.address, true);
       expect(await token.balanceOf(employer.address)).to.equal(
         employerStart + fee
       );
@@ -152,9 +152,9 @@ describe("DisputeModule", function () {
       const agentStart = await token.balanceOf(agent.address);
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(1);
-      await expect(dispute.connect(owner).resolveDispute(1, false))
+      await expect(dispute.connect(owner).resolve(1, false))
         .to.emit(dispute, "DisputeResolved")
-        .withArgs(1, false);
+        .withArgs(1, owner.address, false);
       expect(await token.balanceOf(agent.address)).to.equal(agentStart);
       expect(
         await token.balanceOf(await stakeManager.getAddress())
@@ -165,7 +165,7 @@ describe("DisputeModule", function () {
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(1);
       await expect(
-        dispute.connect(outsider).resolveDispute(1, true)
+        dispute.connect(outsider).resolve(1, true)
       ).to.be.revertedWith("not authorized");
     });
   });

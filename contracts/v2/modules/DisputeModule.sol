@@ -6,8 +6,8 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 
 /// @title DisputeModule
-/// @notice Allows job participants to raise disputes with evidence and resolves
-/// them after a dispute window.
+/// @notice Allows job participants to raise disputes and resolves them after a
+/// dispute window.
 /// @dev Maintains tax neutrality by rejecting ether and escrowing only token
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
 ///      6 decimals (`1 token == 1e6` units).
@@ -27,7 +27,6 @@ contract DisputeModule is Ownable {
 
     struct Dispute {
         address claimant;
-        string evidence;
         uint256 raisedAt;
         bool resolved;
         uint256 fee;
@@ -36,12 +35,12 @@ contract DisputeModule is Ownable {
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
 
-    event DisputeRaised(
+    event DisputeRaised(uint256 indexed jobId, address indexed claimant);
+    event DisputeResolved(
         uint256 indexed jobId,
-        address indexed claimant,
-        string evidence
+        address indexed resolver,
+        bool employerWins
     );
-    event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event ModeratorUpdated(address moderator, bool enabled);
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
@@ -130,15 +129,13 @@ contract DisputeModule is Ownable {
         emit DisputeWindowUpdated(window);
     }
 
-    /// @notice Raise a dispute by posting the dispute fee and providing evidence.
+    /// @notice Raise a dispute by posting the dispute fee.
     /// @param jobId Identifier of the job being disputed.
     /// @param claimant Address of the party raising the dispute.
-    /// @param evidence Supporting evidence for the dispute.
-    function raiseDispute(
-        uint256 jobId,
-        address claimant,
-        string calldata evidence
-    ) external onlyJobRegistry {
+    function raiseDispute(uint256 jobId, address claimant)
+        external
+        onlyJobRegistry
+    {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
@@ -156,21 +153,21 @@ contract DisputeModule is Ownable {
             );
         }
 
-        disputes[jobId] = Dispute({
-            claimant: claimant,
-            evidence: evidence,
-            raisedAt: block.timestamp,
-            resolved: false,
-            fee: disputeFee
-        });
+        disputes[jobId] =
+            Dispute({
+                claimant: claimant,
+                raisedAt: block.timestamp,
+                resolved: false,
+                fee: disputeFee
+            });
 
-        emit DisputeRaised(jobId, claimant, evidence);
+        emit DisputeRaised(jobId, claimant);
     }
 
     /// @notice Resolve an existing dispute after the dispute window elapses.
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.
-    function resolveDispute(uint256 jobId, bool employerWins)
+    function resolve(uint256 jobId, bool employerWins)
         external
         onlyModerator
     {
@@ -195,7 +192,7 @@ contract DisputeModule is Ownable {
             );
         }
 
-        emit DisputeResolved(jobId, employerWins);
+        emit DisputeResolved(jobId, msg.sender, employerWins);
     }
 
     /// @notice Confirms the module and its owner cannot accrue tax liabilities.

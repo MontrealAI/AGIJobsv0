@@ -162,7 +162,7 @@ describe("Full system integration", function () {
     await validation.setResult(false);
     await registry.connect(agent).completeJob(jobId);
     await registry.connect(agent).raiseDispute(jobId, "evidence");
-    await dispute.connect(owner).resolveDispute(jobId, false);
+    await dispute.connect(owner).resolve(jobId, false);
     await registry.connect(owner).finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(900n);
@@ -175,7 +175,7 @@ describe("Full system integration", function () {
     await validation.setResult(false);
     await registry.connect(agent).completeJob(jobId);
     await registry.connect(agent).raiseDispute(jobId, "evidence");
-    await dispute.connect(owner).resolveDispute(jobId, true);
+    await dispute.connect(owner).resolve(jobId, true);
     await registry.connect(owner).finalize(jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(800n);
