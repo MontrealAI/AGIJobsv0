@@ -55,6 +55,9 @@ interface IReputationEngine {
     /// @notice Allow or disallow a caller to update reputation
     /// @param caller Address of the caller to configure
     /// @param allowed True to authorise the caller, false to revoke
+    function setCaller(address caller, bool allowed) external;
+
+    /// @notice Backwards compatible alias for {setCaller}
     function setAuthorizedCaller(address caller, bool allowed) external;
 
     /// @notice Set the minimum score threshold for certain actions
