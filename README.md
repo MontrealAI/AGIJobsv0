@@ -11,6 +11,37 @@ For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v
 
 For step‑by‑step instructions on deploying the legacy manager with `$AGIALPHA`, see [docs/deployment-v0-agialpha.md](docs/deployment-v0-agialpha.md). The guide uses block‑explorer write tabs so non‑technical owners can configure the contract without additional tooling.
 
+## Deployment with $AGIALPHA
+
+Record every address as you deploy. The defaults below assume the 6‑decimal `$AGIALPHA` token and can be adjusted later via [`StakeManager.setToken`](contracts/v2/StakeManager.sol):
+
+| Module | Address (example) | Constructor parameters |
+| --- | --- | --- |
+| `AGIALPHAToken` | [`0x2e8f…ebe`](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) | none – `decimals()` returns `6` |
+| `StakeManager` | `TBD` | `token`, `minStake`, `employerPct`, `treasuryPct`, `treasury` |
+| `JobRegistry` | `TBD` | `validation`, `stakeManager`, `reputation`, `dispute`, `certificateNFT`, `feePool`, `taxPolicy`, `feePct`, `jobStake` |
+| `ValidationModule` | `TBD` | `jobRegistry`, `stakeManager`, `commitWindow`, `revealWindow`, `minValidators`, `maxValidators`, `validatorPool` |
+| `FeePool` | `TBD` | `token`, `stakeManager`, `burnPct`, `treasury` |
+
+Amounts use base units (`1 token = 1_000000`). To swap tokens after deployment, call `setToken(newToken)` on both `StakeManager` and `FeePool` and wait for `TokenUpdated` events.
+
+### Etherscan steps
+1. Open each verified contract → **Contract → Deploy** and supply the constructor parameters above. The deployer becomes `owner`.
+2. After deployment, wire modules from the **Write Contract** tab:
+   - `JobRegistry.setModules(stakeManager, validationModule, disputeModule, certificateNFT, reputationEngine, feePool)`
+   - `StakeManager.setJobRegistry(jobRegistry)` and `ValidationModule.setJobRegistry(jobRegistry)`
+   - Load ENS roots and allowlists with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, and `setValidatorMerkleRoot`.
+3. Owners may retune fees or replace the staking token at any time using the setter functions on each module.
+
+### Quickstart flow
+1. **Obtain Merkle proof** – request your address proof from AGI operators or generate it from the published allowlist.
+2. **Stake** – approve `$AGIALPHA` for the `StakeManager` and call `depositStake(role, amount)` (`role` 0 = agent, 1 = validator).
+3. **Apply** – submit `applyForJob(jobId, subdomain, proof)` on `JobRegistry` or use `stakeAndApply` to combine staking and applying.
+4. **Commit & reveal** – validators call `commitValidation(jobId, hash, subdomain, proof)` then `revealValidation(jobId, approve, salt)`.
+5. **Resolve disputes** – anyone can raise a dispute via `acknowledgeAndDispute(jobId, evidence)`; the owner settles it on `DisputeModule.resolve`.
+
+For screenshot walkthroughs and scripted deployments, see [docs/etherscan-guide.md](docs/etherscan-guide.md) and [docs/deployment-v2-agialpha.md](docs/deployment-v2-agialpha.md).
+
 ## v2 Modular Contract Overview
 
 The v2 release splits the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system. Deploy modules sequentially in the following order:
