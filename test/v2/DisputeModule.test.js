@@ -59,8 +59,8 @@ describe("DisputeModule", function () {
   describe("dispute resolution", function () {
     let owner, employer, agent, outsider;
     let token, stakeManager, registry, dispute;
-    const fee = 100n;
-    const stakeAmount = 500n;
+    const fee = 100n * 1_000_000n;
+    const stakeAmount = 500n * 1_000_000n;
 
     beforeEach(async () => {
       [owner, employer, agent, outsider] = await ethers.getSigners();
@@ -122,6 +122,10 @@ describe("DisputeModule", function () {
         .connect(agent)
         .depositStake(0, stakeAmount);
 
+      await stakeManager
+        .connect(owner)
+        .setJobRegistry(await dispute.getAddress());
+
       // initialise job in completed state
       await registry.setJob(1, {
         employer: employer.address,
@@ -142,7 +146,7 @@ describe("DisputeModule", function () {
       const employerStart = await token.balanceOf(employer.address);
       expect(
         await token.balanceOf(await stakeManager.getAddress())
-      ).to.equal(fee);
+      ).to.equal(stakeAmount + fee);
       await time.increase(1);
       await expect(dispute.connect(owner).resolve(1, true))
         .to.emit(dispute, "DisputeResolved")
@@ -168,7 +172,7 @@ describe("DisputeModule", function () {
       expect(await token.balanceOf(agent.address)).to.equal(agentStart);
       expect(
         await token.balanceOf(await stakeManager.getAddress())
-      ).to.equal(0);
+      ).to.equal(stakeAmount);
       expect(
         await stakeManager.stakeOf(agent.address, 0)
       ).to.equal(stakeAmount);

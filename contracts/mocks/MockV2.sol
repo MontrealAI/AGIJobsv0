@@ -140,6 +140,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         taxAcknowledgedVersion[msg.sender] = taxPolicyVersion;
     }
 
+    function acknowledge(address user) external {
+        taxAcknowledgedVersion[user] = taxPolicyVersion;
+    }
+
     function setTaxPolicy(address policy) external {
         taxPolicy = ITaxPolicy(policy);
     }
