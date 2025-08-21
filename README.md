@@ -183,7 +183,7 @@ await feePool.setToken("0xNewToken");
 **Moderators**
 1. Watch for `JobDisputed` events on `JobRegistry`.
 2. Review evidence off-chain.
-3. In `DisputeModule` → **Write**, call `resolveDispute(jobId, employerWins)`.
+3. In `DisputeModule` → **Write**, call `resolve(jobId, employerWins)`.
 4. Confirm `DisputeResolved` in the transaction log.
 
 #### End-to-End Etherscan Flow
@@ -940,7 +940,7 @@ Interact with the deployment directly from a block explorer using the **Write** 
 
 ### Dispute
 1. If the outcome is contested, call `DisputeModule.raiseDispute(jobId, reason)`.
-2. Moderators resolve via `DisputeModule.resolveDispute(jobId, upheld)`; results flow back to `JobRegistry` for payout.
+2. Moderators resolve via `DisputeModule.resolve(jobId, upheld)`; results flow back to `JobRegistry` for payout.
 
 No custom tooling is required—everything happens in the browser.
 
@@ -1399,7 +1399,7 @@ Interact with the contracts using a wallet or block explorer. Always verify cont
  - Disputes still resolve even if your stake drops below the required threshold; jobs finalize but no additional slashing occurs when funds are insufficient.
 
 **Penalties**
-- Missing a deadline or having a moderator side with the employer via `resolveDispute` can lower your reputation and slash staked AGI if the job is cancelled with `cancelExpiredJob`.
+- Missing a deadline or having a moderator side with the employer via `resolve` can lower your reputation and slash staked AGI if the job is cancelled with `cancelExpiredJob`.
 - After the configured number of penalties, `blacklistedAgents[agent]` becomes `true` and you must appeal to the owner to run `clearAgentBlacklist` before applying again. By default, the threshold is three.
 
 **Validators**
