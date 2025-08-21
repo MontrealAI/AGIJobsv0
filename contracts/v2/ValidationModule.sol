@@ -186,6 +186,44 @@ contract ValidationModule is IValidationModule, Ownable {
         identityRegistry = registry;
     }
 
+    /// @notice Batch update core validation parameters.
+    /// @param committeeSize Number of validators selected per job.
+    /// @param commitDur Duration of the commit phase in seconds.
+    /// @param revealDur Duration of the reveal phase in seconds.
+    /// @param approvalPct Percentage of stake required for approval.
+    /// @param slashPct Percentage of stake slashed for incorrect votes.
+    function setParameters(
+        uint256 committeeSize,
+        uint256 commitDur,
+        uint256 revealDur,
+        uint256 approvalPct,
+        uint256 slashPct
+    ) external override onlyOwner {
+        require(committeeSize > 0, "committee");
+        require(commitDur > 0 && revealDur > 0, "windows");
+        require(approvalPct > 0 && approvalPct <= 100, "approval");
+        require(slashPct <= 100, "slash");
+
+        minValidators = committeeSize;
+        maxValidators = committeeSize;
+        commitWindow = commitDur;
+        revealWindow = revealDur;
+        approvalThreshold = approvalPct;
+        validatorSlashingPercentage = slashPct;
+
+        emit ValidatorBoundsUpdated(committeeSize, committeeSize);
+        emit TimingUpdated(commitDur, revealDur);
+        emit ApprovalThresholdUpdated(approvalPct);
+        emit ValidatorSlashingPctUpdated(slashPct);
+        emit ParametersUpdated(
+            committeeSize,
+            commitDur,
+            revealDur,
+            approvalPct,
+            slashPct
+        );
+    }
+
     /// @notice Return validators selected for a job
     /// @param jobId Identifier of the job
     /// @return validators_ Array of validator addresses
@@ -291,6 +329,7 @@ contract ValidationModule is IValidationModule, Ownable {
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
         uint256[] memory stakes = new uint256[](n);
+        uint256[] memory hashes = new uint256[](n);
         uint256 m;
 
         for (uint256 i; i < n; ++i) {
@@ -313,21 +352,29 @@ contract ValidationModule is IValidationModule, Ownable {
             if (!authorized) continue;
             pool[m] = candidate;
             stakes[m] = stake;
+            hashes[m] = uint256(
+                keccak256(abi.encodePacked(jobId, jobNonce[jobId], candidate))
+            );
             m++;
         }
 
         require(m >= minValidators, "insufficient validators");
         uint256 count = m < maxValidators ? m : maxValidators;
 
-        // pseudo-randomly shuffle eligible validators
-        bytes32 seed = keccak256(
-            abi.encodePacked(blockhash(block.number - 1), jobId, jobNonce[jobId])
-        );
-        for (uint256 i; i < m; ++i) {
-            seed = keccak256(abi.encodePacked(seed, i));
-            uint256 j = i + (uint256(seed) % (m - i));
-            (pool[i], pool[j]) = (pool[j], pool[i]);
-            (stakes[i], stakes[j]) = (stakes[j], stakes[i]);
+        // deterministic selection based on hash ordering
+        for (uint256 i; i < count; ++i) {
+            uint256 minIndex = i;
+            for (uint256 j = i + 1; j < m; ++j) {
+                if (hashes[j] < hashes[minIndex]) {
+                    minIndex = j;
+                }
+            }
+            // place chosen validator at current index
+            if (minIndex != i) {
+                (pool[i], pool[minIndex]) = (pool[minIndex], pool[i]);
+                (stakes[i], stakes[minIndex]) = (stakes[minIndex], stakes[i]);
+                (hashes[i], hashes[minIndex]) = (hashes[minIndex], hashes[i]);
+            }
         }
 
         selected = new address[](count);
@@ -497,9 +544,12 @@ contract ValidationModule is IValidationModule, Ownable {
         require(block.timestamp > r.revealDeadline, "reveal pending");
 
         uint256 total = r.approvals + r.rejections;
+        bool allRevealed = r.participants.length == r.validators.length;
         bool quorum = r.participants.length >= minValidators;
-        if (quorum && total > 0) {
+        if (allRevealed && quorum && total > 0) {
             success = (r.approvals * 100) >= (total * approvalThreshold);
+        } else {
+            success = false;
         }
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 agentGain;
@@ -541,7 +591,7 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationTallied(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
-        jobRegistry.finalizeAfterValidation(jobId, success);
+        jobRegistry.validationComplete(jobId, success);
         return success;
     }
 

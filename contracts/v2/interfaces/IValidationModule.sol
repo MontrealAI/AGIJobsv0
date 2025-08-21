@@ -15,6 +15,13 @@ interface IValidationModule {
     );
     event ValidationResult(uint256 indexed jobId, bool success);
     event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
+    event ParametersUpdated(
+        uint256 committeeSize,
+        uint256 commitWindow,
+        uint256 revealWindow,
+        uint256 approvalThreshold,
+        uint256 slashingPct
+    );
 
     /// @notice Select validators for a given job
     /// @param jobId Identifier of the job
@@ -68,6 +75,20 @@ interface IValidationModule {
 
     /// @notice Alias for finalize using legacy naming.
     function finalizeValidation(uint256 jobId) external returns (bool success);
+
+    /// @notice Batch update core validation parameters
+    /// @param committeeSize Number of validators selected per job
+    /// @param commitWindow Duration of commit phase in seconds
+    /// @param revealWindow Duration of reveal phase in seconds
+    /// @param approvalThreshold Percentage of stake required for approval
+    /// @param slashingPct Percentage of stake slashed for incorrect votes
+    function setParameters(
+        uint256 committeeSize,
+        uint256 commitWindow,
+        uint256 revealWindow,
+        uint256 approvalThreshold,
+        uint256 slashingPct
+    ) external;
 
     /// @notice Owner configuration for timing windows
     function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow) external;

@@ -56,7 +56,7 @@ contract ValidationStub is IValidationModule {
     function finalize(uint256 jobId) external override returns (bool success) {
         success = result;
         if (jobRegistry != address(0)) {
-            IJobRegistry(jobRegistry).finalizeAfterValidation(jobId, success);
+            IJobRegistry(jobRegistry).validationComplete(jobId, success);
         }
     }
 
@@ -90,6 +90,14 @@ contract ValidationStub is IValidationModule {
     function setValidatorSubdomains(
         address[] calldata,
         string[] calldata
+    ) external override {}
+
+    function setParameters(
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256
     ) external override {}
 
     function resetJobNonce(uint256) external override {}
