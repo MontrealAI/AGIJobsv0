@@ -174,13 +174,28 @@ describe("AGI job flow", function () {
     await time.increase(6);
     await manager.connect(v1).validateJob(0, "", []);
 
+    const AGI = await ethers.getContractFactory(
+      "contracts/AGIALPHAToken.sol:AGIALPHAToken"
+    );
+    const initialSupply = ethers.parseUnits("1000", 6);
+    const saleToken = await AGI.deploy("AGI ALPHA", "AGIA", initialSupply);
+    const StakeManager = await ethers.getContractFactory(
+      "contracts/StakeManager.sol:StakeManager"
+    );
+    const stakeManager = await StakeManager.deploy();
+    await stakeManager.setToken(await saleToken.getAddress());
     const JobNFT = await ethers.getContractFactory("JobNFT");
-    const nft = await JobNFT.deploy(await token.getAddress());
+    const nft = await JobNFT.deploy();
     await nft.setJobRegistry(owner.address);
+    await nft.setStakeManager(await stakeManager.getAddress());
     await nft.connect(owner).mint(agent.address, 1);
-    const price = ethers.parseEther("1");
+    const price = ethers.parseUnits("1", 6);
+    await saleToken.transfer(agent.address, price);
+    await saleToken.transfer(employer.address, price);
     await nft.connect(agent).list(1, price);
-    await token.connect(employer).approve(await nft.getAddress(), price);
+    await saleToken
+      .connect(employer)
+      .approve(await nft.getAddress(), price);
     await expect(nft.connect(employer).purchase(1))
       .to.emit(nft, "NFTPurchased")
       .withArgs(1, employer.address, price);
