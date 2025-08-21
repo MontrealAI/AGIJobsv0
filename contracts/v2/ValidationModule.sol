@@ -430,7 +430,7 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
-    function selectValidators(uint256 jobId) external override returns (address[] memory selected) {
+    function selectValidators(uint256 jobId) public override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         require(r.validators.length == 0, "already selected");
         jobNonce[jobId] += 1;
@@ -503,6 +503,15 @@ contract ValidationModule is IValidationModule, Ownable {
 
         emit ValidatorsSelected(jobId, selected);
         return selected;
+    }
+
+    /// @inheritdoc IValidationModule
+    function startValidation(uint256 jobId, string calldata /*result*/)
+        external
+        override
+        returns (address[] memory validators)
+    {
+        validators = selectValidators(jobId);
     }
 
     /// @notice Commit a validation hash for a job.

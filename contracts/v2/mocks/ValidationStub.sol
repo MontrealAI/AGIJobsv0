@@ -17,8 +17,16 @@ contract ValidationStub is IValidationModule {
         result = _result;
     }
 
-    function selectValidators(uint256) external pure override returns (address[] memory) {
+    function selectValidators(uint256) public pure override returns (address[] memory) {
         return new address[](0);
+    }
+
+    function startValidation(uint256 jobId, string calldata)
+        external
+        override
+        returns (address[] memory validators)
+    {
+        validators = selectValidators(jobId);
     }
 
     function commitValidation(

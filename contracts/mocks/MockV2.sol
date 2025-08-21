@@ -272,11 +272,12 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         Job storage job = _jobs[jobId];
         require(job.status == Status.Applied, "state");
         require(msg.sender == job.agent, "agent");
+        require(block.timestamp <= deadlines[jobId], "deadline");
         job.result = result;
         job.status = Status.Submitted;
-        emit JobSubmitted(jobId, result);
+        emit JobSubmitted(jobId, msg.sender, result);
         if (address(validationModule) != address(0)) {
-            validationModule.selectValidators(jobId);
+            validationModule.startValidation(jobId, result);
         }
     }
 

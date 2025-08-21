@@ -65,7 +65,7 @@ interface IJobRegistry {
         uint256 fee
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, string result);
+    event JobSubmitted(uint256 indexed jobId, address indexed worker, string result);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobFinalized(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
