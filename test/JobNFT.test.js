@@ -57,7 +57,7 @@ describe("JobNFT", function () {
       "only JobRegistry"
     );
     await expect(nft.connect(jobRegistry).mint(seller.address, 1))
-      .to.emit(nft, "NFTMinted")
+      .to.emit(nft, "NFTIssued")
       .withArgs(seller.address, 1);
     expect(await nft.ownerOf(1)).to.equal(seller.address);
   });
