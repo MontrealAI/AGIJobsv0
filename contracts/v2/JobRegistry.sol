@@ -102,7 +102,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             );
             if (address(taxPolicy) != address(0)) {
                 require(
-                    taxPolicy.acknowledged(msg.sender),
+                    taxPolicy.hasAcknowledged(msg.sender),
                     "acknowledge tax policy"
                 );
             }
@@ -926,25 +926,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice Cancel a job before completion and refund the employer.
-    function cancelJob(uint256 jobId)
-        public
-        requiresTaxAcknowledgement
-    {
+    function _cancelJob(uint256 jobId) internal {
         Job storage job = jobs[jobId];
         require(
             job.state == State.Created && job.agent == address(0),
             "cannot cancel"
         );
-        require(
-            msg.sender == job.employer || msg.sender == owner(),
-            "only employer or owner"
-        );
-        if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted employer"
-            );
-        }
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
@@ -957,10 +944,25 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit JobCancelled(jobId);
     }
 
-    /// @notice Owner can force-cancel an unassigned job and refund the employer.
-    /// @param jobId Identifier of the job to cancel.
-    function forceCancel(uint256 jobId) external onlyOwner {
-        cancelJob(jobId);
+    function cancelJob(uint256 jobId)
+        public
+        requiresTaxAcknowledgement
+    {
+        Job storage job = jobs[jobId];
+        require(msg.sender == job.employer, "only employer");
+        if (address(reputationEngine) != address(0)) {
+            require(
+                !reputationEngine.isBlacklisted(msg.sender),
+                "Blacklisted employer"
+            );
+        }
+        _cancelJob(jobId);
+    }
+
+    /// @notice Owner can delist an unassigned job and refund the employer.
+    /// @param jobId Identifier of the job to delist.
+    function delistJob(uint256 jobId) external onlyOwner {
+        _cancelJob(jobId);
     }
 
     // ---------------------------------------------------------------------

@@ -11,11 +11,7 @@ describe("TaxPolicy", function () {
     const Factory = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    tax = await Factory.deploy(
-      owner.address,
-      "ipfs://initial",
-      "initial ack"
-    );
+    tax = await Factory.deploy("ipfs://initial", "initial ack");
     await tax.waitForDeployment();
   });
 
@@ -78,7 +74,7 @@ describe("TaxPolicy", function () {
     await expect(tax.connect(user).acknowledge(user.address))
       .to.emit(tax, "PolicyAcknowledged")
       .withArgs(user.address);
-    expect(await tax.acknowledged(user.address)).to.equal(true);
+    expect(await tax.hasAcknowledged(user.address)).to.equal(true);
   });
 
   it("tracks policy version bumps", async () => {

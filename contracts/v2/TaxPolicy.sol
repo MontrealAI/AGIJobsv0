@@ -93,7 +93,7 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     }
 
     /// @notice Check if a user has acknowledged the policy.
-    function acknowledged(address user)
+    function hasAcknowledged(address user)
         external
         view
         override
