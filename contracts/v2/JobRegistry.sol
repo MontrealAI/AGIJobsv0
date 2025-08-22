@@ -916,6 +916,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         cancelJob(jobId);
     }
 
+    /// @notice Cancel an unassigned job and refund the employer.
+    /// @dev Convenience wrapper matching earlier interface expectations.
+    /// Calls {cancelJob} which handles tax acknowledgement checks and
+    /// refunds any locked reward back to the employer.
+    /// @param jobId Identifier of the job to cancel.
+    function cancel(uint256 jobId) external {
+        cancelJob(jobId);
+    }
+
     /// @notice Cancel a job before completion and refund the employer.
     function cancelJob(uint256 jobId)
         public
