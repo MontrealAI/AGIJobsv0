@@ -126,7 +126,7 @@ interface IJobRegistry {
     function setMaxJobReward(uint256 maxReward) external;
 
     /// @notice set the maximum allowed job duration in seconds
-    function setMaxJobDuration(uint256 limit) external;
+    function setJobDurationLimit(uint256 limit) external;
 
     /// @notice update the percentage of each job reward taken as a protocol fee
     function setFeePct(uint256 feePct) external;

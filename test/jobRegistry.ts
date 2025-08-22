@@ -38,7 +38,7 @@ describe("JobRegistry tax policy gating", function () {
 
     await registry.connect(owner).setJobParameters(0, 0);
     await registry.connect(owner).setMaxJobReward(1000);
-    await registry.connect(owner).setMaxJobDuration(86400);
+    await registry.connect(owner).setJobDurationLimit(86400);
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"

@@ -1282,7 +1282,7 @@ Use a block explorer like Etherscan—no coding required. Always verify addresse
 | `premiumReputationThreshold` | `setPremiumReputationThreshold(uint256)` | Reputation needed for premium tier |
 | `maxReputation` | `setMaxReputation(uint256)` | Upper bound on reputation |
 | `maxJobPayout` | `setMaxJobPayout(uint256)` | Maximum allowed job payout |
-| `maxJobDuration` | `setMaxJobDuration(uint256)` | Maximum job duration |
+| `maxJobDuration` | `setJobDurationLimit(uint256)` | Maximum job duration |
 | `agentBlacklistThreshold` | `setAgentBlacklistThreshold(uint256)` | Penalties before automatic agent blacklist |
 | `validatorBlacklistThreshold` | `setValidatorBlacklistThreshold(uint256)` | Penalties before automatic validator blacklist |
 | `maxValidatorPoolSize` | `setMaxValidatorPoolSize(uint256)` | Cap on validator pool size |
@@ -2030,7 +2030,7 @@ Several operational parameters are adjustable by the owner. Every update emits a
 - `setRequiredValidatorDisapprovals(uint256 count)` → `RequiredValidatorDisapprovalsUpdated`
 - `setPremiumReputationThreshold(uint256 newThreshold)` → `PremiumReputationThresholdUpdated`
 - `setMaxJobPayout(uint256 newMax)` → `MaxJobPayoutUpdated`
-- `setMaxJobDuration(uint256 newLimit)` → `JobDurationLimitUpdated`
+- `setJobDurationLimit(uint256 newLimit)` → `JobParametersUpdated`
 - `setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow)` → `CommitRevealWindowsUpdated` – controls how long validators have to commit and reveal votes; the existing `reviewWindow` must be at least `commitWindow + revealWindow`. Zero values are rejected.
 - `setCommitDuration(uint256 newCommit)` or `setRevealDuration(uint256 newReveal)` → `CommitRevealWindowsUpdated` – tweak individual phase lengths; `reviewWindow` must remain ≥ `commitDuration + revealDuration`.
 - `setReviewWindow(uint256 newWindow)` → `ReviewWindowUpdated` – defines the mandatory wait after completion requests and must be greater than or equal to `commitDuration + revealDuration`.

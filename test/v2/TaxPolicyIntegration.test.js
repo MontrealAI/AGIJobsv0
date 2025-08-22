@@ -61,7 +61,7 @@ describe("JobRegistry tax policy integration", function () {
   it("requires re-acknowledgement after version bump", async () => {
     await registry.connect(owner).setJobParameters(0, 0);
     await registry.connect(owner).setMaxJobReward(10);
-    await registry.connect(owner).setMaxJobDuration(86400);
+    await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(user).acknowledgeTaxPolicy();
     await registry.connect(owner).bumpTaxPolicyVersion();

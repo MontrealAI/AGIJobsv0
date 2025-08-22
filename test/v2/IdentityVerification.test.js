@@ -69,7 +69,7 @@ describe("Identity verification enforcement", function () {
       await registry.connect(employer).acknowledgeTaxPolicy();
       await registry.connect(agent).acknowledgeTaxPolicy();
       await registry.connect(owner).setMaxJobReward(1000);
-      await registry.connect(owner).setMaxJobDuration(1000);
+      await registry.connect(owner).setJobDurationLimit(1000);
       await registry.connect(owner).setFeePct(0);
       await registry.connect(owner).setJobParameters(0, 0);
     });
