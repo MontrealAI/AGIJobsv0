@@ -55,7 +55,7 @@ describe("JobRegistry tax policy integration", function () {
       .and.to.emit(registry, "TaxAcknowledged")
       .withArgs(user.address, 1, "ack");
     expect(await registry.taxAcknowledgedVersion(user.address)).to.equal(1);
-    expect(await policy.acknowledged(user.address)).to.equal(true);
+    expect(await policy.hasAcknowledged(user.address)).to.equal(true);
   });
 
   it("requires re-acknowledgement after version bump", async () => {

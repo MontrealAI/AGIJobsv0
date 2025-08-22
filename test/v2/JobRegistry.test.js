@@ -223,12 +223,12 @@ describe("JobRegistry integration", function () {
     expect(await token.balanceOf(employer.address)).to.equal(1000);
   });
 
-  it("allows owner to force cancel unassigned job", async () => {
+  it("allows owner to delist unassigned job", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
-    await expect(registry.connect(owner).forceCancel(jobId))
+    await expect(registry.connect(owner).delistJob(jobId))
       .to.emit(registry, "JobCancelled")
       .withArgs(jobId);
     const job = await registry.jobs(jobId);

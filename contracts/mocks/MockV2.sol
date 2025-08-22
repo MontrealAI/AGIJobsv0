@@ -214,7 +214,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         );
         if (address(taxPolicy) != address(0)) {
             require(
-                taxPolicy.acknowledged(msg.sender),
+                taxPolicy.hasAcknowledged(msg.sender),
                 "acknowledge tax policy"
             );
         }
