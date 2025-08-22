@@ -699,6 +699,21 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeLocked(bytes32(0), from, amount);
     }
 
+    /// @notice unlock previously locked reward without applying fees or burns
+    /// @param jobId unique job identifier
+    /// @param to recipient of the unlocked funds
+    /// @param amount token amount with 6 decimals to release
+    function unlockReward(bytes32 jobId, address to, uint256 amount)
+        external
+        onlyJobRegistry
+    {
+        uint256 escrow = jobEscrows[jobId];
+        require(escrow >= amount, "escrow");
+        jobEscrows[jobId] = escrow - amount;
+        token.safeTransfer(to, amount);
+        emit StakeReleased(jobId, to, amount);
+    }
+
     /// @notice release locked job reward to recipient applying any AGI type bonus
     /// @param jobId unique job identifier
     /// @param to recipient of the release (typically the agent)

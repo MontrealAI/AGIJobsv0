@@ -4,15 +4,13 @@ pragma solidity ^0.8.25;
 /// @title IJobRegistry
 /// @notice Interface for orchestrating job lifecycles and module coordination
 interface IJobRegistry {
-    enum Status {
-        None,
+    enum State {
         Created,
         Applied,
         Submitted,
-        Completed,
+        Validated,
         Disputed,
-        Finalized,
-        Cancelled
+        Finalized
     }
 
     struct Job {
@@ -20,8 +18,11 @@ interface IJobRegistry {
         address agent;
         uint256 reward;
         uint256 stake;
+        uint256 deadline;
+        uint256 validatorApprovals;
+        uint256 validatorRejections;
         bool success;
-        Status status;
+        State state;
         string uri;
         string result;
     }
@@ -39,7 +40,7 @@ interface IJobRegistry {
     error OnlyAgent(address caller);
 
     /// @dev Reverts when a job is in an unexpected status
-    error InvalidStatus(Status expected, Status actual);
+    error InvalidStatus(State expected, State actual);
 
     // module configuration
     event ModuleUpdated(string module, address newAddress);
@@ -76,6 +77,7 @@ interface IJobRegistry {
     event JobFinalized(uint256 indexed jobId, address worker);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event JobCancelled(uint256 indexed jobId);
+    event JobDelisted(uint256 indexed jobId);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
 
     // owner wiring of modules
@@ -183,34 +185,32 @@ interface IJobRegistry {
     /// @notice Agent submits completed work for validation.
     /// @param jobId Identifier of the job being submitted
     /// @param result Metadata URI of the submission
-    /// @param subdomain ENS subdomain label
-    /// @param proof Merkle proof for ENS ownership verification
-    function submit(
-        uint256 jobId,
-        string calldata result,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) external;
+    function submit(uint256 jobId, string calldata result) external;
 
     /// @notice Acknowledge tax policy and submit work in one call
     /// @param jobId Identifier of the job being submitted
     /// @param result Metadata URI of the submission
-    /// @param subdomain ENS subdomain label
-    /// @param proof Merkle proof for ENS ownership verification
-    function acknowledgeAndSubmit(
-        uint256 jobId,
-        string calldata result,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) external;
+    function acknowledgeAndSubmit(uint256 jobId, string calldata result) external;
 
     /// @notice Record validation outcome and update job state
     /// @param jobId Identifier of the job being finalised
     /// @param success True if validators approved the job
-    function finalizeAfterValidation(uint256 jobId, bool success) external;
+    /// @param approvals Number of validator approvals
+    /// @param rejections Number of validator rejections
+    function finalizeAfterValidation(
+        uint256 jobId,
+        bool success,
+        uint256 approvals,
+        uint256 rejections
+    ) external;
 
     /// @notice Alias for {finalizeAfterValidation} for backwards compatibility
-    function validationComplete(uint256 jobId, bool success) external;
+    function validationComplete(
+        uint256 jobId,
+        bool success,
+        uint256 approvals,
+        uint256 rejections
+    ) external;
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
@@ -243,9 +243,9 @@ interface IJobRegistry {
     /// @dev Reverts with {OnlyEmployer} or {InvalidStatus}
     function cancelJob(uint256 jobId) external;
 
-    /// @notice Owner can force-cancel an unassigned job
-    /// @param jobId Identifier of the job to cancel
-    function forceCancel(uint256 jobId) external;
+    /// @notice Owner can delist an unassigned job
+    /// @param jobId Identifier of the job to delist
+    function delistJob(uint256 jobId) external;
 
     // view helper
 

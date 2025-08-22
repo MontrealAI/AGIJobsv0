@@ -56,7 +56,14 @@ contract ValidationStub is IValidationModule {
     function finalize(uint256 jobId) external override returns (bool success) {
         success = result;
         if (jobRegistry != address(0)) {
-            IJobRegistry(jobRegistry).validationComplete(jobId, success);
+            uint256 approvals = result ? 1 : 0;
+            uint256 rejections = result ? 0 : 1;
+            IJobRegistry(jobRegistry).validationComplete(
+                jobId,
+                success,
+                approvals,
+                rejections
+            );
         }
     }
 

@@ -41,14 +41,12 @@ interface ICertificateNFT {
 /// the owner‑controlled `TaxPolicy` reference.
 contract JobRegistry is Ownable, ReentrancyGuard {
     enum State {
-        None,
         Created,
         Applied,
         Submitted,
-        Completed,
+        Validated,
         Disputed,
-        Finalized,
-        Cancelled
+        Finalized
     }
 
     struct Job {
@@ -59,6 +57,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint32 feePct;
         uint64 deadline;
         uint64 assignedAt;
+        uint32 validatorApprovals;
+        uint32 validatorRejections;
         State state;
         bool success;
         string uri;
@@ -181,6 +181,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param worker Agent who performed the job
     event JobFinalized(uint256 indexed jobId, address worker);
     event JobCancelled(uint256 indexed jobId);
+    event JobDelisted(uint256 indexed jobId);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
@@ -488,6 +489,8 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             feePct: feePctSnapshot,
             deadline: deadline,
             assignedAt: 0,
+            validatorApprovals: 0,
+            validatorRejections: 0,
             state: State.Created,
             success: false,
             uri: uri,
@@ -557,6 +560,11 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             reputationEngine.onApply(msg.sender);
         }
         if (job.stake > 0 && address(stakeManager) != address(0)) {
+            require(
+                stakeManager.stakeOf(msg.sender, IStakeManager.Role.Agent) >=
+                    job.stake,
+                "insufficient stake"
+            );
             uint64 lockTime;
             if (job.deadline > block.timestamp) {
                 lockTime = uint64(job.deadline - block.timestamp);
@@ -622,12 +630,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Agent submits work for validation and selects validators.
     /// @param jobId Identifier of the job being submitted.
     /// @param result Metadata URI describing the completed work.
-    function submit(
-        uint256 jobId,
-        string calldata result,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) public requiresTaxAcknowledgement {
+    function submit(uint256 jobId, string calldata result)
+        public
+        requiresTaxAcknowledgement
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
@@ -642,30 +648,20 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 "Blacklisted employer"
             );
         }
-        require(address(identityRegistry) != address(0), "identity reg");
-        bool authorized = identityRegistry.verifyAgent(
-            msg.sender,
-            subdomain,
-            proof
-        );
-        require(authorized, "Not authorized agent");
         job.result = result;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, msg.sender, result);
         if (address(validationModule) != address(0)) {
-            validationModule.startValidation(jobId, result);
+            validationModule.selectValidators(jobId);
         }
     }
 
     /// @notice Acknowledge the tax policy and submit work in one call.
-    function acknowledgeAndSubmit(
-        uint256 jobId,
-        string calldata result,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) external {
+    function acknowledgeAndSubmit(uint256 jobId, string calldata result)
+        external
+    {
         _acknowledge(msg.sender);
-        submit(jobId, result, subdomain, proof);
+        submit(jobId, result);
     }
 
     /// @notice Finalize job outcome after validation.
@@ -673,20 +669,29 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ///      computed result of the commit-reveal process.
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
-    function finalizeAfterValidation(uint256 jobId, bool success) public {
+    function finalizeAfterValidation(
+        uint256 jobId,
+        bool success,
+        uint256 approvals,
+        uint256 rejections
+    ) public {
         require(msg.sender == address(validationModule), "only validation");
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
         job.success = success;
-        job.state = success ? State.Completed : State.Disputed;
+        job.validatorApprovals = uint32(approvals);
+        job.validatorRejections = uint32(rejections);
+        job.state = success ? State.Validated : State.Disputed;
         emit JobCompleted(jobId, success);
-        if (success) {
-            finalize(jobId);
-        }
     }
 
-    function validationComplete(uint256 jobId, bool success) external {
-        finalizeAfterValidation(jobId, success);
+    function validationComplete(
+        uint256 jobId,
+        bool success,
+        uint256 approvals,
+        uint256 rejections
+    ) external {
+        finalizeAfterValidation(jobId, success, approvals, rejections);
     }
 
     /// @notice Agent or employer disputes a job outcome with supporting evidence.
@@ -702,11 +707,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             "only participant"
         );
         require(
-            job.state == State.Completed ||
-                (job.state == State.Disputed && !job.success),
+            job.state == State.Validated || job.state == State.Disputed,
             "cannot dispute"
         );
-        if (job.state == State.Completed) {
+        if (job.state == State.Validated) {
             job.state = State.Disputed;
         }
         if (address(reputationEngine) != address(0)) {
@@ -764,7 +768,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(job.state == State.Disputed, "no dispute");
 
         job.success = !employerWins;
-        job.state = State.Completed;
+        job.state = State.Disputed;
         emit DisputeResolved(jobId, employerWins);
         finalize(jobId);
     }
@@ -778,7 +782,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         nonReentrant
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Completed, "not ready");
+        require(
+            job.state == State.Validated || job.state == State.Disputed,
+            "not ready"
+        );
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
@@ -916,16 +923,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         cancelJob(jobId);
     }
 
-    /// @notice Cancel an unassigned job and refund the employer.
-    /// @dev Convenience wrapper matching earlier interface expectations.
-    /// Calls {cancelJob} which handles tax acknowledgement checks and
-    /// refunds any locked reward back to the employer.
-    /// @param jobId Identifier of the job to cancel.
-    function cancel(uint256 jobId) external {
-        cancelJob(jobId);
-    }
-
-    /// @notice Cancel a job before completion and refund the employer.
+    /// @notice Cancel a job before assignment and refund the employer.
     function cancelJob(uint256 jobId)
         public
         requiresTaxAcknowledgement
@@ -935,20 +933,17 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             job.state == State.Created && job.agent == address(0),
             "cannot cancel"
         );
-        require(
-            msg.sender == job.employer || msg.sender == owner(),
-            "only employer or owner"
-        );
+        require(msg.sender == job.employer, "only employer");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
                 "Blacklisted employer"
             );
         }
-        job.state = State.Cancelled;
+        job.state = State.Finalized;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
-            stakeManager.releaseReward(
+            stakeManager.unlockReward(
                 bytes32(jobId),
                 job.employer,
                 uint256(job.reward) + fee
@@ -957,10 +952,24 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit JobCancelled(jobId);
     }
 
-    /// @notice Owner can force-cancel an unassigned job and refund the employer.
-    /// @param jobId Identifier of the job to cancel.
-    function forceCancel(uint256 jobId) external onlyOwner {
-        cancelJob(jobId);
+    /// @notice Owner can delist an unassigned job and refund the employer.
+    /// @param jobId Identifier of the job to delist.
+    function delistJob(uint256 jobId) external onlyOwner {
+        Job storage job = jobs[jobId];
+        require(
+            job.state == State.Created && job.agent == address(0),
+            "cannot delist"
+        );
+        job.state = State.Finalized;
+        if (address(stakeManager) != address(0) && job.reward > 0) {
+            uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+            stakeManager.unlockReward(
+                bytes32(jobId),
+                job.employer,
+                uint256(job.reward) + fee
+            );
+        }
+        emit JobDelisted(jobId);
     }
 
     // ---------------------------------------------------------------------
