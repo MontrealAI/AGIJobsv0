@@ -137,8 +137,11 @@ describe("Protocol core features", function () {
       agent: agent.address,
       reward: 0,
       stake: 0,
+      deadline: 0,
+      validatorApprovals: 0,
+      validatorRejections: 0,
       success: false,
-      status: 5,
+      state: 3,
       uri: "",
       result: "",
     });

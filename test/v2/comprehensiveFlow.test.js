@@ -152,7 +152,7 @@ describe("comprehensive job flows", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.setResult(true);
-    await registry.connect(agent).submit(jobId, "result", "", []);
+    await registry.connect(agent).submit(jobId, "result");
     await validation.finalize(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
     const price = ethers.parseUnits("10", 6);
@@ -199,7 +199,7 @@ describe("comprehensive job flows", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.setResult(false);
-    await registry.connect(agent).submit(jobId, "bad", "", []);
+    await registry.connect(agent).submit(jobId, "bad");
     await validation.finalize(jobId);
     // fund and impersonate dispute module to resolve
     await network.provider.send("hardhat_setBalance", [

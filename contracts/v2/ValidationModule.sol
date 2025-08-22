@@ -439,7 +439,7 @@ contract ValidationModule is IValidationModule, Ownable {
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
         require(
-            jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
+            jobRegistry.jobs(jobId).state == IJobRegistry.State.Submitted,
             "not submitted"
         );
         require(
@@ -628,7 +628,12 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationTallied(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
-        jobRegistry.validationComplete(jobId, success);
+        jobRegistry.validationComplete(
+            jobId,
+            success,
+            r.approvals,
+            r.rejections
+        );
         return success;
     }
 

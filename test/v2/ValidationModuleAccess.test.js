@@ -62,8 +62,11 @@ describe("ValidationModule access controls", function () {
       agent: ethers.ZeroAddress,
       reward: 0,
       stake: 0,
+      deadline: 0,
+      validatorApprovals: 0,
+      validatorRejections: 0,
       success: false,
-      status: 3,
+      state: 2,
       uri: "",
       result: "",
     };
@@ -188,17 +191,20 @@ describe("ValidationModule access controls", function () {
     await advance(61);
     await validation.finalize(1);
     let job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    expect(job.state).to.equal(4); // Disputed
 
     await validation.connect(owner).resetJobNonce(1);
-    // reset job status to Submitted
+    // reset job state to Submitted
     await jobRegistry.setJob(1, {
       employer: employer.address,
       agent: ethers.ZeroAddress,
       reward: 0,
       stake: 0,
+      deadline: 0,
+      validatorApprovals: 0,
+      validatorRejections: 0,
       success: false,
-      status: 3,
+      state: 2,
       uri: "",
       result: "",
     });
@@ -230,7 +236,7 @@ describe("ValidationModule access controls", function () {
     await advance(61);
     await validation.finalize(1);
     job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(6); // Finalized
+    expect(job.state).to.equal(3); // Validated
     expect(job.success).to.equal(true);
   });
 });

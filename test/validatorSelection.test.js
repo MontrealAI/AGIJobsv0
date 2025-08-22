@@ -156,8 +156,11 @@ describe("validator selection", function () {
       agent: ethers.ZeroAddress,
       reward: 0,
       stake: 0,
+      deadline: 0,
+      validatorApprovals: 0,
+      validatorRejections: 0,
       success: false,
-      status: 3,
+      state: 2,
       uri: "",
       result: "",
     });

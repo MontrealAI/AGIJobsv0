@@ -74,6 +74,9 @@ interface IStakeManager {
     /// @notice release locked job reward to recipient
     function releaseReward(bytes32 jobId, address to, uint256 amount) external;
 
+    /// @notice unlock previously locked job reward without applying fees
+    function unlockReward(bytes32 jobId, address to, uint256 amount) external;
+
     /// @notice release previously locked stake for a user
     function releaseStake(address user, uint256 amount) external;
 

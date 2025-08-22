@@ -137,13 +137,14 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "JobApplied")
       .withArgs(jobId, agent.address);
     await validation.connect(owner).setResult(true);
-    await expect(registry.connect(agent).submit(jobId, "result", "", []))
+    await expect(registry.connect(agent).submit(jobId, "result"))
       .to.emit(registry, "JobSubmitted")
       .withArgs(jobId, agent.address, "result");
     await expect(validation.finalize(jobId))
       .to.emit(registry, "JobCompleted")
-      .withArgs(jobId, true)
-      .and.to.emit(registry, "JobFinalized")
+      .withArgs(jobId, true);
+    await expect(registry.connect(agent).finalize(jobId))
+      .to.emit(registry, "JobFinalized")
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
@@ -198,8 +199,9 @@ describe("JobRegistry integration", function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
-    await registry.connect(agent).submit(jobId, "result", "", []);
+    await registry.connect(agent).submit(jobId, "result");
     await validation.finalize(jobId);
+    await registry.finalize(jobId);
 
     // platform operator should be able to claim fee
     const before = await token.balanceOf(owner.address);
@@ -219,20 +221,20 @@ describe("JobRegistry integration", function () {
       .to.emit(registry, "JobCancelled")
       .withArgs(jobId);
     const job = await registry.jobs(jobId);
-    expect(job.state).to.equal(7); // Cancelled enum value
+    expect(job.state).to.equal(5); // Finalized enum value after cancel
     expect(await token.balanceOf(employer.address)).to.equal(1000);
   });
 
-  it("allows owner to force cancel unassigned job", async () => {
+  it("allows owner to delist unassigned job", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
-    await expect(registry.connect(owner).forceCancel(jobId))
-      .to.emit(registry, "JobCancelled")
+    await expect(registry.connect(owner).delistJob(jobId))
+      .to.emit(registry, "JobDelisted")
       .withArgs(jobId);
     const job = await registry.jobs(jobId);
-    expect(job.state).to.equal(7);
+    expect(job.state).to.equal(5);
   });
 
   it("enforces owner-only controls", async () => {
