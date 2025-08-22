@@ -7,6 +7,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /// @title StakeManager
 /// @notice Simple staking contract supporting multiple participant roles.
@@ -18,7 +19,13 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     /// @notice ERC20 token used for staking
     IERC20 public token;
 
-    /// @notice address receiving slashed stakes
+    /// @notice percentage of rewards taken as protocol fee (0-100)
+    uint256 public feePct;
+
+    /// @notice percentage of rewards to burn (0-100)
+    uint256 public burnPct;
+
+    /// @notice address receiving fees and slashed stakes
     address public treasury;
 
     /// @notice minimum stake required per role
@@ -42,6 +49,19 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     /// @notice tracks which addresses acknowledged the tax policy
     mapping(address => bool) private _taxAcknowledged;
 
+    /// @notice details about AGI NFT types and payout bonuses
+    struct AGIType {
+        address nftAddress;
+        uint256 payoutPercentage;
+    }
+
+    /// @notice list of registered AGI types
+    AGIType[] public agiTypes;
+
+    /// @notice canonical burn address
+    address public constant BURN_ADDRESS =
+        0x000000000000000000000000000000000000dEaD;
+
     /// @notice emitted when a user acknowledges the tax policy
     event TaxPolicyAcknowledged(address indexed user);
 
@@ -54,11 +74,48 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     /// @notice emitted when stake is slashed
     event StakeSlashed(address indexed user, uint8 indexed role, uint256 amount);
 
+    /// @notice emitted when reward is locked by an employer
+    event RewardLocked(address indexed employer, uint256 amount);
+
+    /// @notice emitted when reward is paid out
+    event RewardPaid(address indexed to, uint256 amount);
+
+    /// @notice emitted when a reward is distributed among participants
+    event RewardDistributed(
+        uint256 indexed jobId,
+        address indexed agent,
+        uint256 agentShare,
+        uint256 validatorShare,
+        uint256 feeAmount,
+        uint256 burnAmount
+    );
+
     /// @notice emitted when treasury address is updated
     event TreasuryUpdated(address indexed treasury);
 
     /// @notice emitted when staking token is updated
     event TokenUpdated(address indexed token);
+
+    /// @notice emitted when minimum stake is updated
+    event MinStakeUpdated(uint256 minStake);
+
+    /// @notice emitted when maximum stake per address is updated
+    event MaxStakePerAddressUpdated(uint256 maxStake);
+
+    /// @notice emitted when allowed slashing percentage changes for a role
+    event SlashingPercentageUpdated(uint8 indexed role, uint256 percent);
+
+    /// @notice emitted when fee percentage is updated
+    event FeePctUpdated(uint256 pct);
+
+    /// @notice emitted when burn percentage is updated
+    event BurnPctUpdated(uint256 pct);
+
+    /// @notice emitted when an AGI NFT type is added or updated
+    event AGITypeUpdated(address indexed nftAddress, uint256 payoutPercentage);
+
+    /// @notice emitted when an AGI NFT type is removed
+    event AGITypeRemoved(address indexed nftAddress);
 
     /// @notice emitted when blacklist status changes for an address
     event BlacklistUpdated(address indexed user, bool status);
@@ -84,17 +141,20 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     /// @notice update minimum stake requirement
     function setMinStake(uint256 newMin) external onlyOwner {
         minStake = newMin;
+        emit MinStakeUpdated(newMin);
     }
 
     /// @notice update maximum stake allowed per address (0 disables limit)
     function setMaxStakePerAddress(uint256 newMax) external onlyOwner {
         maxStakePerAddress = newMax;
+        emit MaxStakePerAddressUpdated(newMax);
     }
 
     /// @notice update allowed slashing percentage for a role
     function setSlashingPercentage(uint8 role, uint256 percent) external onlyOwner {
         require(percent <= 100, "StakeManager: percent > 100");
         slashingPercentages[role] = percent;
+        emit SlashingPercentageUpdated(role, percent);
     }
 
     /// @notice update staking token
@@ -102,6 +162,20 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
         require(newToken.decimals() == 6, "StakeManager: token not 6 decimals");
         token = IERC20(address(newToken));
         emit TokenUpdated(address(newToken));
+    }
+
+    /// @notice update protocol fee percentage
+    function setFeePct(uint256 pct) external onlyOwner {
+        require(pct <= 100, "StakeManager: percent > 100");
+        feePct = pct;
+        emit FeePctUpdated(pct);
+    }
+
+    /// @notice update burn percentage
+    function setBurnPct(uint256 pct) external onlyOwner {
+        require(pct <= 100, "StakeManager: percent > 100");
+        burnPct = pct;
+        emit BurnPctUpdated(pct);
     }
 
     /// @notice update treasury recipient
@@ -119,6 +193,134 @@ contract StakeManager is Ownable, ReentrancyGuard, Pausable {
     /// @notice Recover ERC20 tokens sent to this contract by mistake.
     function withdrawEmergency(address token, uint256 amount) external onlyOwner {
         IERC20(token).safeTransfer(owner(), amount);
+    }
+
+    /// @notice add or update an AGI NFT type with payout percentage
+    function addAGIType(address nftAddress, uint256 payoutPercentage)
+        external
+        onlyOwner
+    {
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ) {
+            if (agiTypes[i].nftAddress == nftAddress) {
+                agiTypes[i].payoutPercentage = payoutPercentage;
+                emit AGITypeUpdated(nftAddress, payoutPercentage);
+                return;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        agiTypes.push(AGIType({nftAddress: nftAddress, payoutPercentage: payoutPercentage}));
+        emit AGITypeUpdated(nftAddress, payoutPercentage);
+    }
+
+    /// @notice remove an AGI NFT type
+    function removeAGIType(address nftAddress) external onlyOwner {
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ) {
+            if (agiTypes[i].nftAddress == nftAddress) {
+                agiTypes[i] = agiTypes[length - 1];
+                agiTypes.pop();
+                emit AGITypeRemoved(nftAddress);
+                return;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        revert("AGIType: not found");
+    }
+
+    /// @notice return configured AGI NFT types
+    function getAGITypes() external view returns (AGIType[] memory types) {
+        types = agiTypes;
+    }
+
+    /// @notice return highest payout percentage for an agent based on owned NFTs
+    function getHighestPayoutPercentage(address agent)
+        public
+        view
+        returns (uint256 highestPercentage)
+    {
+        uint256 len = agiTypes.length;
+        for (uint256 i; i < len; ) {
+            try IERC721(agiTypes[i].nftAddress).balanceOf(agent) returns (
+                uint256 bal
+            ) {
+                if (bal > 0 && agiTypes[i].payoutPercentage > highestPercentage) {
+                    highestPercentage = agiTypes[i].payoutPercentage;
+                }
+            } catch {
+                // ignore failing NFT contracts
+            }
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /// @notice lock reward funds from an employer
+    function lockReward(address employer, uint256 amount) external {
+        token.safeTransferFrom(employer, address(this), amount);
+        emit RewardLocked(employer, amount);
+    }
+
+    /// @notice pay out reward funds to a recipient
+    function payReward(address to, uint256 amount) public {
+        token.safeTransfer(to, amount);
+        emit RewardPaid(to, amount);
+    }
+
+    /// @notice distribute a job reward among agent and validators applying fees
+    function distributeReward(
+        uint256 jobId,
+        address agent,
+        address[] calldata validators,
+        uint256 reward
+    ) external {
+        uint256 feeAmount = (reward * feePct) / 100;
+        uint256 burnAmount = (reward * burnPct) / 100;
+        uint256 remaining = reward - feeAmount - burnAmount;
+
+        if (feeAmount > 0) {
+            token.safeTransfer(treasury, feeAmount);
+        }
+        if (burnAmount > 0) {
+            token.safeTransfer(BURN_ADDRESS, burnAmount);
+        }
+
+        uint256 agentPct = getHighestPayoutPercentage(agent);
+        if (agentPct == 0) {
+            agentPct = 100;
+        }
+        uint256 agentShare = (remaining * agentPct) / 100;
+        uint256 validatorShare = remaining - agentShare;
+
+        payReward(agent, agentShare);
+
+        uint256 count = validators.length;
+        if (count > 0 && validatorShare > 0) {
+            uint256 perValidator = validatorShare / count;
+            uint256 rem = validatorShare - perValidator * count;
+            for (uint256 i; i < count; ) {
+                uint256 amt = perValidator;
+                if (i == 0) {
+                    amt += rem;
+                }
+                payReward(validators[i], amt);
+                unchecked {
+                    ++i;
+                }
+            }
+        } else if (validatorShare > 0) {
+            // no validators provided, send remainder to agent
+            payReward(agent, validatorShare);
+            agentShare += validatorShare;
+            validatorShare = 0;
+        }
+
+        emit RewardDistributed(jobId, agent, agentShare, validatorShare, feeAmount, burnAmount);
     }
 
     // ------------------------------------------------------------------
