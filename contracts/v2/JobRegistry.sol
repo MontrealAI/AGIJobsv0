@@ -353,7 +353,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice set the maximum allowed job duration in seconds
-    function setMaxJobDuration(uint256 limit) external onlyOwner {
+    function setJobDurationLimit(uint256 limit) external onlyOwner {
         maxJobDuration = limit;
         emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
     }

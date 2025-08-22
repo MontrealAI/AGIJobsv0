@@ -113,7 +113,7 @@ describe("end-to-end job lifecycle", function () {
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
     await registry.setMaxJobReward(reward);
-    await registry.setMaxJobDuration(86400);
+    await registry.setJobDurationLimit(86400);
     await stakeManager.setJobRegistry(await registry.getAddress());
     await stakeManager.setValidationModule(await validation.getAddress());
     await stakeManager.setDisputeModule(await dispute.getAddress());

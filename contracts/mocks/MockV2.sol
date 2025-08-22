@@ -191,7 +191,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         maxJobReward = maxReward;
     }
 
-    function setMaxJobDuration(uint256 limit) external override {
+    function setJobDurationLimit(uint256 limit) external override {
         maxJobDuration = limit;
     }
 
