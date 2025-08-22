@@ -178,6 +178,12 @@ contract IdentityRegistry is Ownable {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external returns (bool) {
+        if (
+            address(reputationEngine) != address(0) &&
+            reputationEngine.isBlacklisted(claimant)
+        ) {
+            return false;
+        }
         if (additionalAgents[claimant]) {
             emit OwnershipVerified(claimant, subdomain);
             return true;
@@ -190,6 +196,12 @@ contract IdentityRegistry is Ownable {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external returns (bool) {
+        if (
+            address(reputationEngine) != address(0) &&
+            reputationEngine.isBlacklisted(claimant)
+        ) {
+            return false;
+        }
         if (additionalValidators[claimant]) {
             emit OwnershipVerified(claimant, subdomain);
             return true;

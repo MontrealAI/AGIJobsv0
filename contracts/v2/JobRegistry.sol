@@ -538,13 +538,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata subdomain,
         bytes32[] calldata proof
     ) internal requiresTaxAcknowledgement {
-        require(address(identityRegistry) != address(0), "identity reg");
-        bool authorized = identityRegistry.verifyAgent(
-            msg.sender,
-            subdomain,
-            proof
-        );
-        require(authorized, "Not authorized agent");
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
         if (address(reputationEngine) != address(0)) {
@@ -552,6 +545,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 !reputationEngine.isBlacklisted(msg.sender),
                 "Blacklisted agent"
             );
+        }
+        require(address(identityRegistry) != address(0), "identity reg");
+        bool authorized = identityRegistry.verifyAgent(
+            msg.sender,
+            subdomain,
+            proof
+        );
+        require(authorized, "Not authorized agent");
+        if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
         }
         if (job.stake > 0 && address(stakeManager) != address(0)) {
@@ -630,13 +632,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
         require(block.timestamp <= job.deadline, "deadline");
-        require(address(identityRegistry) != address(0), "identity reg");
-        bool authorized = identityRegistry.verifyAgent(
-            msg.sender,
-            subdomain,
-            proof
-        );
-        require(authorized, "Not authorized agent");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
@@ -647,6 +642,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
                 "Blacklisted employer"
             );
         }
+        require(address(identityRegistry) != address(0), "identity reg");
+        bool authorized = identityRegistry.verifyAgent(
+            msg.sender,
+            subdomain,
+            proof
+        );
+        require(authorized, "Not authorized agent");
         job.result = result;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, msg.sender, result);

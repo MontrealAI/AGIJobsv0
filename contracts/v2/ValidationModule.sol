@@ -409,7 +409,6 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32[] calldata proof
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
-        require(address(identityRegistry) != address(0), "identity reg");
         require(
             jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
             "not submitted"
@@ -418,22 +417,20 @@ contract ValidationModule is IValidationModule, Ownable {
             r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
             "commit closed"
         );
-        require(_isValidator(jobId, msg.sender), "not validator");
-        bool authorized;
-        if (address(identityRegistry) != address(0)) {
-            authorized = identityRegistry.verifyValidator(
-                msg.sender,
-                subdomain,
-                proof
-            );
-        }
-        require(authorized, "Not authorized validator");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
                 "Blacklisted validator"
             );
         }
+        require(address(identityRegistry) != address(0), "identity reg");
+        require(_isValidator(jobId, msg.sender), "not validator");
+        bool authorized = identityRegistry.verifyValidator(
+            msg.sender,
+            subdomain,
+            proof
+        );
+        require(authorized, "Not authorized validator");
         require(validatorStakes[jobId][msg.sender] > 0, "stake");
         uint256 nonce = jobNonce[jobId];
         require(
@@ -466,24 +463,21 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32[] calldata proof
     ) public override requiresTaxAcknowledgement {
         Round storage r = rounds[jobId];
-        require(address(identityRegistry) != address(0), "identity reg");
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
-        bool authorized;
-        if (address(identityRegistry) != address(0)) {
-            authorized = identityRegistry.verifyValidator(
-                msg.sender,
-                subdomain,
-                proof
-            );
-        }
-        require(authorized, "Not authorized validator");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
                 "Blacklisted validator"
             );
         }
+        require(address(identityRegistry) != address(0), "identity reg");
+        bool authorized = identityRegistry.verifyValidator(
+            msg.sender,
+            subdomain,
+            proof
+        );
+        require(authorized, "Not authorized validator");
         uint256 nonce = jobNonce[jobId];
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         require(commitHash != bytes32(0), "no commit");
