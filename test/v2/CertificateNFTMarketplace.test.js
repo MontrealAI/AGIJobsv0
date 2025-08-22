@@ -91,6 +91,14 @@ describe("CertificateNFT marketplace", function () {
       );
     });
 
+  it("prevents self purchase", async () => {
+      await nft.connect(seller).list(1, price);
+      await token.connect(seller).approve(await nft.getAddress(), price);
+      await expect(nft.connect(seller).purchase(1)).to.be.revertedWith(
+        "self"
+      );
+    });
+
   it("guards purchase against reentrancy", async () => {
       await nft.connect(seller).list(1, price);
 
