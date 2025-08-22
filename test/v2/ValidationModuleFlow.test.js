@@ -70,6 +70,7 @@ async function setup() {
     stakeManager,
     jobRegistry,
     identity,
+    reputation,
   };
 }
 
@@ -166,6 +167,37 @@ describe("ValidationModule finalize flows", function () {
     expect(await stakeManager.stakeOf(v2.address, 1)).to.equal(
       ethers.parseEther("25")
     );
+    const job = await jobRegistry.jobs(1);
+    expect(job.status).to.equal(5); // Disputed
+  });
+
+  it("disputes when approvals fall below threshold", async () => {
+    const { v1, v2, validation, jobRegistry, stakeManager } = await setup();
+    await stakeManager.setStake(v1.address, 1, ethers.parseEther("50"));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther("100"));
+    await validation.selectValidators(1);
+    const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
+    const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const nonce = await validation.jobNonce(1);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt1]
+    );
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, false, salt2]
+    );
+    await validation.connect(v1).commitValidation(1, commit1, "", []);
+    await validation.connect(v2).commitValidation(1, commit2, "", []);
+    await advance(61);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, salt1, "", []);
+    await validation
+      .connect(v2)
+      .revealValidation(1, false, salt2, "", []);
+    await advance(61);
+    await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(5); // Disputed
   });

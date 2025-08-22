@@ -112,5 +112,62 @@ describe("validator selection", function () {
     );
     expect(event.args[0]).to.equal(newSeed);
   });
+
+  it("filters blacklisted validators using ValidationModule", async function () {
+    const [owner, employer, v1, v2, v3] = await ethers.getSigners();
+    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const stakeManager = await StakeMock.deploy();
+    await stakeManager.waitForDeployment();
+    const JobMock = await ethers.getContractFactory("MockJobRegistry");
+    const jobRegistry = await JobMock.deploy();
+    await jobRegistry.waitForDeployment();
+    const RepMock = await ethers.getContractFactory("MockReputationEngine");
+    const reputation = await RepMock.deploy();
+    await reputation.waitForDeployment();
+    await reputation.setBlacklist(v1.address, true);
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
+    );
+    const identity = await Identity.deploy();
+    await identity.waitForDeployment();
+    await identity.setResult(false);
+    await identity.addAdditionalValidator(v2.address);
+    await identity.addAdditionalValidator(v3.address);
+    const Validation = await ethers.getContractFactory(
+      "contracts/v2/ValidationModule.sol:ValidationModule"
+    );
+    const validation = await Validation.deploy(
+      await jobRegistry.getAddress(),
+      await stakeManager.getAddress(),
+      60,
+      60,
+      2,
+      2,
+      [v1.address, v2.address, v3.address]
+    );
+    await validation.waitForDeployment();
+    await validation.connect(owner).setReputationEngine(await reputation.getAddress());
+    await validation.connect(owner).setIdentityRegistry(await identity.getAddress());
+    await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther("100"));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther("100"));
+    await jobRegistry.setJob(1, {
+      employer: employer.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 3,
+      uri: "",
+      result: "",
+    });
+    const selected = await validation.selectValidators.staticCall(1);
+    await validation.selectValidators(1);
+    expect(selected.length).to.equal(2);
+    const set = new Set(selected.map((a) => a.toLowerCase()));
+    expect(set.has(v1.address.toLowerCase())).to.be.false;
+    expect(set.has(v2.address.toLowerCase())).to.be.true;
+    expect(set.has(v3.address.toLowerCase())).to.be.true;
+  });
 });
 

@@ -334,21 +334,21 @@ contract ValidationModule is IValidationModule, Ownable {
 
         for (uint256 i; i < n; ++i) {
             address candidate = pool[i];
-            uint256 stake = stakeManager.stakeOf(candidate, IStakeManager.Role.Validator);
+            uint256 stake = stakeManager.stakeOf(
+                candidate,
+                IStakeManager.Role.Validator
+            );
             if (stake == 0) continue;
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) continue;
             }
             bytes32[] memory proof;
             string memory subdomain = validatorSubdomains[candidate];
-            bool authorized;
-            if (address(identityRegistry) != address(0)) {
-                authorized = identityRegistry.verifyValidator(
-                    candidate,
-                    subdomain,
-                    proof
-                );
-            }
+            bool authorized = identityRegistry.isAuthorizedValidator(
+                candidate,
+                subdomain,
+                proof
+            );
             if (!authorized) continue;
             pool[m] = candidate;
             stakes[m] = stake;
