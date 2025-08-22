@@ -55,8 +55,11 @@ async function setup() {
     agent: ethers.ZeroAddress,
     reward: 0,
     stake: 0,
+    deadline: 0,
+    validatorApprovals: 0,
+    validatorRejections: 0,
     success: false,
-    status: 3,
+    state: 2,
     uri: "",
     result: "",
   };
@@ -102,7 +105,7 @@ describe("ValidationModule finalize flows", function () {
     await advance(61);
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(6); // Finalized
+    expect(job.state).to.equal(3); // Validated
     expect(job.success).to.equal(true);
   });
 
@@ -128,7 +131,7 @@ describe("ValidationModule finalize flows", function () {
     await advance(61);
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    expect(job.state).to.equal(4); // Disputed
   });
 
   it("disputes when validators fail to reveal", async () => {
@@ -138,7 +141,7 @@ describe("ValidationModule finalize flows", function () {
     await advance(61); // end reveal
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    expect(job.state).to.equal(4); // Disputed
   });
 
   it("slashes validators that do not all reveal", async () => {
@@ -168,7 +171,7 @@ describe("ValidationModule finalize flows", function () {
       ethers.parseEther("25")
     );
     const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    expect(job.state).to.equal(4); // Disputed
   });
 
   it("disputes when approvals fall below threshold", async () => {
@@ -199,7 +202,7 @@ describe("ValidationModule finalize flows", function () {
     await advance(61);
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    expect(job.state).to.equal(4); // Disputed
   });
 });
 
