@@ -90,6 +90,9 @@ interface IValidationModule {
         uint256 slashingPct
     ) external;
 
+    /// @notice Set the number of validators selected per job.
+    function setValidatorsPerJob(uint256 count) external;
+
     /// @notice Owner configuration for timing windows
     function setCommitRevealWindows(uint256 commitWindow, uint256 revealWindow) external;
 
@@ -98,6 +101,9 @@ interface IValidationModule {
 
     /// @notice Owner configuration for validator counts
     function setValidatorBounds(uint256 minValidators, uint256 maxValidators) external;
+
+    /// @notice Set the required number of validator approvals.
+    function setRequiredValidatorApprovals(uint256 count) external;
 
     /// @notice Reset the validation nonce for a job after it is finalized or disputed
     /// @param jobId Identifier of the job

@@ -38,6 +38,8 @@ contract ValidationModule is IValidationModule, Ownable {
     uint256 public validatorSlashingPercentage = 50;
     // percentage of total stake required for approval
     uint256 public approvalThreshold = 50;
+    // absolute number of validator approvals required
+    uint256 public requiredValidatorApprovals;
 
     // pool of validators
     address[] public validatorPool;
@@ -71,6 +73,10 @@ contract ValidationModule is IValidationModule, Ownable {
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
     event ValidatorSlashingPctUpdated(uint256 pct);
     event ApprovalThresholdUpdated(uint256 pct);
+    event ValidatorsPerJobUpdated(uint256 count);
+    event CommitWindowUpdated(uint256 window);
+    event RevealWindowUpdated(uint256 window);
+    event RequiredValidatorApprovalsUpdated(uint256 count);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
@@ -258,6 +264,8 @@ contract ValidationModule is IValidationModule, Ownable {
         commitWindow = commitDur;
         revealWindow = revealDur;
         emit TimingUpdated(commitDur, revealDur);
+        emit CommitWindowUpdated(commitDur);
+        emit RevealWindowUpdated(revealDur);
     }
 
     /// @notice Convenience wrapper matching original API naming.
@@ -270,6 +278,8 @@ contract ValidationModule is IValidationModule, Ownable {
         commitWindow = commitDur;
         revealWindow = revealDur;
         emit TimingUpdated(commitDur, revealDur);
+        emit CommitWindowUpdated(commitDur);
+        emit RevealWindowUpdated(revealDur);
     }
 
     /// @notice Set minimum and maximum validators per round.
@@ -280,11 +290,21 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
+    /// @notice Set number of validators selected per job.
+    function setValidatorsPerJob(uint256 count) external override onlyOwner {
+        require(count > 0, "count");
+        minValidators = count;
+        maxValidators = count;
+        emit ValidatorBoundsUpdated(count, count);
+        emit ValidatorsPerJobUpdated(count);
+    }
+
     /// @notice Individually update commit window duration.
     function setCommitWindow(uint256 commitDur) external onlyOwner {
         require(commitDur > 0, "commit");
         commitWindow = commitDur;
         emit TimingUpdated(commitDur, revealWindow);
+        emit CommitWindowUpdated(commitDur);
     }
 
     /// @notice Individually update reveal window duration.
@@ -292,6 +312,7 @@ contract ValidationModule is IValidationModule, Ownable {
         require(revealDur > 0, "reveal");
         revealWindow = revealDur;
         emit TimingUpdated(commitWindow, revealDur);
+        emit RevealWindowUpdated(revealDur);
     }
 
     /// @notice Individually update minimum validators.
@@ -321,6 +342,12 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ApprovalThresholdUpdated(pct);
     }
 
+    /// @notice Set the required number of validator approvals.
+    function setRequiredValidatorApprovals(uint256 count) external override onlyOwner {
+        requiredValidatorApprovals = count;
+        emit RequiredValidatorApprovalsUpdated(count);
+    }
+
     /// @inheritdoc IValidationModule
     function selectValidators(uint256 jobId) public override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
@@ -346,7 +373,7 @@ contract ValidationModule is IValidationModule, Ownable {
             }
             bytes32[] memory proof;
             string memory subdomain = validatorSubdomains[candidate];
-            bool authorized = identityRegistry.isAuthorizedValidator(
+            bool authorized = identityRegistry.verifyValidator(
                 candidate,
                 subdomain,
                 proof
@@ -467,6 +494,7 @@ contract ValidationModule is IValidationModule, Ownable {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
+        require(_isValidator(jobId, msg.sender), "not validator");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
@@ -537,13 +565,26 @@ contract ValidationModule is IValidationModule, Ownable {
     function finalize(uint256 jobId) external override returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
-        require(block.timestamp > r.revealDeadline, "reveal pending");
+        require(
+            block.timestamp > r.revealDeadline ||
+                r.participants.length == r.validators.length,
+            "reveal pending"
+        );
 
         uint256 total = r.approvals + r.rejections;
-        bool allRevealed = r.participants.length == r.validators.length;
         bool quorum = r.participants.length >= minValidators;
-        if (allRevealed && quorum && total > 0) {
-            success = (r.approvals * 100) >= (total * approvalThreshold);
+        uint256 approvalCount;
+        for (uint256 i; i < r.validators.length; ++i) {
+            address v = r.validators[i];
+            if (revealed[jobId][v] && votes[jobId][v]) {
+                approvalCount++;
+            }
+        }
+        if (quorum && total > 0) {
+            bool thresholdMet =
+                (r.approvals * 100) >= (total * approvalThreshold);
+            bool countMet = approvalCount >= requiredValidatorApprovals;
+            success = thresholdMet && countMet;
         } else {
             success = false;
         }
