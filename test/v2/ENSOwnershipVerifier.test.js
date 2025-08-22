@@ -210,6 +210,14 @@ describe("ENSOwnershipVerifier verification", function () {
     ).to.equal(false);
   });
 
+  it("rejects when NameWrapper owner differs from agent", async () => {
+    const node = namehash(root, "a");
+    await wrapper.setOwner(ethers.toBigInt(node), owner.address);
+    expect(
+      await verifier.verifyAgent.staticCall(agent.address, "a", [])
+    ).to.equal(false);
+  });
+
   it("emits recovery when NameWrapper reverts", async () => {
     const BadWrapper = await ethers.getContractFactory(
       "contracts/mocks/RevertingNameWrapper.sol:RevertingNameWrapper"

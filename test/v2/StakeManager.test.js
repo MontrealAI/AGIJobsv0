@@ -550,6 +550,18 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("pct");
   });
 
+  it("routes full slashing to treasury when employer share is zero", async () => {
+    await stakeManager.connect(owner).setSlashingPercentages(0, 100);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    await stakeManager
+      .connect(owner)
+      ["slash(address,uint8,uint256,address)"](owner.address, 0, 40, employer.address);
+    expect(await token.balanceOf(treasury.address)).to.equal(40n);
+    expect(await token.balanceOf(employer.address)).to.equal(1000n);
+  });
+
   it("restricts treasury updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setTreasury(user.address)
