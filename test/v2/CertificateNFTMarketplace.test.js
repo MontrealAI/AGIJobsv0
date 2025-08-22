@@ -91,6 +91,15 @@ describe("CertificateNFT marketplace", function () {
       );
     });
 
+  it("rejects purchase after delisting", async () => {
+      await nft.connect(seller).list(1, price);
+      await nft.connect(seller).delist(1);
+      await token.connect(buyer).approve(await nft.getAddress(), price);
+      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
+        "not listed"
+      );
+    });
+
   it("prevents self purchase", async () => {
       await nft.connect(seller).list(1, price);
       await token.connect(seller).approve(await nft.getAddress(), price);

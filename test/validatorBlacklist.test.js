@@ -86,4 +86,38 @@ describe("Validator blacklist threshold", function () {
     expect(await manager.validatorPenaltyCount(validator.address)).to.equal(1n);
     expect(await manager.blacklistedValidators(validator.address)).to.equal(true);
   });
+
+  it("rejects commits from blacklisted validators", async function () {
+    const { token, manager, employer, agent, validator } = await deployFixture();
+    const payout = ethers.parseEther("10");
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash", payout, 1, "details");
+    await manager.connect(agent).applyForJob(0, "", []);
+    await manager.connect(agent).requestJobCompletion(0, "resultHash");
+
+    const salt = ethers.encodeBytes32String("salt");
+    const commit = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, 0, false, salt]
+    );
+    await manager.connect(validator).commitValidation(0, commit, "", []);
+    await time.increase(2);
+    await manager.connect(validator).revealValidation(0, false, salt);
+    await time.increase(11);
+    await manager.connect(validator).disapproveJob(0, "", []);
+    await manager.resolveDispute(0, 0);
+
+    await token.connect(employer).approve(await manager.getAddress(), payout);
+    await manager.connect(employer).createJob("jobhash2", payout, 1, "details");
+    await manager.connect(agent).applyForJob(1, "", []);
+    await manager.connect(agent).requestJobCompletion(1, "resultHash");
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool", "bytes32"],
+      [validator.address, 1, false, salt]
+    );
+    await expect(
+      manager.connect(validator).commitValidation(1, commit2, "", [])
+    ).to.be.revertedWithCustomError(manager, "Unauthorized");
+  });
 });
