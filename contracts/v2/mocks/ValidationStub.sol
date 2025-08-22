@@ -83,6 +83,8 @@ contract ValidationStub is IValidationModule {
 
     function setValidatorBounds(uint256, uint256) external override {}
 
+    function setValidatorsPerJob(uint256) external override {}
+
     function setApprovalThreshold(uint256) external override {}
 
     function setValidatorSlashingPct(uint256) external override {}
@@ -99,6 +101,8 @@ contract ValidationStub is IValidationModule {
         uint256,
         uint256
     ) external override {}
+
+    function setRequiredValidatorApprovals(uint256) external override {}
 
     function resetJobNonce(uint256) external override {}
 }
