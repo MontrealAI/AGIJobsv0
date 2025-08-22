@@ -82,10 +82,31 @@ describe("Ownable modules", function () {
       "contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier"
     );
 
+    const ModCertificateNFT = await ethers.getContractFactory(
+      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    );
+    const IdentityLib = await ethers.getContractFactory(
+      "contracts/v2/modules/IdentityLib.sol:IdentityLib"
+    );
+
+    const modCert = await ModCertificateNFT.deploy("Cert", "CRT");
+    await modCert.waitForDeployment();
+    const identity = await IdentityLib.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
+    await identity.waitForDeployment();
+
     const modules = [
       [StakeManager.attach(stake), (inst, signer) => inst.connect(signer).setFeePct(1)],
       [JobRegistry.attach(registry), (inst, signer) => inst.connect(signer).setFeePct(1)],
-      [ValidationModule.attach(validation), (inst, signer) => inst.connect(signer).setCommitWindow(1)],
+      [
+        ValidationModule.attach(validation),
+        (inst, signer) => inst.connect(signer).setIdentityRegistry(ethers.ZeroAddress),
+      ],
       [
         ReputationEngine.attach(reputation),
         (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
@@ -98,6 +119,8 @@ describe("Ownable modules", function () {
       [FeePool.attach(feePool), (inst, signer) => inst.connect(signer).setBurnPct(0)],
       [TaxPolicy.attach(taxPolicy), (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new")],
       [ENSVerifier.attach(ensVerifier), (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress)],
+      [modCert, (inst, signer) => inst.connect(signer).setJobRegistry(ethers.ZeroAddress)],
+      [identity, (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress)],
     ];
 
     for (const [inst, call] of modules) {

@@ -13,6 +13,8 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     address public jobRegistry;
     mapping(uint256 => string) private _tokenURIs;
 
+    event JobRegistryUpdated(address registry);
+
     constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
         Ownable(msg.sender)
@@ -29,6 +31,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
 
     function setJobRegistry(address registry) external onlyOwner {
         jobRegistry = registry;
+        emit JobRegistryUpdated(registry);
     }
 
     function mint(
