@@ -25,8 +25,11 @@ contract ReputationEngine is Ownable, Pausable {
     /// @dev authorised callers mapped to the role they may update
     mapping(address => Role) public callers;
 
-    /// @notice JobRegistry allowed to invoke lifecycle hooks
+    /// @notice JobRegistry allowed to invoke agent lifecycle hooks
     address public jobRegistry;
+
+    /// @notice ValidationModule rewarded for validator reputation
+    address public validationModule;
 
     /// @notice minimum reputation before a user is blacklisted
     uint256 public agentThreshold;
@@ -46,6 +49,7 @@ contract ReputationEngine is Ownable, Pausable {
     event CallerAuthorized(address indexed caller, Role role);
     event AgentThresholdUpdated(uint256 newThreshold);
     event ValidatorThresholdUpdated(uint256 newThreshold);
+    event ValidationRewardPercentageUpdated(uint256 percentage);
     event DecayConstantUpdated(uint256 newK);
 
     constructor() Ownable(msg.sender) {}
@@ -63,11 +67,18 @@ contract ReputationEngine is Ownable, Pausable {
         _;
     }
 
+    modifier onlyValidationModule() {
+        require(msg.sender == validationModule, "not authorized");
+        _;
+    }
+
     /// @notice Authorize a caller and assign its role.
     function setCaller(address caller, Role role) external onlyOwner {
         callers[caller] = role;
         if (role == Role.Agent) {
             jobRegistry = caller;
+        } else if (role == Role.Validator) {
+            validationModule = caller;
         }
         emit CallerAuthorized(caller, role);
     }
@@ -99,6 +110,7 @@ contract ReputationEngine is Ownable, Pausable {
     function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
         require(percentage <= 100, "invalid percentage");
         validationRewardPercentage = percentage;
+        emit ValidationRewardPercentageUpdated(percentage);
     }
 
     /// @notice Set the decay constant `k` in 1e18 fixed point.
@@ -193,14 +205,14 @@ contract ReputationEngine is Ownable, Pausable {
         subtract(user, amount);
     }
 
-    /// @notice Manually update blacklist status for caller's role.
-    function blacklist(address user, bool status) external whenNotPaused {
-        Role role = callers[msg.sender];
-        require(role != Role.None, "not authorized");
+    /// @notice Owner-controlled blacklist setter.
+    function setBlacklist(address user, Role role, bool status) external onlyOwner {
         if (role == Role.Agent) {
             agentBlacklisted[user] = status;
         } else if (role == Role.Validator) {
             validatorBlacklisted[user] = status;
+        } else {
+            revert("invalid role");
         }
         emit BlacklistUpdated(user, role, status);
     }
@@ -252,7 +264,7 @@ contract ReputationEngine is Ownable, Pausable {
     /// @notice Reward a validator based on an agent's reputation gain.
     /// @param validator The validator address
     /// @param agentGain Reputation points awarded to the agent
-    function rewardValidator(address validator, uint256 agentGain) external onlyJobRegistry {
+    function rewardValidator(address validator, uint256 agentGain) external onlyValidationModule {
         _applyDecayValidator(validator);
         uint256 gain = calculateValidatorReputationPoints(agentGain);
         uint256 newScore = _enforceReputationGrowth(_validatorReputation[validator], gain);
