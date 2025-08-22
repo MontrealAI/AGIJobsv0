@@ -3,9 +3,11 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labor markets among autonomous agents. Both the legacy v0 contract and the modular v2 suite default to [$AGIALPHA](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) – a 6‑decimal ERC‑20 used for payments, staking, rewards and dispute deposits. The token address is stored on-chain and the contract owner may replace it at any time (`AGIJobManagerv0.updateAGITokenAddress` or `StakeManager.setToken` / `FeePool.setToken`) without redeploying any module. This repository hosts the immutable mainnet deployment (v0) and an unaudited v1 prototype under active development. Treat every address as unverified until you confirm it on-chain and through official AGI.eth channels.
 
+> **Default token** – All modules ship wired for `$AGIALPHA` and expect 6‑decimal base units. Only the owner can rotate tokens after deployment by calling `StakeManager.setToken` and `FeePool.setToken`.
+
 Non‑technical owners can deploy and configure the legacy contract entirely from a web browser. The [deployment guide](docs/deployment-v0-agialpha.md) walks through using block‑explorer "Write" tabs to initialise `$AGIALPHA` for payments, staking, rewards and dispute resolution, all of which remain owner‑configurable without redeployment.
 
-All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Agents must control an ENS subdomain ending in `.agent.agi.eth`, while validators require one ending in `.club.agi.eth`. Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
+All modules expect amounts in 6‑decimal base units (`1 token = 1_000000`). Should the owner choose to migrate to a different ERC‑20, calling `setToken` on `StakeManager` and `FeePool` updates the system without redeployment or data loss.
 
 For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v1-v2-function-map.md) which maps every v1 function to its v2 counterpart.
 
@@ -26,12 +28,25 @@ Record every address as you deploy. The defaults below assume the 6‑decimal `$
 Amounts use base units (`1 token = 1_000000`). To swap tokens after deployment, call `setToken(newToken)` on both `StakeManager` and `FeePool` and wait for `TokenUpdated` events.
 
 ### Etherscan steps
-1. Open each verified contract → **Contract → Deploy** and supply the constructor parameters above. The deployer becomes `owner`.
-2. After deployment, wire modules from the **Write Contract** tab:
+1. **Deploy contracts** – open each verified contract → **Contract → Deploy** and supply the constructor parameters listed above. Examples:
+   - `StakeManager(token, minStake, employerPct, treasuryPct, treasury)`
+   - `JobRegistry(validation, stakeManager, reputation, dispute, certificateNFT, feePool, taxPolicy, feePct, jobStake)`
+   - `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)`
+   - `FeePool(token, stakeManager, burnPct, treasury)`
+   The deployer becomes `owner`.
+2. **Wire modules** – from each contract’s **Write** tab:
    - `JobRegistry.setModules(stakeManager, validationModule, disputeModule, certificateNFT, reputationEngine, feePool)`
    - `StakeManager.setJobRegistry(jobRegistry)` and `ValidationModule.setJobRegistry(jobRegistry)`
-   - Load ENS roots and allowlists with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, and `setValidatorMerkleRoot`.
-3. Owners may retune fees or replace the staking token at any time using the setter functions on each module.
+   - Load ENS settings with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, and `setValidatorMerkleRoot`
+3. **Example transactions** – after wiring, you can:
+   - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000)` then `StakeManager.depositStake(role, 1_000000)`
+   - Post a job: `JobRegistry.createJob(1_000000, "ipfs://QmHash")`
+   - Rotate tokens later via owner calls to `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`
+
+### ENS subdomain prerequisites
+- Agents must control an ENS subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`.
+- Owners load allowlists with `JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`.
+- When applying or validating, participants include their subdomain label and Merkle proof: `applyForJob(jobId, label, proof)` or `commitValidation(jobId, hash, label, proof)`.
 
 ### Quickstart flow
 1. **Obtain Merkle proof** – request your address proof from AGI operators or generate it from the published allowlist.
