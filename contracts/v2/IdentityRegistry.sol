@@ -2,19 +2,10 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
-
-/// @title Resolver interface
-/// @notice Minimal interface to query addresses from ENS records.
-interface IResolver {
-    /// @notice Get the address associated with an ENS node.
-    /// @param node The ENS node hash.
-    /// @return resolvedAddress The resolved payable address for `node`.
-    function addr(bytes32 node) external view returns (address payable resolvedAddress);
-}
+import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
@@ -33,8 +24,6 @@ contract IdentityRegistry is Ownable {
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
 
-    event OwnershipVerified(address indexed claimant, string subdomain);
-    event RecoveryInitiated(string reason);
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
     event ReputationEngineUpdated(address indexed reputationEngine);
@@ -153,7 +142,16 @@ contract IdentityRegistry is Ownable {
         if (additionalAgents[claimant]) {
             return true;
         }
-        return _checkOwnership(claimant, subdomain, proof, agentRootNode);
+        return
+            ENSIdentityVerifier.checkOwnership(
+                ens,
+                nameWrapper,
+                agentRootNode,
+                agentMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
     }
 
     function isAuthorizedValidator(
@@ -170,7 +168,16 @@ contract IdentityRegistry is Ownable {
         if (additionalValidators[claimant]) {
             return true;
         }
-        return _checkOwnership(claimant, subdomain, proof, clubRootNode);
+        return
+            ENSIdentityVerifier.checkOwnership(
+                ens,
+                nameWrapper,
+                clubRootNode,
+                validatorMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
     }
 
     function verifyAgent(
@@ -185,10 +192,19 @@ contract IdentityRegistry is Ownable {
             return false;
         }
         if (additionalAgents[claimant]) {
-            emit OwnershipVerified(claimant, subdomain);
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             return true;
         }
-        return _verifyOwnership(claimant, subdomain, proof, agentRootNode);
+        return
+            ENSIdentityVerifier.verifyOwnership(
+                ens,
+                nameWrapper,
+                agentRootNode,
+                agentMerkleRoot,
+                claimant,
+                subdomain,
+                proof
+            );
     }
 
     function verifyValidator(
@@ -203,127 +219,19 @@ contract IdentityRegistry is Ownable {
             return false;
         }
         if (additionalValidators[claimant]) {
-            emit OwnershipVerified(claimant, subdomain);
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             return true;
         }
-        return _verifyOwnership(claimant, subdomain, proof, clubRootNode);
-    }
-
-    // ---------------------------------------------------------------------
-    // Internal helpers
-    // ---------------------------------------------------------------------
-
-    function _checkOwnership(
-        address claimant,
-        string memory subdomain,
-        bytes32[] calldata proof,
-        bytes32 rootNode
-    ) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(claimant));
-        bytes32 merkleRoot;
-        if (rootNode == clubRootNode) {
-            merkleRoot = validatorMerkleRoot;
-        } else if (rootNode == agentRootNode) {
-            merkleRoot = agentMerkleRoot;
-        } else {
-            return false;
-        }
-        if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
-            return true;
-        }
-        bytes32 subnode = keccak256(
-            abi.encodePacked(rootNode, keccak256(bytes(subdomain)))
-        );
-        try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
-            if (actualOwner == claimant) {
-                return true;
-            }
-        } catch {}
-
-        address resolverAddr = ens.resolver(subnode);
-        if (resolverAddr != address(0)) {
-            try IResolver(resolverAddr).addr(subnode) returns (
-                address payable resolvedAddress
-            ) {
-                if (resolvedAddress == claimant) {
-                    return true;
-                }
-            } catch {}
-        }
-        return false;
-    }
-
-    function _verifyOwnership(
-        address claimant,
-        string memory subdomain,
-        bytes32[] calldata proof,
-        bytes32 rootNode
-    ) internal returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(claimant));
-        bytes32 merkleRoot;
-        if (rootNode == clubRootNode) {
-            merkleRoot = validatorMerkleRoot;
-        } else if (rootNode == agentRootNode) {
-            merkleRoot = agentMerkleRoot;
-        } else {
-            return false;
-        }
-        if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
-            emit OwnershipVerified(claimant, subdomain);
-            return true;
-        }
-        bytes32 subnode = keccak256(
-            abi.encodePacked(rootNode, keccak256(bytes(subdomain)))
-        );
-        bool eventEmitted;
-        try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
-            if (actualOwner == claimant) {
-                emit OwnershipVerified(claimant, subdomain);
-                return true;
-            }
-        } catch Error(string memory reason) {
-            emit RecoveryInitiated(reason);
-            eventEmitted = true;
-        } catch {
-            emit RecoveryInitiated(
-                "NameWrapper call failed without a specified reason."
+        return
+            ENSIdentityVerifier.verifyOwnership(
+                ens,
+                nameWrapper,
+                clubRootNode,
+                validatorMerkleRoot,
+                claimant,
+                subdomain,
+                proof
             );
-            eventEmitted = true;
-        }
-        address resolverAddr = ens.resolver(subnode);
-        if (resolverAddr != address(0)) {
-            IResolver resolver = IResolver(resolverAddr);
-            try resolver.addr(subnode) returns (
-                address payable resolvedAddress
-            ) {
-                if (resolvedAddress == claimant) {
-                    emit OwnershipVerified(claimant, subdomain);
-                    return true;
-                }
-                if (!eventEmitted) {
-                    emit RecoveryInitiated("Resolver address mismatch.");
-                    eventEmitted = true;
-                }
-            } catch {
-                if (!eventEmitted) {
-                    emit RecoveryInitiated(
-                        "Resolver call failed without a specified reason."
-                    );
-                    eventEmitted = true;
-                }
-            }
-        } else {
-            if (!eventEmitted) {
-                emit RecoveryInitiated(
-                    "Resolver address not found for node."
-                );
-                eventEmitted = true;
-            }
-        }
-        if (!eventEmitted) {
-            emit RecoveryInitiated("Ownership verification failed.");
-        }
-        return false;
     }
 }
 
