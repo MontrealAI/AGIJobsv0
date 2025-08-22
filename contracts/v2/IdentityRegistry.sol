@@ -275,6 +275,7 @@ contract IdentityRegistry is Ownable {
         bytes32 subnode = keccak256(
             abi.encodePacked(rootNode, keccak256(bytes(subdomain)))
         );
+        bool eventEmitted;
         try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
             if (actualOwner == claimant) {
                 emit OwnershipVerified(claimant, subdomain);
@@ -282,10 +283,12 @@ contract IdentityRegistry is Ownable {
             }
         } catch Error(string memory reason) {
             emit RecoveryInitiated(reason);
+            eventEmitted = true;
         } catch {
             emit RecoveryInitiated(
                 "NameWrapper call failed without a specified reason."
             );
+            eventEmitted = true;
         }
         address resolverAddr = ens.resolver(subnode);
         if (resolverAddr != address(0)) {
@@ -297,13 +300,28 @@ contract IdentityRegistry is Ownable {
                     emit OwnershipVerified(claimant, subdomain);
                     return true;
                 }
+                if (!eventEmitted) {
+                    emit RecoveryInitiated("Resolver address mismatch.");
+                    eventEmitted = true;
+                }
             } catch {
-                emit RecoveryInitiated(
-                    "Resolver call failed without a specified reason."
-                );
+                if (!eventEmitted) {
+                    emit RecoveryInitiated(
+                        "Resolver call failed without a specified reason."
+                    );
+                    eventEmitted = true;
+                }
             }
         } else {
-            emit RecoveryInitiated("Resolver address not found for node.");
+            if (!eventEmitted) {
+                emit RecoveryInitiated(
+                    "Resolver address not found for node."
+                );
+                eventEmitted = true;
+            }
+        }
+        if (!eventEmitted) {
+            emit RecoveryInitiated("Ownership verification failed.");
         }
         return false;
     }
