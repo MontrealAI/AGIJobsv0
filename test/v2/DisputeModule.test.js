@@ -180,6 +180,16 @@ describe("DisputeModule", function () {
       ).to.equal(0);
     });
 
+    it("allows owner to resolve even if not moderator", async () => {
+      await dispute.connect(owner).removeModerator(owner.address);
+      expect(await dispute.moderators(owner.address)).to.equal(false);
+      await registry.connect(agent).dispute(1, "evidence");
+      await time.increase(window);
+      await expect(dispute.connect(owner).resolve(1, true))
+        .to.emit(dispute, "DisputeResolved")
+        .withArgs(1, owner.address, true);
+    });
+
     it("rejects unauthorized resolve attempts", async () => {
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(window);

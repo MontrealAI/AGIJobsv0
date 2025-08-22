@@ -75,11 +75,16 @@ contract DisputeModule is Ownable {
         emit ModeratorUpdated(initialModerator, true);
     }
 
-    /// @notice Restrict calls to approved moderators.
+    /// @notice Restrict calls to approved moderators or the contract owner.
     /// @dev The owner can grant or revoke moderator status via
-    ///      {addModerator} and {removeModerator}.
-    modifier onlyModerator() {
-        require(moderators[msg.sender], "not authorized");
+    ///      {addModerator} and {removeModerator}. Regardless of moderator
+    ///      status, the owner always retains the ability to resolve
+    ///      disputes.
+    modifier onlyOwnerOrModerator() {
+        require(
+            msg.sender == owner() || moderators[msg.sender],
+            "not authorized"
+        );
         _;
     }
 
@@ -169,7 +174,7 @@ contract DisputeModule is Ownable {
     /// @param employerWins True if the employer prevails.
     function resolve(uint256 jobId, bool employerWins)
         external
-        onlyModerator
+        onlyOwnerOrModerator
     {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
