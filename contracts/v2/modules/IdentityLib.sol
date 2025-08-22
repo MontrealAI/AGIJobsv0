@@ -40,6 +40,7 @@ contract IdentityLib is Ownable {
     event MerkleRootUpdated(string root, bytes32 newRoot);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    event ModulesUpdated(address jobRegistry, address validationModule);
 
     constructor(
         IENS _ens,
@@ -93,6 +94,7 @@ contract IdentityLib is Ownable {
     function setModules(address _jobRegistry, address _validationModule) external onlyOwner {
         jobRegistry = _jobRegistry;
         validationModule = _validationModule;
+        emit ModulesUpdated(_jobRegistry, _validationModule);
     }
 
     modifier onlyAuthorized() {

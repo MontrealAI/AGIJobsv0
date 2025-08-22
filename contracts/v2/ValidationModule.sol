@@ -74,6 +74,7 @@ contract ValidationModule is IValidationModule, Ownable {
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
+    event IdentityRegistryUpdated(address registry);
     event JobNonceReset(uint256 indexed jobId);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
@@ -184,6 +185,7 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @notice Update the identity registry used for validator verification.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
         identityRegistry = registry;
+        emit IdentityRegistryUpdated(address(registry));
     }
 
     /// @notice Batch update core validation parameters.
