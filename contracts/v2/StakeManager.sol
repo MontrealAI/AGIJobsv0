@@ -51,6 +51,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice percentage of released amount burned (0-100)
     uint256 public burnPct;
 
+    /// @notice percentage of released amount allocated to validators (0-100)
+    uint256 public validatorRewardPct;
+
     /// @notice FeePool receiving protocol fees
     IFeePool public feePool;
 
@@ -138,6 +141,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
+    event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
 
     /// @notice Deploys the StakeManager.
@@ -309,7 +313,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
     function setFeePct(uint256 pct) external onlyOwner {
-        require(pct + burnPct <= 100, "pct");
+        require(pct + burnPct + validatorRewardPct <= 100, "pct");
         feePct = pct;
         emit FeePctUpdated(pct);
     }
@@ -324,9 +328,17 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice update burn percentage applied on release
     /// @param pct percentage of released amount burned (0-100)
     function setBurnPct(uint256 pct) external onlyOwner {
-        require(feePct + pct <= 100, "pct");
+        require(feePct + pct + validatorRewardPct <= 100, "pct");
         burnPct = pct;
         emit BurnPctUpdated(pct);
+    }
+
+    /// @notice update validator reward percentage
+    /// @param pct percentage of released amount allocated to validators (0-100)
+    function setValidatorRewardPct(uint256 pct) external onlyOwner {
+        require(feePct + burnPct + pct <= 100, "pct");
+        validatorRewardPct = pct;
+        emit ValidatorRewardPctUpdated(pct);
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
@@ -349,14 +361,18 @@ contract StakeManager is Ownable, ReentrancyGuard {
     ///      be used to provide a discount.
     function addAGIType(address nft, uint256 payoutPct) external onlyOwner {
         require(nft != address(0) && payoutPct > 0, "params");
-        for (uint256 i; i < agiTypes.length; ++i) {
+        uint256 length = agiTypes.length;
+        for (uint256 i; i < length; ) {
             if (agiTypes[i].nft == nft) {
                 agiTypes[i].payoutPct = payoutPct;
                 emit AGITypeUpdated(nft, payoutPct);
                 return;
             }
+            unchecked {
+                ++i;
+            }
         }
-        require(agiTypes.length < maxAGITypes, "max types");
+        require(length < maxAGITypes, "max types");
         agiTypes.push(AGIType({nft: nft, payoutPct: payoutPct}));
         emit AGITypeUpdated(nft, payoutPct);
     }
@@ -364,12 +380,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice Remove an AGI type
     function removeAGIType(address nft) external onlyOwner {
         uint256 length = agiTypes.length;
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length; ) {
             if (agiTypes[i].nft == nft) {
                 agiTypes[i] = agiTypes[length - 1];
                 agiTypes.pop();
                 emit AGITypeRemoved(nft);
                 return;
+            }
+            unchecked {
+                ++i;
             }
         }
         revert("AGIType: not found");
