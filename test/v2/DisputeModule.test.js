@@ -60,6 +60,7 @@ describe("DisputeModule", function () {
     let owner, employer, agent, outsider;
     let token, stakeManager, registry, dispute;
     const fee = 100n;
+    const window = 10n;
 
     beforeEach(async () => {
       [owner, employer, agent, outsider] = await ethers.getSigners();
@@ -97,7 +98,7 @@ describe("DisputeModule", function () {
       dispute = await Dispute.deploy(
         await registry.getAddress(),
         fee,
-        1,
+        window,
         ethers.ZeroAddress
       );
       await dispute.waitForDeployment();
@@ -130,13 +131,31 @@ describe("DisputeModule", function () {
       });
     });
 
+    it("emits dispute raised and rejects second dispute", async () => {
+      await expect(
+        registry.connect(agent).dispute(1, "evidence")
+      )
+        .to.emit(dispute, "DisputeRaised")
+        .withArgs(1, agent.address);
+      await expect(
+        registry.connect(agent).dispute(1, "more")
+      ).to.be.revertedWith("disputed");
+    });
+
+    it("reverts resolution attempted before window", async () => {
+      await registry.connect(agent).dispute(1, "evidence");
+      await expect(
+        dispute.connect(owner).resolve(1, true)
+      ).to.be.revertedWith("window");
+    });
+
     it("transfers fee to employer when employer wins", async () => {
       const employerStart = await token.balanceOf(employer.address);
       await registry.connect(agent).dispute(1, "evidence");
       expect(
         await token.balanceOf(await stakeManager.getAddress())
       ).to.equal(fee);
-      await time.increase(1);
+      await time.increase(window);
       await expect(dispute.connect(owner).resolve(1, true))
         .to.emit(dispute, "DisputeResolved")
         .withArgs(1, owner.address, true);
@@ -151,7 +170,7 @@ describe("DisputeModule", function () {
     it("refunds fee to agent when employer loses", async () => {
       const agentStart = await token.balanceOf(agent.address);
       await registry.connect(agent).dispute(1, "evidence");
-      await time.increase(1);
+      await time.increase(window);
       await expect(dispute.connect(owner).resolve(1, false))
         .to.emit(dispute, "DisputeResolved")
         .withArgs(1, owner.address, false);
@@ -163,7 +182,7 @@ describe("DisputeModule", function () {
 
     it("rejects unauthorized resolve attempts", async () => {
       await registry.connect(agent).dispute(1, "evidence");
-      await time.increase(1);
+      await time.increase(window);
       await expect(
         dispute.connect(outsider).resolve(1, true)
       ).to.be.revertedWith("not authorized");
