@@ -16,7 +16,7 @@ describe("ReputationEngine", function () {
       .setPremiumReputationThreshold(2);
   });
 
-  it("accumulates reputation and rewards validators", async () => {
+  it("rewards validators based on agent gain", async () => {
     const payout = ethers.parseEther("100");
     const duration = 100000;
     const gain = await engine.calculateReputationPoints(payout, duration);
@@ -45,6 +45,24 @@ describe("ReputationEngine", function () {
     );
   });
 
+  it("reputation gain scales with payout and duration", async () => {
+    const smallPayout = ethers.parseEther("10");
+    const smallDuration = 1000;
+    const largePayout = ethers.parseEther("100");
+    const largeDuration = 100000;
+
+    await engine
+      .connect(caller)
+      .onFinalize(user.address, true, smallPayout, smallDuration);
+    await engine
+      .connect(caller)
+      .onFinalize(validator.address, true, largePayout, largeDuration);
+
+    const smallRep = await engine.reputation(user.address);
+    const largeRep = await engine.reputation(validator.address);
+    expect(largeRep).to.be.gt(smallRep);
+  });
+
   it("blocks blacklisted users", async () => {
     await engine.connect(owner).setBlacklist(user.address, true);
     await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
@@ -59,6 +77,17 @@ describe("ReputationEngine", function () {
     await engine.connect(caller).add(user.address, 3);
     expect(await engine.meetsThreshold(user.address)).to.equal(true);
     await expect(engine.connect(caller).onApply(user.address)).to.not.be.reverted;
+  });
+
+  it("auto clears blacklist when threshold met", async () => {
+    await engine.connect(owner).setBlacklist(user.address, true);
+    const payout = ethers.parseEther("100");
+    const duration = 100000;
+    await engine
+      .connect(caller)
+      .onFinalize(user.address, true, payout, duration);
+    expect(await engine.isBlacklisted(user.address)).to.equal(false);
+    expect(await engine.meetsThreshold(user.address)).to.equal(true);
   });
 
   it("rejects unauthorized callers", async () => {
