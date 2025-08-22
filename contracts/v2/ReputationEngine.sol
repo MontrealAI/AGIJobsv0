@@ -106,8 +106,8 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Increase reputation for a user.
+    /// @dev Blacklisted users may gain reputation to clear their status.
     function add(address user, uint256 amount) external onlyCaller {
-        require(!isBlacklisted[user], "Blacklisted agent");
         uint256 current = _scores[user];
         uint256 newScore = _enforceReputationGrowth(current, amount);
         uint256 delta = newScore - current;
@@ -175,7 +175,6 @@ contract ReputationEngine is Ownable {
         uint256 payout,
         uint256 duration
     ) external onlyCaller {
-        require(!isBlacklisted[user], "Blacklisted agent");
         if (success) {
             uint256 gain = calculateReputationPoints(payout, duration);
             uint256 current = _scores[user];
@@ -200,7 +199,6 @@ contract ReputationEngine is Ownable {
     /// @param validator The validator address
     /// @param agentGain Reputation points awarded to the agent
     function rewardValidator(address validator, uint256 agentGain) external onlyCaller {
-        require(!isBlacklisted[validator], "Blacklisted validator");
         uint256 gain = calculateValidatorReputationPoints(agentGain);
         uint256 current = _scores[validator];
         uint256 newScore = _enforceReputationGrowth(current, gain);
