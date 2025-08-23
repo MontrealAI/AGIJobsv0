@@ -111,7 +111,7 @@ then be performed through the "Write" tabs on each module.
 ### Dispute
 1. Approve the dispute fee on `$AGIALPHA`.
 2. Call `JobRegistry.raiseDispute(jobId, evidence)`.
-3. Owner resolves via `DisputeModule.resolve(jobId, uphold)`.
+3. Owner or a majority of moderators resolves via `DisputeModule.resolve(jobId, uphold, signatures)`.
 4. Monitor `DisputeRaised` and `DisputeResolved` events.
 
 ### NFT Marketplace

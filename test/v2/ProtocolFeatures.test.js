@@ -150,7 +150,7 @@ describe("Protocol core features", function () {
     expect(disputeInfo.fee).to.equal(5);
     const block = await ethers.provider.getBlock(rcpt.blockNumber);
     const expected = (BigInt(block.hash) ^ BigInt(jobId)) % 2n === 0n;
-    await expect(dispute.connect(owner).resolve(jobId, expected))
+    await expect(dispute.connect(owner).resolve(jobId, expected, []))
       .to.emit(dispute, "DisputeResolved")
       .withArgs(jobId, owner.address, expected);
     const cleared = await dispute.disputes(jobId);

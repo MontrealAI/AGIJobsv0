@@ -11,7 +11,7 @@ interface IDisputeModule {
         bool employerWins
     );
     event DisputeFeeUpdated(uint256 fee);
-    event ModeratorUpdated(address moderator, bool enabled);
+    event ModeratorUpdated(address moderator, uint256 weight);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
@@ -22,10 +22,14 @@ interface IDisputeModule {
         address claimant,
         string calldata evidence
     ) external;
-    function resolve(uint256 jobId, bool employerWins) external;
+    function resolve(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) external;
     function setDisputeFee(uint256 fee) external;
     function setDisputeWindow(uint256 window) external;
-    function addModerator(address moderator) external;
+    function addModerator(address moderator, uint256 weight) external;
     function removeModerator(address moderator) external;
     function setJobRegistry(address registry) external;
     function setStakeManager(address manager) external;

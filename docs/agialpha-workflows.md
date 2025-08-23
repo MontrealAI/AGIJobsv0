@@ -18,7 +18,7 @@ This guide summarises Etherscan-based interactions for the $AGIALPHA-powered AGI
 ## 4. Raise a Dispute (Anyone)
 1. **Approve fee** – approve the dispute fee for `StakeManager` (e.g., `10_000000` for 10 tokens).
 2. **Raise** – on [`DisputeModule` Write](https://etherscan.io/address/<DisputeModuleAddress>#writeContract) call `raiseDispute(jobId, evidence)` before the window ends.
-3. **Resolve** – after the window an authorised arbiter calls `resolve(jobId)`.
+3. **Resolve** – after the window a majority of moderators (or the owner) calls `resolve(jobId, verdict, signatures)`.
 
 ## 5. Trade a Certificate (Peer to Peer)
 1. **List** – certificate owner calls `list(tokenId, price)` on [`CertificateNFT` Write](https://etherscan.io/address/<CertificateNFTAddress>#writeContract)` using 6‑decimal pricing.
