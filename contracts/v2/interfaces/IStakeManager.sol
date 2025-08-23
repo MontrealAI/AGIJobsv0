@@ -41,7 +41,6 @@ interface IStakeManager {
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
     event AGITypeRemoved(address indexed nft);
-    event SlashPercentSumEnforcementUpdated(bool enforced);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
@@ -131,9 +130,6 @@ interface IStakeManager {
     /// @param amount token amount with 6 decimals to slash
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient) external;
-
-    /// @notice toggle enforcement requiring slashing percentages to sum to 100
-    function setSlashPercentSumEnforcement(bool enforced) external;
 
     /// @notice owner configuration helpers
     function setToken(IERC20 newToken) external;

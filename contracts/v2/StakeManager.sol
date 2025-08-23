@@ -75,9 +75,6 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @notice percentage of slashed amount sent to treasury (out of 100)
     uint256 public treasurySlashPct;
 
-    /// @notice enforce employer+treasury percentages sum to 100 during slashing
-    bool public enforceSlashPercentSum100;
-
     /// @notice staked balance per user and role
     mapping(address => mapping(Role => uint256)) public stakes;
 
@@ -134,7 +131,6 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
     event JobRegistryUpdated(address indexed registry);
-    event SlashPercentSumEnforcementUpdated(bool enforced);
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
@@ -182,7 +178,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
             treasurySlashPct = 100;
         } else {
             require(
-                _employerSlashPct + _treasurySlashPct <= 100,
+                _employerSlashPct + _treasurySlashPct == 100,
                 "pct"
             );
             employerSlashPct = _employerSlashPct;
@@ -234,7 +230,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
     ) internal {
-        require(_employerSlashPct + _treasurySlashPct <= 100, "pct");
+        require(_employerSlashPct + _treasurySlashPct == 100, "pct");
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
@@ -258,13 +254,6 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 _treasurySlashPct
     ) external onlyOwner {
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
-    }
-
-    /// @notice toggle enforcement that slashing percentages must sum to 100
-    /// @param enforced true to require employer+treasury percentages equal 100
-    function setSlashPercentSumEnforcement(bool enforced) external onlyOwner {
-        enforceSlashPercentSum100 = enforced;
-        emit SlashPercentSumEnforcementUpdated(enforced);
     }
 
     /// @notice update treasury recipient address
@@ -891,10 +880,8 @@ contract StakeManager is Ownable, ReentrancyGuard {
         uint256 recipientShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
         uint256 total = recipientShare + treasuryShare;
-
-        if (enforceSlashPercentSum100) {
-            require(total == amount, "pct");
-        }
+        require(total <= amount, "pct");
+        uint256 burnShare = amount - total;
 
         stakes[user][role] = staked - amount;
         totalStakes[role] -= amount;
@@ -921,6 +908,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
         }
         if (treasuryShare > 0) {
             token.safeTransfer(treasury, treasuryShare);
+        }
+        if (burnShare > 0) {
+            token.safeTransfer(BURN_ADDRESS, burnShare);
         }
 
         emit StakeSlashed(
