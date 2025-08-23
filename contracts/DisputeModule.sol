@@ -88,8 +88,10 @@ contract DisputeModule is Ownable {
         emit DisputeWindowUpdated(window);
     }
 
-    function raiseDispute(uint256 jobId) external onlyJobRegistry {
-        address claimant = tx.origin;
+    function raiseDispute(uint256 jobId, address claimant)
+        external
+        onlyJobRegistry
+    {
         Dispute storage d = disputes[jobId];
         require(d.claimant == address(0), "disputed");
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);

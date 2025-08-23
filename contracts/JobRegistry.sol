@@ -39,7 +39,7 @@ interface ICertificateNFT {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId) external;
+    function raiseDispute(uint256 jobId, address claimant) external;
     function resolve(uint256 jobId, bool employerWins) external;
 }
 
@@ -417,7 +417,7 @@ contract JobRegistry is Ownable, Pausable {
         }
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId);
+            disputeModule.raiseDispute(jobId, msg.sender);
         }
         emit JobDisputed(jobId);
     }
