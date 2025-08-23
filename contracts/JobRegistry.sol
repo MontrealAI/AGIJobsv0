@@ -31,7 +31,7 @@ interface IFeePool {
 }
 
 interface ICertificateNFT {
-    function mintCertificate(
+    function mint(
         address to,
         uint256 jobId,
         string calldata uri
@@ -467,7 +467,7 @@ contract JobRegistry is Ownable, Pausable {
                 reputationEngine.add(job.agent, 1);
             }
             if (address(certificateNFT) != address(0)) {
-                certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
+                certificateNFT.mint(job.agent, jobId, job.outputURI);
             }
         } else {
             stakeManager.payReward(job.employer, job.reward + job.fee);
