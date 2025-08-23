@@ -301,7 +301,7 @@ describe("StakeManager", function () {
       "StakeDeposited"
     );
 
-    await jobRegistry.connect(owner).bumpTaxPolicyVersion();
+    await taxPolicy.connect(owner).bumpPolicyVersion();
     await expect(
       stakeManager.connect(user).withdrawStake(0, 50)
     ).to.be.revertedWith("acknowledge tax policy");

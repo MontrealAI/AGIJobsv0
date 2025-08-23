@@ -238,7 +238,7 @@ describe("comprehensive job flows", function () {
   });
 
   it("enforces fresh tax policy acknowledgements", async () => {
-    await registry.bumpTaxPolicyVersion();
+    await policy.bumpPolicyVersion();
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);

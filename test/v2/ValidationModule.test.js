@@ -308,7 +308,11 @@ describe("ValidationModule V2", function () {
   });
 
   it("enforces tax acknowledgement for commit and reveal", async () => {
-    await jobRegistry.setTaxPolicyVersion(1);
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.setTaxPolicy(await policy.getAddress());
     const tx = await validation.selectValidators(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
@@ -338,7 +342,7 @@ describe("ValidationModule V2", function () {
     ).to.emit(validation, "ValidationCommitted");
 
     await advance(61);
-    await jobRegistry.setTaxPolicyVersion(2);
+    await policy.bumpPolicyVersion();
     await expect(
       validation.connect(val).revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("acknowledge tax policy");

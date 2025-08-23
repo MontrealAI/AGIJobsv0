@@ -94,10 +94,12 @@ contract ValidationModule is IValidationModule, Ownable {
             address registry = address(jobRegistry);
             require(registry != address(0), "job registry");
             ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
-            require(
-                policy.hasAcknowledged(msg.sender),
-                "acknowledge tax policy"
-            );
+            if (address(policy) != address(0)) {
+                require(
+                    policy.hasAcknowledged(msg.sender),
+                    "acknowledge tax policy"
+                );
+            }
         }
         _;
     }

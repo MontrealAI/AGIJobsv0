@@ -417,12 +417,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
     modifier requiresTaxAcknowledgement() {
         if (msg.sender != owner()) {
             address registry = jobRegistry;
-            require(registry != address(0), "job registry");
-            ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
-            require(
-                policy.hasAcknowledged(msg.sender),
-                "acknowledge tax policy"
-            );
+            if (registry != address(0)) {
+                ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
+                if (address(policy) != address(0)) {
+                    require(
+                        policy.hasAcknowledged(msg.sender),
+                        "acknowledge tax policy"
+                    );
+                }
+            }
         }
         _;
     }
