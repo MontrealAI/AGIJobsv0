@@ -878,10 +878,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
         require(staked >= amount, "stake");
 
         uint256 recipientShare = (amount * employerSlashPct) / 100;
-        uint256 treasuryShare = (amount * treasurySlashPct) / 100;
-        uint256 total = recipientShare + treasuryShare;
-        require(total <= amount, "pct");
-        uint256 burnShare = amount - total;
+        uint256 treasuryShare = amount - recipientShare; // remainder to treasury
 
         stakes[user][role] = staked - amount;
         totalStakes[role] -= amount;
@@ -908,9 +905,6 @@ contract StakeManager is Ownable, ReentrancyGuard {
         }
         if (treasuryShare > 0) {
             token.safeTransfer(treasury, treasuryShare);
-        }
-        if (burnShare > 0) {
-            token.safeTransfer(BURN_ADDRESS, burnShare);
         }
 
         emit StakeSlashed(
