@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 interface IValidationModule {
     function validate(uint256 jobId) external view returns (bool);
+    function selectValidators(uint256 jobId) external returns (address[] memory);
 }
 
 interface IReputationEngine {
@@ -57,6 +58,7 @@ contract JobRegistry is Ownable, Pausable {
         bool success;
         Status status;
         string outputURI;
+        uint256 deadline;
     }
 
     uint256 public nextJobId;
@@ -71,8 +73,10 @@ contract JobRegistry is Ownable, Pausable {
 
     uint256 public jobReward;
     uint256 public jobStake;
+    uint256 public jobDuration;
     uint256 public feePct;
     uint256 public maxJobReward;
+    uint256 public maxJobDuration;
     bytes32 public agentRootNode;
     bytes32 public agentMerkleRoot;
 
@@ -101,6 +105,7 @@ contract JobRegistry is Ownable, Pausable {
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
     event MaxJobRewardUpdated(uint256 maxReward);
+    event MaxJobDurationUpdated(uint256 maxDuration);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     /// @notice Emitted when the ENS root node for agents changes.
     /// @param node The new ENS root node.
@@ -117,10 +122,14 @@ contract JobRegistry is Ownable, Pausable {
         uint256 stake,
         uint256 fee
     );
+    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event JobSubmitted(uint256 indexed jobId, address indexed agent, string uri);
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
     event JobFinalized(uint256 indexed jobId, bool success);
-    event JobParametersUpdated(uint256 reward, uint256 stake);
+    event JobCancelled(uint256 indexed jobId);
+    event JobDelisted(uint256 indexed jobId);
+    event JobParametersUpdated(uint256 reward, uint256 stake, uint256 duration);
 
     constructor() Ownable(msg.sender) {}
 
@@ -256,11 +265,17 @@ contract JobRegistry is Ownable, Pausable {
         );
     }
 
-    function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
+    function setJobParameters(
+        uint256 reward,
+        uint256 stake,
+        uint256 duration
+    ) external onlyOwner {
         require(maxJobReward == 0 || reward <= maxJobReward, "reward too high");
+        require(maxJobDuration == 0 || duration <= maxJobDuration, "duration too long");
         jobReward = reward;
         jobStake = stake;
-        emit JobParametersUpdated(reward, stake);
+        jobDuration = duration;
+        emit JobParametersUpdated(reward, stake, duration);
     }
 
     function setMaxJobReward(uint256 maxReward) external onlyOwner {
@@ -268,8 +283,13 @@ contract JobRegistry is Ownable, Pausable {
         emit MaxJobRewardUpdated(maxReward);
     }
 
+    function setMaxJobDuration(uint256 maxDuration) external onlyOwner {
+        maxJobDuration = maxDuration;
+        emit MaxJobDurationUpdated(maxDuration);
+    }
+
     /// @notice Create a new job.
-    function createJob(address agent)
+    function createJob()
         external
         requiresTaxAcknowledgement
         whenNotPaused
@@ -277,36 +297,56 @@ contract JobRegistry is Ownable, Pausable {
     {
         require(jobReward > 0 || jobStake > 0, "params not set");
         require(maxJobReward == 0 || jobReward <= maxJobReward, "reward too high");
-        require(agent != msg.sender, "self");
+        require(maxJobDuration == 0 || jobDuration <= maxJobDuration, "duration too long");
         if (address(reputationEngine) != address(0)) {
             require(
                 !reputationEngine.isBlacklisted(msg.sender),
                 "blacklisted employer"
             );
-            require(
-                !reputationEngine.isBlacklisted(agent),
-                "blacklisted agent"
-            );
         }
-        require(stakeManager.stakes(agent) >= jobStake, "stake missing");
         jobId = ++nextJobId;
         uint256 fee = (jobReward * feePct) / 100;
         jobs[jobId] = Job({
             employer: msg.sender,
-            agent: agent,
+            agent: address(0),
             reward: jobReward,
             stake: jobStake,
             fee: fee,
             success: false,
             status: Status.Created,
-            outputURI: ""
+            outputURI: "",
+            deadline: block.timestamp + jobDuration
         });
         stakeManager.lockReward(msg.sender, jobReward + fee);
-        emit JobCreated(jobId, msg.sender, agent, jobReward, jobStake, fee);
+        emit JobCreated(jobId, msg.sender, address(0), jobReward, jobStake, fee);
+    }
+
+    function _applyForJob(uint256 jobId) internal {
+        Job storage job = jobs[jobId];
+        require(job.status == Status.Created, "not open");
+        require(job.agent == address(0), "taken");
+        require(msg.sender != job.employer, "self");
+        if (address(reputationEngine) != address(0)) {
+            require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted agent");
+        }
+        require(additionalAgents[msg.sender], "unauthorized agent");
+        if (job.stake > 0) {
+            stakeManager.lockReward(msg.sender, job.stake);
+        }
+        job.agent = msg.sender;
+        emit JobApplied(jobId, msg.sender);
+    }
+
+    function applyForJob(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+        whenNotPaused
+    {
+        _applyForJob(jobId);
     }
 
     /// @notice Agent submits job result; validation outcome stored.
-    function completeJob(uint256 jobId, string calldata uri)
+    function submit(uint256 jobId, string calldata uri)
         external
         requiresTaxAcknowledgement
         whenNotPaused
@@ -314,33 +354,62 @@ contract JobRegistry is Ownable, Pausable {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "invalid status");
         require(msg.sender == job.agent, "only agent");
+        require(block.timestamp <= job.deadline, "deadline");
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "blacklisted agent"
-            );
+            require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted agent");
+            require(!reputationEngine.isBlacklisted(job.employer), "blacklisted employer");
         }
-        bool outcome = validationModule.validate(jobId);
-        job.success = outcome;
-        job.status = Status.Completed;
         job.outputURI = uri;
-        emit JobCompleted(jobId, outcome);
+        emit JobSubmitted(jobId, msg.sender, uri);
+        if (address(validationModule) != address(0)) {
+            validationModule.selectValidators(jobId);
+            bool outcome = validationModule.validate(jobId);
+            job.success = outcome;
+            job.status = Status.Completed;
+            emit JobCompleted(jobId, outcome);
+        } else {
+            job.success = true;
+            job.status = Status.Completed;
+            emit JobCompleted(jobId, true);
+        }
     }
 
-    /// @notice Agent disputes a failed job outcome.
-    function dispute(uint256 jobId)
+    /// @notice Employer cancels an open job.
+    function cancelJob(uint256 jobId)
+        external
+        requiresTaxAcknowledgement
+        whenNotPaused
+    {
+        Job storage job = jobs[jobId];
+        require(job.status == Status.Created, "invalid status");
+        require(job.agent == address(0), "taken");
+        require(msg.sender == job.employer, "only employer");
+        job.status = Status.Finalized;
+        stakeManager.payReward(job.employer, job.reward + job.fee);
+        emit JobCancelled(jobId);
+    }
+
+    /// @notice Owner delists an open job.
+    function delistJob(uint256 jobId) external onlyOwner {
+        Job storage job = jobs[jobId];
+        require(job.status == Status.Created, "invalid status");
+        require(job.agent == address(0), "taken");
+        job.status = Status.Finalized;
+        stakeManager.payReward(job.employer, job.reward + job.fee);
+        emit JobDelisted(jobId);
+    }
+
+    /// @notice Raise a dispute for a completed job.
+    function raiseDispute(uint256 jobId)
         external
         requiresTaxAcknowledgement
         whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent, "only agent");
+        require(msg.sender == job.agent || msg.sender == job.employer, "only participant");
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "blacklisted agent"
-            );
+            require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted");
         }
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
@@ -394,12 +463,18 @@ contract JobRegistry is Ownable, Pausable {
             }
             stakeManager.payReward(job.agent, payout);
             stakeManager.releaseStake(job.agent, job.stake);
-            reputationEngine.add(job.agent, 1);
-            certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
+            if (address(reputationEngine) != address(0)) {
+                reputationEngine.add(job.agent, 1);
+            }
+            if (address(certificateNFT) != address(0)) {
+                certificateNFT.mintCertificate(job.agent, jobId, job.outputURI);
+            }
         } else {
             stakeManager.payReward(job.employer, job.reward + job.fee);
             stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, job.employer);
-            reputationEngine.subtract(job.agent, 1);
+            if (address(reputationEngine) != address(0)) {
+                reputationEngine.subtract(job.agent, 1);
+            }
         }
         emit JobFinalized(jobId, job.success);
     }
