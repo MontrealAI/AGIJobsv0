@@ -38,6 +38,10 @@ contract DisputeModule is Ownable {
     /// @notice Emitted when the moderator resolves a dispute.
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
 
+    /// @notice Emitted when the moderator address is updated.
+    /// @param moderator Address of the new moderator
+    event ModeratorUpdated(address indexed moderator);
+
     constructor(
         IJobRegistry _jobRegistry,
         IStakeManager _stakeManager,
@@ -55,7 +59,9 @@ contract DisputeModule is Ownable {
     /// @notice Update the moderator address.
     /// @param _moderator New moderator able to resolve disputes.
     function setModerator(address _moderator) external onlyOwner {
+        require(_moderator != address(0), "moderator");
         moderator = _moderator;
+        emit ModeratorUpdated(_moderator);
     }
 
     /// @dev Restrict calls to the designated moderator.
