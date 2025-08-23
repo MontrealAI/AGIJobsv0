@@ -11,9 +11,7 @@ describe("ReputationEngine", function () {
     );
     engine = await Engine.deploy(ethers.ZeroAddress);
     await engine.connect(owner).setCaller(caller.address, true);
-    await engine
-      .connect(owner)
-      .setPremiumReputationThreshold(2);
+    await engine.connect(owner).setPremiumThreshold(2);
   });
 
   it("rewards validators based on agent gain", async () => {

@@ -450,7 +450,7 @@ contract MockReputationEngine is IReputationEngine {
         threshold = t;
     }
 
-    function setPremiumReputationThreshold(uint256 t) external override {
+    function setPremiumThreshold(uint256 t) external override {
         threshold = t;
     }
 
