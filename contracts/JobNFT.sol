@@ -6,6 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {StakeManager} from "./StakeManager.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title JobNFT
 /// @notice ERC721 token representing jobs with simple marketplace mechanics.
@@ -68,7 +69,7 @@ contract JobNFT is ERC721, Ownable {
 
     /// @notice Restricts function to the configured JobRegistry.
     modifier onlyJobRegistry() {
-        require(msg.sender == jobRegistry, "only JobRegistry");
+        require(jobRegistry != address(0) && msg.sender == jobRegistry, "only JobRegistry");
         _;
     }
 
@@ -78,6 +79,7 @@ contract JobNFT is ERC721, Ownable {
 
     /// @notice Configure the authorized JobRegistry.
     function setJobRegistry(address registry) external onlyOwner {
+        require(registry != address(0), "zero address");
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
     }
@@ -119,6 +121,16 @@ contract JobNFT is ERC721, Ownable {
     /// @dev Override for base URI handling.
     function _baseURI() internal view override returns (string memory) {
         return baseTokenURI;
+    }
+
+    /// @notice Returns the metadata URI for a token.
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireOwned(tokenId);
+        string memory base = _baseURI();
+        if (bytes(base).length != 0) {
+            return string.concat(base, Strings.toString(tokenId));
+        }
+        return "";
     }
 
     // ---------------------------------------------------------------------
