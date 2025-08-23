@@ -15,6 +15,10 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 ///      assets or accrues taxable exposure in any jurisdiction.
 contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
+
+    /// @dev Emitted when a zero address is supplied where non-zero is required.
+    error ZeroAddress();
+
     address public jobRegistry;
     string private baseTokenURI;
     mapping(uint256 => string) private _tokenURIs;
@@ -51,11 +55,13 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     // ---------------------------------------------------------------------
 
     function setJobRegistry(address registry) external onlyOwner {
+        if (registry == address(0)) revert ZeroAddress();
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
     }
 
     function setStakeManager(address manager) external onlyOwner {
+        if (manager == address(0)) revert ZeroAddress();
         stakeManager = StakeManager(payable(manager));
         emit StakeManagerUpdated(manager);
     }
@@ -71,6 +77,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         string calldata uri
     ) external onlyJobRegistry returns (uint256 tokenId) {
         if (bytes(uri).length == 0) revert EmptyURI();
+        if (to == address(0)) revert ZeroAddress();
         tokenId = jobId;
         if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(jobId);
         _safeMint(to, tokenId);
