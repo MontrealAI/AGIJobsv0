@@ -65,12 +65,14 @@ async function deploySystem() {
     []
   );
 
-  const Dispute = await ethers.getContractFactory("contracts/v2/DisputeModule.sol:DisputeModule");
+  const Dispute = await ethers.getContractFactory(
+    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+  );
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
-    await stake.getAddress(),
-    moderator.address,
-    0
+    0,
+    0,
+    moderator.address
   );
 
   await stake.setModules(await registry.getAddress(), await dispute.getAddress());

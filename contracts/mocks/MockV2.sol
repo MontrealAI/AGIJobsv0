@@ -106,7 +106,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     ITaxPolicy public taxPolicy;
 
     IStakeManager private _stakeManager;
-    IValidationModule public validationModule;
+    address public validationModule;
     IReputationEngine public reputationEngine;
     ICertificateNFT public certificateNFT;
     IDisputeModule public disputeModule;
@@ -150,7 +150,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     }
 
     function setValidationModule(address module) external override {
-        validationModule = IValidationModule(module);
+        validationModule = module;
     }
 
     function setReputationEngine(address engine) external override {
@@ -287,8 +287,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         job.result = result;
         job.status = Status.Submitted;
         emit JobSubmitted(jobId, msg.sender, result);
-        if (address(validationModule) != address(0)) {
-            validationModule.start(jobId, result);
+        if (validationModule != address(0)) {
+            IValidationModule(validationModule).start(jobId, result);
         }
     }
 
@@ -329,7 +329,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         Job storage job = _jobs[jobId];
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, msg.sender);
+            disputeModule.raiseDispute(jobId, evidence);
         }
         emit JobDisputed(jobId, msg.sender);
     }
