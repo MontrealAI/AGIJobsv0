@@ -29,7 +29,7 @@ describe("JobRegistry ownership", function () {
       .withArgs(user.address);
 
     await expect(
-      registry.connect(user).setJobParameters(1, 1)
+      registry.connect(user).setJobParameters(1, 1, 1)
     )
       .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
       .withArgs(user.address);

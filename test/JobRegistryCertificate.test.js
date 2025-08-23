@@ -4,12 +4,6 @@ const { ethers } = require("hardhat");
 async function deployFixture() {
   const [owner, employer, agent, other] = await ethers.getSigners();
 
-  const Validation = await ethers.getContractFactory(
-    "contracts/ValidationModule.sol:ValidationModule"
-  );
-  const validation = await Validation.deploy();
-  await validation.waitForDeployment();
-
   const Reputation = await ethers.getContractFactory(
     "contracts/mocks/StubReputationEngine.sol:StubReputationEngine"
   );
@@ -35,36 +29,38 @@ async function deployFixture() {
   const registry = await Registry.deploy();
   await registry.waitForDeployment();
 
-  await registry.setValidationModule(await validation.getAddress());
   await registry.setReputationEngine(await reputation.getAddress());
   await registry.setStakeManager(await stake.getAddress());
   await registry.setCertificateNFT(await cert.getAddress());
-  await registry.setJobParameters(1, 1);
+  await registry.setJobParameters(1, 1, 100);
+  await registry.addAdditionalAgent(agent.address);
 
   await cert.setJobRegistry(await registry.getAddress());
   await cert.setBaseURI("ipfs://");
 
-  return { owner, employer, agent, other, validation, reputation, stake, cert, registry };
+  return { owner, employer, agent, other, reputation, stake, cert, registry };
 }
 
 describe("JobRegistry and CertificateNFT", function () {
   it("prevents self-hiring", async function () {
     const { registry, employer } = await deployFixture();
     await registry.connect(employer).acknowledgeTaxPolicy();
-    await expect(
-      registry.connect(employer).createJob(employer.address)
-    ).to.be.revertedWith("self");
+    await registry.connect(employer).createJob();
+    await expect(registry.connect(employer).applyForJob(1)).to.be.revertedWith(
+      "self"
+    );
   });
 
   it("mints certificate with output URI on completion", async function () {
-    const { registry, employer, agent, validation, cert } = await deployFixture();
+    const { registry, employer, agent, cert, owner } = await deployFixture();
 
+    await registry.connect(owner).acknowledgeTaxPolicy();
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
-    await registry.connect(employer).createJob(agent.address);
+    await registry.connect(employer).createJob();
     const jobId = 1;
-    await validation.setOutcome(jobId, true);
-    await registry.connect(agent).completeJob(jobId, "result.json");
+    await registry.connect(agent).applyForJob(jobId);
+    await registry.connect(agent).submit(jobId, "result.json");
     await registry.finalize(jobId);
 
     expect(await cert.ownerOf(jobId)).to.equal(agent.address);

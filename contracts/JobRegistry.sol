@@ -325,6 +325,7 @@ contract JobRegistry is Ownable, Pausable {
         Job storage job = jobs[jobId];
         require(job.status == Status.Created, "not open");
         require(job.agent == address(0), "taken");
+        require(msg.sender != job.employer, "self");
         if (address(reputationEngine) != address(0)) {
             require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted agent");
         }
