@@ -45,22 +45,17 @@ describe("StakeManager", function () {
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      "ipfs://policy",
-      "ack"
-    );
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
-    await expect(
-      stakeManager.connect(user).depositStake(0, 200)
-    ).to.emit(stakeManager, "StakeDeposited").withArgs(user.address, 0, 200);
+    await expect(stakeManager.connect(user).depositStake(0, 200))
+      .to.emit(stakeManager, "StakeDeposited")
+      .withArgs(user.address, 0, 200);
 
     expect(await stakeManager.stakes(user.address, 0)).to.equal(200n);
     expect(await stakeManager.totalStake(0)).to.equal(200n);
@@ -70,7 +65,10 @@ describe("StakeManager", function () {
     expect(await stakeManager.totalStake(0)).to.equal(150n);
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const jobId = ethers.encodeBytes32String("job1");
@@ -80,22 +78,26 @@ describe("StakeManager", function () {
       .lockReward(jobId, employer.address, 300);
 
     await expect(
-      stakeManager.connect(registrySigner).releaseReward(jobId, user.address, 200)
-    ).to.emit(stakeManager, "StakeReleased").withArgs(jobId, user.address, 200);
+      stakeManager
+        .connect(registrySigner)
+        .releaseReward(jobId, user.address, 200)
+    )
+      .to.emit(stakeManager, "StakeReleased")
+      .withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        ["slash(address,uint8,uint256,address)"](user.address, 0, 100, employer.address)
-    ).to.emit(stakeManager, "StakeSlashed").withArgs(
-      user.address,
-      0,
-      employer.address,
-      treasury.address,
-      50,
-      50
-    );
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          0,
+          100,
+          employer.address
+        )
+    )
+      .to.emit(stakeManager, "StakeSlashed")
+      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
@@ -122,9 +124,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -136,17 +136,30 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(user)
-        ["slash(address,uint8,uint256,address)"](user.address, 0, 10, employer.address)
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          0,
+          10,
+          employer.address
+        )
     ).to.be.revertedWith("only job registry");
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        ["slash(address,uint8,uint256,address)"](user.address, 0, 200, employer.address)
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          0,
+          200,
+          employer.address
+        )
     ).to.be.revertedWith("stake");
   });
 
@@ -170,9 +183,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -192,7 +203,12 @@ describe("StakeManager", function () {
       expect(await stakeManager.stakes(user.address, role)).to.equal(100n);
       await stakeManager
         .connect(registrySigner)
-        ["slash(address,uint8,uint256,address)"](user.address, role, 50, employer.address);
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          role,
+          50,
+          employer.address
+        );
       expect(await stakeManager.stakes(user.address, role)).to.equal(50n);
     }
   });
@@ -217,9 +233,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -242,7 +256,12 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ["slash(address,uint8,uint256,address)"](user.address, 3, 1, employer.address)
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          3,
+          1,
+          employer.address
+        )
     ).to.be.revertedWithoutReason();
   });
 
@@ -266,9 +285,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -279,9 +296,10 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("acknowledge tax policy");
 
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
-    await expect(
-      stakeManager.connect(user).depositStake(0, 100)
-    ).to.emit(stakeManager, "StakeDeposited");
+    await expect(stakeManager.connect(user).depositStake(0, 100)).to.emit(
+      stakeManager,
+      "StakeDeposited"
+    );
 
     await jobRegistry.connect(owner).bumpTaxPolicyVersion();
     await expect(
@@ -289,9 +307,9 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("acknowledge tax policy");
 
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
-    await expect(
-      stakeManager.connect(user).withdrawStake(0, 50)
-    ).to.emit(stakeManager, "StakeWithdrawn").withArgs(user.address, 0, 50);
+    await expect(stakeManager.connect(user).withdrawStake(0, 50))
+      .to.emit(stakeManager, "StakeWithdrawn")
+      .withArgs(user.address, 0, 50);
   });
 
   it("restricts token updates to owner and enforces 6 decimals", async () => {
@@ -299,10 +317,7 @@ describe("StakeManager", function () {
     const token6 = await Token6.deploy();
     await expect(
       stakeManager.connect(user).setToken(await token6.getAddress())
-    ).to.be.revertedWithCustomError(
-      stakeManager,
-      "OwnableUnauthorizedAccount"
-    );
+    ).to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount");
 
     const Token18 = await ethers.getContractFactory("MockERC20");
     const token18 = await Token18.deploy();
@@ -342,9 +357,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -355,25 +368,24 @@ describe("StakeManager", function () {
 
     // old token approvals have no effect
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
-    await expect(
-      stakeManager.connect(user).depositStake(0, 100)
-    )
+    await expect(stakeManager.connect(user).depositStake(0, 100))
       .to.be.revertedWithCustomError(token2, "ERC20InsufficientAllowance")
       .withArgs(await stakeManager.getAddress(), 0n, 100n);
 
     // deposit using the new token
     await token2.mint(user.address, 200);
     await token2.connect(user).approve(await stakeManager.getAddress(), 200);
-    await expect(
-      stakeManager.connect(user).depositStake(0, 200)
-    )
+    await expect(stakeManager.connect(user).depositStake(0, 200))
       .to.emit(stakeManager, "StakeDeposited")
       .withArgs(user.address, 0, 200);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(200n);
 
     // locking funds with old token fails
     const registryAddr2 = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr2, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr2,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner2 = await ethers.getImpersonatedSigner(registryAddr2);
 
     const jobId = ethers.encodeBytes32String("job1");
@@ -412,10 +424,7 @@ describe("StakeManager", function () {
   it("restricts min stake updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setMinStake(1)
-    ).to.be.revertedWithCustomError(
-      stakeManager,
-      "OwnableUnauthorizedAccount"
-    );
+    ).to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount");
     await expect(stakeManager.connect(owner).setMinStake(1))
       .to.emit(stakeManager, "MinStakeUpdated")
       .withArgs(1);
@@ -446,9 +455,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -484,13 +491,8 @@ describe("StakeManager", function () {
   it("restricts slashing percentage updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setSlashingPercentages(60, 40)
-    ).to.be.revertedWithCustomError(
-      stakeManager,
-      "OwnableUnauthorizedAccount"
-    );
-    await expect(
-      stakeManager.connect(owner).setSlashingPercentages(60, 40)
-    )
+    ).to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount");
+    await expect(stakeManager.connect(owner).setSlashingPercentages(60, 40))
       .to.emit(stakeManager, "SlashingPercentagesUpdated")
       .withArgs(60, 40);
     expect(await stakeManager.employerSlashPct()).to.equal(60);
@@ -510,13 +512,16 @@ describe("StakeManager", function () {
     await stakeManager.connect(owner).depositStake(0, 100);
     await stakeManager
       .connect(owner)
-      ["slash(address,uint8,uint256,address)"](owner.address, 0, 100, employer.address);
+      ["slash(address,uint8,uint256,address)"](
+        owner.address,
+        0,
+        100,
+        employer.address
+      );
     expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
     expect(await token.balanceOf(employer.address)).to.equal(1070n);
     expect(await token.balanceOf(treasury.address)).to.equal(30n);
-    expect(
-      await token.balanceOf(await stakeManager.getAddress())
-    ).to.equal(0n);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(0n);
   });
 
   it("reverts when slashing percentages sum over 100", async () => {
@@ -532,35 +537,39 @@ describe("StakeManager", function () {
     await stakeManager.connect(owner).depositStake(0, 100);
     await stakeManager
       .connect(owner)
-      ["slash(address,uint8,uint256,address)"](owner.address, 0, 40, employer.address);
+      ["slash(address,uint8,uint256,address)"](
+        owner.address,
+        0,
+        40,
+        employer.address
+      );
     expect(await token.balanceOf(treasury.address)).to.equal(40n);
     expect(await token.balanceOf(employer.address)).to.equal(1000n);
   });
 
-  it("burns remainder when slashing", async () => {
+  it("sends remainder to treasury when slashing", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
     await stakeManager.connect(owner).setJobRegistry(owner.address);
     await token.connect(owner).approve(await stakeManager.getAddress(), 101);
     await stakeManager.connect(owner).depositStake(0, 101);
-    const burnAddr = await stakeManager.BURN_ADDRESS();
-    const burnBefore = await token.balanceOf(burnAddr);
+    const treasuryBefore = await token.balanceOf(treasury.address);
     await stakeManager
       .connect(owner)
-      ["slash(address,uint8,uint256,address)"](owner.address, 0, 101, employer.address);
-    const burnAfter = await token.balanceOf(burnAddr);
-    expect(burnAfter - burnBefore).to.equal(1n);
+      ["slash(address,uint8,uint256,address)"](
+        owner.address,
+        0,
+        101,
+        employer.address
+      );
+    const treasuryAfter = await token.balanceOf(treasury.address);
+    expect(treasuryAfter - treasuryBefore).to.equal(41n);
   });
 
   it("restricts treasury updates to owner", async () => {
     await expect(
       stakeManager.connect(user).setTreasury(user.address)
-    ).to.be.revertedWithCustomError(
-      stakeManager,
-      "OwnableUnauthorizedAccount"
-    );
-    await expect(
-      stakeManager.connect(owner).setTreasury(user.address)
-    )
+    ).to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount");
+    await expect(stakeManager.connect(owner).setTreasury(user.address))
       .to.emit(stakeManager, "TreasuryUpdated")
       .withArgs(user.address);
     expect(await stakeManager.treasury()).to.equal(user.address);
@@ -586,9 +595,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -598,7 +605,10 @@ describe("StakeManager", function () {
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const lockDuration = 3600n;
@@ -618,9 +628,7 @@ describe("StakeManager", function () {
 
     await time.increase(lockDuration);
 
-    await expect(
-      stakeManager.connect(user).withdrawStake(0, 50)
-    )
+    await expect(stakeManager.connect(user).withdrawStake(0, 50))
       .to.emit(stakeManager, "StakeUnlocked")
       .withArgs(user.address, 200n)
       .and.to.emit(stakeManager, "StakeWithdrawn")
@@ -647,9 +655,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -675,9 +681,9 @@ describe("StakeManager", function () {
       .to.emit(stakeManager, "StakeUnlocked")
       .withArgs(user.address, 100n);
 
-    await expect(
-      stakeManager.connect(user).withdrawStake(0, 100)
-    ).to.emit(stakeManager, "StakeWithdrawn").withArgs(user.address, 0, 100n);
+    await expect(stakeManager.connect(user).withdrawStake(0, 100))
+      .to.emit(stakeManager, "StakeWithdrawn")
+      .withArgs(user.address, 0, 100n);
   });
 
   it("allows slashing during active lock", async () => {
@@ -700,9 +706,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -712,7 +716,10 @@ describe("StakeManager", function () {
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     await stakeManager
@@ -722,7 +729,12 @@ describe("StakeManager", function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ["slash(address,uint8,uint256,address)"](user.address, 0, 100, employer.address)
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          0,
+          100,
+          employer.address
+        )
     )
       .to.emit(stakeManager, "StakeSlashed")
       .withArgs(user.address, 0, employer.address, treasury.address, 50, 50)
@@ -752,9 +764,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -785,9 +795,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -797,12 +805,20 @@ describe("StakeManager", function () {
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     await stakeManager
       .connect(registrySigner)
-      ["slash(address,uint8,uint256,address)"](user.address, 0, 100, employer.address);
+      ["slash(address,uint8,uint256,address)"](
+        user.address,
+        0,
+        100,
+        employer.address
+      );
     await stakeManager.connect(user).withdrawStake(0, 100);
 
     expect(await stakeManager.stakes(user.address, 0)).to.equal(0n);
@@ -829,9 +845,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -843,9 +857,9 @@ describe("StakeManager", function () {
     await stakeManager.connect(owner).setToken(await token2.getAddress());
 
     await token2.connect(user).approve(await stakeManager.getAddress(), 200);
-    await expect(
-      stakeManager.connect(user).depositStake(0, 200)
-    ).to.emit(stakeManager, "StakeDeposited").withArgs(user.address, 0, 200);
+    await expect(stakeManager.connect(user).depositStake(0, 200))
+      .to.emit(stakeManager, "StakeDeposited")
+      .withArgs(user.address, 0, 200);
   });
 
   it("matches 18-decimal slashing math", async () => {
@@ -868,9 +882,7 @@ describe("StakeManager", function () {
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
-    await jobRegistry
-      .connect(owner)
-      .setTaxPolicy(await taxPolicy.getAddress());
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -881,7 +893,10 @@ describe("StakeManager", function () {
     await stakeManager.connect(user).depositStake(0, 1000000);
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [registryAddr, "0x56BC75E2D63100000"]);
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const amount = 123456n;
@@ -891,7 +906,12 @@ describe("StakeManager", function () {
 
     await stakeManager
       .connect(registrySigner)
-      ["slash(address,uint8,uint256,address)"](user.address, 0, amount, employer.address);
+      ["slash(address,uint8,uint256,address)"](
+        user.address,
+        0,
+        amount,
+        employer.address
+      );
 
     const employerAfter = await token.balanceOf(employer.address);
     const treasuryAfter = await token.balanceOf(treasury.address);
@@ -900,23 +920,23 @@ describe("StakeManager", function () {
     expect(employerAfter - employerBefore).to.equal(share6);
     expect(treasuryAfter - treasuryBefore).to.equal(share6);
 
-    const shareFrom18 = (amount18 * 50n / 100n) / 10n ** 12n;
+    const shareFrom18 = (amount18 * 50n) / 100n / 10n ** 12n;
     expect(share6).to.equal(shareFrom18);
-    expect(await stakeManager.stakes(user.address, 0)).to.equal(1000000n - amount);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(
+      1000000n - amount
+    );
   });
 
   it("enforces owner-only parameter updates", async () => {
-    await expect(
-      stakeManager.connect(owner).setMinStake(10)
-    ).to.emit(stakeManager, "MinStakeUpdated").withArgs(10n);
-    await expect(
-      stakeManager.connect(user).setMinStake(1)
-    )
+    await expect(stakeManager.connect(owner).setMinStake(10))
+      .to.emit(stakeManager, "MinStakeUpdated")
+      .withArgs(10n);
+    await expect(stakeManager.connect(user).setMinStake(1))
       .to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount")
       .withArgs(user.address);
-    await expect(
-      stakeManager.connect(owner).setSlashingPercentages(40, 60)
-    ).to.emit(stakeManager, "SlashingPercentagesUpdated").withArgs(40n, 60n);
+    await expect(stakeManager.connect(owner).setSlashingPercentages(40, 60))
+      .to.emit(stakeManager, "SlashingPercentagesUpdated")
+      .withArgs(40n, 60n);
   });
 
   it("acknowledgeAndDeposit records acknowledgement and restricts callers", async () => {
@@ -1039,14 +1059,9 @@ describe("StakeManager", function () {
     await jobRegistry.connect(owner).setTaxPolicy(await policy2.getAddress());
 
     await expect(
-      stakeManager
-        .connect(user)
-        .acknowledgeAndWithdrawFor(user.address, 0, 50)
+      stakeManager.connect(user).acknowledgeAndWithdrawFor(user.address, 0, 50)
     )
-      .to.be.revertedWithCustomError(
-        stakeManager,
-        "OwnableUnauthorizedAccount"
-      )
+      .to.be.revertedWithCustomError(stakeManager, "OwnableUnauthorizedAccount")
       .withArgs(user.address);
 
     await stakeManager
@@ -1059,4 +1074,3 @@ describe("StakeManager", function () {
     );
   });
 });
-
