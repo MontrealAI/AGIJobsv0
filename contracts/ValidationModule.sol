@@ -9,6 +9,15 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 interface IStakeManager {
     function lockReward(address from, uint256 amount) external;
     function stakes(address user) external view returns (uint256);
+    function slash(address user, uint256 amount, address recipient) external;
+}
+
+interface IJobRegistry {
+    function onValidationResult(
+        uint256 jobId,
+        bool success,
+        address[] calldata validators
+    ) external;
 }
 
 interface IReputationEngine {
@@ -24,6 +33,7 @@ contract ValidationModule is Ownable, Pausable {
     /// @notice stake manager used to lock dispute bonds and verify stake
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
+    IJobRegistry public jobRegistry;
     bytes32 public clubRootNode;
     bytes32 public validatorMerkleRoot;
     /// @notice bond required to challenge a result
@@ -52,6 +62,8 @@ contract ValidationModule is Ownable, Pausable {
     uint256 public approvalThreshold = 50;
     /// @notice absolute number of validator approvals required
     uint256 public requiredValidatorApprovals;
+    /// @notice percentage of stake to slash for dishonest or absent validators
+    uint256 public slashPercentage;
 
     /// @notice global pool of potential validators
     address[] public validatorPool;
@@ -72,6 +84,8 @@ contract ValidationModule is Ownable, Pausable {
     mapping(uint256 => mapping(address => bytes32)) public commitments;
     /// @dev whether a validator revealed their vote
     mapping(uint256 => mapping(address => bool)) public revealed;
+    /// @dev store revealed vote per validator to enable slashing
+    mapping(uint256 => mapping(address => bool)) public votes;
     /// @dev approvals count per job
     mapping(uint256 => uint256) public approvals;
     /// @dev rejections count per job
@@ -94,6 +108,8 @@ contract ValidationModule is Ownable, Pausable {
     event ValidatorMerkleRootUpdated(bytes32 root);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
     event ValidatorIdentityUpdated(address indexed validator, bool hasIdentity);
+    event SlashPercentageUpdated(uint256 percent);
+    event JobRegistryUpdated(address registry);
 
     // events for commit–reveal validation
     event ValidatorsPerJobUpdated(uint256 count);
@@ -153,6 +169,17 @@ contract ValidationModule is Ownable, Pausable {
     function setReputationEngine(IReputationEngine engine) external onlyOwner {
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
+    }
+
+    function setJobRegistry(IJobRegistry registry) external onlyOwner {
+        jobRegistry = registry;
+        emit JobRegistryUpdated(address(registry));
+    }
+
+    function setSlashPercentage(uint256 percent) external onlyOwner {
+        require(percent <= 100, "percent");
+        slashPercentage = percent;
+        emit SlashPercentageUpdated(percent);
     }
 
     /// @notice Set the required number of validator approvals.
@@ -354,6 +381,10 @@ contract ValidationModule is Ownable, Pausable {
     /// @notice Commit to a validation vote.
     function commitValidation(uint256 jobId, bytes32 commitHash) external whenNotPaused {
         require(isValidator[jobId][msg.sender], "not validator");
+        require(
+            validatorIdentity[msg.sender] || additionalValidators[msg.sender],
+            "no identity"
+        );
         require(block.timestamp <= commitDeadline[jobId], "commit over");
         require(commitments[jobId][msg.sender] == bytes32(0), "committed");
         if (address(reputationEngine) != address(0)) {
@@ -370,6 +401,10 @@ contract ValidationModule is Ownable, Pausable {
         bytes32 salt
     ) external whenNotPaused {
         require(isValidator[jobId][msg.sender], "not validator");
+        require(
+            validatorIdentity[msg.sender] || additionalValidators[msg.sender],
+            "no identity"
+        );
         require(block.timestamp > commitDeadline[jobId], "commit phase");
         require(block.timestamp <= revealDeadline[jobId], "reveal over");
         bytes32 commitment = commitments[jobId][msg.sender];
@@ -383,6 +418,7 @@ contract ValidationModule is Ownable, Pausable {
         );
         require(expected == commitment, "hash mismatch");
         revealed[jobId][msg.sender] = true;
+        votes[jobId][msg.sender] = approve;
         if (approve) {
             approvals[jobId] += 1;
         } else {
@@ -406,27 +442,39 @@ contract ValidationModule is Ownable, Pausable {
             "reveal pending"
         );
         uint256 reveals = approvals[jobId] + rejections[jobId];
+        success =
+            approvals[jobId] * 100 >= reveals * approvalThreshold &&
+            reveals > 0;
+        address[] memory validators = jobValidators[jobId];
         participants = new address[](reveals);
-        address[] storage vals = jobValidators[jobId];
         uint256 idx;
-        for (uint256 i; i < vals.length; ++i) {
-            address v = vals[i];
-            if (revealed[jobId][v]) {
+        for (uint256 i; i < validators.length; ++i) {
+            address v = validators[i];
+            bool didReveal = revealed[jobId][v];
+            if (didReveal) {
                 participants[idx++] = v;
+            }
+            if (!didReveal || votes[jobId][v] != success) {
+                uint256 stake = stakeManager.stakes(v);
+                uint256 amount = (stake * slashPercentage) / 100;
+                if (amount > 0) {
+                    stakeManager.slash(v, amount, owner());
+                }
             }
             delete isValidator[jobId][v];
             delete commitments[jobId][v];
             delete revealed[jobId][v];
+            delete votes[jobId][v];
         }
-        success =
-            approvals[jobId] * 100 >= reveals * approvalThreshold &&
-            reveals > 0;
         outcomes[jobId] = success;
         delete approvals[jobId];
         delete rejections[jobId];
         delete totalReveals[jobId];
         delete jobValidators[jobId];
         emit ValidationResult(jobId, success, participants);
+        if (address(jobRegistry) != address(0)) {
+            jobRegistry.onValidationResult(jobId, success, validators);
+        }
     }
 
     /// @notice Confirms the contract and owner are tax-exempt.
