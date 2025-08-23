@@ -158,7 +158,12 @@ describe("Job lifecycle", function () {
     await validation.finalize(1);
 
     await registry.connect(employer).dispute(1, "evidence");
-    await dispute.connect(moderator).resolve(1, true); // employer wins
+    const hash = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool"],
+      [await dispute.getAddress(), 1, true]
+    );
+    const sig = await moderator.signMessage(ethers.getBytes(hash));
+    await dispute.connect(moderator).resolve(1, true, [sig]); // employer wins
 
     expect(await reputation.isBlacklisted(agent.address)).to.equal(true);
 

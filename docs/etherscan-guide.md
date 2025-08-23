@@ -21,7 +21,7 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 | Employer | `$AGIALPHA.approve(StakeManager, 1_050000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000, uri)` | approve `1_050000` for a 1‑token reward + 5% fee |
 | Agent | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000)` | stake `1_000000` |
 | Validator | `$AGIALPHA.approve(StakeManager, 1_000000)` → `StakeManager.depositStake(1, 1_000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt)` | stake `1_000000` |
-| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → owner `DisputeModule.resolve(jobId, uphold)` | dispute fee `1_000000` |
+| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner) | dispute fee `1_000000` |
 
 ## ENS prerequisites
 - Agents need an ENS subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`.
@@ -169,7 +169,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 ### Raise & resolve disputes
 1. Approve the dispute fee on `$AGIALPHA`.
 2. On `JobRegistry` → **Write**, call **acknowledgeAndDispute(jobId, evidence)**.
-3. The owner finalizes by calling **resolve(jobId, uphold)** on `DisputeModule`.
+3. A majority of moderators (or the owner) finalizes by calling **resolve(jobId, uphold, signatures)** on `DisputeModule`.
 
 ### List & purchase NFTs
 1. To list a certificate, open `CertificateNFT` → **Write** and call **approve(marketplace, tokenId)** or **setApprovalForAll(operator, true)**.
@@ -202,7 +202,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | Function | Parameters | Typical Use Case |
 | --- | --- | --- |
 | `raiseDispute(uint256 jobId, string reason)` | jobId, reason URI | Participant appeals a validation outcome. |
-| `resolve(uint256 jobId, bool uphold)` | jobId, `uphold` – sustain original result? | Moderator issues a final ruling. |
+| `resolve(uint256 jobId, bool uphold, bytes[] signatures)` | jobId, ruling, moderator approvals | Finalise dispute via majority vote or owner override. |
 | `setDisputeFee(uint256 fee)` | fee amount | Owner adjusts the dispute bond charged on disputes. |
 
 ## Parameter Glossary

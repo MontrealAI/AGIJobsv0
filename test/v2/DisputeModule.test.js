@@ -45,14 +45,14 @@ describe("DisputeModule", function () {
     });
 
     it("allows owner to add and remove moderators", async () => {
-      await expect(dispute.connect(owner).addModerator(other.address))
+      await expect(dispute.connect(owner).addModerator(other.address, 1))
         .to.emit(dispute, "ModeratorUpdated")
-        .withArgs(other.address, true);
-      expect(await dispute.moderators(other.address)).to.equal(true);
+        .withArgs(other.address, 1);
+      expect(await dispute.moderatorWeights(other.address)).to.equal(1n);
       await expect(dispute.connect(owner).removeModerator(other.address))
         .to.emit(dispute, "ModeratorUpdated")
-        .withArgs(other.address, false);
-      expect(await dispute.moderators(other.address)).to.equal(false);
+        .withArgs(other.address, 0);
+      expect(await dispute.moderatorWeights(other.address)).to.equal(0n);
     });
   });
 
@@ -145,7 +145,7 @@ describe("DisputeModule", function () {
     it("reverts resolution attempted before window", async () => {
       await registry.connect(agent).dispute(1, "evidence");
       await expect(
-        dispute.connect(owner).resolve(1, true)
+        dispute.connect(owner).resolve(1, true, [])
       ).to.be.revertedWith("window");
     });
 
@@ -156,7 +156,7 @@ describe("DisputeModule", function () {
         await token.balanceOf(await stakeManager.getAddress())
       ).to.equal(fee);
       await time.increase(window);
-      await expect(dispute.connect(owner).resolve(1, true))
+      await expect(dispute.connect(owner).resolve(1, true, []))
         .to.emit(dispute, "DisputeResolved")
         .withArgs(1, owner.address, true);
       expect(await token.balanceOf(employer.address)).to.equal(
@@ -171,7 +171,7 @@ describe("DisputeModule", function () {
       const agentStart = await token.balanceOf(agent.address);
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(window);
-      await expect(dispute.connect(owner).resolve(1, false))
+      await expect(dispute.connect(owner).resolve(1, false, []))
         .to.emit(dispute, "DisputeResolved")
         .withArgs(1, owner.address, false);
       expect(await token.balanceOf(agent.address)).to.equal(agentStart);
@@ -182,20 +182,31 @@ describe("DisputeModule", function () {
 
     it("allows owner to resolve even if not moderator", async () => {
       await dispute.connect(owner).removeModerator(owner.address);
-      expect(await dispute.moderators(owner.address)).to.equal(false);
+      expect(await dispute.moderatorWeights(owner.address)).to.equal(0n);
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(window);
-      await expect(dispute.connect(owner).resolve(1, true))
+      await expect(dispute.connect(owner).resolve(1, true, []))
         .to.emit(dispute, "DisputeResolved")
         .withArgs(1, owner.address, true);
     });
 
-    it("rejects unauthorized resolve attempts", async () => {
+    it("requires majority signatures for non-owner resolution", async () => {
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(window);
       await expect(
-        dispute.connect(outsider).resolve(1, true)
-      ).to.be.revertedWith("not authorized");
+        dispute.connect(outsider).resolve(1, true, [])
+      ).to.be.revertedWith("insufficient weight");
+
+      const hash = ethers.solidityPackedKeccak256(
+        ["address", "uint256", "bool"],
+        [await dispute.getAddress(), 1, true]
+      );
+      const sig = await owner.signMessage(ethers.getBytes(hash));
+      await expect(
+        dispute.connect(outsider).resolve(1, true, [sig])
+      )
+        .to.emit(dispute, "DisputeResolved")
+        .withArgs(1, outsider.address, true);
     });
   });
 });

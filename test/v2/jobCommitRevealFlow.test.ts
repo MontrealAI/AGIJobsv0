@@ -282,7 +282,12 @@ describe("Commit-reveal job lifecycle", function () {
     await validation.finalize(1);
 
     await registry.connect(agent).dispute(1, "evidence");
-    await env.dispute.connect(moderator).resolve(1, true);
+    const hash = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool"],
+      [await env.dispute.getAddress(), 1, true]
+    );
+    const sig = await moderator.signMessage(ethers.getBytes(hash));
+    await env.dispute.connect(moderator).resolve(1, true, [sig]);
 
     expect(await stake.stakeOf(agent.address, Role.Agent)).to.equal(0);
     expect(await token.balanceOf(employer.address)).to.equal(

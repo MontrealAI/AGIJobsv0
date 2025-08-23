@@ -44,8 +44,8 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 
 ### 6. DisputeModule
 - Allow `JobRegistry.dispute` to escrow dispute fees and trigger resolution.
-- Moderator‑based `resolve(jobId, employerWins)` that directs `StakeManager` to refund or release.
-- Owner setter to manage moderator addresses and dispute fee size.
+- Majority‑signed `resolve(jobId, employerWins, signatures)` directing `StakeManager` to refund or release.
+- Owner setter to manage moderator addresses, weights, and dispute fee size.
 
 ### 7. CertificateNFT & Marketplace
 - Mint one certificate per completed job to the worker.

@@ -70,7 +70,7 @@ For a step-by-step deployment walkthrough with owner-only setters, see [deployme
 | --- | --- | --- |
 | JobRegistry | `setModules` (none set), `setJobParameters` (`reward=0`, `stake=0`), `setFeePool` (0 address), `setFeePct` (`0`), `setTaxPolicy` (0 address) | Wire modules, set template stake/reward, and configure fees/tax policy. |
 | ValidationModule | `setValidatorPool` (empty), `setReputationEngine` (0 address), `setCommitRevealWindows` (`0`, `0`), `setValidatorBounds` (`0`, `0`), `setVRF` (0 address) | Choose validators and tune commit/reveal timing and committee sizes. |
-| DisputeModule | `addModerator` / `removeModerator` (owner), `setAppealJury` (owner), `setDisputeFee` (`0`), `setJobRegistry` (constructor address) | Configure dispute bond and arbiters. |
+| DisputeModule | `addModerator(address, weight)` / `removeModerator(address)` (owner), majority-signed `resolve(jobId, verdict, signatures)`, `setDisputeFee` (`0`), `setJobRegistry` (constructor address) | Configure dispute bond and weighted arbiters; disputes finalize via moderator vote or owner call. |
 | StakeManager | `setToken` (constructor token), `setMinStake` (`0`), `setSlashingPercentages` (`0`, `100`), `setTreasury` (constructor treasury), `setJobRegistry` (0 address), `setDisputeModule` (0 address), `setMaxStakePerAddress` (`0`) | Adjust staking token, minimums, slashing rules, and authorised modules. |
 | ReputationEngine | `setCaller` (`false`), `setStakeManager` (0 address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
 | CertificateNFT | `setJobRegistry` (0 address), `setBaseURI` (empty) | Authorise minting registry and metadata base URI. |

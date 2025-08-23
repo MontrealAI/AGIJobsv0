@@ -2,6 +2,8 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
@@ -24,8 +26,11 @@ contract DisputeModule is Ownable {
     /// @dev Defaults to 1 day if zero is provided to the constructor.
     uint256 public disputeWindow;
 
-    /// @notice Owner‑appointed addresses allowed to resolve disputes.
-    mapping(address => bool) public moderators;
+    /// @notice Voting weight allocated to each moderator.
+    mapping(address => uint256) public moderatorWeights;
+
+    /// @notice Sum of all moderator voting weights.
+    uint256 public totalModeratorWeight;
 
     struct Dispute {
         address claimant;
@@ -44,7 +49,7 @@ contract DisputeModule is Ownable {
         address indexed resolver,
         bool employerWins
     );
-    event ModeratorUpdated(address moderator, bool enabled);
+    event ModeratorUpdated(address moderator, uint256 weight);
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
@@ -75,21 +80,9 @@ contract DisputeModule is Ownable {
 
         address initialModerator =
             _moderator != address(0) ? _moderator : msg.sender;
-        moderators[initialModerator] = true;
-        emit ModeratorUpdated(initialModerator, true);
-    }
-
-    /// @notice Restrict calls to approved moderators or the contract owner.
-    /// @dev The owner can grant or revoke moderator status via
-    ///      {addModerator} and {removeModerator}. Regardless of moderator
-    ///      status, the owner always retains the ability to resolve
-    ///      disputes.
-    modifier onlyOwnerOrModerator() {
-        require(
-            msg.sender == owner() || moderators[msg.sender],
-            "not authorized"
-        );
-        _;
+        moderatorWeights[initialModerator] = 1;
+        totalModeratorWeight = 1;
+        emit ModeratorUpdated(initialModerator, 1);
     }
 
     /// @notice Restrict functions to the JobRegistry.
@@ -118,18 +111,26 @@ contract DisputeModule is Ownable {
         emit ModulesUpdated(address(jobRegistry), address(newManager));
     }
 
-    /// @notice Add a moderator address.
-    /// @param _moderator Address to grant moderator rights.
-    function addModerator(address _moderator) external onlyOwner {
-        moderators[_moderator] = true;
-        emit ModeratorUpdated(_moderator, true);
+    /// @notice Add or update a moderator with a specific voting weight.
+    /// @param _moderator Address granted moderator rights.
+    /// @param weight Voting weight assigned to the moderator.
+    function addModerator(address _moderator, uint256 weight) external onlyOwner {
+        require(_moderator != address(0), "moderator");
+        require(weight > 0, "weight");
+        uint256 previous = moderatorWeights[_moderator];
+        totalModeratorWeight = totalModeratorWeight - previous + weight;
+        moderatorWeights[_moderator] = weight;
+        emit ModeratorUpdated(_moderator, weight);
     }
 
-    /// @notice Remove a moderator address.
+    /// @notice Remove a moderator and its voting weight.
     /// @param _moderator Address to revoke moderator rights from.
     function removeModerator(address _moderator) external onlyOwner {
-        moderators[_moderator] = false;
-        emit ModeratorUpdated(_moderator, false);
+        uint256 weight = moderatorWeights[_moderator];
+        require(weight > 0, "not moderator");
+        totalModeratorWeight -= weight;
+        delete moderatorWeights[_moderator];
+        emit ModeratorUpdated(_moderator, 0);
     }
 
     /// @notice Configure the dispute fee in token units (6 decimals).
@@ -184,13 +185,20 @@ contract DisputeModule is Ownable {
     /// @notice Resolve an existing dispute after the dispute window elapses.
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.
-    function resolve(uint256 jobId, bool employerWins)
-        external
-        onlyOwnerOrModerator
-    {
+    /// @param signatures Moderator approvals supporting the resolution.
+    function resolve(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) external {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+
+        if (msg.sender != owner()) {
+            uint256 weight = _verifySignatures(jobId, employerWins, signatures);
+            require(weight * 2 > totalModeratorWeight, "insufficient weight");
+        }
 
         d.resolved = true;
 
@@ -220,6 +228,27 @@ contract DisputeModule is Ownable {
         }
 
         emit DisputeResolved(jobId, msg.sender, employerWins);
+    }
+
+    function _verifySignatures(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) internal view returns (uint256 weight) {
+        bytes32 hash = MessageHashUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(address(this), jobId, employerWins))
+        );
+        address[] memory seen = new address[](signatures.length);
+        for (uint256 i; i < signatures.length; ++i) {
+            address signer = ECDSA.recover(hash, signatures[i]);
+            uint256 w = moderatorWeights[signer];
+            require(w > 0, "bad sig");
+            for (uint256 j; j < i; ++j) {
+                require(seen[j] != signer, "dup sig");
+            }
+            seen[i] = signer;
+            weight += w;
+        }
     }
 
     function _stakeManager() internal view returns (IStakeManager) {
