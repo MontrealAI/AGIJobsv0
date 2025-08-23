@@ -26,7 +26,7 @@ contract ValidationStub is IValidationModule {
         return validatorList;
     }
 
-    function startValidation(uint256 jobId, string calldata)
+    function start(uint256 jobId, string calldata)
         external
         override
         returns (address[] memory validators)
@@ -56,7 +56,7 @@ contract ValidationStub is IValidationModule {
     function finalize(uint256 jobId) external override returns (bool success) {
         success = result;
         if (jobRegistry != address(0)) {
-            IJobRegistry(jobRegistry).validationComplete(jobId, success);
+            IJobRegistry(jobRegistry).onValidationResult(jobId, success, validatorList);
         }
     }
 

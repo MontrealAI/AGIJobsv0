@@ -212,6 +212,16 @@ interface IJobRegistry {
     /// @notice Alias for {finalizeAfterValidation} for backwards compatibility
     function validationComplete(uint256 jobId, bool success) external;
 
+    /// @notice Receive validation outcome from the ValidationModule
+    /// @param jobId Identifier of the job being validated
+    /// @param success True if validators approved the job
+    /// @param validators Validators that participated in the round
+    function onValidationResult(
+        uint256 jobId,
+        bool success,
+        address[] calldata validators
+    ) external;
+
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
     /// @param evidence Supporting evidence for the dispute

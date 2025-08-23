@@ -28,6 +28,7 @@ contract ValidationModule is IValidationModule, Ownable {
     // validator bounds per job
     uint256 public minValidators;
     uint256 public maxValidators;
+    uint256 public validatorsPerJob;
 
     uint256 public constant DEFAULT_COMMIT_WINDOW = 1 days;
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
@@ -137,6 +138,8 @@ contract ValidationModule is IValidationModule, Ownable {
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
+        validatorsPerJob = maxValidators;
+        emit ValidatorsPerJobUpdated(validatorsPerJob);
 
         emit ApprovalThresholdUpdated(approvalThreshold);
 
@@ -207,20 +210,11 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 approvalPct,
         uint256 slashPct
     ) external override onlyOwner {
-        require(committeeSize > 0, "committee");
-        require(commitDur > 0 && revealDur > 0, "windows");
+        setParameters(committeeSize, commitDur, revealDur);
         require(approvalPct > 0 && approvalPct <= 100, "approval");
         require(slashPct <= 100, "slash");
-
-        minValidators = committeeSize;
-        maxValidators = committeeSize;
-        commitWindow = commitDur;
-        revealWindow = revealDur;
         approvalThreshold = approvalPct;
         validatorSlashingPercentage = slashPct;
-
-        emit ValidatorBoundsUpdated(committeeSize, committeeSize);
-        emit TimingUpdated(commitDur, revealDur);
         emit ApprovalThresholdUpdated(approvalPct);
         emit ValidatorSlashingPctUpdated(slashPct);
         emit ParametersUpdated(
@@ -230,6 +224,27 @@ contract ValidationModule is IValidationModule, Ownable {
             approvalPct,
             slashPct
         );
+    }
+
+    /// @notice Update validator count and phase windows.
+    /// @param validators Number of validators per job.
+    /// @param commitDur Duration of the commit phase in seconds.
+    /// @param revealDur Duration of the reveal phase in seconds.
+    function setParameters(
+        uint256 validators,
+        uint256 commitDur,
+        uint256 revealDur
+    ) public onlyOwner {
+        require(validators > 0, "validators");
+        require(commitDur > 0 && revealDur > 0, "windows");
+        validatorsPerJob = validators;
+        minValidators = validators;
+        maxValidators = validators;
+        commitWindow = commitDur;
+        revealWindow = revealDur;
+        emit ValidatorBoundsUpdated(validators, validators);
+        emit ValidatorsPerJobUpdated(validators);
+        emit TimingUpdated(commitDur, revealDur);
     }
 
     /// @notice Return validators selected for a job
@@ -287,6 +302,10 @@ contract ValidationModule is IValidationModule, Ownable {
         require(minVals > 0 && maxVals >= minVals, "bounds");
         minValidators = minVals;
         maxValidators = maxVals;
+        if (minVals == maxVals) {
+            validatorsPerJob = minVals;
+            emit ValidatorsPerJobUpdated(minVals);
+        }
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
@@ -295,6 +314,7 @@ contract ValidationModule is IValidationModule, Ownable {
         require(count > 0, "count");
         minValidators = count;
         maxValidators = count;
+        validatorsPerJob = count;
         emit ValidatorBoundsUpdated(count, count);
         emit ValidatorsPerJobUpdated(count);
     }
@@ -387,8 +407,8 @@ contract ValidationModule is IValidationModule, Ownable {
             m++;
         }
 
-        require(m >= minValidators, "insufficient validators");
-        uint256 count = m < maxValidators ? m : maxValidators;
+        require(m >= validatorsPerJob, "insufficient validators");
+        uint256 count = validatorsPerJob;
 
         // deterministic selection based on hash ordering
         for (uint256 i; i < count; ++i) {
@@ -422,7 +442,7 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
-    function startValidation(uint256 jobId, string calldata /*result*/)
+    function start(uint256 jobId, string calldata /*data*/)
         external
         override
         returns (address[] memory validators)
@@ -430,13 +450,13 @@ contract ValidationModule is IValidationModule, Ownable {
         validators = selectValidators(jobId);
     }
 
-    /// @notice Commit a validation hash for a job.
-    function commitValidation(
+    /// @notice Internal commit logic shared by overloads.
+    function _commitValidation(
         uint256 jobId,
         bytes32 commitHash,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) public override requiresTaxAcknowledgement {
+        string memory subdomain,
+        bytes32[] memory proof
+    ) internal {
         Round storage r = rounds[jobId];
         require(
             jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
@@ -471,6 +491,16 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationCommitted(jobId, msg.sender, commitHash);
     }
 
+    /// @notice Commit a validation hash for a job.
+    function commitValidation(
+        uint256 jobId,
+        bytes32 commitHash,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public override requiresTaxAcknowledgement {
+        _commitValidation(jobId, commitHash, subdomain, proof);
+    }
+
     /// @notice Backwards-compatible commit function without ENS parameters.
     /// @param jobId Identifier of the job.
     /// @param commitHash Hash of the vote and salt.
@@ -480,17 +510,17 @@ contract ValidationModule is IValidationModule, Ownable {
         requiresTaxAcknowledgement
     {
         bytes32[] memory proof;
-        this.commitValidation(jobId, commitHash, "", proof);
+        _commitValidation(jobId, commitHash, "", proof);
     }
 
-    /// @notice Reveal a previously committed validation vote.
-    function revealValidation(
+    /// @notice Internal reveal logic shared by overloads.
+    function _revealValidation(
         uint256 jobId,
         bool approve,
         bytes32 salt,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) public override requiresTaxAcknowledgement {
+        string memory subdomain,
+        bytes32[] memory proof
+    ) internal {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
@@ -513,7 +543,8 @@ contract ValidationModule is IValidationModule, Ownable {
         require(commitHash != bytes32(0), "no commit");
         require(!revealed[jobId][msg.sender], "already revealed");
         require(
-            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) == commitHash,
+            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) ==
+                commitHash,
             "invalid reveal"
         );
 
@@ -527,6 +558,17 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationRevealed(jobId, msg.sender, approve);
     }
 
+    /// @notice Reveal a previously committed validation vote.
+    function revealValidation(
+        uint256 jobId,
+        bool approve,
+        bytes32 salt,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public override requiresTaxAcknowledgement {
+        _revealValidation(jobId, approve, salt, subdomain, proof);
+    }
+
     /// @notice Backwards-compatible reveal function without ENS parameters.
     /// @param jobId Identifier of the job.
     /// @param approve True to approve, false to reject.
@@ -537,7 +579,7 @@ contract ValidationModule is IValidationModule, Ownable {
         requiresTaxAcknowledgement
     {
         bytes32[] memory proof;
-        this.revealValidation(jobId, approve, salt, "", proof);
+        _revealValidation(jobId, approve, salt, "", proof);
     }
 
     /// @notice Backwards-compatible wrapper for commitValidation.
@@ -572,7 +614,7 @@ contract ValidationModule is IValidationModule, Ownable {
         );
 
         uint256 total = r.approvals + r.rejections;
-        bool quorum = r.participants.length >= minValidators;
+        bool quorum = r.participants.length >= validatorsPerJob;
         uint256 approvalCount;
         for (uint256 i; i < r.validators.length; ++i) {
             address v = r.validators[i];
@@ -628,7 +670,7 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationTallied(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
-        jobRegistry.validationComplete(jobId, success);
+        jobRegistry.onValidationResult(jobId, success, r.validators);
         return success;
     }
 
