@@ -64,7 +64,7 @@ interface IReputationEngine {
     function setThreshold(uint256 newThreshold) external;
 
     /// @notice Set premium reputation threshold
-    function setPremiumReputationThreshold(uint256 newThreshold) external;
+    function setPremiumThreshold(uint256 newThreshold) external;
 
     /// @notice Add or remove a user from the blacklist
     /// @param user Address to update
