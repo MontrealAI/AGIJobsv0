@@ -127,6 +127,7 @@ contract JobRegistry is Ownable, Pausable {
     event JobCompleted(uint256 indexed jobId, bool success);
     event JobDisputed(uint256 indexed jobId);
     event JobFinalized(uint256 indexed jobId, bool success);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event JobCancelled(uint256 indexed jobId);
     event JobDelisted(uint256 indexed jobId);
     event JobParametersUpdated(uint256 reward, uint256 stake, uint256 duration);
@@ -399,15 +400,18 @@ contract JobRegistry is Ownable, Pausable {
         emit JobDelisted(jobId);
     }
 
-    /// @notice Raise a dispute for a completed job.
-    function raiseDispute(uint256 jobId)
-        external
+    /// @notice Agent or employer raises a dispute for a completed job.
+    function dispute(uint256 jobId)
+        public
         requiresTaxAcknowledgement
         whenNotPaused
     {
         Job storage job = jobs[jobId];
         require(job.status == Status.Completed && !job.success, "cannot dispute");
-        require(msg.sender == job.agent || msg.sender == job.employer, "only participant");
+        require(
+            msg.sender == job.agent || msg.sender == job.employer,
+            "only participant"
+        );
         if (address(reputationEngine) != address(0)) {
             require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted");
         }
@@ -418,15 +422,52 @@ contract JobRegistry is Ownable, Pausable {
         emit JobDisputed(jobId);
     }
 
-    /// @notice Owner resolves a dispute, setting the final outcome.
-    function resolveDispute(uint256 jobId, bool success) external onlyOwner {
+    /// @notice Backwards-compatible wrapper for legacy integrations.
+    /// @dev Calls {dispute}.
+    function raiseDispute(uint256 jobId) external {
+        dispute(jobId);
+    }
+
+    /// @notice Resolve a dispute; callable only by the dispute module.
+    /// @param jobId Identifier of the disputed job.
+    /// @param employerWins True if the employer won the dispute.
+    function resolveDispute(uint256 jobId, bool employerWins) external {
+        require(msg.sender == address(disputeModule), "only dispute");
         Job storage job = jobs[jobId];
         require(job.status == Status.Disputed, "no dispute");
-        job.success = success;
-        job.status = Status.Completed;
-        if (address(disputeModule) != address(0)) {
-            disputeModule.resolve(jobId, !success);
+        job.success = !employerWins;
+        job.status = Status.Finalized;
+        if (employerWins) {
+            stakeManager.payReward(job.employer, job.reward + job.fee);
+            stakeManager.slash(
+                job.agent,
+                IStakeManager.Role.Agent,
+                job.stake,
+                job.employer
+            );
+            if (address(reputationEngine) != address(0)) {
+                reputationEngine.subtract(job.agent, 1);
+            }
+        } else {
+            uint256 payout = job.reward;
+            IFeePool pool = feePool;
+            uint256 fee = job.fee;
+            if (address(pool) != address(0) && fee > 0) {
+                stakeManager.payReward(address(pool), fee);
+                pool.depositFee(fee);
+                payout -= fee;
+            }
+            stakeManager.payReward(job.agent, payout);
+            stakeManager.releaseStake(job.agent, job.stake);
+            if (address(reputationEngine) != address(0)) {
+                reputationEngine.add(job.agent, 1);
+            }
+            if (address(certificateNFT) != address(0)) {
+                certificateNFT.mint(job.agent, jobId, job.outputURI);
+            }
         }
+        emit DisputeResolved(jobId, employerWins);
+        emit JobFinalized(jobId, job.success);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
