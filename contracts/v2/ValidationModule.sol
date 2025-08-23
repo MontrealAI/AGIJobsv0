@@ -450,13 +450,13 @@ contract ValidationModule is IValidationModule, Ownable {
         validators = selectValidators(jobId);
     }
 
-    /// @notice Commit a validation hash for a job.
-    function commitValidation(
+    /// @notice Internal commit logic shared by overloads.
+    function _commitValidation(
         uint256 jobId,
         bytes32 commitHash,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) public override requiresTaxAcknowledgement {
+        string memory subdomain,
+        bytes32[] memory proof
+    ) internal {
         Round storage r = rounds[jobId];
         require(
             jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
@@ -491,6 +491,16 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationCommitted(jobId, msg.sender, commitHash);
     }
 
+    /// @notice Commit a validation hash for a job.
+    function commitValidation(
+        uint256 jobId,
+        bytes32 commitHash,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public override requiresTaxAcknowledgement {
+        _commitValidation(jobId, commitHash, subdomain, proof);
+    }
+
     /// @notice Backwards-compatible commit function without ENS parameters.
     /// @param jobId Identifier of the job.
     /// @param commitHash Hash of the vote and salt.
@@ -500,17 +510,17 @@ contract ValidationModule is IValidationModule, Ownable {
         requiresTaxAcknowledgement
     {
         bytes32[] memory proof;
-        this.commitValidation(jobId, commitHash, "", proof);
+        _commitValidation(jobId, commitHash, "", proof);
     }
 
-    /// @notice Reveal a previously committed validation vote.
-    function revealValidation(
+    /// @notice Internal reveal logic shared by overloads.
+    function _revealValidation(
         uint256 jobId,
         bool approve,
         bytes32 salt,
-        string calldata subdomain,
-        bytes32[] calldata proof
-    ) public override requiresTaxAcknowledgement {
+        string memory subdomain,
+        bytes32[] memory proof
+    ) internal {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
@@ -533,7 +543,8 @@ contract ValidationModule is IValidationModule, Ownable {
         require(commitHash != bytes32(0), "no commit");
         require(!revealed[jobId][msg.sender], "already revealed");
         require(
-            keccak256(abi.encodePacked(approve, salt)) == commitHash,
+            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) ==
+                commitHash,
             "invalid reveal"
         );
 
@@ -547,6 +558,17 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationRevealed(jobId, msg.sender, approve);
     }
 
+    /// @notice Reveal a previously committed validation vote.
+    function revealValidation(
+        uint256 jobId,
+        bool approve,
+        bytes32 salt,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) public override requiresTaxAcknowledgement {
+        _revealValidation(jobId, approve, salt, subdomain, proof);
+    }
+
     /// @notice Backwards-compatible reveal function without ENS parameters.
     /// @param jobId Identifier of the job.
     /// @param approve True to approve, false to reject.
@@ -557,7 +579,7 @@ contract ValidationModule is IValidationModule, Ownable {
         requiresTaxAcknowledgement
     {
         bytes32[] memory proof;
-        this.revealValidation(jobId, approve, salt, "", proof);
+        _revealValidation(jobId, approve, salt, "", proof);
     }
 
     /// @notice Backwards-compatible wrapper for commitValidation.
