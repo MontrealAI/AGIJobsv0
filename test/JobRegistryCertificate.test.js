@@ -71,7 +71,9 @@ describe("JobRegistry and CertificateNFT", function () {
   it("restricts minting to authorized minters", async function () {
     const { cert, agent } = await deployFixture();
     await expect(
-      cert.connect(agent).mintCertificate(agent.address, 1, "foo")
-    ).to.be.revertedWith("only JobRegistry");
+      cert.connect(agent).mint(agent.address, 1, "foo")
+    )
+      .to.be.revertedWithCustomError(cert, "NotJobRegistry")
+      .withArgs(agent.address);
   });
 });
