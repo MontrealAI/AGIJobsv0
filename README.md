@@ -13,19 +13,23 @@ For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v
 
 For step‑by‑step instructions on deploying the legacy manager with `$AGIALPHA`, see [docs/deployment-v0-agialpha.md](docs/deployment-v0-agialpha.md). The guide uses block‑explorer write tabs so non‑technical owners can configure the contract without additional tooling.
 
-## Deployment with $AGIALPHA
+## Step‑by‑Step Deployment with $AGIALPHA
 
 Record every address as you deploy. The defaults below assume the 6‑decimal `$AGIALPHA` token and can be adjusted later via [`StakeManager.setToken`](contracts/v2/StakeManager.sol):
 
-| Module | Address (example) | Constructor parameters |
+| Module | Address (example) | Owner‑only setters |
 | --- | --- | --- |
-| `AGIALPHAToken` | [`0x2e8f…ebe`](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) | none – `decimals()` returns `6` |
-| `StakeManager` | `TBD` | `token`, `minStake`, `employerPct`, `treasuryPct`, `treasury` |
-| `JobRegistry` | `TBD` | `validation`, `stakeManager`, `reputation`, `dispute`, `certificateNFT`, `feePool`, `taxPolicy`, `feePct`, `jobStake` |
-| `ValidationModule` | `TBD` | `jobRegistry`, `stakeManager`, `commitWindow`, `revealWindow`, `minValidators`, `maxValidators`, `validatorPool` |
-| `FeePool` | `TBD` | `token`, `stakeManager`, `burnPct`, `treasury` |
+| `AGIALPHAToken` | [`0x2e8f…ebe`](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) | `mint`, `burn` |
+| `StakeManager` | `0x…` | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
+| `JobRegistry` | `0x…` | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot` |
+| `ValidationModule` | `0x…` | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry` |
+| `IdentityRegistry` | `0x…` | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot` |
+| `DisputeModule` | `0x…` | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
+| `ReputationEngine` | `0x…` | `setCaller`, `setWeights`, `blacklist`, `unblacklist` |
+| `CertificateNFT` | `0x…` | `setJobRegistry`, `setStakeManager`, `setBaseURI` |
+| `FeePool` | `0x…` | `setToken`, `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury` |
 
-Amounts use base units (`1 token = 1_000000`). To swap tokens after deployment, call `setToken(newToken)` on both `StakeManager` and `FeePool` and wait for `TokenUpdated` events.
+Amounts use base units (`1 token = 1_000000`). Replace the placeholder `0x…` values with the deployed addresses recorded in `docs/deployment-addresses.md`. To swap tokens after deployment, call `setToken(newToken)` on both `StakeManager` and `FeePool` and wait for `TokenUpdated` events.
 
 ### Etherscan steps
 1. **Deploy contracts** – open each verified contract → **Contract → Deploy** and supply the constructor parameters listed above. Examples:
@@ -57,7 +61,27 @@ Amounts use base units (`1 token = 1_000000`). To swap tokens after deployment, 
 
 For screenshot walkthroughs and scripted deployments, see [docs/etherscan-guide.md](docs/etherscan-guide.md) and [docs/deployment-v2-agialpha.md](docs/deployment-v2-agialpha.md).
 
-## v2 Modular Contract Overview
+### Etherscan job lifecycle
+
+1. **Create** – on `JobRegistry` **Write Contract**, call `createJob(reward, uri)` with amounts in 6‑decimal base units.
+2. **Apply** – agents stake through `StakeManager.depositStake(0, amount)` then call `applyForJob(jobId, label, proof)`.
+3. **Validate** – selected validators execute `commitValidation(jobId, hash, label, proof)` followed by `revealValidation(jobId, approve, salt)`.
+4. **Finalize** – when the reveal window closes, anyone may call `ValidationModule.finalize(jobId)` to release rewards.
+5. **Dispute** – challenges go through `JobRegistry.raiseDispute(jobId, evidence)` which forwards to `DisputeModule` for resolution.
+
+### Updating parameters without redeployment
+
+The contract owner can retune live systems from block‑explorer **Write** tabs:
+
+- **Token address** – `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`.
+- **ENS roots** – `IdentityRegistry.setAgentRootNode` / `setClubRootNode`.
+- **Merkle roots** – `IdentityRegistry.setAgentMerkleRoot` / `setValidatorMerkleRoot`.
+- **Timing & fees** – `ValidationModule.setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, and `DisputeModule.setDisputeFee`.
+- **Routing & policies** – `JobRegistry.setModules`, `setFeePool`, and `setTaxPolicy`.
+
+None of these calls require redeploying modules or migrating state.
+
+## Overview of v2 Modular Architecture
 
 The v2 release splits the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system. Deploy modules sequentially in the following order:
 
