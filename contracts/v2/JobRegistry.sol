@@ -185,6 +185,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param worker Agent who performed the job
     event JobFinalized(uint256 indexed jobId, address worker);
     event JobCancelled(uint256 indexed jobId);
+    /// @notice Emitted when an assigned job is cancelled after missing its deadline
+    /// @param jobId Identifier of the expired job
+    /// @param caller Address that triggered the expiration
+    event JobExpired(uint256 indexed jobId, address indexed caller);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
@@ -980,6 +984,24 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param jobId Identifier of the job to delist.
     function delistJob(uint256 jobId) external onlyOwner {
         _cancelJob(jobId);
+    }
+
+    /// @notice Cancel an assigned job that failed to submit before its deadline.
+    /// @param jobId Identifier of the job to cancel.
+    function cancelExpiredJob(uint256 jobId) public {
+        Job storage job = jobs[jobId];
+        require(job.state == State.Applied, "cannot expire");
+        require(block.timestamp > job.deadline, "not expired");
+        if (
+            address(taxPolicy) != address(0) &&
+            taxAcknowledgedVersion[msg.sender] != taxPolicyVersion
+        ) {
+            _acknowledge(msg.sender);
+        }
+        job.success = false;
+        job.state = State.Completed;
+        finalize(jobId);
+        emit JobExpired(jobId, msg.sender);
     }
 
     // ---------------------------------------------------------------------
