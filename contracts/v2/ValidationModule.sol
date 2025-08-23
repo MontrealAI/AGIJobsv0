@@ -28,6 +28,7 @@ contract ValidationModule is IValidationModule, Ownable {
     // validator bounds per job
     uint256 public minValidators;
     uint256 public maxValidators;
+    uint256 public validatorsPerJob;
 
     uint256 public constant DEFAULT_COMMIT_WINDOW = 1 days;
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
@@ -137,6 +138,8 @@ contract ValidationModule is IValidationModule, Ownable {
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
+        validatorsPerJob = maxValidators;
+        emit ValidatorsPerJobUpdated(validatorsPerJob);
 
         emit ApprovalThresholdUpdated(approvalThreshold);
 
@@ -207,20 +210,11 @@ contract ValidationModule is IValidationModule, Ownable {
         uint256 approvalPct,
         uint256 slashPct
     ) external override onlyOwner {
-        require(committeeSize > 0, "committee");
-        require(commitDur > 0 && revealDur > 0, "windows");
+        setParameters(committeeSize, commitDur, revealDur);
         require(approvalPct > 0 && approvalPct <= 100, "approval");
         require(slashPct <= 100, "slash");
-
-        minValidators = committeeSize;
-        maxValidators = committeeSize;
-        commitWindow = commitDur;
-        revealWindow = revealDur;
         approvalThreshold = approvalPct;
         validatorSlashingPercentage = slashPct;
-
-        emit ValidatorBoundsUpdated(committeeSize, committeeSize);
-        emit TimingUpdated(commitDur, revealDur);
         emit ApprovalThresholdUpdated(approvalPct);
         emit ValidatorSlashingPctUpdated(slashPct);
         emit ParametersUpdated(
@@ -230,6 +224,27 @@ contract ValidationModule is IValidationModule, Ownable {
             approvalPct,
             slashPct
         );
+    }
+
+    /// @notice Update validator count and phase windows.
+    /// @param validators Number of validators per job.
+    /// @param commitDur Duration of the commit phase in seconds.
+    /// @param revealDur Duration of the reveal phase in seconds.
+    function setParameters(
+        uint256 validators,
+        uint256 commitDur,
+        uint256 revealDur
+    ) public onlyOwner {
+        require(validators > 0, "validators");
+        require(commitDur > 0 && revealDur > 0, "windows");
+        validatorsPerJob = validators;
+        minValidators = validators;
+        maxValidators = validators;
+        commitWindow = commitDur;
+        revealWindow = revealDur;
+        emit ValidatorBoundsUpdated(validators, validators);
+        emit ValidatorsPerJobUpdated(validators);
+        emit TimingUpdated(commitDur, revealDur);
     }
 
     /// @notice Return validators selected for a job
@@ -287,6 +302,10 @@ contract ValidationModule is IValidationModule, Ownable {
         require(minVals > 0 && maxVals >= minVals, "bounds");
         minValidators = minVals;
         maxValidators = maxVals;
+        if (minVals == maxVals) {
+            validatorsPerJob = minVals;
+            emit ValidatorsPerJobUpdated(minVals);
+        }
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
@@ -295,6 +314,7 @@ contract ValidationModule is IValidationModule, Ownable {
         require(count > 0, "count");
         minValidators = count;
         maxValidators = count;
+        validatorsPerJob = count;
         emit ValidatorBoundsUpdated(count, count);
         emit ValidatorsPerJobUpdated(count);
     }
@@ -387,8 +407,8 @@ contract ValidationModule is IValidationModule, Ownable {
             m++;
         }
 
-        require(m >= minValidators, "insufficient validators");
-        uint256 count = m < maxValidators ? m : maxValidators;
+        require(m >= validatorsPerJob, "insufficient validators");
+        uint256 count = validatorsPerJob;
 
         // deterministic selection based on hash ordering
         for (uint256 i; i < count; ++i) {
@@ -422,7 +442,7 @@ contract ValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
-    function startValidation(uint256 jobId, string calldata /*result*/)
+    function start(uint256 jobId, string calldata /*data*/)
         external
         override
         returns (address[] memory validators)
@@ -513,7 +533,7 @@ contract ValidationModule is IValidationModule, Ownable {
         require(commitHash != bytes32(0), "no commit");
         require(!revealed[jobId][msg.sender], "already revealed");
         require(
-            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) == commitHash,
+            keccak256(abi.encodePacked(approve, salt)) == commitHash,
             "invalid reveal"
         );
 
@@ -572,7 +592,7 @@ contract ValidationModule is IValidationModule, Ownable {
         );
 
         uint256 total = r.approvals + r.rejections;
-        bool quorum = r.participants.length >= minValidators;
+        bool quorum = r.participants.length >= validatorsPerJob;
         uint256 approvalCount;
         for (uint256 i; i < r.validators.length; ++i) {
             address v = r.validators[i];
@@ -628,7 +648,7 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationTallied(jobId, success, r.approvals, r.rejections);
         emit ValidationResult(jobId, success);
 
-        jobRegistry.validationComplete(jobId, success);
+        jobRegistry.onValidationResult(jobId, success, r.validators);
         return success;
     }
 

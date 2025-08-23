@@ -653,7 +653,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         job.state = State.Submitted;
         emit JobSubmitted(jobId, msg.sender, result);
         if (address(validationModule) != address(0)) {
-            validationModule.startValidation(jobId, result);
+            validationModule.start(jobId, result);
         }
     }
 
@@ -686,6 +686,19 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     function validationComplete(uint256 jobId, bool success) external {
+        finalizeAfterValidation(jobId, success);
+    }
+
+    /// @notice Receive validation outcome from the ValidationModule
+    /// @param jobId Identifier of the job
+    /// @param success True if validators approved the job
+    /// @param validators Validators that participated in validation
+    function onValidationResult(
+        uint256 jobId,
+        bool success,
+        address[] calldata validators
+    ) external {
+        validators; // silence unused variable warning
         finalizeAfterValidation(jobId, success);
     }
 

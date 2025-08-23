@@ -288,7 +288,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         job.status = Status.Submitted;
         emit JobSubmitted(jobId, msg.sender, result);
         if (address(validationModule) != address(0)) {
-            validationModule.startValidation(jobId, result);
+            validationModule.start(jobId, result);
         }
     }
 
@@ -314,6 +314,14 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     }
 
     function validationComplete(uint256 jobId, bool success) external override {
+        finalizeAfterValidation(jobId, success);
+    }
+
+    function onValidationResult(
+        uint256 jobId,
+        bool success,
+        address[] calldata /*validators*/
+    ) external override {
         finalizeAfterValidation(jobId, success);
     }
 
