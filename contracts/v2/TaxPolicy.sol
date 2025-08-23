@@ -22,8 +22,8 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Incrementing version for the current policy text.
     uint256 private _version;
 
-    /// @notice Tracks which addresses have acknowledged the policy.
-    mapping(address => bool) private _acknowledged;
+    /// @notice Tracks which policy version each address has acknowledged.
+    mapping(address => uint256) private _acknowledgedVersion;
 
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
@@ -35,7 +35,9 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     event PolicyVersionUpdated(uint256 version);
 
     /// @notice Emitted when a user acknowledges the tax policy.
-    event PolicyAcknowledged(address indexed user);
+    /// @param user Address of the acknowledging participant.
+    /// @param version Policy version that was acknowledged.
+    event PolicyAcknowledged(address indexed user, uint256 version);
 
     constructor(string memory uri, string memory ack) Ownable(msg.sender) {
         _policyURI = uri;
@@ -87,8 +89,8 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         override
         returns (string memory disclaimer)
     {
-        _acknowledged[user] = true;
-        emit PolicyAcknowledged(user);
+        _acknowledgedVersion[user] = _version;
+        emit PolicyAcknowledged(user, _version);
         return _acknowledgement;
     }
 
@@ -99,7 +101,7 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         override
         returns (bool)
     {
-        return _acknowledged[user];
+        return _acknowledgedVersion[user] == _version;
     }
 
     /// @notice Returns the acknowledgement text without recording acceptance.

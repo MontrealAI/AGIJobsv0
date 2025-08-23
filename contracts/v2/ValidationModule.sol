@@ -10,6 +10,7 @@ import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IVRF} from "./interfaces/IVRF.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
+import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -92,9 +93,9 @@ contract ValidationModule is IValidationModule, Ownable {
         if (msg.sender != owner()) {
             address registry = address(jobRegistry);
             require(registry != address(0), "job registry");
-            IJobRegistryTax j = IJobRegistryTax(registry);
+            ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
             require(
-                j.taxAcknowledgedVersion(msg.sender) == j.taxPolicyVersion(),
+                policy.hasAcknowledged(msg.sender),
                 "acknowledge tax policy"
             );
         }
