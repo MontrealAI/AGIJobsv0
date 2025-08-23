@@ -39,12 +39,16 @@ interface IStakeManager {
     event TreasuryUpdated(address indexed treasury);
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
+    event AGITypeUpdated(address indexed nft, uint256 payoutPct);
+    event AGITypeRemoved(address indexed nft);
     event SlashPercentSumEnforcementUpdated(bool enforced);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
 
     /// @notice deposit stake for caller for a specific role
+    /// @param role participant role receiving credit
+    /// @param amount token amount with 6 decimals to deposit
     function depositStake(Role role, uint256 amount) external;
 
     /// @notice acknowledge the tax policy and deposit stake in one call
@@ -54,6 +58,8 @@ interface IStakeManager {
     function depositStakeFor(address user, Role role, uint256 amount) external;
 
     /// @notice withdraw available stake for a specific role
+    /// @param role participant role of the stake being withdrawn
+    /// @param amount token amount with 6 decimals to withdraw
     function withdrawStake(Role role, uint256 amount) external;
 
     /// @notice acknowledge the tax policy and withdraw stake in one call
@@ -72,6 +78,9 @@ interface IStakeManager {
     function lock(address from, uint256 amount) external;
 
     /// @notice release locked job reward to recipient
+    /// @param jobId unique job identifier
+    /// @param to recipient of the reward
+    /// @param amount base token amount with 6 decimals before bonuses
     function releaseReward(bytes32 jobId, address to, uint256 amount) external;
 
     /// @notice release previously locked stake for a user
@@ -111,9 +120,16 @@ interface IStakeManager {
     function payDisputeFee(address to, uint256 amount) external;
 
     /// @notice slash stake from a user for a specific role
+    /// @param user address whose stake will be reduced
+    /// @param role participant role of the slashed stake
+    /// @param amount token amount with 6 decimals to slash
+    /// @param employer recipient of the employer share
     function slash(address user, Role role, uint256 amount, address employer) external;
 
     /// @notice slash validator stake during dispute resolution
+    /// @param user address whose stake will be reduced
+    /// @param amount token amount with 6 decimals to slash
+    /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient) external;
 
     /// @notice toggle enforcement requiring slashing percentages to sum to 100
@@ -127,9 +143,12 @@ interface IStakeManager {
     function setTreasury(address _treasury) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
     function setMaxAGITypes(uint256 newMax) external;
+    function addAGIType(address nft, uint256 payoutPct) external;
+    function removeAGIType(address nft) external;
     function setFeePct(uint256 pct) external;
     function setFeePool(IFeePool pool) external;
     function setBurnPct(uint256 pct) external;
+    function setValidatorRewardPct(uint256 pct) external;
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);

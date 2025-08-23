@@ -6,6 +6,7 @@ import "contracts/v2/modules/JobRouter.sol";
 import "contracts/v2/interfaces/IStakeManager.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/v2/interfaces/IPlatformRegistry.sol";
+import "contracts/mocks/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface Vm {
@@ -50,41 +51,6 @@ contract MockPlatformRegistry is IPlatformRegistry {
     }
     function getScore(address op) external view returns (uint256) {
         return registered[op] ? scores[op] : 0;
-    }
-}
-
-contract MockStakeManager is IStakeManager {
-    mapping(address => mapping(Role => uint256)) public stakes;
-    mapping(Role => uint256) public totals;
-    address public jobRegistry;
-    function setJobRegistry(address j) external { jobRegistry = j; }
-    function setStake(address user, Role role, uint256 amount) external {
-        totals[role] = totals[role] - stakes[user][role] + amount;
-        stakes[user][role] = amount;
-    }
-    function depositStake(Role, uint256) external override {}
-    function acknowledgeAndDeposit(Role, uint256) external override {}
-    function depositStakeFor(address, Role, uint256) external override {}
-    function acknowledgeAndWithdraw(Role, uint256) external override {}
-    function withdrawStake(Role, uint256) external override {}
-    function lockReward(bytes32, address, uint256) external override {}
-    function releaseReward(bytes32, address, uint256) external override {}
-    function releaseStake(address, uint256) external override {}
-    function release(address, uint256) external override {}
-    function finalizeJobFunds(bytes32, address, uint256, uint256, IFeePool) external override {}
-    function distributeValidatorRewards(bytes32, uint256) external override {}
-    function setDisputeModule(address) external override {}
-    function setValidationModule(address) external override {}
-    function lockDisputeFee(address, uint256) external override {}
-    function payDisputeFee(address, uint256) external override {}
-    function slash(address, Role, uint256, address) external override {}
-    function slash(address, uint256, address) external override {}
-    function setSlashPercentSumEnforcement(bool) external override {}
-    function stakeOf(address user, Role role) external view override returns (uint256) {
-        return stakes[user][role];
-    }
-    function totalStake(Role role) external view override returns (uint256) {
-        return totals[role];
     }
 }
 
