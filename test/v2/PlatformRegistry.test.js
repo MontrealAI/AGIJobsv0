@@ -124,10 +124,7 @@ describe("PlatformRegistry", function () {
     )
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(platform.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("acknowledgeStakeAndRegisterFor stakes, acknowledges, and registers", async () => {
@@ -169,10 +166,7 @@ describe("PlatformRegistry", function () {
     )
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(platform.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("acknowledgeAndRegister records acknowledgement", async () => {
@@ -206,10 +200,7 @@ describe("PlatformRegistry", function () {
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(platform.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("registrar enforces operator stake", async () => {
@@ -332,10 +323,7 @@ describe("PlatformRegistry", function () {
     await expect(registry.connect(platform).acknowledgeAndDeregister())
       .to.emit(registry, "Deregistered")
       .withArgs(platform.address);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(platform.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
     expect(await registry.registered(platform.address)).to.equal(false);
   });
 

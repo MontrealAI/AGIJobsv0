@@ -9,6 +9,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
+import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -416,13 +417,15 @@ contract StakeManager is Ownable, ReentrancyGuard {
     modifier requiresTaxAcknowledgement() {
         if (msg.sender != owner()) {
             address registry = jobRegistry;
-            require(registry != address(0), "job registry");
-            IJobRegistryTax reg = IJobRegistryTax(registry);
-            require(
-                reg.taxAcknowledgedVersion(msg.sender) ==
-                    reg.taxPolicyVersion(),
-                "acknowledge tax policy"
-            );
+            if (registry != address(0)) {
+                ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
+                if (address(policy) != address(0)) {
+                    require(
+                        policy.hasAcknowledged(msg.sender),
+                        "acknowledge tax policy"
+                    );
+                }
+            }
         }
         _;
     }
@@ -512,9 +515,9 @@ contract StakeManager is Ownable, ReentrancyGuard {
         if (user != owner()) {
             address registry = jobRegistry;
             require(registry != address(0), "job registry");
-            IJobRegistryTax reg = IJobRegistryTax(registry);
+            ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
             require(
-                reg.taxAcknowledgedVersion(user) == reg.taxPolicyVersion(),
+                policy.hasAcknowledged(user),
                 "acknowledge tax policy"
             );
         }

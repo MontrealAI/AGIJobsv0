@@ -161,10 +161,7 @@ describe("JobRegistry integration", function () {
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "JobApplied")
       .withArgs(1, newAgent.address);
-    const version = await registry.taxPolicyVersion();
-    expect(
-      await registry.taxAcknowledgedVersion(newAgent.address)
-    ).to.equal(version);
+    expect(await policy.hasAcknowledged(newAgent.address)).to.equal(true);
   });
 
   it("distributes platform fee to stakers", async () => {

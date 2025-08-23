@@ -127,10 +127,7 @@ describe("JobEscrow", function () {
       .to.emit(escrow, "ResultAccepted")
       .withArgs(jobId, employer.address);
     expect(await token.balanceOf(operator.address)).to.equal(reward);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(employer.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(employer.address)).to.equal(true);
   });
 });
 

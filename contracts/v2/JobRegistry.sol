@@ -81,13 +81,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     IFeePool public feePool;
     IIdentityRegistry public identityRegistry;
 
-    /// @notice Current version of the tax policy. Participants must acknowledge
-    /// this version before interacting. The contract owner remains exempt.
-    uint256 public taxPolicyVersion;
-
-    /// @notice Tracks which policy version each participant acknowledged.
-    /// @dev Mapping is public for off-chain auditability.
-    mapping(address => uint256) public taxAcknowledgedVersion;
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
     mapping(address => bool) public acknowledgers;
@@ -100,10 +93,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             msg.sender != address(disputeModule) &&
             msg.sender != address(validationModule)
         ) {
-            require(
-                taxAcknowledgedVersion[msg.sender] == taxPolicyVersion,
-                "acknowledge tax policy"
-            );
             if (address(taxPolicy) != address(0)) {
                 require(
                     taxPolicy.hasAcknowledged(msg.sender),
@@ -246,8 +235,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         if (address(_policy) != address(0)) {
             require(_policy.isTaxExempt(), "not tax exempt");
             taxPolicy = _policy;
-            taxPolicyVersion++;
-            emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
+            emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
         }
         for (uint256 i; i < _ackModules.length; i++) {
             acknowledgers[_ackModules[i]] = true;
@@ -366,25 +354,15 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
     }
 
-    /// @notice Sets the TaxPolicy contract holding the canonical disclaimer and
-    /// bumps the policy version so participants must re-acknowledge.
+    /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
     /// @dev Only callable by the owner; the policy address cannot be zero and
     /// must explicitly report tax exemption.
     function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
         require(address(_policy) != address(0), "policy");
         require(_policy.isTaxExempt(), "not tax exempt");
         taxPolicy = _policy;
-        taxPolicyVersion++;
-        emit TaxPolicyUpdated(address(_policy), taxPolicyVersion);
+        emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
         emit ModuleUpdated("TaxPolicy", address(_policy));
-    }
-
-    /// @notice Increments the tax policy version without changing the contract
-    /// address, requiring all participants to re-acknowledge.
-    function bumpTaxPolicyVersion() external onlyOwner {
-        require(address(taxPolicy) != address(0), "policy");
-        taxPolicyVersion++;
-        emit TaxPolicyUpdated(address(taxPolicy), taxPolicyVersion);
     }
 
     /// @notice Confirms this registry and its owner are perpetually tax‑exempt.
@@ -430,8 +408,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     function _acknowledge(address user) internal returns (string memory ack) {
         require(address(taxPolicy) != address(0), "policy");
         ack = taxPolicy.acknowledge(user);
-        taxAcknowledgedVersion[user] = taxPolicyVersion;
-        emit TaxAcknowledged(user, taxPolicyVersion, ack);
+        emit TaxAcknowledged(user, taxPolicy.policyVersion(), ack);
     }
 
     /// @notice Acknowledge the current tax policy.
@@ -765,7 +742,10 @@ contract JobRegistry is Ownable, ReentrancyGuard {
      * @param evidence Supporting evidence for the dispute.
      */
     function acknowledgeAndDispute(uint256 jobId, string calldata evidence) external {
-        if (taxAcknowledgedVersion[msg.sender] != taxPolicyVersion) {
+        if (
+            address(taxPolicy) != address(0) &&
+            !taxPolicy.hasAcknowledged(msg.sender)
+        ) {
             _acknowledge(msg.sender);
         }
         dispute(jobId, evidence);
@@ -992,10 +972,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "cannot expire");
         require(block.timestamp > job.deadline, "not expired");
-        if (
-            address(taxPolicy) != address(0) &&
-            taxAcknowledgedVersion[msg.sender] != taxPolicyVersion
-        ) {
+        if (address(taxPolicy) != address(0) && !taxPolicy.hasAcknowledged(msg.sender)) {
             _acknowledge(msg.sender);
         }
         job.success = false;

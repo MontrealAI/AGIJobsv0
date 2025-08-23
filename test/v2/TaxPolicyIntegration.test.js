@@ -51,10 +51,9 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(policy, "PolicyAcknowledged")
-      .withArgs(user.address)
+      .withArgs(user.address, 1)
       .and.to.emit(registry, "TaxAcknowledged")
       .withArgs(user.address, 1, "ack");
-    expect(await registry.taxAcknowledgedVersion(user.address)).to.equal(1);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);
   });
 
@@ -64,13 +63,15 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(user).acknowledgeTaxPolicy();
-    await registry.connect(owner).bumpTaxPolicyVersion();
+    await policy.connect(owner).bumpPolicyVersion();
     const deadline = (await time.latest()) + 1000;
     await expect(
       registry.connect(user).createJob(1, deadline, "uri")
     ).to.be.revertedWith("acknowledge tax policy");
     await expect(registry.connect(user).acknowledgeTaxPolicy())
-      .to.emit(registry, "TaxAcknowledged")
+      .to.emit(policy, "PolicyAcknowledged")
+      .withArgs(user.address, 2)
+      .and.to.emit(registry, "TaxAcknowledged")
       .withArgs(user.address, 2, "ack");
     await expect(registry.connect(user).createJob(1, deadline, "uri"))
       .to.emit(registry, "JobCreated")
@@ -88,9 +89,9 @@ describe("JobRegistry tax policy integration", function () {
   it("blocks non-owner from bumping version", async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await expect(
-      registry.connect(user).bumpTaxPolicyVersion()
+      policy.connect(user).bumpPolicyVersion()
     )
-      .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
+      .to.be.revertedWithCustomError(policy, "OwnableUnauthorizedAccount")
       .withArgs(user.address);
   });
 });

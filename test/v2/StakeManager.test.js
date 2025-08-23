@@ -301,7 +301,7 @@ describe("StakeManager", function () {
       "StakeDeposited"
     );
 
-    await jobRegistry.connect(owner).bumpTaxPolicyVersion();
+    await taxPolicy.connect(owner).bumpPolicyVersion();
     await expect(
       stakeManager.connect(user).withdrawStake(0, 50)
     ).to.be.revertedWith("acknowledge tax policy");
@@ -969,10 +969,7 @@ describe("StakeManager", function () {
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(user.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(user.address)).to.equal(true);
     await expect(
       jobRegistry.connect(user).acknowledgeFor(user.address)
     ).to.be.revertedWith("acknowledger");
@@ -1017,11 +1014,8 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("acknowledge tax policy");
 
     await stakeManager.connect(user).acknowledgeAndWithdraw(0, 50);
-    const version = await jobRegistry.taxPolicyVersion();
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
-    expect(await jobRegistry.taxAcknowledgedVersion(user.address)).to.equal(
-      version
-    );
+    expect(await policy2.hasAcknowledged(user.address)).to.equal(true);
   });
 
   it("acknowledgeAndWithdrawFor requires authorization and re-acknowledges", async () => {
@@ -1067,10 +1061,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .acknowledgeAndWithdrawFor(user.address, 0, 50);
-    const version = await jobRegistry.taxPolicyVersion();
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
-    expect(await jobRegistry.taxAcknowledgedVersion(user.address)).to.equal(
-      version
-    );
+    expect(await policy2.hasAcknowledged(user.address)).to.equal(true);
   });
 });

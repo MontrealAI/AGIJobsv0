@@ -89,10 +89,7 @@ describe("PlatformIncentives acknowledge", function () {
       .approve(await stakeManager.getAddress(), STAKE);
 
     await incentives.connect(operator).acknowledgeStakeAndActivate(STAKE);
-    const version = await jobRegistry.taxPolicyVersion();
-    expect(await jobRegistry.taxAcknowledgedVersion(operator.address)).to.equal(
-      version
-    );
+    expect(await policy.hasAcknowledged(operator.address)).to.equal(true);
   });
 });
 
