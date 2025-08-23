@@ -148,12 +148,13 @@ contract DisputeModule is Ownable {
 
     /// @notice Raise a dispute by posting the dispute fee.
     /// @param jobId Identifier of the job being disputed.
+    /// @param claimant Address of the participant raising the dispute.
     /// @param evidence Supporting evidence or reason for the dispute.
-    function raiseDispute(uint256 jobId, string calldata evidence)
-        external
-        onlyJobRegistry
-    {
-        address claimant = tx.origin;
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external onlyJobRegistry {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 

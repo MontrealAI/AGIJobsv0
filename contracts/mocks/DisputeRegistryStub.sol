@@ -2,7 +2,11 @@
 pragma solidity ^0.8.23;
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId, string calldata evidence) external;
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external;
 }
 
 /// @notice Simple job registry stub to interact with DisputeModule in tests
@@ -31,7 +35,11 @@ contract DisputeRegistryStub {
 
     function finalize(uint256) external {}
 
-    function appeal(address module, uint256 jobId, string calldata evidence) external payable {
-        IDisputeModule(module).raiseDispute(jobId, evidence);
+    function appeal(
+        address module,
+        uint256 jobId,
+        string calldata evidence
+    ) external payable {
+        IDisputeModule(module).raiseDispute(jobId, msg.sender, evidence);
     }
 }

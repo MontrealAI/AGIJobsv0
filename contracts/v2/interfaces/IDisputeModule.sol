@@ -17,7 +17,11 @@ interface IDisputeModule {
     event StakeManagerUpdated(address manager);
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
 
-    function raiseDispute(uint256 jobId, string calldata evidence) external;
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external;
     function resolve(uint256 jobId, bool employerWins) external;
     function setDisputeFee(uint256 fee) external;
     function setDisputeWindow(uint256 window) external;
