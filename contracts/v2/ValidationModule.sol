@@ -371,8 +371,13 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function selectValidators(uint256 jobId) public override returns (address[] memory selected) {
         Round storage r = rounds[jobId];
+        // Ensure validators are only chosen once per round to prevent
+        // re-selection or commit replay.
         require(r.validators.length == 0, "already selected");
+        // Identity registry must be configured so candidates can be
+        // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
+        // Increment job nonce to distinguish separate validation rounds.
         jobNonce[jobId] += 1;
 
         address[] memory pool = validatorPool;
@@ -387,10 +392,14 @@ contract ValidationModule is IValidationModule, Ownable {
                 candidate,
                 IStakeManager.Role.Validator
             );
+            // Candidate must maintain active stake and cannot be
+            // blacklisted by the reputation engine.
             if (stake == 0) continue;
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) continue;
             }
+            // Verify the candidate via the identity registry (typically
+            // proving ownership of an ENS subdomain).
             bytes32[] memory proof;
             string memory subdomain = validatorSubdomains[candidate];
             bool authorized = identityRegistry.verifyValidator(
