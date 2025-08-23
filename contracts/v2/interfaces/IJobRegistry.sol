@@ -114,6 +114,10 @@ interface IJobRegistry {
     /// @return Address of the StakeManager
     function stakeManager() external view returns (address);
 
+    /// @notice Retrieve the ValidationModule managing validator sets
+    /// @return Address of the ValidationModule
+    function validationModule() external view returns (address);
+
     /// @notice Owner configuration of job limits
     /// @param reward Reward paid upon successful job completion
     /// @param stake Stake required from the agent to accept a job

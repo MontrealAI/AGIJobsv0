@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
+import {IValidationModule} from "../interfaces/IValidationModule.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes and resolves them after a
@@ -13,6 +14,7 @@ import {IStakeManager} from "../interfaces/IStakeManager.sol";
 ///      6 decimals (`1 token == 1e6` units).
 contract DisputeModule is Ownable {
     IJobRegistry public jobRegistry;
+    IStakeManager public stakeManager;
 
     /// @notice Fee required to initiate a dispute, in token units (6 decimals).
     /// @dev Defaults to 1 token (1e6 units) if zero is provided to the constructor.
@@ -30,6 +32,7 @@ contract DisputeModule is Ownable {
         uint256 raisedAt;
         bool resolved;
         uint256 fee;
+        string evidence;
     }
 
     /// @dev Tracks active disputes by jobId.
@@ -45,7 +48,8 @@ contract DisputeModule is Ownable {
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
-    event ModulesUpdated(address indexed jobRegistry);
+    event StakeManagerUpdated(IStakeManager newManager);
+    event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (6 decimals); defaults to 1e6.
@@ -60,8 +64,8 @@ contract DisputeModule is Ownable {
         if (address(_jobRegistry) != address(0)) {
             jobRegistry = _jobRegistry;
             emit JobRegistryUpdated(_jobRegistry);
-            emit ModulesUpdated(address(_jobRegistry));
         }
+        emit ModulesUpdated(address(_jobRegistry), address(0));
 
         disputeFee = _disputeFee > 0 ? _disputeFee : 1e6;
         emit DisputeFeeUpdated(disputeFee);
@@ -103,7 +107,15 @@ contract DisputeModule is Ownable {
     function setJobRegistry(IJobRegistry newRegistry) external onlyOwner {
         jobRegistry = newRegistry;
         emit JobRegistryUpdated(newRegistry);
-        emit ModulesUpdated(address(newRegistry));
+        emit ModulesUpdated(address(newRegistry), address(stakeManager));
+    }
+
+    /// @notice Update the StakeManager reference.
+    /// @param newManager New StakeManager contract implementing IStakeManager.
+    function setStakeManager(IStakeManager newManager) external onlyOwner {
+        stakeManager = newManager;
+        emit StakeManagerUpdated(newManager);
+        emit ModulesUpdated(address(jobRegistry), address(newManager));
     }
 
     /// @notice Add a moderator address.
@@ -136,11 +148,12 @@ contract DisputeModule is Ownable {
 
     /// @notice Raise a dispute by posting the dispute fee.
     /// @param jobId Identifier of the job being disputed.
-    /// @param claimant Address of the party raising the dispute.
-    function raiseDispute(uint256 jobId, address claimant)
+    /// @param evidence Supporting evidence or reason for the dispute.
+    function raiseDispute(uint256 jobId, string calldata evidence)
         external
         onlyJobRegistry
     {
+        address claimant = tx.origin;
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
@@ -150,12 +163,9 @@ contract DisputeModule is Ownable {
             "not participant"
         );
 
-        // Lock the dispute fee in the StakeManager if configured.
-        if (disputeFee > 0) {
-            IStakeManager(jobRegistry.stakeManager()).lockDisputeFee(
-                claimant,
-                disputeFee
-            );
+        IStakeManager sm = _stakeManager();
+        if (address(sm) != address(0) && disputeFee > 0) {
+            sm.lockDisputeFee(claimant, disputeFee);
         }
 
         disputes[jobId] =
@@ -163,7 +173,8 @@ contract DisputeModule is Ownable {
                 claimant: claimant,
                 raisedAt: block.timestamp,
                 resolved: false,
-                fee: disputeFee
+                fee: disputeFee,
+                evidence: evidence
             });
 
         emit DisputeRaised(jobId, claimant);
@@ -190,14 +201,31 @@ contract DisputeModule is Ownable {
 
         jobRegistry.resolveDispute(jobId, employerWins);
 
-        if (fee > 0) {
-            IStakeManager(jobRegistry.stakeManager()).payDisputeFee(
-                recipient,
-                fee
-            );
+        IStakeManager sm = _stakeManager();
+        if (fee > 0 && address(sm) != address(0)) {
+            sm.payDisputeFee(recipient, fee);
+        }
+
+        if (!employerWins && address(sm) != address(0)) {
+            address valMod = address(jobRegistry.validationModule());
+            if (valMod != address(0)) {
+                address[] memory validators = IValidationModule(valMod).validators(jobId);
+                for (uint256 i; i < validators.length; ++i) {
+                    if (!IValidationModule(valMod).votes(jobId, validators[i])) {
+                        sm.slash(validators[i], fee, jobRegistry.jobs(jobId).employer);
+                    }
+                }
+            }
         }
 
         emit DisputeResolved(jobId, msg.sender, employerWins);
+    }
+
+    function _stakeManager() internal view returns (IStakeManager) {
+        if (address(stakeManager) != address(0)) {
+            return stakeManager;
+        }
+        return IStakeManager(jobRegistry.stakeManager());
     }
 
     /// @notice Confirms the module and its owner cannot accrue tax liabilities.
