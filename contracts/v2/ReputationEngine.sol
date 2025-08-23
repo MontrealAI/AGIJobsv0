@@ -182,8 +182,14 @@ contract ReputationEngine is Ownable {
                 emit BlacklistUpdated(user, false);
             }
         } else {
+            uint256 penalty = calculateReputationPoints(payout, duration);
             uint256 current = reputation[user];
-            if (!blacklisted[user] && current < premiumThreshold) {
+            uint256 newScore = current > penalty ? current - penalty : 0;
+            reputation[user] = newScore;
+            uint256 delta = current - newScore;
+            emit ReputationUpdated(user, -int256(delta), newScore);
+
+            if (!blacklisted[user] && newScore < premiumThreshold) {
                 blacklisted[user] = true;
                 emit BlacklistUpdated(user, true);
             }
