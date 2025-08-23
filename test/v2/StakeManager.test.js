@@ -483,34 +483,24 @@ describe("StakeManager", function () {
 
   it("restricts slashing percentage updates to owner", async () => {
     await expect(
-      stakeManager.connect(user).setSlashingPercentages(60, 30)
+      stakeManager.connect(user).setSlashingPercentages(60, 40)
     ).to.be.revertedWithCustomError(
       stakeManager,
       "OwnableUnauthorizedAccount"
     );
     await expect(
-      stakeManager.connect(owner).setSlashingPercentages(60, 30)
+      stakeManager.connect(owner).setSlashingPercentages(60, 40)
     )
       .to.emit(stakeManager, "SlashingPercentagesUpdated")
-      .withArgs(60, 30);
+      .withArgs(60, 40);
     expect(await stakeManager.employerSlashPct()).to.equal(60);
-    expect(await stakeManager.treasurySlashPct()).to.equal(30);
+    expect(await stakeManager.treasurySlashPct()).to.equal(40);
   });
 
-  it("slashes full amount when percentages sum under 100", async () => {
-    await stakeManager.connect(owner).setSlashingPercentages(60, 20);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
-    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
-    await stakeManager.connect(owner).depositStake(0, 100);
-    await stakeManager
-      .connect(owner)
-      ["slash(address,uint8,uint256,address)"](owner.address, 0, 100, employer.address);
-    expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
-    expect(await token.balanceOf(employer.address)).to.equal(1060n);
-    expect(await token.balanceOf(treasury.address)).to.equal(20n);
-    expect(
-      await token.balanceOf(await stakeManager.getAddress())
-    ).to.equal(20n);
+  it("reverts when percentages do not sum to 100", async () => {
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(60, 20)
+    ).to.be.revertedWith("pct");
   });
 
   it("slashes full amount when percentages sum to 100", async () => {
@@ -535,21 +525,6 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("pct");
   });
 
-  it("can enforce percentage sum to 100", async () => {
-    await stakeManager.connect(owner).setSlashingPercentages(60, 20);
-    await stakeManager
-      .connect(owner)
-      .setSlashPercentSumEnforcement(true);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
-    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
-    await stakeManager.connect(owner).depositStake(0, 100);
-    await expect(
-      stakeManager
-        .connect(owner)
-        ["slash(address,uint8,uint256,address)"](owner.address, 0, 100, employer.address)
-    ).to.be.revertedWith("pct");
-  });
-
   it("routes full slashing to treasury when employer share is zero", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(0, 100);
     await stakeManager.connect(owner).setJobRegistry(owner.address);
@@ -560,6 +535,20 @@ describe("StakeManager", function () {
       ["slash(address,uint8,uint256,address)"](owner.address, 0, 40, employer.address);
     expect(await token.balanceOf(treasury.address)).to.equal(40n);
     expect(await token.balanceOf(employer.address)).to.equal(1000n);
+  });
+
+  it("burns remainder when slashing", async () => {
+    await stakeManager.connect(owner).setSlashingPercentages(60, 40);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    await token.connect(owner).approve(await stakeManager.getAddress(), 101);
+    await stakeManager.connect(owner).depositStake(0, 101);
+    const burnAddr = await stakeManager.BURN_ADDRESS();
+    const burnBefore = await token.balanceOf(burnAddr);
+    await stakeManager
+      .connect(owner)
+      ["slash(address,uint8,uint256,address)"](owner.address, 0, 101, employer.address);
+    const burnAfter = await token.balanceOf(burnAddr);
+    expect(burnAfter - burnBefore).to.equal(1n);
   });
 
   it("restricts treasury updates to owner", async () => {
