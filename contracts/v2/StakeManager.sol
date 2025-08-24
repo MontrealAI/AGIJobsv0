@@ -120,7 +120,8 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         address indexed employer,
         address treasury,
         uint256 employerShare,
-        uint256 treasuryShare
+        uint256 treasuryShare,
+        uint256 burnShare
     );
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
@@ -895,9 +896,11 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         require(role <= Role.Platform, "role");
         uint256 staked = stakes[user][role];
         require(staked >= amount, "stake");
+        require(employerSlashPct + treasurySlashPct == 100, "pct");
 
-        uint256 recipientShare = (amount * employerSlashPct) / 100;
-        uint256 treasuryShare = amount - recipientShare; // remainder to treasury
+        uint256 employerShare = (amount * employerSlashPct) / 100;
+        uint256 treasuryShare = (amount * treasurySlashPct) / 100;
+        uint256 burnShare = amount - employerShare - treasuryShare;
 
         stakes[user][role] = staked - amount;
         totalStakes[role] -= amount;
@@ -913,17 +916,20 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
             }
         }
 
-        if (recipientShare > 0) {
+        if (employerShare > 0) {
             if (recipient == address(feePool) && address(feePool) != address(0)) {
-                token.safeTransfer(address(feePool), recipientShare);
-                feePool.depositFee(recipientShare);
+                token.safeTransfer(address(feePool), employerShare);
+                feePool.depositFee(employerShare);
                 feePool.distributeFees();
             } else {
-                token.safeTransfer(recipient, recipientShare);
+                token.safeTransfer(recipient, employerShare);
             }
         }
         if (treasuryShare > 0) {
             token.safeTransfer(treasury, treasuryShare);
+        }
+        if (burnShare > 0) {
+            token.safeTransfer(BURN_ADDRESS, burnShare);
         }
 
         emit StakeSlashed(
@@ -931,8 +937,9 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
             role,
             recipient,
             treasury,
-            recipientShare,
-            treasuryShare
+            employerShare,
+            treasuryShare,
+            burnShare
         );
     }
 

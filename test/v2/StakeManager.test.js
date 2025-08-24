@@ -104,7 +104,7 @@ describe("StakeManager", function () {
         )
     )
       .to.emit(stakeManager, "StakeSlashed")
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50);
+      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
@@ -578,7 +578,7 @@ describe("StakeManager", function () {
     expect(await token.balanceOf(employer.address)).to.equal(1000n);
   });
 
-  it("sends remainder to treasury when slashing", async () => {
+  it("burns remainder when slashing with rounding", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
     const MockRegistry = await ethers.getContractFactory(
       "contracts/mocks/MockV2.sol:MockJobRegistry"
@@ -589,7 +589,10 @@ describe("StakeManager", function () {
       .setJobRegistry(await mockRegistry.getAddress());
     await token.connect(owner).approve(await stakeManager.getAddress(), 101);
     await stakeManager.connect(owner).depositStake(0, 101);
+    const burnAddress = "0x000000000000000000000000000000000000dEaD";
+    const burnBefore = await token.balanceOf(burnAddress);
     const treasuryBefore = await token.balanceOf(treasury.address);
+    const employerBefore = await token.balanceOf(employer.address);
     const registryAddr = await mockRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
       registryAddr,
@@ -604,8 +607,12 @@ describe("StakeManager", function () {
         101,
         employer.address
       );
+    const burnAfter = await token.balanceOf(burnAddress);
     const treasuryAfter = await token.balanceOf(treasury.address);
-    expect(treasuryAfter - treasuryBefore).to.equal(41n);
+    const employerAfter = await token.balanceOf(employer.address);
+    expect(burnAfter - burnBefore).to.equal(1n);
+    expect(treasuryAfter - treasuryBefore).to.equal(40n);
+    expect(employerAfter - employerBefore).to.equal(60n);
   });
 
   it("restricts treasury updates to owner", async () => {
@@ -780,7 +787,7 @@ describe("StakeManager", function () {
         )
     )
       .to.emit(stakeManager, "StakeSlashed")
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50)
+      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0)
       .and.to.emit(stakeManager, "StakeUnlocked")
       .withArgs(user.address, 100);
 
