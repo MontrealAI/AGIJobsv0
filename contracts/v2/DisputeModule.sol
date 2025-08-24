@@ -30,6 +30,7 @@ contract DisputeModule is Ownable {
     struct Dispute {
         address claimant;
         bool resolved;
+        string evidence;
     }
 
     /// @dev Active disputes keyed by job identifier.
@@ -73,23 +74,39 @@ contract DisputeModule is Ownable {
         _;
     }
 
+    /// @dev Restrict calls to the JobRegistry
+    modifier onlyJobRegistry() {
+        require(msg.sender == address(jobRegistry), "not registry");
+        _;
+    }
+
     /// @notice Raise a dispute for a given job.
     /// @param jobId Identifier of the disputed job.
-    function raiseDispute(uint256 jobId) external {
+    /// @param claimant Address of the disputing participant forwarded by JobRegistry.
+    /// @param evidence Supporting evidence for the dispute.
+    function raiseDispute(
+        uint256 jobId,
+        address claimant,
+        string calldata evidence
+    ) external onlyJobRegistry {
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         require(
-            msg.sender == job.employer || msg.sender == job.agent,
+            claimant == job.employer || claimant == job.agent,
             "not participant"
         );
         Dispute storage d = disputes[jobId];
         require(d.claimant == address(0), "disputed");
 
         if (appealFee > 0) {
-            stakeManager.lockDisputeFee(msg.sender, appealFee);
+            stakeManager.lockDisputeFee(claimant, appealFee);
         }
 
-        disputes[jobId] = Dispute({claimant: msg.sender, resolved: false});
-        emit DisputeRaised(jobId, msg.sender);
+        disputes[jobId] = Dispute({
+            claimant: claimant,
+            resolved: false,
+            evidence: evidence
+        });
+        emit DisputeRaised(jobId, claimant);
     }
 
     /// @notice Resolve a previously raised dispute.
