@@ -141,4 +141,17 @@ describe("Job expiration", function () {
     expect(job.success).to.equal(false);
     expect(await stakeManager.stakes(agent.address, 0)).to.equal(0);
   });
+
+  it("reverts if caller has not acknowledged tax policy", async () => {
+    const deadline = (await time.latest()) + 100;
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, "uri");
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, "", []);
+    await time.increase(200);
+    await expect(
+      registry.connect(treasury).cancelExpiredJob(jobId)
+    ).to.be.revertedWith("acknowledge tax policy");
+  });
 });

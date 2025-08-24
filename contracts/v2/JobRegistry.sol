@@ -1009,13 +1009,19 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice Cancel an assigned job that failed to submit before its deadline.
     /// @param jobId Identifier of the job to cancel.
-    function cancelExpiredJob(uint256 jobId) public {
+    function cancelExpiredJob(uint256 jobId)
+        public
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "cannot expire");
         require(block.timestamp > job.deadline, "not expired");
-        if (address(taxPolicy) != address(0) && !taxPolicy.hasAcknowledged(msg.sender)) {
-            _acknowledge(msg.sender);
-        }
         job.success = false;
         job.state = State.Completed;
         finalize(jobId);
