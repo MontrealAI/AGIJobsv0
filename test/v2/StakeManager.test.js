@@ -26,6 +26,13 @@ describe("StakeManager", function () {
     await stakeManager.connect(owner).setMinStake(0);
   });
 
+  it("reverts when staking without job registry", async () => {
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await expect(
+      stakeManager.connect(user).depositStake(0, 100)
+    ).to.be.revertedWith("registry");
+  });
+
   it("handles staking, job escrow and slashing", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
