@@ -6,7 +6,8 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint .",
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "gateway": "node agent-gateway/index.js"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,9 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@prb/math": "^4.0.1"
+    "@prb/math": "^4.0.1",
+    "ethers": "^6.15.0",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
   }
 }
