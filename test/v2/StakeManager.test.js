@@ -514,11 +514,23 @@ describe("StakeManager", function () {
 
   it("slashes full amount when percentages sum to 100", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(70, 30);
-    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
-    await stakeManager.connect(owner).depositStake(0, 100);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    const MockRegistry = await ethers.getContractFactory(
+      "contracts/mocks/MockV2.sol:MockJobRegistry"
+    );
+    const mockRegistry = await MockRegistry.deploy();
     await stakeManager
       .connect(owner)
+      .setJobRegistry(await mockRegistry.getAddress());
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    const registryAddr = await mockRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+    await stakeManager
+      .connect(registrySigner)
       ["slash(address,uint8,uint256,address)"](
         owner.address,
         0,
@@ -539,11 +551,23 @@ describe("StakeManager", function () {
 
   it("routes full slashing to treasury when employer share is zero", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(0, 100);
-    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
-    await stakeManager.connect(owner).depositStake(0, 100);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
+    const MockRegistry = await ethers.getContractFactory(
+      "contracts/mocks/MockV2.sol:MockJobRegistry"
+    );
+    const mockRegistry = await MockRegistry.deploy();
     await stakeManager
       .connect(owner)
+      .setJobRegistry(await mockRegistry.getAddress());
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    const registryAddr = await mockRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+    await stakeManager
+      .connect(registrySigner)
       ["slash(address,uint8,uint256,address)"](
         owner.address,
         0,
@@ -556,12 +580,24 @@ describe("StakeManager", function () {
 
   it("sends remainder to treasury when slashing", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
-    await token.connect(owner).approve(await stakeManager.getAddress(), 101);
-    await stakeManager.connect(owner).depositStake(0, 101);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
-    const treasuryBefore = await token.balanceOf(treasury.address);
+    const MockRegistry = await ethers.getContractFactory(
+      "contracts/mocks/MockV2.sol:MockJobRegistry"
+    );
+    const mockRegistry = await MockRegistry.deploy();
     await stakeManager
       .connect(owner)
+      .setJobRegistry(await mockRegistry.getAddress());
+    await token.connect(owner).approve(await stakeManager.getAddress(), 101);
+    await stakeManager.connect(owner).depositStake(0, 101);
+    const treasuryBefore = await token.balanceOf(treasury.address);
+    const registryAddr = await mockRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+    await stakeManager
+      .connect(registrySigner)
       ["slash(address,uint8,uint256,address)"](
         owner.address,
         0,
