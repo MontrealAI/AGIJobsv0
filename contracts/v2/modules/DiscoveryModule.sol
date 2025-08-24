@@ -8,6 +8,9 @@ import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
 /// @title DiscoveryModule
 /// @notice Ranks registered platforms based on operator scores combining stake and reputation
 contract DiscoveryModule is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
 

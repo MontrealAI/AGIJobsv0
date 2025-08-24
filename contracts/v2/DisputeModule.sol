@@ -11,6 +11,9 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @dev Dispute claimants may optionally stake an appeal fee via the
 /// StakeManager which is paid out to the winner.
 contract DisputeModule is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     /// @notice Registry coordinating job lifecycle state.
     IJobRegistry public immutable jobRegistry;
 

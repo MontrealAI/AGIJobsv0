@@ -9,6 +9,9 @@ import {VerifyOwnership} from "./VerifyOwnership.sol";
 /// @title ENSOwnershipVerifier
 /// @notice Verifies ownership of ENS subdomains via Merkle proofs or on-chain lookups
 contract ENSOwnershipVerifier is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IENS public ens;
     INameWrapper public nameWrapper;
 

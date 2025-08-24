@@ -28,6 +28,9 @@ interface IStakeManager {
 /// @title DisputeModule
 /// @notice Handles job outcome disputes and distributes dispute fees based on the verdict.
 contract DisputeModule is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
 

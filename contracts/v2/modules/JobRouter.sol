@@ -8,6 +8,9 @@ import {IPlatformRegistry} from "../interfaces/IPlatformRegistry.sol";
 /// @notice Routes jobs to registered platform operators based on stake and reputation scores.
 ///         Falls back to the deployer when no eligible operator exists.
 contract JobRouter is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IPlatformRegistry public platformRegistry;
 
     /// @dev list of operators that have registered with the router
