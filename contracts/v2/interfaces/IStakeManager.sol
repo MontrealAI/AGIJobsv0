@@ -110,6 +110,7 @@ interface IStakeManager {
     function setValidationModule(address module) external;
 
     /// @notice update job registry and dispute module in one call
+    /// @dev Staking is disabled until `jobRegistry` is configured.
     function setModules(address _jobRegistry, address _disputeModule) external;
 
     /// @notice lock a dispute fee from the payer

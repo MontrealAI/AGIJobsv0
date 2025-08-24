@@ -6,7 +6,7 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `setToken(address newToken)` – owner updates ERC‑20 used for stakes.
 - `setMinStake(uint256 minStake)` / `setMaxStakePerAddress(uint256 maxStake)` – configure stake limits.
 - `setTreasury(address treasury)` / `setFeePool(address feePool)` – wire fee destinations.
-- `setJobRegistry(address registry)` / `setDisputeModule(address module)` / `setValidationModule(address module)` – connect modules.
+- `setJobRegistry(address registry)` / `setDisputeModule(address module)` / `setValidationModule(address module)` – connect modules. Staking reverts until a registry is configured.
 - `depositStake(uint8 role, uint256 amount)` – user stakes as agent (`0`) or validator (`1`).
 - `withdrawStake(uint8 role, uint256 amount)` – withdraw previously staked tokens.
 - `lock(address from, uint256 amount)` / `release(address to, uint256 amount)` – JobRegistry hooks for job rewards.

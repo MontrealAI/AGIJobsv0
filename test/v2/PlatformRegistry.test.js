@@ -29,6 +29,13 @@ describe("PlatformRegistry", function () {
       ethers.ZeroAddress
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
+    const MockRegistry = await ethers.getContractFactory(
+      "contracts/mocks/MockV2.sol:MockJobRegistry"
+    );
+    const mockRegistry = await MockRegistry.deploy();
+    await stakeManager
+      .connect(platform)
+      .setJobRegistry(await mockRegistry.getAddress());
     await token.connect(platform).approve(await stakeManager.getAddress(), STAKE);
     await stakeManager.connect(platform).depositStake(2, STAKE); // Role.Platform = 2
 
@@ -62,6 +69,32 @@ describe("PlatformRegistry", function () {
   });
 
   it("acknowledgeAndRegister registers caller", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
+    await stakeManager
+      .connect(platform)
+      .setJobRegistry(await jobRegistry.getAddress());
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
@@ -81,6 +114,32 @@ describe("PlatformRegistry", function () {
 
   it("acknowledgeAndRegisterFor works for registrars", async () => {
     await registry.setRegistrar(owner.address, true);
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      []
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await jobRegistry
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
+    await stakeManager
+      .connect(platform)
+      .setJobRegistry(await jobRegistry.getAddress());
     await expect(
       registry.connect(owner).acknowledgeAndRegisterFor(platform.address)
     )

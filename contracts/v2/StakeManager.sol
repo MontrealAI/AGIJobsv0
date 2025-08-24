@@ -266,6 +266,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     /// @notice set the JobRegistry used for tax acknowledgement tracking
+    /// @dev Staking is disabled until a nonzero registry is configured.
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
     function setJobRegistry(address _jobRegistry) external onlyOwner {
         jobRegistry = _jobRegistry;
@@ -287,6 +288,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     /// @notice update job registry and dispute module in one call
+    /// @dev Staking is disabled until `jobRegistry` is set.
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
     /// @param _disputeModule module contract allowed to move dispute fees
     function setModules(address _jobRegistry, address _disputeModule)
@@ -541,6 +543,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     {
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
+        require(jobRegistry != address(0), "registry");
         _deposit(msg.sender, role, amount);
     }
 
