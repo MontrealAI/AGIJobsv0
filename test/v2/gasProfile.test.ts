@@ -124,7 +124,12 @@ describe("gas profiling", function () {
     expect(receiptFinalize.gasUsed).to.be.lt(1_000_000n);
 
     await registry.connect(agent).dispute(1, "evidence");
-    const txResolve = await dispute.connect(moderator).resolve(1, false);
+    const hash = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool"],
+      [await dispute.getAddress(), 1, false]
+    );
+    const sig = await moderator.signMessage(ethers.getBytes(hash));
+    const txResolve = await dispute.connect(moderator).resolve(1, false, [sig]);
     const receiptResolve = await txResolve.wait();
     expect(receiptResolve.gasUsed).to.be.lt(1_000_000n);
   });
