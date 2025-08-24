@@ -36,8 +36,6 @@ async function deployFixture() {
   await registry.addAdditionalAgent(agent.address);
 
   await cert.setJobRegistry(await registry.getAddress());
-  await cert.setBaseURI("ipfs://");
-
   return { owner, employer, agent, other, reputation, stake, cert, registry };
 }
 
@@ -60,11 +58,12 @@ describe("JobRegistry and CertificateNFT", function () {
     await registry.connect(employer).createJob();
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId);
-    await registry.connect(agent).submit(jobId, "result.json");
+    await registry.connect(agent).submit(jobId, "ipfs://result.json");
     await registry.finalize(jobId);
 
     expect(await cert.ownerOf(jobId)).to.equal(agent.address);
-    expect(await cert.tokenURI(jobId)).to.equal("ipfs://result.json");
+    const hash = await cert.tokenHashes(jobId);
+    expect(hash).to.equal(ethers.keccak256(ethers.toUtf8Bytes("ipfs://result.json")));
     await expect(registry.finalize(jobId)).to.be.revertedWith("not ready");
   });
 

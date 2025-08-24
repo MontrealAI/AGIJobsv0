@@ -112,7 +112,7 @@ describe("Ownable modules", function () {
         (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
       ],
       [DisputeModule.attach(dispute), (inst, signer) => inst.connect(signer).setDisputeFee(0)],
-      [CertificateNFT.attach(certificate), (inst, signer) => inst.connect(signer).setBaseURI("ipfs://new")],
+      [CertificateNFT.attach(certificate), (inst, signer) => inst.connect(signer).setJobRegistry(ethers.ZeroAddress)],
       [PlatformRegistry.attach(platformRegistry), (inst, signer) => inst.connect(signer).setMinPlatformStake(0)],
       [JobRouter.attach(router), (inst, signer) => inst.connect(signer).setRegistrar(ethers.ZeroAddress, false)],
       [PlatformIncentives.attach(incentives), (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress)],
