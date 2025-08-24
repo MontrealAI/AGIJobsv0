@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 const JOB_REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
-  'function submit(uint256 jobId, string result, string subdomain, bytes proof) external'
+  'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external'
 ];
 
 // Provider and signer
@@ -63,7 +63,8 @@ app.post('/jobs/:id/apply', async (req, res) => {
 app.post('/jobs/:id/submit', async (req, res) => {
   try {
     const { result } = req.body;
-    const tx = await registry.submit(req.params.id, result || '', '', '0x');
+    const hash = ethers.id(result || '');
+    const tx = await registry.submit(req.params.id, hash, result || '', '', '0x');
     await tx.wait();
     res.json({ tx: tx.hash });
   } catch (err) {

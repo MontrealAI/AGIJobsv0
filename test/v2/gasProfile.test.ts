@@ -104,7 +104,9 @@ describe("gas profiling", function () {
     expect(receiptCreate.gasUsed).to.be.lt(1_000_000n);
 
     await registry.connect(agent).applyForJob(1, "agent", []);
-    await registry.connect(agent).submit(1, "ipfs://result", "agent", []);
+    await registry
+      .connect(agent)
+      .submit(1, ethers.id("ipfs://result"), "ipfs://result", "agent", []);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);

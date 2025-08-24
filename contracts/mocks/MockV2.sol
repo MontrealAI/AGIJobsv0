@@ -235,7 +235,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             success: false,
             status: Status.Created,
             uri: uri,
-            result: ""
+            resultHash: bytes32(0)
         });
         deadlines[jobId] = deadline;
         if (address(_stakeManager) != address(0) && reward > 0) {
@@ -278,7 +278,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function submit(
         uint256 jobId,
-        string calldata result,
+        bytes32 resultHash,
+        string calldata resultURI,
         string calldata,
         bytes32[] calldata
     ) public override {
@@ -286,21 +287,22 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         require(job.status == Status.Applied, "state");
         require(msg.sender == job.agent, "agent");
         require(block.timestamp <= deadlines[jobId], "deadline");
-        job.result = result;
+        job.resultHash = resultHash;
         job.status = Status.Submitted;
-        emit JobSubmitted(jobId, msg.sender, result);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);
         if (validationModule != address(0)) {
-            IValidationModule(validationModule).start(jobId, result);
+            IValidationModule(validationModule).start(jobId, resultURI);
         }
     }
 
     function acknowledgeAndSubmit(
         uint256 jobId,
-        string calldata result,
+        bytes32 resultHash,
+        string calldata resultURI,
         string calldata subdomain,
         bytes32[] calldata proof
     ) external override {
-        submit(jobId, result, subdomain, proof);
+        submit(jobId, resultHash, resultURI, subdomain, proof);
     }
 
     function finalizeAfterValidation(uint256 jobId, bool success) public override {

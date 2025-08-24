@@ -5,7 +5,7 @@ Summary of key AGIJob Manager contract functions and parameters.
 ## JobRegistry
 - `createJob(uint256 reward, string uri)` – employer posts a job and escrows the reward.
 - `applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)` – agent applies using ENS label and Merkle proof.
-- `submit(uint256 jobId, string result)` – agent submits work artifact.
+- `submit(uint256 jobId, bytes32 resultHash, string resultURI)` – agent submits work artifact by hash.
 - `finalizeAfterValidation(uint256 jobId, bool success)` – records validation result and releases funds.
 - `raiseDispute(uint256 jobId, string evidence)` – escalates a job to the dispute module.
 

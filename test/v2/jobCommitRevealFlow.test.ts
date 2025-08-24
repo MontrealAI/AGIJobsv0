@@ -196,7 +196,7 @@ describe("Commit-reveal job lifecycle", function () {
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
       .connect(agent)
-      .submit(1, "ipfs://result", label, []);
+      .submit(1, ethers.id("ipfs://result"), "ipfs://result", label, []);
 
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
@@ -267,7 +267,7 @@ describe("Commit-reveal job lifecycle", function () {
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
       .connect(agent)
-      .submit(1, "ipfs://bad", label, []);
+      .submit(1, ethers.id("ipfs://bad"), "ipfs://bad", label, []);
 
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");

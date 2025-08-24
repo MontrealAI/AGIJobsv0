@@ -99,8 +99,8 @@ then be performed through the "Write" tabs on each module.
 3. `JobApplied(jobId, agent)` will be emitted.
 
 ### Submitting Work
-1. The selected agent calls `JobRegistry.submit(jobId, resultURI)` when the task is complete.
-2. `JobSubmitted(jobId, resultURI)` confirms the submission and triggers validation.
+1. The selected agent calls `JobRegistry.submit(jobId, resultHash, resultURI)` when the task is complete.
+2. `JobSubmitted(jobId, resultHash, resultURI)` confirms the submission and triggers validation.
 
 ### Validation
 1. During commit phase, validators call

@@ -93,7 +93,9 @@ describe("Identity verification enforcement", function () {
       await registry.connect(agent).applyForJob(jobId, "a", []);
       await identity.removeAdditionalAgent(agent.address);
       await expect(
-        registry.connect(agent).submit(jobId, "res", "a", [])
+        registry
+          .connect(agent)
+          .submit(jobId, ethers.id("res"), "res", "a", [])
       ).to.be.revertedWith("Not authorized agent");
     });
   });
@@ -180,7 +182,7 @@ describe("Identity verification enforcement", function () {
         success: false,
         status: 3,
         uri: "",
-        result: "",
+        resultHash: ethers.ZeroHash,
       };
       await jobRegistry.setJob(1, jobStruct);
     });

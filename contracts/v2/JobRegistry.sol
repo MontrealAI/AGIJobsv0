@@ -66,7 +66,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         State state;
         bool success;
         string uri;
-        string result;
+        bytes32 resultHash;
     }
 
     uint256 public nextJobId;
@@ -167,7 +167,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 fee
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, address indexed worker, string result);
+    event JobSubmitted(
+        uint256 indexed jobId,
+        address indexed worker,
+        bytes32 resultHash,
+        string resultURI
+    );
     event JobCompleted(uint256 indexed jobId, bool success);
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
@@ -476,7 +481,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             state: State.Created,
             success: false,
             uri: uri,
-            result: ""
+            resultHash: bytes32(0)
         });
         uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
@@ -606,10 +611,12 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Agent submits work for validation and selects validators.
     /// @param jobId Identifier of the job being submitted.
-    /// @param result Metadata URI describing the completed work.
+    /// @param resultHash Hash of the completed work.
+    /// @param resultURI Metadata URI describing the completed work.
     function submit(
         uint256 jobId,
-        string calldata result,
+        bytes32 resultHash,
+        string calldata resultURI,
         string calldata subdomain,
         bytes32[] calldata proof
     ) public requiresTaxAcknowledgement {
@@ -634,23 +641,24 @@ contract JobRegistry is Ownable, ReentrancyGuard {
             proof
         );
         require(authorized, "Not authorized agent");
-        job.result = result;
+        job.resultHash = resultHash;
         job.state = State.Submitted;
-        emit JobSubmitted(jobId, msg.sender, result);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);
         if (address(validationModule) != address(0)) {
-            validationModule.start(jobId, result);
+            validationModule.start(jobId, resultURI);
         }
     }
 
     /// @notice Acknowledge the tax policy and submit work in one call.
     function acknowledgeAndSubmit(
         uint256 jobId,
-        string calldata result,
+        bytes32 resultHash,
+        string calldata resultURI,
         string calldata subdomain,
         bytes32[] calldata proof
     ) external {
         _acknowledge(msg.sender);
-        submit(jobId, result, subdomain, proof);
+        submit(jobId, resultHash, resultURI, subdomain, proof);
     }
 
     /// @notice Finalize job outcome after validation.

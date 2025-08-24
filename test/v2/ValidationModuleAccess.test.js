@@ -65,7 +65,7 @@ describe("ValidationModule access controls", function () {
       success: false,
       status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, jobStruct);
   });
@@ -200,7 +200,7 @@ describe("ValidationModule access controls", function () {
       success: false,
       status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     });
     await validation.selectValidators(1);
     const nonce2 = await validation.jobNonce(1);
