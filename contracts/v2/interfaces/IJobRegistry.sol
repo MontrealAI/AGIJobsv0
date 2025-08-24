@@ -22,7 +22,7 @@ interface IJobRegistry {
         uint256 stake;
         bool success;
         Status status;
-        string uri;
+        bytes32 uriHash;
         bytes32 resultHash;
     }
 
@@ -65,7 +65,8 @@ interface IJobRegistry {
         address indexed agent,
         uint256 reward,
         uint256 stake,
-        uint256 fee
+        uint256 fee,
+        string uri
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
     event JobSubmitted(

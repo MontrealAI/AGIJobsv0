@@ -131,7 +131,15 @@ describe("JobRegistry integration", function () {
     const deadline = (await time.latest()) + 1000;
     await expect(registry.connect(employer).createJob(reward, deadline, "uri"))
       .to.emit(registry, "JobCreated")
-      .withArgs(1, employer.address, ethers.ZeroAddress, reward, stake, 0);
+      .withArgs(
+        1,
+        employer.address,
+        ethers.ZeroAddress,
+        reward,
+        stake,
+        0,
+        "uri"
+      );
     const jobId = 1;
     await expect(registry.connect(agent).applyForJob(jobId, "", []))
       .to.emit(registry, "JobApplied")
