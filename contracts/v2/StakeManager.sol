@@ -900,6 +900,10 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         require(role <= Role.Platform, "role");
         uint256 staked = stakes[user][role];
         require(staked >= amount, "stake");
+        require(
+            employerSlashPct + treasurySlashPct == 100,
+            "pct"
+        );
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
