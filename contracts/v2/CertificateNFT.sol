@@ -20,8 +20,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     error ZeroAddress();
 
     address public jobRegistry;
-    string private baseTokenURI;
-    mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => bytes32) public tokenHashes;
 
     StakeManager public stakeManager;
 
@@ -33,7 +32,6 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
 
     mapping(uint256 => Listing) public listings;
 
-    event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
@@ -66,11 +64,6 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         emit StakeManagerUpdated(manager);
     }
 
-    function setBaseURI(string calldata uri) external onlyOwner {
-        baseTokenURI = uri;
-        emit BaseURIUpdated(uri);
-    }
-
     function mint(
         address to,
         uint256 jobId,
@@ -81,22 +74,12 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         tokenId = jobId;
         if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(jobId);
         _safeMint(to, tokenId);
-        _tokenURIs[tokenId] = uri;
-        emit CertificateMinted(to, jobId);
+        tokenHashes[tokenId] = keccak256(bytes(uri));
+        emit CertificateMinted(to, jobId, uri);
     }
-
-    function _baseURI() internal view override returns (string memory) {
-        return baseTokenURI;
-    }
-
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        string memory custom = _tokenURIs[tokenId];
-        string memory base = _baseURI();
-        if (bytes(base).length != 0) {
-            return string.concat(base, custom);
-        }
-        return custom;
+        revert("Off-chain URI");
     }
 
     function list(uint256 tokenId, uint256 price) external {

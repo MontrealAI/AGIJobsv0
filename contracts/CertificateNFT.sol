@@ -35,8 +35,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------------
 
     address public jobRegistry;
-    string private baseTokenURI;
-    mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => bytes32) public tokenHashes;
 
     /// @notice StakeManager providing the ERC20 token used for payments.
     StakeManager public stakeManager;
@@ -54,10 +53,9 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard {
     // Events
     // ---------------------------------------------------------------------
 
-    event BaseURIUpdated(string newURI);
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
-    event CertificateMinted(address indexed to, uint256 indexed jobId);
+    event CertificateMinted(address indexed to, uint256 indexed jobId, string uri);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
@@ -97,12 +95,6 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard {
         emit StakeManagerUpdated(manager);
     }
 
-    /// @notice Update the base token URI.
-    function setBaseURI(string calldata uri) external onlyOwner {
-        baseTokenURI = uri;
-        emit BaseURIUpdated(uri);
-    }
-
     // ---------------------------------------------------------------------
     // Minting
     // ---------------------------------------------------------------------
@@ -121,8 +113,8 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard {
             revert CertificateAlreadyMinted(jobId);
         }
         _safeMint(to, tokenId);
-        _tokenURIs[tokenId] = uri;
-        emit CertificateMinted(to, jobId);
+        tokenHashes[tokenId] = keccak256(bytes(uri));
+        emit CertificateMinted(to, jobId, uri);
     }
 
     // ---------------------------------------------------------------------
@@ -175,18 +167,9 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard {
     // Metadata
     // ---------------------------------------------------------------------
 
-    function _baseURI() internal view override returns (string memory) {
-        return baseTokenURI;
-    }
-
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        string memory custom = _tokenURIs[tokenId];
-        string memory base = _baseURI();
-        if (bytes(base).length != 0) {
-            return string.concat(base, custom);
-        }
-        return custom;
+        revert("Off-chain URI");
     }
 
     // ---------------------------------------------------------------------

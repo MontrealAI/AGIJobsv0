@@ -14,7 +14,7 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     uint256 public constant version = 1;
 
     address public jobRegistry;
-    mapping(uint256 => string) private _tokenURIs;
+    mapping(uint256 => bytes32) public tokenHashes;
 
     event JobRegistryUpdated(address registry);
 
@@ -42,17 +42,16 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         uint256 jobId,
         string calldata uri
     ) external onlyJobRegistry returns (uint256 tokenId) {
+        if (bytes(uri).length == 0) revert EmptyURI();
         tokenId = jobId;
         _safeMint(to, tokenId);
-        if (bytes(uri).length != 0) {
-            _tokenURIs[tokenId] = uri;
-        }
-        emit CertificateMinted(to, jobId);
+        tokenHashes[tokenId] = keccak256(bytes(uri));
+        emit CertificateMinted(to, jobId, uri);
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        return _tokenURIs[tokenId];
+        revert("Off-chain URI");
     }
 
     /// @notice Confirms this NFT module and owner remain tax neutral.

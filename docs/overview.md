@@ -73,7 +73,7 @@ For a step-by-step deployment walkthrough with owner-only setters, see [deployme
 | DisputeModule | `addModerator(address, weight)` / `removeModerator(address)` (owner), majority-signed `resolve(jobId, verdict, signatures)`, `setDisputeFee` (`0`), `setJobRegistry` (constructor address) | Configure dispute bond and weighted arbiters; disputes finalize via moderator vote or owner call. |
 | StakeManager | `setToken` (constructor token), `setMinStake` (`0`), `setSlashingPercentages` (`0`, `100`), `setTreasury` (constructor treasury), `setJobRegistry` (0 address), `setDisputeModule` (0 address), `setMaxStakePerAddress` (`0`) | Adjust staking token, minimums, slashing rules, and authorised modules. |
 | ReputationEngine | `setCaller` (`false`), `setStakeManager` (0 address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
-| CertificateNFT | `setJobRegistry` (0 address), `setBaseURI` (empty) | Authorise minting registry and metadata base URI. |
+| CertificateNFT | `setJobRegistry` (0 address) | Authorise minting registry; URIs emitted in events with hashes on-chain. |
 
 ## Incentive Mechanics
 Honest participation minimises a system-wide free energy similar to the thermodynamic relation `G = H - T S`.

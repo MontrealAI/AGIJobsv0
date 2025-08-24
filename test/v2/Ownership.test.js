@@ -112,14 +112,20 @@ describe("Ownable modules", function () {
         (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
       ],
       [DisputeModule.attach(dispute), (inst, signer) => inst.connect(signer).setDisputeFee(0)],
-      [CertificateNFT.attach(certificate), (inst, signer) => inst.connect(signer).setBaseURI("ipfs://new")],
+      [
+        CertificateNFT.attach(certificate),
+        (inst, signer) => inst.connect(signer).setJobRegistry(other.address),
+      ],
       [PlatformRegistry.attach(platformRegistry), (inst, signer) => inst.connect(signer).setMinPlatformStake(0)],
       [JobRouter.attach(router), (inst, signer) => inst.connect(signer).setRegistrar(ethers.ZeroAddress, false)],
       [PlatformIncentives.attach(incentives), (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress)],
       [FeePool.attach(feePool), (inst, signer) => inst.connect(signer).setBurnPct(0)],
       [TaxPolicy.attach(taxPolicy), (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new")],
       [ENSVerifier.attach(ensVerifier), (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress)],
-      [modCert, (inst, signer) => inst.connect(signer).setJobRegistry(ethers.ZeroAddress)],
+      [
+        modCert,
+        (inst, signer) => inst.connect(signer).setJobRegistry(other.address),
+      ],
       [identity, (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress)],
     ];
 

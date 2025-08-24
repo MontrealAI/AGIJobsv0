@@ -13,7 +13,7 @@ interface ICertificateNFT {
     /// @dev Reverts when an empty metadata URI is supplied
     error EmptyURI();
 
-    event CertificateMinted(address indexed to, uint256 indexed jobId);
+    event CertificateMinted(address indexed to, uint256 indexed jobId, string uri);
 
     /// @notice Mint a completion certificate NFT for a job
     /// @param to Recipient of the certificate

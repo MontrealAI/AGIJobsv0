@@ -14,13 +14,13 @@ describe("CertificateNFT", function () {
   });
 
   it("mints certificates only via JobRegistry", async () => {
-    await expect(
-      nft.connect(jobRegistry).mint(user.address, 1, "ipfs://job/1")
-    )
+    const uri = "ipfs://job/1";
+    await expect(nft.connect(jobRegistry).mint(user.address, 1, uri))
       .to.emit(nft, "CertificateMinted")
-      .withArgs(user.address, 1);
+      .withArgs(user.address, 1, uri);
     expect(await nft.ownerOf(1)).to.equal(user.address);
-    expect(await nft.tokenURI(1)).to.equal("ipfs://job/1");
+    const hash = await nft.tokenHashes(1);
+    expect(hash).to.equal(ethers.keccak256(ethers.toUtf8Bytes(uri)));
     await expect(
       nft.connect(owner).mint(user.address, 2, "ipfs://job/2")
     ).to.be.revertedWith("only JobRegistry");

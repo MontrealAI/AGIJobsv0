@@ -14,13 +14,13 @@ describe("CertificateNFT minting", function () {
   });
 
   it("mints with jobId tokenId and enforces registry and URI", async () => {
-    await expect(
-      nft.connect(jobRegistry).mint(user.address, 1, "ipfs://1")
-    )
+    const uri = "ipfs://1";
+    await expect(nft.connect(jobRegistry).mint(user.address, 1, uri))
       .to.emit(nft, "CertificateMinted")
-      .withArgs(user.address, 1);
+      .withArgs(user.address, 1, uri);
     expect(await nft.ownerOf(1)).to.equal(user.address);
-    expect(await nft.tokenURI(1)).to.equal("ipfs://1");
+    const hash = await nft.tokenHashes(1);
+    expect(hash).to.equal(ethers.keccak256(ethers.toUtf8Bytes(uri)));
 
     await expect(
       nft.connect(jobRegistry).mint(user.address, 2, "")
@@ -31,13 +31,5 @@ describe("CertificateNFT minting", function () {
     ).to.be.revertedWithCustomError(nft, "NotJobRegistry").withArgs(
       owner.address
     );
-  });
-
-  it("updates base URI and emits event", async () => {
-    await nft.connect(jobRegistry).mint(user.address, 1, "1");
-    await expect(nft.setBaseURI("https://base/"))
-      .to.emit(nft, "BaseURIUpdated")
-      .withArgs("https://base/");
-    expect(await nft.tokenURI(1)).to.equal("https://base/1");
   });
 });
