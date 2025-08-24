@@ -61,7 +61,7 @@ describe("Validator selection determinism", function () {
       success: false,
       status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, jobStruct);
   });

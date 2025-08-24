@@ -116,7 +116,10 @@ describe("Job lifecycle", function () {
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, subdomain, []);
-    await registry.connect(agent).submit(1, "ipfs://result", subdomain, []);
+    const hash = ethers.id("ipfs://result");
+    await registry
+      .connect(agent)
+      .submit(1, hash, "ipfs://result", subdomain, []);
     await validation.setResult(true);
     await validation.finalize(1);
 
@@ -153,7 +156,9 @@ describe("Job lifecycle", function () {
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, subdomain, []);
-    await registry.connect(agent).submit(1, "ipfs://bad", subdomain, []);
+    await registry
+      .connect(agent)
+      .submit(1, ethers.id("ipfs://bad"), "ipfs://bad", subdomain, []);
     await validation.setResult(false);
     await validation.finalize(1);
 

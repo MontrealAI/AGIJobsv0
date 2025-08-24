@@ -23,7 +23,7 @@ interface IJobRegistry {
         bool success;
         Status status;
         string uri;
-        string result;
+        bytes32 resultHash;
     }
 
     /// @dev Reverts when job creation parameters have not been configured
@@ -68,7 +68,12 @@ interface IJobRegistry {
         uint256 fee
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
-    event JobSubmitted(uint256 indexed jobId, address indexed worker, string result);
+    event JobSubmitted(
+        uint256 indexed jobId,
+        address indexed worker,
+        bytes32 resultHash,
+        string resultURI
+    );
     event JobCompleted(uint256 indexed jobId, bool success);
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
@@ -186,24 +191,28 @@ interface IJobRegistry {
 
     /// @notice Agent submits completed work for validation.
     /// @param jobId Identifier of the job being submitted
-    /// @param result Metadata URI of the submission
+    /// @param resultHash Hash of the submission
+    /// @param resultURI Metadata URI of the submission
     /// @param subdomain ENS subdomain label
     /// @param proof Merkle proof for ENS ownership verification
     function submit(
         uint256 jobId,
-        string calldata result,
+        bytes32 resultHash,
+        string calldata resultURI,
         string calldata subdomain,
         bytes32[] calldata proof
     ) external;
 
     /// @notice Acknowledge tax policy and submit work in one call
     /// @param jobId Identifier of the job being submitted
-    /// @param result Metadata URI of the submission
+    /// @param resultHash Hash of the submission
+    /// @param resultURI Metadata URI of the submission
     /// @param subdomain ENS subdomain label
     /// @param proof Merkle proof for ENS ownership verification
     function acknowledgeAndSubmit(
         uint256 jobId,
-        string calldata result,
+        bytes32 resultHash,
+        string calldata resultURI,
         string calldata subdomain,
         bytes32[] calldata proof
     ) external;

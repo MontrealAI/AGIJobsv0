@@ -6,7 +6,7 @@ const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const registryAbi = [
   "function createJob(uint256 reward, string uri)",
   "function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)",
-  "function submit(uint256 jobId, string result)"
+  "function submit(uint256 jobId, bytes32 resultHash, string resultURI)"
 ];
 const validationAbi = [
   "function commitValidation(uint256 jobId, bytes32 hash, bytes32 label, bytes32[] proof)",
@@ -27,7 +27,8 @@ async function apply(jobId, label, proof) {
 }
 
 async function submit(jobId, uri) {
-  await registry.submit(jobId, uri);
+  const hash = ethers.id(uri);
+  await registry.submit(jobId, hash, uri);
 }
 
 async function validate(jobId, hash, label, proof, approve, salt) {

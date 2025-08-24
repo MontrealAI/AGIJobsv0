@@ -67,9 +67,9 @@ describe("ValidationModule V2", function () {
       reward: 0,
       stake: 0,
       success: false,
-       status: 3,
+      status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, jobStruct);
   });

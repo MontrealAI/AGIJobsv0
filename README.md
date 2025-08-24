@@ -11,7 +11,7 @@ Below is a minimal walkthrough of the job lifecycle using the v2 contracts. All 
 
 1. **Post a job** – `JobRegistry.createJob(reward, "ipfs://job")`.
 2. **Agent applies** – stake via `StakeManager.depositStake(0, amount)` then call `JobRegistry.applyForJob(jobId, label, proof)`.
-3. **Work submission** – the agent finishes the task and calls `JobRegistry.submit(jobId, "ipfs://result")`.
+3. **Work submission** – the agent finishes the task and calls `JobRegistry.submit(jobId, resultHash, "ipfs://result")`.
 4. **Validation** – validators commit and reveal votes with `ValidationModule.commitValidation(jobId, hash, label, proof)` followed by `ValidationModule.revealValidation(jobId, approve, salt)`.
 5. **Finalize** – after the reveal window anyone may call `ValidationModule.finalize(jobId)` which releases rewards and mints a certificate.
 6. **Disputes (optional)** – open a challenge with `JobRegistry.raiseDispute(jobId, evidence)`; the owner resolves it on `DisputeModule.resolve(jobId, employerWins)`.

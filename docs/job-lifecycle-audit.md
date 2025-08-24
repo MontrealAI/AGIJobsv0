@@ -6,7 +6,7 @@ This document cross-checks key `JobRegistry` entry points with the v1 `AGIJobMan
 |-------------|-------------|------------------|---------------|---------------|
 | `createJob` | `createJob` | `reward`, `deadline`, `uri` retained. | `None -> Created` | `JobCreated` |
 | `applyForJob` | `applyForJob` | `jobId`, ENS `subdomain`, `proof`. | `Created -> Applied` | `JobApplied` |
-| `requestJobCompletion` | `submit` | `jobId`, `result`, ENS proof. | `Applied -> Submitted` | `JobSubmitted` |
+| `requestJobCompletion` | `submit` | `jobId`, `resultHash`, `resultURI`, ENS proof. | `Applied -> Submitted` | `JobSubmitted` |
 | `resolveStalledJob` / `finalizeJob` | `finalize` | `jobId`. | `Completed -> Finalized` or refunds on failure. | `JobFinalized` |
 | `cancelJob` | `cancelJob` | `jobId`. | `Created -> Cancelled` | `JobCancelled` |
 | `disputeJob` | `raiseDispute`/`dispute` | `jobId`, `evidence`. | `Completed -> Disputed` | `JobDisputed` |

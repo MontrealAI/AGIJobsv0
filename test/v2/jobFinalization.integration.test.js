@@ -146,7 +146,9 @@ describe("job finalization integration", function () {
     const jobId = 1;
     await registry.connect(agent).acknowledgeAndApply(jobId, "", []);
     await validation.setResult(result);
-    await registry.connect(agent).submit(jobId, "result", "", []);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id("result"), "result", "", []);
     return { jobId, fee, vReward };
   }
 

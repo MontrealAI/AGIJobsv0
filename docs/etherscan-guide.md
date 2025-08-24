@@ -116,7 +116,7 @@ Before performing any on-chain action, employers, agents, and validators must ca
 1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Check the emitted `TaxAcknowledged` event for the recorded disclaimer.
 2. Open `StakeManager`; in **Read Contract** confirm **isTaxExempt()**, then stake with **depositStake(0, amount)** (role `0` = Agent).
    ![agent stake](https://via.placeholder.com/650x150?text=depositStake)
-3. Use **applyForJob** then **submit(jobId, uri)** when work is ready.
+3. Use **applyForJob** then **submit(jobId, resultHash, uri)** when work is ready.
 4. After validators reveal votes, call **ValidationModule.finalize(jobId)**; the module records the outcome in `JobRegistry`.
 
 ### Validators

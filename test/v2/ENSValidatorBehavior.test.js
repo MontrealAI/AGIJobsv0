@@ -90,7 +90,7 @@ describe("Validator ENS integration", function () {
       success: false,
       status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
     await expect(validation.selectValidators(1)).to.be.revertedWith(
@@ -155,7 +155,7 @@ describe("Validator ENS integration", function () {
       success: false,
       status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
     await validation.selectValidators(1);
@@ -205,7 +205,7 @@ describe("Validator ENS integration", function () {
       success: false,
       status: 3,
       uri: "",
-      result: "",
+      resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
     await expect(validation.selectValidators(1)).to.be.revertedWith(

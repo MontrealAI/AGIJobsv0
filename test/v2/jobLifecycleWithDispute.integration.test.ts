@@ -103,7 +103,9 @@ describe("job lifecycle with dispute and validator failure", function () {
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, "agent", []);
-    await registry.connect(agent).submit(1, "ipfs://result", "agent", []);
+    await registry
+      .connect(agent)
+      .submit(1, ethers.id("ipfs://result"), "ipfs://result", "agent", []);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);

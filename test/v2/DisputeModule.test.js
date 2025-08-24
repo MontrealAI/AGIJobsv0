@@ -127,7 +127,7 @@ describe("DisputeModule", function () {
         success: false,
         status: 4, // Completed
         uri: "",
-        result: "",
+        resultHash: ethers.ZeroHash,
       });
     });
 
