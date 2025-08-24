@@ -6,7 +6,11 @@ const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const registryAbi = [
   "function createJob(uint256 reward, string uri)",
   "function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)",
-  "function submit(uint256 jobId, bytes32 resultHash, string resultURI)"
+  "function submit(uint256 jobId, bytes32 resultHash, string resultURI)",
+  "function raiseDispute(uint256 jobId, string evidence)"
+];
+const stakeAbi = [
+  "function depositStake(uint8 role, uint256 amount)"
 ];
 const validationAbi = [
   "function commitValidation(uint256 jobId, bytes32 hash, bytes32 label, bytes32[] proof)",
@@ -15,11 +19,16 @@ const validationAbi = [
 ];
 
 const registry = new ethers.Contract(process.env.JOB_REGISTRY, registryAbi, signer);
+const stakeManager = new ethers.Contract(process.env.STAKE_MANAGER, stakeAbi, signer);
 const validation = new ethers.Contract(process.env.VALIDATION_MODULE, validationAbi, signer);
 
 async function postJob() {
   const reward = ethers.parseUnits("1", 6);
   await registry.createJob(reward, "ipfs://job");
+}
+
+async function stake(amount) {
+  await stakeManager.depositStake(0, amount);
 }
 
 async function apply(jobId, label, proof) {
@@ -37,4 +46,8 @@ async function validate(jobId, hash, label, proof, approve, salt) {
   await validation.finalize(jobId);
 }
 
-module.exports = { postJob, apply, submit, validate };
+async function dispute(jobId, evidence) {
+  await registry.raiseDispute(jobId, evidence);
+}
+
+module.exports = { postJob, stake, apply, submit, validate, dispute };

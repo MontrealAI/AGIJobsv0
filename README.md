@@ -7,15 +7,27 @@ All modules default to the 6‑decimal `$AGIALPHA` token for payments, stakes an
 
 ## Quick Start
 
-Below is a minimal walkthrough of the job lifecycle using the v2 contracts. All token amounts use six‑decimal base units (`1 token = 1_000000`).
+Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER` and `VALIDATION_MODULE`.
 
-1. **Post a job** – `JobRegistry.createJob(reward, "ipfs://job")`.
-2. **Agent applies** – stake via `StakeManager.depositStake(0, amount)` then call `JobRegistry.applyForJob(jobId, label, proof)`.
-3. **Work submission** – the agent finishes the task and calls `JobRegistry.submit(jobId, resultHash, "ipfs://result")`.
-4. **Validation** – validators commit and reveal votes with `ValidationModule.commitValidation(jobId, hash, label, proof)` followed by `ValidationModule.revealValidation(jobId, approve, salt)`.
-5. **Finalize** – after the reveal window anyone may call `ValidationModule.finalize(jobId)` which releases rewards and mints a certificate.
-6. **Disputes (optional)** – open a challenge with `JobRegistry.raiseDispute(jobId, evidence)`; the owner resolves it on `DisputeModule.resolve(jobId, employerWins)`.
+### Post a job
+```bash
+node -e "require('./examples/ethers-quickstart').postJob()"
+```
 
+### Stake tokens
+```bash
+node -e "require('./examples/ethers-quickstart').stake(1_000000)"
+```
+
+### Validate a submission
+```bash
+node -e "require('./examples/ethers-quickstart').validate(1, '0xhash', '0xlabel', [], true, '0xsalt')"
+```
+
+### Raise a dispute
+```bash
+node -e "require('./examples/ethers-quickstart').dispute(1, 'ipfs://evidence')"
+```
 ## Step‑by‑Step Deployment with $AGIALPHA
 
 Record each address during deployment. The defaults below assume the 6‑decimal `$AGIALPHA` token and can be adjusted later via [`StakeManager.setToken`](contracts/v2/StakeManager.sol):
