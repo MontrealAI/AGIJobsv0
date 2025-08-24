@@ -75,6 +75,13 @@ For a step-by-step deployment walkthrough with owner-only setters, see [deployme
 | ReputationEngine | `setCaller` (`false`), `setStakeManager` (0 address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
 | CertificateNFT | `setJobRegistry` (0 address) | Authorise minting registry; URIs emitted in events with hashes on-chain. |
 
+Example of swapping validation logic:
+
+```solidity
+NoValidationModule fast = new NoValidationModule(registry);
+registry.setValidationModule(address(fast));
+```
+
 ## Incentive Mechanics
 Honest participation minimises a system-wide free energy similar to the thermodynamic relation `G = H - T S`.
 Slashing raises the enthalpy `H` of dishonest paths, while commit–reveal randomness injects entropy `S`.
