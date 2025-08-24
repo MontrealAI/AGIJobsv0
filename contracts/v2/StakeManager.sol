@@ -10,6 +10,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -23,7 +24,7 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 ///      instance `2` tokens should be provided as `2_000_000`. Contracts that
 ///      operate on 18‑decimal tokens must downscale by `1e12`, which may cause
 ///      precision loss.
-contract StakeManager is Ownable, ReentrancyGuard {
+contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     using SafeERC20 for IERC20;
 
     /// @notice participant roles
@@ -414,21 +415,6 @@ contract StakeManager is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     /// @notice require caller to acknowledge current tax policy
-    modifier requiresTaxAcknowledgement() {
-        if (msg.sender != owner()) {
-            address registry = jobRegistry;
-            if (registry != address(0)) {
-                ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
-                if (address(policy) != address(0)) {
-                    require(
-                        policy.hasAcknowledged(msg.sender),
-                        "acknowledge tax policy"
-                    );
-                }
-            }
-        }
-        _;
-    }
 
     modifier onlyJobRegistry() {
         require(msg.sender == jobRegistry, "only job registry");
@@ -495,6 +481,23 @@ contract StakeManager is Ownable, ReentrancyGuard {
         emit StakeDeposited(user, role, amount);
     }
 
+    function _policy() internal view returns (ITaxPolicy) {
+        address registry = jobRegistry;
+        if (registry != address(0)) {
+            return IJobRegistryTax(registry).taxPolicy();
+        }
+        return ITaxPolicy(address(0));
+    }
+
+    function _policyFor(address account) internal view returns (ITaxPolicy) {
+        if (account != owner()) {
+            address registry = jobRegistry;
+            require(registry != address(0), "job registry");
+            return IJobRegistryTax(registry).taxPolicy();
+        }
+        return ITaxPolicy(address(0));
+    }
+
     /// @notice deposit stake on behalf of a user for a specific role; use
     ///         `depositStake` when staking for the caller.
     /// @dev Use `depositStake` when the caller is staking for themselves.
@@ -506,21 +509,19 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @param amount token amount with 6 decimals
     function depositStakeFor(address user, Role role, uint256 amount)
         external
+        requiresTaxAcknowledgement(
+            _policyFor(user),
+            user,
+            owner(),
+            address(0),
+            address(0)
+        )
         nonReentrant
     {
         require(user != address(0), "user");
         require(role <= Role.Platform, "role");
         require(amount > 0, "amount");
 
-        if (user != owner()) {
-            address registry = jobRegistry;
-            require(registry != address(0), "job registry");
-            ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
-            require(
-                policy.hasAcknowledged(user),
-                "acknowledge tax policy"
-            );
-        }
         _deposit(user, role, amount);
     }
 
@@ -529,7 +530,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
     /// @param amount token amount with 6 decimals; caller must approve first
     function depositStake(Role role, uint256 amount)
         external
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
         nonReentrant
     {
         require(role <= Role.Platform, "role");
@@ -620,7 +627,13 @@ contract StakeManager is Ownable, ReentrancyGuard {
      */
     function withdrawStake(Role role, uint256 amount)
         external
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
         nonReentrant
     {
         _withdraw(msg.sender, role, amount);

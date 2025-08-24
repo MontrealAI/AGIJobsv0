@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry agent gating", function () {
   let owner, employer, agent;
-  let registry, rep, verifier;
+  let registry, rep, verifier, policy;
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
@@ -49,7 +49,7 @@ describe("JobRegistry agent gating", function () {
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const policy = await Policy.deploy("uri", "ack");
+    policy = await Policy.deploy("uri", "ack");
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(employer).acknowledgeTaxPolicy();
     await registry.connect(agent).acknowledgeTaxPolicy();
@@ -110,5 +110,13 @@ describe("JobRegistry agent gating", function () {
     await expect(
       registry.connect(agent).applyForJob(jobId, "a", [])
     ).to.be.revertedWith("Blacklisted agent");
+  });
+
+  it("rejects agents without acknowledging tax policy", async () => {
+    const jobId = await createJob();
+    await policy.bumpPolicyVersion();
+    await expect(
+      registry.connect(agent).applyForJob(jobId, "a", [])
+    ).to.be.revertedWith("acknowledge tax policy");
   });
 });

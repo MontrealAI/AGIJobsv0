@@ -11,12 +11,13 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IVRF} from "./interfaces/IVRF.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
 /// @dev Holds no ether and keeps the owner and contract tax neutral; only
 ///      participating validators and job parties bear tax obligations.
-contract ValidationModule is IValidationModule, Ownable {
+contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -92,20 +93,6 @@ contract ValidationModule is IValidationModule, Ownable {
     /// @param allowed True if the validator is whitelisted, false if removed.
 
     /// @notice Require caller to acknowledge current tax policy via JobRegistry.
-    modifier requiresTaxAcknowledgement() {
-        if (msg.sender != owner()) {
-            address registry = address(jobRegistry);
-            require(registry != address(0), "job registry");
-            ITaxPolicy policy = IJobRegistryTax(registry).taxPolicy();
-            if (address(policy) != address(0)) {
-                require(
-                    policy.hasAcknowledged(msg.sender),
-                    "acknowledge tax policy"
-                );
-            }
-        }
-        _;
-    }
 
     constructor(
         IJobRegistry _jobRegistry,
@@ -496,13 +483,29 @@ contract ValidationModule is IValidationModule, Ownable {
         emit ValidationCommitted(jobId, msg.sender, commitHash);
     }
 
+    function _policy() internal view returns (ITaxPolicy) {
+        address registry = address(jobRegistry);
+        require(registry != address(0), "job registry");
+        return IJobRegistryTax(registry).taxPolicy();
+    }
+
     /// @notice Commit a validation hash for a job.
     function commitValidation(
         uint256 jobId,
         bytes32 commitHash,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) public override requiresTaxAcknowledgement {
+    )
+        public
+        override
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+    {
         _commitValidation(jobId, commitHash, subdomain, proof);
     }
 
@@ -512,7 +515,13 @@ contract ValidationModule is IValidationModule, Ownable {
     function commitValidation(uint256 jobId, bytes32 commitHash)
         public
         override
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
     {
         bytes32[] memory proof;
         _commitValidation(jobId, commitHash, "", proof);
@@ -570,7 +579,17 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32 salt,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) public override requiresTaxAcknowledgement {
+    )
+        public
+        override
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+    {
         _revealValidation(jobId, approve, salt, subdomain, proof);
     }
 
@@ -581,7 +600,13 @@ contract ValidationModule is IValidationModule, Ownable {
     function revealValidation(uint256 jobId, bool approve, bytes32 salt)
         public
         override
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
     {
         bytes32[] memory proof;
         _revealValidation(jobId, approve, salt, "", proof);
@@ -593,7 +618,16 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32 commitHash,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external requiresTaxAcknowledgement {
+    )
+        external
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+    {
         commitValidation(jobId, commitHash, subdomain, proof);
     }
 
@@ -604,7 +638,16 @@ contract ValidationModule is IValidationModule, Ownable {
         bytes32 salt,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external requiresTaxAcknowledgement {
+    )
+        external
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+    {
         revealValidation(jobId, approve, salt, subdomain, proof);
     }
 
