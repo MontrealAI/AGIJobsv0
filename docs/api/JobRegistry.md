@@ -1,0 +1,24 @@
+# JobRegistry API
+
+Coordinates job posting, assignment and dispute resolution.
+
+## Functions
+- `createJob(uint256 reward, string uri)` – employer escrows reward and posts IPFS job metadata.
+- `applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)` – agent applies using ENS label and Merkle proof.
+- `submit(uint256 jobId, bytes32 resultHash, string resultURI)` – agent submits work.
+- `finalize(uint256 jobId)` – releases rewards after validation succeeds.
+- `raiseDispute(uint256 jobId, string evidence)` – escalate to the dispute module.
+- `setModules(address stakeManager, address validationModule, address disputeModule, address certificateNFT, address reputationEngine, address feePool)` – owner wires modules.
+- `setTaxPolicy(address policy)` / `acknowledgeTaxPolicy()` – configure tax policy and acknowledge.
+- `setAgentRootNode(bytes32 node)` / `setAgentMerkleRoot(bytes32 root)` – load ENS allowlists.
+
+## Events
+- `JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward, string uri)`
+- `JobApplied(uint256 indexed jobId, address indexed agent)`
+- `JobSubmitted(uint256 indexed jobId, bytes32 resultHash)`
+- `JobCompleted(uint256 indexed jobId, bool success)`
+- `JobFinalized(uint256 indexed jobId, address worker)`
+- `JobCancelled(uint256 indexed jobId)`
+- `JobExpired(uint256 indexed jobId, address caller)`
+- `JobDisputed(uint256 indexed jobId, address caller)`
+- `DisputeResolved(uint256 indexed jobId, bool employerWins)`
