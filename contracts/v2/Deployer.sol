@@ -260,6 +260,7 @@ contract Deployer is Ownable {
         IERC20 token = econ.token;
 
         StakeManager stake = new StakeManager(
+            owner_,
             token,
             minStake,
             employerSlashPct,
@@ -271,6 +272,7 @@ contract Deployer is Ownable {
         address[] memory ackInit = new address[](1);
         ackInit[0] = address(stake);
         JobRegistry registry = new JobRegistry(
+            owner_,
             IValidationModule(address(0)),
             IStakeManager(address(0)),
             JIReputationEngine(address(0)),
@@ -384,8 +386,8 @@ contract Deployer is Ownable {
         reputation.setAuthorizedCaller(address(validation), true);
 
         // Transfer ownership
-        registry.transferOwnership(owner_);
-        stake.transferOwnership(owner_);
+        registry.transferGovernance(owner_);
+        stake.transferGovernance(owner_);
         validation.transferOwnership(owner_);
         reputation.transferOwnership(owner_);
         dispute.transferOwnership(owner_);

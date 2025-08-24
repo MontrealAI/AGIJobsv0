@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Governable} from "./Governable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -43,7 +43,7 @@ interface ICertificateNFT {
 /// @dev Tax obligations never accrue to this registry or its owner. All
 /// liabilities remain with employers, agents, and validators as expressed by
 /// the owner‑controlled `TaxPolicy` reference.
-contract JobRegistry is Ownable, ReentrancyGuard {
+contract JobRegistry is Governable, ReentrancyGuard {
     enum State {
         None,
         Created,
@@ -89,7 +89,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// version for callers other than the owner, dispute module, or validation module.
     modifier requiresTaxAcknowledgement() {
         if (
-            msg.sender != owner() &&
+            msg.sender != governance &&
             msg.sender != address(disputeModule) &&
             msg.sender != address(validationModule)
         ) {
@@ -189,6 +189,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     event FeePctUpdated(uint256 feePct);
 
     constructor(
+        address _governance,
         IValidationModule _validation,
         IStakeManager _stakeMgr,
         IReputationEngine _reputation,
@@ -199,7 +200,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 _feePct,
         uint96 _jobStake,
         address[] memory _ackModules
-    ) Ownable(msg.sender) {
+    ) Governable(_governance) {
         validationModule = _validation;
         stakeManager = _stakeMgr;
         reputationEngine = _reputation;
@@ -249,7 +250,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------------
-    // Owner configuration
+    // Governance configuration
     // ---------------------------------------------------------------------
     // Setters below are executed manually via Etherscan's "Write Contract"
     // tab using the authorized owner account.
@@ -261,7 +262,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         ICertificateNFT _certNFT,
         IFeePool _feePool,
         address[] calldata _ackModules
-    ) external onlyOwner {
+    ) external onlyGovernance {
         require(address(_validation) != address(0), "validation");
         require(address(_stakeMgr) != address(0), "stake");
         require(address(_reputation) != address(0), "reputation");
@@ -296,7 +297,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Update the identity registry used for agent verification.
     /// @param registry Address of the IdentityRegistry contract.
-    function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+    function setIdentityRegistry(IIdentityRegistry registry) external onlyGovernance {
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
         emit ModuleUpdated("IdentityRegistry", address(registry));
@@ -304,7 +305,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Update the ENS root node used for agent verification.
     /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
-    function setAgentRootNode(bytes32 node) external onlyOwner {
+    function setAgentRootNode(bytes32 node) external onlyGovernance {
         require(address(identityRegistry) != address(0), "identity reg");
         identityRegistry.setAgentRootNode(node);
         emit AgentRootNodeUpdated(node);
@@ -312,27 +313,27 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Update the Merkle root for the agent allowlist.
     /// @param root Merkle root of approved agent addresses.
-    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+    function setAgentMerkleRoot(bytes32 root) external onlyGovernance {
         require(address(identityRegistry) != address(0), "identity reg");
         identityRegistry.setAgentMerkleRoot(root);
         emit AgentMerkleRootUpdated(root);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
-    function setFeePool(IFeePool _feePool) external onlyOwner {
+    function setFeePool(IFeePool _feePool) external onlyGovernance {
         feePool = _feePool;
         emit FeePoolUpdated(address(_feePool));
         emit ModuleUpdated("FeePool", address(_feePool));
     }
 
     /// @notice update the required agent stake for each job
-    function setJobStake(uint96 stake) external onlyOwner {
+    function setJobStake(uint96 stake) external onlyGovernance {
         jobStake = stake;
         emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration);
     }
 
     /// @notice update the percentage of each job reward taken as a protocol fee
-    function setFeePct(uint256 _feePct) external onlyOwner {
+    function setFeePct(uint256 _feePct) external onlyGovernance {
         require(_feePct <= 100, "pct");
         require(_feePct + validatorRewardPct <= 100, "pct");
         feePct = _feePct;
@@ -340,7 +341,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice update validator reward percentage of job reward
-    function setValidatorRewardPct(uint256 pct) external onlyOwner {
+    function setValidatorRewardPct(uint256 pct) external onlyGovernance {
         require(pct <= 100, "pct");
         require(feePct + pct <= 100, "pct");
         validatorRewardPct = pct;
@@ -348,13 +349,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     }
 
     /// @notice set the maximum allowed job reward
-    function setMaxJobReward(uint256 maxReward) external onlyOwner {
+    function setMaxJobReward(uint256 maxReward) external onlyGovernance {
         maxJobReward = maxReward;
         emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration);
     }
 
     /// @notice set the maximum allowed job duration in seconds
-    function setJobDurationLimit(uint256 limit) external onlyOwner {
+    function setJobDurationLimit(uint256 limit) external onlyGovernance {
         maxJobDuration = limit;
         emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
     }
@@ -362,7 +363,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
     /// @dev Only callable by the owner; the policy address cannot be zero and
     /// must explicitly report tax exemption.
-    function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
+    function setTaxPolicy(ITaxPolicy _policy) external onlyGovernance {
         require(address(_policy) != address(0), "policy");
         require(_policy.isTaxExempt(), "not tax exempt");
         taxPolicy = _policy;
@@ -404,7 +405,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @notice Allow or revoke an acknowledger address.
     /// @param acknowledger Address granted permission to acknowledge for users.
     /// @param allowed True to allow the address, false to revoke.
-    function setAcknowledger(address acknowledger, bool allowed) external onlyOwner {
+    function setAcknowledger(address acknowledger, bool allowed) external onlyGovernance {
         acknowledgers[acknowledger] = allowed;
         emit AcknowledgerUpdated(acknowledger, allowed);
     }
@@ -434,7 +435,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         ack = _acknowledge(user);
     }
 
-    function setJobParameters(uint256 reward, uint256 stake) external onlyOwner {
+    function setJobParameters(uint256 reward, uint256 stake) external onlyGovernance {
         require(stake <= type(uint96).max, "overflow");
         jobStake = uint96(stake);
         emit JobParametersUpdated(reward, stake, maxJobReward, maxJobDuration);
@@ -970,7 +971,7 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @notice Owner can delist an unassigned job and refund the employer.
     /// @param jobId Identifier of the job to delist.
-    function delistJob(uint256 jobId) external onlyOwner {
+    function delistJob(uint256 jobId) external onlyGovernance {
         _cancelJob(jobId);
     }
 
