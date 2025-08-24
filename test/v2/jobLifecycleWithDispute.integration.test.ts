@@ -123,7 +123,12 @@ describe("job lifecycle with dispute and validator failure", function () {
     expect(await registry.jobs(1)).to.have.property("state", 5); // Disputed
 
     await registry.connect(agent).dispute(1, "evidence");
-    await dispute.connect(moderator).resolve(1, false);
+    const hash = ethers.solidityPackedKeccak256(
+      ["address", "uint256", "bool"],
+      [await dispute.getAddress(), 1, false]
+    );
+    const sig = await moderator.signMessage(ethers.getBytes(hash));
+    await dispute.connect(moderator).resolve(1, false, [sig]);
 
     expect(await registry.jobs(1)).to.have.property("state", 6); // Finalized
     expect(await token.balanceOf(agent.address)).to.be.gt(initialAgentBalance);

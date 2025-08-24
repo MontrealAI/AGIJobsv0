@@ -2,6 +2,8 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -20,8 +22,11 @@ contract DisputeModule is Ownable {
     /// @notice Contract managing stake and dispute fees.
     IStakeManager public immutable stakeManager;
 
-    /// @notice Address authorised to resolve disputes.
-    address public moderator;
+    /// @notice Registered moderator addresses allowed to approve resolutions.
+    mapping(address => bool) public moderators;
+
+    /// @notice Total number of active moderators.
+    uint256 public moderatorCount;
 
     /// @notice Fixed appeal fee in token units (6 decimals) required to raise a
     /// dispute. A value of 0 disables the fee.
@@ -38,12 +43,15 @@ contract DisputeModule is Ownable {
     /// @notice Emitted when a participant raises a dispute.
     event DisputeRaised(uint256 indexed jobId, address indexed claimant);
 
-    /// @notice Emitted when the moderator resolves a dispute.
-    event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    /// @notice Emitted when a dispute is resolved.
+    event DisputeResolved(
+        uint256 indexed jobId,
+        address indexed resolver,
+        bool employerWins
+    );
 
-    /// @notice Emitted when the moderator address is updated.
-    /// @param moderator Address of the new moderator
-    event ModeratorUpdated(address indexed moderator);
+    /// @notice Emitted when moderator membership changes.
+    event ModeratorUpdated(address indexed moderator, bool active);
 
     constructor(
         IJobRegistry _jobRegistry,
@@ -55,22 +63,32 @@ contract DisputeModule is Ownable {
         require(address(_stakeManager) != address(0), "stake mgr");
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
-        moderator = _moderator;
         appealFee = _appealFee;
+
+        if (_moderator != address(0)) {
+            moderators[_moderator] = true;
+            moderatorCount = 1;
+            emit ModeratorUpdated(_moderator, true);
+        }
     }
 
-    /// @notice Update the moderator address.
-    /// @param _moderator New moderator able to resolve disputes.
-    function setModerator(address _moderator) external onlyOwner {
+    /// @notice Add a new moderator.
+    /// @param _moderator Address to grant moderator status.
+    function addModerator(address _moderator) external onlyOwner {
         require(_moderator != address(0), "moderator");
-        moderator = _moderator;
-        emit ModeratorUpdated(_moderator);
+        require(!moderators[_moderator], "exists");
+        moderators[_moderator] = true;
+        moderatorCount += 1;
+        emit ModeratorUpdated(_moderator, true);
     }
 
-    /// @dev Restrict calls to the designated moderator.
-    modifier onlyModerator() {
-        require(msg.sender == moderator, "not moderator");
-        _;
+    /// @notice Remove an existing moderator.
+    /// @param _moderator Address to revoke moderator status from.
+    function removeModerator(address _moderator) external onlyOwner {
+        require(moderators[_moderator], "not moderator");
+        delete moderators[_moderator];
+        moderatorCount -= 1;
+        emit ModeratorUpdated(_moderator, false);
     }
 
     /// @notice Raise a dispute for a given job.
@@ -92,15 +110,21 @@ contract DisputeModule is Ownable {
         emit DisputeRaised(jobId, msg.sender);
     }
 
-    /// @notice Resolve a previously raised dispute.
+    /// @notice Resolve a previously raised dispute after collecting moderator approvals.
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.
-    function resolve(uint256 jobId, bool employerWins)
-        external
-        onlyModerator
-    {
+    /// @param signatures Moderator signatures authorising the resolution.
+    function resolve(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) external {
         Dispute storage d = disputes[jobId];
         require(d.claimant != address(0) && !d.resolved, "no dispute");
+
+        uint256 approvals = _verifySignatures(jobId, employerWins, signatures);
+        require(approvals * 2 > moderatorCount, "insufficient approvals");
+
         d.resolved = true;
 
         // Forward outcome to JobRegistry for fund distribution.
@@ -114,7 +138,27 @@ contract DisputeModule is Ownable {
         }
 
         delete disputes[jobId];
-        emit DisputeResolved(jobId, employerWins);
+        emit DisputeResolved(jobId, msg.sender, employerWins);
+    }
+
+    function _verifySignatures(
+        uint256 jobId,
+        bool employerWins,
+        bytes[] calldata signatures
+    ) internal view returns (uint256 count) {
+        bytes32 hash = MessageHashUtils.toEthSignedMessageHash(
+            keccak256(abi.encodePacked(address(this), jobId, employerWins))
+        );
+        address[] memory seen = new address[](signatures.length);
+        for (uint256 i; i < signatures.length; ++i) {
+            address signer = ECDSA.recover(hash, signatures[i]);
+            require(moderators[signer], "bad sig");
+            for (uint256 j; j < i; ++j) {
+                require(seen[j] != signer, "dup sig");
+            }
+            seen[i] = signer;
+            count++;
+        }
     }
 }
 
