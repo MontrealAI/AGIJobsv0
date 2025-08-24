@@ -18,7 +18,7 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `StakeDeposited(address indexed user, Role indexed role, uint256 amount)`
 - `StakeWithdrawn(address indexed user, Role indexed role, uint256 amount)`
 - `StakeSlashed(address indexed user, uint256 amount, address recipient)`
-- `StakeLocked(bytes32 indexed jobId, address indexed from, uint256 amount)`
+- `StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount)`
 - `StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount)`
 - `DisputeFeeLocked(address indexed payer, uint256 amount)`
 - `DisputeFeePaid(address indexed to, uint256 amount)`
