@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
@@ -43,7 +44,7 @@ interface ICertificateNFT {
 /// @dev Tax obligations never accrue to this registry or its owner. All
 /// liabilities remain with employers, agents, and validators as expressed by
 /// the owner‑controlled `TaxPolicy` reference.
-contract JobRegistry is Ownable, ReentrancyGuard {
+contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
     enum State {
         None,
         Created,
@@ -87,21 +88,6 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
     /// version for callers other than the owner, dispute module, or validation module.
-    modifier requiresTaxAcknowledgement() {
-        if (
-            msg.sender != owner() &&
-            msg.sender != address(disputeModule) &&
-            msg.sender != address(validationModule)
-        ) {
-            if (address(taxPolicy) != address(0)) {
-                require(
-                    taxPolicy.hasAcknowledged(msg.sender),
-                    "acknowledge tax policy"
-                );
-            }
-        }
-        _;
-    }
 
     // default agent stake requirement configured by owner
     uint96 public jobStake;
@@ -447,7 +433,18 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 reward,
         uint64 deadline,
         string calldata uri
-    ) internal requiresTaxAcknowledgement nonReentrant returns (uint256 jobId) {
+    )
+        internal
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+        nonReentrant
+        returns (uint256 jobId)
+    {
         require(reward > 0 || jobStake > 0, "params not set");
         require(reward <= type(uint128).max, "overflow");
         require(maxJobReward == 0 || reward <= maxJobReward, "reward too high");
@@ -527,7 +524,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         uint256 jobId,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) internal requiresTaxAcknowledgement {
+    )
+        internal
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Created, "not open");
         if (address(reputationEngine) != address(0)) {
@@ -619,7 +625,16 @@ contract JobRegistry is Ownable, ReentrancyGuard {
         string calldata resultURI,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) public requiresTaxAcknowledgement {
+    )
+        public
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "invalid state");
         require(msg.sender == job.agent, "only agent");
@@ -700,7 +715,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     /// @param evidence Supporting evidence for the dispute.
     function dispute(uint256 jobId, string calldata evidence)
         public
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
     {
         Job storage job = jobs[jobId];
         require(
@@ -783,7 +804,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
     ///      merely relays the arbiter's ruling and holds no tax liability.
     function finalize(uint256 jobId)
         public
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
         nonReentrant
     {
         Job storage job = jobs[jobId];
@@ -955,7 +982,13 @@ contract JobRegistry is Ownable, ReentrancyGuard {
 
     function cancelJob(uint256 jobId)
         public
-        requiresTaxAcknowledgement
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
     {
         Job storage job = jobs[jobId];
         require(msg.sender == job.employer, "only employer");

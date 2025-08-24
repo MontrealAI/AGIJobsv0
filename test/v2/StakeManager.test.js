@@ -507,9 +507,9 @@ describe("StakeManager", function () {
 
   it("slashes full amount when percentages sum to 100", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(70, 30);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
     await token.connect(owner).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(owner).depositStake(0, 100);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
     await stakeManager
       .connect(owner)
       ["slash(address,uint8,uint256,address)"](
@@ -532,9 +532,9 @@ describe("StakeManager", function () {
 
   it("routes full slashing to treasury when employer share is zero", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(0, 100);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
     await token.connect(owner).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(owner).depositStake(0, 100);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
     await stakeManager
       .connect(owner)
       ["slash(address,uint8,uint256,address)"](
@@ -549,9 +549,9 @@ describe("StakeManager", function () {
 
   it("sends remainder to treasury when slashing", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
-    await stakeManager.connect(owner).setJobRegistry(owner.address);
     await token.connect(owner).approve(await stakeManager.getAddress(), 101);
     await stakeManager.connect(owner).depositStake(0, 101);
+    await stakeManager.connect(owner).setJobRegistry(owner.address);
     const treasuryBefore = await token.balanceOf(treasury.address);
     await stakeManager
       .connect(owner)
