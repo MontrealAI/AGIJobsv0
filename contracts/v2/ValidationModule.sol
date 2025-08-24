@@ -389,7 +389,6 @@ contract ValidationModule is IValidationModule, Ownable {
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
         uint256[] memory stakes = new uint256[](n);
-        uint256[] memory hashes = new uint256[](n);
         uint256 m;
 
         for (uint256 i; i < n; ++i) {
@@ -416,29 +415,20 @@ contract ValidationModule is IValidationModule, Ownable {
             if (!authorized) continue;
             pool[m] = candidate;
             stakes[m] = stake;
-            hashes[m] = uint256(
-                keccak256(abi.encodePacked(jobId, jobNonce[jobId], candidate))
-            );
             m++;
         }
 
         require(m >= validatorsPerJob, "insufficient validators");
         uint256 count = validatorsPerJob;
+        uint256 seed = uint256(
+            keccak256(abi.encodePacked(jobId, jobNonce[jobId]))
+        );
 
-        // deterministic selection based on hash ordering
         for (uint256 i; i < count; ++i) {
-            uint256 minIndex = i;
-            for (uint256 j = i + 1; j < m; ++j) {
-                if (hashes[j] < hashes[minIndex]) {
-                    minIndex = j;
-                }
-            }
-            // place chosen validator at current index
-            if (minIndex != i) {
-                (pool[i], pool[minIndex]) = (pool[minIndex], pool[i]);
-                (stakes[i], stakes[minIndex]) = (stakes[minIndex], stakes[i]);
-                (hashes[i], hashes[minIndex]) = (hashes[minIndex], hashes[i]);
-            }
+            uint256 j = i + (seed % (m - i));
+            (pool[i], pool[j]) = (pool[j], pool[i]);
+            (stakes[i], stakes[j]) = (stakes[j], stakes[i]);
+            seed = uint256(keccak256(abi.encodePacked(seed)));
         }
 
         selected = new address[](count);

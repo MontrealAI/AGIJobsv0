@@ -8,6 +8,15 @@ AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules wi
 - **Owner control** – `Ownable` setters let the owner swap tokens or retune parameters at will. Users must trust this address to act in good faith.
 - **No external dependencies** – the architecture avoids Chainlink VRF and subscription services entirely.
 
+## Validator pool sizing & gas costs
+
+The validator selection routine uses an in-place Fisher–Yates shuffle, so
+gas consumption scales linearly with the candidate pool. Selecting ten
+validators from one hundred candidates consumes roughly **2.0M gas**, while
+two hundred candidates cost about **3.5M gas**. At ~20k gas per
+candidate, we recommend capping the validator pool around **500
+validators** to keep `selectValidators` under ~10M gas on mainnet.
+
 ## Modules
 - **JobRegistry** – posts jobs, escrows payouts and tracks lifecycle state.
 - **ValidationModule** – selects validators, orchestrates commit‑reveal voting and returns preliminary outcomes.
