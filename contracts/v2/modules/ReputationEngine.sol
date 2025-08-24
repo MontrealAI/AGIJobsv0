@@ -9,6 +9,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @dev Holds no funds and rejects ether so neither the contract nor owner
 ///      incur tax obligations.
 contract ReputationEngine is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     /// @notice participant roles
     enum Role {
         Agent,

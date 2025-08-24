@@ -7,6 +7,9 @@ import {IStakeManager} from "../interfaces/IStakeManager.sol";
 /// @title RevenueDistributor
 /// @notice Splits incoming job fees among active operators based on stake.
 contract RevenueDistributor is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IStakeManager public stakeManager;
     address public treasury;
 

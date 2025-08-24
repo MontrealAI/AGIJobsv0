@@ -28,6 +28,10 @@ interface IReputationEngine {
 /// @notice Returns predetermined validation outcomes and supports result challenges.
 contract ValidationModule is Ownable, Pausable {
     using SafeERC20 for IERC20;
+
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     mapping(uint256 => bool) public outcomes;
 
     /// @notice stake manager used to lock dispute bonds and verify stake

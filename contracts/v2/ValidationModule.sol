@@ -17,6 +17,9 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 /// @dev Holds no ether and keeps the owner and contract tax neutral; only
 ///      participating validators and job parties bear tax obligations.
 contract ValidationModule is IValidationModule, Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;

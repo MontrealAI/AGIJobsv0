@@ -15,6 +15,9 @@ import {IValidationModule} from "../interfaces/IValidationModule.sol";
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
 ///      6 decimals (`1 token == 1e6` units).
 contract DisputeModule is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
 
