@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Governable} from "./Governable.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -10,7 +10,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// to resolve them by finalising outcomes in the JobRegistry.
 /// @dev Dispute claimants may optionally stake an appeal fee via the
 /// StakeManager which is paid out to the winner.
-contract DisputeModule is Ownable {
+contract DisputeModule is Governable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -46,11 +46,12 @@ contract DisputeModule is Ownable {
     event ModeratorUpdated(address indexed moderator);
 
     constructor(
+        address _governance,
         IJobRegistry _jobRegistry,
         IStakeManager _stakeManager,
         address _moderator,
         uint256 _appealFee
-    ) Ownable(msg.sender) {
+    ) Governable(_governance) {
         require(address(_jobRegistry) != address(0), "registry");
         require(address(_stakeManager) != address(0), "stake mgr");
         jobRegistry = _jobRegistry;
@@ -61,7 +62,7 @@ contract DisputeModule is Ownable {
 
     /// @notice Update the moderator address.
     /// @param _moderator New moderator able to resolve disputes.
-    function setModerator(address _moderator) external onlyOwner {
+    function setModerator(address _moderator) external onlyGovernance {
         require(_moderator != address(0), "moderator");
         moderator = _moderator;
         emit ModeratorUpdated(_moderator);

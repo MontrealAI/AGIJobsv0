@@ -18,6 +18,7 @@ describe("DisputeModule core", function () {
       "contracts/v2/DisputeModule.sol:DisputeModule"
     );
     dispute = await Dispute.deploy(
+      owner.address,
       await registry.getAddress(),
       await stakeManager.getAddress(),
       owner.address,
