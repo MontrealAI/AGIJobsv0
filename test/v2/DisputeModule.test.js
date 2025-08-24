@@ -142,6 +142,12 @@ describe("DisputeModule", function () {
       ).to.be.revertedWith("disputed");
     });
 
+    it("reverts when raiseDispute is called directly", async () => {
+      await expect(
+        dispute.connect(agent).raiseDispute(1, agent.address, "evidence")
+      ).to.be.revertedWith("not registry");
+    });
+
     it("reverts resolution attempted before window", async () => {
       await registry.connect(agent).dispute(1, "evidence");
       await expect(
