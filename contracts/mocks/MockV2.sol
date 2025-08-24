@@ -227,6 +227,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             "duration"
         );
         jobId = ++nextJobId;
+        bytes32 uriHash = keccak256(bytes(uri));
         _jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
@@ -234,7 +235,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             stake: jobStake,
             success: false,
             status: Status.Created,
-            uri: uri,
+            uriHash: uriHash,
             resultHash: bytes32(0)
         });
         deadlines[jobId] = deadline;
@@ -368,7 +369,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
                     reputationEngine.add(job.agent, 1);
                 }
                 if (address(certificateNFT) != address(0)) {
-                    certificateNFT.mint(job.agent, jobId, job.uri);
+                    certificateNFT.mint(job.agent, jobId, job.uriHash);
                 }
             }
         }
@@ -387,7 +388,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             reputationEngine.add(job.agent, 1);
         }
         if (address(certificateNFT) != address(0)) {
-            certificateNFT.mint(job.agent, jobId, job.uri);
+            certificateNFT.mint(job.agent, jobId, job.uriHash);
         }
         emit JobFinalized(jobId, job.agent);
     }

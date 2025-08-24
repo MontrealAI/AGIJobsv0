@@ -35,7 +35,11 @@ describe("CertificateNFT marketplace", function () {
     await nft.setJobRegistry(owner.address);
     await nft.setStakeManager(await stake.getAddress());
 
-    await nft.mint(seller.address, 1, "ipfs://1");
+    await nft.mint(
+      seller.address,
+      1,
+      ethers.keccak256(ethers.toUtf8Bytes("ipfs://1"))
+    );
   });
 
   it("lists, purchases, and delists with events", async () => {
@@ -67,7 +71,11 @@ describe("CertificateNFT marketplace", function () {
         buyerStart - price
       );
 
-      await nft.mint(seller.address, 2, "ipfs://2");
+      await nft.mint(
+        seller.address,
+        2,
+        ethers.keccak256(ethers.toUtf8Bytes("ipfs://2"))
+      );
       await nft.connect(seller).list(2, price);
       await expect(nft.connect(seller).delist(2))
         .to.emit(nft, "NFTDelisted")

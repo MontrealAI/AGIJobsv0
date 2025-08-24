@@ -10,21 +10,21 @@ interface ICertificateNFT {
     /// @dev Reverts when attempting to mint more than once for the same job
     error CertificateAlreadyMinted(uint256 jobId);
 
-    /// @dev Reverts when an empty metadata URI is supplied
+    /// @dev Reverts when an empty metadata hash is supplied
     error EmptyURI();
 
-    event CertificateMinted(address indexed to, uint256 indexed jobId, string uri);
+    event CertificateMinted(address indexed to, uint256 indexed jobId, bytes32 uriHash);
 
     /// @notice Mint a completion certificate NFT for a job
     /// @param to Recipient of the certificate
     /// @param jobId Identifier of the job; doubles as the NFT tokenId
-    /// @param uri Metadata URI for the certificate
+    /// @param uriHash Hash of the metadata URI for the certificate
     /// @return tokenId The identifier of the minted certificate
     /// @dev Reverts with {NotJobRegistry} if called by an unauthorised address
     function mint(
         address to,
         uint256 jobId,
-        string calldata uri
+        bytes32 uriHash
     ) external returns (uint256 tokenId);
 }
 

@@ -40,13 +40,13 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     function mint(
         address to,
         uint256 jobId,
-        string calldata uri
+        bytes32 uriHash
     ) external onlyJobRegistry returns (uint256 tokenId) {
-        if (bytes(uri).length == 0) revert EmptyURI();
+        if (uriHash == bytes32(0)) revert EmptyURI();
         tokenId = jobId;
         _safeMint(to, tokenId);
-        tokenHashes[tokenId] = keccak256(bytes(uri));
-        emit CertificateMinted(to, jobId, uri);
+        tokenHashes[tokenId] = uriHash;
+        emit CertificateMinted(to, jobId, uriHash);
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {

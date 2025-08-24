@@ -126,7 +126,7 @@ describe("DisputeModule", function () {
         stake: 0,
         success: false,
         status: 4, // Completed
-        uri: "",
+        uriHash: ethers.ZeroHash,
         resultHash: ethers.ZeroHash,
       });
     });

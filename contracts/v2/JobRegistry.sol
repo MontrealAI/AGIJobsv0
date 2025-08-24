@@ -36,7 +36,7 @@ interface IDisputeModule {
 }
 
 interface ICertificateNFT {
-    function mint(address to, uint256 jobId, string calldata uri) external returns (uint256);
+    function mint(address to, uint256 jobId, bytes32 uriHash) external returns (uint256);
 }
 
 /// @title JobRegistry
@@ -66,7 +66,7 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
         uint64 assignedAt;
         State state;
         bool success;
-        string uri;
+        bytes32 uriHash;
         bytes32 resultHash;
     }
 
@@ -150,7 +150,8 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
         address indexed agent,
         uint256 reward,
         uint256 stake,
-        uint256 fee
+        uint256 fee,
+        string uri
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
     event JobSubmitted(
@@ -467,6 +468,7 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
         }
         jobId = nextJobId;
         uint32 feePctSnapshot = uint32(feePct);
+        bytes32 uriHash = keccak256(bytes(uri));
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
@@ -477,7 +479,7 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
             assignedAt: 0,
             state: State.Created,
             success: false,
-            uri: uri,
+            uriHash: uriHash,
             resultHash: bytes32(0)
         });
         uint256 fee;
@@ -491,7 +493,8 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
             address(0),
             reward,
             uint256(jobStake),
-            fee
+            fee,
+            uri
         );
     }
 
@@ -910,7 +913,7 @@ contract JobRegistry is Ownable, ReentrancyGuard, TaxAcknowledgement {
                 }
             }
             if (address(certificateNFT) != address(0)) {
-                certificateNFT.mint(job.agent, jobId, job.uri);
+                certificateNFT.mint(job.agent, jobId, job.uriHash);
             }
         } else {
             if (address(stakeManager) != address(0)) {
