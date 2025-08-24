@@ -549,6 +549,18 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("pct");
   });
 
+  it("reverts when slashing percentages sum under 100", async () => {
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(40, 50)
+    ).to.be.revertedWith("pct");
+  });
+
+  it("reverts when individual slashing percentage exceeds 100", async () => {
+    await expect(
+      stakeManager.connect(owner).setSlashingPercentages(101, 0)
+    ).to.be.revertedWith("pct");
+  });
+
   it("routes full slashing to treasury when employer share is zero", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(0, 100);
     const MockRegistry = await ethers.getContractFactory(
