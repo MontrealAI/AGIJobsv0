@@ -1,0 +1,48 @@
+import json
+import os
+from pathlib import Path
+from web3 import Web3
+
+w3 = Web3(Web3.HTTPProvider(os.environ["RPC_URL"]))
+account = w3.eth.account.from_key(os.environ["PRIVATE_KEY"])
+
+registry_abi = json.loads(Path("artifacts/JobRegistry.json").read_text())
+validation_abi = json.loads(Path("artifacts/ValidationModule.json").read_text())
+
+registry = w3.eth.contract(address=os.environ["JOB_REGISTRY"], abi=registry_abi)
+validation = w3.eth.contract(address=os.environ["VALIDATION_MODULE"], abi=validation_abi)
+
+def post_job():
+    reward = 1_000000  # 1 token in 6‑decimal units
+    tx = registry.functions.createJob(reward, "ipfs://job").build_transaction({
+        "from": account.address,
+        "nonce": w3.eth.get_transaction_count(account.address)
+    })
+    signed = account.sign_transaction(tx)
+    w3.eth.send_raw_transaction(signed.rawTransaction)
+
+
+def apply(job_id, label, proof):
+    tx = registry.functions.applyForJob(job_id, label, proof).build_transaction({
+        "from": account.address,
+        "nonce": w3.eth.get_transaction_count(account.address)
+    })
+    signed = account.sign_transaction(tx)
+    w3.eth.send_raw_transaction(signed.rawTransaction)
+
+
+def commit_and_reveal(job_id, commit_hash, label, proof, approve, salt):
+    tx = validation.functions.commitValidation(job_id, commit_hash, label, proof).build_transaction({
+        "from": account.address,
+        "nonce": w3.eth.get_transaction_count(account.address)
+    })
+    signed = account.sign_transaction(tx)
+    w3.eth.send_raw_transaction(signed.rawTransaction)
+
+    tx2 = validation.functions.revealValidation(job_id, approve, salt).build_transaction({
+        "from": account.address,
+        "nonce": w3.eth.get_transaction_count(account.address)
+    })
+    signed2 = account.sign_transaction(tx2)
+    w3.eth.send_raw_transaction(signed2.rawTransaction)
+

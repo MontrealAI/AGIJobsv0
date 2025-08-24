@@ -13,6 +13,17 @@ For a quick reference on migrating code, see [docs/v1-v2-function-map.md](docs/v
 
 For step‑by‑step instructions on deploying the legacy manager with `$AGIALPHA`, see [docs/deployment-v0-agialpha.md](docs/deployment-v0-agialpha.md). The guide uses block‑explorer write tabs so non‑technical owners can configure the contract without additional tooling.
 
+## Quick Start
+
+Below is a minimal walkthrough of the job lifecycle using the modular v2 contracts. All token amounts use six‑decimal base units (`1 token = 1_000000`).
+
+1. **Post a job** – the employer calls `JobRegistry.createJob(reward, "ipfs://job")`.
+2. **Agent applies** – the worker stakes via `StakeManager.depositStake(0, amount)` then submits `JobRegistry.applyForJob(jobId, label, proof)`.
+3. **Work submission** – the agent finishes the task and calls `JobRegistry.submit(jobId, "ipfs://result")`.
+4. **Validation** – selected validators commit and reveal votes with `ValidationModule.commitValidation(jobId, hash, label, proof)` followed by `ValidationModule.revealValidation(jobId, approve, salt)`.
+5. **Finalize** – once the reveal window closes anyone may execute `ValidationModule.finalize(jobId)` which triggers payout and certificate minting.
+6. **Disputes (optional)** – dissatisfied parties open a challenge through `JobRegistry.raiseDispute(jobId, evidence)`; the owner resolves it on `DisputeModule.resolve(jobId, employerWins)`.
+
 ## Step‑by‑Step Deployment with $AGIALPHA
 
 Record every address as you deploy. The defaults below assume the 6‑decimal `$AGIALPHA` token and can be adjusted later via [`StakeManager.setToken`](contracts/v2/StakeManager.sol):
@@ -2584,8 +2595,10 @@ This project has not undergone a formal security audit. Before any production de
 
 Please report security issues responsibly. Contact **security@agi.network** or open a private issue so we can address vulnerabilities quickly.
 
-## Glossary / FAQ
+## Known Limitations & FAQ
 
+- **Centralized disputes** – all challenges escalate to the `DisputeModule` and are ultimately settled by the contract owner.
+- **ENS dependencies** – participation requires ENS subdomains (`*.agent.agi.eth` or `*.club.agi.eth`) and matching Merkle proofs.
 - **What is $AGIALPHA?** A 6‑decimal ERC‑20 token used for staking and rewards.
 - **Do I need special tools to interact?** No. All actions can be performed through block explorer "Write" tabs.
 - **What happens if validators disagree?** Anyone may raise a dispute and the `DisputeModule` resolves it.
