@@ -122,7 +122,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         uint256 employerShare,
         uint256 treasuryShare
     );
-    event StakeLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
+    event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
@@ -134,7 +134,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     event TreasuryUpdated(address indexed treasury);
     event JobRegistryUpdated(address indexed registry);
     event MaxStakePerAddressUpdated(uint256 maxStake);
-    event StakeLocked(address indexed user, uint256 amount, uint64 unlockTime);
+    event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
     event FeePctUpdated(uint256 pct);
@@ -446,7 +446,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
             unlockTime[user] = newUnlock;
         }
         lockedStakes[user] += amount;
-        emit StakeLocked(user, amount, unlockTime[user]);
+        emit StakeTimeLocked(user, amount, unlockTime[user]);
     }
 
     /// @notice release previously locked stake for a user
@@ -693,7 +693,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     {
         token.safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
-        emit StakeLocked(jobId, from, amount);
+        emit StakeEscrowLocked(jobId, from, amount);
     }
 
     /// @notice Generic escrow lock used when job context is managed externally.
@@ -704,7 +704,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     /// @param amount Token amount with 6 decimals to lock.
     function lock(address from, uint256 amount) external onlyJobRegistry {
         token.safeTransferFrom(from, address(this), amount);
-        emit StakeLocked(bytes32(0), from, amount);
+        emit StakeEscrowLocked(bytes32(0), from, amount);
     }
 
     /// @notice release locked job reward to recipient applying any AGI type bonus
