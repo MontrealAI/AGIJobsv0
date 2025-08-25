@@ -9,6 +9,7 @@ import {
 } from "./JobRegistry.sol";
 import {StakeManager} from "./StakeManager.sol";
 import {ValidationModule} from "./ValidationModule.sol";
+import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
@@ -31,6 +32,9 @@ interface IOwnable {
 ///      via the modules' own `transferOwnership` functions.
 contract ModuleInstaller is Ownable {
     bool public initialized;
+
+    /// @notice Emitted when a validation module is replaced.
+    event ValidationModuleMigrated(address newModule);
 
     /// @notice Emitted after all modules are wired together.
     event ModulesInstalled(
@@ -142,6 +146,85 @@ contract ModuleInstaller is Ownable {
             address(taxPolicy),
             address(identityRegistry)
         );
+    }
+
+    /// @notice Replace the validation module on an existing registry.
+    /// @dev Migrates configuration from the old module and restores governance
+    ///      to the owner after wiring.
+    /// @param jobRegistry Target registry whose validation module is updated.
+    /// @param newValidation Address of the newly deployed validation module.
+    /// @param ackModules Optional additional acknowledger modules.
+    function replaceValidationModule(
+        JobRegistry jobRegistry,
+        address newValidation,
+        address[] calldata ackModules
+    ) external onlyOwner {
+        require(newValidation != address(0), "validation");
+
+        IStakeManager stake = jobRegistry.stakeManager();
+        IReputationEngine rep = jobRegistry.reputationEngine();
+        IDisputeModule dispute = jobRegistry.disputeModule();
+        ICertificateNFT nft = jobRegistry.certificateNFT();
+        IFeePool feePool = jobRegistry.feePool();
+
+        jobRegistry.setModules(
+            IValidationModule(newValidation),
+            stake,
+            rep,
+            dispute,
+            nft,
+            feePool,
+            ackModules
+        );
+
+        IIdentityRegistry identity = jobRegistry.identityRegistry();
+        _callOptional(
+            newValidation,
+            abi.encodeWithSignature(
+                "setJobRegistry(address)",
+                address(jobRegistry)
+            )
+        );
+        _callOptional(
+            newValidation,
+            abi.encodeWithSignature(
+                "setStakeManager(address)",
+                address(stake)
+            )
+        );
+        _callOptional(
+            newValidation,
+            abi.encodeWithSignature(
+                "setReputationEngine(address)",
+                address(rep)
+            )
+        );
+        if (address(identity) != address(0)) {
+            _callOptional(
+                newValidation,
+                abi.encodeWithSignature(
+                    "setIdentityRegistry(address)",
+                    address(identity)
+                )
+            );
+        }
+
+        address moduleOwner = owner();
+        _callOptional(
+            newValidation,
+            abi.encodeWithSignature(
+                "transferOwnership(address)",
+                moduleOwner
+            )
+        );
+
+        jobRegistry.setGovernance(moduleOwner);
+        emit ValidationModuleMigrated(newValidation);
+    }
+
+    function _callOptional(address target, bytes memory data) internal {
+        (bool ok, ) = target.call(data);
+        ok;
     }
 
     /// @notice Proof that neither this contract nor its owner accrues taxable revenue.
