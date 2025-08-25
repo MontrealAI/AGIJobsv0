@@ -49,6 +49,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
 
     // pool of validators
     address[] public validatorPool;
+    // maximum number of pool entries to sample on-chain
+    uint256 public validatorPoolSampleSize = 100;
     // optional VRF provider for future randomness upgrades
     IVRF public vrf;
 
@@ -88,6 +90,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
     event IdentityRegistryUpdated(address registry);
     event JobNonceReset(uint256 indexed jobId);
+    event ValidatorPoolSampleSizeUpdated(uint256 size);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -188,6 +191,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
+    }
+
+    /// @notice Update the maximum number of pool entries sampled during selection.
+    /// @param size Maximum number of validators examined on-chain.
+    function setValidatorPoolSampleSize(uint256 size) external onlyOwner {
+        validatorPoolSampleSize = size;
+        emit ValidatorPoolSampleSizeUpdated(size);
     }
 
     /// @notice Batch update core validation parameters.
@@ -375,23 +385,34 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
 
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
-        uint256[] memory stakes = new uint256[](n);
-        uint256 m;
+        require(n > 0, "no validators");
+        uint256 sample = validatorPoolSampleSize;
+        if (sample > n) sample = n;
+        uint256 seed = uint256(
+            keccak256(abi.encodePacked(jobId, jobNonce[jobId]))
+        );
 
-        for (uint256 i; i < n; ++i) {
+        // Shuffle only the first `sample` entries using Fisher–Yates
+        for (uint256 i; i < sample; ++i) {
+            uint256 j = i + (seed % (n - i));
+            (pool[i], pool[j]) = (pool[j], pool[i]);
+            seed = uint256(keccak256(abi.encodePacked(seed)));
+        }
+
+        selected = new address[](validatorsPerJob);
+        uint256[] memory stakes = new uint256[](validatorsPerJob);
+        uint256 count;
+
+        for (uint256 i; i < sample && count < validatorsPerJob; ++i) {
             address candidate = pool[i];
             uint256 stake = stakeManager.stakeOf(
                 candidate,
                 IStakeManager.Role.Validator
             );
-            // Candidate must maintain active stake and cannot be
-            // blacklisted by the reputation engine.
             if (stake == 0) continue;
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) continue;
             }
-            // Verify the candidate via the identity registry (typically
-            // proving ownership of an ENS subdomain).
             bytes32[] memory proof;
             string memory subdomain = validatorSubdomains[candidate];
             bool authorized = identityRegistry.verifyValidator(
@@ -400,29 +421,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
                 proof
             );
             if (!authorized) continue;
-            pool[m] = candidate;
-            stakes[m] = stake;
-            m++;
+            selected[count] = candidate;
+            stakes[count] = stake;
+            count++;
         }
 
-        require(m >= validatorsPerJob, "insufficient validators");
-        uint256 count = validatorsPerJob;
-        uint256 seed = uint256(
-            keccak256(abi.encodePacked(jobId, jobNonce[jobId]))
-        );
+        require(count == validatorsPerJob, "insufficient validators");
 
         for (uint256 i; i < count; ++i) {
-            uint256 j = i + (seed % (m - i));
-            (pool[i], pool[j]) = (pool[j], pool[i]);
-            (stakes[i], stakes[j]) = (stakes[j], stakes[i]);
-            seed = uint256(keccak256(abi.encodePacked(seed)));
-        }
-
-        selected = new address[](count);
-        for (uint256 i; i < count; ++i) {
-            address val = pool[i];
-            selected[i] = val;
-            validatorStakes[jobId][val] = stakes[i];
+            validatorStakes[jobId][selected[i]] = stakes[i];
         }
 
         r.validators = selected;
