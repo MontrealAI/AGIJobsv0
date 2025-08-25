@@ -3,8 +3,10 @@
 ## Architecture Overview
 AGIJobs v2 decomposes the platform into small, immutable modules wired
 through a central `JobRegistry`. Each module owns a single
-responsibility and exposes `onlyOwner` setters so governance can retune
-parameters without redeploying the whole system.
+responsibility and exposes governance‑only setters so parameters can be
+tuned without redeploying the whole system. `JobRegistry` and
+`StakeManager` accept a multisig or timelock address during construction
+which becomes the governance authority.
 
 Identity for agents and validators is enforced with the
 `ENSOwnershipVerifier` library. Participants must control an ENS
@@ -55,18 +57,20 @@ The script prints module addresses and verifies source on Etherscan.
 5. **Deploy `ValidationModule`** with `jobRegistry = 0`, the `StakeManager` address and desired timing/validator settings.
 6. **Deploy `DisputeModule`** with `jobRegistry = 0` and any custom fee or window.
 7. **Deploy `CertificateNFT`** supplying a name and symbol.
-8. **Deploy `JobRegistry`** (no constructor params) then wire modules by calling
-   `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, new address[](0))`.
+8. **Deploy `JobRegistry`** passing the governance contract address as the
+   final constructor argument, then wire modules by calling
+   `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, new address[](0))` from the
+   governance account.
 9. **Point modules back to `JobRegistry`** by calling `setJobRegistry` on `StakeManager`, `ValidationModule`, `DisputeModule` and `CertificateNFT`, and `setIdentityRegistry` on `ValidationModule`.
 10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
-11. **Transfer ownership** – deploy a multisig wallet or timelock controller
-    and call `transferOwnership(multisig)` on every module. Only the new
-    owner will be able to call privileged setters. To rotate governance
-    later, have the current multisig execute `transferOwnership(newOwner)`
-    and confirm the `OwnershipTransferred` event before proceeding.
+11. **Governance setup** – deploy a multisig wallet or timelock controller
+    and pass its address to the `StakeManager` and `JobRegistry` constructors.
+    Other modules remain `Ownable`; transfer their ownership to the governance
+    contract if desired. To rotate governance later, the current authority
+    calls `setGovernance(newGov)`.
 
-## Owner Configuration Steps
-After deployment the owner can fine‑tune the system without redeploying:
+## Governance Configuration Steps
+After deployment the governance contract can fine‑tune the system without redeploying:
 
 1. **Configure `$AGIALPHA`** – ensure `StakeManager` and `FeePool` point
    to the desired ERC‑20 via `setToken`.
@@ -74,7 +78,7 @@ After deployment the owner can fine‑tune the system without redeploying:
    `setClubRootNode` and, if using allowlists, `setAgentMerkleRoot` and
    `setValidatorMerkleRoot`.
 3. **Update parameters** – adjust economic settings through `setFeePct`,
-   `setBurnPct`, `setMinStake`, timing windows and other owner‑only
+   `setBurnPct`, `setMinStake`, timing windows and other governance‑only
    setters or the helper script `scripts/updateParams.ts`.
 4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(uri)` and
    instruct participants to acknowledge via

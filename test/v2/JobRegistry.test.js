@@ -24,7 +24,8 @@ describe("JobRegistry integration", function () {
       0,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -53,7 +54,8 @@ describe("JobRegistry integration", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"
@@ -258,11 +260,11 @@ describe("JobRegistry integration", function () {
           ethers.ZeroAddress,
           []
         )
-    ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+    ).to.be.revertedWith("governance only");
 
     await expect(
       registry.connect(agent).setJobParameters(1, 1)
-    ).to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount");
+    ).to.be.revertedWith("governance only");
 
     await expect(
       dispute.connect(agent).setDisputeFee(1)

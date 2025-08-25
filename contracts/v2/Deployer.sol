@@ -266,7 +266,8 @@ contract Deployer is Ownable {
             treasurySlashPct,
             owner_,
             address(0),
-            address(0)
+            address(0),
+            address(this)
         );
         address[] memory ackInit = new address[](1);
         ackInit[0] = address(stake);
@@ -280,7 +281,8 @@ contract Deployer is Ownable {
             ITaxPolicy(address(0)),
             feePct,
             jobStake,
-            ackInit
+            ackInit,
+            address(this)
         );
 
         ValidationModule validation = new ValidationModule(
@@ -383,9 +385,11 @@ contract Deployer is Ownable {
         reputation.setAuthorizedCaller(address(registry), true);
         reputation.setAuthorizedCaller(address(validation), true);
 
+        // hand over governance to the eventual owner
+        stake.setGovernance(owner_);
+        registry.setGovernance(owner_);
+
         // Transfer ownership
-        registry.transferOwnership(owner_);
-        stake.transferOwnership(owner_);
         validation.transferOwnership(owner_);
         reputation.transferOwnership(owner_);
         dispute.transferOwnership(owner_);

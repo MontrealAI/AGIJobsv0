@@ -20,7 +20,8 @@ describe("StakeManager slashing configuration", function () {
       50,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
   });
 

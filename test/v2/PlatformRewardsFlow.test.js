@@ -34,7 +34,8 @@ describe("Platform reward flow", function () {
       0,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
 
@@ -51,7 +52,8 @@ describe("Platform reward flow", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
 
     const TaxPolicy = await ethers.getContractFactory(

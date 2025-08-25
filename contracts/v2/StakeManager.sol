@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Governable} from "./Governable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -24,7 +24,7 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 ///      instance `2` tokens should be provided as `2_000_000`. Contracts that
 ///      operate on 18‑decimal tokens must downscale by `1e12`, which may cause
 ///      precision loss.
-contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
+contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     using SafeERC20 for IERC20;
 
     /// @notice participant roles
@@ -163,8 +163,9 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         uint256 _treasurySlashPct,
         address _treasury,
         address _jobRegistry,
-        address _disputeModule
-    ) Ownable(msg.sender) {
+        address _disputeModule,
+        address _governance
+    ) Governable(_governance) {
         if (address(_token) == address(0)) {
             token = IERC20(DEFAULT_TOKEN);
         } else {
@@ -210,7 +211,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice update the staking/payout token
     /// @param newToken ERC20 token address using 6 decimals
-    function setToken(IERC20 newToken) external onlyOwner {
+    function setToken(IERC20 newToken) external onlyGovernance {
         if (address(newToken) == address(0)) {
             token = IERC20(DEFAULT_TOKEN);
         } else {
@@ -223,7 +224,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice update the minimum stake required
     /// @param _minStake minimum token amount with 6 decimals
-    function setMinStake(uint256 _minStake) external onlyOwner {
+    function setMinStake(uint256 _minStake) external onlyGovernance {
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
     }
@@ -249,7 +250,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     function setSlashingPercentages(
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
-    ) external onlyOwner {
+    ) external onlyGovernance {
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
@@ -259,13 +260,13 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     function setSlashingParameters(
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
-    ) external onlyOwner {
+    ) external onlyGovernance {
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
     /// @notice update treasury recipient address
     /// @param _treasury address receiving treasury slash share
-    function setTreasury(address _treasury) external onlyOwner {
+    function setTreasury(address _treasury) external onlyGovernance {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
@@ -273,21 +274,21 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice set the JobRegistry used for tax acknowledgement tracking
     /// @dev Staking is disabled until a nonzero registry is configured.
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
-    function setJobRegistry(address _jobRegistry) external onlyOwner {
+    function setJobRegistry(address _jobRegistry) external onlyGovernance {
         jobRegistry = _jobRegistry;
         emit JobRegistryUpdated(_jobRegistry);
     }
 
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
-    function setDisputeModule(address module) external onlyOwner {
+    function setDisputeModule(address module) external onlyGovernance {
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
 
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
-    function setValidationModule(address module) external onlyOwner {
+    function setValidationModule(address module) external onlyGovernance {
         validationModule = IValidationModule(module);
         emit ValidationModuleUpdated(module);
     }
@@ -298,7 +299,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     /// @param _disputeModule module contract allowed to move dispute fees
     function setModules(address _jobRegistry, address _disputeModule)
         external
-        onlyOwner
+        onlyGovernance
     {
         require(_jobRegistry != address(0) && _disputeModule != address(0), "module");
         jobRegistry = _jobRegistry;
@@ -310,7 +311,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
-    function setFeePct(uint256 pct) external onlyOwner {
+    function setFeePct(uint256 pct) external onlyGovernance {
         require(pct + burnPct + validatorRewardPct <= 100, "pct");
         feePct = pct;
         emit FeePctUpdated(pct);
@@ -318,14 +319,14 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice update FeePool contract
     /// @param pool FeePool receiving protocol fees
-    function setFeePool(IFeePool pool) external onlyOwner {
+    function setFeePool(IFeePool pool) external onlyGovernance {
         feePool = pool;
         emit FeePoolUpdated(address(pool));
     }
 
     /// @notice update burn percentage applied on release
     /// @param pct percentage of released amount burned (0-100)
-    function setBurnPct(uint256 pct) external onlyOwner {
+    function setBurnPct(uint256 pct) external onlyGovernance {
         require(feePct + pct + validatorRewardPct <= 100, "pct");
         burnPct = pct;
         emit BurnPctUpdated(pct);
@@ -333,7 +334,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice update validator reward percentage
     /// @param pct percentage of released amount allocated to validators (0-100)
-    function setValidatorRewardPct(uint256 pct) external onlyOwner {
+    function setValidatorRewardPct(uint256 pct) external onlyGovernance {
         require(feePct + burnPct + pct <= 100, "pct");
         validatorRewardPct = pct;
         emit ValidatorRewardPctUpdated(pct);
@@ -341,13 +342,13 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
     /// @param maxStake cap on combined stake per address using 6 decimals
-    function setMaxStakePerAddress(uint256 maxStake) external onlyOwner {
+    function setMaxStakePerAddress(uint256 maxStake) external onlyGovernance {
         maxStakePerAddress = maxStake;
         emit MaxStakePerAddressUpdated(maxStake);
     }
 
     /// @notice Update the maximum number of AGI types allowed
-    function setMaxAGITypes(uint256 newMax) external onlyOwner {
+    function setMaxAGITypes(uint256 newMax) external onlyGovernance {
         uint256 old = maxAGITypes;
         maxAGITypes = newMax;
         emit MaxAGITypesUpdated(old, newMax);
@@ -357,7 +358,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     /// @dev `payoutPct` is expressed as a percentage where `100` represents no
     ///      bonus and values above 100 increase the payout. Values below 100 can
     ///      be used to provide a discount.
-    function addAGIType(address nft, uint256 payoutPct) external onlyOwner {
+    function addAGIType(address nft, uint256 payoutPct) external onlyGovernance {
         require(nft != address(0) && payoutPct > 0, "params");
         uint256 length = agiTypes.length;
         for (uint256 i; i < length; ) {
@@ -376,7 +377,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     /// @notice Remove an AGI type
-    function removeAGIType(address nft) external onlyOwner {
+    function removeAGIType(address nft) external onlyGovernance {
         uint256 length = agiTypes.length;
         for (uint256 i; i < length; ) {
             if (agiTypes[i].nft == nft) {
@@ -675,7 +676,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         address user,
         Role role,
         uint256 amount
-    ) external onlyOwner nonReentrant {
+    ) external onlyGovernance nonReentrant {
         require(user != address(0), "user");
         address registry = jobRegistry;
         require(registry != address(0), "registry");

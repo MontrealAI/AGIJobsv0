@@ -20,7 +20,16 @@ async function deployFullSystem() {
   await token.mint(v2.address, mint);
 
   const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
-  const stake = await Stake.deploy(await token.getAddress(), 0, 0, 0, owner.address, ethers.ZeroAddress, ethers.ZeroAddress);
+  const stake = await Stake.deploy(
+    await token.getAddress(),
+    0,
+    0,
+    0,
+    owner.address,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    owner.address
+  );
 
   const Reputation = await ethers.getContractFactory("contracts/v2/ReputationEngine.sol:ReputationEngine");
   const reputation = await Reputation.deploy(await stake.getAddress());
@@ -54,7 +63,8 @@ async function deployFullSystem() {
     ethers.ZeroAddress,
     0,
     0,
-    []
+    [],
+    owner.address
   );
 
   const Dispute = await ethers.getContractFactory("contracts/v2/DisputeModule.sol:DisputeModule");

@@ -22,7 +22,8 @@ describe("Job expiration", function () {
       0,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -51,7 +52,8 @@ describe("Job expiration", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     const Dispute = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"

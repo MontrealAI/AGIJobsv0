@@ -53,7 +53,8 @@ describe("Identity verification enforcement", function () {
         ethers.ZeroAddress,
         0,
         0,
-        []
+        [],
+        owner.address
       );
       await registry.connect(owner).setIdentityRegistry(await identity.getAddress());
       await rep

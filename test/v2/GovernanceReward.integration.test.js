@@ -22,7 +22,8 @@ describe("Governance reward lifecycle", function () {
       0,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
 
     const JobRegistry = await ethers.getContractFactory(
@@ -38,7 +39,8 @@ describe("Governance reward lifecycle", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"

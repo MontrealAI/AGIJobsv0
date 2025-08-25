@@ -24,7 +24,8 @@ describe("StakeManager reentrancy", function () {
       50,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
 

@@ -19,7 +19,8 @@ describe("StakeManager release", function () {
       0,
       treasury.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
 
@@ -36,7 +37,8 @@ describe("StakeManager release", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -168,25 +170,14 @@ describe("StakeManager release", function () {
   });
 
   it("restricts fee configuration to owner", async () => {
-    await expect(stakeManager.connect(user1).setFeePct(1))
-      .to.be.revertedWithCustomError(
-        stakeManager,
-        "OwnableUnauthorizedAccount"
-      )
-      .withArgs(user1.address);
+    await expect(stakeManager.connect(user1).setFeePct(1)).to.be.revertedWith(
+      "governance only"
+    );
     await expect(
       stakeManager.connect(user1).setFeePool(await feePool.getAddress())
-    )
-      .to.be.revertedWithCustomError(
-        stakeManager,
-        "OwnableUnauthorizedAccount"
-      )
-      .withArgs(user1.address);
-    await expect(stakeManager.connect(user1).setBurnPct(1))
-      .to.be.revertedWithCustomError(
-        stakeManager,
-        "OwnableUnauthorizedAccount"
-      )
-      .withArgs(user1.address);
+    ).to.be.revertedWith("governance only");
+    await expect(stakeManager.connect(user1).setBurnPct(1)).to.be.revertedWith(
+      "governance only"
+    );
   });
 });

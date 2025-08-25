@@ -80,7 +80,8 @@ describe("DisputeModule", function () {
         0,
         owner.address,
         ethers.ZeroAddress,
-        ethers.ZeroAddress
+        ethers.ZeroAddress,
+        owner.address
       );
       await stakeManager.waitForDeployment();
 

@@ -20,7 +20,8 @@ describe("JobRegistry tax policy integration", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     const Policy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
@@ -81,9 +82,7 @@ describe("JobRegistry tax policy integration", function () {
   it("blocks non-owner from setting policy", async () => {
     await expect(
       registry.connect(user).setTaxPolicy(await policy.getAddress())
-    )
-      .to.be.revertedWithCustomError(registry, "OwnableUnauthorizedAccount")
-      .withArgs(user.address);
+    ).to.be.revertedWith("governance only");
   });
 
   it("blocks non-owner from bumping version", async () => {

@@ -113,8 +113,8 @@ contract ModuleInstaller is Ownable {
         jobRouter.setRegistrar(address(platformIncentives), true);
 
         address moduleOwner = owner();
-        jobRegistry.transferOwnership(moduleOwner);
-        stakeManager.transferOwnership(moduleOwner);
+        jobRegistry.setGovernance(moduleOwner);
+        stakeManager.setGovernance(moduleOwner);
         IOwnable(address(validationModule)).transferOwnership(moduleOwner);
         IOwnable(address(reputationEngine)).transferOwnership(moduleOwner);
         IOwnable(address(disputeModule)).transferOwnership(moduleOwner);

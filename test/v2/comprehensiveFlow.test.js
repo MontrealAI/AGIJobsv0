@@ -34,7 +34,8 @@ describe("comprehensive job flows", function () {
       0,
       owner.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
 
     const Validation = await ethers.getContractFactory(
@@ -65,7 +66,8 @@ describe("comprehensive job flows", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
 
     const Dispute = await ethers.getContractFactory(

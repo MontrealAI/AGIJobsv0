@@ -25,7 +25,8 @@ describe("CertificateNFT marketplace", function () {
       0,
       owner.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
 
     const NFT = await ethers.getContractFactory(

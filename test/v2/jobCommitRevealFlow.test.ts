@@ -32,7 +32,8 @@ async function deploySystem() {
     0,
     owner.address,
     ethers.ZeroAddress,
-    ethers.ZeroAddress
+    ethers.ZeroAddress,
+    owner.address
   );
 
   const Reputation = await ethers.getContractFactory(
@@ -88,7 +89,8 @@ async function deploySystem() {
     ethers.ZeroAddress,
     0,
     stakeAmt,
-    []
+    [],
+    owner.address
   );
 
   const Dispute = await ethers.getContractFactory(
