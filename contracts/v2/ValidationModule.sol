@@ -386,6 +386,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         address[] memory pool = validatorPool;
         uint256 n = pool.length;
         require(n > 0, "no validators");
+        require(address(stakeManager) != address(0), "stake manager");
         uint256 sample = validatorPoolSampleSize;
         if (sample > n) sample = n;
         uint256 seed = uint256(
