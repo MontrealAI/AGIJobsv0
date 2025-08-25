@@ -81,6 +81,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     ITaxPolicy public taxPolicy;
     IFeePool public feePool;
     IIdentityRegistry public identityRegistry;
+    address public treasury;
 
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
@@ -174,6 +175,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    event GovernanceFinalized(
+        uint256 indexed jobId,
+        address indexed caller,
+        bool fundsRedirected
+    );
+    event TreasuryUpdated(address treasury);
 
     constructor(
         IValidationModule _validation,
@@ -311,6 +318,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         feePool = _feePool;
         emit FeePoolUpdated(address(_feePool));
         emit ModuleUpdated("FeePool", address(_feePool));
+    }
+
+    /// @notice update the treasury address used for blacklisted payouts
+    function setTreasury(address _treasury) external onlyGovernance {
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     /// @notice update the required agent stake for each job
@@ -819,22 +832,24 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
+        bool isGov = msg.sender == governance;
+        bool agentBlacklisted;
+        bool employerBlacklisted;
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted"
-            );
-            require(
-                !reputationEngine.isBlacklisted(job.agent),
-                "Blacklisted agent"
-            );
-            require(
-                !reputationEngine.isBlacklisted(job.employer),
-                "Blacklisted employer"
-            );
+            agentBlacklisted = reputationEngine.isBlacklisted(job.agent);
+            employerBlacklisted = reputationEngine.isBlacklisted(job.employer);
+            if (!isGov) {
+                require(
+                    !reputationEngine.isBlacklisted(msg.sender),
+                    "Blacklisted"
+                );
+                require(!agentBlacklisted, "Blacklisted agent");
+                require(!employerBlacklisted, "Blacklisted employer");
+            }
         }
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
+        bool fundsRedirected;
         if (job.success) {
             IFeePool pool = feePool;
             address[] memory validators;
@@ -854,9 +869,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
+                address payee = job.agent;
+                if (isGov && treasury != address(0) && agentBlacklisted) {
+                    payee = treasury;
+                    fundsRedirected = true;
+                }
                 stakeManager.finalizeJobFunds(
                     jobKey,
-                    job.agent,
+                    payee,
                     rewardAfterValidator,
                     fee,
                     pool
@@ -871,13 +891,22 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
                     } else {
                         stakeManager.releaseReward(
                             jobKey,
-                            job.employer,
+                            payee,
                             validatorReward
                         );
                     }
                 }
                 if (job.stake > 0) {
-                    stakeManager.releaseStake(job.agent, uint256(job.stake));
+                    if (isGov && treasury != address(0) && agentBlacklisted) {
+                        stakeManager.slash(
+                            job.agent,
+                            IStakeManager.Role.Agent,
+                            uint256(job.stake),
+                            treasury
+                        );
+                    } else {
+                        stakeManager.releaseStake(job.agent, uint256(job.stake));
+                    }
                 }
             }
             if (address(reputationEngine) != address(0)) {
@@ -919,10 +948,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         } else {
             if (address(stakeManager) != address(0)) {
                 uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+                address recipient = job.employer;
+                if (isGov && treasury != address(0) && employerBlacklisted) {
+                    recipient = treasury;
+                    fundsRedirected = true;
+                }
                 if (job.reward > 0) {
                     stakeManager.releaseReward(
                         jobKey,
-                        job.employer,
+                        recipient,
                         uint256(job.reward) + fee
                     );
                 }
@@ -931,7 +965,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
                         job.agent,
                         IStakeManager.Role.Agent,
                         uint256(job.stake),
-                        job.employer
+                        recipient
                     );
                 }
             }
@@ -940,6 +974,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
             }
         }
         emit JobFinalized(jobId, job.agent);
+        if (isGov) {
+            emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
+        }
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.
