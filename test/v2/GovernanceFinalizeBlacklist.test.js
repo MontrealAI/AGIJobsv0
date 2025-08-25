@@ -90,7 +90,7 @@ describe("JobRegistry governance finalization", function () {
     const slot = base + 3n;
     const slotHex = ethers.toBeHex(slot);
     const prev = BigInt(
-      await ethers.provider.getStorageAt(await registry.getAddress(), slotHex)
+      await ethers.provider.getStorage(await registry.getAddress(), slot)
     );
     const mask = ~((0xffn << (8n * 16n)) | (0xffn << (8n * 17n)));
     const cleared = prev & mask;

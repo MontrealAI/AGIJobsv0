@@ -849,7 +849,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         }
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
-        bool redirected;
+        bool fundsRedirected;
         if (job.success) {
             IFeePool pool = feePool;
             address[] memory validators;
@@ -872,7 +872,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
                 address payee = job.agent;
                 if (isGov && treasury != address(0) && agentBlacklisted) {
                     payee = treasury;
-                    redirected = true;
+                    fundsRedirected = true;
                 }
                 stakeManager.finalizeJobFunds(
                     jobKey,
@@ -951,7 +951,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
                 address recipient = job.employer;
                 if (isGov && treasury != address(0) && employerBlacklisted) {
                     recipient = treasury;
-                    redirected = true;
+                    fundsRedirected = true;
                 }
                 if (job.reward > 0) {
                     stakeManager.releaseReward(
@@ -975,7 +975,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         }
         emit JobFinalized(jobId, job.agent);
         if (isGov) {
-            emit GovernanceFinalized(jobId, msg.sender, redirected);
+            emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
         }
     }
 
