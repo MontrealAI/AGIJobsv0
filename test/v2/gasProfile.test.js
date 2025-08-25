@@ -18,6 +18,7 @@ describe("gas profiling", function () {
 
     const tx = await validation.finalize(1);
     const receipt = await tx.wait();
-    expect(receipt.gasUsed).to.be.lt(5_000_000n);
+    // 5M gas safety threshold
+    expect(receipt.gasUsed).to.be.lt(5000000n);
   });
 });
