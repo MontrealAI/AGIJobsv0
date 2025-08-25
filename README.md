@@ -13,6 +13,8 @@ The original v0 and v1 contracts are preserved under the `legacy` git tag for re
 
 Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER` and `VALIDATION_MODULE`.
 
+The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
+
 ### Post a job
 ```bash
 node -e "require('./examples/ethers-quickstart').postJob()"
@@ -122,4 +124,6 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Module and interface reference](docs/v2-module-interface-reference.md)
 - [Etherscan interaction guide](docs/etherscan-guide.md)
 - [Deployment walkthrough with $AGIALPHA](docs/deployment-v2-agialpha.md)
+- [API reference and SDK snippets](docs/api-reference.md)
+- [Agent gateway example](examples/agent-gateway.js)
 
