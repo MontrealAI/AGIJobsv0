@@ -30,7 +30,7 @@ describe("DisputeModule core", function () {
   });
 
   describe("moderator management", function () {
-    it("allows owner to add and remove moderators", async function () {
+    it("allows committee to add and remove moderators", async function () {
       await expect(dispute.addModerator(mod1.address))
         .to.emit(dispute, "ModeratorAdded")
         .withArgs(mod1.address);
@@ -91,13 +91,7 @@ describe("DisputeModule core", function () {
       );
     });
 
-    it("allows arbitrator to resolve directly", async function () {
-      await dispute.setArbitrator(outsider.address);
-      await registry.connect(agent).dispute(1, "evidence");
-      await expect(dispute.connect(outsider).resolve(1, true))
-        .to.emit(dispute, "DisputeResolved")
-        .withArgs(1, true);
-    });
+    // arbitrator path removed; disputes require moderator quorum
   });
 });
 

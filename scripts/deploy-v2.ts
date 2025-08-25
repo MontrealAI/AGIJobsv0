@@ -63,11 +63,12 @@ async function main() {
   );
   await registry.waitForDeployment();
 
+  const committee = deployer; // replace with multisig for production
   const Dispute = await ethers.getContractFactory("contracts/v2/DisputeModule.sol:DisputeModule");
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
     await stake.getAddress(),
-    deployer.address,
+    committee.address,
     0
   );
   await dispute.waitForDeployment();
