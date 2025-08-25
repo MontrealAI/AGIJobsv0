@@ -13,11 +13,44 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract AGIALPHAToken is ERC20, Ownable {
     uint8 private constant DECIMALS = 6;
 
-    constructor() ERC20("AGI ALPHA", "AGIALPHA") Ownable(msg.sender) {}
+    /// @notice tracks addresses that acknowledged token terms
+    mapping(address => bool) private _acknowledged;
+
+    /// @notice emitted when an address accepts token terms
+    event TermsAccepted(address indexed account);
+
+    constructor() ERC20("AGI ALPHA", "AGIALPHA") Ownable(msg.sender) {
+        _acknowledged[msg.sender] = true;
+    }
 
     /// @notice Returns token decimals (6).
     function decimals() public pure override returns (uint8) {
         return DECIMALS;
+    }
+
+    // ---------------------------------------------------------------------
+    // Terms acknowledgement
+    // ---------------------------------------------------------------------
+
+    /// @notice Accepts token terms required for transfers.
+    function acceptTerms() external {
+        _acknowledged[msg.sender] = true;
+        emit TermsAccepted(msg.sender);
+    }
+
+    /// @notice Returns whether an address has accepted token terms.
+    /// @param account address to query
+    function hasAcknowledged(address account) public view returns (bool) {
+        return _acknowledged[account];
+    }
+
+    /// @dev Require acknowledgement for transfers from EOAs, except owner ops.
+    function _update(address from, address to, uint256 value) internal override {
+        bool ownerOp = msg.sender == owner() || from == owner() || to == owner();
+        if (!ownerOp && from != address(0) && from.code.length == 0) {
+            require(_acknowledged[from], "AGIALPHA: sender not acknowledged");
+        }
+        super._update(from, to, value);
     }
 
     // ---------------------------------------------------------------------
@@ -28,6 +61,7 @@ contract AGIALPHAToken is ERC20, Ownable {
     /// @param to recipient of minted tokens
     /// @param amount token amount with 6 decimals
     function mint(address to, uint256 amount) external onlyOwner {
+        _acknowledged[to] = true;
         _mint(to, amount);
     }
 
