@@ -1,7 +1,7 @@
 # AGIJob Manager
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The active implementation is the modular **v2** release located under `contracts/v2`. Earlier v0 and v1 sources, along with their tests and deployment scripts, are archived under the `legacy` tag and are no longer supported. A high‑level mapping of legacy entry points to their v2 counterparts lives in [docs/migration-guide.md](docs/migration-guide.md).
+AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. Only the modular **v2** release located under `contracts/v2` is supported. Earlier v0 and v1 sources are archived under `docs/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
 
 All modules default to the 6‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits. Token addresses can be rotated post‑deployment through owner calls to `StakeManager.setToken` and `FeePool.setToken` without redeploying any module.
 
