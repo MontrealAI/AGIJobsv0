@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("DisputeModule core", function () {
   let owner, mod1, mod2, employer, agent, outsider;
@@ -52,6 +53,7 @@ describe("DisputeModule core", function () {
     beforeEach(async function () {
       await dispute.addModerator(mod1.address);
       await dispute.addModerator(mod2.address);
+      await dispute.setResolutionWindow(100);
       await registry.setJob(1, {
         employer: employer.address,
         agent: agent.address,
@@ -92,6 +94,20 @@ describe("DisputeModule core", function () {
     });
 
     // arbitrator path removed; disputes require moderator quorum
+
+    it("expires after deadline and rejects resolution", async function () {
+      await dispute.setResolutionWindow(5);
+      await registry.connect(agent).dispute(1, "evidence");
+      await time.increase(6);
+      await expect(dispute.connect(mod1).resolve(1, true)).to.be.revertedWith(
+        "expired"
+      );
+      await expect(dispute.expireDispute(1))
+        .to.emit(dispute, "DisputeResolved")
+        .withArgs(1, true);
+      const info = await dispute.disputes(1);
+      expect(info.claimant).to.equal(ethers.ZeroAddress);
+    });
   });
 });
 
