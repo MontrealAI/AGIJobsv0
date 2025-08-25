@@ -15,7 +15,8 @@ async function main() {
     0,
     deployer.address,
     ethers.ZeroAddress,
-    ethers.ZeroAddress
+    ethers.ZeroAddress,
+    deployer.address
   );
   await stake.waitForDeployment();
 
@@ -59,7 +60,8 @@ async function main() {
     ethers.ZeroAddress,
     0,
     0,
-    []
+    [],
+    deployer.address
   );
   await registry.waitForDeployment();
 
