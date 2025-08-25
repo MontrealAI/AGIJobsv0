@@ -37,7 +37,8 @@ describe("JobRegistry agent gating", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     await registry.connect(owner).setIdentityRegistry(await verifier.getAddress());
 

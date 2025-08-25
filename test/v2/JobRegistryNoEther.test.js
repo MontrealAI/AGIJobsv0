@@ -19,7 +19,8 @@ describe("JobRegistry ether rejection", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     await registry.waitForDeployment();
   });

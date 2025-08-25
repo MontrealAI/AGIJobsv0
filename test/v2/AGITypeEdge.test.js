@@ -22,7 +22,8 @@ describe("StakeManager AGIType bonuses", function () {
       0,
       owner.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
 
@@ -39,7 +40,8 @@ describe("StakeManager AGIType bonuses", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"

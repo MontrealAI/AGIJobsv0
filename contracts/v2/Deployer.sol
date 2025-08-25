@@ -267,7 +267,7 @@ contract Deployer is Ownable {
             owner_,
             address(0),
             address(0),
-            owner_
+            address(this)
         );
         address[] memory ackInit = new address[](1);
         ackInit[0] = address(stake);
@@ -282,7 +282,7 @@ contract Deployer is Ownable {
             feePct,
             jobStake,
             ackInit,
-            owner_
+            address(this)
         );
 
         ValidationModule validation = new ValidationModule(
@@ -384,6 +384,10 @@ contract Deployer is Ownable {
         router.setRegistrar(address(incentives), true);
         reputation.setAuthorizedCaller(address(registry), true);
         reputation.setAuthorizedCaller(address(validation), true);
+
+        // hand over governance to the eventual owner
+        stake.setGovernance(owner_);
+        registry.setGovernance(owner_);
 
         // Transfer ownership
         validation.transferOwnership(owner_);

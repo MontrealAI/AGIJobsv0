@@ -35,7 +35,8 @@ describe("multi-operator job lifecycle", function () {
       0,
       owner.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
 
     const Validation = await ethers.getContractFactory(
@@ -66,7 +67,8 @@ describe("multi-operator job lifecycle", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
 
     const Dispute = await ethers.getContractFactory(

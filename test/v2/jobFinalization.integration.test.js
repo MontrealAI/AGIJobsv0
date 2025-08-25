@@ -32,7 +32,8 @@ describe("job finalization integration", function () {
       0,
       owner.address,
       ethers.ZeroAddress,
-      ethers.ZeroAddress
+      ethers.ZeroAddress,
+      owner.address
     );
 
     const Validation = await ethers.getContractFactory(
@@ -63,7 +64,8 @@ describe("job finalization integration", function () {
       ethers.ZeroAddress,
       0,
       0,
-      []
+      [],
+      owner.address
     );
 
     const Dispute = await ethers.getContractFactory(

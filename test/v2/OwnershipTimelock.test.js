@@ -37,11 +37,11 @@ describe("Timelock ownership", function () {
     const Timelock = await ethers.getContractFactory("contracts/mocks/TimelockMock.sol:TimelockMock");
     const timelock = await Timelock.deploy(proposer.address);
 
-    await stake.transferOwnership(await timelock.getAddress());
-    await registry.transferOwnership(await timelock.getAddress());
+    await stake.setGovernance(await timelock.getAddress());
+    await registry.setGovernance(await timelock.getAddress());
 
-    await expect(stake.setFeePct(1)).to.be.reverted;
-    await expect(registry.setFeePct(1)).to.be.reverted;
+    await expect(stake.setFeePct(1)).to.be.revertedWith("governance only");
+    await expect(registry.setFeePct(1)).to.be.revertedWith("governance only");
 
     const stakeData = stake.interface.encodeFunctionData("setFeePct", [1]);
     const registryData = registry.interface.encodeFunctionData("setFeePct", [1]);

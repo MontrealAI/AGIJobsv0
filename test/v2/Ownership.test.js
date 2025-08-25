@@ -100,9 +100,20 @@ describe("Ownable modules", function () {
     );
     await identity.waitForDeployment();
 
-    const modules = [
+    const governable = [
       [StakeManager.attach(stake), (inst, signer) => inst.connect(signer).setFeePct(1)],
       [JobRegistry.attach(registry), (inst, signer) => inst.connect(signer).setFeePct(1)],
+    ];
+
+    for (const [inst, call] of governable) {
+      await expect(call(inst, other)).to.be.revertedWith("governance only");
+      await inst.setGovernance(other.address);
+      await expect(call(inst, owner)).to.be.revertedWith("governance only");
+      await call(inst, other);
+      await inst.connect(other).setGovernance(owner.address);
+    }
+
+    const modules = [
       [
         ValidationModule.attach(validation),
         (inst, signer) => inst.connect(signer).setIdentityRegistry(ethers.ZeroAddress),
@@ -118,7 +129,10 @@ describe("Ownable modules", function () {
       ],
       [PlatformRegistry.attach(platformRegistry), (inst, signer) => inst.connect(signer).setMinPlatformStake(0)],
       [JobRouter.attach(router), (inst, signer) => inst.connect(signer).setRegistrar(ethers.ZeroAddress, false)],
-      [PlatformIncentives.attach(incentives), (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress)],
+      [
+        PlatformIncentives.attach(incentives),
+        (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress),
+      ],
       [FeePool.attach(feePool), (inst, signer) => inst.connect(signer).setBurnPct(0)],
       [TaxPolicy.attach(taxPolicy), (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new")],
       [ENSVerifier.attach(ensVerifier), (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress)],
