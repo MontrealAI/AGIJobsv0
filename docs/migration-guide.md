@@ -2,6 +2,8 @@
 
 All legacy AGIJobManager contracts have been moved to the `legacy/` directory. The table below links common v0/v1 contracts to the modules that replace them in v2.
 
+> **Note:** v1 contracts were never audited and are no longer supported.
+
 | Legacy contract | v2 replacement |
 | --- | --- |
 | `AGIJobManagerv0.sol`, `AGIJobManagerv1.sol` | Combination of `JobRegistry`, `StakeManager`, `ValidationModule`, `ReputationEngine`, `DisputeModule`, `CertificateNFT`, `FeePool` |
@@ -15,7 +17,7 @@ All legacy AGIJobManager contracts have been moved to the `legacy/` directory. T
 
 For function‑level differences see:
 
-- [v0 → v2 function map](v0-v2-function-map.md)
+- [v0 → v2 function map](legacy/v0-v2-function-map.md)
 - [v1 → v2 function map](v1-v2-function-map.md)
 
 ## Job URI Hash Migration
