@@ -8,7 +8,7 @@ interface IDisputeModule {
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event ModeratorAdded(address moderator);
     event ModeratorRemoved(address moderator);
-    event ArbitratorUpdated(address arbitrator);
+    event CommitteeUpdated(address committee);
 
     function raiseDispute(
         uint256 jobId,
@@ -20,6 +20,6 @@ interface IDisputeModule {
 
     function addModerator(address moderator) external;
     function removeModerator(address moderator) external;
-    function setArbitrator(address arbitrator) external;
+    function setCommittee(address committee) external;
 }
 

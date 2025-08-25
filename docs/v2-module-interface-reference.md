@@ -68,11 +68,11 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
-    function raiseDispute(uint256 jobId, string calldata reason) external;
-    function resolve(uint256 jobId, bool uphold, bytes[] calldata sigs) external;
-    function addModerator(address moderator, uint256 weight) external;
+    function raiseDispute(uint256 jobId, string calldata evidence) external;
+    function resolve(uint256 jobId, bool employerWins) external;
+    function addModerator(address moderator) external;
     function removeModerator(address moderator) external;
-    function setDisputeFee(uint256 fee) external;
+    function setCommittee(address committee) external;
 }
 
 interface ICertificateNFT {
