@@ -59,7 +59,11 @@ The script prints module addresses and verifies source on Etherscan.
    `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, new address[](0))`.
 9. **Point modules back to `JobRegistry`** by calling `setJobRegistry` on `StakeManager`, `ValidationModule`, `DisputeModule` and `CertificateNFT`, and `setIdentityRegistry` on `ValidationModule`.
 10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
-11. **Transfer ownership** of each module to a multisig with `transferOwnership` if desired and verify events before accepting user funds.
+11. **Transfer ownership** – deploy a multisig wallet or timelock controller
+    and call `transferOwnership(multisig)` on every module. Only the new
+    owner will be able to call privileged setters. To rotate governance
+    later, have the current multisig execute `transferOwnership(newOwner)`
+    and confirm the `OwnershipTransferred` event before proceeding.
 
 ## Owner Configuration Steps
 After deployment the owner can fine‑tune the system without redeploying:
@@ -136,7 +140,11 @@ then be performed through the "Write" tabs on each module.
 - **Swap the token:** call `StakeManager.setToken(newToken)` (and any mirrored module setters) from the owner account.
 - **Adjust parameters:** examples include `StakeManager.setMinStake(amount)`, `JobRegistry.setFeePct(pct)`, `ValidationModule.setCommitWindow(seconds)`, `ValidationModule.setRevealWindow(seconds)` and `DisputeModule.setDisputeFee(fee)`.
 - **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
-- **Transfer ownership:** every module inherits `Ownable`; call `transferOwnership(multisig)` to hand control to a multisig.
+- **Transfer ownership:** every module inherits `Ownable`; call
+  `transferOwnership(multisig)` to hand control to a multisig or timelock.
+  To rotate later, the current owner invokes `transferOwnership(newOwner)`
+  and waits for the `OwnershipTransferred` event before using the new
+  address.
 
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at

@@ -59,6 +59,20 @@ Record each address during deployment. The defaults below assume the 6‑decimal
    - Post a job: `JobRegistry.createJob(1_000000, "ipfs://QmHash")`
    - Rotate tokens later via `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`
 
+### Transfer ownership to a multisig or timelock
+After deployment hand control of each module to a governance contract so no
+single key can change parameters:
+
+1. Deploy a multisig wallet or an OpenZeppelin
+   `TimelockController`.
+2. From the deployer account call
+   `transferOwnership(multisig)` on every module such as
+   `JobRegistry`, `StakeManager`, and `ValidationModule`.
+3. To rotate governance later, the current multisig executes
+   `transferOwnership(newOwner)` and the new address assumes control after the
+   `OwnershipTransferred` event. Timelock contracts must schedule and execute
+   the call; direct EOA transactions will revert once ownership has moved.
+
 ### ENS subdomain prerequisites
 - Agents must control an ENS subdomain ending in `.agent.agi.eth`.
 - Validators require `.club.agi.eth`.

@@ -40,3 +40,18 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
 For function parity with the legacy contract, compare calls against [v1-v2-function-map.md](v1-v2-function-map.md).
 
 Following this sequence results in a ready‑to‑use v2 deployment running on `$AGIALPHA`.
+
+## 4. Transfer ownership to a multisig or timelock
+
+Immediately after wiring, delegate control of every module to a governance
+contract:
+
+1. Deploy a multisig wallet or OpenZeppelin `TimelockController`.
+2. From the deployer account call `transferOwnership(multisig)` on
+   `JobRegistry`, `StakeManager`, `ValidationModule` and all other modules.
+3. To rotate owners, the current multisig schedules and executes
+   `transferOwnership(newOwner)` and the new address takes effect once the
+   `OwnershipTransferred` event is emitted.
+
+Calls sent directly by EOAs will revert after ownership has moved; timelocks
+must queue and execute transactions to invoke privileged setters.
