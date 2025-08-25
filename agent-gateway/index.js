@@ -36,8 +36,14 @@ const validation = VALIDATION_MODULE_ADDRESS
 
 // In-memory stores
 const jobs = new Map();
-const agents = new Map(); // id -> {url, wallet}
+const agents = new Map(); // id -> { url, wallet, ws }
 const commits = new Map(); // jobId -> { address -> {approve, salt} }
+const pendingJobs = new Map(); // id -> [job]
+
+function queueJob(id, job) {
+  if (!pendingJobs.has(id)) pendingJobs.set(id, []);
+  pendingJobs.get(id).push(job);
+}
 
 // Listen for JobCreated events
 registry.on('JobCreated', (jobId, employer, agentAddr, reward, stake, fee) => {
@@ -62,15 +68,16 @@ app.use(express.json());
 // Register an agent to receive job dispatches
 app.post('/agents', (req, res) => {
   const { id, url, wallet } = req.body;
-  if (!id || !url || !wallet) {
-    return res.status(400).json({ error: 'id, url and wallet required' });
+  if (!id || !wallet) {
+    return res.status(400).json({ error: 'id and wallet required' });
   }
-  agents.set(id, { url, wallet });
+  agents.set(id, { url, wallet, ws: agents.get(id)?.ws || null });
+  if (!pendingJobs.has(id)) pendingJobs.set(id, []);
   res.json({ id, url, wallet });
 });
 
 app.get('/agents', (req, res) => {
-  res.json(Array.from(agents.entries()).map(([id, a]) => ({ id, ...a })));
+  res.json(Array.from(agents.entries()).map(([id, a]) => ({ id, url: a.url, wallet: a.wallet })));
 });
 
 // REST endpoint to list jobs
@@ -109,29 +116,44 @@ app.post('/jobs/:id/submit', async (req, res) => {
   }
 });
 
+// Helpers for commit/reveal workflow
+async function commitHelper(jobId, wallet, approve) {
+  if (!validation) throw new Error('validation module not configured');
+  const nonce = await validation.jobNonce(jobId);
+  const salt = ethers.hexlify(ethers.randomBytes(32));
+  const commitHash = ethers.solidityPackedKeccak256(
+    ['uint256', 'uint256', 'bool', 'bytes32'],
+    [BigInt(jobId), nonce, approve, salt]
+  );
+  const tx = await validation.connect(wallet).commitValidation(jobId, commitHash);
+  await tx.wait();
+  if (!commits.has(jobId)) commits.set(jobId, {});
+  const jobCommits = commits.get(jobId);
+  jobCommits[wallet.address.toLowerCase()] = { approve, salt };
+  return { tx: tx.hash, salt };
+}
+
+async function revealHelper(jobId, wallet) {
+  if (!validation) throw new Error('validation module not configured');
+  const jobCommits = commits.get(jobId) || {};
+  const data = jobCommits[wallet.address.toLowerCase()];
+  if (!data) throw new Error('no commit found');
+  const tx = await validation
+    .connect(wallet)
+    .revealValidation(jobId, data.approve, data.salt);
+  await tx.wait();
+  delete jobCommits[wallet.address.toLowerCase()];
+  return { tx: tx.hash };
+}
+
 // Commit validation decision
 app.post('/jobs/:id/commit', async (req, res) => {
-  if (!validation) {
-    return res.status(500).json({ error: 'validation module not configured' });
-  }
   const { address, approve } = req.body;
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
   try {
-    const nonce = await validation.jobNonce(req.params.id);
-    const salt = ethers.hexlify(ethers.randomBytes(32));
-    const commitHash = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32'],
-      [BigInt(req.params.id), nonce, approve, salt]
-    );
-    const tx = await validation
-      .connect(wallet)
-      .commitValidation(req.params.id, commitHash);
-    await tx.wait();
-    if (!commits.has(req.params.id)) commits.set(req.params.id, {});
-    const jobCommits = commits.get(req.params.id);
-    jobCommits[address.toLowerCase()] = { approve, salt };
-    res.json({ tx: tx.hash, salt });
+    const result = await commitHelper(req.params.id, wallet, approve);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -139,22 +161,12 @@ app.post('/jobs/:id/commit', async (req, res) => {
 
 // Reveal validation decision
 app.post('/jobs/:id/reveal', async (req, res) => {
-  if (!validation) {
-    return res.status(500).json({ error: 'validation module not configured' });
-  }
   const { address } = req.body;
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
-  const jobCommits = commits.get(req.params.id) || {};
-  const data = jobCommits[address.toLowerCase()];
-  if (!data) return res.status(400).json({ error: 'no commit found' });
   try {
-    const tx = await validation
-      .connect(wallet)
-      .revealValidation(req.params.id, data.approve, data.salt);
-    await tx.wait();
-    delete jobCommits[address.toLowerCase()];
-    res.json({ tx: tx.hash });
+    const result = await revealHelper(req.params.id, wallet);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -164,6 +176,40 @@ app.post('/jobs/:id/reveal', async (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+wss.on('connection', (ws) => {
+  ws.on('message', (data) => {
+    let msg;
+    try {
+      msg = JSON.parse(data);
+    } catch (err) {
+      return;
+    }
+    if (msg.type === 'register') {
+      const { id, wallet } = msg;
+      if (!id || !wallet) return;
+      const existing = agents.get(id) || {};
+      agents.set(id, { url: existing.url, wallet, ws });
+      if (!pendingJobs.has(id)) pendingJobs.set(id, []);
+      pendingJobs.get(id).forEach((job) => {
+        ws.send(JSON.stringify({ type: 'job', job }));
+      });
+    } else if (msg.type === 'ack') {
+      const { id, jobId } = msg;
+      const queue = pendingJobs.get(id) || [];
+      pendingJobs.set(
+        id,
+        queue.filter((j) => j.jobId !== String(jobId))
+      );
+    }
+  });
+
+  ws.on('close', () => {
+    agents.forEach((info) => {
+      if (info.ws === ws) info.ws = null;
+    });
+  });
+});
+
 function broadcast(payload) {
   wss.clients.forEach((client) => {
     if (client.readyState === 1) {
@@ -172,14 +218,19 @@ function broadcast(payload) {
   });
 }
 
-// Dispatch jobs to registered agents via HTTP
+// Dispatch jobs to registered agents
 function dispatch(job) {
-  agents.forEach(({ url }) => {
-    fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(job)
-    }).catch((err) => console.error('dispatch error', err));
+  agents.forEach((info, id) => {
+    queueJob(id, job);
+    if (info.ws && info.ws.readyState === 1) {
+      info.ws.send(JSON.stringify({ type: 'job', job }));
+    } else if (info.url) {
+      fetch(info.url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(job)
+      }).catch((err) => console.error('dispatch error', err));
+    }
   });
 }
 
@@ -187,3 +238,5 @@ server.listen(PORT, () => {
   console.log(`Agent gateway listening on port ${PORT}`);
   console.log('Wallets:', walletManager.list());
 });
+
+module.exports = { app, server, commitHelper, revealHelper };
