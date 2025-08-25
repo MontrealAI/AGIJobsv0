@@ -850,9 +850,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         jobEscrows[jobId] = escrow - amount;
         uint256 perValidator = amount / count;
         uint256 remainder = amount - perValidator * count;
-        for (uint256 i; i < count; ++i) {
+        for (uint256 i; i < count;) {
             token.safeTransfer(vals[i], perValidator);
             emit StakeReleased(jobId, vals[i], perValidator);
+            unchecked {
+                ++i;
+            }
         }
         if (remainder > 0) {
             token.safeTransfer(vals[0], remainder);

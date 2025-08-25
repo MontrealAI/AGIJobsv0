@@ -394,25 +394,38 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         );
 
         // Shuffle only the first `sample` entries using Fisher–Yates
-        for (uint256 i; i < sample; ++i) {
+        for (uint256 i; i < sample;) {
             uint256 j = i + (seed % (n - i));
             (pool[i], pool[j]) = (pool[j], pool[i]);
             seed = uint256(keccak256(abi.encodePacked(seed)));
+            unchecked {
+                ++i;
+            }
         }
 
         selected = new address[](validatorsPerJob);
         uint256[] memory stakes = new uint256[](validatorsPerJob);
         uint256 count;
 
-        for (uint256 i; i < sample && count < validatorsPerJob; ++i) {
+        for (uint256 i; i < sample && count < validatorsPerJob;) {
             address candidate = pool[i];
             uint256 stake = stakeManager.stakeOf(
                 candidate,
                 IStakeManager.Role.Validator
             );
-            if (stake == 0) continue;
+            if (stake == 0) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
             if (address(reputationEngine) != address(0)) {
-                if (reputationEngine.isBlacklisted(candidate)) continue;
+                if (reputationEngine.isBlacklisted(candidate)) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
             }
             bytes32[] memory proof;
             string memory subdomain = validatorSubdomains[candidate];
@@ -421,16 +434,27 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
                 subdomain,
                 proof
             );
-            if (!authorized) continue;
+            if (!authorized) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
             selected[count] = candidate;
             stakes[count] = stake;
-            count++;
+            unchecked {
+                ++count;
+                ++i;
+            }
         }
 
         require(count == validatorsPerJob, "insufficient validators");
 
-        for (uint256 i; i < count; ++i) {
+        for (uint256 i; i < count;) {
             validatorStakes[jobId][selected[i]] = stakes[i];
+            unchecked {
+                ++i;
+            }
         }
 
         r.validators = selected;
