@@ -799,7 +799,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
         uint256 reward,
         uint256 fee,
         IFeePool _feePool
-    ) external onlyJobRegistry {
+    ) external onlyJobRegistry nonReentrant {
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -835,6 +835,7 @@ contract StakeManager is Ownable, ReentrancyGuard, TaxAcknowledgement {
     function distributeValidatorRewards(bytes32 jobId, uint256 amount)
         external
         onlyJobRegistry
+        nonReentrant
     {
         if (amount == 0) return;
         address vm = address(validationModule);
