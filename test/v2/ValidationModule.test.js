@@ -79,6 +79,13 @@ describe("ValidationModule V2", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
+  it("reverts when stake manager is unset", async () => {
+    await validation.connect(owner).setStakeManager(ethers.ZeroAddress);
+    await expect(validation.selectValidators(1)).to.be.revertedWith(
+      "stake manager"
+    );
+  });
+
   it("selects stake-weighted validators", async () => {
     const tx = await validation.selectValidators(1);
     const receipt = await tx.wait();
