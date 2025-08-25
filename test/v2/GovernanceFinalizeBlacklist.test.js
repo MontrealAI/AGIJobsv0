@@ -84,23 +84,24 @@ describe("JobRegistry governance finalization", function () {
     const coder = ethers.AbiCoder.defaultAbiCoder();
     const base = BigInt(
       ethers.keccak256(
-        coder.encode(["uint256", "uint256"], [BigInt(jobId), 1n])
+        coder.encode(["uint256", "uint256"], [BigInt(jobId), 3n])
       )
     );
     const slot = base + 3n;
-    const slotHex = ethers.toBeHex(slot);
     const prev = BigInt(
       await ethers.provider.getStorage(await registry.getAddress(), slot)
     );
-    const mask = ~((0xffn << (8n * 16n)) | (0xffn << (8n * 17n)));
-    const cleared = prev & mask;
+    const stateOffset = 8n * 16n;
+    const successOffset = 8n * 17n;
+    const mask = (0xffn << stateOffset) | (0xffn << successOffset);
+    const cleared = prev & ~mask;
     const value =
       cleared |
-      (4n << (8n * 16n)) |
-      (BigInt(success ? 1 : 0) << (8n * 17n));
+      (4n << stateOffset) |
+      (BigInt(success ? 1 : 0) << successOffset);
     await ethers.provider.send("hardhat_setStorageAt", [
       await registry.getAddress(),
-      slotHex,
+      ethers.toBeHex(slot),
       ethers.toBeHex(value, 32),
     ]);
   }
@@ -123,7 +124,7 @@ describe("JobRegistry governance finalization", function () {
     await setJobState(jobId, true);
 
     await expect(registry.connect(agent).finalize(jobId)).to.be.revertedWith(
-      "Blacklisted agent"
+      "Blacklisted"
     );
 
     await expect(registry.connect(owner).finalize(jobId))
@@ -154,7 +155,7 @@ describe("JobRegistry governance finalization", function () {
 
     await expect(
       registry.connect(employer).finalize(jobId)
-    ).to.be.revertedWith("Blacklisted employer");
+    ).to.be.revertedWith("Blacklisted");
 
     await expect(registry.connect(owner).finalize(jobId))
       .to.emit(registry, "GovernanceFinalized")
