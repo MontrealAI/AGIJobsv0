@@ -34,9 +34,15 @@ contract DisputeModule {
     /// dispute. A value of 0 disables the fee.
     uint256 public appealFee;
 
+    /// @notice Time window in seconds after which unresolved disputes may expire.
+    /// @dev Defaults to 3 days and can be adjusted by the committee.
+    uint64 public resolutionWindow = 3 days;
+
     struct Dispute {
         address claimant;
         bool resolved;
+        uint64 raisedAt;
+        uint64 resolveBy;
         string evidence;
     }
 
@@ -109,6 +115,12 @@ contract DisputeModule {
         emit CommitteeUpdated(_committee);
     }
 
+    /// @notice Configure the dispute resolution window in seconds.
+    /// @param window Duration after which an unresolved dispute can expire.
+    function setResolutionWindow(uint64 window) external onlyCommittee {
+        resolutionWindow = window;
+    }
+
     /// @dev Restrict calls to the JobRegistry
     modifier onlyJobRegistry() {
         require(msg.sender == address(jobRegistry), "not registry");
@@ -145,6 +157,8 @@ contract DisputeModule {
         disputes[jobId] = Dispute({
             claimant: claimant,
             resolved: false,
+            raisedAt: uint64(block.timestamp),
+            resolveBy: uint64(block.timestamp + resolutionWindow),
             evidence: evidence
         });
         emit DisputeRaised(jobId, claimant);
@@ -156,6 +170,7 @@ contract DisputeModule {
         Dispute storage d = disputes[jobId];
         require(d.claimant != address(0) && !d.resolved, "no dispute");
         require(moderators[msg.sender], "not moderator");
+        require(block.timestamp <= d.resolveBy, "expired");
         require(!hasVoted[jobId][msg.sender], "voted");
         hasVoted[jobId][msg.sender] = true;
 
@@ -170,6 +185,17 @@ contract DisputeModule {
                 _finalize(jobId, false);
             }
         }
+    }
+
+    /// @notice Expire a dispute that has passed its resolution window.
+    /// @param jobId Identifier of the dispute to expire.
+    function expireDispute(uint256 jobId) external {
+        Dispute storage d = disputes[jobId];
+        require(d.claimant != address(0) && !d.resolved, "no dispute");
+        require(block.timestamp > d.resolveBy, "active");
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        bool employerWins = d.claimant == job.agent;
+        _finalize(jobId, employerWins);
     }
 
     /// @dev Internal helper returning the number of votes required for
