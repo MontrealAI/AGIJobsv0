@@ -197,6 +197,7 @@ contract DisputeModule is Ownable {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
 
         if (msg.sender != owner()) {
             uint256 weight = _verifySignatures(jobId, employerWins, signatures);
@@ -205,9 +206,8 @@ contract DisputeModule is Ownable {
 
         d.resolved = true;
 
-        address recipient = employerWins
-            ? jobRegistry.jobs(jobId).employer
-            : d.claimant;
+        address employer = job.employer;
+        address recipient = employerWins ? employer : d.claimant;
         uint256 fee = d.fee;
         delete disputes[jobId];
 
@@ -224,7 +224,7 @@ contract DisputeModule is Ownable {
                 address[] memory validators = IValidationModule(valMod).validators(jobId);
                 for (uint256 i; i < validators.length; ++i) {
                     if (!IValidationModule(valMod).votes(jobId, validators[i])) {
-                        sm.slash(validators[i], fee, jobRegistry.jobs(jobId).employer);
+                        sm.slash(validators[i], fee, employer);
                     }
                 }
             }
