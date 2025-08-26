@@ -33,25 +33,48 @@ describe("Validator selection with large pool", function () {
     await validation.setIdentityRegistry(await identity.getAddress());
   });
 
-  it("samples large pools within gas limits", async () => {
-    const poolSize = 200;
+  it("benchmarks gas usage across pool sizes", async () => {
+    const poolSizes = [10, 50, 200];
+    let jobId = 1;
+    for (const poolSize of poolSizes) {
+      const validators = [];
+      for (let i = 0; i < poolSize; i++) {
+        const addr = ethers.Wallet.createRandom().address;
+        validators.push(addr);
+        await stake.setStake(addr, 1, ethers.parseEther("1"));
+        await identity.addAdditionalValidator(addr);
+      }
+      await validation.setValidatorPool(validators);
+      await validation.setValidatorsPerJob(3);
+      await validation.setValidatorPoolSampleSize(Math.min(poolSize, 50));
+
+      const tx = await validation.selectValidators(jobId++);
+      const receipt = await tx.wait();
+      console.log(`pool size ${poolSize}: ${receipt.gasUsed}`);
+      expect(receipt.gasUsed).to.be.lt(5000000n);
+      const ev = receipt.logs.find(
+        (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      );
+      expect(ev.args[1].length).to.equal(3);
+    }
+  });
+
+  it("reverts when validator pool exceeds max size", async () => {
+    const maxSize = 50;
+    await validation.setMaxValidatorPoolSize(maxSize);
+    const poolSize = maxSize + 1;
     const validators = [];
     for (let i = 0; i < poolSize; i++) {
       const addr = ethers.Wallet.createRandom().address;
       validators.push(addr);
       await stake.setStake(addr, 1, ethers.parseEther("1"));
+      await identity.addAdditionalValidator(addr);
     }
     await validation.setValidatorPool(validators);
     await validation.setValidatorsPerJob(3);
-    await validation.setValidatorPoolSampleSize(50);
-
-    const tx = await validation.selectValidators(1);
-    const receipt = await tx.wait();
-    expect(receipt.gasUsed).to.be.lt(5000000n);
-    const ev = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    await expect(validation.selectValidators(1)).to.be.revertedWith(
+      "pool limit"
     );
-    expect(ev.args[1].length).to.equal(3);
   });
 });
 

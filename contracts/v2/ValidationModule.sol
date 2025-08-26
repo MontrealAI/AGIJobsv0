@@ -51,6 +51,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     address[] public validatorPool;
     // maximum number of pool entries to sample on-chain
     uint256 public validatorPoolSampleSize = 100;
+    // hard cap on validator pool size
+    uint256 public maxValidatorPoolSize = type(uint256).max;
     // optional VRF provider for future randomness upgrades
     IVRF public vrf;
 
@@ -91,6 +93,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     event IdentityRegistryUpdated(address registry);
     event JobNonceReset(uint256 indexed jobId);
     event ValidatorPoolSampleSizeUpdated(uint256 size);
+    event MaxValidatorPoolSizeUpdated(uint256 size);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -198,6 +201,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     function setValidatorPoolSampleSize(uint256 size) external onlyOwner {
         validatorPoolSampleSize = size;
         emit ValidatorPoolSampleSizeUpdated(size);
+    }
+
+    /// @notice Update the maximum allowable size of the validator pool.
+    /// @param size Maximum number of validators permitted in the pool.
+    function setMaxValidatorPoolSize(uint256 size) external onlyOwner {
+        maxValidatorPoolSize = size;
+        emit MaxValidatorPoolSizeUpdated(size);
     }
 
     /// @notice Batch update core validation parameters.
@@ -383,9 +393,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         // Increment job nonce to distinguish separate validation rounds.
         jobNonce[jobId] += 1;
 
-        address[] memory pool = validatorPool;
-        uint256 n = pool.length;
+        uint256 n = validatorPool.length;
         require(n > 0, "no validators");
+        require(n <= maxValidatorPoolSize, "pool limit");
+        address[] memory pool = validatorPool;
         require(address(stakeManager) != address(0), "stake manager");
         uint256 sample = validatorPoolSampleSize;
         if (sample > n) sample = n;
