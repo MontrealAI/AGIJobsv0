@@ -1161,6 +1161,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function cancelExpiredJob(uint256 jobId)
         public
         onlyAfterDeadline(jobId)
+        whenNotPaused
         nonReentrant
     {
         Job storage job = jobs[jobId];
