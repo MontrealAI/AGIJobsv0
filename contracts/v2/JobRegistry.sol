@@ -305,6 +305,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         emit ModuleUpdated("IdentityRegistry", address(registry));
     }
 
+    /// @notice Switch the active dispute module.
+    /// @param module Address of the new dispute module contract.
+    function setDisputeModule(IDisputeModule module) external onlyGovernance {
+        require(address(module) != address(0), "dispute");
+        disputeModule = module;
+        emit DisputeModuleUpdated(address(module));
+        emit ModuleUpdated("DisputeModule", address(module));
+    }
+
     /// @notice Update the ENS root node used for agent verification.
     /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
     function setAgentRootNode(bytes32 node) external onlyGovernance {

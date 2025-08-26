@@ -241,7 +241,25 @@ async function main() {
   console.log("ValidationModule:", await validation.getAddress());
   console.log("StakeManager:", await stake.getAddress());
   console.log("ReputationEngine:", await reputation.getAddress());
-  console.log("DisputeModule:", await dispute.getAddress());
+  let activeDispute = await dispute.getAddress();
+  if (typeof args.arbitrator === "string") {
+    const Kleros = await ethers.getContractFactory(
+      "contracts/v2/modules/KlerosDisputeModule.sol:KlerosDisputeModule"
+    );
+    const kleros = await Kleros.deploy(
+      await registry.getAddress(),
+      args.arbitrator,
+      governance
+    );
+    await kleros.waitForDeployment();
+    await registry
+      .connect(governanceSigner)
+      .setDisputeModule(await kleros.getAddress());
+    activeDispute = await kleros.getAddress();
+    console.log("KlerosDisputeModule:", activeDispute);
+  } else {
+    console.log("DisputeModule:", activeDispute);
+  }
   console.log("CertificateNFT:", await nft.getAddress());
   console.log("TaxPolicy:", await tax.getAddress());
   console.log("FeePool:", await feePool.getAddress());
@@ -255,7 +273,7 @@ async function main() {
     jobRegistry: await registry.getAddress(),
     validationModule: await validation.getAddress(),
     reputationEngine: await reputation.getAddress(),
-    disputeModule: await dispute.getAddress(),
+    disputeModule: activeDispute,
     certificateNFT: await nft.getAddress(),
     taxPolicy: await tax.getAddress(),
     feePool: await feePool.getAddress(),
@@ -305,6 +323,13 @@ async function main() {
     moderator,
     governance,
   ]);
+  if (typeof args.arbitrator === "string") {
+    await verify(activeDispute, [
+      await registry.getAddress(),
+      args.arbitrator,
+      governance,
+    ]);
+  }
   await verify(await nft.getAddress(), ["Cert", "CERT", governance]);
   await verify(await tax.getAddress(), [
     governance,
