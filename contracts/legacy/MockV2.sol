@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+// @deprecated Legacy contract for v0; use modules under contracts/v2 instead.
+
 import "../v2/interfaces/IStakeManager.sol";
 import "../v2/interfaces/IJobRegistry.sol";
 import "../v2/interfaces/IJobRegistryTax.sol";

@@ -11,7 +11,7 @@ describe("Identity verification enforcement", function () {
       [owner, employer, agent] = await ethers.getSigners();
 
       const Stake = await ethers.getContractFactory(
-        "contracts/mocks/MockV2.sol:MockStakeManager"
+        "contracts/legacy/MockV2.sol:MockStakeManager"
       );
       stakeManager = await Stake.deploy();
 
@@ -21,11 +21,11 @@ describe("Identity verification enforcement", function () {
       rep = await Rep.deploy(await stakeManager.getAddress());
 
       const ENS = await ethers.getContractFactory(
-        "contracts/mocks/MockENS.sol:MockENS"
+        "contracts/legacy/MockENS.sol:MockENS"
       );
       const ens = await ENS.deploy();
       const Wrapper = await ethers.getContractFactory(
-        "contracts/mocks/MockNameWrapper.sol:MockNameWrapper"
+        "contracts/legacy/MockNameWrapper.sol:MockNameWrapper"
       );
       const wrapper = await Wrapper.deploy();
 
@@ -138,11 +138,11 @@ describe("Identity verification enforcement", function () {
         .setReputationEngine(await reputation.getAddress());
 
       const ENS = await ethers.getContractFactory(
-        "contracts/mocks/MockENS.sol:MockENS"
+        "contracts/legacy/MockENS.sol:MockENS"
       );
       const ens = await ENS.deploy();
       const Wrapper = await ethers.getContractFactory(
-        "contracts/mocks/MockNameWrapper.sol:MockNameWrapper"
+        "contracts/legacy/MockNameWrapper.sol:MockNameWrapper"
       );
       const wrapper = await Wrapper.deploy();
       const Identity = await ethers.getContractFactory(

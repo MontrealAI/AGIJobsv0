@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+// @deprecated Legacy contract for v0; use modules under contracts/v2 instead.
+
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @dev Minimal timelock-style forwarder used for testing ownership transfer.

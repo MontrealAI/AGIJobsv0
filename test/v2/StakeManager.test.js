@@ -523,7 +523,7 @@ describe("StakeManager", function () {
   it("slashes full amount when percentages sum to 100", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(70, 30);
     const MockRegistry = await ethers.getContractFactory(
-      "contracts/mocks/MockV2.sol:MockJobRegistry"
+      "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
     const mockRegistry = await MockRegistry.deploy();
     await stakeManager
@@ -572,7 +572,7 @@ describe("StakeManager", function () {
   it("routes full slashing to treasury when employer share is zero", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(0, 100);
     const MockRegistry = await ethers.getContractFactory(
-      "contracts/mocks/MockV2.sol:MockJobRegistry"
+      "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
     const mockRegistry = await MockRegistry.deploy();
     await stakeManager
@@ -601,7 +601,7 @@ describe("StakeManager", function () {
   it("burns remainder when slashing with rounding", async () => {
     await stakeManager.connect(owner).setSlashingPercentages(60, 40);
     const MockRegistry = await ethers.getContractFactory(
-      "contracts/mocks/MockV2.sol:MockJobRegistry"
+      "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
     const mockRegistry = await MockRegistry.deploy();
     await stakeManager

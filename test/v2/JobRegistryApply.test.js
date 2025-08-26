@@ -10,7 +10,7 @@ describe("JobRegistry agent gating", function () {
     [owner, employer, agent] = await ethers.getSigners();
 
     const Stake = await ethers.getContractFactory(
-      "contracts/mocks/MockV2.sol:MockStakeManager"
+      "contracts/legacy/MockV2.sol:MockStakeManager"
     );
     const stakeManager = await Stake.deploy();
 

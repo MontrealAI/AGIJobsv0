@@ -220,7 +220,7 @@ describe("ENSOwnershipVerifier verification", function () {
 
   it("emits recovery when NameWrapper reverts", async () => {
     const BadWrapper = await ethers.getContractFactory(
-      "contracts/mocks/RevertingNameWrapper.sol:RevertingNameWrapper"
+      "contracts/legacy/RevertingNameWrapper.sol:RevertingNameWrapper"
     );
     const bad = await BadWrapper.deploy();
     await verifier.setNameWrapper(await bad.getAddress());

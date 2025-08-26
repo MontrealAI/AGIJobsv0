@@ -12,7 +12,7 @@ import {IPlatformRegistry} from "../../contracts/v2/interfaces/IPlatformRegistry
 import {IReputationEngine} from "../../contracts/v2/interfaces/IReputationEngine.sol";
 import {FeePool} from "../../contracts/v2/FeePool.sol";
 import {PlatformIncentives} from "../../contracts/v2/PlatformIncentives.sol";
-import {MockJobRegistry, MockReputationEngine} from "../../contracts/mocks/MockV2.sol";
+import {MockJobRegistry, MockReputationEngine} from "../../contracts/legacy/MockV2.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 
 contract PlatformIncentivesTest is Test {

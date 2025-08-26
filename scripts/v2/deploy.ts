@@ -49,7 +49,7 @@ async function main() {
     tokenAddress = args.token;
   } else {
     const Token = await ethers.getContractFactory(
-      "contracts/mocks/MockERC20.sol:MockERC20"
+      "contracts/legacy/MockERC20.sol:MockERC20"
     );
     const token = await Token.deploy();
     await token.waitForDeployment();

@@ -61,13 +61,13 @@ describe("StakeManager AGIType bonuses", function () {
     registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const NFT = await ethers.getContractFactory(
-      "contracts/mocks/MockERC721.sol:MockERC721"
+      "contracts/legacy/MockERC721.sol:MockERC721"
     );
     nft1 = await NFT.deploy();
     nft2 = await NFT.deploy();
 
     const Mal = await ethers.getContractFactory(
-      "contracts/mocks/MaliciousERC721.sol:MaliciousERC721"
+      "contracts/legacy/MaliciousERC721.sol:MaliciousERC721"
     );
     malicious = await Mal.deploy();
 

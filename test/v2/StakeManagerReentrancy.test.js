@@ -9,7 +9,7 @@ describe("StakeManager reentrancy", function () {
     [owner, employer, agent, validator, treasury] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory(
-      "contracts/mocks/ReentrantERC206.sol:ReentrantERC206"
+      "contracts/legacy/ReentrantERC206.sol:ReentrantERC206"
     );
     token = await Token.deploy();
     await token.mint(employer.address, 1000);

@@ -14,7 +14,7 @@ async function verify(address, args = []) {
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const Token = await ethers.getContractFactory("contracts/mocks/MockERC20.sol:MockERC20");
+  const Token = await ethers.getContractFactory("contracts/legacy/MockERC20.sol:MockERC20");
   const token = await Token.deploy();
   await token.waitForDeployment();
 
