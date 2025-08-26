@@ -84,7 +84,7 @@ describe("JobRegistry governance finalization", function () {
     const coder = ethers.AbiCoder.defaultAbiCoder();
     const base = BigInt(
       ethers.keccak256(
-        coder.encode(["uint256", "uint256"], [BigInt(jobId), 3n])
+        coder.encode(["uint256", "uint256"], [BigInt(jobId), 4n])
       )
     );
     const slot = base + 3n;

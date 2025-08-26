@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
@@ -17,7 +18,7 @@ import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 /// @notice Handles validator selection and commit–reveal voting for jobs.
 /// @dev Holds no ether and keeps the owner and contract tax neutral; only
 ///      participating validators and job parties bear tax obligations.
-contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
+contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -199,6 +200,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
+    }
+
+    /// @notice Pause validation operations
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Resume validation operations
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /// @notice Update the maximum number of pool entries sampled during selection.
@@ -387,7 +398,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     }
 
     /// @inheritdoc IValidationModule
-    function selectValidators(uint256 jobId) public override returns (address[] memory selected) {
+    function selectValidators(uint256 jobId) public override whenNotPaused returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         // Ensure validators are only chosen once per round to prevent
         // re-selection or commit replay.
@@ -504,6 +515,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     function start(uint256 jobId, string calldata /*data*/)
         external
         override
+        whenNotPaused
         returns (address[] memory validators)
     {
         validators = selectValidators(jobId);
@@ -515,7 +527,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         bytes32 commitHash,
         string memory subdomain,
         bytes32[] memory proof
-    ) internal {
+    ) internal whenNotPaused {
         Round storage r = rounds[jobId];
         require(
             jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
@@ -564,6 +576,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         bytes32[] calldata proof
     )
         public
+        whenNotPaused
         override
         requiresTaxAcknowledgement(
             _policy(),
@@ -581,6 +594,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     /// @param commitHash Hash of the vote and salt.
     function commitValidation(uint256 jobId, bytes32 commitHash)
         public
+        whenNotPaused
         override
         requiresTaxAcknowledgement(
             _policy(),
@@ -601,7 +615,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         bytes32 salt,
         string memory subdomain,
         bytes32[] memory proof
-    ) internal {
+    ) internal whenNotPaused {
         Round storage r = rounds[jobId];
         require(block.timestamp > r.commitDeadline, "commit phase");
         require(block.timestamp <= r.revealDeadline, "reveal closed");
@@ -648,6 +662,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         bytes32[] calldata proof
     )
         public
+        whenNotPaused
         override
         requiresTaxAcknowledgement(
             _policy(),
@@ -666,6 +681,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     /// @param salt Salt used in the original commitment.
     function revealValidation(uint256 jobId, bool approve, bytes32 salt)
         public
+        whenNotPaused
         override
         requiresTaxAcknowledgement(
             _policy(),
@@ -687,6 +703,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         bytes32[] calldata proof
     )
         external
+        whenNotPaused
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -707,6 +724,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
         bytes32[] calldata proof
     )
         external
+        whenNotPaused
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -719,7 +737,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     }
 
     /// @notice Tally revealed votes, apply slashing/rewards, and push result to JobRegistry.
-    function finalize(uint256 jobId) external override returns (bool success) {
+    function finalize(uint256 jobId) external override whenNotPaused returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
         require(
@@ -795,6 +813,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     function finalizeValidation(uint256 jobId)
         external
         override
+        whenNotPaused
         returns (bool success)
     {
         return this.finalize(jobId);

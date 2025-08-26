@@ -7,6 +7,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
@@ -24,7 +25,7 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 ///      instance `2` tokens should be provided as `2_000_000`. Contracts that
 ///      operate on 18‑decimal tokens must downscale by `1e12`, which may cause
 ///      precision loss.
-contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
+contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice participant roles
@@ -310,6 +311,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         emit ModulesUpdated(_jobRegistry, _disputeModule);
     }
 
+    /// @notice Pause staking and escrow operations
+    function pause() external onlyGovernance {
+        _pause();
+    }
+
+    /// @notice Resume staking and escrow operations
+    function unpause() external onlyGovernance {
+        _unpause();
+    }
+
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
     function setFeePct(uint256 pct) external onlyGovernance {
@@ -442,6 +453,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function lockStake(address user, uint256 amount, uint64 lockTime)
         external
         onlyJobRegistry
+        whenNotPaused
     {
         uint256 total =
             stakes[user][Role.Agent] +
@@ -462,6 +474,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function releaseStake(address user, uint256 amount)
         external
         onlyJobRegistry
+        whenNotPaused
     {
         uint256 locked = lockedStakes[user];
         require(locked >= amount, "locked");
@@ -518,6 +531,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     /// @param amount token amount with 6 decimals
     function depositStakeFor(address user, Role role, uint256 amount)
         external
+        whenNotPaused
         requiresTaxAcknowledgement(
             _policyFor(user),
             user,
@@ -539,6 +553,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     /// @param amount token amount with 6 decimals; caller must approve first
     function depositStake(Role role, uint256 amount)
         external
+        whenNotPaused
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -563,7 +578,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
      * @param role Participant role receiving credit for the stake.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
-    function acknowledgeAndDeposit(Role role, uint256 amount) external nonReentrant {
+    function acknowledgeAndDeposit(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
         require(registry != address(0), "registry");
         IJobRegistryAck(registry).acknowledgeFor(msg.sender);
@@ -586,7 +601,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         address user,
         Role role,
         uint256 amount
-    ) external nonReentrant {
+    ) external whenNotPaused nonReentrant {
         require(user != address(0), "user");
         address registry = jobRegistry;
         require(registry != address(0), "registry");
@@ -637,6 +652,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
      */
     function withdrawStake(Role role, uint256 amount)
         external
+        whenNotPaused
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -657,7 +673,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
      * @param role Participant role of the stake being withdrawn.
      * @param amount Withdraw amount in $AGIALPHA with 6 decimals.
      */
-    function acknowledgeAndWithdraw(Role role, uint256 amount) external nonReentrant {
+    function acknowledgeAndWithdraw(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
         require(registry != address(0), "registry");
         IJobRegistryAck(registry).acknowledgeFor(msg.sender);
@@ -677,7 +693,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         address user,
         Role role,
         uint256 amount
-    ) external onlyGovernance nonReentrant {
+    ) external onlyGovernance whenNotPaused nonReentrant {
         require(user != address(0), "user");
         address registry = jobRegistry;
         require(registry != address(0), "registry");
@@ -697,6 +713,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function lockReward(bytes32 jobId, address from, uint256 amount)
         external
         onlyJobRegistry
+        whenNotPaused
     {
         token.safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
@@ -709,7 +726,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     ///      escrowed balance.
     /// @param from Address providing the funds; must approve first.
     /// @param amount Token amount with 6 decimals to lock.
-    function lock(address from, uint256 amount) external onlyJobRegistry {
+    function lock(address from, uint256 amount) external onlyJobRegistry whenNotPaused {
         token.safeTransferFrom(from, address(this), amount);
         emit StakeEscrowLocked(bytes32(0), from, amount);
     }
@@ -721,6 +738,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function releaseReward(bytes32 jobId, address to, uint256 amount)
         external
         onlyJobRegistry
+        whenNotPaused
     {
         uint256 pct = getAgentPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
@@ -758,7 +776,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     ///      sufficient balance was locked earlier.
     /// @param to Recipient receiving the tokens.
     /// @param amount Base token amount with 6 decimals before AGI bonus.
-    function release(address to, uint256 amount) external onlyJobRegistry {
+    function release(address to, uint256 amount) external onlyJobRegistry whenNotPaused {
         // apply AGI type payout modifier
         uint256 pct = getAgentPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
@@ -801,7 +819,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         uint256 reward,
         uint256 fee,
         IFeePool _feePool
-    ) external onlyJobRegistry nonReentrant {
+    ) external onlyJobRegistry whenNotPaused nonReentrant {
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -837,6 +855,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function distributeValidatorRewards(bytes32 jobId, uint256 amount)
         external
         onlyJobRegistry
+        whenNotPaused
         nonReentrant
     {
         if (amount == 0) return;
@@ -874,6 +893,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function lockDisputeFee(address payer, uint256 amount)
         external
         onlyDisputeModule
+        whenNotPaused
         nonReentrant
     {
         token.safeTransferFrom(payer, address(this), amount);
@@ -886,6 +906,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function payDisputeFee(address to, uint256 amount)
         external
         onlyDisputeModule
+        whenNotPaused
         nonReentrant
     {
         token.safeTransfer(to, amount);
@@ -966,7 +987,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         Role role,
         uint256 amount,
         address employer
-    ) external onlyJobRegistry {
+    ) external onlyJobRegistry whenNotPaused {
         _slash(user, role, amount, employer);
     }
 
@@ -977,6 +998,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
     function slash(address user, uint256 amount, address recipient)
         external
         onlyDisputeModule
+        whenNotPaused
     {
         _slash(user, Role.Validator, amount, recipient);
     }
