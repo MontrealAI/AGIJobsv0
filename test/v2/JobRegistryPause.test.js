@@ -52,4 +52,23 @@ describe("JobRegistry pause", function () {
       .to.emit(registry, "JobApplied")
       .withArgs(1, agent.address);
   });
+
+  it("pauses job expiration", async () => {
+    const deadline = (await time.latest()) + 100;
+
+    await registry.connect(employer).createJob(1, deadline, "uri");
+    await registry.connect(agent).applyForJob(1, "", []);
+
+    await time.increase(200);
+
+    await registry.connect(owner).pause();
+    await expect(
+      registry.connect(owner).cancelExpiredJob(1)
+    ).to.be.revertedWithCustomError(registry, "EnforcedPause");
+
+    await registry.connect(owner).unpause();
+    await expect(registry.connect(owner).cancelExpiredJob(1))
+      .to.emit(registry, "JobExpired")
+      .withArgs(1, owner.address);
+  });
 });
