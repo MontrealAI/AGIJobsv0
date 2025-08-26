@@ -199,10 +199,8 @@ contract DisputeModule is Ownable {
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
 
-        if (msg.sender != owner()) {
-            uint256 weight = _verifySignatures(jobId, employerWins, signatures);
-            require(weight * 2 > totalModeratorWeight, "insufficient weight");
-        }
+        uint256 weight = _verifySignatures(jobId, employerWins, signatures);
+        require(weight * 2 > totalModeratorWeight, "insufficient weight");
 
         d.resolved = true;
 
