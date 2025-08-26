@@ -54,6 +54,26 @@ describe("DisputeModule", function () {
         .withArgs(other.address, 0);
       expect(await dispute.moderatorWeights(other.address)).to.equal(0n);
     });
+
+    it("allows owner to pause and unpause", async () => {
+      await expect(dispute.connect(owner).pause())
+        .to.emit(dispute, "Paused")
+        .withArgs(owner.address);
+      await expect(dispute.connect(owner).setDisputeFee(1))
+        .to.be.revertedWithCustomError(dispute, "EnforcedPause");
+      await expect(dispute.connect(owner).unpause())
+        .to.emit(dispute, "Unpaused")
+        .withArgs(owner.address);
+      await expect(dispute.connect(owner).setDisputeFee(1))
+        .to.emit(dispute, "DisputeFeeUpdated")
+        .withArgs(1n);
+    });
+
+    it("restricts pause to owner", async () => {
+      await expect(dispute.connect(other).pause())
+        .to.be.revertedWithCustomError(dispute, "OwnableUnauthorizedAccount")
+        .withArgs(other.address);
+    });
   });
 
   describe("dispute resolution", function () {
@@ -156,6 +176,27 @@ describe("DisputeModule", function () {
           .connect(agent)
           .raiseDispute(1, agent.address, ethers.id("evidence"))
       ).to.be.revertedWith("not registry");
+    });
+
+    it("prevents raising disputes when paused", async () => {
+      await dispute.connect(owner).pause();
+      await expect(
+        registry.connect(agent).dispute(1, ethers.id("evidence"))
+      ).to.be.revertedWithCustomError(dispute, "EnforcedPause");
+    });
+
+    it("prevents resolving disputes when paused", async () => {
+      await registry.connect(agent).dispute(1, ethers.id("evidence"));
+      await time.increase(window);
+      const hash = ethers.solidityPackedKeccak256(
+        ["address", "uint256", "bool"],
+        [await dispute.getAddress(), 1, true]
+      );
+      const sig = await owner.signMessage(ethers.getBytes(hash));
+      await dispute.connect(owner).pause();
+      await expect(
+        dispute.connect(owner).resolve(1, true, [sig])
+      ).to.be.revertedWithCustomError(dispute, "EnforcedPause");
     });
 
     it("reverts resolution attempted before window", async () => {
