@@ -2,6 +2,10 @@
 pragma solidity ^0.8.25;
 
 interface IIdentityRegistry {
+    enum AgentType {
+        Human,
+        AI
+    }
     function isAuthorizedAgent(
         address claimant,
         string calldata subdomain,
@@ -41,8 +45,11 @@ interface IIdentityRegistry {
     function addAdditionalValidator(address validator) external;
     function removeAdditionalValidator(address validator) external;
 
+    function setAgentType(address agent, uint8 agentType) external;
+
     // views
     function additionalAgents(address account) external view returns (bool);
     function additionalValidators(address account) external view returns (bool);
+    function getAgentType(address agent) external view returns (AgentType);
 }
 
