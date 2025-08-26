@@ -4,7 +4,12 @@ pragma solidity ^0.8.25;
 /// @title IDisputeModule
 /// @notice Interface for raising and resolving disputes with moderator voting.
 interface IDisputeModule {
-    event DisputeRaised(uint256 indexed jobId, address indexed claimant);
+    event DisputeRaised(
+        uint256 indexed jobId,
+        address indexed claimant,
+        bytes32 indexed evidenceHash,
+        string evidence
+    );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event ModeratorAdded(address moderator);
     event ModeratorRemoved(address moderator);
