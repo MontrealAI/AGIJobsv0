@@ -417,7 +417,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function getAgentPayoutPct(address agent) public view returns (uint256) {
         uint256 highest = 100;
         uint256 length = agiTypes.length;
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             AGIType memory t = agiTypes[i];
             try IERC721(t.nft).balanceOf(agent) returns (uint256 bal) {
                 if (bal > 0 && t.payoutPct > highest) {
@@ -425,6 +425,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 }
             } catch {
                 // ignore tokens with failing balanceOf
+            }
+            unchecked {
+                ++i;
             }
         }
         return highest;
