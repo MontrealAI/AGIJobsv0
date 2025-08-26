@@ -164,7 +164,7 @@ describe("Job lifecycle", function () {
     await validation.setResult(false);
     await validation.finalize(1);
 
-    await registry.connect(employer).dispute(1, "evidence");
+    await registry.connect(employer).dispute(1, ethers.id("evidence"));
     const hash = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool"],
       [await dispute.getAddress(), 1, true]

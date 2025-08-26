@@ -238,14 +238,14 @@ interface IJobRegistry {
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
-    /// @param evidence Supporting evidence for the dispute
+    /// @param evidenceHash Keccak256 hash of off-chain evidence
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent}
-    function dispute(uint256 jobId, string calldata evidence) external;
+    function dispute(uint256 jobId, bytes32 evidenceHash) external;
 
     /// @notice Acknowledge tax policy if needed and raise a dispute with evidence
     /// @param jobId Identifier of the disputed job
-    /// @param evidence Supporting evidence for the dispute
-    function acknowledgeAndDispute(uint256 jobId, string calldata evidence) external;
+    /// @param evidenceHash Keccak256 hash of the evidence
+    function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash) external;
 
     /// @notice Resolve a dispute and record the final outcome
     /// @param jobId Identifier of the disputed job

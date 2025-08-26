@@ -49,8 +49,7 @@ contract DisputeModule is Ownable {
     event DisputeRaised(
         uint256 indexed jobId,
         address indexed claimant,
-        bytes32 indexed evidenceHash,
-        string evidence
+        bytes32 indexed evidenceHash
     );
     event DisputeResolved(
         uint256 indexed jobId,
@@ -155,16 +154,21 @@ contract DisputeModule is Ownable {
         emit DisputeWindowUpdated(window);
     }
 
-    /// @notice Raise a dispute by posting the dispute fee.
+    /// @notice Raise a dispute by posting the dispute fee and supplying a
+    /// hash of off-chain evidence.
+    /// @dev The full evidence must be stored off-chain (e.g., IPFS) and its
+    /// `keccak256` hash provided here. Only the hash is stored and emitted on
+    /// chain to keep costs low.
     /// @param jobId Identifier of the job being disputed.
     /// @param claimant Address of the participant raising the dispute.
-    /// @param evidence Supporting evidence or reason for the dispute. The
-    /// full string is emitted while only its hash is stored on-chain.
+    /// @param evidenceHash Keccak256 hash of the external evidence. Must be
+    /// non-zero.
     function raiseDispute(
         uint256 jobId,
         address claimant,
-        string calldata evidence
+        bytes32 evidenceHash
     ) external onlyJobRegistry {
+        require(evidenceHash != bytes32(0), "evidence");
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
@@ -179,8 +183,6 @@ contract DisputeModule is Ownable {
             sm.lockDisputeFee(claimant, disputeFee);
         }
 
-        bytes32 evidenceHash = keccak256(bytes(evidence));
-
         disputes[jobId] =
             Dispute({
                 claimant: claimant,
@@ -190,7 +192,7 @@ contract DisputeModule is Ownable {
                 evidenceHash: evidenceHash
             });
 
-        emit DisputeRaised(jobId, claimant, evidenceHash, evidence);
+        emit DisputeRaised(jobId, claimant, evidenceHash);
     }
 
     /// @notice Resolve an existing dispute after the dispute window elapses.

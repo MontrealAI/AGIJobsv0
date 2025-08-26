@@ -7,8 +7,7 @@ interface IDisputeModule {
     event DisputeRaised(
         uint256 indexed jobId,
         address indexed claimant,
-        bytes32 indexed evidenceHash,
-        string evidence
+        bytes32 indexed evidenceHash
     );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event ModeratorAdded(address moderator);
@@ -31,7 +30,7 @@ interface IDisputeModule {
     function raiseDispute(
         uint256 jobId,
         address claimant,
-        string calldata evidence
+        bytes32 evidenceHash
     ) external;
 
     function resolve(uint256 jobId, bool employerWins) external;

@@ -133,24 +133,33 @@ describe("DisputeModule", function () {
     });
 
     it("emits dispute raised and rejects second dispute", async () => {
+      const evidence = ethers.id("evidence");
       await expect(
-        registry.connect(agent).dispute(1, "evidence")
+        registry.connect(agent).dispute(1, evidence)
       )
         .to.emit(dispute, "DisputeRaised")
-        .withArgs(1, agent.address, ethers.id("evidence"), "evidence");
+        .withArgs(1, agent.address, evidence);
       await expect(
-        registry.connect(agent).dispute(1, "more")
+        registry.connect(agent).dispute(1, ethers.id("more"))
       ).to.be.revertedWith("disputed");
+    });
+
+    it("reverts when evidence hash is zero", async () => {
+      await expect(
+        registry.connect(agent).dispute(1, ethers.ZeroHash)
+      ).to.be.revertedWith("evidence");
     });
 
     it("reverts when raiseDispute is called directly", async () => {
       await expect(
-        dispute.connect(agent).raiseDispute(1, agent.address, "evidence")
+        dispute
+          .connect(agent)
+          .raiseDispute(1, agent.address, ethers.id("evidence"))
       ).to.be.revertedWith("not registry");
     });
 
     it("reverts resolution attempted before window", async () => {
-      await registry.connect(agent).dispute(1, "evidence");
+      await registry.connect(agent).dispute(1, ethers.id("evidence"));
       const hash = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool"],
         [await dispute.getAddress(), 1, true]
@@ -163,7 +172,7 @@ describe("DisputeModule", function () {
 
     it("transfers fee to employer when employer wins", async () => {
       const employerStart = await token.balanceOf(employer.address);
-      await registry.connect(agent).dispute(1, "evidence");
+      await registry.connect(agent).dispute(1, ethers.id("evidence"));
       expect(
         await token.balanceOf(await stakeManager.getAddress())
       ).to.equal(fee);
@@ -186,7 +195,7 @@ describe("DisputeModule", function () {
 
     it("refunds fee to agent when employer loses", async () => {
       const agentStart = await token.balanceOf(agent.address);
-      await registry.connect(agent).dispute(1, "evidence");
+      await registry.connect(agent).dispute(1, ethers.id("evidence"));
       await time.increase(window);
       const hash = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool"],
@@ -204,7 +213,7 @@ describe("DisputeModule", function () {
 
     it("prevents owner resolution without moderator approval", async () => {
       await dispute.connect(owner).addModerator(outsider.address, 1);
-      await registry.connect(agent).dispute(1, "evidence");
+      await registry.connect(agent).dispute(1, ethers.id("evidence"));
       await time.increase(window);
       const hash = ethers.solidityPackedKeccak256(
         ["address", "uint256", "bool"],
@@ -217,7 +226,7 @@ describe("DisputeModule", function () {
     });
 
     it("requires majority signatures for non-owner resolution", async () => {
-      await registry.connect(agent).dispute(1, "evidence");
+      await registry.connect(agent).dispute(1, ethers.id("evidence"));
       await time.increase(window);
       await expect(
         dispute.connect(outsider).resolve(1, true, [])
