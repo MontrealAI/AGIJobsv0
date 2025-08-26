@@ -203,8 +203,7 @@ describe("DisputeModule", function () {
     });
 
     it("prevents owner resolution without moderator approval", async () => {
-      await dispute.connect(owner).removeModerator(owner.address);
-      expect(await dispute.moderatorWeights(owner.address)).to.equal(0n);
+      await dispute.connect(owner).addModerator(outsider.address, 1);
       await registry.connect(agent).dispute(1, "evidence");
       await time.increase(window);
       const hash = ethers.solidityPackedKeccak256(
