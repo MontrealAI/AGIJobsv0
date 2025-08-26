@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {IVRF} from "../interfaces/IVRF.sol";
+import {IVRFConsumer} from "../interfaces/IVRFConsumer.sol";
 
 /// @notice Minimal VRF mock used for testing randomness flows.
-contract VRFMock is IVRF {
+contract VRFMock is IVRFConsumer {
     uint256 public nextRequestId = 1;
     mapping(uint256 => address) public consumers;
     bool public fail;

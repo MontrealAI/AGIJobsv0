@@ -9,7 +9,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
-import {IVRF} from "./interfaces/IVRF.sol";
+import {IVRFConsumer} from "./interfaces/IVRFConsumer.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -55,7 +55,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     // hard cap on validator pool size
     uint256 public maxValidatorPoolSize = type(uint256).max;
     // optional VRF provider for future randomness upgrades
-    IVRF public vrf;
+    IVRFConsumer public vrf;
     // track VRF requests and delivered randomness
     mapping(uint256 => uint256) public vrfRequestIds; // jobId => requestId
     mapping(uint256 => uint256) public vrfRequestJob; // requestId => jobId
@@ -197,7 +197,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @notice Set the optional VRF provider for future upgrades.
-    function setVRF(IVRF provider) external onlyOwner {
+    function setVRF(IVRFConsumer provider) external onlyOwner {
         vrf = provider;
         emit VRFUpdated(address(provider));
     }
