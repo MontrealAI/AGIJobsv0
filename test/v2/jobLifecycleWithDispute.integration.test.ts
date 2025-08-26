@@ -67,13 +67,17 @@ async function deployFullSystem() {
     owner.address
   );
 
-  const Dispute = await ethers.getContractFactory("contracts/v2/DisputeModule.sol:DisputeModule");
+  const Dispute = await ethers.getContractFactory(
+    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+  );
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
-    await stake.getAddress(),
-    moderator.address,
-    0
+    0,
+    0,
+    moderator.address
   );
+  await dispute.waitForDeployment();
+  await dispute.setStakeManager(await stake.getAddress());
 
   await stake.setModules(await registry.getAddress(), await dispute.getAddress());
   await validation.setJobRegistry(await registry.getAddress());
@@ -135,7 +139,7 @@ describe("job lifecycle with dispute and validator failure", function () {
     expect(await registry.jobs(1)).to.have.property("state", 5); // Disputed
 
     await registry.connect(agent).dispute(1, "evidence");
-    await dispute.connect(moderator).resolve(1, false);
+    await dispute.connect(owner).resolve(1, false, []);
 
     expect(await registry.jobs(1)).to.have.property("state", 6); // Finalized
     expect(await token.balanceOf(agent.address)).to.be.gt(initialAgentBalance);
