@@ -59,6 +59,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
     // optional override for validators without ENS identity
     mapping(address => string) public validatorSubdomains;
 
+    // cache successful validator authorizations
+    mapping(address => bool) public validatorAuthCache;
+    mapping(address => uint256) public validatorAuthExpiry;
+    uint256 public validatorAuthCacheDuration = 1 days;
+
     struct Round {
         address[] validators;
         address[] participants;
@@ -431,13 +436,23 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement {
                     continue;
                 }
             }
-            bytes32[] memory proof;
-            string memory subdomain = validatorSubdomains[candidate];
-            bool authorized = identityRegistry.verifyValidator(
-                candidate,
-                subdomain,
-                proof
-            );
+            bool authorized =
+                validatorAuthCache[candidate] &&
+                validatorAuthExpiry[candidate] > block.timestamp;
+            if (!authorized) {
+                string memory subdomain = validatorSubdomains[candidate];
+                bytes32[] memory proof;
+                authorized = identityRegistry.verifyValidator(
+                    candidate,
+                    subdomain,
+                    proof
+                );
+                if (authorized) {
+                    validatorAuthCache[candidate] = true;
+                    validatorAuthExpiry[candidate] =
+                        block.timestamp + validatorAuthCacheDuration;
+                }
+            }
             if (!authorized) {
                 unchecked {
                     ++i;
