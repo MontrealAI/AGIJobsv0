@@ -796,11 +796,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 total = r.approvals + r.rejections;
         bool quorum = r.participants.length >= validatorsPerJob;
         uint256 approvalCount;
-        for (uint256 i; i < r.validators.length; ++i) {
+        for (uint256 i; i < r.validators.length;) {
             address v = r.validators[i];
             if (revealed[jobId][v] && votes[jobId][v]) {
                 approvalCount++;
             }
+            unchecked { ++i; }
         }
         if (quorum && total > 0) {
             bool thresholdMet =
@@ -825,7 +826,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
-        for (uint256 i; i < r.validators.length; ++i) {
+        for (uint256 i; i < r.validators.length;) {
             address val = r.validators[i];
             uint256 stake = validatorStakes[jobId][val];
             uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
@@ -844,6 +845,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             } else if (address(reputationEngine) != address(0)) {
                 reputationEngine.rewardValidator(val, agentGain);
             }
+            unchecked { ++i; }
         }
 
         r.tallied = true;
