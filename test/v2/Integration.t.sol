@@ -6,7 +6,7 @@ import "contracts/v2/modules/JobRouter.sol";
 import "contracts/v2/interfaces/IStakeManager.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/v2/interfaces/IPlatformRegistry.sol";
-import "contracts/mocks/MockV2.sol";
+import "contracts/legacy/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface Vm {

@@ -14,7 +14,7 @@ describe("JobEscrow ether rejection", function () {
     await token.connect(owner).mint(employer.address, 1000);
 
     const Routing = await ethers.getContractFactory(
-      "contracts/mocks/MockRoutingModule.sol:MockRoutingModule"
+      "contracts/legacy/MockRoutingModule.sol:MockRoutingModule"
     );
     routing = await Routing.deploy(operator.address);
 
@@ -44,7 +44,7 @@ describe("JobEscrow ether rejection", function () {
     expect(await escrow.isTaxExempt()).to.equal(true);
 
     const Helper = await ethers.getContractFactory(
-      "contracts/mocks/TaxExemptHelper.sol:TaxExemptHelper"
+      "contracts/legacy/TaxExemptHelper.sol:TaxExemptHelper"
     );
     const helper = await Helper.deploy();
     expect(await helper.check(await escrow.getAddress())).to.equal(true);

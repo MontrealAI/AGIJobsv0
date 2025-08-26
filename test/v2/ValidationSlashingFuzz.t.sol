@@ -10,7 +10,7 @@ import {IJobRegistry} from "../../contracts/v2/interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {MockJobRegistry} from "../../contracts/mocks/MockV2.sol";
+import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 
 contract ValidationSlashingFuzz is Test {
     ValidationModule validation;

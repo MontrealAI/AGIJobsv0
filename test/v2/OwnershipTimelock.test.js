@@ -34,7 +34,7 @@ describe("Timelock ownership", function () {
     const stake = StakeManager.attach(stakeAddr);
     const registry = JobRegistry.attach(registryAddr);
 
-    const Timelock = await ethers.getContractFactory("contracts/mocks/TimelockMock.sol:TimelockMock");
+    const Timelock = await ethers.getContractFactory("contracts/legacy/TimelockMock.sol:TimelockMock");
     const timelock = await Timelock.deploy(proposer.address);
 
     await stake.setGovernance(await timelock.getAddress());

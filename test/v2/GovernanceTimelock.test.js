@@ -6,7 +6,7 @@ describe("Governance via Timelock", function () {
     const [admin] = await ethers.getSigners();
 
     const Timelock = await ethers.getContractFactory(
-      "contracts/mocks/TimelockControllerHarness.sol:TimelockControllerHarness"
+      "contracts/legacy/TimelockControllerHarness.sol:TimelockControllerHarness"
     );
     const timelock = await Timelock.deploy(admin.address);
     await timelock.waitForDeployment();
@@ -16,7 +16,7 @@ describe("Governance via Timelock", function () {
     await timelock.grantRole(executorRole, admin.address);
 
     const Token = await ethers.getContractFactory(
-      "contracts/mocks/MockERC206Decimals.sol:MockERC206Decimals"
+      "contracts/legacy/MockERC206Decimals.sol:MockERC206Decimals"
     );
     const token = await Token.deploy();
     await token.waitForDeployment();

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
+// @deprecated Legacy contract for v0; use modules under contracts/v2 instead.
+
 /// @title MockResolver
 /// @notice Minimal ENS resolver mock allowing adjustable addr records.
 contract MockResolver {

@@ -8,7 +8,7 @@ async function deploySystem() {
   const [owner, employer, agent] = await ethers.getSigners();
 
   const Token = await ethers.getContractFactory(
-    "contracts/mocks/MockERC206Decimals.sol:MockERC206Decimals"
+    "contracts/legacy/MockERC206Decimals.sol:MockERC206Decimals"
   );
   const token = await Token.deploy();
   await token.waitForDeployment();

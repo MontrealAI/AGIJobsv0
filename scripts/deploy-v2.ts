@@ -24,10 +24,10 @@ async function main() {
   const reputation = await Reputation.deploy(await stake.getAddress());
   await reputation.waitForDeployment();
 
-  const ENS = await ethers.getContractFactory("contracts/mocks/MockENS.sol:MockENS");
+  const ENS = await ethers.getContractFactory("contracts/legacy/MockENS.sol:MockENS");
   const ens = await ENS.deploy();
   await ens.waitForDeployment();
-  const Wrapper = await ethers.getContractFactory("contracts/mocks/MockNameWrapper.sol:MockNameWrapper");
+  const Wrapper = await ethers.getContractFactory("contracts/legacy/MockNameWrapper.sol:MockNameWrapper");
   const wrapper = await Wrapper.deploy();
   await wrapper.waitForDeployment();
 

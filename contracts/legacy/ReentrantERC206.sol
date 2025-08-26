@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+// @deprecated Legacy contract for v0; use modules under contracts/v2 instead.
+
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface IReentrantCaller {

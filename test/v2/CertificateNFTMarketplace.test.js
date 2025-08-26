@@ -9,7 +9,7 @@ describe("CertificateNFT marketplace", function () {
     [owner, seller, buyer] = await ethers.getSigners();
 
     const Token = await ethers.getContractFactory(
-      "contracts/mocks/MockERC206Decimals.sol:MockERC206Decimals"
+      "contracts/legacy/MockERC206Decimals.sol:MockERC206Decimals"
     );
     token = await Token.deploy();
     await token.mint(buyer.address, price);
@@ -121,7 +121,7 @@ describe("CertificateNFT marketplace", function () {
       await nft.connect(seller).list(1, price);
 
       const Reenter = await ethers.getContractFactory(
-        "contracts/mocks/ReentrantBuyer.sol:ReentrantBuyer"
+        "contracts/legacy/ReentrantBuyer.sol:ReentrantBuyer"
       );
       const attacker = await Reenter.deploy(await nft.getAddress());
 

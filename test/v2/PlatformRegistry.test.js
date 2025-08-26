@@ -31,7 +31,7 @@ describe("PlatformRegistry", function () {
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
     const MockRegistry = await ethers.getContractFactory(
-      "contracts/mocks/MockV2.sol:MockJobRegistry"
+      "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
     const mockRegistry = await MockRegistry.deploy();
     await stakeManager
