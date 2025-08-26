@@ -60,7 +60,7 @@ interface IStakeManager {
     function depositStake(uint256 amount) external;
     function lockReward(address from, uint256 amount) external;
     function payReward(address to, uint256 amount) external;
-    function slash(address offender, address beneficiary, uint256 amount) external;
+    function slash(address offender, address beneficiary, uint256 amount) external; // `beneficiary` must not be zero when employer share > 0
     function setToken(address newToken) external;
 }
 

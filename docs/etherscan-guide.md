@@ -189,7 +189,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | --- | --- | --- |
 | `depositStake(uint8 role, uint256 amount)` | `role` – 0 Agent, 1 Validator, 2 Platform; `amount` – tokens | Participants bond tokens for their role. |
 | `setToken(address newToken)` | `newToken` – ERC‑20 address | Owner switches the staking and reward token. |
-| `slash(address offender, address beneficiary, uint256 amount)` | offending address, beneficiary address, amount | Owner penalises misbehaviour and redirects stake. |
+| `slash(address offender, address beneficiary, uint256 amount)` | offending address, beneficiary address, amount | Owner penalises misbehaviour and redirects stake. Beneficiary cannot be the zero address if an employer share is due. |
 
 ### ValidationModule
 | Function | Parameters | Typical Use Case |

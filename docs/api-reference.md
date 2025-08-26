@@ -29,7 +29,7 @@ Holds token deposits for agents, validators and dispute fees.
 - `withdrawStake(uint8 role, uint256 amount)` – Withdraw available stake.
 - `acknowledgeAndDeposit(uint8 role, uint256 amount)` – Deposit after acknowledging the tax policy.
 - `acknowledgeAndWithdraw(uint8 role, uint256 amount)` – Withdraw after acknowledging the tax policy.
-- `slash(address user, uint256 amount, address recipient)` – Governance‑only slashing mechanism.
+- `slash(address user, uint256 amount, address recipient)` – Governance‑only slashing mechanism. Fails if `recipient` is the zero address when the employer share is non‑zero.
 
 ### Example
 ```solidity
