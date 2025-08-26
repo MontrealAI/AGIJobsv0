@@ -309,9 +309,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         string[] calldata subdomains
     ) external onlyOwner {
         require(accounts.length == subdomains.length, "length");
-        for (uint256 i; i < accounts.length; ++i) {
+        for (uint256 i; i < accounts.length;) {
             validatorSubdomains[accounts[i]] = subdomains[i];
             emit ValidatorSubdomainUpdated(accounts[i], subdomains[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -877,12 +880,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         );
         uint256 nonce = jobNonce[jobId];
         address[] storage vals = rounds[jobId].validators;
-        for (uint256 i; i < vals.length; ++i) {
+        for (uint256 i; i < vals.length;) {
             address val = vals[i];
             delete commitments[jobId][val][nonce];
             delete revealed[jobId][val];
             delete votes[jobId][val];
             delete validatorStakes[jobId][val];
+            unchecked {
+                ++i;
+            }
         }
         delete rounds[jobId];
         delete jobNonce[jobId];
@@ -907,8 +913,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
         address[] storage list = rounds[jobId].validators;
-        for (uint256 i; i < list.length; ++i) {
+        for (uint256 i; i < list.length;) {
             if (list[i] == val) return true;
+            unchecked {
+                ++i;
+            }
         }
         return false;
     }
