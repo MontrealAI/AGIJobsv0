@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Governable} from "./Governable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -44,7 +45,7 @@ interface ICertificateNFT {
 /// @dev Tax obligations never accrue to this registry or its owner. All
 /// liabilities remain with employers, agents, and validators as expressed by
 /// the owner‑controlled `TaxPolicy` reference.
-contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
+contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     enum State {
         None,
         Created,
@@ -388,6 +389,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         emit ModuleUpdated("TaxPolicy", address(_policy));
     }
 
+    /// @notice Pause job lifecycle interactions
+    function pause() external onlyGovernance {
+        _pause();
+    }
+
+    /// @notice Resume job lifecycle interactions
+    function unpause() external onlyGovernance {
+        _unpause();
+    }
+
     /// @notice Confirms this registry and its owner are perpetually tax‑exempt.
     /// @return Always true; no tax liability can accrue here.
     function isTaxExempt() external pure returns (bool) {
@@ -468,6 +479,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         string calldata uri
     )
         internal
+        whenNotPaused
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
@@ -582,6 +594,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         bytes32[] calldata proof
     )
         internal
+        whenNotPaused
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
@@ -692,6 +705,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         bytes32[] calldata proof
     )
         public
+        whenNotPaused
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
@@ -755,7 +769,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     ///      computed result of the commit-reveal process.
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
-    function finalizeAfterValidation(uint256 jobId, bool success) public {
+    function finalizeAfterValidation(uint256 jobId, bool success) public whenNotPaused {
         require(msg.sender == address(validationModule), "only validation");
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
@@ -767,7 +781,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         }
     }
 
-    function validationComplete(uint256 jobId, bool success) external {
+    function validationComplete(uint256 jobId, bool success) external whenNotPaused {
         finalizeAfterValidation(jobId, success);
     }
 
@@ -789,6 +803,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     /// @param evidenceHash Keccak256 hash of the evidence stored off-chain.
     function dispute(uint256 jobId, bytes32 evidenceHash)
         public
+        whenNotPaused
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
@@ -879,6 +894,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     ///      merely relays the arbiter's ruling and holds no tax liability.
     function finalize(uint256 jobId)
         public
+        whenNotPaused
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
@@ -891,7 +907,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         _finalize(jobId);
     }
 
-    function _finalize(uint256 jobId) internal {
+    function _finalize(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
         bool isGov = msg.sender == address(governance);
@@ -1065,7 +1081,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     /// @notice Cancel a job before completion and refund the employer.
-    function _cancelJob(uint256 jobId) internal {
+    function _cancelJob(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
         require(
             job.state == State.Created && job.agent == address(0),
