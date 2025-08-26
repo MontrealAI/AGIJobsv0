@@ -56,6 +56,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public maxValidatorPoolSize = type(uint256).max;
     // optional VRF provider for future randomness upgrades
     IVRF public vrf;
+    // track VRF requests and delivered randomness
+    mapping(uint256 => uint256) public vrfRequestIds; // jobId => requestId
+    mapping(uint256 => uint256) public vrfRequestJob; // requestId => jobId
+    mapping(uint256 => uint256) public vrfRandomness; // jobId => random word
 
     // optional override for validators without ENS identity
     mapping(address => string) public validatorSubdomains;
@@ -85,6 +89,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
     event VRFUpdated(address vrf);
+    event VRFRequested(uint256 indexed jobId, uint256 requestId);
+    event VRFFulfilled(uint256 indexed jobId, uint256 requestId);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
     event ValidatorSlashingPctUpdated(uint256 pct);
@@ -194,6 +200,17 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function setVRF(IVRF provider) external onlyOwner {
         vrf = provider;
         emit VRFUpdated(address(provider));
+    }
+
+    /// @notice Callback for VRF providers to supply randomness.
+    /// @param requestId Identifier previously returned by the VRF provider.
+    /// @param randomness Random word associated with the request.
+    function fulfillRandomWords(uint256 requestId, uint256 randomness) external {
+        require(msg.sender == address(vrf), "not vrf");
+        uint256 jobId = vrfRequestJob[requestId];
+        require(jobId != 0, "unknown request");
+        vrfRandomness[jobId] = randomness;
+        emit VRFFulfilled(jobId, requestId);
     }
 
     /// @notice Update the identity registry used for validator verification.
@@ -406,8 +423,39 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        // Increment job nonce to distinguish separate validation rounds.
-        jobNonce[jobId] += 1;
+        // increment nonce only when starting a fresh selection cycle
+        if (vrfRequestIds[jobId] == 0 && vrfRandomness[jobId] == 0) {
+            jobNonce[jobId] += 1;
+        }
+
+        uint256 seed;
+        if (address(vrf) != address(0)) {
+            if (vrfRandomness[jobId] != 0) {
+                seed = vrfRandomness[jobId];
+                delete vrfRandomness[jobId];
+                uint256 reqId = vrfRequestIds[jobId];
+                if (reqId != 0) {
+                    delete vrfRequestIds[jobId];
+                    delete vrfRequestJob[reqId];
+                }
+            } else {
+                if (vrfRequestIds[jobId] == 0) {
+                    try vrf.requestRandomWords() returns (uint256 req) {
+                        vrfRequestIds[jobId] = req;
+                        vrfRequestJob[req] = jobId;
+                        emit VRFRequested(jobId, req);
+                    } catch {
+                        seed = _fallbackSeed(jobId);
+                    }
+                }
+                if (seed == 0) {
+                    return selected;
+                }
+            }
+        }
+        if (seed == 0) {
+            seed = _fallbackSeed(jobId);
+        }
 
         uint256 n = validatorPool.length;
         require(n > 0, "no validators");
@@ -415,9 +463,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         require(address(stakeManager) != address(0), "stake manager");
         uint256 sample = validatorPoolSampleSize;
         if (sample > n) sample = n;
-        uint256 seed = uint256(
-            keccak256(abi.encodePacked(jobId, jobNonce[jobId]))
-        );
 
         // Benchmark (foundry, 100 validators):
         // baseline shuffle ~308k gas, reservoir sampling ~218k gas (~29% less)
@@ -838,6 +883,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         delete rounds[jobId];
         delete jobNonce[jobId];
         emit JobNonceReset(jobId);
+    }
+
+    function _fallbackSeed(uint256 jobId) internal view returns (uint256) {
+        return uint256(
+            keccak256(
+                abi.encodePacked(jobId, jobNonce[jobId], blockhash(block.number - 1))
+            )
+        );
     }
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
