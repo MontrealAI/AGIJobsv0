@@ -108,5 +108,14 @@ contract ValidationStub is IValidationModule {
     function setRequiredValidatorApprovals(uint256) external override {}
 
     function resetJobNonce(uint256) external override {}
+
+    function requestVRF(uint256)
+        external
+        pure
+        override
+        returns (uint256)
+    {
+        revert("no vrf");
+    }
 }
 

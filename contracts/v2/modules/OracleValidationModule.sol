@@ -183,5 +183,15 @@ contract OracleValidationModule is IValidationModule, Ownable {
     {
         return true;
     }
+
+    /// @inheritdoc IValidationModule
+    function requestVRF(uint256)
+        external
+        pure
+        override
+        returns (uint256)
+    {
+        revert("no vrf");
+    }
 }
 

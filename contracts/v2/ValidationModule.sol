@@ -202,6 +202,27 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit VRFUpdated(address(provider));
     }
 
+    /// @notice Request randomness for a job's validator selection.
+    /// @dev Must be called before {selectValidators} when a VRF provider is set.
+    ///      If the underlying VRF request reverts, this function reverts and may
+    ///      be retried.
+    /// @param jobId Identifier of the job requiring randomness.
+    /// @return requestId Identifier for the VRF request.
+    function requestVRF(uint256 jobId)
+        external
+        whenNotPaused
+        returns (uint256 requestId)
+    {
+        require(address(vrf) != address(0), "vrf not set");
+        require(vrfRequestIds[jobId] == 0, "request pending");
+        require(vrfRandomness[jobId] == 0, "randomness pending");
+        jobNonce[jobId] += 1;
+        requestId = vrf.requestRandomWords();
+        vrfRequestIds[jobId] = requestId;
+        vrfRequestJob[requestId] = jobId;
+        emit VRFRequested(jobId, requestId);
+    }
+
     /// @notice Callback for VRF providers to supply randomness.
     /// @param requestId Identifier previously returned by the VRF provider.
     /// @param randomness Random word associated with the request.
@@ -418,6 +439,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @inheritdoc IValidationModule
+    /// @dev When a VRF provider is configured, callers must invoke {requestVRF}
+    ///      and wait for {fulfillRandomWords} before calling this function. If
+    ///      randomness has not yet been delivered, the call reverts with
+    ///      "VRF pending".
     function selectValidators(uint256 jobId) public override whenNotPaused returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         // Ensure validators are only chosen once per round to prevent
@@ -426,37 +451,19 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        // increment nonce only when starting a fresh selection cycle
-        if (vrfRequestIds[jobId] == 0 && vrfRandomness[jobId] == 0) {
-            jobNonce[jobId] += 1;
-        }
-
         uint256 seed;
         if (address(vrf) != address(0)) {
-            if (vrfRandomness[jobId] != 0) {
-                seed = vrfRandomness[jobId];
-                delete vrfRandomness[jobId];
-                uint256 reqId = vrfRequestIds[jobId];
-                if (reqId != 0) {
-                    delete vrfRequestIds[jobId];
-                    delete vrfRequestJob[reqId];
-                }
-            } else {
-                if (vrfRequestIds[jobId] == 0) {
-                    try vrf.requestRandomWords() returns (uint256 req) {
-                        vrfRequestIds[jobId] = req;
-                        vrfRequestJob[req] = jobId;
-                        emit VRFRequested(jobId, req);
-                    } catch {
-                        seed = _fallbackSeed(jobId);
-                    }
-                }
-                if (seed == 0) {
-                    return selected;
-                }
+            uint256 randomness = vrfRandomness[jobId];
+            require(randomness != 0, "VRF pending");
+            seed = randomness;
+            delete vrfRandomness[jobId];
+            uint256 reqId = vrfRequestIds[jobId];
+            if (reqId != 0) {
+                delete vrfRequestIds[jobId];
+                delete vrfRequestJob[reqId];
             }
-        }
-        if (seed == 0) {
+        } else {
+            jobNonce[jobId] += 1;
             seed = _fallbackSeed(jobId);
         }
 
@@ -896,8 +903,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @dev Generates a pseudo-random seed using job context and block entropy.
-    /// Incorporates `block.prevrandao` and the previous block hash to make
-    /// validator selection harder to predict in absence of VRF.
+    ///      Used only when no VRF provider is configured.
+    ///      Incorporates `block.prevrandao` and the previous block hash to make
+    ///      validator selection harder to predict in absence of VRF.
     function _fallbackSeed(uint256 jobId) internal view returns (uint256) {
         return uint256(
             keccak256(
