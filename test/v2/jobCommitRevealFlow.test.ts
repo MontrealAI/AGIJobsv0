@@ -283,7 +283,7 @@ describe("Commit-reveal job lifecycle", function () {
     await time.increase(2);
     await validation.finalize(1);
 
-    await registry.connect(agent).dispute(1, "evidence");
+    await registry.connect(agent).dispute(1, ethers.id("evidence"));
     const hash = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool"],
       [await env.dispute.getAddress(), 1, true]

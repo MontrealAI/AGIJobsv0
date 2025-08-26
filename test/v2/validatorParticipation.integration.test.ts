@@ -170,7 +170,7 @@ describe("validator participation", function () {
 
     expect(await registry.jobs(1)).to.have.property("state", 5);
 
-    await registry.connect(agent).dispute(1, "evidence");
+    await registry.connect(agent).dispute(1, ethers.id("evidence"));
     await dispute.connect(moderator).resolve(1, false);
 
     expect(await registry.jobs(1)).to.have.property("state", 6);

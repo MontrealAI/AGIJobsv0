@@ -138,7 +138,7 @@ describe("job lifecycle with dispute and validator failure", function () {
     expect((await stake.stakes(v2.address, Role.Validator))).to.be.lt(stakeAmount);
     expect(await registry.jobs(1)).to.have.property("state", 5); // Disputed
 
-    await registry.connect(agent).dispute(1, "evidence");
+    await registry.connect(agent).dispute(1, ethers.id("evidence"));
     const hash = ethers.solidityPackedKeccak256(
       ["address", "uint256", "bool"],
       [await dispute.getAddress(), 1, false]

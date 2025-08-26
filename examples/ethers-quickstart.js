@@ -7,7 +7,7 @@ const registryAbi = [
   "function createJob(uint256 reward, string uri)",
   "function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)",
   "function submit(uint256 jobId, bytes32 resultHash, string resultURI)",
-  "function raiseDispute(uint256 jobId, string evidence)"
+  "function raiseDispute(uint256 jobId, bytes32 evidenceHash)"
 ];
 const stakeAbi = [
   "function depositStake(uint8 role, uint256 amount)"
@@ -47,7 +47,8 @@ async function validate(jobId, hash, label, proof, approve, salt) {
 }
 
 async function dispute(jobId, evidence) {
-  await registry.raiseDispute(jobId, evidence);
+  const evidenceHash = ethers.id(evidence);
+  await registry.raiseDispute(jobId, evidenceHash);
 }
 
 module.exports = { postJob, stake, apply, submit, validate, dispute };

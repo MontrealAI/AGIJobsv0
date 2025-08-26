@@ -332,26 +332,26 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         finalizeAfterValidation(jobId, success);
     }
 
-    function dispute(uint256 jobId, string calldata evidence) public override {
+    function dispute(uint256 jobId, bytes32 evidenceHash) public override {
         Job storage job = _jobs[jobId];
         job.status = Status.Disputed;
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, msg.sender, evidence);
+            disputeModule.raiseDispute(jobId, msg.sender, evidenceHash);
         }
         emit JobDisputed(jobId, msg.sender);
     }
 
     /// @notice Backwards-compatible wrapper for legacy tests
-    /// @dev Forwards to {dispute} with the provided evidence
-    function raiseDispute(uint256 jobId, string calldata evidence) external {
-        dispute(jobId, evidence);
+    /// @dev Forwards to {dispute} with the provided evidence hash
+    function raiseDispute(uint256 jobId, bytes32 evidenceHash) external {
+        dispute(jobId, evidenceHash);
     }
 
-    function acknowledgeAndDispute(uint256 jobId, string calldata evidence)
+    function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash)
         external
         override
     {
-        dispute(jobId, evidence);
+        dispute(jobId, evidenceHash);
     }
 
     function resolveDispute(uint256 jobId, bool employerWins) external override {
