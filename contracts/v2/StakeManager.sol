@@ -28,6 +28,9 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     using SafeERC20 for IERC20;
 
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     /// @notice participant roles
     enum Role {
         Agent,

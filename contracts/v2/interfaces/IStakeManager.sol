@@ -7,6 +7,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title IStakeManager
 /// @notice Interface for staking balances, job escrows and slashing logic
 interface IStakeManager {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     /// @notice participant roles
     enum Role {
         Agent,

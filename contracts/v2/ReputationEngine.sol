@@ -10,6 +10,9 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     mapping(address => uint256) public reputation;
     mapping(address => bool) private blacklisted;
     mapping(address => bool) public callers;

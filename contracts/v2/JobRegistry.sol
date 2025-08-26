@@ -12,6 +12,7 @@ import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 
 interface IReputationEngine {
+    function version() external view returns (uint256);
     function onApply(address user) external;
     function onFinalize(
         address user,
@@ -28,6 +29,7 @@ interface IReputationEngine {
 }
 
 interface IDisputeModule {
+    function version() external view returns (uint256);
     function raiseDispute(
         uint256 jobId,
         address claimant,
@@ -37,6 +39,7 @@ interface IDisputeModule {
 }
 
 interface ICertificateNFT {
+    function version() external view returns (uint256);
     function mint(address to, uint256 jobId, bytes32 uriHash) external returns (uint256);
 }
 
@@ -277,6 +280,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         require(address(_reputation) != address(0), "reputation");
         require(address(_dispute) != address(0), "dispute");
         require(address(_certNFT) != address(0), "nft");
+
+        require(_validation.version() == 1, "Invalid validation module");
+        require(_stakeMgr.version() == 1, "Invalid stake manager");
+        require(_reputation.version() == 1, "Invalid reputation module");
+        require(_dispute.version() == 1, "Invalid dispute module");
+        require(_certNFT.version() == 1, "Invalid certificate NFT");
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
