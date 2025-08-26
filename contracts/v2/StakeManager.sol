@@ -954,6 +954,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
 
         if (employerShare > 0) {
+            require(recipient != address(0), "recipient");
             if (recipient == address(feePool) && address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), employerShare);
                 feePool.depositFee(employerShare);

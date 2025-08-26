@@ -11,7 +11,7 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `withdrawStake(uint8 role, uint256 amount)` – withdraw previously staked tokens.
 - `lock(address from, uint256 amount)` / `release(address to, uint256 amount)` – JobRegistry hooks for job rewards.
 - `lockDisputeFee(address payer, uint256 amount)` / `payDisputeFee(address to, uint256 amount)` – escrow dispute fees.
-- `slash(address user, uint256 amount, address recipient)` – owner slashes stake and sends to recipient.
+- `slash(address user, uint256 amount, address recipient)` – owner slashes stake and sends to recipient. Reverts if `recipient` is the zero address and the employer share is non‑zero.
 - `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` – view functions.
 
 ## Events

@@ -111,6 +111,17 @@ describe("StakeManager", function () {
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
     expect(await token.balanceOf(treasury.address)).to.equal(50n);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          0,
+          10,
+          ethers.ZeroAddress
+        )
+    ).to.be.revertedWith("recipient");
   });
 
   it("rejects unauthorized slashing and excessive amounts", async () => {

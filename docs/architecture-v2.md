@@ -148,7 +148,7 @@ interface IStakeManager {
     function depositStake(Role role, uint256 amount) external;
     function withdrawStake(Role role, uint256 amount) external;
     function lockStake(address user, Role role, uint256 payout) external;
-    function slash(address user, Role role, uint256 payout, address employer) external;
+    function slash(address user, Role role, uint256 payout, address employer) external; // `employer` must not be zero when employer share > 0
     function setToken(address token) external;
     function setMinStake(uint256 minStake) external;
     function setSlashingPercentages(
