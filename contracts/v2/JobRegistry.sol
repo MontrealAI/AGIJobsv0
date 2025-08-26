@@ -91,6 +91,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
     /// version for callers other than the owner, dispute module, or validation module.
 
+    modifier onlyAfterDeadline(uint256 jobId) {
+        Job storage job = jobs[jobId];
+        require(job.state == State.Applied, "cannot expire");
+        require(block.timestamp > job.deadline, "not expired");
+        _;
+    }
+
     // default agent stake requirement configured by owner
     uint96 public jobStake;
     uint96 public constant DEFAULT_JOB_STAKE = 1e6;
@@ -871,6 +878,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         )
         nonReentrant
     {
+        _finalize(jobId);
+    }
+
+    function _finalize(uint256 jobId) internal {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
         bool isGov = msg.sender == address(governance);
@@ -1090,23 +1101,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     /// @notice Cancel an assigned job that failed to submit before its deadline.
+    /// Any address may trigger this after the deadline has passed.
     /// @param jobId Identifier of the job to cancel.
     function cancelExpiredJob(uint256 jobId)
         public
-        requiresTaxAcknowledgement(
-            taxPolicy,
-            msg.sender,
-            owner(),
-            address(disputeModule),
-            address(validationModule)
-        )
+        onlyAfterDeadline(jobId)
+        nonReentrant
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Applied, "cannot expire");
-        require(block.timestamp > job.deadline, "not expired");
         job.success = false;
         job.state = State.Completed;
-        finalize(jobId);
+        _finalize(jobId);
         emit JobExpired(jobId, msg.sender);
     }
 
