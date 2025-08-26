@@ -9,6 +9,19 @@ interface IDisputeModule {
     event ModeratorAdded(address moderator);
     event ModeratorRemoved(address moderator);
     event GovernanceUpdated(address indexed governance);
+    event QuorumUpdated(uint256 quorum);
+    event VoteCast(
+        uint256 indexed jobId,
+        address indexed moderator,
+        bool employerWins,
+        uint256 employerVotes,
+        uint256 agentVotes
+    );
+    event VoteTally(
+        uint256 indexed jobId,
+        uint256 employerVotes,
+        uint256 agentVotes
+    );
 
     function raiseDispute(
         uint256 jobId,
@@ -21,5 +34,7 @@ interface IDisputeModule {
     function addModerator(address moderator) external;
     function removeModerator(address moderator) external;
     function setGovernance(address governance) external;
+    function setQuorum(uint256 newQuorum) external;
+    function getModerators() external view returns (address[] memory);
 }
 

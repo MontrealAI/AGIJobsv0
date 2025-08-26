@@ -25,8 +25,15 @@ contract DisputeModule is Governable {
     /// @notice Approved moderators eligible to vote on disputes.
     mapping(address => bool) public moderators;
 
+    /// @notice Enumerates moderator addresses for off-chain inspection.
+    address[] public moderatorList;
+
     /// @notice Total number of registered moderators.
     uint256 public moderatorCount;
+
+    /// @notice Votes required to resolve a dispute.
+    /// @dev Defaults to simple majority and updates with moderator changes.
+    uint256 public quorum;
 
     /// @notice Fixed appeal fee in token units (6 decimals) required to raise a
     /// dispute. A value of 0 disables the fee.
@@ -61,6 +68,22 @@ contract DisputeModule is Governable {
     /// @notice Emitted when a moderator is added or removed.
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
+    /// @notice Emitted when quorum is updated.
+    event QuorumUpdated(uint256 quorum);
+    /// @notice Emitted when a moderator casts a vote.
+    event VoteCast(
+        uint256 indexed jobId,
+        address indexed moderator,
+        bool employerWins,
+        uint256 employerVotes,
+        uint256 agentVotes
+    );
+    /// @notice Emitted when a dispute finalises with vote totals.
+    event VoteTally(
+        uint256 indexed jobId,
+        uint256 employerVotes,
+        uint256 agentVotes
+    );
 
     constructor(
         IJobRegistry _jobRegistry,
@@ -77,8 +100,11 @@ contract DisputeModule is Governable {
 
         // bootstrap governance as the first moderator
         moderators[_governance] = true;
+        moderatorList.push(_governance);
         moderatorCount = 1;
+        quorum = _calcQuorum(1);
         emit ModeratorAdded(_governance);
+        emit QuorumUpdated(quorum);
     }
 
     // ---------------------------------------------------------------------
@@ -90,22 +116,47 @@ contract DisputeModule is Governable {
         require(moderator != address(0), "moderator");
         require(!moderators[moderator], "exists");
         moderators[moderator] = true;
+        moderatorList.push(moderator);
         moderatorCount += 1;
+        quorum = _calcQuorum(moderatorCount);
         emit ModeratorAdded(moderator);
+        emit QuorumUpdated(quorum);
     }
 
     /// @notice Remove an existing moderator.
     function removeModerator(address moderator) external onlyGovernance {
         require(moderators[moderator], "not moderator");
         moderators[moderator] = false;
+        for (uint256 i; i < moderatorList.length; ++i) {
+            if (moderatorList[i] == moderator) {
+                moderatorList[i] = moderatorList[moderatorList.length - 1];
+                moderatorList.pop();
+                break;
+            }
+        }
         moderatorCount -= 1;
+        quorum = _calcQuorum(moderatorCount);
         emit ModeratorRemoved(moderator);
+        emit QuorumUpdated(quorum);
     }
 
     /// @notice Configure the dispute resolution window in seconds.
     /// @param window Duration after which an unresolved dispute can expire.
     function setResolutionWindow(uint64 window) external onlyGovernance {
         resolutionWindow = window;
+    }
+
+    /// @notice Update the quorum required to finalise disputes.
+    /// @param newQuorum Number of moderator votes needed for resolution.
+    function setQuorum(uint256 newQuorum) external onlyGovernance {
+        require(newQuorum > 0 && newQuorum <= moderatorCount, "quorum");
+        quorum = newQuorum;
+        emit QuorumUpdated(newQuorum);
+    }
+
+    /// @notice Return the current list of moderator addresses.
+    function getModerators() external view returns (address[] memory) {
+        return moderatorList;
     }
 
     /// @dev Restrict calls to the JobRegistry
@@ -157,14 +208,22 @@ contract DisputeModule is Governable {
 
         if (employerWins) {
             employerVotes[jobId] += 1;
-            if (employerVotes[jobId] >= _threshold()) {
-                _finalize(jobId, true);
-            }
         } else {
             agentVotes[jobId] += 1;
-            if (agentVotes[jobId] >= _threshold()) {
-                _finalize(jobId, false);
-            }
+        }
+
+        emit VoteCast(
+            jobId,
+            msg.sender,
+            employerWins,
+            employerVotes[jobId],
+            agentVotes[jobId]
+        );
+
+        if (employerVotes[jobId] >= quorum) {
+            _finalize(jobId, true);
+        } else if (agentVotes[jobId] >= quorum) {
+            _finalize(jobId, false);
         }
     }
 
@@ -179,14 +238,16 @@ contract DisputeModule is Governable {
         _finalize(jobId, employerWins);
     }
 
-    /// @dev Internal helper returning the number of votes required for
-    /// resolution.
-    function _threshold() internal view returns (uint256) {
-        return moderatorCount / 2 + 1; // majority
+    /// @dev Compute majority quorum for a given moderator count.
+    function _calcQuorum(uint256 count) internal pure returns (uint256) {
+        return count / 2 + 1; // simple majority
     }
 
     /// @dev Finalises a dispute and distributes fees.
     function _finalize(uint256 jobId, bool employerWins) internal {
+        uint256 empVotes = employerVotes[jobId];
+        uint256 agVotes = agentVotes[jobId];
+
         Dispute storage d = disputes[jobId];
         d.resolved = true;
 
@@ -203,6 +264,7 @@ contract DisputeModule is Governable {
         delete employerVotes[jobId];
         delete agentVotes[jobId];
         // hasVoted mapping entries are left as-is since jobIds are unique.
+        emit VoteTally(jobId, empVotes, agVotes);
         emit DisputeResolved(jobId, employerWins);
     }
 }
