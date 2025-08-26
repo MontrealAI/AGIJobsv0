@@ -164,8 +164,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement {
         address _treasury,
         address _jobRegistry,
         address _disputeModule,
-        address _governance
-    ) Governable(_governance) {
+        address _timelock // timelock or multisig controller
+    ) Governable(_timelock) {
         if (address(_token) == address(0)) {
             token = IERC20(DEFAULT_TOKEN);
         } else {
