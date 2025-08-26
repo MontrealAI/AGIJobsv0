@@ -203,7 +203,8 @@ describe("StakeManager", function () {
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(user).depositStake(0, 100);
 
-    const treasurySlot = "0x" + (5).toString(16).padStart(64, "0");
+    // treasury storage slot accounting for inherited and packed variables
+    const treasurySlot = "0x" + (7).toString(16).padStart(64, "0");
     await ethers.provider.send("hardhat_setStorageAt", [
       await stakeManager.getAddress(),
       treasurySlot,
