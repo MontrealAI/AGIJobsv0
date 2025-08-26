@@ -12,6 +12,10 @@ import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 /// for agents and validators. Provides helper views that also check
 /// reputation blacklists.
 contract IdentityRegistry is Ownable {
+    enum AgentType {
+        Human,
+        AI
+    }
     IENS public ens;
     INameWrapper public nameWrapper;
     IReputationEngine public reputationEngine;
@@ -23,6 +27,7 @@ contract IdentityRegistry is Ownable {
 
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
+    mapping(address => AgentType) public agentType;
 
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
@@ -33,6 +38,7 @@ contract IdentityRegistry is Ownable {
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    event AgentTypeUpdated(address indexed agent, AgentType agentType);
 
     constructor(
         IENS _ens,
@@ -122,6 +128,17 @@ contract IdentityRegistry is Ownable {
     function removeAdditionalValidator(address validator) external onlyOwner {
         additionalValidators[validator] = false;
         emit AdditionalValidatorUpdated(validator, false);
+    }
+
+    function setAgentType(address agent, uint8 _type) external onlyOwner {
+        require(agent != address(0), "agent");
+        require(_type <= uint8(AgentType.AI), "type");
+        agentType[agent] = AgentType(_type);
+        emit AgentTypeUpdated(agent, AgentType(_type));
+    }
+
+    function getAgentType(address agent) external view returns (AgentType) {
+        return agentType[agent];
     }
 
     // ---------------------------------------------------------------------

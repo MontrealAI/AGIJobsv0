@@ -68,6 +68,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         bool success;
         bytes32 uriHash;
         bytes32 resultHash;
+        uint8 agentTypes;
     }
 
     uint256 public nextJobId;
@@ -447,6 +448,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     function _createJob(
         uint256 reward,
         uint64 deadline,
+        uint8 agentTypes,
         string calldata uri
     )
         internal
@@ -464,6 +466,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         require(reward <= type(uint128).max, "overflow");
         require(maxJobReward == 0 || reward <= maxJobReward, "reward too high");
         require(deadline > block.timestamp, "deadline");
+        require(agentTypes > 0 && agentTypes <= 3, "agent types");
         if (maxJobDuration > 0) {
             require(
                 uint256(deadline) - block.timestamp <= maxJobDuration,
@@ -494,7 +497,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
             state: State.Created,
             success: false,
             uriHash: uriHash,
-            resultHash: bytes32(0)
+            resultHash: bytes32(0),
+            agentTypes: agentTypes
         });
         uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
@@ -517,7 +521,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         uint64 deadline,
         string calldata uri
     ) external returns (uint256 jobId) {
-        jobId = _createJob(reward, deadline, uri);
+        jobId = _createJob(reward, deadline, 3, uri);
+    }
+
+    function createJobWithAgentTypes(
+        uint256 reward,
+        uint64 deadline,
+        uint8 agentTypes,
+        string calldata uri
+    ) external returns (uint256 jobId) {
+        jobId = _createJob(reward, deadline, agentTypes, uri);
     }
 
     /**
@@ -534,7 +547,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         string calldata uri
     ) external returns (uint256 jobId) {
         _acknowledge(msg.sender);
-        jobId = _createJob(reward, deadline, uri);
+        jobId = _createJob(reward, deadline, 3, uri);
+    }
+
+    function acknowledgeAndCreateJobWithAgentTypes(
+        uint256 reward,
+        uint64 deadline,
+        uint8 agentTypes,
+        string calldata uri
+    ) external returns (uint256 jobId) {
+        _acknowledge(msg.sender);
+        jobId = _createJob(reward, deadline, agentTypes, uri);
     }
 
     function _applyForJob(
@@ -566,6 +589,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
             proof
         );
         require(authorized, "Not authorized agent");
+        if (job.agentTypes > 0) {
+            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
+                msg.sender
+            );
+            require(
+                (job.agentTypes & (1 << uint8(aType))) != 0,
+                "Agent type not allowed"
+            );
+        }
         if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
         }
@@ -673,6 +705,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
             proof
         );
         require(authorized, "Not authorized agent");
+        if (job.agentTypes > 0) {
+            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
+                msg.sender
+            );
+            require(
+                (job.agentTypes & (1 << uint8(aType))) != 0,
+                "Agent type not allowed"
+            );
+        }
         job.resultHash = resultHash;
         job.state = State.Submitted;
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);

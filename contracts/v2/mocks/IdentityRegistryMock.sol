@@ -16,6 +16,11 @@ contract IdentityRegistryMock is Ownable {
 
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
+    enum AgentType {
+        Human,
+        AI
+    }
+    mapping(address => AgentType) public agentType;
 
     constructor() Ownable(msg.sender) {}
 
@@ -25,6 +30,7 @@ contract IdentityRegistryMock is Ownable {
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    event AgentTypeUpdated(address indexed agent, AgentType agentType);
 
     function setENS(address _ens) external {
         ens = _ens;
@@ -76,6 +82,15 @@ contract IdentityRegistryMock is Ownable {
     function removeAdditionalValidator(address validator) external {
         additionalValidators[validator] = false;
         emit AdditionalValidatorUpdated(validator, false);
+    }
+
+    function setAgentType(address agent, uint8 _type) external {
+        agentType[agent] = AgentType(_type);
+        emit AgentTypeUpdated(agent, AgentType(_type));
+    }
+
+    function getAgentType(address agent) external view returns (AgentType) {
+        return agentType[agent];
     }
 
     function isAuthorizedAgent(
