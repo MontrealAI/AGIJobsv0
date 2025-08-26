@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
@@ -14,7 +15,7 @@ import {IValidationModule} from "../interfaces/IValidationModule.sol";
 /// @dev Maintains tax neutrality by rejecting ether and escrowing only token
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
 ///      6 decimals (`1 token == 1e6` units).
-contract DisputeModule is Ownable {
+contract DisputeModule is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -104,7 +105,11 @@ contract DisputeModule is Ownable {
 
     /// @notice Update the JobRegistry reference.
     /// @param newRegistry New JobRegistry contract implementing IJobRegistry.
-    function setJobRegistry(IJobRegistry newRegistry) external onlyOwner {
+    function setJobRegistry(IJobRegistry newRegistry)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         jobRegistry = newRegistry;
         emit JobRegistryUpdated(newRegistry);
         emit ModulesUpdated(address(newRegistry), address(stakeManager));
@@ -112,7 +117,11 @@ contract DisputeModule is Ownable {
 
     /// @notice Update the StakeManager reference.
     /// @param newManager New StakeManager contract implementing IStakeManager.
-    function setStakeManager(IStakeManager newManager) external onlyOwner {
+    function setStakeManager(IStakeManager newManager)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         stakeManager = newManager;
         emit StakeManagerUpdated(newManager);
         emit ModulesUpdated(address(jobRegistry), address(newManager));
@@ -121,7 +130,11 @@ contract DisputeModule is Ownable {
     /// @notice Add or update a moderator with a specific voting weight.
     /// @param _moderator Address granted moderator rights.
     /// @param weight Voting weight assigned to the moderator.
-    function addModerator(address _moderator, uint256 weight) external onlyOwner {
+    function addModerator(address _moderator, uint256 weight)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         require(_moderator != address(0), "moderator");
         require(weight > 0, "weight");
         uint256 previous = moderatorWeights[_moderator];
@@ -132,7 +145,11 @@ contract DisputeModule is Ownable {
 
     /// @notice Remove a moderator and its voting weight.
     /// @param _moderator Address to revoke moderator rights from.
-    function removeModerator(address _moderator) external onlyOwner {
+    function removeModerator(address _moderator)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         uint256 weight = moderatorWeights[_moderator];
         require(weight > 0, "not moderator");
         totalModeratorWeight -= weight;
@@ -142,16 +159,34 @@ contract DisputeModule is Ownable {
 
     /// @notice Configure the dispute fee in token units (6 decimals).
     /// @param fee New dispute fee; 0 disables the fee.
-    function setDisputeFee(uint256 fee) external onlyOwner {
+    function setDisputeFee(uint256 fee)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         disputeFee = fee;
         emit DisputeFeeUpdated(fee);
     }
 
     /// @notice Configure the dispute resolution window in seconds.
     /// @param window Minimum time before a dispute can be resolved.
-    function setDisputeWindow(uint256 window) external onlyOwner {
+    function setDisputeWindow(uint256 window)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         disputeWindow = window;
         emit DisputeWindowUpdated(window);
+    }
+
+    /// @notice Pause dispute operations.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Resume dispute operations.
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /// @notice Raise a dispute by posting the dispute fee and supplying a
@@ -167,7 +202,7 @@ contract DisputeModule is Ownable {
         uint256 jobId,
         address claimant,
         bytes32 evidenceHash
-    ) external onlyJobRegistry {
+    ) external onlyJobRegistry whenNotPaused {
         require(evidenceHash != bytes32(0), "evidence");
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
@@ -203,7 +238,7 @@ contract DisputeModule is Ownable {
         uint256 jobId,
         bool employerWins,
         bytes[] calldata signatures
-    ) external {
+    ) external whenNotPaused {
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
