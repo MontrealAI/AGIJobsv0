@@ -89,6 +89,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Addresses allowed to acknowledge the tax policy for others.
     mapping(address => bool) public acknowledgers;
 
+    // cache successful agent authorizations
+    mapping(address => bool) public agentAuthCache;
+    mapping(address => uint256) public agentAuthExpiry;
+    uint256 public agentAuthCacheDuration = 1 days;
+
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
     /// version for callers other than the owner, dispute module, or validation module.
 
@@ -144,6 +149,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     event AgentRootNodeUpdated(bytes32 node);
     event AgentMerkleRootUpdated(bytes32 root);
+    event AgentAuthCacheUpdated(address indexed agent, bool authorized);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -329,6 +335,19 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         require(address(identityRegistry) != address(0), "identity reg");
         identityRegistry.setAgentMerkleRoot(root);
         emit AgentMerkleRootUpdated(root);
+    }
+
+    /// @notice Refresh or invalidate cached agent authorization entries.
+    /// @param agent Address of the agent being updated.
+    /// @param authorized True to refresh the cache entry, false to invalidate it.
+    function updateAgentAuthCache(address agent, bool authorized)
+        external
+        onlyGovernance
+    {
+        agentAuthCache[agent] = authorized;
+        agentAuthExpiry[agent] =
+            authorized ? block.timestamp + agentAuthCacheDuration : 0;
+        emit AgentAuthCacheUpdated(agent, authorized);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
@@ -612,11 +631,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             );
         }
         require(address(identityRegistry) != address(0), "identity reg");
-        bool authorized = identityRegistry.verifyAgent(
-            msg.sender,
-            subdomain,
-            proof
-        );
+        bool authorized =
+            agentAuthCache[msg.sender] &&
+            agentAuthExpiry[msg.sender] > block.timestamp;
+        if (!authorized) {
+            authorized = identityRegistry.verifyAgent(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (authorized) {
+                agentAuthCache[msg.sender] = true;
+                agentAuthExpiry[msg.sender] =
+                    block.timestamp + agentAuthCacheDuration;
+            }
+        }
         require(authorized, "Not authorized agent");
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(

@@ -1,0 +1,85 @@
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
+
+describe("JobRegistry agent auth cache", function () {
+  let owner, employer, agent;
+  let registry, verifier, policy;
+  let jobId = 0;
+
+  beforeEach(async () => {
+    [owner, employer, agent] = await ethers.getSigners();
+
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+    );
+    verifier = await Identity.deploy();
+    await verifier.waitForDeployment();
+    await verifier.setAgentRootNode(ethers.ZeroHash);
+
+    const Registry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    registry = await Registry.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    await registry.waitForDeployment();
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await verifier.getAddress());
+
+    const Policy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    policy = await Policy.deploy("uri", "ack");
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await registry.connect(employer).acknowledgeTaxPolicy();
+    await registry.connect(agent).acknowledgeTaxPolicy();
+
+    await registry.connect(owner).setMaxJobReward(1000);
+    await registry.connect(owner).setJobDurationLimit(1000);
+    await registry.connect(owner).setFeePct(0);
+    await registry.connect(owner).setJobParameters(0, 0);
+  });
+
+  async function createJob() {
+    const deadline = (await time.latest()) + 100;
+    jobId++;
+    await registry.connect(employer).createJob(1, deadline, "uri");
+    return jobId;
+  }
+
+  it("skips repeat ENS checks and expires cache", async () => {
+    const first = await createJob();
+    const tx1 = await registry
+      .connect(agent)
+      .applyForJob(first, "a", []);
+    const gas1 = (await tx1.wait()).gasUsed;
+
+    const second = await createJob();
+    const tx2 = await registry
+      .connect(agent)
+      .applyForJob(second, "a", []);
+    const gas2 = (await tx2.wait()).gasUsed;
+    expect(gas2).to.be.lt(gas1);
+
+    await time.increase(24 * 60 * 60 + 1);
+
+    const third = await createJob();
+    const tx3 = await registry
+      .connect(agent)
+      .applyForJob(third, "a", []);
+    const gas3 = (await tx3.wait()).gasUsed;
+    expect(gas3).to.be.gt(gas2);
+  });
+});
