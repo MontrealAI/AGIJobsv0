@@ -889,10 +889,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit JobNonceReset(jobId);
     }
 
+    /// @dev Generates a pseudo-random seed using job context and block entropy.
+    /// Incorporates `block.prevrandao` and the previous block hash to make
+    /// validator selection harder to predict in absence of VRF.
     function _fallbackSeed(uint256 jobId) internal view returns (uint256) {
         return uint256(
             keccak256(
-                abi.encodePacked(jobId, jobNonce[jobId], blockhash(block.number - 1))
+                abi.encodePacked(
+                    jobId,
+                    jobNonce[jobId],
+                    block.prevrandao,
+                    blockhash(block.number - 1)
+                )
             )
         );
     }
