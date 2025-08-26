@@ -30,6 +30,11 @@ interface IValidationModule {
     /// @return Array of selected validator addresses
     function selectValidators(uint256 jobId) external returns (address[] memory);
 
+    /// @notice Request a VRF random seed for a job's validator selection.
+    /// @param jobId Identifier of the job
+    /// @return requestId Identifier of the VRF request
+    function requestVRF(uint256 jobId) external returns (uint256 requestId);
+
     /// @notice Start validation for a job and select validators
     /// @param jobId Identifier of the job
     /// @param data Arbitrary data associated with the submission

@@ -71,11 +71,14 @@ describe("Validator selection VRF integration", function () {
     await jobRegistry.setJob(1, jobStruct);
   });
 
-  it("waits for VRF fulfillment before selecting", async () => {
-    const tx = await validation.selectValidators(1);
-    await tx.wait();
+  it("requires VRF fulfillment before selecting", async () => {
+    await validation.requestVRF(1);
     const reqId = await validation.vrfRequestIds(1);
     expect(reqId).to.not.equal(0n);
+
+    await expect(validation.selectValidators(1)).to.be.revertedWith(
+      "VRF pending"
+    );
 
     await vrf.fulfill(reqId, 12345);
 
@@ -87,15 +90,11 @@ describe("Validator selection VRF integration", function () {
     expect(selected.length).to.equal(3);
   });
 
-  it("falls back when VRF request fails", async () => {
+  it("reverts when VRF request fails", async () => {
     await vrf.setFail(true);
-    await expect(validation.selectValidators(1)).to.emit(
-      validation,
-      "ValidatorsSelected"
+    await expect(validation.requestVRF(1)).to.be.revertedWith("fail");
+    await expect(validation.selectValidators(1)).to.be.revertedWith(
+      "VRF pending"
     );
-    const selected = await validation.validators(1);
-    expect(selected.length).to.equal(3);
-    const reqId = await validation.vrfRequestIds(1);
-    expect(reqId).to.equal(0n);
   });
 });
