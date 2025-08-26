@@ -193,8 +193,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
         uint256 _feePct,
         uint96 _jobStake,
         address[] memory _ackModules,
-        address _governance
-    ) Governable(_governance) {
+        address _timelock // timelock or multisig controller
+    ) Governable(_timelock) {
         validationModule = _validation;
         stakeManager = _stakeMgr;
         reputationEngine = _reputation;
@@ -832,7 +832,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement {
     {
         Job storage job = jobs[jobId];
         require(job.state == State.Completed, "not ready");
-        bool isGov = msg.sender == governance;
+        bool isGov = msg.sender == address(governance);
         bool agentBlacklisted;
         bool employerBlacklisted;
         if (address(reputationEngine) != address(0)) {
