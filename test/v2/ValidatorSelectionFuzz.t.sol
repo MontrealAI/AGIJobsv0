@@ -16,6 +16,7 @@ contract ValidatorSelectionFuzz is Test {
     ValidationModule validation;
     IdentityRegistryToggle identity;
     AGIALPHAToken token;
+    mapping(address => uint256) index;
 
     function setUp() public {
         token = new AGIALPHAToken();
@@ -49,12 +50,66 @@ contract ValidatorSelectionFuzz is Test {
         }
         validation.setValidatorPool(pool);
         validation.setValidatorsPerJob(selectCount);
+        validation.setValidatorPoolSampleSize(selectCount);
         address[] memory selected = validation.selectValidators(1);
         assertEq(selected.length, selectCount);
         for (uint256 i; i < selected.length; i++) {
             for (uint256 j = i + 1; j < selected.length; j++) {
                 assertTrue(selected[i] != selected[j]);
             }
+        }
+    }
+
+    function test_uniform_selection_probability_independent_of_order() public {
+        uint256 poolSize = 10;
+        uint256 selectCount = 3;
+        uint256 sample = 5;
+        address[] memory pool = new address[](poolSize);
+        for (uint256 i; i < poolSize; i++) {
+            address val = address(uint160(uint256(keccak256(abi.encode(i + 1)))));
+            pool[i] = val;
+            index[val] = i;
+            identity.addAdditionalValidator(val);
+            token.mint(val, 1e6);
+            vm.prank(val);
+            token.approve(address(stake), 1e6);
+            vm.prank(val);
+            stake.depositStake(StakeManager.Role.Validator, 1e6);
+        }
+        validation.setValidatorsPerJob(selectCount);
+        validation.setValidatorPoolSampleSize(sample);
+        validation.setValidatorPool(pool);
+
+        uint256 iterations = 100;
+        uint256[] memory counts = new uint256[](poolSize);
+        for (uint256 j; j < iterations; j++) {
+            vm.roll(block.number + 1);
+            address[] memory sel = validation.selectValidators(j + 1);
+            for (uint256 k; k < sel.length; k++) {
+                counts[index[sel[k]]] += 1;
+            }
+        }
+
+        address[] memory reversed = new address[](poolSize);
+        for (uint256 i; i < poolSize; i++) {
+            reversed[i] = pool[poolSize - 1 - i];
+        }
+        validation.setValidatorPool(reversed);
+
+        uint256[] memory countsRev = new uint256[](poolSize);
+        for (uint256 j; j < iterations; j++) {
+            vm.roll(block.number + 1);
+            address[] memory sel = validation.selectValidators(iterations + j + 1);
+            for (uint256 k; k < sel.length; k++) {
+                countsRev[index[sel[k]]] += 1;
+            }
+        }
+
+        for (uint256 i; i < poolSize; i++) {
+            uint256 a = counts[i];
+            uint256 b = countsRev[i];
+            uint256 diff = a > b ? a - b : b - a;
+            assertLt(diff, iterations / 5);
         }
     }
 }

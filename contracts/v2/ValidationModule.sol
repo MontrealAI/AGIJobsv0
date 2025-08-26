@@ -464,6 +464,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 sample = validatorPoolSampleSize;
         if (sample > n) sample = n;
 
+        uint256 start = seed % n;
+
         // Benchmark (foundry, 100 validators):
         // baseline shuffle ~308k gas, reservoir sampling ~218k gas (~29% less)
         selected = new address[](validatorsPerJob);
@@ -472,7 +474,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 seen;
 
         for (uint256 i; i < sample;) {
-            address candidate = validatorPool[i];
+            address candidate = validatorPool[(start + i) % n];
             seed = uint256(keccak256(abi.encodePacked(seed, candidate)));
             uint256 stake = stakeManager.stakeOf(
                 candidate,
