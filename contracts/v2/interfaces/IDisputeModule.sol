@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 /// @title IDisputeModule
 /// @notice Interface for raising and resolving disputes with moderator voting.
 interface IDisputeModule {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     event DisputeRaised(
         uint256 indexed jobId,
         address indexed claimant,

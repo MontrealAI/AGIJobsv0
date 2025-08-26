@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 /// @title ICertificateNFT
 /// @notice Interface for minting non-fungible job completion certificates
 interface ICertificateNFT {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     /// @dev Reverts when caller is not the authorised JobRegistry
     error NotJobRegistry(address caller);
 

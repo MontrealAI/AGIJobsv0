@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 /// @title IValidationModule
 /// @notice Interface for validator selection and commit-reveal voting
 interface IValidationModule {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
     event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);

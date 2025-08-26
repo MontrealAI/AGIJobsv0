@@ -9,6 +9,9 @@ import {IDisputeModule} from "../interfaces/IDisputeModule.sol";
 /// arbitration service such as Kleros. The arbitrator is expected to call back
 /// with the final ruling via {resolve}.
 contract KlerosDisputeModule is IDisputeModule {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     /// @notice Address with permission to update module settings.
     address public governance;
 

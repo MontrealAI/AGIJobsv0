@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 /// @title IReputationEngine
 /// @notice Interface for tracking and updating participant reputation scores
 interface IReputationEngine {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     /// @dev Reverts when a caller is not authorised to update reputation
     error UnauthorizedCaller(address caller);
 

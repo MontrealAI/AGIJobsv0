@@ -16,6 +16,9 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
 
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
+
     /// @dev Emitted when a zero address is supplied where non-zero is required.
     error ZeroAddress();
 
