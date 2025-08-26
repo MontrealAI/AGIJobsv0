@@ -155,4 +155,25 @@ describe("Job expiration", function () {
       registry.connect(treasury).cancelExpiredJob(jobId)
     ).to.be.revertedWith("not expired");
   });
+
+  it("applies expiration grace period", async () => {
+    const deadline = (await time.latest()) + 100;
+    await registry
+      .connect(owner)
+      .setJobExpirationGracePeriod(100);
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, "uri");
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, "", []);
+    await time.increase(100);
+    await expect(
+      registry.connect(treasury).cancelExpiredJob(jobId)
+    ).to.be.revertedWith("not expired");
+    await time.increase(100);
+    await expect(registry.connect(treasury).cancelExpiredJob(jobId)).to.emit(
+      registry,
+      "JobExpired"
+    );
+  });
 });
