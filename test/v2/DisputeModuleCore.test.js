@@ -31,7 +31,7 @@ describe("DisputeModule core", function () {
   });
 
   describe("moderator management", function () {
-    it("allows committee to add and remove moderators", async function () {
+    it("allows governance to add and remove moderators", async function () {
       await expect(dispute.addModerator(mod1.address))
         .to.emit(dispute, "ModeratorAdded")
         .withArgs(mod1.address);
@@ -46,6 +46,33 @@ describe("DisputeModule core", function () {
       await expect(dispute.addModerator(ethers.ZeroAddress)).to.be.revertedWith(
         "moderator"
       );
+    });
+
+    it("blocks non-governance from modifying moderators", async function () {
+      await expect(
+        dispute.connect(outsider).addModerator(mod1.address)
+      ).to.be.revertedWith("governance only");
+      await expect(
+        dispute.connect(outsider).removeModerator(owner.address)
+      ).to.be.revertedWith("governance only");
+    });
+
+    it("updates governance and grants new authority", async function () {
+      await expect(
+        dispute.connect(outsider).setGovernance(mod1.address)
+      ).to.be.revertedWith("governance only");
+
+      await expect(dispute.setGovernance(mod1.address))
+        .to.emit(dispute, "GovernanceUpdated")
+        .withArgs(mod1.address);
+
+      await expect(dispute.addModerator(mod2.address)).to.be.revertedWith(
+        "governance only"
+      );
+
+      await expect(dispute.connect(mod1).addModerator(mod2.address))
+        .to.emit(dispute, "ModeratorAdded")
+        .withArgs(mod2.address);
     });
   });
 

@@ -72,7 +72,7 @@ interface IDisputeModule {
     function resolve(uint256 jobId, bool employerWins) external;
     function addModerator(address moderator) external;
     function removeModerator(address moderator) external;
-    function setCommittee(address committee) external;
+    function setGovernance(address governance) external;
 }
 
 interface ICertificateNFT {

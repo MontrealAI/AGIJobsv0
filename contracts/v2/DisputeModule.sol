@@ -3,15 +3,16 @@ pragma solidity ^0.8.25;
 
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {Governable} from "./Governable.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes and resolves them via
-/// moderator voting. Configuration is controlled by a moderator committee
-/// address which is expected to be a multisig or DAO contract.
+/// moderator voting. Configuration is controlled by a governance address
+/// which is expected to be a Timelock or multisig contract.
 /// @dev Dispute claimants may optionally stake an appeal fee via the
 /// StakeManager which is paid out to the winner.  All amounts use 6 decimals
 /// (`1 token == 1e6` units).
-contract DisputeModule {
+contract DisputeModule is Governable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -20,9 +21,6 @@ contract DisputeModule {
 
     /// @notice Contract managing stake and dispute fees.
     IStakeManager public immutable stakeManager;
-
-    /// @notice Address of the committee authorised to manage moderators.
-    address public committee;
 
     /// @notice Approved moderators eligible to vote on disputes.
     mapping(address => bool) public moderators;
@@ -35,7 +33,7 @@ contract DisputeModule {
     uint256 public appealFee;
 
     /// @notice Time window in seconds after which unresolved disputes may expire.
-    /// @dev Defaults to 3 days and can be adjusted by the committee.
+    /// @dev Defaults to 3 days and can be adjusted by governance.
     uint64 public resolutionWindow = 3 days;
 
     struct Dispute {
@@ -63,28 +61,24 @@ contract DisputeModule {
     /// @notice Emitted when a moderator is added or removed.
     event ModeratorAdded(address indexed moderator);
     event ModeratorRemoved(address indexed moderator);
-    /// @notice Emitted when the committee address changes.
-    event CommitteeUpdated(address indexed committee);
 
     constructor(
         IJobRegistry _jobRegistry,
         IStakeManager _stakeManager,
-        address _committee,
+        address _governance,
         uint256 _appealFee
-    ) {
+    ) Governable(_governance) {
         require(address(_jobRegistry) != address(0), "registry");
         require(address(_stakeManager) != address(0), "stake mgr");
-        require(_committee != address(0), "committee");
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
         appealFee = _appealFee;
-        committee = _committee;
-        emit CommitteeUpdated(_committee);
+        emit GovernanceUpdated(_governance);
 
-        // bootstrap the committee as the first moderator
-        moderators[_committee] = true;
+        // bootstrap governance as the first moderator
+        moderators[_governance] = true;
         moderatorCount = 1;
-        emit ModeratorAdded(_committee);
+        emit ModeratorAdded(_governance);
     }
 
     // ---------------------------------------------------------------------
@@ -92,7 +86,7 @@ contract DisputeModule {
     // ---------------------------------------------------------------------
 
     /// @notice Register a new moderator.
-    function addModerator(address moderator) external onlyCommittee {
+    function addModerator(address moderator) external onlyGovernance {
         require(moderator != address(0), "moderator");
         require(!moderators[moderator], "exists");
         moderators[moderator] = true;
@@ -101,35 +95,22 @@ contract DisputeModule {
     }
 
     /// @notice Remove an existing moderator.
-    function removeModerator(address moderator) external onlyCommittee {
+    function removeModerator(address moderator) external onlyGovernance {
         require(moderators[moderator], "not moderator");
         moderators[moderator] = false;
         moderatorCount -= 1;
         emit ModeratorRemoved(moderator);
     }
 
-    /// @notice Update the committee multisig address.
-    function setCommittee(address _committee) external onlyCommittee {
-        require(_committee != address(0), "committee");
-        committee = _committee;
-        emit CommitteeUpdated(_committee);
-    }
-
     /// @notice Configure the dispute resolution window in seconds.
     /// @param window Duration after which an unresolved dispute can expire.
-    function setResolutionWindow(uint64 window) external onlyCommittee {
+    function setResolutionWindow(uint64 window) external onlyGovernance {
         resolutionWindow = window;
     }
 
     /// @dev Restrict calls to the JobRegistry
     modifier onlyJobRegistry() {
         require(msg.sender == address(jobRegistry), "not registry");
-        _;
-    }
-
-    /// @dev Restrict calls to the committee multisig.
-    modifier onlyCommittee() {
-        require(msg.sender == committee, "not committee");
         _;
     }
 
