@@ -14,10 +14,10 @@ This sprint focuses on keeping the AGI Jobs protocol and its deploying corporati
    - Emit `TaxPolicyURIUpdated` and `AcknowledgementUpdated` events on changes.
    - Reject all ETH via `receive`/`fallback`, expose `policyDetails()` for explorer reads, and return `true` from `isTaxExempt()`.
 2. **JobRegistry integration**
-   - Track the current `taxPolicyVersion` and map each address to its last acknowledged version.
+   - Rely on `TaxPolicy.hasAcknowledged(address)` for per-user tracking instead of a local mapping.
    - Gate user actions with `requiresTaxAcknowledgement` so only acknowledged participants may interact.
    - Surface `taxPolicyDetails()`, `taxAcknowledgement()`, `taxPolicyURI()`, and `isTaxExempt()` for read‑only explorer access.
-   - Allow the owner to update the policy address or force a fresh acknowledgement with `bumpTaxPolicyVersion`.
+   - Allow the owner to update the policy address or force a fresh acknowledgement with `bumpPolicyVersion` on `TaxPolicy`.
 3. **Explorer UX**
    - Document in the README and `etherscan-guide.md` how users call `acknowledgeTaxPolicy` and how the owner updates the policy via `setPolicyURI`, `setAcknowledgement`, or `setPolicy`.
 4. **Testing**

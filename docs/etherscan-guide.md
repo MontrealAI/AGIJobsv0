@@ -134,7 +134,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 2. In **Read Contract**, call **taxPolicyDetails** to view the canonical policy URI and acknowledgement text. *(Example screenshot: [taxPolicyDetails](https://via.placeholder.com/650x150?text=taxPolicyDetails))*
 3. Still under **Read Contract**, call **isTaxExempt** and confirm it returns `true`.
 4. Switch to **Write Contract**, connect your wallet, and execute **acknowledgeTaxPolicy**. The transaction log will show `TaxAcknowledged(user, version, acknowledgement)` with the disclaimer you accepted.
-5. Back in **Read Contract**, call **taxAcknowledgedVersion(address)** to ensure it matches **taxPolicyVersion**.
+5. Back in **Read Contract**, open the `TaxPolicy` contract and call **hasAcknowledged(address)** to ensure it returns `true`.
 
 #### Owner: update the policy
 1. Open the `TaxPolicy` contract at its deployment address (replace `<TaxPolicyAddress>`): [Etherscan](https://etherscan.io/address/0x0000000000000000000000000000000000000000#writeContract).
@@ -142,7 +142,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 3. Call **setPolicyURI(newURI)** to change only the policy document.
 4. Call **setAcknowledgement(newMessage)** to revise the acknowledgement text.
 5. Call **setPolicy(newURI, newMessage)** to update both fields in one transaction.
-6. After any update, open [`JobRegistry` on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#writeContract) and call **bumpTaxPolicyVersion** so participants must re‑acknowledge.
+6. After any update, call **bumpPolicyVersion** on `TaxPolicy` so participants must re‑acknowledge.
 
 ### Disputers
 1. Ensure you've acknowledged the tax policy and confirmed **isTaxExempt()** on both `JobRegistry` and `DisputeModule`.
