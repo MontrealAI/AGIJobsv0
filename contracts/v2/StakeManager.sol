@@ -960,6 +960,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
         if (treasuryShare > 0) {
+            require(treasury != address(0), "treasury not set");
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {

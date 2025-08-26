@@ -173,6 +173,63 @@ describe("StakeManager", function () {
     ).to.be.revertedWith("stake");
   });
 
+  it("reverts when treasury is zero during slashing", async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      "contracts/v2/JobRegistry.sol:JobRegistry"
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    );
+    const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(user).depositStake(0, 100);
+
+    const treasurySlot = "0x" + (5).toString(16).padStart(64, "0");
+    await ethers.provider.send("hardhat_setStorageAt", [
+      await stakeManager.getAddress(),
+      treasurySlot,
+      ethers.ZeroHash,
+    ]);
+    expect(await stakeManager.treasury()).to.equal(ethers.ZeroAddress);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [
+      registryAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ["slash(address,uint8,uint256,address)"](
+          user.address,
+          0,
+          100,
+          employer.address
+        )
+    ).to.be.revertedWith("treasury not set");
+  });
+
   it("supports staking and slashing for all roles", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
