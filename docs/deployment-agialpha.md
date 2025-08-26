@@ -21,10 +21,10 @@ Deploy each contract **in the order listed below** from the **Write Contract** t
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
 5. `ReputationEngine(stakeManager)` – optional reputation weighting (pass `0` to wire later).
-6. `DisputeModule(jobRegistry, stakeManager, governance, appealFee)` – manages
-   appeals and dispute fees. Pass the governance timelock or multisig as the
-   third argument; it is bootstrapped as the initial moderator and is
-   responsible for onboarding additional moderators.
+6. `DisputeModule(jobRegistry, disputeFee, disputeWindow, moderator)` – manages
+   appeals and dispute fees. The fourth argument optionally seeds an initial
+   moderator; the deployer remains owner and can add weighted moderators with
+   `addModerator(addr, weight)`.
 7. `CertificateNFT(name, symbol)` – certifies completed work.
 8. `FeePool(token, stakeManager, burnPct, treasury)` – rewards default to platform stakers; use `address(0)` for `token` to fall back to $AGIALPHA` and `burnPct` defaults to `0`.
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
@@ -72,8 +72,9 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 
 - The disputing agent approves the `StakeManager` for the configured `appealFee` in `$AGIALPHA` and calls `JobRegistry.acknowledgeAndDispute(jobId, evidence)`; no ETH is ever sent.
 - The `DisputeModule` escrows the token fee and releases it to the winner or back to the payer after resolution.
-- A majority of enrolled moderators (`moderatorCount / 2 + 1`) must vote for
-  either outcome. Governance expands or shrinks the moderator set using
+- Disputes resolve when the owner calls `resolve` or when moderator
+  signatures representing more than half of the total assigned weight approve
+  the outcome. Moderators and their weights are managed with
   `addModerator` and `removeModerator`.
 
 ## 8. Final checks
