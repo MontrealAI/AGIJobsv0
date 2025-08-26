@@ -120,7 +120,7 @@ describe("Job expiration", function () {
       .approve(await stakeManager.getAddress(), reward);
   });
 
-  it("expires job after deadline and refunds employer", async () => {
+  it("allows anyone to expire job after deadline and refunds employer", async () => {
     const deadline = (await time.latest()) + 100;
     await registry
       .connect(employer)
@@ -129,10 +129,10 @@ describe("Job expiration", function () {
     await registry.connect(agent).applyForJob(jobId, "", []);
     await time.increase(200);
     await expect(
-      registry.connect(employer).cancelExpiredJob(jobId)
+      registry.connect(treasury).cancelExpiredJob(jobId)
     )
       .to.emit(registry, "JobExpired")
-      .withArgs(jobId, employer.address)
+      .withArgs(jobId, treasury.address)
       .and.to.emit(registry, "JobFinalized")
       .withArgs(jobId, agent.address);
 
@@ -144,16 +144,15 @@ describe("Job expiration", function () {
     expect(await stakeManager.stakes(agent.address, 0)).to.equal(0);
   });
 
-  it("reverts if caller has not acknowledged tax policy", async () => {
+  it("reverts if job has not yet expired", async () => {
     const deadline = (await time.latest()) + 100;
     await registry
       .connect(employer)
       .createJob(reward, deadline, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
-    await time.increase(200);
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
-    ).to.be.revertedWith("acknowledge tax policy");
+    ).to.be.revertedWith("not expired");
   });
 });
