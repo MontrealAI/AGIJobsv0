@@ -103,7 +103,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     modifier onlyAfterDeadline(uint256 jobId) {
         Job storage job = jobs[jobId];
         require(job.state == State.Applied, "cannot expire");
-        require(block.timestamp > job.deadline, "not expired");
+        require(
+            block.timestamp > uint256(job.deadline) + expirationGracePeriod,
+            "not expired"
+        );
         _;
     }
 
@@ -116,6 +119,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     uint256 public maxJobDuration;
     uint256 public validatorRewardPct;
     uint256 public constant DEFAULT_VALIDATOR_REWARD_PCT = 8;
+    uint256 public expirationGracePeriod;
 
     // module configuration events
     event ModuleUpdated(string module, address newAddress);
@@ -193,6 +197,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
+    event ExpirationGracePeriodUpdated(uint256 period);
     event GovernanceFinalized(
         uint256 indexed jobId,
         address indexed caller,
@@ -404,6 +409,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setJobDurationLimit(uint256 limit) external onlyGovernance {
         maxJobDuration = limit;
         emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
+    }
+
+    /// @notice set additional grace period after a job's deadline before it can expire
+    function setExpirationGracePeriod(uint256 period) external onlyGovernance {
+        expirationGracePeriod = period;
+        emit ExpirationGracePeriodUpdated(period);
     }
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
