@@ -40,13 +40,18 @@ contract DisputeModule is Ownable {
         uint256 raisedAt;
         bool resolved;
         uint256 fee;
-        string evidence;
+        bytes32 evidenceHash;
     }
 
     /// @dev Tracks active disputes by jobId.
     mapping(uint256 => Dispute) public disputes;
 
-    event DisputeRaised(uint256 indexed jobId, address indexed claimant);
+    event DisputeRaised(
+        uint256 indexed jobId,
+        address indexed claimant,
+        bytes32 indexed evidenceHash,
+        string evidence
+    );
     event DisputeResolved(
         uint256 indexed jobId,
         address indexed resolver,
@@ -153,7 +158,8 @@ contract DisputeModule is Ownable {
     /// @notice Raise a dispute by posting the dispute fee.
     /// @param jobId Identifier of the job being disputed.
     /// @param claimant Address of the participant raising the dispute.
-    /// @param evidence Supporting evidence or reason for the dispute.
+    /// @param evidence Supporting evidence or reason for the dispute. The
+    /// full string is emitted while only its hash is stored on-chain.
     function raiseDispute(
         uint256 jobId,
         address claimant,
@@ -173,16 +179,18 @@ contract DisputeModule is Ownable {
             sm.lockDisputeFee(claimant, disputeFee);
         }
 
+        bytes32 evidenceHash = keccak256(bytes(evidence));
+
         disputes[jobId] =
             Dispute({
                 claimant: claimant,
                 raisedAt: block.timestamp,
                 resolved: false,
                 fee: disputeFee,
-                evidence: evidence
+                evidenceHash: evidenceHash
             });
 
-        emit DisputeRaised(jobId, claimant);
+        emit DisputeRaised(jobId, claimant, evidenceHash, evidence);
     }
 
     /// @notice Resolve an existing dispute after the dispute window elapses.

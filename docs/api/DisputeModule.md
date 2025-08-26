@@ -12,7 +12,7 @@ case.
 - `resolve(uint256 jobId, bool employerWins)` – moderators vote; majority decides.
 
 ## Events
-- `DisputeRaised(uint256 indexed jobId, address indexed claimant)`
+- `DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 indexed evidenceHash, string evidence)`
 - `DisputeResolved(uint256 indexed jobId, bool employerWins)`
 - `ModeratorAdded(address indexed moderator)`
 - `ModeratorRemoved(address indexed moderator)`

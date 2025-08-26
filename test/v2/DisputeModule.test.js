@@ -137,7 +137,7 @@ describe("DisputeModule", function () {
         registry.connect(agent).dispute(1, "evidence")
       )
         .to.emit(dispute, "DisputeRaised")
-        .withArgs(1, agent.address);
+        .withArgs(1, agent.address, ethers.id("evidence"), "evidence");
       await expect(
         registry.connect(agent).dispute(1, "more")
       ).to.be.revertedWith("disputed");

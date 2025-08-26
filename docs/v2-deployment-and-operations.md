@@ -192,7 +192,7 @@ To generate proofs:
 | `JobApplied(uint256 jobId, address agent)` | `JobRegistry` | Agent applied for a job. |
 | `ValidationCommitted(uint256 jobId, address validator)` | `ValidationModule` | Validator submitted hashed vote. |
 | `ValidationRevealed(uint256 jobId, address validator, bool approve)` | `ValidationModule` | Validator revealed vote. |
-| `DisputeRaised(uint256 jobId)` | `DisputeModule` | A job result was contested. |
+| `DisputeRaised(uint256 jobId, address claimant, bytes32 evidenceHash, string evidence)` | `DisputeModule` | A job result was contested. |
 | `DisputeResolved(uint256 jobId, bool employerWins)` | `DisputeModule` | Moderator issued final ruling. |
 | `CertificateMinted(address to, uint256 jobId)` | `CertificateNFT` | NFT minted for a completed job. |
 
