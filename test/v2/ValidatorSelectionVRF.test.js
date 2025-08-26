@@ -1,9 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("Validator selection determinism", function () {
+describe("Validator selection VRF integration", function () {
   let owner, v1, v2, v3, v4, v5;
-  let validation, stakeManager, jobRegistry, reputation, identity;
+  let validation, stakeManager, jobRegistry, reputation, identity, vrf;
 
   beforeEach(async () => {
     [owner, v1, v2, v3, v4, v5] = await ethers.getSigners();
@@ -20,6 +20,10 @@ describe("Validator selection determinism", function () {
     reputation = await RepMock.deploy();
     await reputation.waitForDeployment();
 
+    const VRFMock = await ethers.getContractFactory("contracts/v2/mocks/VRFMock.sol:VRFMock");
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
@@ -34,6 +38,7 @@ describe("Validator selection determinism", function () {
     );
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());
+    await validation.setVRF(await vrf.getAddress());
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
@@ -66,21 +71,31 @@ describe("Validator selection determinism", function () {
     await jobRegistry.setJob(1, jobStruct);
   });
 
-  it("mixes blockhash for fallback randomness", async () => {
-    const tx1 = await validation.selectValidators(1);
-    const receipt1 = await tx1.wait();
-    const selected1 = receipt1.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-    ).args[1];
+  it("waits for VRF fulfillment before selecting", async () => {
+    const tx = await validation.selectValidators(1);
+    await tx.wait();
+    const reqId = await validation.vrfRequestIds(1);
+    expect(reqId).to.not.equal(0n);
 
-    await validation.resetJobNonce(1);
+    await vrf.fulfill(reqId, 12345);
 
-    const tx2 = await validation.selectValidators(1);
-    const receipt2 = await tx2.wait();
-    const selected2 = receipt2.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-    ).args[1];
+    await expect(validation.selectValidators(1)).to.emit(
+      validation,
+      "ValidatorsSelected"
+    );
+    const selected = await validation.validators(1);
+    expect(selected.length).to.equal(3);
+  });
 
-    expect(selected2).to.not.deep.equal(selected1);
+  it("falls back when VRF request fails", async () => {
+    await vrf.setFail(true);
+    await expect(validation.selectValidators(1)).to.emit(
+      validation,
+      "ValidatorsSelected"
+    );
+    const selected = await validation.validators(1);
+    expect(selected.length).to.equal(3);
+    const reqId = await validation.vrfRequestIds(1);
+    expect(reqId).to.equal(0n);
   });
 });
