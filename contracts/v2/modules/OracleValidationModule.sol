@@ -193,5 +193,12 @@ contract OracleValidationModule is IValidationModule, Ownable {
     {
         revert("no vrf");
     }
+
+    /// @inheritdoc IValidationModule
+    function setSelectionStrategy(IValidationModule.SelectionStrategy)
+        external
+        pure
+        override
+    {}
 }
 

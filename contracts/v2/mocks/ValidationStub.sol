@@ -117,5 +117,7 @@ contract ValidationStub is IValidationModule {
     {
         revert("no vrf");
     }
+
+    function setSelectionStrategy(IValidationModule.SelectionStrategy) external override {}
 }
 
