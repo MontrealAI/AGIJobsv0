@@ -7,7 +7,7 @@ async function advance(seconds) {
 }
 
 async function setup() {
-  const [owner, employer, validator] = await ethers.getSigners();
+  const [owner, employer, validator, v2, v3] = await ethers.getSigners();
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/mocks/ReentrantStakeManager.sol:ReentrantStakeManager"
@@ -31,8 +31,8 @@ async function setup() {
     await stakeManager.getAddress(),
     60,
     60,
-    1,
-    1,
+    3,
+    3,
     []
   );
   await validation.waitForDeployment();
@@ -51,12 +51,17 @@ async function setup() {
   const identity = await Identity.deploy();
   await identity.setValidationModule(await validation.getAddress());
   await validation.connect(owner).setIdentityRegistry(await identity.getAddress());
+  await identity.addAdditionalValidator(validator.address);
+  await identity.addAdditionalValidator(v2.address);
+  await identity.addAdditionalValidator(v3.address);
 
   await stakeManager.setValidationModule(await validation.getAddress());
   await stakeManager.setStake(validator.address, 1, ethers.parseEther("100"));
+  await stakeManager.setStake(v2.address, 1, ethers.parseEther("100"));
+  await stakeManager.setStake(v3.address, 1, ethers.parseEther("100"));
   await validation
     .connect(owner)
-    .setValidatorPool([validator.address]);
+    .setValidatorPool([validator.address, v2.address, v3.address]);
 
   const jobStruct = {
     employer: employer.address,
@@ -71,10 +76,10 @@ async function setup() {
   await jobRegistry.setJob(1, jobStruct);
 
   async function prepare(jobId, randomness = 12345) {
-    await validation.requestVRF(jobId);
-    const req = await validation.vrfRequestIds(jobId);
-    await vrf.fulfill(req, randomness);
-    return validation.start(jobId, "", 0);
+  await validation.requestVRF(jobId);
+  const req = await validation.vrfRequestIds(jobId);
+  await vrf.fulfill(req, randomness);
+  return validation.start(jobId, "", 0);
   }
 
   return {

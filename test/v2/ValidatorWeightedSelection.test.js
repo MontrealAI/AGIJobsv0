@@ -26,7 +26,7 @@ describe("Validator selection weighted by stake", function () {
       await stake.getAddress(),
       1,
       1,
-      1,
+      3,
       10,
       []
     );
@@ -44,6 +44,8 @@ describe("Validator selection weighted by stake", function () {
       ethers.parseEther("1"),
       ethers.parseEther("2"),
       ethers.parseEther("8"),
+      ethers.parseEther("1"),
+      ethers.parseEther("1"),
     ];
     validators = [];
     for (const amt of stakeAmts) {
@@ -53,7 +55,7 @@ describe("Validator selection weighted by stake", function () {
       await identity.addAdditionalValidator(addr);
     }
     await validation.setValidatorPool(validators);
-    await validation.setValidatorsPerJob(1);
+    await validation.setValidatorsPerJob(3);
     await validation.setValidatorPoolSampleSize(10);
   });
 
@@ -62,8 +64,7 @@ describe("Validator selection weighted by stake", function () {
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
     await (await validation.selectValidators(jobId)).wait();
-    const sel = await validation.validators(jobId);
-    return sel[0];
+    return await validation.validators(jobId);
   }
 
   it("prefers higher staked validators", async () => {
@@ -71,8 +72,8 @@ describe("Validator selection weighted by stake", function () {
     for (const v of validators) counts[v] = 0;
     const iterations = 150;
     for (let i = 0; i < iterations; i++) {
-      const val = await select(i + 1, i + 12345);
-      counts[val]++;
+      const selected = await select(i + 1, i + 12345);
+      for (const v of selected) counts[v]++;
     }
     expect(counts[validators[2]]).to.be.gt(counts[validators[1]]);
     expect(counts[validators[1]]).to.be.gt(counts[validators[0]]);

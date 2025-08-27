@@ -11,13 +11,13 @@ function namehash(root, label) {
 }
 
 describe("Validator ENS integration", function () {
-  let owner, validator, other;
+  let owner, validator, other, v2, v3;
   let ens, resolver, wrapper, identity;
   let stakeManager, jobRegistry, reputation, validation, vrf;
   const root = ethers.id("agi");
 
   beforeEach(async () => {
-    [owner, validator, other] = await ethers.getSigners();
+    [owner, validator, other, v2, v3] = await ethers.getSigners();
 
     const ENS = await ethers.getContractFactory("MockENS");
     ens = await ENS.deploy();
@@ -65,8 +65,8 @@ describe("Validator ENS integration", function () {
       await stakeManager.getAddress(),
       60,
       60,
-      1,
-      1,
+      3,
+      3,
       []
     );
     await validation.waitForDeployment();
@@ -78,16 +78,21 @@ describe("Validator ENS integration", function () {
     vrf = await VRFMock.deploy();
     await vrf.waitForDeployment();
     await validation.setVRF(await vrf.getAddress());
+
+    // add filler validators
+    await identity.addAdditionalValidator(v2.address);
+    await identity.addAdditionalValidator(v3.address);
+    await stakeManager.setStake(validator.address, 1, ethers.parseEther("1"));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther("1"));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther("1"));
+    await validation.setValidatorPool([
+      validator.address,
+      v2.address,
+      v3.address,
+    ]);
   });
 
   it("rejects validators without subdomains and emits events on success", async () => {
-    await validation.connect(owner).setValidatorPool([validator.address]);
-
-    await stakeManager.setStake(
-      validator.address,
-      1,
-      ethers.parseEther("1")
-    );
     const job = {
       employer: owner.address,
       agent: ethers.ZeroAddress,
@@ -151,7 +156,11 @@ describe("Validator ENS integration", function () {
     const node = namehash(root, "v");
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
-    await validation.setValidatorPool([validator.address]);
+    await validation.setValidatorPool([
+      validator.address,
+      v2.address,
+      v3.address,
+    ]);
     await validation.setValidatorSubdomains([validator.address], ["v"]);
 
     await stakeManager.setStake(
@@ -205,7 +214,11 @@ describe("Validator ENS integration", function () {
     const node = namehash(root, "v");
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
-    await validation.setValidatorPool([validator.address]);
+    await validation.setValidatorPool([
+      validator.address,
+      v2.address,
+      v3.address,
+    ]);
     await validation.setValidatorSubdomains([validator.address], ["v"]);
     await stakeManager.setStake(
       validator.address,

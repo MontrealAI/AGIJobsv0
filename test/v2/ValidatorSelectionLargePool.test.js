@@ -25,7 +25,7 @@ describe("Validator selection with large pool", function () {
       await stake.getAddress(),
       1,
       1,
-      1,
+      3,
       10,
       []
     );

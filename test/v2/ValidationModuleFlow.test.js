@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 async function setup() {
-  const [owner, employer, v1, v2] = await ethers.getSigners();
+  const [owner, employer, v1, v2, v3] = await ethers.getSigners();
 
   const StakeMock = await ethers.getContractFactory("MockStakeManager");
   const stakeManager = await StakeMock.deploy();
@@ -24,8 +24,8 @@ async function setup() {
     await stakeManager.getAddress(),
     60,
     60,
-    2,
-    2,
+    3,
+    3,
     []
   );
   await validation.waitForDeployment();
@@ -50,12 +50,14 @@ async function setup() {
   await identity.setAgentRootNode(ethers.ZeroHash);
   await identity.addAdditionalValidator(v1.address);
   await identity.addAdditionalValidator(v2.address);
+  await identity.addAdditionalValidator(v3.address);
 
   await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
   await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
+  await stakeManager.setStake(v3.address, 1, ethers.parseEther("25"));
   await validation
     .connect(owner)
-    .setValidatorPool([v1.address, v2.address]);
+    .setValidatorPool([v1.address, v2.address, v3.address]);
 
   const jobStruct = {
     employer: employer.address,
@@ -80,6 +82,7 @@ async function setup() {
     employer,
     v1,
     v2,
+    v3,
     validation,
     stakeManager,
     jobRegistry,
@@ -96,10 +99,11 @@ async function advance(seconds) {
 
 describe("ValidationModule finalize flows", function () {
   it("records majority approval as success", async () => {
-    const { v1, v2, validation, jobRegistry, select } = await setup();
+    const { v1, v2, v3, validation, jobRegistry, select } = await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -109,11 +113,17 @@ describe("ValidationModule finalize flows", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, false, salt2]
     );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, false, salt3]
+    );
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
+    await validation.connect(v3).commitValidation(1, commit3, "", []);
     await advance(61);
     await validation.connect(v1).revealValidation(1, true, salt1, "", []);
     await validation.connect(v2).revealValidation(1, false, salt2, "", []);
+    await validation.connect(v3).revealValidation(1, false, salt3, "", []);
     await advance(61);
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
@@ -122,10 +132,11 @@ describe("ValidationModule finalize flows", function () {
   });
 
   it("records majority rejection as dispute", async () => {
-    const { v1, v2, validation, jobRegistry, select } = await setup();
+    const { v1, v2, v3, validation, jobRegistry, select } = await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -135,11 +146,17 @@ describe("ValidationModule finalize flows", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, false, salt2]
     );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt3]
+    );
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
+    await validation.connect(v3).commitValidation(1, commit3, "", []);
     await advance(61);
     await validation.connect(v1).revealValidation(1, false, salt1, "", []);
     await validation.connect(v2).revealValidation(1, false, salt2, "", []);
+    await validation.connect(v3).revealValidation(1, true, salt3, "", []);
     await advance(61);
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
@@ -157,10 +174,11 @@ describe("ValidationModule finalize flows", function () {
   });
 
   it("slashes validators that do not all reveal", async () => {
-    const { v1, v2, validation, stakeManager, jobRegistry, select } = await setup();
+    const { v1, v2, v3, validation, stakeManager, jobRegistry, select } = await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -170,8 +188,13 @@ describe("ValidationModule finalize flows", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, true, salt2]
     );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt3]
+    );
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
+    await validation.connect(v3).commitValidation(1, commit3, "", []);
     await advance(61);
     await validation.connect(v1).revealValidation(1, true, salt1, "", []);
     await advance(61);
@@ -182,17 +205,22 @@ describe("ValidationModule finalize flows", function () {
     expect(await stakeManager.stakeOf(v2.address, 1)).to.equal(
       ethers.parseEther("25")
     );
+    expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
+      ethers.parseEther("12.5")
+    );
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(5); // Disputed
   });
 
   it("disputes when approvals fall below threshold", async () => {
-    const { v1, v2, validation, jobRegistry, stakeManager, select } = await setup();
+    const { v1, v2, v3, validation, jobRegistry, stakeManager, select } = await setup();
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("50"));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther("100"));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther("10"));
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -202,8 +230,13 @@ describe("ValidationModule finalize flows", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, false, salt2]
     );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, false, salt3]
+    );
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
+    await validation.connect(v3).commitValidation(1, commit3, "", []);
     await advance(61);
     await validation
       .connect(v1)
@@ -211,6 +244,9 @@ describe("ValidationModule finalize flows", function () {
     await validation
       .connect(v2)
       .revealValidation(1, false, salt2, "", []);
+    await validation
+      .connect(v3)
+      .revealValidation(1, false, salt3, "", []);
     await advance(61);
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
