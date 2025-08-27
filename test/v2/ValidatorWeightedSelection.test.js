@@ -1,0 +1,80 @@
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+
+describe("Validator selection weighted by stake", function () {
+  let validation, stake, identity, vrf;
+  let validators;
+
+  beforeEach(async () => {
+    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    stake = await StakeMock.deploy();
+    await stake.waitForDeployment();
+
+    const Identity = await ethers.getContractFactory(
+      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+    );
+    identity = await Identity.deploy();
+    await identity.waitForDeployment();
+    await identity.setClubRootNode(ethers.ZeroHash);
+    await identity.setAgentRootNode(ethers.ZeroHash);
+
+    const Validation = await ethers.getContractFactory(
+      "contracts/v2/ValidationModule.sol:ValidationModule"
+    );
+    validation = await Validation.deploy(
+      ethers.ZeroAddress,
+      await stake.getAddress(),
+      1,
+      1,
+      1,
+      10,
+      []
+    );
+    await validation.waitForDeployment();
+    await validation.setIdentityRegistry(await identity.getAddress());
+
+    const VRFMock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VRFMock.sol:VRFMock"
+    );
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+    await validation.setVRF(await vrf.getAddress());
+
+    const stakeAmts = [
+      ethers.parseEther("1"),
+      ethers.parseEther("2"),
+      ethers.parseEther("8"),
+    ];
+    validators = [];
+    for (const amt of stakeAmts) {
+      const addr = ethers.Wallet.createRandom().address;
+      validators.push(addr);
+      await stake.setStake(addr, 1, amt);
+      await identity.addAdditionalValidator(addr);
+    }
+    await validation.setValidatorPool(validators);
+    await validation.setValidatorsPerJob(1);
+    await validation.setValidatorPoolSampleSize(10);
+  });
+
+  async function select(jobId, randomness) {
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    await (await validation.selectValidators(jobId)).wait();
+    const sel = await validation.validators(jobId);
+    return sel[0];
+  }
+
+  it("prefers higher staked validators", async () => {
+    const counts = {};
+    for (const v of validators) counts[v] = 0;
+    const iterations = 150;
+    for (let i = 0; i < iterations; i++) {
+      const val = await select(i + 1, i + 12345);
+      counts[val]++;
+    }
+    expect(counts[validators[2]]).to.be.gt(counts[validators[1]]);
+    expect(counts[validators[1]]).to.be.gt(counts[validators[0]]);
+  });
+});
