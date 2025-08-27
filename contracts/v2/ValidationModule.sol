@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
@@ -18,7 +19,7 @@ import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 /// @notice Handles validator selection and commit–reveal voting for jobs.
 /// @dev Holds no ether and keeps the owner and contract tax neutral; only
 ///      participating validators and job parties bear tax obligations.
-contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable {
+contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -618,6 +619,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         external
         override
         whenNotPaused
+        nonReentrant
         returns (address[] memory validators)
     {
         Round storage r = rounds[jobId];
@@ -689,6 +691,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         public
         whenNotPaused
         override
+        nonReentrant
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -707,6 +710,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         public
         whenNotPaused
         override
+        nonReentrant
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -775,6 +779,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         public
         whenNotPaused
         override
+        nonReentrant
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -794,6 +799,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         public
         whenNotPaused
         override
+        nonReentrant
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -815,6 +821,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     )
         external
         whenNotPaused
+        nonReentrant
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -836,6 +843,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     )
         external
         whenNotPaused
+        nonReentrant
         requiresTaxAcknowledgement(
             _policy(),
             msg.sender,
@@ -848,7 +856,27 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @notice Tally revealed votes, apply slashing/rewards, and push result to JobRegistry.
-    function finalize(uint256 jobId) external override whenNotPaused returns (bool success) {
+    function finalize(uint256 jobId)
+        external
+        override
+        whenNotPaused
+        nonReentrant
+        returns (bool success)
+    {
+        return _finalize(jobId);
+    }
+
+    function finalizeValidation(uint256 jobId)
+        external
+        override
+        whenNotPaused
+        nonReentrant
+        returns (bool success)
+    {
+        return _finalize(jobId);
+    }
+
+    function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
         require(
@@ -921,18 +949,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         jobRegistry.onValidationResult(jobId, success, r.validators);
         return success;
-    }
-
-    /// @notice Alias for {finalize} using legacy naming.
-    /// @param jobId Identifier of the job.
-    /// @return success True if validators approved the job.
-    function finalizeValidation(uint256 jobId)
-        external
-        override
-        whenNotPaused
-        returns (bool success)
-    {
-        return this.finalize(jobId);
     }
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
