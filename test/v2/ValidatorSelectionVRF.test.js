@@ -4,6 +4,7 @@ const { ethers } = require("hardhat");
 describe("Validator selection VRF integration", function () {
   let owner, v1, v2, v3, v4, v5;
   let validation, stakeManager, jobRegistry, reputation, identity, vrf;
+  let jobStruct;
 
   beforeEach(async () => {
     [owner, v1, v2, v3, v4, v5] = await ethers.getSigners();
@@ -58,7 +59,7 @@ describe("Validator selection VRF integration", function () {
     await validation.setValidatorPool(validators.map((v) => v.address));
     await validation.setValidatorsPerJob(3);
 
-    const jobStruct = {
+    jobStruct = {
       employer: owner.address,
       agent: ethers.ZeroAddress,
       reward: 0,
@@ -100,5 +101,23 @@ describe("Validator selection VRF integration", function () {
 
   it("reverts on unknown VRF fulfillment", async () => {
     await expect(vrf.fulfill(999, 1)).to.be.revertedWith("unknown request");
+  });
+
+  it("changes selection with different VRF outputs", async () => {
+    await jobRegistry.setJob(2, jobStruct);
+
+    await validation.requestVRF(1);
+    const req1 = await validation.vrfRequestIds(1);
+    await vrf.fulfill(req1, 111);
+    await validation.selectValidators(1);
+    const sel1 = await validation.validators(1);
+
+    await validation.requestVRF(2);
+    const req2 = await validation.vrfRequestIds(2);
+    await vrf.fulfill(req2, 222);
+    await validation.selectValidators(2);
+    const sel2 = await validation.validators(2);
+
+    expect(sel2).to.not.deep.equal(sel1);
   });
 });
