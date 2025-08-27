@@ -466,7 +466,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     ///      no VRF provider is set, a pseudo-random seed is derived on-chain.
     ///      If VRF randomness has not yet been delivered, the call reverts with
     ///      "VRF pending".
-    function selectValidators(uint256 jobId) public override whenNotPaused returns (address[] memory selected) {
+    function selectValidators(uint256 jobId, uint256 entropy)
+        public
+        override
+        whenNotPaused
+        returns (address[] memory selected)
+    {
         Round storage r = rounds[jobId];
         // Ensure validators are only chosen once per round to prevent
         // re-selection or commit replay.
@@ -476,11 +481,24 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         require(address(identityRegistry) != address(0), "identity reg");
         uint256 seed;
         if (address(vrf) == address(0)) {
-            seed = _pseudoRandomSeed(jobId);
+            require(entropy != 0, "entropy");
+            seed = uint256(
+                keccak256(
+                    abi.encodePacked(
+                        jobId,
+                        entropy,
+                        block.prevrandao,
+                        blockhash(block.number - 1)
+                    )
+                )
+            );
         } else {
             seed = vrfRandomness[jobId];
             require(seed != 0, "VRF pending");
             delete vrfRandomness[jobId];
+            if (entropy != 0) {
+                seed = uint256(keccak256(abi.encodePacked(seed, entropy)));
+            }
         }
 
         uint256 n = validatorPool.length;
@@ -637,7 +655,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (size > maxValidators) size = maxValidators;
         if (size > n) size = n;
         r.committeeSize = size;
-        validators = selectValidators(jobId);
+        validators = selectValidators(jobId, 0);
     }
 
     /// @notice Internal commit logic shared by overloads.
@@ -985,24 +1003,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         );
         _cleanup(jobId);
         emit JobNonceReset(jobId);
-    }
-
-    /// @dev Generates a pseudo-random seed using job context and block entropy.
-    ///      Used only when no VRF provider is configured.
-    ///      Incorporates `block.prevrandao` and the previous block hash to make
-    ///      reorgs expensive.
-    /// @param jobId Identifier of the job.
-    /// @return seed Pseudo-random seed.
-    function _pseudoRandomSeed(uint256 jobId) internal view returns (uint256 seed) {
-        seed = uint256(
-            keccak256(
-                abi.encodePacked(
-                    jobId,
-                    block.prevrandao,
-                    blockhash(block.number - 1)
-                )
-            )
-        );
     }
 
     /// @dev Check whether an address is a selected validator for a job.

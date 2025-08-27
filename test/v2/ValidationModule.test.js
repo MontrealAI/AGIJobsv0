@@ -90,18 +90,39 @@ describe("ValidationModule V2", function () {
     await validation.requestVRF(jobId);
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
-    return validation.selectValidators(jobId);
+    return validation.selectValidators(jobId, 0);
   }
 
   it("selects validators without VRF provider", async () => {
     await validation.setVRF(ethers.ZeroAddress);
-    const tx = await validation.selectValidators(1);
+    await expect(validation.selectValidators(1, 0)).to.be.revertedWith("entropy");
+    const tx = await validation.selectValidators(1, 123);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     );
     const selected = event.args[1];
     expect(selected.length).to.equal(3);
+  });
+
+  it("changes selection with different entropy", async () => {
+    await validation.setVRF(ethers.ZeroAddress);
+    const jobStruct = {
+      employer: employer.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 3,
+      uriHash: ethers.ZeroHash,
+      resultHash: ethers.ZeroHash,
+    };
+    await jobRegistry.setJob(2, jobStruct);
+    const rec1 = await (await validation.selectValidators(1, 111)).wait();
+    const sel1 = rec1.logs.find((l) => l.fragment && l.fragment.name === "ValidatorsSelected").args[1];
+    const rec2 = await (await validation.selectValidators(2, 222)).wait();
+    const sel2 = rec2.logs.find((l) => l.fragment && l.fragment.name === "ValidatorsSelected").args[1];
+    expect(sel1).to.not.deep.equal(sel2);
   });
 
   it("reverts when stake manager is unset", async () => {
@@ -371,7 +392,7 @@ describe("ValidationModule V2", function () {
       .withArgs(await newJob.getAddress());
 
     await expect(
-      validation.selectValidators(1)
+      validation.selectValidators(1, 0)
     ).to.be.revertedWith("already selected");
 
     await validation.connect(owner).resetJobNonce(1);

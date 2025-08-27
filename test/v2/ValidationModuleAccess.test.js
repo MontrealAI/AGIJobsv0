@@ -88,7 +88,7 @@ describe("ValidationModule access controls", function () {
     await validation.requestVRF(jobId);
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
-    return validation.selectValidators(jobId);
+    return validation.selectValidators(jobId, 0);
   }
 
   it("rejects unauthorized validators", async () => {

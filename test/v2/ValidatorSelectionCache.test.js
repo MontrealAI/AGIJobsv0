@@ -57,7 +57,7 @@ describe("Validator selection cache", function () {
     await validation.requestVRF(jobId);
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
-    return validation.selectValidators(jobId);
+    return validation.selectValidators(jobId, 0);
   }
 
   it("skips repeat ENS checks and expires cache", async () => {

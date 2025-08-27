@@ -60,7 +60,7 @@ contract ValidatorSelectionFuzz is Test {
         validation.setValidatorPool(pool);
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(selectCount);
-        address[] memory selected = validation.selectValidators(1);
+        address[] memory selected = validation.selectValidators(1, 1);
         assertEq(selected.length, selectCount);
         for (uint256 i; i < selected.length; i++) {
             for (uint256 j = i + 1; j < selected.length; j++) {
@@ -93,7 +93,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory counts = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
-            address[] memory sel = validation.selectValidators(j + 1);
+            address[] memory sel = validation.selectValidators(j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 counts[index[sel[k]]] += 1;
             }
@@ -108,7 +108,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory countsRev = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
-            address[] memory sel = validation.selectValidators(iterations + j + 1);
+            address[] memory sel = validation.selectValidators(iterations + j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 countsRev[index[sel[k]]] += 1;
             }
@@ -146,7 +146,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory counts = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
-            address[] memory sel = validation.selectValidators(j + 1);
+            address[] memory sel = validation.selectValidators(j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 counts[index[sel[k]]] += 1;
             }

@@ -108,7 +108,7 @@ describe("Validator ENS integration", function () {
     let req = await validation.vrfRequestIds(1);
     await vrf.fulfill(req, 12345);
     await expect(
-      validation.selectValidators(1)
+      validation.selectValidators(1, 0)
     ).to.be.revertedWith("insufficient validators");
 
     await validation.setValidatorSubdomains([validator.address], ["v"]);
@@ -122,7 +122,7 @@ describe("Validator ENS integration", function () {
     await validation.requestVRF(2);
     req = await validation.vrfRequestIds(2);
     await vrf.fulfill(req, 99999);
-    await validation.selectValidators(2);
+    await validation.selectValidators(2, 0);
     await expect(
       validation
         .connect(validator)
@@ -183,7 +183,7 @@ describe("Validator ENS integration", function () {
     await validation.requestVRF(1);
     let req = await validation.vrfRequestIds(1);
     await vrf.fulfill(req, 11111);
-    await validation.selectValidators(1);
+    await validation.selectValidators(1, 0);
 
     // transfer ENS ownership
     await wrapper.setOwner(ethers.toBigInt(node), other.address);
@@ -241,7 +241,7 @@ describe("Validator ENS integration", function () {
     req = await validation.vrfRequestIds(1);
     await vrf.fulfill(req, 22222);
     await expect(
-      validation.selectValidators(1)
+      validation.selectValidators(1, 0)
     ).to.be.revertedWith("insufficient validators");
   });
 });

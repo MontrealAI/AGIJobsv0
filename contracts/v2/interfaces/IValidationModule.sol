@@ -25,10 +25,13 @@ interface IValidationModule {
         uint256 slashingPct
     );
 
-    /// @notice Select validators for a given job
-    /// @param jobId Identifier of the job
-    /// @return Array of selected validator addresses
-    function selectValidators(uint256 jobId) external returns (address[] memory);
+    /// @notice Select validators for a given job.
+    /// @param jobId Identifier of the job.
+    /// @param entropy Additional entropy supplied when VRF is unavailable.
+    /// @return Array of selected validator addresses.
+    function selectValidators(uint256 jobId, uint256 entropy)
+        external
+        returns (address[] memory);
 
     /// @notice Request a VRF random seed for a job's validator selection.
     /// @param jobId Identifier of the job

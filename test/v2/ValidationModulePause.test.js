@@ -44,7 +44,7 @@ describe("ValidationModule pause", function () {
 
   it("pauses validator selection", async () => {
     await validation.connect(owner).pause();
-    await expect(validation.selectValidators(1)).to.be.revertedWithCustomError(
+    await expect(validation.selectValidators(1, 0)).to.be.revertedWithCustomError(
       validation,
       "EnforcedPause"
     );
@@ -52,7 +52,7 @@ describe("ValidationModule pause", function () {
     await validation.requestVRF(1);
     const req = await validation.vrfRequestIds(1);
     await vrf.fulfill(req, 1);
-    const selected = await validation.selectValidators.staticCall(1);
+    const selected = await validation.selectValidators.staticCall(1, 0);
     expect(selected.length).to.equal(3);
     expect(selected).to.include(validator.address);
   });

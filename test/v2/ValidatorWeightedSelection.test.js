@@ -63,7 +63,7 @@ describe("Validator selection weighted by stake", function () {
     await validation.requestVRF(jobId);
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
-    await (await validation.selectValidators(jobId)).wait();
+    await (await validation.selectValidators(jobId, 0)).wait();
     return await validation.validators(jobId);
   }
 
