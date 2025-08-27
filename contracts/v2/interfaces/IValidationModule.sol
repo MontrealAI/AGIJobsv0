@@ -30,6 +30,10 @@ interface IValidationModule {
         uint256 approvalThreshold,
         uint256 slashingPct
     );
+    /// @notice Emitted after automation performs upkeep.
+    /// @param jobId Identifier of the job finalized.
+    /// @param success True if validation succeeded.
+    event UpkeepPerformed(uint256 indexed jobId, bool success);
 
     /// @notice Select validators for a given job.
     /// @param jobId Identifier of the job.
@@ -94,6 +98,19 @@ interface IValidationModule {
 
     /// @notice Alias for finalize using legacy naming.
     function finalizeValidation(uint256 jobId) external returns (bool success);
+
+    /// @notice Check if automation should finalize a job.
+    /// @param checkData ABI encoded jobId.
+    /// @return upkeepNeeded True if `performUpkeep` should be called.
+    /// @return performData Data to pass to `performUpkeep`.
+    function checkUpkeep(bytes calldata checkData)
+        external
+        view
+        returns (bool upkeepNeeded, bytes memory performData);
+
+    /// @notice Perform automated finalization.
+    /// @param performData ABI encoded jobId produced by `checkUpkeep`.
+    function performUpkeep(bytes calldata performData) external;
 
     /// @notice Batch update core validation parameters
     /// @param committeeSize Number of validators selected per job
