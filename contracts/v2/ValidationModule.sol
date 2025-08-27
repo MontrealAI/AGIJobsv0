@@ -224,6 +224,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function requestVRF(uint256 jobId)
         external
         whenNotPaused
+        nonReentrant
         returns (uint256 requestId)
     {
         require(address(vrf) != address(0), "vrf not set");

@@ -93,7 +93,44 @@ async function setup() {
   };
 }
 
+async function setupVRF() {
+  const [owner] = await ethers.getSigners();
+
+  const Validation = await ethers.getContractFactory(
+    "contracts/v2/ValidationModule.sol:ValidationModule"
+  );
+  const validation = await Validation.deploy(
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    60,
+    60,
+    3,
+    3,
+    []
+  );
+  await validation.waitForDeployment();
+
+  const VRF = await ethers.getContractFactory(
+    "contracts/v2/mocks/ReentrantVRF.sol:ReentrantVRF"
+  );
+  const vrf = await VRF.deploy();
+  await vrf.waitForDeployment();
+  await validation.setVRF(await vrf.getAddress());
+  await vrf.setValidationModule(await validation.getAddress());
+
+  return { validation, vrf };
+}
+
 describe("ValidationModule reentrancy", function () {
+  it("guards requestVRF against reentrancy", async () => {
+    const { validation, vrf } = await setupVRF();
+    await vrf.attackRequest(1);
+    await expect(validation.requestVRF(1)).to.be.revertedWithCustomError(
+      validation,
+      "ReentrancyGuardReentrantCall"
+    );
+  });
+
   it("guards commit against reentrancy", async () => {
     const { validator, validation, identity, prepare } = await setup();
     await prepare(1);
