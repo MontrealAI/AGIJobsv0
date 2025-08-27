@@ -97,6 +97,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     // cache successful agent authorizations
     mapping(address => bool) public agentAuthCache;
     mapping(address => uint256) public agentAuthExpiry;
+    mapping(address => uint256) public agentAuthVersion;
+    uint256 public agentAuthCacheVersion;
     uint256 public agentAuthCacheDuration = 1 days;
 
     /// @dev Reusable gate enforcing acknowledgement of the latest tax policy
@@ -363,6 +365,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setAgentMerkleRoot(bytes32 root) external onlyGovernance {
         require(address(identityRegistry) != address(0), "identity reg");
         identityRegistry.setAgentMerkleRoot(root);
+        unchecked {
+            agentAuthCacheVersion++;
+        }
         emit AgentMerkleRootUpdated(root);
     }
 
@@ -376,6 +381,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         agentAuthCache[agent] = authorized;
         agentAuthExpiry[agent] =
             authorized ? block.timestamp + agentAuthCacheDuration : 0;
+        agentAuthVersion[agent] = authorized ? agentAuthCacheVersion : 0;
         emit AgentAuthCacheUpdated(agent, authorized);
     }
 
@@ -675,7 +681,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         require(address(identityRegistry) != address(0), "identity reg");
         bool authorized =
             agentAuthCache[msg.sender] &&
-            agentAuthExpiry[msg.sender] > block.timestamp;
+            agentAuthExpiry[msg.sender] > block.timestamp &&
+            agentAuthVersion[msg.sender] == agentAuthCacheVersion;
         if (!authorized) {
             authorized = identityRegistry.verifyAgent(
                 msg.sender,
@@ -686,6 +693,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 agentAuthCache[msg.sender] = true;
                 agentAuthExpiry[msg.sender] =
                     block.timestamp + agentAuthCacheDuration;
+                agentAuthVersion[msg.sender] = agentAuthCacheVersion;
             }
         }
         require(authorized, "Not authorized agent");
