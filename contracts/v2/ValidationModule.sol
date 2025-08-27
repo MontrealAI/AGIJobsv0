@@ -232,6 +232,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 jobId = vrfRequestJob[requestId];
         require(jobId != 0, "unknown request");
         vrfRandomness[jobId] = randomWords[0];
+        delete vrfRequestIds[jobId];
+        delete vrfRequestJob[requestId];
         emit VRFFulfilled(jobId, requestId);
     }
 
@@ -464,11 +466,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             require(randomness != 0, "VRF pending");
             seed = randomness;
             delete vrfRandomness[jobId];
-            uint256 reqId = vrfRequestIds[jobId];
-            if (reqId != 0) {
-                delete vrfRequestIds[jobId];
-                delete vrfRequestJob[reqId];
-            }
         } else {
             jobNonce[jobId] += 1;
             seed = _fallbackSeed(jobId);
