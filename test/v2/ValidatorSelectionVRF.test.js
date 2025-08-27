@@ -77,13 +77,13 @@ describe("Validator selection VRF integration", function () {
     const reqId = await validation.vrfRequestIds(1);
     expect(reqId).to.not.equal(0n);
 
-    await expect(validation.selectValidators(1)).to.be.revertedWith(
+    await expect(validation.selectValidators(1, 0)).to.be.revertedWith(
       "VRF pending"
     );
 
     await vrf.fulfill(reqId, 12345);
 
-    await expect(validation.selectValidators(1)).to.emit(
+    await expect(validation.selectValidators(1, 0)).to.emit(
       validation,
       "ValidatorsSelected"
     );
@@ -94,7 +94,7 @@ describe("Validator selection VRF integration", function () {
   it("reverts when VRF request fails", async () => {
     await vrf.setFail(true);
     await expect(validation.requestVRF(1)).to.be.revertedWith("fail");
-    await expect(validation.selectValidators(1)).to.be.revertedWith(
+    await expect(validation.selectValidators(1, 0)).to.be.revertedWith(
       "VRF pending"
     );
   });
@@ -109,13 +109,13 @@ describe("Validator selection VRF integration", function () {
     await validation.requestVRF(1);
     const req1 = await validation.vrfRequestIds(1);
     await vrf.fulfill(req1, 111);
-    await validation.selectValidators(1);
+    await validation.selectValidators(1, 0);
     const sel1 = await validation.validators(1);
 
     await validation.requestVRF(2);
     const req2 = await validation.vrfRequestIds(2);
     await vrf.fulfill(req2, 222);
-    await validation.selectValidators(2);
+    await validation.selectValidators(2, 0);
     const sel2 = await validation.validators(2);
 
     expect(sel2).to.not.deep.equal(sel1);

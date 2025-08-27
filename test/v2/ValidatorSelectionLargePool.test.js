@@ -57,7 +57,7 @@ describe("Validator selection with large pool", function () {
       await validation.requestVRF(jobId);
       const req = await validation.vrfRequestIds(jobId);
       await vrf.fulfill(req, 12345);
-      const tx = await validation.selectValidators(jobId++);
+      const tx = await validation.selectValidators(jobId++, 0);
       const receipt = await tx.wait();
       console.log(`pool size ${poolSize}: ${receipt.gasUsed}`);
       expect(receipt.gasUsed).to.be.lt(6000000n);
@@ -84,7 +84,7 @@ describe("Validator selection with large pool", function () {
     await validation.requestVRF(1);
     const req = await validation.vrfRequestIds(1);
     await vrf.fulfill(req, 12345);
-    await expect(validation.selectValidators(1)).to.be.revertedWith("pool limit");
+    await expect(validation.selectValidators(1, 0)).to.be.revertedWith("pool limit");
   });
 });
 

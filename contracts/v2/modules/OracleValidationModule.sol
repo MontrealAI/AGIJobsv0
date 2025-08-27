@@ -52,7 +52,7 @@ contract OracleValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
-    function selectValidators(uint256)
+    function selectValidators(uint256, uint256)
         external
         pure
         override

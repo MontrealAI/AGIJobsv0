@@ -25,7 +25,7 @@ contract ValidationStub is IValidationModule {
         validatorList = vals;
     }
 
-    function selectValidators(uint256) public view override returns (address[] memory) {
+    function selectValidators(uint256, uint256) public view override returns (address[] memory) {
         return validatorList;
     }
 
@@ -34,7 +34,7 @@ contract ValidationStub is IValidationModule {
         string calldata,
         uint256 /*committeeSize*/
     ) external override returns (address[] memory validators) {
-        validators = selectValidators(jobId);
+        validators = selectValidators(jobId, 0);
     }
 
     function commitValidation(
