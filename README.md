@@ -44,7 +44,7 @@ Record each address during deployment. The defaults below assume the 6‑decimal
 | [`StakeManager`](contracts/v2/StakeManager.sol) | `setToken`, `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
 | [`JobRegistry`](contracts/v2/JobRegistry.sol) | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot` |
 | [`ValidationModule`](contracts/v2/ValidationModule.sol) | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry` |
-| [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol) | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot` |
+| [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol) | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setAgentProfileURI` |
 | [`DisputeModule`](contracts/v2/modules/DisputeModule.sol) | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
 | [`ReputationEngine`](contracts/v2/ReputationEngine.sol) | `setCaller`, `setWeights`, `blacklist`, `unblacklist` |
 | [`CertificateNFT`](contracts/v2/CertificateNFT.sol) | `setJobRegistry`, `setStakeManager`, `setBaseURI` |

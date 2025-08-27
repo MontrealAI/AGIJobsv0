@@ -51,5 +51,14 @@ interface IIdentityRegistry {
     function additionalAgents(address account) external view returns (bool);
     function additionalValidators(address account) external view returns (bool);
     function getAgentType(address agent) external view returns (AgentType);
+
+    // profile metadata
+    function setAgentProfileURI(address agent, string calldata uri) external;
+    function updateAgentProfile(
+        string calldata subdomain,
+        bytes32[] calldata proof,
+        string calldata uri
+    ) external;
+    function agentProfileURI(address agent) external view returns (string memory);
 }
 

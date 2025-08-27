@@ -28,6 +28,8 @@ contract IdentityRegistry is Ownable {
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
     mapping(address => AgentType) public agentType;
+    /// @notice Optional metadata URI describing agent capabilities.
+    mapping(address => string) public agentProfileURI;
 
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
@@ -39,6 +41,8 @@ contract IdentityRegistry is Ownable {
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
     event AgentTypeUpdated(address indexed agent, AgentType agentType);
+    /// @notice Emitted when an agent updates their profile metadata.
+    event AgentProfileUpdated(address indexed agent, string uri);
 
     constructor(
         IENS _ens,
@@ -139,6 +143,35 @@ contract IdentityRegistry is Ownable {
 
     function getAgentType(address agent) external view returns (AgentType) {
         return agentType[agent];
+    }
+
+    // ---------------------------------------------------------------------
+    // Agent profile metadata
+    // ---------------------------------------------------------------------
+
+    /// @notice Set or overwrite an agent's capability metadata URI.
+    /// @dev Restricted to governance/owner.
+    function setAgentProfileURI(address agent, string calldata uri) external onlyOwner {
+        require(agent != address(0), "agent");
+        agentProfileURI[agent] = uri;
+        emit AgentProfileUpdated(agent, uri);
+    }
+
+    /// @notice Allows an agent to update their own profile after proving identity.
+    /// @param subdomain ENS subdomain owned by the agent.
+    /// @param proof Merkle/ENS proof demonstrating control of the subdomain.
+    /// @param uri Metadata URI describing the agent's capabilities.
+    function updateAgentProfile(
+        string calldata subdomain,
+        bytes32[] calldata proof,
+        string calldata uri
+    ) external {
+        require(
+            this.isAuthorizedAgent(msg.sender, subdomain, proof),
+            "Not authorized agent"
+        );
+        agentProfileURI[msg.sender] = uri;
+        emit AgentProfileUpdated(msg.sender, uri);
     }
 
     // ---------------------------------------------------------------------

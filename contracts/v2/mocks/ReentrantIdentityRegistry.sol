@@ -56,6 +56,19 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         return true;
     }
 
+    // profile metadata - no-ops
+    function setAgentProfileURI(address, string calldata) external {}
+
+    function updateAgentProfile(
+        string calldata,
+        bytes32[] calldata,
+        string calldata
+    ) external {}
+
+    function agentProfileURI(address) external pure returns (string memory) {
+        return "";
+    }
+
     // owner configuration - no-ops
     function setENS(address) external {}
     function setNameWrapper(address) external {}
