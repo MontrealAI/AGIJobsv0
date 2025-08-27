@@ -77,6 +77,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 approvals;
         uint256 rejections;
         bool tallied;
+        uint256 committeeSize;
     }
 
     mapping(uint256 => Round) public rounds;
@@ -476,10 +477,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         uint256 start = seed % n;
 
+        uint256 size = r.committeeSize;
+        if (size == 0) {
+            size = validatorsPerJob;
+            r.committeeSize = size;
+        }
+
         // Benchmark (foundry, 100 validators):
         // baseline shuffle ~308k gas, reservoir sampling ~218k gas (~29% less)
-        selected = new address[](validatorsPerJob);
-        uint256[] memory stakes = new uint256[](validatorsPerJob);
+        selected = new address[](size);
+        uint256[] memory stakes = new uint256[](size);
         uint256 count;
         uint256 seen;
 
@@ -532,7 +539,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 ++seen;
             }
 
-            if (count < validatorsPerJob) {
+            if (count < size) {
                 selected[count] = candidate;
                 stakes[count] = stake;
                 unchecked {
@@ -540,7 +547,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             } else {
                 uint256 j = seed % seen;
-                if (j < validatorsPerJob) {
+                if (j < size) {
                     selected[j] = candidate;
                     stakes[j] = stake;
                 }
@@ -551,7 +558,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
-        require(count == validatorsPerJob, "insufficient validators");
+        require(count == size, "insufficient validators");
 
         for (uint256 i; i < count;) {
             validatorStakes[jobId][selected[i]] = stakes[i];
@@ -569,12 +576,25 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @inheritdoc IValidationModule
-    function start(uint256 jobId, string calldata /*data*/)
+    function start(
+        uint256 jobId,
+        string calldata /*data*/,
+        uint256 committeeSize
+    )
         external
         override
         whenNotPaused
         returns (address[] memory validators)
     {
+        Round storage r = rounds[jobId];
+        uint256 n = validatorPool.length;
+        require(n >= minValidators, "pool");
+        uint256 size = committeeSize;
+        if (size == 0) size = validatorsPerJob;
+        if (size < minValidators) size = minValidators;
+        if (size > maxValidators) size = maxValidators;
+        if (size > n) size = n;
+        r.committeeSize = size;
         validators = selectValidators(jobId);
     }
 
@@ -804,7 +824,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         );
 
         uint256 total = r.approvals + r.rejections;
-        bool quorum = r.participants.length >= validatorsPerJob;
+        uint256 size = r.committeeSize == 0
+            ? validatorsPerJob
+            : r.committeeSize;
+        bool quorum = r.participants.length >= size;
         uint256 approvalCount;
         for (uint256 i; i < r.validators.length;) {
             address v = r.validators[i];
