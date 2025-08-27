@@ -6,6 +6,11 @@ pragma solidity ^0.8.25;
 interface IValidationModule {
     /// @notice Module version for compatibility checks.
     function version() external view returns (uint256);
+
+    enum SelectionStrategy {
+        Rotating,
+        Reservoir
+    }
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
     event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
     event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);
@@ -17,6 +22,7 @@ interface IValidationModule {
     );
     event ValidationResult(uint256 indexed jobId, bool success);
     event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
+    event SelectionStrategyUpdated(SelectionStrategy strategy);
     event ParametersUpdated(
         uint256 committeeSize,
         uint256 commitWindow,
@@ -133,6 +139,9 @@ interface IValidationModule {
         address[] calldata accounts,
         string[] calldata subdomains
     ) external;
+
+    /// @notice Configure the validator sampling strategy.
+    function setSelectionStrategy(SelectionStrategy strategy) external;
 
     /// @notice Return validators selected for a job
     /// @param jobId Identifier of the job

@@ -170,5 +170,12 @@ contract NoValidationModule is IValidationModule, Ownable {
     {
         revert("no vrf");
     }
+
+    /// @inheritdoc IValidationModule
+    function setSelectionStrategy(IValidationModule.SelectionStrategy)
+        external
+        pure
+        override
+    {}
 }
 

@@ -55,6 +55,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public validatorPoolSampleSize = 100;
     // hard cap on validator pool size
     uint256 public maxValidatorPoolSize = type(uint256).max;
+
+    /// @notice Current strategy used for validator sampling.
+    IValidationModule.SelectionStrategy public selectionStrategy;
+
+    /// @notice Starting index for the rotating window strategy.
+    uint256 public validatorPoolRotation;
     // optional VRF provider for future randomness upgrades
     IVRFConsumer public vrf;
     // track VRF requests and delivered randomness
@@ -274,6 +280,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function setMaxValidatorPoolSize(uint256 size) external onlyOwner {
         maxValidatorPoolSize = size;
         emit MaxValidatorPoolSizeUpdated(size);
+    }
+
+    /// @notice Configure the validator sampling strategy.
+    /// @param strategy Sampling algorithm to employ when selecting validators.
+    function setSelectionStrategy(IValidationModule.SelectionStrategy strategy) external onlyOwner {
+        selectionStrategy = strategy;
+        emit SelectionStrategyUpdated(strategy);
     }
 
     /// @notice Update the duration for cached validator authorizations.
@@ -526,61 +539,140 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 candidateCount;
         uint256 totalStake;
 
-        uint256 start = seed % n;
-        for (uint256 i; i < n && candidateCount < sample;) {
-            uint256 idx = (start + i) % n;
-            address candidate = validatorPool[idx];
+        if (selectionStrategy == IValidationModule.SelectionStrategy.Rotating) {
+            uint256 start = validatorPoolRotation;
+            uint256 i;
+            for (; i < n && candidateCount < sample;) {
+                uint256 idx = (start + i) % n;
+                address candidate = validatorPool[idx];
 
-            uint256 stake = stakeManager.stakeOf(
-                candidate,
-                IStakeManager.Role.Validator
-            );
-            if (stake == 0) {
-                unchecked {
-                    ++i;
-                }
-                continue;
-            }
-
-            if (address(reputationEngine) != address(0)) {
-                if (reputationEngine.isBlacklisted(candidate)) {
+                uint256 stake = stakeManager.stakeOf(
+                    candidate,
+                    IStakeManager.Role.Validator
+                );
+                if (stake == 0) {
                     unchecked {
                         ++i;
                     }
                     continue;
                 }
-            }
 
-            bool authorized =
-                validatorAuthCache[candidate] &&
-                validatorAuthExpiry[candidate] > block.timestamp;
-            if (!authorized) {
-                string memory subdomain = validatorSubdomains[candidate];
-                bytes32[] memory proof;
-                authorized = identityRegistry.verifyValidator(
-                    candidate,
-                    subdomain,
-                    proof
-                );
-                if (authorized) {
-                    validatorAuthCache[candidate] = true;
-                    validatorAuthExpiry[candidate] =
-                        block.timestamp + validatorAuthCacheDuration;
+                if (address(reputationEngine) != address(0)) {
+                    if (reputationEngine.isBlacklisted(candidate)) {
+                        unchecked {
+                            ++i;
+                        }
+                        continue;
+                    }
+                }
+
+                bool authorized =
+                    validatorAuthCache[candidate] &&
+                    validatorAuthExpiry[candidate] > block.timestamp;
+                if (!authorized) {
+                    string memory subdomain = validatorSubdomains[candidate];
+                    bytes32[] memory proof;
+                    authorized = identityRegistry.verifyValidator(
+                        candidate,
+                        subdomain,
+                        proof
+                    );
+                    if (authorized) {
+                        validatorAuthCache[candidate] = true;
+                        validatorAuthExpiry[candidate] =
+                            block.timestamp + validatorAuthCacheDuration;
+                    }
+                }
+                if (!authorized) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+
+                candidates[candidateCount] = candidate;
+                candidateStakes[candidateCount] = stake;
+                totalStake += stake;
+                unchecked {
+                    ++candidateCount;
+                    ++i;
                 }
             }
-            if (!authorized) {
+            validatorPoolRotation = (start + i) % n;
+        } else {
+            uint256 eligible;
+            for (uint256 i; i < n;) {
+                address candidate = validatorPool[i];
+
+                uint256 stake = stakeManager.stakeOf(
+                    candidate,
+                    IStakeManager.Role.Validator
+                );
+                if (stake == 0) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+
+                if (address(reputationEngine) != address(0)) {
+                    if (reputationEngine.isBlacklisted(candidate)) {
+                        unchecked {
+                            ++i;
+                        }
+                        continue;
+                    }
+                }
+
+                bool authorized =
+                    validatorAuthCache[candidate] &&
+                    validatorAuthExpiry[candidate] > block.timestamp;
+                if (!authorized) {
+                    string memory subdomain = validatorSubdomains[candidate];
+                    bytes32[] memory proof;
+                    authorized = identityRegistry.verifyValidator(
+                        candidate,
+                        subdomain,
+                        proof
+                    );
+                    if (authorized) {
+                        validatorAuthCache[candidate] = true;
+                        validatorAuthExpiry[candidate] =
+                            block.timestamp + validatorAuthCacheDuration;
+                    }
+                }
+                if (!authorized) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+
+                unchecked {
+                    ++eligible;
+                }
+
+                if (candidateCount < sample) {
+                    candidates[candidateCount] = candidate;
+                    candidateStakes[candidateCount] = stake;
+                    totalStake += stake;
+                    unchecked {
+                        ++candidateCount;
+                    }
+                } else {
+                    seed = uint256(keccak256(abi.encodePacked(seed, i)));
+                    uint256 j = seed % eligible;
+                    if (j < sample) {
+                        totalStake =
+                            totalStake - candidateStakes[j] + stake;
+                        candidates[j] = candidate;
+                        candidateStakes[j] = stake;
+                    }
+                }
+
                 unchecked {
                     ++i;
                 }
-                continue;
-            }
-
-            candidates[candidateCount] = candidate;
-            candidateStakes[candidateCount] = stake;
-            totalStake += stake;
-            unchecked {
-                ++candidateCount;
-                ++i;
             }
         }
 
