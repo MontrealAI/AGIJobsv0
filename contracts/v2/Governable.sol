@@ -2,21 +2,21 @@
 pragma solidity ^0.8.25;
 
 /// @title Governable
-/// @notice Simple governance-controlled access mechanism compatible with TimelockController or multisig wallets.
+/// @notice Simple governance-controlled access mechanism where all privileged
+/// calls must come through a TimelockController. This enforces delayed
+/// execution and coordination via a timelock or multisig that inherits from
+/// OpenZeppelin's TimelockController.
 
-/// @dev Minimal interface implemented by timelock or multisig governance
-/// contracts. No specific functions are required as the interface merely
-/// serves as a type distinction from EOAs.
-interface IGovernance {}
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 
 abstract contract Governable {
-    IGovernance public governance;
+    TimelockController public governance;
 
     event GovernanceUpdated(address indexed newGovernance);
 
     constructor(address _governance) {
         require(_governance != address(0), "governance");
-        governance = IGovernance(_governance);
+        governance = TimelockController(payable(_governance));
     }
 
     modifier onlyGovernance() {
@@ -26,7 +26,7 @@ abstract contract Governable {
 
     function setGovernance(address _governance) public onlyGovernance {
         require(_governance != address(0), "governance");
-        governance = IGovernance(_governance);
+        governance = TimelockController(payable(_governance));
         emit GovernanceUpdated(_governance);
     }
 
