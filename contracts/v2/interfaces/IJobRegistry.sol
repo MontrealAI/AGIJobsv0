@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 /// @title IJobRegistry
 /// @notice Interface for orchestrating job lifecycles and module coordination
 interface IJobRegistry {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     enum Status {
         None,
         Created,

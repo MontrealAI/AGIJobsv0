@@ -15,6 +15,8 @@ import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
+import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -287,6 +289,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external onlyGovernance {
+        require(IDisputeModule(module).version() == 1, "Invalid dispute module");
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
@@ -294,6 +297,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
     function setValidationModule(address module) external onlyGovernance {
+        require(IValidationModule(module).version() == 1, "Invalid validation module");
         validationModule = IValidationModule(module);
         emit ValidationModuleUpdated(module);
     }
@@ -307,6 +311,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         onlyGovernance
     {
         require(_jobRegistry != address(0) && _disputeModule != address(0), "module");
+        require(IJobRegistry(_jobRegistry).version() == 1, "Invalid job registry");
+        require(IDisputeModule(_disputeModule).version() == 1, "Invalid dispute module");
         jobRegistry = _jobRegistry;
         disputeModule = _disputeModule;
         emit JobRegistryUpdated(_jobRegistry);
