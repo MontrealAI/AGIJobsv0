@@ -85,6 +85,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => bool)) public revealed;
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
+    mapping(uint256 => mapping(address => bool)) private _validatorLookup;
     mapping(uint256 => uint256) public jobNonce;
     uint256 private _selectionNonce;
     mapping(address => uint256) private _selectedNonce;
@@ -572,7 +573,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         require(count == size, "insufficient validators");
 
         for (uint256 i; i < count;) {
-            validatorStakes[jobId][selected[i]] = stakes[i];
+            address val = selected[i];
+            validatorStakes[jobId][val] = stakes[i];
+            _validatorLookup[jobId][val] = true;
             unchecked {
                 ++i;
             }
@@ -927,6 +930,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             delete revealed[jobId][val];
             delete votes[jobId][val];
             delete validatorStakes[jobId][val];
+            delete _validatorLookup[jobId][val];
             unchecked {
                 ++i;
             }
@@ -954,14 +958,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
-        address[] storage list = rounds[jobId].validators;
-        for (uint256 i; i < list.length;) {
-            if (list[i] == val) return true;
-            unchecked {
-                ++i;
-            }
-        }
-        return false;
+        return _validatorLookup[jobId][val];
     }
 
     /// @notice Confirms the contract and its owner can never accrue tax obligations.

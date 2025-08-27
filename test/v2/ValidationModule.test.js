@@ -275,6 +275,28 @@ describe("ValidationModule V2", function () {
     ).to.not.be.reverted;
   });
 
+  it("removes validators from lookup on nonce reset", async () => {
+    await validation.connect(owner).setValidatorBounds(1, 1);
+    await validation
+      .connect(owner)
+      .setValidatorPool([v1.address]);
+    await validation.selectValidators(1);
+    await validation.connect(owner).resetJobNonce(1);
+    await validation
+      .connect(owner)
+      .setValidatorPool([v2.address]);
+    await validation.selectValidators(1);
+    const nonce = await validation.jobNonce(1);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const commit = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt]
+    );
+    await expect(
+      validation.connect(v1).commitValidation(1, commit, "", [])
+    ).to.be.revertedWith("not validator");
+  });
+
   it("allows owner to reassign registry and stake manager", async () => {
     // select validators to create state for job 1
     await validation.selectValidators(1);
