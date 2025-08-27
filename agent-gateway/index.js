@@ -10,23 +10,38 @@ const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
 const VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS || '';
 const WALLET_KEYS = process.env.WALLET_KEYS || '';
 const PORT = process.env.PORT || 3000;
+const BOT_WALLET = process.env.BOT_WALLET || '';
 
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const walletManager = new WalletManager(WALLET_KEYS, provider);
+let automationWallet;
+if (BOT_WALLET) {
+  automationWallet = walletManager.get(BOT_WALLET);
+} else {
+  const [first] = walletManager.list();
+  if (first) automationWallet = walletManager.get(first);
+}
 
 // Minimal ABI for JobRegistry interactions
 const JOB_REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee)',
+  'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
-  'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external'
+  'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
+  'function cancelExpiredJob(uint256 jobId) external',
+  "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint64 deadline,uint64 assignedAt,uint8 state,bool success,bytes32 uriHash,bytes32 resultHash,uint8 agentTypes)",
+  'function expirationGracePeriod() view returns (uint256)'
 ];
 
 // Minimal ABI for ValidationModule interactions
 const VALIDATION_MODULE_ABI = [
   'function jobNonce(uint256 jobId) view returns (uint256)',
   'function commitValidation(uint256 jobId, bytes32 commitHash)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt)'
+  'function revealValidation(uint256 jobId, bool approve, bytes32 salt)',
+  'function finalize(uint256 jobId) external returns (bool)',
+  'function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,bool tallied,uint256 committeeSize)',
+  'event ValidatorsSelected(uint256 indexed jobId, address[] validators)'
 ];
 
 const registry = new ethers.Contract(JOB_REGISTRY_ADDRESS, JOB_REGISTRY_ABI, provider);
@@ -39,10 +54,69 @@ const jobs = new Map();
 const agents = new Map(); // id -> { url, wallet, ws }
 const commits = new Map(); // jobId -> { address -> {approve, salt} }
 const pendingJobs = new Map(); // id -> [job]
+const finalizeTimers = new Map();
+const expiryTimers = new Map();
 
 function queueJob(id, job) {
   if (!pendingJobs.has(id)) pendingJobs.set(id, []);
   pendingJobs.get(id).push(job);
+}
+
+async function scheduleExpiration(jobId) {
+  if (!automationWallet) return;
+  try {
+    const job = await registry.jobs(jobId);
+    const grace = await registry.expirationGracePeriod();
+    const deadline = Number(job.deadline) + Number(grace);
+    const delay = deadline - Math.floor(Date.now() / 1000);
+    if (delay <= 0) {
+      expireJob(jobId);
+    } else {
+      if (expiryTimers.has(jobId)) clearTimeout(expiryTimers.get(jobId));
+      expiryTimers.set(jobId, setTimeout(() => expireJob(jobId), delay * 1000));
+    }
+  } catch (err) {
+    console.error('scheduleExpiration error', err);
+  }
+}
+
+async function expireJob(jobId) {
+  if (!automationWallet) return;
+  try {
+    const tx = await registry.connect(automationWallet).cancelExpiredJob(jobId);
+    await tx.wait();
+    console.log('cancelExpired', jobId.toString(), tx.hash);
+  } catch (err) {
+    console.error('cancelExpired error', err);
+  }
+}
+
+async function scheduleFinalize(jobId) {
+  if (!validation || !automationWallet) return;
+  try {
+    const round = await validation.rounds(jobId);
+    const revealDeadline = Number(round[3] || round.revealDeadline);
+    const delay = revealDeadline - Math.floor(Date.now() / 1000);
+    if (delay <= 0) {
+      finalizeJob(jobId);
+    } else {
+      if (finalizeTimers.has(jobId)) clearTimeout(finalizeTimers.get(jobId));
+      finalizeTimers.set(jobId, setTimeout(() => finalizeJob(jobId), delay * 1000));
+    }
+  } catch (err) {
+    console.error('scheduleFinalize error', err);
+  }
+}
+
+async function finalizeJob(jobId) {
+  if (!validation || !automationWallet) return;
+  try {
+    const tx = await validation.connect(automationWallet).finalize(jobId);
+    await tx.wait();
+    console.log('validationFinalized', jobId.toString(), tx.hash);
+  } catch (err) {
+    console.error('finalize error', err);
+  }
 }
 
 // Listen for JobCreated events
@@ -59,7 +133,24 @@ registry.on('JobCreated', (jobId, employer, agentAddr, reward, stake, fee) => {
   broadcast({ type: 'JobCreated', job });
   dispatch(job);
   console.log('JobCreated', job);
+  scheduleExpiration(job.jobId);
 });
+
+registry.on('JobSubmitted', (jobId, worker, resultHash, resultURI) => {
+  const id = jobId.toString();
+  broadcast({ type: 'JobSubmitted', jobId: id, worker, resultHash, resultURI });
+  scheduleFinalize(id);
+  console.log('JobSubmitted', id);
+});
+
+if (validation) {
+  validation.on('ValidatorsSelected', (jobId, validators) => {
+    const id = jobId.toString();
+    broadcast({ type: 'ValidationStarted', jobId: id, validators });
+    scheduleFinalize(id);
+    console.log('ValidationStarted', id);
+  });
+}
 
 // Express app setup
 const app = express();
