@@ -124,22 +124,9 @@ describe("ValidationModule reentrancy", function () {
   });
 
   it("guards finalize against reentrancy", async () => {
-    const { validator, validation, stakeManager, prepare } = await setup();
+    const { validation, stakeManager, prepare } = await setup();
     await prepare(1);
-    const salt = ethers.keccak256(ethers.toUtf8Bytes("s"));
-    const nonce = await validation.jobNonce(1);
-    const commitHash = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
-    await validation
-      .connect(validator)
-      .commitValidation(1, commitHash, "", []);
-    await advance(61);
-    await validation
-      .connect(validator)
-      .revealValidation(1, true, salt, "", []);
-    await advance(61);
+    await advance(121);
     await stakeManager.attackFinalize(1);
     await expect(validation.finalize(1)).to.be.revertedWithCustomError(
       validation,

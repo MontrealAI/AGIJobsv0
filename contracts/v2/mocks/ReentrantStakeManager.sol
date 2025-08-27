@@ -82,9 +82,14 @@ contract ReentrantStakeManager is IStakeManager {
     function slash(address user, Role role, uint256 amount, address) external override {
         if (attackSlash) {
             attackSlash = false;
-            address(validation).call(
+            (bool ok, bytes memory err) = address(validation).call(
                 abi.encodeWithSelector(IValidationModule.finalize.selector, attackJobId)
             );
+            if (!ok) {
+                assembly {
+                    revert(add(err, 0x20), mload(err))
+                }
+            }
         }
         uint256 st = _stakes[user][role];
         require(st >= amount, "stake");
@@ -95,9 +100,14 @@ contract ReentrantStakeManager is IStakeManager {
     function slash(address user, uint256 amount, address) external override {
         if (attackSlash) {
             attackSlash = false;
-            address(validation).call(
+            (bool ok, bytes memory err) = address(validation).call(
                 abi.encodeWithSelector(IValidationModule.finalize.selector, attackJobId)
             );
+            if (!ok) {
+                assembly {
+                    revert(add(err, 0x20), mload(err))
+                }
+            }
         }
         uint256 st = _stakes[user][Role.Validator];
         require(st >= amount, "stake");
