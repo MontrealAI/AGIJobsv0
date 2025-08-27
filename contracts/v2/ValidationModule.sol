@@ -59,7 +59,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     // track VRF requests and delivered randomness
     mapping(uint256 => uint256) public vrfRequestIds; // jobId => requestId
     mapping(uint256 => uint256) public vrfRequestJob; // requestId => jobId
-    mapping(uint256 => uint256) public vrfRandomness; // jobId => random word
+    mapping(uint256 => uint256) public vrfRandomness; // jobId => first random word
 
     // optional override for validators without ENS identity
     mapping(address => string) public validatorSubdomains;
@@ -226,12 +226,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Callback for VRF providers to supply randomness.
     /// @param requestId Identifier previously returned by the VRF provider.
-    /// @param randomness Random word associated with the request.
-    function fulfillRandomWords(uint256 requestId, uint256 randomness) external {
+    /// @param randomWords Array of random words associated with the request.
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
         require(msg.sender == address(vrf), "not vrf");
         uint256 jobId = vrfRequestJob[requestId];
         require(jobId != 0, "unknown request");
-        vrfRandomness[jobId] = randomness;
+        vrfRandomness[jobId] = randomWords[0];
         emit VRFFulfilled(jobId, requestId);
     }
 
@@ -475,10 +475,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         require(n > 0, "no validators");
         require(n <= maxValidatorPoolSize, "pool limit");
         require(address(stakeManager) != address(0), "stake manager");
-        uint256 sample = validatorPoolSampleSize;
-        if (sample > n) sample = n;
 
-        uint256 start = seed % n;
+        uint256 sample = validatorPoolSampleSize;
 
         uint256 size = r.committeeSize;
         if (size == 0) {
@@ -486,16 +484,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             r.committeeSize = size;
         }
 
-        // Benchmark (foundry, 100 validators):
-        // baseline shuffle ~308k gas, reservoir sampling ~218k gas (~29% less)
         selected = new address[](size);
         uint256[] memory stakes = new uint256[](size);
         uint256 count;
-        uint256 seen;
 
-        for (uint256 i; i < sample;) {
-            address candidate = validatorPool[(start + i) % n];
-            seed = uint256(keccak256(abi.encodePacked(seed, candidate)));
+        for (uint256 i; i < sample && count < size;) {
+            seed = uint256(keccak256(abi.encodePacked(seed, i)));
+            address candidate = validatorPool[seed % n];
+
             uint256 stake = stakeManager.stakeOf(
                 candidate,
                 IStakeManager.Role.Validator
@@ -506,6 +502,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
                 continue;
             }
+
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) {
                     unchecked {
@@ -514,6 +511,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     continue;
                 }
             }
+
             bool authorized =
                 validatorAuthCache[candidate] &&
                 validatorAuthExpiry[candidate] > block.timestamp;
@@ -538,25 +536,27 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 continue;
             }
 
-            unchecked {
-                ++seen;
-            }
-
-            if (count < size) {
-                selected[count] = candidate;
-                stakes[count] = stake;
+            bool duplicate;
+            for (uint256 j; j < count;) {
+                if (selected[j] == candidate) {
+                    duplicate = true;
+                    break;
+                }
                 unchecked {
-                    ++count;
-                }
-            } else {
-                uint256 j = seed % seen;
-                if (j < size) {
-                    selected[j] = candidate;
-                    stakes[j] = stake;
+                    ++j;
                 }
             }
+            if (duplicate) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
 
+            selected[count] = candidate;
+            stakes[count] = stake;
             unchecked {
+                ++count;
                 ++i;
             }
         }
