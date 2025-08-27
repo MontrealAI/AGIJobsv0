@@ -107,6 +107,11 @@ describe("ValidationModule V2", function () {
 
   it("changes selection with different entropy", async () => {
     await validation.setVRF(ethers.ZeroAddress);
+    await validation
+      .connect(owner)
+      .setSelectionStrategy(
+        1
+      );
     const jobStruct = {
       employer: employer.address,
       agent: ethers.ZeroAddress,
