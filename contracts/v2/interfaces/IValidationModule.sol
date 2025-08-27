@@ -38,10 +38,13 @@ interface IValidationModule {
     /// @notice Start validation for a job and select validators
     /// @param jobId Identifier of the job
     /// @param data Arbitrary data associated with the submission
+    /// @param committeeSize Desired number of validators for this job
     /// @return validators Array of selected validator addresses
-    function start(uint256 jobId, string calldata data)
-        external
-        returns (address[] memory validators);
+    function start(
+        uint256 jobId,
+        string calldata data,
+        uint256 committeeSize
+    ) external returns (address[] memory validators);
 
     /// @notice Commit a validation hash for a job
     /// @param jobId Identifier of the job being voted on

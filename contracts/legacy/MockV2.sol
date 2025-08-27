@@ -297,7 +297,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         job.status = Status.Submitted;
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);
         if (validationModule != address(0)) {
-            IValidationModule(validationModule).start(jobId, resultURI);
+            IValidationModule(validationModule).start(jobId, resultURI, 0);
         }
     }
 

@@ -797,7 +797,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.state = State.Submitted;
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);
         if (address(validationModule) != address(0)) {
-            validationModule.start(jobId, resultURI);
+            validationModule.start(jobId, resultURI, 0);
         }
     }
 

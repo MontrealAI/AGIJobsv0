@@ -6,7 +6,7 @@ Manages commit‑reveal voting for submitted jobs.
 - `setValidatorPool(address[] newPool)` – owner sets initial validator set.
 - `setJobRegistry(address registry)` / `setStakeManager(address manager)` – wire core modules.
 - `setCommitRevealWindows(uint256 commitDur, uint256 revealDur)` – configure timing.
-- `setValidatorBounds(uint256 minVals, uint256 maxVals)` / `setValidatorsPerJob(uint256 count)` – set validator counts.
+- `setValidatorBounds(uint256 minVals, uint256 maxVals)` / `setValidatorsPerJob(uint256 count)` – configure validator bounds and default committee size.
 - `setValidatorSlashingPct(uint256 pct)` / `setApprovalThreshold(uint256 pct)` / `setRequiredValidatorApprovals(uint256 count)` – configure slashing and thresholds.
 - `requestVRF(uint256 jobId)` – request randomness for validator selection.
 - `selectValidators(uint256 jobId)` – pick validators once randomness is fulfilled.
