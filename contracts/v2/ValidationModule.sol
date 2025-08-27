@@ -107,6 +107,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event JobNonceReset(uint256 indexed jobId);
     event ValidatorPoolSampleSizeUpdated(uint256 size);
     event MaxValidatorPoolSizeUpdated(uint256 size);
+    event ValidatorAuthCacheDurationUpdated(uint256 duration);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -268,6 +269,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function setMaxValidatorPoolSize(uint256 size) external onlyOwner {
         maxValidatorPoolSize = size;
         emit MaxValidatorPoolSizeUpdated(size);
+    }
+
+    /// @notice Update the duration for cached validator authorizations.
+    /// @param duration Seconds an authorization remains valid in cache.
+    function setValidatorAuthCacheDuration(uint256 duration) external onlyOwner {
+        validatorAuthCacheDuration = duration;
+        emit ValidatorAuthCacheDurationUpdated(duration);
     }
 
     /// @notice Batch update core validation parameters.
