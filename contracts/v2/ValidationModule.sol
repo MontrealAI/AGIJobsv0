@@ -86,6 +86,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => bool)) public votes;
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
     mapping(uint256 => uint256) public jobNonce;
+    uint256 private _selectionNonce;
+    mapping(address => uint256) private _selectedNonce;
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
@@ -495,34 +497,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         require(sample >= size, "sample too small");
 
-        // Build contiguous window starting from a pseudo-random offset.
-        uint256 start = seed % n;
-        uint256[] memory subset = new uint256[](sample);
-        for (uint256 i; i < sample;) {
-            unchecked {
-                subset[i] = (start + i) % n;
-                ++i;
-            }
-        }
-
-        // Fisher–Yates shuffle on the window for uniform ordering.
-        for (uint256 i = sample; i > 1;) {
-            unchecked {
-                seed = uint256(keccak256(abi.encodePacked(seed, i)));
-                uint256 j = seed % i;
-                uint256 tmp = subset[i - 1];
-                subset[i - 1] = subset[j];
-                subset[j] = tmp;
-                --i;
-            }
-        }
-
         selected = new address[](size);
         uint256[] memory stakes = new uint256[](size);
         uint256 count;
+        _selectionNonce += 1;
+        uint256 maxAttempts = sample * 10;
 
-        for (uint256 i; i < sample && count < size;) {
-            address candidate = validatorPool[subset[i]];
+        for (uint256 attempts; count < size && attempts < maxAttempts; ) {
+            seed = uint256(keccak256(abi.encodePacked(seed, attempts)));
+            uint256 idx = seed % n;
+            address candidate = validatorPool[idx];
 
             uint256 stake = stakeManager.stakeOf(
                 candidate,
@@ -530,7 +514,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             );
             if (stake == 0) {
                 unchecked {
-                    ++i;
+                    ++attempts;
                 }
                 continue;
             }
@@ -538,7 +522,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) {
                     unchecked {
-                        ++i;
+                        ++attempts;
                     }
                     continue;
                 }
@@ -563,33 +547,25 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
             if (!authorized) {
                 unchecked {
-                    ++i;
+                    ++attempts;
                 }
                 continue;
             }
 
-            bool duplicate;
-            for (uint256 j; j < count;) {
-                if (selected[j] == candidate) {
-                    duplicate = true;
-                    break;
-                }
+            if (_selectedNonce[candidate] == _selectionNonce) {
                 unchecked {
-                    ++j;
-                }
-            }
-            if (duplicate) {
-                unchecked {
-                    ++i;
+                    ++attempts;
                 }
                 continue;
             }
+
+            _selectedNonce[candidate] = _selectionNonce;
 
             selected[count] = candidate;
             stakes[count] = stake;
             unchecked {
                 ++count;
-                ++i;
+                ++attempts;
             }
         }
 
