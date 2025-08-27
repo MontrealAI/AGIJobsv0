@@ -97,4 +97,8 @@ describe("Validator selection VRF integration", function () {
       "VRF pending"
     );
   });
+
+  it("reverts on unknown VRF fulfillment", async () => {
+    await expect(vrf.fulfill(999, 1)).to.be.revertedWith("unknown request");
+  });
 });

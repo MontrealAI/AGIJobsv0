@@ -22,11 +22,13 @@ contract VRFMock is IVRFConsumer {
     function fulfill(uint256 requestId, uint256 randomness) external {
         address consumer = consumers[requestId];
         require(consumer != address(0), "unknown request");
+        uint256[] memory words = new uint256[](1);
+        words[0] = randomness;
         (bool ok, ) = consumer.call(
             abi.encodeWithSignature(
-                "fulfillRandomWords(uint256,uint256)",
+                "fulfillRandomWords(uint256,uint256[])",
                 requestId,
-                randomness
+                words
             )
         );
         require(ok, "callback failed");

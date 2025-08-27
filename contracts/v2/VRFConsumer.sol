@@ -7,10 +7,11 @@ import {IVRF} from "./interfaces/IVRF.sol";
 import {ValidationModule} from "./ValidationModule.sol";
 
 /// @title VRFConsumer
-/// @notice Bridges Chainlink VRF responses to the ValidationModule.
-/// @dev This contract wraps the Chainlink VRF coordinator. The ValidationModule
-///      requests randomness via {requestRandomWords}. When fulfilled, the random
-///      word is forwarded to the ValidationModule's {fulfillRandomWords}.
+    /// @notice Bridges Chainlink VRF responses to the ValidationModule.
+    /// @dev This contract wraps the Chainlink VRF coordinator. The ValidationModule
+    ///      requests randomness via {requestRandomWords}. When fulfilled, the
+    ///      random words are forwarded to the ValidationModule's
+    ///      {fulfillRandomWords}.
 contract VRFConsumer is IVRFConsumer, Ownable {
     IVRF public immutable coordinator;
     ValidationModule public validation;
@@ -70,6 +71,6 @@ contract VRFConsumer is IVRFConsumer, Ownable {
     /// @notice Called by the VRF coordinator with the randomness result.
     function rawFulfillRandomWords(uint256 requestId, uint256[] memory randomWords) external {
         require(msg.sender == address(coordinator), "only coord");
-        validation.fulfillRandomWords(requestId, randomWords[0]);
+        validation.fulfillRandomWords(requestId, randomWords);
     }
 }
