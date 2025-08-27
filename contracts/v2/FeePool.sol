@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -13,7 +14,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @dev All token amounts use 6 decimals. Uses an accumulator scaled by 1e12
 ///      to avoid precision loss when dividing fees by total stake.
 
-contract FeePool is Ownable {
+contract FeePool is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
@@ -240,6 +241,14 @@ contract FeePool is Ownable {
     /// @notice Confirms the contract and its owner can never incur tax liability.
     function isTaxExempt() external pure returns (bool) {
         return true;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /// @dev Reject direct ETH transfers to keep the contract tax neutral.

@@ -33,13 +33,13 @@ describe("SystemPause", function () {
       stakeAddr,
       registryAddr,
       validationAddr,
-      ,
+      reputationAddr,
       disputeAddr,
       ,
+      platformRegistryAddr,
       ,
       ,
-      ,
-      ,
+      feePoolAddr,
       ,
       ,
       systemPauseAddr,
@@ -56,6 +56,15 @@ describe("SystemPause", function () {
     const DisputeModule = await ethers.getContractFactory(
       "contracts/v2/modules/DisputeModule.sol:DisputeModule"
     );
+    const ReputationEngine = await ethers.getContractFactory(
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    );
+    const PlatformRegistry = await ethers.getContractFactory(
+      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+    );
+    const FeePool = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
     const SystemPause = await ethers.getContractFactory(
       "contracts/v2/SystemPause.sol:SystemPause"
     );
@@ -63,12 +72,18 @@ describe("SystemPause", function () {
     const registry = JobRegistry.attach(registryAddr);
     const validation = ValidationModule.attach(validationAddr);
     const dispute = DisputeModule.attach(disputeAddr);
+    const reputation = ReputationEngine.attach(reputationAddr);
+    const platformRegistry = PlatformRegistry.attach(platformRegistryAddr);
+    const feePool = FeePool.attach(feePoolAddr);
     const pause = SystemPause.attach(systemPauseAddr);
 
     expect(await stake.paused()).to.equal(false);
     expect(await registry.paused()).to.equal(false);
     expect(await validation.paused()).to.equal(false);
     expect(await dispute.paused()).to.equal(false);
+    expect(await platformRegistry.paused()).to.equal(false);
+    expect(await feePool.paused()).to.equal(false);
+    expect(await reputation.paused()).to.equal(false);
 
     await pause.connect(owner).pauseAll();
 
@@ -76,6 +91,9 @@ describe("SystemPause", function () {
     expect(await registry.paused()).to.equal(true);
     expect(await validation.paused()).to.equal(true);
     expect(await dispute.paused()).to.equal(true);
+    expect(await platformRegistry.paused()).to.equal(true);
+    expect(await feePool.paused()).to.equal(true);
+    expect(await reputation.paused()).to.equal(true);
 
     await pause.connect(owner).unpauseAll();
 
@@ -83,6 +101,9 @@ describe("SystemPause", function () {
     expect(await registry.paused()).to.equal(false);
     expect(await validation.paused()).to.equal(false);
     expect(await dispute.paused()).to.equal(false);
+    expect(await platformRegistry.paused()).to.equal(false);
+    expect(await feePool.paused()).to.equal(false);
+    expect(await reputation.paused()).to.equal(false);
   });
 });
 

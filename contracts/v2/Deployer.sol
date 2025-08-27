@@ -397,6 +397,9 @@ contract Deployer is Ownable {
             stake,
             validation,
             dispute,
+            pRegistry,
+            pool,
+            reputation,
             owner_
         );
         // hand over governance to SystemPause
@@ -405,13 +408,13 @@ contract Deployer is Ownable {
 
         // Transfer ownership
         validation.transferOwnership(address(pause));
-        reputation.transferOwnership(owner_);
+        reputation.transferOwnership(address(pause));
         dispute.transferOwnership(address(pause));
         certificate.transferOwnership(owner_);
-        pRegistry.transferOwnership(owner_);
+        pRegistry.transferOwnership(address(pause));
         router.transferOwnership(owner_);
         incentives.transferOwnership(owner_);
-        pool.transferOwnership(owner_);
+        pool.transferOwnership(address(pause));
         if (address(policy) != address(0)) {
             policy.transferOwnership(owner_);
         }
