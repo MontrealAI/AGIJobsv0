@@ -41,10 +41,7 @@ describe("Validator selection cache", function () {
     }
     await validation.setValidatorPool(validators);
     await validation.setValidatorsPerJob(3);
-    // Allow extra sampling to account for potential duplicates when hashing
-    // into the validator pool. This avoids rare "insufficient validators"
-    // reverts when the pseudo-random sequence selects the same validator more
-    // than once.
+    // Sample a fixed window for shuffle-based selection.
     await validation.setValidatorPoolSampleSize(10);
   });
 

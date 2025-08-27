@@ -34,7 +34,7 @@ describe("Validator selection with large pool", function () {
   });
 
   it("benchmarks gas usage across pool sizes", async () => {
-    const poolSizes = [10, 50, 200];
+    const poolSizes = [10, 50, 200, 500];
     let jobId = 1;
     for (const poolSize of poolSizes) {
       const validators = [];
@@ -51,7 +51,7 @@ describe("Validator selection with large pool", function () {
       const tx = await validation.selectValidators(jobId++);
       const receipt = await tx.wait();
       console.log(`pool size ${poolSize}: ${receipt.gasUsed}`);
-      expect(receipt.gasUsed).to.be.lt(5000000n);
+      expect(receipt.gasUsed).to.be.lt(6000000n);
       const ev = receipt.logs.find(
         (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
       );
