@@ -150,7 +150,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
-        validatorsPerJob = maxValidators;
+        validatorsPerJob = minValidators;
         emit ValidatorsPerJobUpdated(validatorsPerJob);
 
         emit ApprovalThresholdUpdated(approvalThreshold);
@@ -376,17 +376,20 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (minVals == maxVals) {
             validatorsPerJob = minVals;
             emit ValidatorsPerJobUpdated(minVals);
+        } else if (validatorsPerJob < minVals) {
+            validatorsPerJob = minVals;
+            emit ValidatorsPerJobUpdated(minVals);
+        } else if (validatorsPerJob > maxVals) {
+            validatorsPerJob = maxVals;
+            emit ValidatorsPerJobUpdated(maxVals);
         }
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
     /// @notice Set number of validators selected per job.
     function setValidatorsPerJob(uint256 count) external override onlyOwner {
-        require(count > 0, "count");
-        minValidators = count;
-        maxValidators = count;
+        require(count >= minValidators && count <= maxValidators, "bounds");
         validatorsPerJob = count;
-        emit ValidatorBoundsUpdated(count, count);
         emit ValidatorsPerJobUpdated(count);
     }
 
