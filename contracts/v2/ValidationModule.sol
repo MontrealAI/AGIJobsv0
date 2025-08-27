@@ -462,7 +462,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @inheritdoc IValidationModule
     /// @dev When a VRF provider is configured, callers must invoke {requestVRF}
     ///      and wait for {fulfillRandomWords} before calling this function. If
-    ///      randomness has not yet been delivered, the call reverts with
+    ///      no VRF provider is set, a pseudo-random seed is derived on-chain.
+    ///      If VRF randomness has not yet been delivered, the call reverts with
     ///      "VRF pending".
     function selectValidators(uint256 jobId) public override whenNotPaused returns (address[] memory selected) {
         Round storage r = rounds[jobId];
@@ -472,10 +473,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        require(address(vrf) != address(0), "vrf not set");
-        uint256 seed = vrfRandomness[jobId];
-        require(seed != 0, "VRF pending");
-        delete vrfRandomness[jobId];
+        uint256 seed;
+        if (address(vrf) == address(0)) {
+            seed = _pseudoRandomSeed(jobId);
+        } else {
+            seed = vrfRandomness[jobId];
+            require(seed != 0, "VRF pending");
+            delete vrfRandomness[jobId];
+        }
 
         uint256 n = validatorPool.length;
         require(n > 0, "insufficient validators");
@@ -979,6 +984,25 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @dev Generates a pseudo-random seed using job context and block entropy.
     ///      Used only when no VRF provider is configured.
     ///      Incorporates `block.prevrandao` and the previous block hash to make
+    ///      reorgs expensive.
+    /// @param jobId Identifier of the job.
+    /// @return seed Pseudo-random seed.
+    function _pseudoRandomSeed(uint256 jobId) internal view returns (uint256 seed) {
+        seed = uint256(
+            keccak256(
+                abi.encodePacked(
+                    jobId,
+                    block.prevrandao,
+                    blockhash(block.number - 1)
+                )
+            )
+        );
+    }
+
+    /// @dev Check whether an address is a selected validator for a job.
+    /// @param jobId Identifier of the job.
+    /// @param val Validator address to check.
+    /// @return True if the address is a validator for the job.
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
         return _validatorLookup[jobId][val];
     }
