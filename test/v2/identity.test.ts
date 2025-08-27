@@ -1,5 +1,6 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import hre from "hardhat";
+const { ethers } = hre;
 
 // Tests for ENS ownership verification through IdentityRegistry
 
@@ -35,8 +36,12 @@ describe("IdentityRegistry ENS verification", function () {
     );
     await wrapper.setOwner(BigInt(subnode), alice.address);
 
-    expect(await id.verifyAgent(alice.address, subdomain, [])).to.equal(true);
-    expect(await id.verifyAgent(bob.address, subdomain, [])).to.equal(false);
+    expect(
+      await id.verifyAgent.staticCall(alice.address, subdomain, [])
+    ).to.equal(true);
+    expect(
+      await id.verifyAgent.staticCall(bob.address, subdomain, [])
+    ).to.equal(false);
   });
 
   it("supports merkle proofs and resolver fallback", async () => {
@@ -72,7 +77,9 @@ describe("IdentityRegistry ENS verification", function () {
       "address",
     ], [validator.address]);
     await id.setValidatorMerkleRoot(leaf);
-    expect(await id.verifyValidator(validator.address, "", [])).to.equal(true);
+    expect(
+      await id.verifyValidator.staticCall(validator.address, "", [])
+    ).to.equal(true);
 
     // agent verified via resolver fallback
     const label = "agent";
@@ -84,7 +91,9 @@ describe("IdentityRegistry ENS verification", function () {
     );
     await ens.setResolver(node, await resolver.getAddress());
     await resolver.setAddr(node, agent.address);
-    expect(await id.verifyAgent(agent.address, label, [])).to.equal(true);
+    expect(await id.verifyAgent.staticCall(agent.address, label, [])).to.equal(
+      true
+    );
   });
 
   it("respects allowlists and blacklists", async () => {
@@ -114,11 +123,56 @@ describe("IdentityRegistry ENS verification", function () {
 
     // blacklist blocks verification even if allowlisted
     await rep.blacklist(alice.address, true);
-    expect(await id.verifyAgent(alice.address, "", [])).to.equal(false);
+    expect(await id.verifyAgent.staticCall(alice.address, "", [])).to.equal(
+      false
+    );
     await rep.blacklist(alice.address, false);
 
     // additional allowlist bypasses ENS requirements
     await id.addAdditionalAgent(alice.address);
-    expect(await id.verifyAgent(alice.address, "", [])).to.equal(true);
+    expect(await id.verifyAgent.staticCall(alice.address, "", [])).to.equal(
+      true
+    );
+  });
+
+  it("allows governance and agents to set capability profiles", async () => {
+    const [owner, alice] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory("MockENS");
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory("MockNameWrapper");
+    const wrapper = await Wrapper.deploy();
+
+    const Rep = await ethers.getContractFactory(
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    );
+    const rep = await Rep.deploy(ethers.ZeroAddress);
+
+    const Registry = await ethers.getContractFactory(
+      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
+    );
+    const id = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      await rep.getAddress(),
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
+
+    // owner sets profile for alice
+    await expect(
+      id.connect(owner).setAgentProfileURI(alice.address, "ipfs://cap1")
+    )
+      .to.emit(id, "AgentProfileUpdated")
+      .withArgs(alice.address, "ipfs://cap1");
+    expect(await id.agentProfileURI(alice.address)).to.equal("ipfs://cap1");
+
+    // allow alice as additional agent then self-update profile
+    await id.addAdditionalAgent(alice.address);
+    await id
+      .connect(alice)
+      .updateAgentProfile("sub", [], "ipfs://cap2");
+    expect(await id.agentProfileURI(alice.address)).to.equal("ipfs://cap2");
   });
 });

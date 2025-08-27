@@ -1,6 +1,7 @@
 # IdentityRegistry API
 
 Validates ENS ownership and Merkle proofs for agents and validators.
+Maintains optional metadata URIs describing each agent's capabilities.
 
 ## Functions
 - `setENS(address ens)` / `setNameWrapper(address wrapper)` – configure ENS contracts.
@@ -8,6 +9,8 @@ Validates ENS ownership and Merkle proofs for agents and validators.
 - `setAgentRootNode(bytes32 node)` / `setClubRootNode(bytes32 node)` – base ENS nodes for agents and validators.
 - `setAgentMerkleRoot(bytes32 root)` / `setValidatorMerkleRoot(bytes32 root)` – load allowlists.
 - `addAdditionalAgent(address agent)` / `addAdditionalValidator(address validator)` – manual overrides.
+- `setAgentProfileURI(address agent, string uri)` – governance-set capability profile for an agent.
+- `updateAgentProfile(string subdomain, bytes32[] proof, string uri)` – agent updates their own profile after proving control of `subdomain`.
 - `isAuthorizedAgent(address account, bytes32 label, bytes32[] proof)` – check agent eligibility.
 - `isAuthorizedValidator(address account, bytes32 label, bytes32[] proof)` – check validator eligibility.
 - `verifyAgent(bytes32 label, bytes32[] proof, address account)` – external verification helper.
@@ -20,3 +23,4 @@ Validates ENS ownership and Merkle proofs for agents and validators.
 - `AgentMerkleRootUpdated(bytes32 agentMerkleRoot)` / `ValidatorMerkleRootUpdated(bytes32 validatorMerkleRoot)`
 - `AdditionalAgentUpdated(address agent, bool allowed)`
 - `AdditionalValidatorUpdated(address validator, bool allowed)`
+- `AgentProfileUpdated(address agent, string uri)` – emitted whenever an agent profile is set or changed. Off-chain services can listen for this event and fetch the referenced URI (e.g., from IPFS) to match jobs with agents based on declared capabilities.
