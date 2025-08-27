@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Validator selection cache", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, vrf;
 
   beforeEach(async () => {
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
@@ -33,6 +33,13 @@ describe("Validator selection cache", function () {
     await validation.waitForDeployment();
     await validation.setIdentityRegistry(await identity.getAddress());
 
+    const VRFMock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VRFMock.sol:VRFMock"
+    );
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+    await validation.setVRF(await vrf.getAddress());
+
     const validators = [];
     for (let i = 0; i < 3; i++) {
       const addr = ethers.Wallet.createRandom().address;
@@ -46,21 +53,28 @@ describe("Validator selection cache", function () {
     await validation.setValidatorPoolSampleSize(10);
   });
 
+  async function select(jobId, randomness = 12345) {
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    return validation.selectValidators(jobId);
+  }
+
   it("skips repeat ENS checks and expires cache", async () => {
     await expect(validation.setValidatorAuthCacheDuration(5))
       .to.emit(validation, "ValidatorAuthCacheDurationUpdated")
       .withArgs(5);
 
-    const tx1 = await validation.selectValidators(1);
+    const tx1 = await select(1);
     const gas1 = (await tx1.wait()).gasUsed;
 
-    const tx2 = await validation.selectValidators(2);
+    const tx2 = await select(2);
     const gas2 = (await tx2.wait()).gasUsed;
     expect(gas2).to.be.lt(gas1);
 
     await time.increase(6);
 
-    const tx3 = await validation.selectValidators(3);
+    const tx3 = await select(3);
     const gas3 = (await tx3.wait()).gasUsed;
     expect(gas3).to.be.gt(gas2);
   });

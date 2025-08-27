@@ -103,7 +103,7 @@ describe("Identity verification enforcement", function () {
 
   describe("ValidationModule", function () {
     let owner, employer, v1, v2;
-    let validation, stakeManager, jobRegistry, reputation, identity;
+    let validation, stakeManager, jobRegistry, reputation, identity, vrf;
 
     beforeEach(async () => {
       [owner, employer, v1, v2] = await ethers.getSigners();
@@ -136,6 +136,13 @@ describe("Identity verification enforcement", function () {
       await validation
         .connect(owner)
         .setReputationEngine(await reputation.getAddress());
+
+      const VRFMock = await ethers.getContractFactory(
+        "contracts/v2/mocks/VRFMock.sol:VRFMock"
+      );
+      vrf = await VRFMock.deploy();
+      await vrf.waitForDeployment();
+      await validation.setVRF(await vrf.getAddress());
 
       const ENS = await ethers.getContractFactory(
         "contracts/legacy/MockENS.sol:MockENS"
@@ -188,13 +195,20 @@ describe("Identity verification enforcement", function () {
       await jobRegistry.setJob(1, jobStruct);
     });
 
+    async function select(jobId, randomness = 12345) {
+      await validation.requestVRF(jobId);
+      const req = await validation.vrfRequestIds(jobId);
+      await vrf.fulfill(req, randomness);
+      return validation.selectValidators(jobId);
+    }
+
     async function advance(seconds) {
       await ethers.provider.send("evm_increaseTime", [seconds]);
       await ethers.provider.send("evm_mine", []);
     }
 
     it("rejects validators lacking ENS or merkle proof", async () => {
-      const tx = await validation.selectValidators(1);
+      const tx = await select(1);
       const receipt = await tx.wait();
       const selected = receipt.logs.find(
         (l) => l.fragment && l.fragment.name === "ValidatorsSelected"

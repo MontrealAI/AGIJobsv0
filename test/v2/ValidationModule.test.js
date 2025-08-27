@@ -342,9 +342,9 @@ describe("ValidationModule V2", function () {
       .to.emit(validation, "JobRegistryUpdated")
       .withArgs(await newJob.getAddress());
 
-    await expect(select(1)).to.be.revertedWith(
-      "already selected"
-    );
+    await expect(
+      validation.selectValidators(1)
+    ).to.be.revertedWith("already selected");
 
     await validation.connect(owner).resetJobNonce(1);
     await expect(select(1)).to.not.be.reverted;

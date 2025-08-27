@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("ValidationModule access controls", function () {
   let owner, employer, v1, v2;
-  let validation, stakeManager, jobRegistry, reputation, identity;
+  let validation, stakeManager, jobRegistry, reputation, identity, vrf;
 
   beforeEach(async () => {
     [owner, employer, v1, v2] = await ethers.getSigners();
@@ -36,6 +36,13 @@ describe("ValidationModule access controls", function () {
     await validation
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
+
+    const VRFMock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VRFMock.sol:VRFMock"
+    );
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+    await validation.setVRF(await vrf.getAddress());
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
@@ -75,8 +82,15 @@ describe("ValidationModule access controls", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
+  async function select(jobId, randomness = 12345) {
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    return validation.selectValidators(jobId);
+  }
+
   it("rejects unauthorized validators", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -121,7 +135,7 @@ describe("ValidationModule access controls", function () {
   });
 
   it("rejects blacklisted validators", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -153,7 +167,7 @@ describe("ValidationModule access controls", function () {
   });
 
   it("finalize updates job registry based on tally", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -202,7 +216,7 @@ describe("ValidationModule access controls", function () {
       uriHash: ethers.ZeroHash,
       resultHash: ethers.ZeroHash,
     });
-    await validation.selectValidators(1);
+    await select(1);
     const nonce2 = await validation.jobNonce(1);
     const s1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const s2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
