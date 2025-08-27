@@ -158,4 +158,37 @@ describe("Module replacement", function () {
     expect(after.agent).to.equal(before.agent);
     expect(after.state).to.equal(6); // Finalized
   });
+
+  it("rejects modules with mismatched versions", async function () {
+    const env = await deploySystem();
+    const { owner, registry, stake, dispute } = env;
+    const Version = await ethers.getContractFactory(
+      "contracts/v2/mocks/VersionMock.sol:VersionMock"
+    );
+    const bad = await Version.deploy(2);
+
+    await expect(
+      registry.connect(owner).setDisputeModule(await bad.getAddress())
+    ).to.be.revertedWith("Invalid dispute module");
+
+    await expect(
+      stake.connect(owner).setDisputeModule(await bad.getAddress())
+    ).to.be.revertedWith("Invalid dispute module");
+
+    await expect(
+      stake.connect(owner).setValidationModule(await bad.getAddress())
+    ).to.be.revertedWith("Invalid validation module");
+
+    await expect(
+      stake
+        .connect(owner)
+        .setModules(await bad.getAddress(), await dispute.getAddress())
+    ).to.be.revertedWith("Invalid job registry");
+
+    await expect(
+      stake
+        .connect(owner)
+        .setModules(await registry.getAddress(), await bad.getAddress())
+    ).to.be.revertedWith("Invalid dispute module");
+  });
 });

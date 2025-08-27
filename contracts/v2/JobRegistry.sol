@@ -49,6 +49,8 @@ interface ICertificateNFT {
 /// liabilities remain with employers, agents, and validators as expressed by
 /// the owner‑controlled `TaxPolicy` reference.
 contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 1;
     enum State {
         None,
         Created,
@@ -218,12 +220,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         address[] memory _ackModules,
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
-        validationModule = _validation;
-        stakeManager = _stakeMgr;
-        reputationEngine = _reputation;
-        disputeModule = _dispute;
-        certificateNFT = _certNFT;
-        feePool = _feePool;
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
         require(pct <= 100, "pct");
         feePct = pct;
@@ -231,26 +227,37 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
         emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
+            require(_validation.version() == 1, "Invalid validation module");
+            validationModule = _validation;
             emit ValidationModuleUpdated(address(_validation));
             emit ModuleUpdated("ValidationModule", address(_validation));
         }
         if (address(_stakeMgr) != address(0)) {
+            require(_stakeMgr.version() == 1, "Invalid stake manager");
+            stakeManager = _stakeMgr;
             emit StakeManagerUpdated(address(_stakeMgr));
             emit ModuleUpdated("StakeManager", address(_stakeMgr));
         }
         if (address(_reputation) != address(0)) {
+            require(_reputation.version() == 1, "Invalid reputation module");
+            reputationEngine = _reputation;
             emit ReputationEngineUpdated(address(_reputation));
             emit ModuleUpdated("ReputationEngine", address(_reputation));
         }
         if (address(_dispute) != address(0)) {
+            require(_dispute.version() == 1, "Invalid dispute module");
+            disputeModule = _dispute;
             emit DisputeModuleUpdated(address(_dispute));
             emit ModuleUpdated("DisputeModule", address(_dispute));
         }
         if (address(_certNFT) != address(0)) {
+            require(_certNFT.version() == 1, "Invalid certificate NFT");
+            certificateNFT = _certNFT;
             emit CertificateNFTUpdated(address(_certNFT));
             emit ModuleUpdated("CertificateNFT", address(_certNFT));
         }
         if (address(_feePool) != address(0)) {
+            feePool = _feePool;
             emit FeePoolUpdated(address(_feePool));
             emit ModuleUpdated("FeePool", address(_feePool));
         }
@@ -330,6 +337,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param module Address of the new dispute module contract.
     function setDisputeModule(IDisputeModule module) external onlyGovernance {
         require(address(module) != address(0), "dispute");
+        require(module.version() == 1, "Invalid dispute module");
         disputeModule = module;
         emit DisputeModuleUpdated(address(module));
         emit ModuleUpdated("DisputeModule", address(module));

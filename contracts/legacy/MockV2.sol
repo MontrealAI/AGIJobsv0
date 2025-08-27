@@ -105,6 +105,7 @@ contract MockStakeManager is IStakeManager {
 }
 
 contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
+    uint256 public constant version = 1;
     constructor() Ownable(msg.sender) {}
     mapping(uint256 => Job) private _jobs;
     uint256 public taxPolicyVersion;
