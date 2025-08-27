@@ -751,6 +751,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         external
         onlyJobRegistry
         whenNotPaused
+        nonReentrant
     {
         uint256 pct = getAgentPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
