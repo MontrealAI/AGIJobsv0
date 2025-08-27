@@ -268,9 +268,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             taxPolicy = _policy;
             emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
         }
-        for (uint256 i; i < _ackModules.length; i++) {
+        for (uint256 i; i < _ackModules.length;) {
             acknowledgers[_ackModules[i]] = true;
             emit AcknowledgerUpdated(_ackModules[i], true);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -320,9 +323,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit ModuleUpdated("CertificateNFT", address(_certNFT));
         emit FeePoolUpdated(address(_feePool));
         emit ModuleUpdated("FeePool", address(_feePool));
-        for (uint256 i; i < _ackModules.length; i++) {
+        for (uint256 i; i < _ackModules.length;) {
             acknowledgers[_ackModules[i]] = true;
             emit AcknowledgerUpdated(_ackModules[i], true);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -1077,10 +1083,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     completionTime
                 );
                 if (validators.length > 0) {
-                    for (uint256 i; i < validators.length; ++i) {
+                    for (uint256 i; i < validators.length;) {
                         address val = validators[i];
                         if (validationModule.votes(jobId, val)) {
                             reputationEngine.rewardValidator(val, agentGain);
+                        }
+                        unchecked {
+                            ++i;
                         }
                     }
                 }
