@@ -718,7 +718,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 jobId,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external {
+    ) external nonReentrant {
         _applyForJob(jobId, subdomain, proof);
     }
 
@@ -734,7 +734,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 jobId,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external {
+    ) external nonReentrant {
         _acknowledge(msg.sender);
         _applyForJob(jobId, subdomain, proof);
     }
@@ -754,7 +754,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 amount,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external {
+    ) external nonReentrant {
         _acknowledge(msg.sender);
         stakeManager.depositStakeFor(
             msg.sender,
