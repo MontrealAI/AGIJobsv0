@@ -494,13 +494,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         selected = new address[](size);
         uint256[] memory stakes = new uint256[](size);
-        uint256 count;
         _selectionNonce += 1;
-        uint256 maxAttempts = sample * 10;
 
-        for (uint256 attempts; count < size && attempts < maxAttempts; ) {
-            seed = uint256(keccak256(abi.encodePacked(seed, attempts)));
-            uint256 idx = seed % n;
+        address[] memory candidates = new address[](sample);
+        uint256[] memory candidateStakes = new uint256[](sample);
+        uint256 candidateCount;
+        uint256 totalStake;
+
+        uint256 start = seed % n;
+        for (uint256 i; i < n && candidateCount < sample;) {
+            uint256 idx = (start + i) % n;
             address candidate = validatorPool[idx];
 
             uint256 stake = stakeManager.stakeOf(
@@ -509,7 +512,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             );
             if (stake == 0) {
                 unchecked {
-                    ++attempts;
+                    ++i;
                 }
                 continue;
             }
@@ -517,7 +520,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             if (address(reputationEngine) != address(0)) {
                 if (reputationEngine.isBlacklisted(candidate)) {
                     unchecked {
-                        ++attempts;
+                        ++i;
                     }
                     continue;
                 }
@@ -542,31 +545,54 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
             if (!authorized) {
                 unchecked {
-                    ++attempts;
+                    ++i;
                 }
                 continue;
             }
 
-            if (_selectedNonce[candidate] == _selectionNonce) {
-                unchecked {
-                    ++attempts;
-                }
-                continue;
-            }
-
-            _selectedNonce[candidate] = _selectionNonce;
-
-            selected[count] = candidate;
-            stakes[count] = stake;
+            candidates[candidateCount] = candidate;
+            candidateStakes[candidateCount] = stake;
+            totalStake += stake;
             unchecked {
-                ++count;
-                ++attempts;
+                ++candidateCount;
+                ++i;
             }
         }
 
-        require(count == size, "insufficient validators");
+        require(candidateCount >= size, "insufficient validators");
 
-        for (uint256 i; i < count;) {
+        for (uint256 i; i < size;) {
+            seed = uint256(keccak256(abi.encodePacked(seed, i)));
+            uint256 pick = seed % totalStake;
+            uint256 cumulative;
+            uint256 chosen;
+            for (uint256 j; j < candidateCount;) {
+                cumulative += candidateStakes[j];
+                if (pick < cumulative) {
+                    chosen = j;
+                    break;
+                }
+                unchecked {
+                    ++j;
+                }
+            }
+
+            address val = candidates[chosen];
+            selected[i] = val;
+            stakes[i] = candidateStakes[chosen];
+            _selectedNonce[val] = _selectionNonce;
+
+            totalStake -= candidateStakes[chosen];
+            candidateCount -= 1;
+            candidates[chosen] = candidates[candidateCount];
+            candidateStakes[chosen] = candidateStakes[candidateCount];
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint256 i; i < size;) {
             address val = selected[i];
             validatorStakes[jobId][val] = stakes[i];
             _validatorLookup[jobId][val] = true;
