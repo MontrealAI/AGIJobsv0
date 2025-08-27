@@ -254,6 +254,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @notice Update the maximum number of pool entries sampled during selection.
     /// @param size Maximum number of validators examined on-chain.
     function setValidatorPoolSampleSize(uint256 size) external onlyOwner {
+        require(size > 0, "size");
+        require(size <= maxValidatorPoolSize, "pool limit");
+        require(size >= validatorsPerJob, "lt validators");
         validatorPoolSampleSize = size;
         emit ValidatorPoolSampleSizeUpdated(size);
     }
@@ -472,11 +475,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
 
         uint256 n = validatorPool.length;
-        require(n > 0, "no validators");
+        require(n > 0, "insufficient validators");
         require(n <= maxValidatorPoolSize, "pool limit");
         require(address(stakeManager) != address(0), "stake manager");
 
         uint256 sample = validatorPoolSampleSize;
+        if (sample > n) sample = n;
 
         uint256 size = r.committeeSize;
         if (size == 0) {
@@ -484,13 +488,36 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             r.committeeSize = size;
         }
 
+        require(sample >= size, "sample too small");
+
+        // Build contiguous window starting from a pseudo-random offset.
+        uint256 start = seed % n;
+        uint256[] memory subset = new uint256[](sample);
+        for (uint256 i; i < sample;) {
+            unchecked {
+                subset[i] = (start + i) % n;
+                ++i;
+            }
+        }
+
+        // Fisher–Yates shuffle on the window for uniform ordering.
+        for (uint256 i = sample; i > 1;) {
+            unchecked {
+                seed = uint256(keccak256(abi.encodePacked(seed, i)));
+                uint256 j = seed % i;
+                uint256 tmp = subset[i - 1];
+                subset[i - 1] = subset[j];
+                subset[j] = tmp;
+                --i;
+            }
+        }
+
         selected = new address[](size);
         uint256[] memory stakes = new uint256[](size);
         uint256 count;
 
         for (uint256 i; i < sample && count < size;) {
-            seed = uint256(keccak256(abi.encodePacked(seed, i)));
-            address candidate = validatorPool[seed % n];
+            address candidate = validatorPool[subset[i]];
 
             uint256 stake = stakeManager.stakeOf(
                 candidate,

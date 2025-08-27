@@ -20,7 +20,16 @@ contract ValidatorSelectionFuzz is Test {
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e6, 0, 100, address(this), address(0), address(0));
+        stake = new StakeManager(
+            IERC20(address(token)),
+            1e6,
+            0,
+            100,
+            address(this),
+            address(0),
+            address(0),
+            address(this)
+        );
         identity = new IdentityRegistryToggle();
         validation = new ValidationModule(
             IJobRegistry(address(0)),
@@ -110,6 +119,44 @@ contract ValidatorSelectionFuzz is Test {
             uint256 b = countsRev[i];
             uint256 diff = a > b ? a - b : b - a;
             assertLt(diff, iterations / 5);
+        }
+    }
+
+    function test_uniform_distribution_large_pool() public {
+        uint256 poolSize = 200;
+        uint256 selectCount = 5;
+        uint256 sample = 50;
+        address[] memory pool = new address[](poolSize);
+        for (uint256 i; i < poolSize; i++) {
+            address val = address(uint160(uint256(keccak256(abi.encode(i + 1)))));
+            pool[i] = val;
+            index[val] = i;
+            identity.addAdditionalValidator(val);
+            token.mint(val, 1e6);
+            vm.prank(val);
+            token.approve(address(stake), 1e6);
+            vm.prank(val);
+            stake.depositStake(StakeManager.Role.Validator, 1e6);
+        }
+        validation.setValidatorsPerJob(selectCount);
+        validation.setValidatorPoolSampleSize(sample);
+        validation.setValidatorPool(pool);
+
+        uint256 iterations = 400;
+        uint256[] memory counts = new uint256[](poolSize);
+        for (uint256 j; j < iterations; j++) {
+            vm.roll(block.number + 1);
+            address[] memory sel = validation.selectValidators(j + 1);
+            for (uint256 k; k < sel.length; k++) {
+                counts[index[sel[k]]] += 1;
+            }
+        }
+
+        uint256 expected = (iterations * selectCount) / poolSize;
+        for (uint256 i; i < poolSize; i++) {
+            uint256 a = counts[i];
+            uint256 diff = a > expected ? a - expected : expected - a;
+            assertLt(diff, expected);
         }
     }
 }
