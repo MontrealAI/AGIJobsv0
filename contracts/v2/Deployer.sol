@@ -12,6 +12,7 @@ import {ValidationModule} from "./ValidationModule.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
 import {DisputeModule} from "./modules/DisputeModule.sol";
 import {CertificateNFT} from "./CertificateNFT.sol";
+import {SystemPause} from "./SystemPause.sol";
 import {PlatformRegistry, IReputationEngine as PRReputationEngine} from "./PlatformRegistry.sol";
 import {JobRouter} from "./modules/JobRouter.sol";
 import {IdentityRegistry} from "./IdentityRegistry.sol";
@@ -78,7 +79,8 @@ contract Deployer is Ownable {
         address platformIncentives,
         address feePool,
         address taxPolicy,
-        address identityRegistryAddr
+        address identityRegistryAddr,
+        address systemPause
     );
 
     /// @notice Deploy and wire all modules including TaxPolicy.
@@ -113,7 +115,8 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address identityRegistryAddr
+            address identityRegistryAddr,
+            address systemPause
         )
     {
         return _deploy(true, econ, ids);
@@ -147,7 +150,8 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address identityRegistryAddr
+            address identityRegistryAddr,
+            address systemPause
         )
     {
         return _deploy(false, econ, ids);
@@ -181,7 +185,8 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address identityRegistryAddr
+            address identityRegistryAddr,
+            address systemPause
         )
     {
         EconParams memory econ;
@@ -216,7 +221,8 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address identityRegistryAddr
+            address identityRegistryAddr,
+            address systemPause
         )
     {
         EconParams memory econ;
@@ -237,7 +243,8 @@ contract Deployer is Ownable {
             address platformIncentives,
             address feePool,
             address taxPolicy,
-            address identityRegistryAddr
+            address identityRegistryAddr,
+            address systemPause
         )
     {
         require(!deployed, "deployed");
@@ -385,14 +392,21 @@ contract Deployer is Ownable {
         reputation.setAuthorizedCaller(address(registry), true);
         reputation.setAuthorizedCaller(address(validation), true);
 
-        // hand over governance to the eventual owner
-        stake.setGovernance(owner_);
-        registry.setGovernance(owner_);
+        SystemPause pause = new SystemPause(
+            registry,
+            stake,
+            validation,
+            dispute,
+            owner_
+        );
+        // hand over governance to SystemPause
+        stake.setGovernance(address(pause));
+        registry.setGovernance(address(pause));
 
         // Transfer ownership
-        validation.transferOwnership(owner_);
+        validation.transferOwnership(address(pause));
         reputation.transferOwnership(owner_);
-        dispute.transferOwnership(owner_);
+        dispute.transferOwnership(address(pause));
         certificate.transferOwnership(owner_);
         pRegistry.transferOwnership(owner_);
         router.transferOwnership(owner_);
@@ -415,7 +429,8 @@ contract Deployer is Ownable {
             address(incentives),
             address(pool),
             address(policy),
-            address(identity)
+            address(identity),
+            address(pause)
         );
 
         return (
@@ -430,7 +445,8 @@ contract Deployer is Ownable {
             address(incentives),
             address(pool),
             address(policy),
-            address(identity)
+            address(identity),
+            address(pause)
         );
     }
 }

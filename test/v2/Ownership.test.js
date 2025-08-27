@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 
 describe("Ownable modules", function () {
   it("enforces ownership and transfer across modules", async function () {
@@ -42,7 +42,8 @@ describe("Ownable modules", function () {
       incentives,
       feePool,
       taxPolicy,
-      ensVerifier,
+      identityRegistryAddr,
+      systemPause,
     ] = addresses;
 
     const StakeManager = await ethers.getContractFactory(
@@ -81,6 +82,9 @@ describe("Ownable modules", function () {
     const ENSVerifier = await ethers.getContractFactory(
       "contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier"
     );
+    const SystemPause = await ethers.getContractFactory(
+      "contracts/v2/SystemPause.sol:SystemPause"
+    );
 
     const ModCertificateNFT = await ethers.getContractFactory(
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
@@ -100,6 +104,17 @@ describe("Ownable modules", function () {
     );
     await identity.waitForDeployment();
 
+    const systemPauseSignerAddr = systemPause;
+    await network.provider.send("hardhat_setBalance", [
+      systemPauseSignerAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [systemPauseSignerAddr],
+    });
+    const systemPauseSigner = await ethers.getSigner(systemPauseSignerAddr);
+
     const governable = [
       [StakeManager.attach(stake), (inst, signer) => inst.connect(signer).setFeePct(1)],
       [JobRegistry.attach(registry), (inst, signer) => inst.connect(signer).setFeePct(1)],
@@ -107,48 +122,86 @@ describe("Ownable modules", function () {
 
     for (const [inst, call] of governable) {
       await expect(call(inst, other)).to.be.revertedWith("governance only");
-      await inst.setGovernance(other.address);
+      await inst.connect(systemPauseSigner).setGovernance(other.address);
       await expect(call(inst, owner)).to.be.revertedWith("governance only");
       await call(inst, other);
-      await inst.connect(other).setGovernance(owner.address);
+      await inst.connect(other).setGovernance(systemPauseSignerAddr);
     }
 
     const modules = [
       [
         ValidationModule.attach(validation),
+        systemPauseSigner,
         (inst, signer) => inst.connect(signer).setIdentityRegistry(ethers.ZeroAddress),
       ],
       [
         ReputationEngine.attach(reputation),
+        owner,
         (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
       ],
-      [DisputeModule.attach(dispute), (inst, signer) => inst.connect(signer).setDisputeFee(0)],
+      [
+        DisputeModule.attach(dispute),
+        systemPauseSigner,
+        (inst, signer) => inst.connect(signer).setDisputeFee(0),
+      ],
       [
         CertificateNFT.attach(certificate),
+        owner,
         (inst, signer) => inst.connect(signer).setJobRegistry(other.address),
       ],
-      [PlatformRegistry.attach(platformRegistry), (inst, signer) => inst.connect(signer).setMinPlatformStake(0)],
-      [JobRouter.attach(router), (inst, signer) => inst.connect(signer).setRegistrar(ethers.ZeroAddress, false)],
+      [
+        PlatformRegistry.attach(platformRegistry),
+        owner,
+        (inst, signer) => inst.connect(signer).setMinPlatformStake(0),
+      ],
+      [
+        JobRouter.attach(router),
+        owner,
+        (inst, signer) => inst.connect(signer).setRegistrar(ethers.ZeroAddress, false),
+      ],
       [
         PlatformIncentives.attach(incentives),
-        (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress),
+        owner,
+        (inst, signer) =>
+          inst
+            .connect(signer)
+            .setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress),
       ],
-      [FeePool.attach(feePool), (inst, signer) => inst.connect(signer).setBurnPct(0)],
-      [TaxPolicy.attach(taxPolicy), (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new")],
-      [ENSVerifier.attach(ensVerifier), (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress)],
+      [FeePool.attach(feePool), owner, (inst, signer) => inst.connect(signer).setBurnPct(0)],
+      [
+        TaxPolicy.attach(taxPolicy),
+        owner,
+        (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new"),
+      ],
+      [
+        ENSVerifier.attach(identityRegistryAddr),
+        owner,
+        (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress),
+      ],
       [
         modCert,
+        owner,
         (inst, signer) => inst.connect(signer).setJobRegistry(other.address),
       ],
-      [identity, (inst, signer) => inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress)],
+      [
+        identity,
+        owner,
+        (inst, signer) =>
+          inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress),
+      ],
     ];
 
-    for (const [inst, call] of modules) {
+    for (const [inst, signer, call] of modules) {
       await expect(call(inst, other)).to.be.reverted;
-      await inst.transferOwnership(other.address);
-      await expect(call(inst, owner)).to.be.reverted;
+      await inst.connect(signer).transferOwnership(other.address);
+      await expect(call(inst, signer)).to.be.reverted;
       await call(inst, other);
-      await inst.connect(other).transferOwnership(owner.address);
+      await inst.connect(other).transferOwnership(await signer.getAddress());
     }
+
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [systemPauseSignerAddr],
+    });
   });
 });

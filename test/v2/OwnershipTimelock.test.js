@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 
 describe("Timelock ownership", function () {
   it("only timelock can call privileged setters after transfer", async function () {
@@ -27,7 +27,7 @@ describe("Timelock ownership", function () {
     };
     const addresses = await deployer.deploy.staticCall(econ, ids);
     await deployer.deploy(econ, ids);
-    const [stakeAddr, registryAddr] = addresses;
+    const [stakeAddr, registryAddr, , , , , , , , , , , systemPauseAddr] = addresses;
 
     const StakeManager = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
     const JobRegistry = await ethers.getContractFactory("contracts/v2/JobRegistry.sol:JobRegistry");
@@ -37,8 +37,20 @@ describe("Timelock ownership", function () {
     const Timelock = await ethers.getContractFactory("contracts/legacy/TimelockMock.sol:TimelockMock");
     const timelock = await Timelock.deploy(proposer.address);
 
-    await stake.setGovernance(await timelock.getAddress());
-    await registry.setGovernance(await timelock.getAddress());
+    await network.provider.send("hardhat_setBalance", [
+      systemPauseAddr,
+      "0x56BC75E2D63100000",
+    ]);
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [systemPauseAddr],
+    });
+    const systemPauseSigner = await ethers.getSigner(systemPauseAddr);
+
+    await stake.connect(systemPauseSigner).setGovernance(await timelock.getAddress());
+    await registry
+      .connect(systemPauseSigner)
+      .setGovernance(await timelock.getAddress());
 
     await expect(stake.setFeePct(1)).to.be.revertedWith("governance only");
     await expect(registry.setFeePct(1)).to.be.revertedWith("governance only");
@@ -51,5 +63,10 @@ describe("Timelock ownership", function () {
 
     await timelock.connect(proposer).execute(registry.target, registryData);
     expect(await registry.feePct()).to.equal(1);
+
+    await network.provider.request({
+      method: "hardhat_stopImpersonatingAccount",
+      params: [systemPauseAddr],
+    });
   });
 });
