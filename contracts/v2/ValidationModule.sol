@@ -954,16 +954,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit ValidationResult(jobId, success);
 
         jobRegistry.onValidationResult(jobId, success, r.validators);
+        _cleanup(jobId);
         return success;
     }
 
-    /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
-    /// @param jobId Identifier of the job
-    function resetJobNonce(uint256 jobId) external override {
-        require(
-            msg.sender == owner() || msg.sender == address(jobRegistry),
-            "not authorized"
-        );
+    function _cleanup(uint256 jobId) internal {
         uint256 nonce = jobNonce[jobId];
         address[] storage vals = rounds[jobId].validators;
         for (uint256 i; i < vals.length;) {
@@ -979,6 +974,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
         delete rounds[jobId];
         delete jobNonce[jobId];
+    }
+
+    /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
+    /// @param jobId Identifier of the job
+    function resetJobNonce(uint256 jobId) external override {
+        require(
+            msg.sender == owner() || msg.sender == address(jobRegistry),
+            "not authorized"
+        );
+        _cleanup(jobId);
         emit JobNonceReset(jobId);
     }
 

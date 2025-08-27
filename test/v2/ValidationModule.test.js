@@ -254,6 +254,34 @@ describe("ValidationModule V2", function () {
     ).to.be.revertedWith("invalid reveal");
   });
 
+  it("clears commitments after finalization", async () => {
+    await validation.connect(owner).setValidatorBounds(1, 1);
+    await validation
+      .connect(owner)
+      .setValidatorPool([v1.address]);
+
+    await select(1);
+    const nonce = await validation.jobNonce(1);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const commit = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt]
+    );
+    await (
+      await validation.connect(v1).commitValidation(1, commit, "", [])
+    ).wait();
+    expect(await validation.commitments(1, v1.address, nonce)).to.equal(commit);
+    await advance(61);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, salt, "", []);
+    await advance(61);
+    await validation.finalize(1);
+    expect(await validation.commitments(1, v1.address, nonce)).to.equal(
+      ethers.ZeroHash
+    );
+  });
+
   it("clears commitments when job nonce is reset", async () => {
     await validation.connect(owner).setValidatorBounds(1, 1);
     await validation
