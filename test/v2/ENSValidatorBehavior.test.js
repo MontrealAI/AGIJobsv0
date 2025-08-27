@@ -13,7 +13,7 @@ function namehash(root, label) {
 describe("Validator ENS integration", function () {
   let owner, validator, other;
   let ens, resolver, wrapper, identity;
-  let stakeManager, jobRegistry, reputation, validation;
+  let stakeManager, jobRegistry, reputation, validation, vrf;
   const root = ethers.id("agi");
 
   beforeEach(async () => {
@@ -72,6 +72,12 @@ describe("Validator ENS integration", function () {
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());
     await validation.setIdentityRegistry(await identity.getAddress());
+    const VRFMock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VRFMock.sol:VRFMock"
+    );
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+    await validation.setVRF(await vrf.getAddress());
   });
 
   it("rejects validators without subdomains and emits events on success", async () => {
@@ -93,9 +99,12 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await expect(validation.selectValidators(1)).to.be.revertedWith(
-      "insufficient validators"
-    );
+    await validation.requestVRF(1);
+    let req = await validation.vrfRequestIds(1);
+    await vrf.fulfill(req, 12345);
+    await expect(
+      validation.selectValidators(1)
+    ).to.be.revertedWith("insufficient validators");
 
     await validation.setValidatorSubdomains([validator.address], ["v"]);
     await wrapper.setOwner(
@@ -104,11 +113,15 @@ describe("Validator ENS integration", function () {
     );
     await resolver.setAddr(namehash(root, "v"), validator.address);
 
-    await validation.selectValidators(1);
+    await jobRegistry.setJob(2, job);
+    await validation.requestVRF(2);
+    req = await validation.vrfRequestIds(2);
+    await vrf.fulfill(req, 99999);
+    await validation.selectValidators(2);
     await expect(
       validation
         .connect(validator)
-        .commitValidation(1, ethers.id("h"), "v", [])
+        .commitValidation(2, ethers.id("h"), "v", [])
     )
       .to.emit(identity, "OwnershipVerified")
       .withArgs(validator.address, "v")
@@ -158,6 +171,9 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
+    await validation.requestVRF(1);
+    let req = await validation.vrfRequestIds(1);
+    await vrf.fulfill(req, 11111);
     await validation.selectValidators(1);
 
     // transfer ENS ownership
@@ -208,8 +224,11 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await expect(validation.selectValidators(1)).to.be.revertedWith(
-      "insufficient validators"
-    );
+    await validation.requestVRF(1);
+    req = await validation.vrfRequestIds(1);
+    await vrf.fulfill(req, 22222);
+    await expect(
+      validation.selectValidators(1)
+    ).to.be.revertedWith("insufficient validators");
   });
 });

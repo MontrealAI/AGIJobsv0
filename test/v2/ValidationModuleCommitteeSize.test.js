@@ -3,7 +3,7 @@ const { expect } = require("chai");
 
 describe("ValidationModule committee size", function () {
   let owner, employer, v1, v2, v3;
-  let validation, stakeManager, jobRegistry, identity;
+  let validation, stakeManager, jobRegistry, identity, vrf;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -38,6 +38,13 @@ describe("ValidationModule committee size", function () {
     await validation
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
+
+    const VRFMock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VRFMock.sol:VRFMock"
+    );
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
+    await validation.setVRF(await vrf.getAddress());
     await identity.setClubRootNode(ethers.ZeroHash);
     await identity.setAgentRootNode(ethers.ZeroHash);
     await identity.addAdditionalValidator(v1.address);
@@ -73,25 +80,32 @@ describe("ValidationModule committee size", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
+  async function start(jobId, size, randomness = 12345) {
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    return validation.start(jobId, "", size);
+  }
+
   it("allows per-job committee size within bounds", async () => {
-    await validation.start(1, "", 1);
+    await start(1, 1);
     expect((await validation.validators(1)).length).to.equal(1);
     const r1 = await validation.rounds(1);
     expect(r1.committeeSize).to.equal(1n);
 
-    await validation.start(2, "", 0);
+    await start(2, 0);
     expect((await validation.validators(2)).length).to.equal(1);
     const r2 = await validation.rounds(2);
     expect(r2.committeeSize).to.equal(1n);
 
-    await validation.start(3, "", 10);
+    await start(3, 10);
     expect((await validation.validators(3)).length).to.equal(3);
     const r3 = await validation.rounds(3);
     expect(r3.committeeSize).to.equal(3n);
   });
 
   it("uses stored committee size for quorum", async () => {
-    await validation.start(4, "", 3);
+    await start(4, 3);
     const selected = await validation.validators(4);
     const signerMap = {
       [v1.address.toLowerCase()]: v1,

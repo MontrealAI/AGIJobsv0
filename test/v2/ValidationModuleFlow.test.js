@@ -31,6 +31,13 @@ async function setup() {
   await validation.waitForDeployment();
   await validation.connect(owner).setReputationEngine(await reputation.getAddress());
 
+  const VRFMock = await ethers.getContractFactory(
+    "contracts/v2/mocks/VRFMock.sol:VRFMock"
+  );
+  const vrf = await VRFMock.deploy();
+  await vrf.waitForDeployment();
+  await validation.setVRF(await vrf.getAddress());
+
   const Identity = await ethers.getContractFactory(
     "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
   );
@@ -61,6 +68,13 @@ async function setup() {
     resultHash: ethers.ZeroHash,
   };
   await jobRegistry.setJob(1, jobStruct);
+  async function select(jobId, randomness = 12345) {
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    return validation.selectValidators(jobId);
+  }
+
   return {
     owner,
     employer,
@@ -71,6 +85,7 @@ async function setup() {
     jobRegistry,
     identity,
     reputation,
+    select,
   };
 }
 
@@ -81,8 +96,8 @@ async function advance(seconds) {
 
 describe("ValidationModule finalize flows", function () {
   it("records majority approval as success", async () => {
-    const { v1, v2, validation, jobRegistry } = await setup();
-    await validation.selectValidators(1);
+    const { v1, v2, validation, jobRegistry, select } = await setup();
+    await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const nonce = await validation.jobNonce(1);
@@ -107,8 +122,8 @@ describe("ValidationModule finalize flows", function () {
   });
 
   it("records majority rejection as dispute", async () => {
-    const { v1, v2, validation, jobRegistry } = await setup();
-    await validation.selectValidators(1);
+    const { v1, v2, validation, jobRegistry, select } = await setup();
+    await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const nonce = await validation.jobNonce(1);
@@ -132,8 +147,8 @@ describe("ValidationModule finalize flows", function () {
   });
 
   it("disputes when validators fail to reveal", async () => {
-    const { validation, jobRegistry } = await setup();
-    await validation.selectValidators(1);
+    const { validation, jobRegistry, select } = await setup();
+    await select(1);
     await advance(61); // end commit
     await advance(61); // end reveal
     await validation.finalize(1);
@@ -142,8 +157,8 @@ describe("ValidationModule finalize flows", function () {
   });
 
   it("slashes validators that do not all reveal", async () => {
-    const { v1, v2, validation, stakeManager, jobRegistry } = await setup();
-    await validation.selectValidators(1);
+    const { v1, v2, validation, stakeManager, jobRegistry, select } = await setup();
+    await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const nonce = await validation.jobNonce(1);
@@ -172,10 +187,10 @@ describe("ValidationModule finalize flows", function () {
   });
 
   it("disputes when approvals fall below threshold", async () => {
-    const { v1, v2, validation, jobRegistry, stakeManager } = await setup();
+    const { v1, v2, validation, jobRegistry, stakeManager, select } = await setup();
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("50"));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther("100"));
-    await validation.selectValidators(1);
+    await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const nonce = await validation.jobNonce(1);

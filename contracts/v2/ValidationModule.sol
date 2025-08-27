@@ -471,16 +471,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        uint256 seed;
-        if (address(vrf) != address(0)) {
-            uint256 randomness = vrfRandomness[jobId];
-            require(randomness != 0, "VRF pending");
-            seed = randomness;
-            delete vrfRandomness[jobId];
-        } else {
-            jobNonce[jobId] += 1;
-            seed = _fallbackSeed(jobId);
-        }
+        require(address(vrf) != address(0), "vrf not set");
+        uint256 seed = vrfRandomness[jobId];
+        require(seed != 0, "VRF pending");
+        delete vrfRandomness[jobId];
 
         uint256 n = validatorPool.length;
         require(n > 0, "insufficient validators");
@@ -943,20 +937,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @dev Generates a pseudo-random seed using job context and block entropy.
     ///      Used only when no VRF provider is configured.
     ///      Incorporates `block.prevrandao` and the previous block hash to make
-    ///      validator selection harder to predict in absence of VRF.
-    function _fallbackSeed(uint256 jobId) internal view returns (uint256) {
-        return uint256(
-            keccak256(
-                abi.encodePacked(
-                    jobId,
-                    jobNonce[jobId],
-                    block.prevrandao,
-                    blockhash(block.number - 1)
-                )
-            )
-        );
-    }
-
     function _isValidator(uint256 jobId, address val) internal view returns (bool) {
         return _validatorLookup[jobId][val];
     }

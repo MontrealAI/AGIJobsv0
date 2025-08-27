@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("ValidationModule V2", function () {
   let owner, employer, v1, v2, v3;
-  let validation, stakeManager, jobRegistry, reputation, identity;
+  let validation, stakeManager, jobRegistry, reputation, identity, vrf;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -19,6 +19,12 @@ describe("ValidationModule V2", function () {
     const RepMock = await ethers.getContractFactory("MockReputationEngine");
     reputation = await RepMock.deploy();
     await reputation.waitForDeployment();
+
+    const VRFMock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VRFMock.sol:VRFMock"
+    );
+    vrf = await VRFMock.deploy();
+    await vrf.waitForDeployment();
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
@@ -36,6 +42,7 @@ describe("ValidationModule V2", function () {
     await validation
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
+    await validation.setVRF(await vrf.getAddress());
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
@@ -79,15 +86,22 @@ describe("ValidationModule V2", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
+  async function select(jobId, randomness = 12345) {
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    return validation.selectValidators(jobId);
+  }
+
   it("reverts when stake manager is unset", async () => {
     await validation.connect(owner).setStakeManager(ethers.ZeroAddress);
-    await expect(validation.selectValidators(1)).to.be.revertedWith(
+    await expect(select(1)).to.be.revertedWith(
       "stake manager"
     );
   });
 
   it("selects stake-weighted validators", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -103,7 +117,7 @@ describe("ValidationModule V2", function () {
   });
 
   it("does not slash honest validators", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -158,7 +172,7 @@ describe("ValidationModule V2", function () {
   });
 
   it("slashes validator voting against majority", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -211,7 +225,7 @@ describe("ValidationModule V2", function () {
   });
 
   it("rejects reveal with incorrect nonce", async () => {
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -246,7 +260,7 @@ describe("ValidationModule V2", function () {
       .connect(owner)
       .setValidatorPool([v1.address]);
 
-    await validation.selectValidators(1);
+    await select(1);
     const nonce1 = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const commit1 = ethers.solidityPackedKeccak256(
@@ -262,7 +276,7 @@ describe("ValidationModule V2", function () {
     await validation.connect(owner).resetJobNonce(1);
     expect(await validation.jobNonce(1)).to.equal(0n);
 
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     await tx.wait();
     const nonce2 = await validation.jobNonce(1);
     expect(nonce2).to.equal(1n);
@@ -280,12 +294,12 @@ describe("ValidationModule V2", function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address]);
-    await validation.selectValidators(1);
+    await select(1);
     await validation.connect(owner).resetJobNonce(1);
     await validation
       .connect(owner)
       .setValidatorPool([v2.address]);
-    await validation.selectValidators(1);
+    await select(1);
     const nonce = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const commit = ethers.solidityPackedKeccak256(
@@ -299,7 +313,7 @@ describe("ValidationModule V2", function () {
 
   it("allows owner to reassign registry and stake manager", async () => {
     // select validators to create state for job 1
-    await validation.selectValidators(1);
+    await select(1);
 
     const StakeMock2 = await ethers.getContractFactory("MockStakeManager");
     const newStake = await StakeMock2.deploy();
@@ -328,12 +342,12 @@ describe("ValidationModule V2", function () {
       .to.emit(validation, "JobRegistryUpdated")
       .withArgs(await newJob.getAddress());
 
-    await expect(validation.selectValidators(1)).to.be.revertedWith(
-      "already selected"
-    );
+    await expect(
+      validation.selectValidators(1)
+    ).to.be.revertedWith("already selected");
 
     await validation.connect(owner).resetJobNonce(1);
-    await expect(validation.selectValidators(1)).to.not.be.reverted;
+    await expect(select(1)).to.not.be.reverted;
   });
 
   it("enforces tax acknowledgement for commit and reveal", async () => {
@@ -342,7 +356,7 @@ describe("ValidationModule V2", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.setTaxPolicy(await policy.getAddress());
-    const tx = await validation.selectValidators(1);
+    const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
