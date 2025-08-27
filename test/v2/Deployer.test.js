@@ -47,6 +47,7 @@ describe("Deployer", function () {
       feePool,
       taxPolicy,
       identityRegistryAddr,
+      systemPause,
     ] = addresses;
 
     const StakeManager = await ethers.getContractFactory(
@@ -85,6 +86,9 @@ describe("Deployer", function () {
     const IdentityRegistry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
     );
+    const SystemPause = await ethers.getContractFactory(
+      "contracts/v2/SystemPause.sol:SystemPause"
+    );
 
     const stakeC = StakeManager.attach(stake);
     const registryC = JobRegistry.attach(registry);
@@ -98,13 +102,14 @@ describe("Deployer", function () {
     const feePoolC = FeePool.attach(feePool);
     const taxPolicyC = TaxPolicy.attach(taxPolicy);
     const identityRegistryC = IdentityRegistry.attach(identityRegistryAddr);
+    const systemPauseC = SystemPause.attach(systemPause);
 
     // ownership
-    expect(await stakeC.owner()).to.equal(owner.address);
-    expect(await registryC.owner()).to.equal(owner.address);
-    expect(await validationC.owner()).to.equal(owner.address);
+    expect(await stakeC.owner()).to.equal(systemPause);
+    expect(await registryC.owner()).to.equal(systemPause);
+    expect(await validationC.owner()).to.equal(systemPause);
     expect(await reputationC.owner()).to.equal(owner.address);
-    expect(await disputeC.owner()).to.equal(owner.address);
+    expect(await disputeC.owner()).to.equal(systemPause);
     expect(await certificateC.owner()).to.equal(owner.address);
     expect(await platformRegistryC.owner()).to.equal(owner.address);
     expect(await routerC.owner()).to.equal(owner.address);
@@ -112,6 +117,12 @@ describe("Deployer", function () {
     expect(await feePoolC.owner()).to.equal(owner.address);
     expect(await taxPolicyC.owner()).to.equal(owner.address);
     expect(await identityRegistryC.owner()).to.equal(owner.address);
+    expect(await systemPauseC.owner()).to.equal(owner.address);
+
+    expect(await systemPauseC.jobRegistry()).to.equal(registry);
+    expect(await systemPauseC.stakeManager()).to.equal(stake);
+    expect(await systemPauseC.validationModule()).to.equal(validation);
+    expect(await systemPauseC.disputeModule()).to.equal(dispute);
 
     // wiring
     expect(await stakeC.jobRegistry()).to.equal(registry);
