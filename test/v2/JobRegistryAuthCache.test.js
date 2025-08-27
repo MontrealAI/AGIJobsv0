@@ -50,6 +50,11 @@ describe("JobRegistry agent auth cache", function () {
     await registry.connect(owner).setJobDurationLimit(1000);
     await registry.connect(owner).setFeePct(0);
     await registry.connect(owner).setJobParameters(0, 0);
+    await expect(
+      registry.connect(owner).setAgentAuthCacheDuration(5)
+    )
+      .to.emit(registry, "AgentAuthCacheDurationUpdated")
+      .withArgs(5);
   });
 
   async function createJob() {
@@ -73,7 +78,7 @@ describe("JobRegistry agent auth cache", function () {
     const gas2 = (await tx2.wait()).gasUsed;
     expect(gas2).to.be.lt(gas1);
 
-    await time.increase(24 * 60 * 60 + 1);
+    await time.increase(6);
 
     const third = await createJob();
     const tx3 = await registry

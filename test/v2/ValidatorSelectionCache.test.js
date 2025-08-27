@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Validator selection cache", function () {
   let validation, stake, identity;
@@ -45,13 +46,22 @@ describe("Validator selection cache", function () {
     await validation.setValidatorPoolSampleSize(10);
   });
 
-  it("skips repeat ENS checks when cached", async () => {
+  it("skips repeat ENS checks and expires cache", async () => {
+    await expect(validation.setValidatorAuthCacheDuration(5))
+      .to.emit(validation, "ValidatorAuthCacheDurationUpdated")
+      .withArgs(5);
+
     const tx1 = await validation.selectValidators(1);
     const gas1 = (await tx1.wait()).gasUsed;
 
     const tx2 = await validation.selectValidators(2);
     const gas2 = (await tx2.wait()).gasUsed;
-
     expect(gas2).to.be.lt(gas1);
+
+    await time.increase(6);
+
+    const tx3 = await validation.selectValidators(3);
+    const gas3 = (await tx3.wait()).gasUsed;
+    expect(gas3).to.be.gt(gas2);
   });
 });

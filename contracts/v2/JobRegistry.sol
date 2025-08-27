@@ -159,6 +159,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event AgentRootNodeUpdated(bytes32 node);
     event AgentMerkleRootUpdated(bytes32 root);
     event AgentAuthCacheUpdated(address indexed agent, bool authorized);
+    event AgentAuthCacheDurationUpdated(uint256 duration);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -370,6 +371,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         agentAuthExpiry[agent] =
             authorized ? block.timestamp + agentAuthCacheDuration : 0;
         emit AgentAuthCacheUpdated(agent, authorized);
+    }
+
+    /// @notice Update the duration for cached agent authorizations.
+    /// @param duration Seconds an authorization remains valid in cache.
+    function setAgentAuthCacheDuration(uint256 duration) external onlyGovernance {
+        agentAuthCacheDuration = duration;
+        emit AgentAuthCacheDurationUpdated(duration);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
