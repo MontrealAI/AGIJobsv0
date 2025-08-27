@@ -718,11 +718,21 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             );
         }
         require(address(identityRegistry) != address(0), "identity reg");
-        bool authorized = identityRegistry.verifyValidator(
-            msg.sender,
-            subdomain,
-            proof
-        );
+        bool authorized =
+            validatorAuthCache[msg.sender] &&
+            validatorAuthExpiry[msg.sender] > block.timestamp;
+        if (!authorized) {
+            authorized = identityRegistry.verifyValidator(
+                msg.sender,
+                subdomain,
+                proof
+            );
+            if (authorized) {
+                validatorAuthCache[msg.sender] = true;
+                validatorAuthExpiry[msg.sender] =
+                    block.timestamp + validatorAuthCacheDuration;
+            }
+        }
         require(authorized, "Not authorized validator");
         uint256 nonce = jobNonce[jobId];
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
