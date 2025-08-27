@@ -2,11 +2,11 @@ const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
 describe("ValidationModule committee size", function () {
-  let owner, employer, v1, v2, v3;
+  let owner, employer, v1, v2, v3, v4;
   let validation, stakeManager, jobRegistry, identity, vrf;
 
   beforeEach(async () => {
-    [owner, employer, v1, v2, v3] = await ethers.getSigners();
+    [owner, employer, v1, v2, v3, v4] = await ethers.getSigners();
 
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stakeManager = await StakeMock.deploy();
@@ -24,8 +24,8 @@ describe("ValidationModule committee size", function () {
       await stakeManager.getAddress(),
       60,
       60,
-      1,
       3,
+      4,
       []
     );
     await validation.waitForDeployment();
@@ -50,14 +50,16 @@ describe("ValidationModule committee size", function () {
     await identity.addAdditionalValidator(v1.address);
     await identity.addAdditionalValidator(v2.address);
     await identity.addAdditionalValidator(v3.address);
+    await identity.addAdditionalValidator(v4.address);
 
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
     await stakeManager.setStake(v3.address, 1, ethers.parseEther("10"));
+    await stakeManager.setStake(v4.address, 1, ethers.parseEther("5"));
 
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address, v2.address, v3.address]);
+      .setValidatorPool([v1.address, v2.address, v3.address, v4.address]);
 
     const jobStruct = {
       employer: employer.address,
@@ -88,20 +90,20 @@ describe("ValidationModule committee size", function () {
   }
 
   it("allows per-job committee size within bounds", async () => {
-    await start(1, 1);
-    expect((await validation.validators(1)).length).to.equal(1);
+    await start(1, 2);
+    expect((await validation.validators(1)).length).to.equal(3);
     const r1 = await validation.rounds(1);
-    expect(r1.committeeSize).to.equal(1n);
+    expect(r1.committeeSize).to.equal(3n);
 
     await start(2, 0);
-    expect((await validation.validators(2)).length).to.equal(1);
+    expect((await validation.validators(2)).length).to.equal(3);
     const r2 = await validation.rounds(2);
-    expect(r2.committeeSize).to.equal(1n);
+    expect(r2.committeeSize).to.equal(3n);
 
     await start(3, 10);
-    expect((await validation.validators(3)).length).to.equal(3);
+    expect((await validation.validators(3)).length).to.equal(4);
     const r3 = await validation.rounds(3);
-    expect(r3.committeeSize).to.equal(3n);
+    expect(r3.committeeSize).to.equal(4n);
   });
 
   it("uses stored committee size for quorum", async () => {

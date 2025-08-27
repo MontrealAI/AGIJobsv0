@@ -34,8 +34,8 @@ describe("ValidationModule V2", function () {
       await stakeManager.getAddress(),
       60,
       60,
-      2,
-      2,
+      3,
+      3,
       []
     );
     await validation.waitForDeployment();
@@ -101,7 +101,7 @@ describe("ValidationModule V2", function () {
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     );
     const selected = event.args[1];
-    expect(selected.length).to.equal(2);
+    expect(selected.length).to.equal(3);
   });
 
   it("reverts when stake manager is unset", async () => {
@@ -109,6 +109,12 @@ describe("ValidationModule V2", function () {
     await expect(select(1)).to.be.revertedWith(
       "stake manager"
     );
+  });
+
+  it("rejects validators less than three via setParameters", async () => {
+    await expect(
+      validation.connect(owner).setParameters(2, 60, 60)
+    ).to.be.revertedWith("validators");
   });
 
   it("selects stake-weighted validators", async () => {
@@ -119,22 +125,19 @@ describe("ValidationModule V2", function () {
     );
     const selected = event.args[1];
 
-    expect(selected.length).to.equal(2);
+    expect(selected.length).to.equal(3);
     const set = new Set(selected.map((a) => a.toLowerCase()));
-    expect(set.size).to.equal(2);
+    expect(set.size).to.equal(3);
     for (const addr of selected) {
       expect([v1.address, v2.address, v3.address]).to.include(addr);
     }
   });
 
   it("does not slash honest validators", async () => {
-    const tx = await select(1);
-    const receipt = await tx.wait();
-    const selected = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-    ).args[1];
+    await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("salt3"));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -144,31 +147,33 @@ describe("ValidationModule V2", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, true, salt2]
     );
-    const signerMap = {
-      [v1.address.toLowerCase()]: v1,
-      [v2.address.toLowerCase()]: v2,
-      [v3.address.toLowerCase()]: v3,
-    };
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt3]
+    );
     await (
-      await validation
-        .connect(signerMap[selected[0].toLowerCase()])
-        .commitValidation(1, commit1, "", [])
+      await validation.connect(v1).commitValidation(1, commit1, "", [])
     ).wait();
     await (
-      await validation
-        .connect(signerMap[selected[1].toLowerCase()])
-        .commitValidation(1, commit2, "", [])
+      await validation.connect(v2).commitValidation(1, commit2, "", [])
+    ).wait();
+    await (
+      await validation.connect(v3).commitValidation(1, commit3, "", [])
     ).wait();
     await advance(61);
-      await validation
-        .connect(signerMap[selected[0].toLowerCase()])
-        .revealValidation(1, true, salt1, "", []);
-      await validation
-        .connect(signerMap[selected[1].toLowerCase()])
-        .revealValidation(1, true, salt2, "", []);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, salt1, "", []);
+    await validation
+      .connect(v2)
+      .revealValidation(1, true, salt2, "", []);
+    await validation
+      .connect(v3)
+      .revealValidation(1, true, salt3, "", []);
     await advance(61);
     expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
+    const selected = [v1.address, v2.address, v3.address];
     for (const addr of selected) {
       const stake = await stakeManager.stakeOf(addr, 1);
       const expectedStake =
@@ -183,13 +188,10 @@ describe("ValidationModule V2", function () {
   });
 
   it("slashes validator voting against majority", async () => {
-    const tx = await select(1);
-    const receipt = await tx.wait();
-    const selected = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-    ).args[1];
+    await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("salt3"));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -197,55 +199,44 @@ describe("ValidationModule V2", function () {
     );
     const commit2 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt2]
+      [1n, nonce, true, salt2]
     );
-    const signerMap = {
-      [v1.address.toLowerCase()]: v1,
-      [v2.address.toLowerCase()]: v2,
-      [v3.address.toLowerCase()]: v3,
-    };
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, false, salt3]
+    );
     await (
-      await validation
-        .connect(signerMap[selected[0].toLowerCase()])
-        .commitValidation(1, commit1, "", [])
+      await validation.connect(v1).commitValidation(1, commit1, "", [])
     ).wait();
     await (
-      await validation
-        .connect(signerMap[selected[1].toLowerCase()])
-        .commitValidation(1, commit2, "", [])
+      await validation.connect(v2).commitValidation(1, commit2, "", [])
+    ).wait();
+    await (
+      await validation.connect(v3).commitValidation(1, commit3, "", [])
     ).wait();
     await advance(61);
-    const stake0 = await stakeManager.stakeOf(selected[0], 1);
-    const stake1 = await stakeManager.stakeOf(selected[1], 1);
-      await validation
-        .connect(signerMap[selected[0].toLowerCase()])
-        .revealValidation(1, true, salt1, "", []);
-      await validation
-        .connect(signerMap[selected[1].toLowerCase()])
-        .revealValidation(1, false, salt2, "", []);
+    const stakeBefore = await stakeManager.stakeOf(v3.address, 1);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, salt1, "", []);
+    await validation
+      .connect(v2)
+      .revealValidation(1, true, salt2, "", []);
+    await validation
+      .connect(v3)
+      .revealValidation(1, false, salt3, "", []);
     await advance(61);
     await validation.finalize(1);
-    const slashed = stake0 >= stake1 ? selected[1] : selected[0];
-    const winner = slashed === selected[0] ? selected[1] : selected[0];
-    const slashedStakeBefore = stake0 >= stake1 ? stake1 : stake0;
-    expect(await stakeManager.stakeOf(slashed, 1)).to.equal(
-      slashedStakeBefore / 2n
+    expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
+      stakeBefore / 2n
     );
-    expect(await reputation.reputation(winner)).to.equal(1n);
-    expect(await reputation.reputation(slashed)).to.equal(0n);
+    expect(await reputation.reputation(v1.address)).to.equal(1n);
+    expect(await reputation.reputation(v2.address)).to.equal(1n);
+    expect(await reputation.reputation(v3.address)).to.equal(0n);
   });
 
   it("rejects reveal with incorrect nonce", async () => {
-    const tx = await select(1);
-    const receipt = await tx.wait();
-    const selected = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-    ).args[1];
-    const signerMap = {
-      [v1.address.toLowerCase()]: v1,
-      [v2.address.toLowerCase()]: v2,
-      [v3.address.toLowerCase()]: v3,
-    };
+    await select(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const wrongNonce = (await validation.jobNonce(1)) + 1n;
     const commit = ethers.solidityPackedKeccak256(
@@ -253,14 +244,12 @@ describe("ValidationModule V2", function () {
       [1n, wrongNonce, true, salt]
     );
     await (
-      await validation
-        .connect(signerMap[selected[0].toLowerCase()])
-        .commitValidation(1, commit, "", [])
+      await validation.connect(v1).commitValidation(1, commit, "", [])
     ).wait();
     await advance(61);
     await expect(
       validation
-        .connect(signerMap[selected[0].toLowerCase()])
+        .connect(v1)
         .revealValidation(1, true, salt, "", [])
     ).to.be.revertedWith("invalid reveal");
   });

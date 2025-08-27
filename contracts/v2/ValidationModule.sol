@@ -39,7 +39,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     uint256 public constant DEFAULT_COMMIT_WINDOW = 1 days;
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
-    uint256 public constant DEFAULT_MIN_VALIDATORS = 1;
+    uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
     uint256 public constant DEFAULT_MAX_VALIDATORS = 3;
 
     // slashing percentage applied to validator stake for incorrect votes
@@ -154,6 +154,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             _minValidators == 0 ? DEFAULT_MIN_VALIDATORS : _minValidators;
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
+        require(minValidators >= 3, "validators");
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
         validatorsPerJob = minValidators;
         emit ValidatorsPerJobUpdated(validatorsPerJob);
@@ -320,7 +321,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 commitDur,
         uint256 revealDur
     ) public onlyOwner {
-        require(validators > 0, "validators");
+        require(validators >= 3, "validators");
         require(commitDur > 0 && revealDur > 0, "windows");
         validatorsPerJob = validators;
         minValidators = validators;

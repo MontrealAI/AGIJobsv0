@@ -26,7 +26,7 @@ describe("Validator selection cache", function () {
       await stake.getAddress(),
       1,
       1,
-      1,
+      3,
       10,
       []
     );

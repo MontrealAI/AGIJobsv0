@@ -2,11 +2,11 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("ValidationModule access controls", function () {
-  let owner, employer, v1, v2;
+  let owner, employer, v1, v2, v3;
   let validation, stakeManager, jobRegistry, reputation, identity, vrf;
 
   beforeEach(async () => {
-    [owner, employer, v1, v2] = await ethers.getSigners();
+    [owner, employer, v1, v2, v3] = await ethers.getSigners();
 
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stakeManager = await StakeMock.deploy();
@@ -28,8 +28,8 @@ describe("ValidationModule access controls", function () {
       await stakeManager.getAddress(),
       60,
       60,
-      2,
-      2,
+      3,
+      3,
       []
     );
     await validation.waitForDeployment();
@@ -56,13 +56,15 @@ describe("ValidationModule access controls", function () {
     await identity.setAgentRootNode(ethers.ZeroHash);
     await identity.addAdditionalValidator(v1.address);
     await identity.addAdditionalValidator(v2.address);
+    await identity.addAdditionalValidator(v3.address);
 
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther("10"));
 
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address, v2.address]);
+      .setValidatorPool([v1.address, v2.address, v3.address]);
 
     const jobStruct = {
       employer: employer.address,
@@ -95,9 +97,13 @@ describe("ValidationModule access controls", function () {
     const selected = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     ).args[1];
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
     const val = selected[0];
-    const signer =
-      val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
+    const signer = signerMap[val.toLowerCase()];
 
     const Toggle = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
@@ -174,9 +180,11 @@ describe("ValidationModule access controls", function () {
     ).args[1];
     const vA = selected[0];
     const vB = selected[1];
+    const vC = selected[2];
 
     const saltA = ethers.keccak256(ethers.toUtf8Bytes("a"));
     const saltB = ethers.keccak256(ethers.toUtf8Bytes("b"));
+    const saltC = ethers.keccak256(ethers.toUtf8Bytes("c"));
     const nonce = await validation.jobNonce(1);
     const commitA = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
@@ -186,18 +194,45 @@ describe("ValidationModule access controls", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, false, saltB]
     );
+    const commitC = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, false, saltC]
+    );
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
     await (
-      await validation.connect(v1).commitValidation(1, commitA, "", [])
+      await validation
+        .connect(signerMap[vA.toLowerCase()])
+        .commitValidation(1, commitA, "", [])
     ).wait();
     await (
-      await validation.connect(v2).commitValidation(1, commitB, "", [])
+      await validation
+        .connect(signerMap[vB.toLowerCase()])
+        .commitValidation(1, commitB, "", [])
+    ).wait();
+    await (
+      await validation
+        .connect(signerMap[vC.toLowerCase()])
+        .commitValidation(1, commitC, "", [])
     ).wait();
     await advance(61);
     await (
-      await validation.connect(v1).revealValidation(1, false, saltA, "", [])
+      await validation
+        .connect(signerMap[vA.toLowerCase()])
+        .revealValidation(1, false, saltA, "", [])
     ).wait();
     await (
-      await validation.connect(v2).revealValidation(1, false, saltB, "", [])
+      await validation
+        .connect(signerMap[vB.toLowerCase()])
+        .revealValidation(1, false, saltB, "", [])
+    ).wait();
+    await (
+      await validation
+        .connect(signerMap[vC.toLowerCase()])
+        .revealValidation(1, false, saltC, "", [])
     ).wait();
     await advance(61);
     await validation.finalize(1);
@@ -220,6 +255,7 @@ describe("ValidationModule access controls", function () {
     const nonce2 = await validation.jobNonce(1);
     const s1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const s2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const s3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const c1 = ethers.solidityPackedKeccak256(
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce2, true, s1]
@@ -228,18 +264,40 @@ describe("ValidationModule access controls", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce2, true, s2]
     );
+    const c3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce2, true, s3]
+    );
     await (
-      await validation.connect(v1).commitValidation(1, c1, "", [])
+      await validation
+        .connect(signerMap[vA.toLowerCase()])
+        .commitValidation(1, c1, "", [])
     ).wait();
     await (
-      await validation.connect(v2).commitValidation(1, c2, "", [])
+      await validation
+        .connect(signerMap[vB.toLowerCase()])
+        .commitValidation(1, c2, "", [])
+    ).wait();
+    await (
+      await validation
+        .connect(signerMap[vC.toLowerCase()])
+        .commitValidation(1, c3, "", [])
     ).wait();
     await advance(61);
     await (
-      await validation.connect(v1).revealValidation(1, true, s1, "", [])
+      await validation
+        .connect(signerMap[vA.toLowerCase()])
+        .revealValidation(1, true, s1, "", [])
     ).wait();
     await (
-      await validation.connect(v2).revealValidation(1, true, s2, "", [])
+      await validation
+        .connect(signerMap[vB.toLowerCase()])
+        .revealValidation(1, true, s2, "", [])
+    ).wait();
+    await (
+      await validation
+        .connect(signerMap[vC.toLowerCase()])
+        .revealValidation(1, true, s3, "", [])
     ).wait();
     await advance(61);
     await validation.finalize(1);

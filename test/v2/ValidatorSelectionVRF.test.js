@@ -33,7 +33,7 @@ describe("Validator selection VRF integration", function () {
       await stakeManager.getAddress(),
       60,
       60,
-      2,
+      3,
       5,
       []
     );

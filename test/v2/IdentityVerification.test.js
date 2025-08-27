@@ -102,11 +102,11 @@ describe("Identity verification enforcement", function () {
   });
 
   describe("ValidationModule", function () {
-    let owner, employer, v1, v2;
+    let owner, employer, v1, v2, v3;
     let validation, stakeManager, jobRegistry, reputation, identity, vrf;
 
     beforeEach(async () => {
-      [owner, employer, v1, v2] = await ethers.getSigners();
+      [owner, employer, v1, v2, v3] = await ethers.getSigners();
 
       const StakeMock = await ethers.getContractFactory("MockStakeManager");
       stakeManager = await StakeMock.deploy();
@@ -128,8 +128,8 @@ describe("Identity verification enforcement", function () {
         await stakeManager.getAddress(),
         60,
         60,
-        2,
-        2,
+        3,
+        3,
         []
       );
       await validation.waitForDeployment();
@@ -167,6 +167,7 @@ describe("Identity verification enforcement", function () {
         .setIdentityRegistry(await identity.getAddress());
       await identity.addAdditionalValidator(v1.address);
       await identity.addAdditionalValidator(v2.address);
+      await identity.addAdditionalValidator(v3.address);
 
       await stakeManager.setStake(
         v1.address,
@@ -178,9 +179,14 @@ describe("Identity verification enforcement", function () {
         1,
         ethers.parseEther("50")
       );
+      await stakeManager.setStake(
+        v3.address,
+        1,
+        ethers.parseEther("10")
+      );
       await validation
         .connect(owner)
-        .setValidatorPool([v1.address, v2.address]);
+        .setValidatorPool([v1.address, v2.address, v3.address]);
 
       const jobStruct = {
         employer: employer.address,
@@ -214,8 +220,12 @@ describe("Identity verification enforcement", function () {
         (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
       ).args[1];
       const val = selected[0];
-      const signer =
-        val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
+      const signerMap = {
+        [v1.address.toLowerCase()]: v1,
+        [v2.address.toLowerCase()]: v2,
+        [v3.address.toLowerCase()]: v3,
+      };
+      const signer = signerMap[val.toLowerCase()];
 
       await identity.removeAdditionalValidator(val);
       const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));

@@ -20,8 +20,8 @@ describe("ValidationModule ether rejection", function () {
       await stakeManager.getAddress(),
       1,
       1,
-      1,
-      1,
+      3,
+      3,
       []
     );
     await validation.waitForDeployment();
