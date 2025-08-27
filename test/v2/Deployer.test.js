@@ -108,13 +108,13 @@ describe("Deployer", function () {
     expect(await stakeC.owner()).to.equal(systemPause);
     expect(await registryC.owner()).to.equal(systemPause);
     expect(await validationC.owner()).to.equal(systemPause);
-    expect(await reputationC.owner()).to.equal(owner.address);
+    expect(await reputationC.owner()).to.equal(systemPause);
     expect(await disputeC.owner()).to.equal(systemPause);
     expect(await certificateC.owner()).to.equal(owner.address);
-    expect(await platformRegistryC.owner()).to.equal(owner.address);
+    expect(await platformRegistryC.owner()).to.equal(systemPause);
     expect(await routerC.owner()).to.equal(owner.address);
     expect(await incentivesC.owner()).to.equal(owner.address);
-    expect(await feePoolC.owner()).to.equal(owner.address);
+    expect(await feePoolC.owner()).to.equal(systemPause);
     expect(await taxPolicyC.owner()).to.equal(owner.address);
     expect(await identityRegistryC.owner()).to.equal(owner.address);
     expect(await systemPauseC.owner()).to.equal(owner.address);
@@ -123,6 +123,9 @@ describe("Deployer", function () {
     expect(await systemPauseC.stakeManager()).to.equal(stake);
     expect(await systemPauseC.validationModule()).to.equal(validation);
     expect(await systemPauseC.disputeModule()).to.equal(dispute);
+    expect(await systemPauseC.platformRegistry()).to.equal(platformRegistry);
+    expect(await systemPauseC.feePool()).to.equal(feePool);
+    expect(await systemPauseC.reputationEngine()).to.equal(reputation);
 
     // wiring
     expect(await stakeC.jobRegistry()).to.equal(registry);

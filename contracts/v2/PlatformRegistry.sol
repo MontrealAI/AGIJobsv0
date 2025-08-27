@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
@@ -18,7 +19,7 @@ interface IReputationEngine {
 ///         reputation-weighted scores for job routing and discovery.
 /// @dev Holds no tokens and rejects ether to remain tax neutral. All values
 ///      use 6 decimals via the `StakeManager`.
-contract PlatformRegistry is Ownable, ReentrancyGuard {
+contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = 1e6;
 
     IStakeManager public stakeManager;
@@ -274,6 +275,14 @@ contract PlatformRegistry is Ownable, ReentrancyGuard {
     /// @notice Confirms the contract and owner are perpetually tax neutral.
     function isTaxExempt() external pure returns (bool) {
         return true;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // ---------------------------------------------------------------

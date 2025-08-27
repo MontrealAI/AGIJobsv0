@@ -136,7 +136,7 @@ describe("Ownable modules", function () {
       ],
       [
         ReputationEngine.attach(reputation),
-        owner,
+        systemPauseSigner,
         (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
       ],
       [
@@ -151,7 +151,7 @@ describe("Ownable modules", function () {
       ],
       [
         PlatformRegistry.attach(platformRegistry),
-        owner,
+        systemPauseSigner,
         (inst, signer) => inst.connect(signer).setMinPlatformStake(0),
       ],
       [
@@ -167,7 +167,11 @@ describe("Ownable modules", function () {
             .connect(signer)
             .setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress),
       ],
-      [FeePool.attach(feePool), owner, (inst, signer) => inst.connect(signer).setBurnPct(0)],
+      [
+        FeePool.attach(feePool),
+        systemPauseSigner,
+        (inst, signer) => inst.connect(signer).setBurnPct(0),
+      ],
       [
         TaxPolicy.attach(taxPolicy),
         owner,

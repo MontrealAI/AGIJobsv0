@@ -94,6 +94,28 @@ async function main() {
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
 
+  const SystemPause = await ethers.getContractFactory(
+    "contracts/v2/SystemPause.sol:SystemPause"
+  );
+  const pause = await SystemPause.deploy(
+    await registry.getAddress(),
+    await stake.getAddress(),
+    await validation.getAddress(),
+    await dispute.getAddress(),
+    await platformRegistry.getAddress(),
+    await feePool.getAddress(),
+    await reputation.getAddress(),
+    deployer.address
+  );
+  await pause.waitForDeployment();
+  await stake.setGovernance(await pause.getAddress());
+  await registry.setGovernance(await pause.getAddress());
+  await validation.transferOwnership(await pause.getAddress());
+  await dispute.transferOwnership(await pause.getAddress());
+  await platformRegistry.transferOwnership(await pause.getAddress());
+  await feePool.transferOwnership(await pause.getAddress());
+  await reputation.transferOwnership(await pause.getAddress());
+
   console.log("Token:", await token.getAddress());
   console.log("StakeManager:", await stake.getAddress());
   console.log("ReputationEngine:", await reputation.getAddress());
@@ -101,6 +123,7 @@ async function main() {
   console.log("JobRegistry:", await registry.getAddress());
   console.log("DisputeModule:", await dispute.getAddress());
   console.log("CertificateNFT:", await nft.getAddress());
+  console.log("SystemPause:", await pause.getAddress());
 }
 
 main().catch((err) => {

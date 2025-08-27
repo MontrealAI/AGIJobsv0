@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title ReputationEngine
@@ -9,7 +10,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// Only authorised callers may update scores.
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
-contract ReputationEngine is Ownable {
+contract ReputationEngine is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
 
@@ -105,7 +106,7 @@ contract ReputationEngine is Ownable {
 
     /// @notice Increase reputation for a user.
     /// @dev Blacklisted users may gain reputation to clear their status.
-    function add(address user, uint256 amount) external onlyCaller {
+    function add(address user, uint256 amount) external onlyCaller whenNotPaused {
         uint256 current = reputation[user];
         uint256 newScore = _enforceReputationGrowth(current, amount);
         uint256 delta = newScore - current;
@@ -119,7 +120,7 @@ contract ReputationEngine is Ownable {
     }
 
     /// @notice Decrease reputation for a user.
-    function subtract(address user, uint256 amount) external onlyCaller {
+    function subtract(address user, uint256 amount) external onlyCaller whenNotPaused {
         uint256 current = reputation[user];
         uint256 newScore = current > amount ? current - amount : 0;
         reputation[user] = newScore;
@@ -161,7 +162,7 @@ contract ReputationEngine is Ownable {
     // ---------------------------------------------------------------------
 
     /// @notice Ensure an applicant meets premium requirements and is not blacklisted.
-    function onApply(address user) external onlyCaller {
+    function onApply(address user) external onlyCaller whenNotPaused {
         require(!blacklisted[user], "Blacklisted agent");
         require(reputation[user] >= premiumThreshold, "insufficient reputation");
     }
@@ -172,7 +173,7 @@ contract ReputationEngine is Ownable {
         bool success,
         uint256 payout,
         uint256 duration
-    ) external onlyCaller {
+    ) external onlyCaller whenNotPaused {
         if (success) {
             uint256 gain = calculateReputationPoints(payout, duration);
             uint256 current = reputation[user];
@@ -202,7 +203,7 @@ contract ReputationEngine is Ownable {
     /// @notice Reward a validator based on an agent's reputation gain.
     /// @param validator The validator address
     /// @param agentGain Reputation points awarded to the agent
-    function rewardValidator(address validator, uint256 agentGain) external onlyCaller {
+    function rewardValidator(address validator, uint256 agentGain) external onlyCaller whenNotPaused {
         uint256 gain = calculateValidatorReputationPoints(agentGain);
         uint256 current = reputation[validator];
         uint256 newScore = _enforceReputationGrowth(current, gain);
@@ -283,6 +284,14 @@ contract ReputationEngine is Ownable {
     /// @return Always true, signalling perpetual tax exemption.
     function isTaxExempt() external pure returns (bool) {
         return true;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // ---------------------------------------------------------------
