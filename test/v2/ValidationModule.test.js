@@ -93,6 +93,17 @@ describe("ValidationModule V2", function () {
     return validation.selectValidators(jobId);
   }
 
+  it("selects validators without VRF provider", async () => {
+    await validation.setVRF(ethers.ZeroAddress);
+    const tx = await validation.selectValidators(1);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    );
+    const selected = event.args[1];
+    expect(selected.length).to.equal(2);
+  });
+
   it("reverts when stake manager is unset", async () => {
     await validation.connect(owner).setStakeManager(ethers.ZeroAddress);
     await expect(select(1)).to.be.revertedWith(
