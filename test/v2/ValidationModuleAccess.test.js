@@ -137,8 +137,12 @@ describe("ValidationModule access controls", function () {
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     ).args[1];
     const val = selected[0];
-    const signer =
-      val.toLowerCase() === v1.address.toLowerCase() ? v1 : v2;
+    const signerMap = {
+      [v1.address.toLowerCase()]: v1,
+      [v2.address.toLowerCase()]: v2,
+      [v3.address.toLowerCase()]: v3,
+    };
+    const signer = signerMap[val.toLowerCase()];
 
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const nonce = await validation.jobNonce(1);
