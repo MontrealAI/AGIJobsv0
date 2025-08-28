@@ -442,7 +442,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        jobNonce[jobId] += 1;
+        unchecked {
+            jobNonce[jobId] += 1;
+        }
         bytes32 bhash = blockhash(block.number - 1);
         uint256 randao = uint256(block.prevrandao);
         if (randao == 0) {
@@ -992,7 +994,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         for (uint256 i; i < r.validators.length;) {
             address v = r.validators[i];
             if (revealed[jobId][v] && votes[jobId][v]) {
-                approvalCount++;
+                unchecked { ++approvalCount; }
             }
             unchecked { ++i; }
         }
