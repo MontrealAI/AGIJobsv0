@@ -68,13 +68,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint128 reward;
         uint96 stake;
         uint32 feePct;
-        uint64 deadline;
-        uint64 assignedAt;
         State state;
         bool success;
+        uint8 agentTypes;
+        uint64 deadline;
+        uint64 assignedAt;
         bytes32 uriHash;
         bytes32 resultHash;
-        uint8 agentTypes;
     }
 
     uint256 public nextJobId;

@@ -30,7 +30,7 @@ const JOB_REGISTRY_ABI = [
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
   'function cancelExpiredJob(uint256 jobId) external',
-  "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint64 deadline,uint64 assignedAt,uint8 state,bool success,bytes32 uriHash,bytes32 resultHash,uint8 agentTypes)",
+  "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)",
   'function expirationGracePeriod() view returns (uint256)'
 ];
 
