@@ -51,6 +51,16 @@ interface ICertificateNFT {
 contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
+
+    error JobParametersUnset();
+    error RewardOverflow();
+    error RewardTooHigh();
+    error InvalidDeadline();
+    error InvalidAgentTypes();
+    error DurationTooLong();
+    error InvalidPercentages();
+    error BlacklistedEmployer();
+
     enum State {
         None,
         Created,
@@ -558,23 +568,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         nonReentrant
         returns (uint256 jobId)
     {
-        require(reward > 0 || jobStake > 0, "params not set");
-        require(reward <= type(uint128).max, "overflow");
-        require(maxJobReward == 0 || reward <= maxJobReward, "reward too high");
-        require(deadline > block.timestamp, "deadline");
-        require(agentTypes > 0 && agentTypes <= 3, "agent types");
-        if (maxJobDuration > 0) {
-            require(
-                uint256(deadline) - block.timestamp <= maxJobDuration,
-                "duration"
-            );
-        }
-        require(feePct + validatorRewardPct <= 100, "pct");
-        if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted employer"
-            );
+        if (reward == 0 && jobStake == 0) revert JobParametersUnset();
+        if (reward > type(uint128).max) revert RewardOverflow();
+        if (maxJobReward != 0 && reward > maxJobReward) revert RewardTooHigh();
+        if (deadline <= block.timestamp) revert InvalidDeadline();
+        if (agentTypes == 0 || agentTypes > 3) revert InvalidAgentTypes();
+        if (
+            maxJobDuration > 0 &&
+            uint256(deadline) - block.timestamp > maxJobDuration
+        ) revert DurationTooLong();
+        if (feePct + validatorRewardPct > 100) revert InvalidPercentages();
+        if (
+            address(reputationEngine) != address(0) &&
+            reputationEngine.isBlacklisted(msg.sender)
+        ) {
+            revert BlacklistedEmployer();
         }
         unchecked {
             nextJobId++;

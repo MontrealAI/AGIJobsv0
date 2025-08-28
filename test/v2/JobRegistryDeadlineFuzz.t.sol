@@ -27,14 +27,15 @@ contract JobRegistryDeadlineFuzz is Test {
             ITaxPolicy(address(0)),
             0,
             0,
-            new address[](0)
+            new address[](0),
+            address(0)
         );
     }
 
     function testFuzz_deadline(uint64 deadline) public {
         uint256 reward = 1;
         if (deadline <= block.timestamp) {
-            vm.expectRevert("deadline");
+            vm.expectRevert(JobRegistry.InvalidDeadline.selector);
             registry.createJob(reward, deadline, "uri");
         } else {
             registry.createJob(reward, deadline, "uri");
