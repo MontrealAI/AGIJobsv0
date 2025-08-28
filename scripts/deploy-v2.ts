@@ -78,6 +78,27 @@ async function main() {
   await dispute.waitForDeployment();
   await dispute.setStakeManager(await stake.getAddress());
 
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await token.getAddress(),
+    await stake.getAddress(),
+    0,
+    deployer.address
+  );
+  await feePool.waitForDeployment();
+
+  const PlatformRegistry = await ethers.getContractFactory(
+    "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+  );
+  const platformRegistry = await PlatformRegistry.deploy(
+    await stake.getAddress(),
+    await reputation.getAddress(),
+    0
+  );
+  await platformRegistry.waitForDeployment();
+
   await stake.setModules(await registry.getAddress(), await dispute.getAddress());
   await validation.setJobRegistry(await registry.getAddress());
   await nft.setJobRegistry(await registry.getAddress());
@@ -88,7 +109,7 @@ async function main() {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
-    ethers.ZeroAddress,
+    await feePool.getAddress(),
     []
   );
   await registry.setIdentityRegistry(await identity.getAddress());
@@ -108,6 +129,15 @@ async function main() {
     deployer.address
   );
   await pause.waitForDeployment();
+  await pause.setModules(
+    await registry.getAddress(),
+    await stake.getAddress(),
+    await validation.getAddress(),
+    await dispute.getAddress(),
+    await platformRegistry.getAddress(),
+    await feePool.getAddress(),
+    await reputation.getAddress()
+  );
   await stake.setGovernance(await pause.getAddress());
   await registry.setGovernance(await pause.getAddress());
   await validation.transferOwnership(await pause.getAddress());
