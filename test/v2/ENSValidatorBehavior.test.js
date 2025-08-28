@@ -98,6 +98,8 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
+    await validation.selectValidators(1, 0);
+    await ethers.provider.send("evm_mine", []);
     await expect(
       validation.selectValidators(1, 0)
     ).to.be.revertedWith("insufficient validators");
@@ -111,6 +113,8 @@ describe("Validator ENS integration", function () {
 
     await jobRegistry.setJob(2, job);
     await validation.selectValidators(2, 99999);
+    await ethers.provider.send("evm_mine", []);
+    await validation.selectValidators(2, 0);
     await expect(
       validation
         .connect(validator)
@@ -169,6 +173,8 @@ describe("Validator ENS integration", function () {
     };
     await jobRegistry.setJob(1, job);
     await validation.selectValidators(1, 11111);
+    await ethers.provider.send("evm_mine", []);
+    await validation.selectValidators(1, 0);
 
     // transfer ENS ownership
     await wrapper.setOwner(ethers.toBigInt(node), other.address);
@@ -222,8 +228,10 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
+    await validation.selectValidators(1, 22222);
+    await ethers.provider.send("evm_mine", []);
     await expect(
-      validation.selectValidators(1, 22222)
+      validation.selectValidators(1, 0)
     ).to.be.revertedWith("insufficient validators");
   });
 });

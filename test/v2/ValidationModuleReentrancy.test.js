@@ -73,9 +73,10 @@ async function setup() {
     await ethers.provider.send("hardhat_setBalance", [addr, "0x1000000000000000000"]);
     await ethers.provider.send("hardhat_impersonateAccount", [addr]);
     const registry = await ethers.getSigner(addr);
-    const tx = await validation.connect(registry).start(jobId, entropy);
+    await validation.connect(registry).start(jobId, entropy);
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
-    return tx;
+    await ethers.provider.send("evm_mine", []);
+    return validation.selectValidators(jobId, 0);
   }
 
   return {

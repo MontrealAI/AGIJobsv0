@@ -54,8 +54,9 @@ describe("Validator selection reservoir strategy", function () {
     const counts = {};
     const iterations = 30;
     for (let i = 0; i < iterations; i++) {
-      const tx = await validation.selectValidators(i + 1, i + 12345);
-      await tx.wait();
+      await validation.selectValidators(i + 1, i + 12345);
+      await ethers.provider.send("evm_mine", []);
+      await validation.selectValidators(i + 1, 0);
       const selected = await validation.validators(i + 1);
       for (const v of selected) {
         counts[v] = (counts[v] || 0) + 1;

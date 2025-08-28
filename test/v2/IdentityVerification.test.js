@@ -195,7 +195,9 @@ describe("Identity verification enforcement", function () {
     });
 
     async function select(jobId, entropy = 0) {
-      return validation.selectValidators(jobId, entropy);
+      await validation.selectValidators(jobId, entropy);
+      await ethers.provider.send("evm_mine", []);
+      return validation.selectValidators(jobId, 0);
     }
 
     async function advance(seconds) {
