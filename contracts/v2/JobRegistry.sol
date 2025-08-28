@@ -833,6 +833,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 uint256(
                     keccak256(
                         abi.encodePacked(
+                            jobId,
+                            msg.sender,
                             resultHash,
                             block.timestamp,
                             block.prevrandao,
@@ -861,7 +863,18 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     ///      computed result of the commit-reveal process.
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
-    function finalizeAfterValidation(uint256 jobId, bool success) public whenNotPaused {
+    function finalizeAfterValidation(uint256 jobId, bool success)
+        public
+        whenNotPaused
+        nonReentrant
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         require(msg.sender == address(validationModule), "only validation");
         Job storage job = jobs[jobId];
         require(job.state == State.Submitted, "not submitted");
@@ -869,7 +882,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.state = success ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, success);
         if (success) {
-            finalize(jobId);
+            _finalize(jobId);
         }
     }
 
