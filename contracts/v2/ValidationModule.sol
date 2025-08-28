@@ -457,7 +457,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     jobNonce[jobId],
                     entropy,
                     randao,
-                    bhash
+                    bhash,
+                    gasleft(),
+                    address(this)
                 )
             )
         );
