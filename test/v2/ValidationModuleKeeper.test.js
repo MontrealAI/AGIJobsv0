@@ -33,13 +33,6 @@ async function setup() {
     .connect(owner)
     .setReputationEngine(await reputation.getAddress());
 
-  const VRFMock = await ethers.getContractFactory(
-    "contracts/v2/mocks/VRFMock.sol:VRFMock"
-  );
-  const vrf = await VRFMock.deploy();
-  await vrf.waitForDeployment();
-  await validation.setVRF(await vrf.getAddress());
-
   const Identity = await ethers.getContractFactory(
     "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
   );
@@ -72,11 +65,8 @@ async function setup() {
     resultHash: ethers.ZeroHash,
   };
   await jobRegistry.setJob(1, jobStruct);
-  async function select(jobId, randomness = 12345) {
-    await validation.requestVRF(jobId);
-    const req = await validation.vrfRequestIds(jobId);
-    await vrf.fulfill(req, randomness);
-    return validation.selectValidators(jobId, 0);
+  async function select(jobId, entropy = 0) {
+    return validation.selectValidators(jobId, entropy);
   }
 
   return {

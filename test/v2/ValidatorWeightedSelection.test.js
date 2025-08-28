@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Validator selection weighted by stake", function () {
-  let validation, stake, identity, vrf;
+  let validation, stake, identity;
   let validators;
 
   beforeEach(async () => {
@@ -33,13 +33,6 @@ describe("Validator selection weighted by stake", function () {
     await validation.waitForDeployment();
     await validation.setIdentityRegistry(await identity.getAddress());
 
-    const VRFMock = await ethers.getContractFactory(
-      "contracts/v2/mocks/VRFMock.sol:VRFMock"
-    );
-    vrf = await VRFMock.deploy();
-    await vrf.waitForDeployment();
-    await validation.setVRF(await vrf.getAddress());
-
     const stakeAmts = [
       ethers.parseEther("1"),
       ethers.parseEther("2"),
@@ -59,11 +52,8 @@ describe("Validator selection weighted by stake", function () {
     await validation.setValidatorPoolSampleSize(10);
   });
 
-  async function select(jobId, randomness) {
-    await validation.requestVRF(jobId);
-    const req = await validation.vrfRequestIds(jobId);
-    await vrf.fulfill(req, randomness);
-    await (await validation.selectValidators(jobId, 0)).wait();
+  async function select(jobId, entropy) {
+    await (await validation.selectValidators(jobId, entropy)).wait();
     return await validation.validators(jobId);
   }
 

@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("ValidationModule V2", function () {
   let owner, employer, v1, v2, v3;
-  let validation, stakeManager, jobRegistry, reputation, identity, vrf;
+  let validation, stakeManager, jobRegistry, reputation, identity;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -19,12 +19,6 @@ describe("ValidationModule V2", function () {
     const RepMock = await ethers.getContractFactory("MockReputationEngine");
     reputation = await RepMock.deploy();
     await reputation.waitForDeployment();
-
-    const VRFMock = await ethers.getContractFactory(
-      "contracts/v2/mocks/VRFMock.sol:VRFMock"
-    );
-    vrf = await VRFMock.deploy();
-    await vrf.waitForDeployment();
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
@@ -42,7 +36,6 @@ describe("ValidationModule V2", function () {
     await validation
       .connect(owner)
       .setReputationEngine(await reputation.getAddress());
-    await validation.setVRF(await vrf.getAddress());
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
@@ -86,15 +79,11 @@ describe("ValidationModule V2", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
-  async function select(jobId, randomness = 12345) {
-    await validation.requestVRF(jobId);
-    const req = await validation.vrfRequestIds(jobId);
-    await vrf.fulfill(req, randomness);
-    return validation.selectValidators(jobId, 0);
+  async function select(jobId, entropy = 0) {
+    return validation.selectValidators(jobId, entropy);
   }
 
-  it("selects validators without VRF provider", async () => {
-    await validation.setVRF(ethers.ZeroAddress);
+  it("selects validators", async () => {
     const tx = await validation.selectValidators(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
@@ -104,8 +93,7 @@ describe("ValidationModule V2", function () {
     expect(selected.length).to.equal(3);
   });
 
-  it("starts validation without VRF provider", async () => {
-    await validation.setVRF(ethers.ZeroAddress);
+  it("starts validation", async () => {
     const tx = await validation.start(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
@@ -115,7 +103,6 @@ describe("ValidationModule V2", function () {
   });
 
   it("changes selection with different entropy", async () => {
-    await validation.setVRF(ethers.ZeroAddress);
     await validation
       .connect(owner)
       .setSelectionStrategy(

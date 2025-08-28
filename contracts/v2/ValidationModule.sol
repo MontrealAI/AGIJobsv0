@@ -10,7 +10,6 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
-import {IVRFConsumer} from "./interfaces/IVRFConsumer.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -61,12 +60,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Starting index for the rotating window strategy.
     uint256 public validatorPoolRotation;
-    // optional VRF provider for future randomness upgrades
-    IVRFConsumer public vrf;
-    // track VRF requests and delivered randomness
-    mapping(uint256 => uint256) public vrfRequestIds; // jobId => requestId
-    mapping(uint256 => uint256) public vrfRequestJob; // requestId => jobId
-    mapping(uint256 => uint256) public vrfRandomness; // jobId => first random word
 
     // optional override for validators without ENS identity
     mapping(address => string) public validatorSubdomains;
@@ -99,9 +92,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
-    event VRFUpdated(address vrf);
-    event VRFRequested(uint256 indexed jobId, uint256 requestId);
-    event VRFFulfilled(uint256 indexed jobId, uint256 requestId);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators);
     event ValidatorSlashingPctUpdated(uint256 pct);
@@ -209,46 +199,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit ModulesUpdated(address(jobRegistry), address(manager));
     }
 
-    /// @notice Set the optional VRF provider for future upgrades.
-    function setVRF(IVRFConsumer provider) external onlyOwner {
-        vrf = provider;
-        emit VRFUpdated(address(provider));
-    }
-
-    /// @notice Request randomness for a job's validator selection.
-    /// @dev Must be called before {selectValidators} when a VRF provider is set.
-    ///      If the underlying VRF request reverts, this function reverts and may
-    ///      be retried.
-    /// @param jobId Identifier of the job requiring randomness.
-    /// @return requestId Identifier for the VRF request.
-    function requestVRF(uint256 jobId)
-        external
-        whenNotPaused
-        nonReentrant
-        returns (uint256 requestId)
-    {
-        require(address(vrf) != address(0), "vrf not set");
-        require(vrfRequestIds[jobId] == 0, "request pending");
-        require(vrfRandomness[jobId] == 0, "randomness pending");
-        jobNonce[jobId] += 1;
-        requestId = vrf.requestRandomWords();
-        vrfRequestIds[jobId] = requestId;
-        vrfRequestJob[requestId] = jobId;
-        emit VRFRequested(jobId, requestId);
-    }
-
-    /// @notice Callback for VRF providers to supply randomness.
-    /// @param requestId Identifier previously returned by the VRF provider.
-    /// @param randomWords Array of random words associated with the request.
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
-        require(msg.sender == address(vrf), "not vrf");
-        uint256 jobId = vrfRequestJob[requestId];
-        require(jobId != 0, "unknown request");
-        vrfRandomness[jobId] = randomWords[0];
-        delete vrfRequestIds[jobId];
-        delete vrfRequestJob[requestId];
-        emit VRFFulfilled(jobId, requestId);
-    }
+    // VRF functionality has been removed; randomness is derived on-chain.
 
     /// @notice Update the identity registry used for validator verification.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
@@ -475,11 +426,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @inheritdoc IValidationModule
-    /// @dev When a VRF provider is configured, callers must invoke {requestVRF}
-    ///      and wait for {fulfillRandomWords} before calling this function. If
-    ///      no VRF provider is set, a pseudo-random seed is derived on-chain.
-    ///      If VRF randomness has not yet been delivered, the call reverts with
-    ///      "VRF pending".
+    /// @dev Randomness is derived from on-chain data and optional caller-supplied entropy.
     function selectValidators(uint256 jobId, uint256 entropy)
         public
         override
@@ -493,26 +440,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        uint256 seed;
-        if (address(vrf) == address(0)) {
-            seed = uint256(
-                keccak256(
-                    abi.encodePacked(
-                        jobId,
-                        entropy,
-                        block.prevrandao,
-                        blockhash(block.number - 1)
-                    )
+        jobNonce[jobId] += 1;
+        uint256 seed = uint256(
+            keccak256(
+                abi.encodePacked(
+                    jobId,
+                    jobNonce[jobId],
+                    entropy,
+                    block.prevrandao,
+                    blockhash(block.number - 1)
                 )
-            );
-        } else {
-            seed = vrfRandomness[jobId];
-            require(seed != 0, "VRF pending");
-            delete vrfRandomness[jobId];
-            if (entropy != 0) {
-                seed = uint256(keccak256(abi.encodePacked(seed, entropy)));
-            }
-        }
+            )
+        );
 
         uint256 n = validatorPool.length;
         require(n > 0, "insufficient validators");
