@@ -77,7 +77,7 @@ describe("ValidationModule committee size", function () {
   }
 
   async function start(jobId, entropy = 0) {
-    return validation.start(jobId, 0, entropy);
+    return validation.start(jobId, entropy);
   }
 
   it("respects validator count bounds", async () => {

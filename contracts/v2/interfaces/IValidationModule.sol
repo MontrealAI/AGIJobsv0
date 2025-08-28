@@ -37,7 +37,7 @@ interface IValidationModule {
 
     /// @notice Select validators for a given job.
     /// @param jobId Identifier of the job.
-    /// @param entropy Optional caller-provided entropy.
+    /// @param entropy Optional caller-provided entropy mixed with on-chain data.
     /// @return Array of selected validator addresses.
     function selectValidators(uint256 jobId, uint256 entropy)
         external
@@ -45,13 +45,11 @@ interface IValidationModule {
 
     /// @notice Start validation for a job and select validators
     /// @param jobId Identifier of the job
-    /// @param entropy VRF-supplied randomness if available, otherwise 0
-    /// @param extraEntropy Additional caller-provided entropy mixed in when VRF is absent
+    /// @param entropy Caller-provided entropy mixed with on-chain sources
     /// @return validators Array of selected validator addresses
     function start(
         uint256 jobId,
-        uint256 entropy,
-        uint256 extraEntropy
+        uint256 entropy
     ) external returns (address[] memory validators);
 
     /// @notice Commit a validation hash for a job
