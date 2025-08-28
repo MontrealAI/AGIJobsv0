@@ -82,32 +82,37 @@ describe("ValidationModule committee size", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
-  async function start(jobId, size, randomness = 12345) {
+  async function start(jobId, randomness = 12345) {
     await validation.requestVRF(jobId);
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
-    return validation.start(jobId, "", size);
+    return validation.start(jobId, "", 0);
   }
 
-  it("allows per-job committee size within bounds", async () => {
-    await start(1, 2);
+  it("respects validator count bounds", async () => {
+    await validation.connect(owner).setValidatorsPerJob(3);
+    await start(1);
     expect((await validation.validators(1)).length).to.equal(3);
     const r1 = await validation.rounds(1);
     expect(r1.committeeSize).to.equal(3n);
 
-    await start(2, 0);
-    expect((await validation.validators(2)).length).to.equal(3);
+    await validation.connect(owner).setValidatorsPerJob(4);
+    await start(2);
+    expect((await validation.validators(2)).length).to.equal(4);
     const r2 = await validation.rounds(2);
-    expect(r2.committeeSize).to.equal(3n);
+    expect(r2.committeeSize).to.equal(4n);
 
-    await start(3, 10);
-    expect((await validation.validators(3)).length).to.equal(4);
-    const r3 = await validation.rounds(3);
-    expect(r3.committeeSize).to.equal(4n);
+    await expect(
+      validation.connect(owner).setValidatorsPerJob(2)
+    ).to.be.revertedWith("bounds");
+    await expect(
+      validation.connect(owner).setValidatorsPerJob(10)
+    ).to.be.revertedWith("bounds");
   });
 
   it("uses stored committee size for quorum", async () => {
-    await start(4, 3);
+    await validation.connect(owner).setValidatorsPerJob(3);
+    await start(4);
     const selected = await validation.validators(4);
     const signerMap = {
       [v1.address.toLowerCase()]: v1,
