@@ -121,6 +121,31 @@ describe("ValidationModule finalize flows", function () {
     expect(job.success).to.equal(true);
   });
 
+  it("reverts finalize before any reveals", async () => {
+    const { v1, v2, v3, validation, select } = await setup();
+    await select(1);
+    const salt1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
+    const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
+    const nonce = await validation.jobNonce(1);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt1]
+    );
+    const commit2 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt2]
+    );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32"],
+      [1n, nonce, true, salt3]
+    );
+    await validation.connect(v1).commitValidation(1, commit1, "", []);
+    await validation.connect(v2).commitValidation(1, commit2, "", []);
+    await validation.connect(v3).commitValidation(1, commit3, "", []);
+    await expect(validation.finalize(1)).to.be.revertedWith("reveal pending");
+  });
+
   it("records majority rejection as dispute", async () => {
     const { v1, v2, v3, validation, jobRegistry, select } = await setup();
     await select(1);

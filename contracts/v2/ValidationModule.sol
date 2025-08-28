@@ -78,6 +78,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 revealDeadline;
         uint256 approvals;
         uint256 rejections;
+        uint256 revealedCount;
         bool tallied;
         uint256 committeeSize;
     }
@@ -836,6 +837,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         revealed[jobId][msg.sender] = true;
         votes[jobId][msg.sender] = approve;
         r.participants.push(msg.sender);
+        r.revealedCount += 1;
         if (approve) r.approvals += stake; else r.rejections += stake;
 
         emit ValidationRevealed(jobId, msg.sender, approve);
@@ -964,7 +966,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             !r.tallied &&
             r.revealDeadline != 0 &&
             (block.timestamp > r.revealDeadline ||
-                r.participants.length == r.validators.length);
+                r.revealedCount == r.validators.length);
         performData = checkData;
     }
 
@@ -981,7 +983,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             !r.tallied &&
             r.revealDeadline != 0 &&
             (block.timestamp > r.revealDeadline ||
-                r.participants.length == r.validators.length);
+                r.revealedCount == r.validators.length);
         require(upkeepNeeded, "upkeep");
         bool success = _finalize(jobId);
         emit UpkeepPerformed(jobId, success);
@@ -990,17 +992,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");
-        require(
-            block.timestamp > r.revealDeadline ||
-                r.participants.length == r.validators.length,
-            "reveal pending"
-        );
+        if (r.revealedCount != r.validators.length) {
+            require(block.timestamp > r.revealDeadline, "reveal pending");
+        }
 
         uint256 total = r.approvals + r.rejections;
         uint256 size = r.committeeSize == 0
             ? validatorsPerJob
             : r.committeeSize;
-        bool quorum = r.participants.length >= size;
+        bool quorum = r.revealedCount >= size;
         uint256 approvalCount;
         for (uint256 i; i < r.validators.length;) {
             address v = r.validators[i];
@@ -1065,7 +1065,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     function _cleanup(uint256 jobId) internal {
         uint256 nonce = jobNonce[jobId];
-        address[] storage vals = rounds[jobId].validators;
+        Round storage r = rounds[jobId];
+        address[] storage vals = r.validators;
         for (uint256 i; i < vals.length;) {
             address val = vals[i];
             delete commitments[jobId][val][nonce];
@@ -1077,6 +1078,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 ++i;
             }
         }
+        r.revealedCount = 0;
         delete rounds[jobId];
         delete jobNonce[jobId];
     }
