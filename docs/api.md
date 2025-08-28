@@ -42,7 +42,8 @@ const jobId = receipt.logs[0].args.jobId;
 ## ValidationModule
 Manages commit‑reveal voting by validators.
 
-- `selectValidators(jobId)` – choose validators for a job.
+- `start(jobId, entropy)` – select validators and open the commit window.
+- `selectValidators(jobId, entropy)` – choose validators for a job.
 - `commitValidation(jobId, commitHash)` / `revealValidation(jobId, approve, salt)` – validator vote flow.
 - `finalize(jobId)` – tallies votes and notifies `JobRegistry`.
 

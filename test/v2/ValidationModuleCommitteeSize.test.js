@@ -86,7 +86,7 @@ describe("ValidationModule committee size", function () {
     await validation.requestVRF(jobId);
     const req = await validation.vrfRequestIds(jobId);
     await vrf.fulfill(req, randomness);
-    return validation.start(jobId, "", 0);
+    return validation.start(jobId, 0);
   }
 
   it("respects validator count bounds", async () => {

@@ -829,7 +829,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(validationModule) != address(0)) {
             validationModule.start(
                 jobId,
-                resultURI,
                 uint256(
                     keccak256(
                         abi.encodePacked(resultHash, block.timestamp)

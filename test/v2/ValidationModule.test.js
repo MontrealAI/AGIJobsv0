@@ -106,7 +106,7 @@ describe("ValidationModule V2", function () {
 
   it("starts validation without VRF provider", async () => {
     await validation.setVRF(ethers.ZeroAddress);
-    const tx = await validation.start(1, "", 0);
+    const tx = await validation.start(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"

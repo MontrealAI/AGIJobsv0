@@ -76,10 +76,10 @@ async function setup() {
   await jobRegistry.setJob(1, jobStruct);
 
   async function prepare(jobId, randomness = 12345) {
-  await validation.requestVRF(jobId);
-  const req = await validation.vrfRequestIds(jobId);
-  await vrf.fulfill(req, randomness);
-  return validation.start(jobId, "", 0);
+    await validation.requestVRF(jobId);
+    const req = await validation.vrfRequestIds(jobId);
+    await vrf.fulfill(req, randomness);
+    return validation.start(jobId, 0);
   }
 
   return {
