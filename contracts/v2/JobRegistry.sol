@@ -832,7 +832,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 jobId,
                 uint256(
                     keccak256(
-                        abi.encodePacked(resultHash, block.timestamp)
+                        abi.encodePacked(
+                            resultHash,
+                            block.timestamp,
+                            block.prevrandao,
+                            blockhash(block.number - 1)
+                        )
                     )
                 )
             );
