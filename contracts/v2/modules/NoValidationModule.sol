@@ -40,11 +40,11 @@ contract NoValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
-    function start(
-        uint256 jobId,
-        string calldata,
-        uint256 /*entropy*/
-    ) external override returns (address[] memory validators) {
+    function start(uint256 jobId, uint256 /*entropy*/)
+        external
+        override
+        returns (address[] memory validators)
+    {
         validators = new address[](0);
         jobRegistry.onValidationResult(jobId, true, validators);
     }

@@ -727,11 +727,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @inheritdoc IValidationModule
-    function start(
-        uint256 jobId,
-        string calldata /*data*/,
-        uint256 entropy
-    )
+    function start(uint256 jobId, uint256 entropy)
         external
         override
         whenNotPaused

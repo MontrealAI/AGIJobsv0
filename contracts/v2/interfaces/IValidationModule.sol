@@ -50,14 +50,11 @@ interface IValidationModule {
 
     /// @notice Start validation for a job and select validators
     /// @param jobId Identifier of the job
-    /// @param data Arbitrary data associated with the submission
     /// @param entropy Optional entropy supplied when VRF is unavailable
     /// @return validators Array of selected validator addresses
-    function start(
-        uint256 jobId,
-        string calldata data,
-        uint256 entropy
-    ) external returns (address[] memory validators);
+    function start(uint256 jobId, uint256 entropy)
+        external
+        returns (address[] memory validators);
 
     /// @notice Commit a validation hash for a job
     /// @param jobId Identifier of the job being voted on
