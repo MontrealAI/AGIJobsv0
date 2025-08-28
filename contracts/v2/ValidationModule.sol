@@ -174,6 +174,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         external
         onlyOwner
     {
+        require(newPool.length <= maxValidatorPoolSize, "pool limit");
         validatorPool = newPool;
         emit ValidatorsUpdated(newPool);
     }
