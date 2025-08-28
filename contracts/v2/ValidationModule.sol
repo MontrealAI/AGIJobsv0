@@ -495,6 +495,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         if (selectionStrategy == IValidationModule.SelectionStrategy.Rotating) {
             uint256 rotationStart = validatorPoolRotation;
+            uint256 offset = uint256(
+                keccak256(abi.encodePacked(randao, bhash))
+            ) % n;
+            rotationStart = (rotationStart + offset) % n;
             uint256 i;
             for (; i < n && candidateCount < sample;) {
                 uint256 idx = (rotationStart + i) % n;
