@@ -13,7 +13,6 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
-import {IVRF} from "./interfaces/IVRF.sol";
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -27,7 +26,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
     IIdentityRegistry public identityRegistry;
-    IVRF public vrf;
 
     // timing configuration
     uint256 public commitWindow;
@@ -109,8 +107,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorPoolSampleSizeUpdated(uint256 size);
     event MaxValidatorPoolSizeUpdated(uint256 size);
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
-    event VRFUpdated(address vrf);
-    event VRFAutoRequested(uint256 indexed jobId);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -202,18 +198,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit ModulesUpdated(address(jobRegistry), address(manager));
     }
 
-    // Optional VRF integration; randomness is derived on-chain when unset.
-
     /// @notice Update the identity registry used for validator verification.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
-    }
-
-    /// @notice Update the optional VRF provider.
-    function setVRF(IVRF _vrf) external onlyOwner {
-        vrf = _vrf;
-        emit VRFUpdated(address(_vrf));
     }
 
     /// @notice Pause validation operations
@@ -683,21 +671,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return selected;
     }
 
-    function requestVRF(uint256 jobId) internal {
-        vrf.requestVRF(jobId);
-    }
-
     /// @inheritdoc IValidationModule
     function start(
         uint256 jobId,
-        uint256 entropy,
-        uint256 extraEntropy
+        uint256 entropy
     ) external override whenNotPaused nonReentrant returns (address[] memory selected) {
         Round storage r = rounds[jobId];
-        if (address(vrf) != address(0) && vrf.randomness(jobId) == 0) {
-            requestVRF(jobId);
-            emit VRFAutoRequested(jobId);
-        }
         uint256 n = validatorPool.length;
         require(n >= minValidators, "pool");
         uint256 size = validatorsPerJob;
@@ -705,11 +684,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (size > maxValidators) size = maxValidators;
         if (size > n) size = n;
         r.committeeSize = size;
-        uint256 ent = entropy;
-        if (ent == 0) {
-            ent = extraEntropy;
-        }
-        selected = selectValidators(jobId, ent);
+        selected = selectValidators(jobId, entropy);
     }
 
     /// @notice Internal commit logic shared by overloads.

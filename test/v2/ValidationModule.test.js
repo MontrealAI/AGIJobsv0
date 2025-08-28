@@ -93,30 +93,14 @@ describe("ValidationModule V2", function () {
     expect(selected.length).to.equal(3);
   });
 
-  it("starts validation", async () => {
-    const tx = await validation.start(1, 0, 0);
-    const receipt = await tx.wait();
-    const event = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-    );
-    expect(event.args[1].length).to.equal(3);
-  });
-
-  it("auto-requests VRF when missing randomness", async () => {
-    const VRF = await ethers.getContractFactory(
-      "contracts/v2/mocks/VRFMock.sol:VRFMock"
-    );
-    const vrf = await VRF.deploy();
-    await vrf.waitForDeployment();
-    await validation.connect(owner).setVRF(await vrf.getAddress());
-    const tx = await validation.start(1, 0, 0);
-    const receipt = await tx.wait();
-    const auto = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "VRFAutoRequested"
-    );
-    expect(auto.args[0]).to.equal(1n);
-    expect(await vrf.lastRequest()).to.equal(1n);
-  });
+    it("starts validation", async () => {
+      const tx = await validation.start(1, 0);
+      const receipt = await tx.wait();
+      const event = receipt.logs.find(
+        (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      );
+      expect(event.args[1].length).to.equal(3);
+    });
 
 
   it("reverts when stake manager is unset", async () => {
