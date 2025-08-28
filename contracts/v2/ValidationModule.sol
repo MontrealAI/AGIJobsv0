@@ -52,8 +52,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     address[] public validatorPool;
     // maximum number of pool entries to sample on-chain
     uint256 public validatorPoolSampleSize = 100;
-    // hard cap on validator pool size
-    uint256 public maxValidatorPoolSize = type(uint256).max;
+    // hard cap on validator pool size; default chosen to keep on-chain
+    // iteration within practical gas limits while allowing governance to
+    // raise or lower it via the existing setter.
+    uint256 public maxValidatorPoolSize = 1000;
 
     /// @notice Current strategy used for validator sampling.
     IValidationModule.SelectionStrategy public selectionStrategy;
