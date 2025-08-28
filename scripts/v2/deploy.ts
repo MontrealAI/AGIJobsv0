@@ -114,13 +114,6 @@ async function main() {
   );
   await validation.waitForDeployment();
 
-  const VRFMock = await ethers.getContractFactory(
-    "contracts/v2/mocks/VRFMock.sol:VRFMock"
-  );
-  const vrf = await VRFMock.deploy();
-  await vrf.waitForDeployment();
-  await validation.setVRF(await vrf.getAddress());
-
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
   );
@@ -246,7 +239,6 @@ async function main() {
 
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());
-  console.log("VRFMock:", await vrf.getAddress());
   console.log("StakeManager:", await stake.getAddress());
   console.log("ReputationEngine:", await reputation.getAddress());
   let activeDispute = await dispute.getAddress();
@@ -288,7 +280,6 @@ async function main() {
     platformRegistry: await platformRegistry.getAddress(),
     jobRouter: await jobRouter.getAddress(),
     platformIncentives: await incentives.getAddress(),
-    vrf: await vrf.getAddress(),
   };
 
   writeFileSync(
@@ -324,7 +315,6 @@ async function main() {
     await stake.getAddress(),
     governance,
   ]);
-  await verify(await vrf.getAddress(), []);
   await verify(await reputation.getAddress(), [governance]);
   await verify(await dispute.getAddress(), [
     await registry.getAddress(),

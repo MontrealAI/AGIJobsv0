@@ -3,7 +3,7 @@ const { expect } = require("chai");
 
 describe("ValidationModule committee size", function () {
   let owner, employer, v1, v2, v3, v4;
-  let validation, stakeManager, jobRegistry, identity, vrf;
+  let validation, stakeManager, jobRegistry, identity;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3, v4] = await ethers.getSigners();
@@ -39,12 +39,6 @@ describe("ValidationModule committee size", function () {
       .connect(owner)
       .setIdentityRegistry(await identity.getAddress());
 
-    const VRFMock = await ethers.getContractFactory(
-      "contracts/v2/mocks/VRFMock.sol:VRFMock"
-    );
-    vrf = await VRFMock.deploy();
-    await vrf.waitForDeployment();
-    await validation.setVRF(await vrf.getAddress());
     await identity.setClubRootNode(ethers.ZeroHash);
     await identity.setAgentRootNode(ethers.ZeroHash);
     await identity.addAdditionalValidator(v1.address);
@@ -82,11 +76,8 @@ describe("ValidationModule committee size", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
-  async function start(jobId, randomness = 12345) {
-    await validation.requestVRF(jobId);
-    const req = await validation.vrfRequestIds(jobId);
-    await vrf.fulfill(req, randomness);
-    return validation.start(jobId, 0);
+  async function start(jobId, entropy = 0) {
+    return validation.start(jobId, entropy);
   }
 
   it("respects validator count bounds", async () => {

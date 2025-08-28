@@ -38,13 +38,6 @@ async function setup() {
   await validation.waitForDeployment();
   await validation.connect(owner).setReputationEngine(await reputation.getAddress());
 
-  const VRF = await ethers.getContractFactory(
-    "contracts/v2/mocks/VRFMock.sol:VRFMock"
-  );
-  const vrf = await VRF.deploy();
-  await vrf.waitForDeployment();
-  await validation.setVRF(await vrf.getAddress());
-
   const Identity = await ethers.getContractFactory(
     "contracts/v2/mocks/ReentrantIdentityRegistry.sol:ReentrantIdentityRegistry"
   );
@@ -75,11 +68,8 @@ async function setup() {
   };
   await jobRegistry.setJob(1, jobStruct);
 
-  async function prepare(jobId, randomness = 12345) {
-    await validation.requestVRF(jobId);
-    const req = await validation.vrfRequestIds(jobId);
-    await vrf.fulfill(req, randomness);
-    return validation.start(jobId, 0);
+  async function prepare(jobId, entropy = 0) {
+    return validation.start(jobId, entropy);
   }
 
   return {
@@ -93,44 +83,7 @@ async function setup() {
   };
 }
 
-async function setupVRF() {
-  const [owner] = await ethers.getSigners();
-
-  const Validation = await ethers.getContractFactory(
-    "contracts/v2/ValidationModule.sol:ValidationModule"
-  );
-  const validation = await Validation.deploy(
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    60,
-    60,
-    3,
-    3,
-    []
-  );
-  await validation.waitForDeployment();
-
-  const VRF = await ethers.getContractFactory(
-    "contracts/v2/mocks/ReentrantVRF.sol:ReentrantVRF"
-  );
-  const vrf = await VRF.deploy();
-  await vrf.waitForDeployment();
-  await validation.setVRF(await vrf.getAddress());
-  await vrf.setValidationModule(await validation.getAddress());
-
-  return { validation, vrf };
-}
-
 describe("ValidationModule reentrancy", function () {
-  it("guards requestVRF against reentrancy", async () => {
-    const { validation, vrf } = await setupVRF();
-    await vrf.attackRequest(1);
-    await expect(validation.requestVRF(1)).to.be.revertedWithCustomError(
-      validation,
-      "ReentrancyGuardReentrantCall"
-    );
-  });
-
   it("guards commit against reentrancy", async () => {
     const { validator, validation, identity, prepare } = await setup();
     await prepare(1);

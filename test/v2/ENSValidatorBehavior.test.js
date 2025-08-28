@@ -13,7 +13,7 @@ function namehash(root, label) {
 describe("Validator ENS integration", function () {
   let owner, validator, other, v2, v3;
   let ens, resolver, wrapper, identity;
-  let stakeManager, jobRegistry, reputation, validation, vrf;
+  let stakeManager, jobRegistry, reputation, validation;
   const root = ethers.id("agi");
 
   beforeEach(async () => {
@@ -72,12 +72,6 @@ describe("Validator ENS integration", function () {
     await validation.waitForDeployment();
     await validation.setReputationEngine(await reputation.getAddress());
     await validation.setIdentityRegistry(await identity.getAddress());
-    const VRFMock = await ethers.getContractFactory(
-      "contracts/v2/mocks/VRFMock.sol:VRFMock"
-    );
-    vrf = await VRFMock.deploy();
-    await vrf.waitForDeployment();
-    await validation.setVRF(await vrf.getAddress());
 
     // add filler validators
     await identity.addAdditionalValidator(v2.address);
@@ -104,9 +98,6 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.requestVRF(1);
-    let req = await validation.vrfRequestIds(1);
-    await vrf.fulfill(req, 12345);
     await expect(
       validation.selectValidators(1, 0)
     ).to.be.revertedWith("insufficient validators");
@@ -119,10 +110,7 @@ describe("Validator ENS integration", function () {
     await resolver.setAddr(namehash(root, "v"), validator.address);
 
     await jobRegistry.setJob(2, job);
-    await validation.requestVRF(2);
-    req = await validation.vrfRequestIds(2);
-    await vrf.fulfill(req, 99999);
-    await validation.selectValidators(2, 0);
+    await validation.selectValidators(2, 99999);
     await expect(
       validation
         .connect(validator)
@@ -180,10 +168,7 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.requestVRF(1);
-    let req = await validation.vrfRequestIds(1);
-    await vrf.fulfill(req, 11111);
-    await validation.selectValidators(1, 0);
+    await validation.selectValidators(1, 11111);
 
     // transfer ENS ownership
     await wrapper.setOwner(ethers.toBigInt(node), other.address);
@@ -237,11 +222,8 @@ describe("Validator ENS integration", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.requestVRF(1);
-    req = await validation.vrfRequestIds(1);
-    await vrf.fulfill(req, 22222);
     await expect(
-      validation.selectValidators(1, 0)
+      validation.selectValidators(1, 22222)
     ).to.be.revertedWith("insufficient validators");
   });
 });

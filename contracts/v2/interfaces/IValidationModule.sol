@@ -37,20 +37,15 @@ interface IValidationModule {
 
     /// @notice Select validators for a given job.
     /// @param jobId Identifier of the job.
-    /// @param entropy Additional entropy supplied when VRF is unavailable.
+    /// @param entropy Optional caller-provided entropy.
     /// @return Array of selected validator addresses.
     function selectValidators(uint256 jobId, uint256 entropy)
         external
         returns (address[] memory);
 
-    /// @notice Request a VRF random seed for a job's validator selection.
-    /// @param jobId Identifier of the job
-    /// @return requestId Identifier of the VRF request
-    function requestVRF(uint256 jobId) external returns (uint256 requestId);
-
     /// @notice Start validation for a job and select validators
     /// @param jobId Identifier of the job
-    /// @param entropy Optional entropy supplied when VRF is unavailable
+    /// @param entropy Optional caller-provided entropy
     /// @return validators Array of selected validator addresses
     function start(uint256 jobId, uint256 entropy)
         external

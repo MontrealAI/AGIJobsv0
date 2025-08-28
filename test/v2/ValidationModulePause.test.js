@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("ValidationModule pause", function () {
-  let owner, validator, v2, v3, validation, vrf;
+  let owner, validator, v2, v3, validation;
 
   beforeEach(async () => {
     [owner, validator, v2, v3] = await ethers.getSigners();
@@ -20,12 +20,6 @@ describe("ValidationModule pause", function () {
     await identity.addAdditionalValidator(validator.address);
     await identity.addAdditionalValidator(v2.address);
     await identity.addAdditionalValidator(v3.address);
-    const VRFMock = await ethers.getContractFactory(
-      "contracts/v2/mocks/VRFMock.sol:VRFMock"
-    );
-    vrf = await VRFMock.deploy();
-    await vrf.waitForDeployment();
-
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
@@ -39,19 +33,14 @@ describe("ValidationModule pause", function () {
       [validator.address, v2.address, v3.address]
     );
     await validation.setIdentityRegistry(await identity.getAddress());
-    await validation.setVRF(await vrf.getAddress());
   });
 
   it("pauses validator selection", async () => {
     await validation.connect(owner).pause();
-    await expect(validation.selectValidators(1, 0)).to.be.revertedWithCustomError(
-      validation,
-      "EnforcedPause"
-    );
+    await expect(
+      validation.selectValidators(1, 0)
+    ).to.be.revertedWithCustomError(validation, "EnforcedPause");
     await validation.connect(owner).unpause();
-    await validation.requestVRF(1);
-    const req = await validation.vrfRequestIds(1);
-    await vrf.fulfill(req, 1);
     const selected = await validation.selectValidators.staticCall(1, 0);
     expect(selected.length).to.equal(3);
     expect(selected).to.include(validator.address);

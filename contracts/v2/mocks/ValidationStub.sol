@@ -32,9 +32,9 @@ contract ValidationStub is IValidationModule {
     function start(uint256 jobId, uint256 /*entropy*/)
         external
         override
-        returns (address[] memory validators)
+        returns (address[] memory vals)
     {
-        validators = selectValidators(jobId, 0);
+        vals = selectValidators(jobId, 0);
     }
 
     function commitValidation(
@@ -108,15 +108,6 @@ contract ValidationStub is IValidationModule {
     function setRequiredValidatorApprovals(uint256) external override {}
 
     function resetJobNonce(uint256) external override {}
-
-    function requestVRF(uint256)
-        external
-        pure
-        override
-        returns (uint256)
-    {
-        revert("no vrf");
-    }
 
     function setSelectionStrategy(IValidationModule.SelectionStrategy) external override {}
 
