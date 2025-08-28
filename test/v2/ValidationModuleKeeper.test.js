@@ -66,7 +66,9 @@ async function setup() {
   };
   await jobRegistry.setJob(1, jobStruct);
   async function select(jobId, entropy = 0) {
-    return validation.selectValidators(jobId, entropy);
+    await validation.selectValidators(jobId, entropy);
+    await ethers.provider.send("evm_mine", []);
+    return validation.selectValidators(jobId, 0);
   }
 
   return {

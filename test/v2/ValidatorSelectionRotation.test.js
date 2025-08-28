@@ -49,8 +49,9 @@ describe("Validator selection rotating strategy", function () {
   it("randomizes rotation start index between runs", async () => {
     const starts = new Set();
     for (let j = 0; j < 5; j++) {
-      const tx = await validation.selectValidators(j + 1, 0);
-      await tx.wait();
+      await validation.selectValidators(j + 1, 0);
+      await ethers.provider.send("evm_mine", []);
+      await validation.selectValidators(j + 1, 0);
       const rotation = await validation.validatorPoolRotation();
       const start = Number(
         (rotation + BigInt(poolSize) - BigInt(sampleSize)) % BigInt(poolSize)

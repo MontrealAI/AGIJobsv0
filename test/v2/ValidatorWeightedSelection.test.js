@@ -53,7 +53,9 @@ describe("Validator selection weighted by stake", function () {
   });
 
   async function select(jobId, entropy) {
-    await (await validation.selectValidators(jobId, entropy)).wait();
+    await validation.selectValidators(jobId, entropy);
+    await ethers.provider.send("evm_mine", []);
+    await validation.selectValidators(jobId, 0);
     return await validation.validators(jobId);
   }
 

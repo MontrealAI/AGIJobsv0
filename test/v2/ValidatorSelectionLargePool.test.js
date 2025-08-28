@@ -48,7 +48,9 @@ describe("Validator selection with large pool", function () {
       await validation.setValidatorPool(validators);
       await validation.setValidatorsPerJob(3);
       await validation.setValidatorPoolSampleSize(Math.min(poolSize, 50));
-      const tx = await validation.selectValidators(jobId++, 12345);
+      await validation.selectValidators(jobId, 12345);
+      await ethers.provider.send("evm_mine", []);
+      const tx = await validation.selectValidators(jobId++, 0);
       const receipt = await tx.wait();
       console.log(`pool size ${poolSize}: ${receipt.gasUsed}`);
       expect(receipt.gasUsed).to.be.lt(6000000n);

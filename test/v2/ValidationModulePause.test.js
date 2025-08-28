@@ -41,7 +41,10 @@ describe("ValidationModule pause", function () {
       validation.selectValidators(1, 0)
     ).to.be.revertedWithCustomError(validation, "EnforcedPause");
     await validation.connect(owner).unpause();
-    const selected = await validation.selectValidators.staticCall(1, 0);
+    await validation.selectValidators(1, 0);
+    await ethers.provider.send("evm_mine", []);
+    await validation.selectValidators(1, 0);
+    const selected = await validation.validators(1);
     expect(selected.length).to.equal(3);
     expect(selected).to.include(validator.address);
   });
