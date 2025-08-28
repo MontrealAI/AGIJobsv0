@@ -90,6 +90,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
     mapping(uint256 => mapping(address => bool)) private _validatorLookup;
     mapping(uint256 => uint256) public jobNonce;
+    // Initial entropy provided when a job is submitted.
+    mapping(uint256 => uint256) public pendingEntropy;
+    // Block number whose hash will be used to finalize committee selection.
+    mapping(uint256 => uint256) public selectionBlock;
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
@@ -442,23 +446,35 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
-        unchecked {
-            jobNonce[jobId] += 1;
+
+        // If selection has not been initiated, store entropy and target block.
+        if (selectionBlock[jobId] == 0) {
+            pendingEntropy[jobId] = entropy;
+            selectionBlock[jobId] = block.number + 1;
+            return selected;
         }
-        bytes32 bhash = blockhash(block.number - 1);
+
+        // Finalization path using the stored entropy and future blockhash.
+        require(block.number > selectionBlock[jobId], "await blockhash");
+        bytes32 bhash = blockhash(selectionBlock[jobId]);
+        require(bhash != bytes32(0), "bhash");
+
         uint256 randao = uint256(block.prevrandao);
         if (randao == 0) {
             randao = uint256(keccak256(abi.encodePacked(bhash, block.timestamp)));
+        }
+
+        unchecked {
+            jobNonce[jobId] += 1;
         }
         uint256 seed = uint256(
             keccak256(
                 abi.encodePacked(
                     jobId,
                     jobNonce[jobId],
-                    entropy,
+                    pendingEntropy[jobId],
                     randao,
                     bhash,
-                    gasleft(),
                     address(this)
                 )
             )
@@ -674,6 +690,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.commitDeadline = block.timestamp + commitWindow;
         r.revealDeadline = r.commitDeadline + revealWindow;
 
+        // Clear stored entropy and target block after finalization.
+        delete pendingEntropy[jobId];
+        delete selectionBlock[jobId];
+
         emit ValidatorsSelected(jobId, selected);
         return selected;
     }
@@ -696,7 +716,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (size > maxValidators) size = maxValidators;
         if (size > n) size = n;
         r.committeeSize = size;
-        selected = selectValidators(jobId, entropy);
+
+        // Initialize entropy and schedule finalization using a future blockhash.
+        pendingEntropy[jobId] = entropy;
+        selectionBlock[jobId] = block.number + 1;
     }
 
     /// @notice Internal commit logic shared by overloads.
