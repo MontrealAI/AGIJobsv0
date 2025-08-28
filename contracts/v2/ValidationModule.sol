@@ -683,13 +683,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @inheritdoc IValidationModule
-    function start(uint256 jobId, uint256 entropy)
-        external
-        override
-        whenNotPaused
-        nonReentrant
-        returns (address[] memory selected)
-    {
+    function start(
+        uint256 jobId,
+        uint256 entropy,
+        uint256 extraEntropy
+    ) external override whenNotPaused nonReentrant returns (address[] memory selected) {
         Round storage r = rounds[jobId];
         if (address(vrf) != address(0) && vrf.randomness(jobId) == 0) {
             requestVRF(jobId);
@@ -702,7 +700,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (size > maxValidators) size = maxValidators;
         if (size > n) size = n;
         r.committeeSize = size;
-        selected = selectValidators(jobId, entropy);
+        uint256 ent = entropy;
+        if (ent == 0) {
+            ent = extraEntropy;
+        }
+        selected = selectValidators(jobId, ent);
     }
 
     /// @notice Internal commit logic shared by overloads.
