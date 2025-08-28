@@ -9,10 +9,12 @@ import {DisputeModule} from "./modules/DisputeModule.sol";
 import {PlatformRegistry} from "./PlatformRegistry.sol";
 import {FeePool} from "./FeePool.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title SystemPause
 /// @notice Helper contract allowing governance to pause or unpause all core modules.
-contract SystemPause is Governable {
+/// @dev Uses ReentrancyGuard to prevent reentrant pause/unpause cascades.
+contract SystemPause is Governable, ReentrancyGuard {
     JobRegistry public jobRegistry;
     StakeManager public stakeManager;
     ValidationModule public validationModule;
@@ -78,7 +80,7 @@ contract SystemPause is Governable {
     }
 
     /// @notice Pause all core modules.
-    function pauseAll() external onlyGovernance {
+    function pauseAll() external onlyGovernance nonReentrant {
         jobRegistry.pause();
         stakeManager.pause();
         validationModule.pause();
@@ -89,7 +91,7 @@ contract SystemPause is Governable {
     }
 
     /// @notice Unpause all core modules.
-    function unpauseAll() external onlyGovernance {
+    function unpauseAll() external onlyGovernance nonReentrant {
         jobRegistry.unpause();
         stakeManager.unpause();
         validationModule.unpause();
