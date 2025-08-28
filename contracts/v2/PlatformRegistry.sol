@@ -86,12 +86,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Register caller as a platform operator.
-    function register() external nonReentrant {
+    function register() external whenNotPaused nonReentrant {
         _register(msg.sender);
     }
 
     /// @notice Remove caller from the registry.
-    function deregister() external nonReentrant {
+    function deregister() external whenNotPaused nonReentrant {
         require(registered[msg.sender], "not registered");
         registered[msg.sender] = false;
         emit Deregistered(msg.sender);
@@ -103,7 +103,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      beforehand. Uses 6-decimal base units.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
-    function stakeAndRegister(uint256 amount) external nonReentrant {
+    function stakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
         stakeManager.depositStakeFor(
@@ -123,7 +123,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      token `approve` calls. Invoking this helper implicitly accepts the
      *      current tax policy if it has not been acknowledged yet.
      */
-    function acknowledgeAndRegister() external nonReentrant {
+    function acknowledgeAndRegister() external whenNotPaused nonReentrant {
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
             IJobRegistryAck(registry).acknowledgeFor(msg.sender);
@@ -139,7 +139,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      acknowledged yet.
      * @param amount Stake amount in $AGIALPHA with 6 decimals.
      */
-    function acknowledgeStakeAndRegister(uint256 amount) external nonReentrant {
+    function acknowledgeStakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
         require(!blacklist[msg.sender], "blacklisted");
         address registry = stakeManager.jobRegistry();
@@ -160,7 +160,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @dev Invoking this helper implicitly accepts the current tax policy via
      *      the associated `JobRegistry` when set.
      */
-    function acknowledgeAndDeregister() external nonReentrant {
+    function acknowledgeAndDeregister() external whenNotPaused nonReentrant {
         require(registered[msg.sender], "not registered");
         address registry = stakeManager.jobRegistry();
         if (registry != address(0)) {
@@ -171,7 +171,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     }
 
     /// @notice Register an operator on their behalf.
-    function registerFor(address operator) external nonReentrant {
+    function registerFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
         }
@@ -187,7 +187,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      *      the tax policy for the operator if needed.
      * @param operator Address to be registered.
      */
-    function acknowledgeAndRegisterFor(address operator) external nonReentrant {
+    function acknowledgeAndRegisterFor(address operator) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
         }
@@ -210,7 +210,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     function acknowledgeStakeAndRegisterFor(
         address operator,
         uint256 amount
-    ) external nonReentrant {
+    ) external whenNotPaused nonReentrant {
         if (msg.sender != operator) {
             require(registrars[msg.sender], "registrar");
         }
