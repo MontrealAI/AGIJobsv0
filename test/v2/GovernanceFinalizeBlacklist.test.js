@@ -91,8 +91,8 @@ describe("JobRegistry governance finalization", function () {
     const prev = BigInt(
       await ethers.provider.getStorage(await registry.getAddress(), slot)
     );
-    const stateOffset = 8n * 16n;
-    const successOffset = 8n * 17n;
+    const stateOffset = 0n;
+    const successOffset = 8n;
     const mask = (0xffn << stateOffset) | (0xffn << successOffset);
     const cleared = prev & ~mask;
     const value =
