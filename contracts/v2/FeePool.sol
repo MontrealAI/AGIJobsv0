@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -14,7 +15,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @dev All token amounts use 6 decimals. Uses an accumulator scaled by 1e12
 ///      to avoid precision loss when dividing fees by total stake.
 
-contract FeePool is Ownable, Pausable {
+contract FeePool is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
@@ -113,7 +114,7 @@ contract FeePool is Ownable, Pausable {
     ///      `StakeManager` may call this to keep accounting trustless while the
     ///      registry itself never holds custody of user funds.
     /// @param amount fee amount scaled to 6 decimals
-    function depositFee(uint256 amount) external onlyStakeManager {
+    function depositFee(uint256 amount) external onlyStakeManager nonReentrant {
         require(amount > 0, "amount");
         pendingFees += amount;
         emit FeeDeposited(msg.sender, amount);
@@ -121,7 +122,7 @@ contract FeePool is Ownable, Pausable {
 
     /// @notice Contribute tokens directly to the reward pool.
     /// @param amount fee amount scaled to 6 decimals.
-    function contribute(uint256 amount) external {
+    function contribute(uint256 amount) external nonReentrant {
         require(amount > 0, "amount");
         token.safeTransferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
@@ -133,7 +134,11 @@ contract FeePool is Ownable, Pausable {
     ///      pending or when no stake is present; in the latter case funds are
     ///      burned/forwarded to the treasury so non-technical callers never see
     ///      a revert.
-    function distributeFees() public {
+    function distributeFees() public nonReentrant {
+        _distributeFees();
+    }
+
+    function _distributeFees() internal {
         uint256 amount = pendingFees;
         if (amount == 0) {
             return;
@@ -170,8 +175,8 @@ contract FeePool is Ownable, Pausable {
      * @dev Invokes the idempotent `distributeFees` so stakers can settle and
      *      claim in a single Etherscan transaction. Rewards use 6‑decimal units.
      */
-    function claimRewards() external {
-        distributeFees();
+    function claimRewards() external nonReentrant {
+        _distributeFees();
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
         // Deployer may claim but receives no rewards without stake.
         if (msg.sender == owner() && stake == 0) {
@@ -194,7 +199,7 @@ contract FeePool is Ownable, Pausable {
     ///      to this pool or the burn address. Amount uses 6 decimal units.
     /// @param to recipient address
     /// @param amount token amount with 6 decimals
-    function ownerWithdraw(address to, uint256 amount) external onlyOwner {
+    function ownerWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         token.safeTransfer(to, amount);
         emit OwnerWithdrawal(to, amount);
     }
