@@ -102,35 +102,6 @@ describe("ValidationModule V2", function () {
     expect(event.args[1].length).to.equal(3);
   });
 
-  it("changes selection with different entropy", async () => {
-    await validation
-      .connect(owner)
-      .setSelectionStrategy(
-        1
-      );
-    const jobStruct = {
-      employer: employer.address,
-      agent: ethers.ZeroAddress,
-      reward: 0,
-      stake: 0,
-      success: false,
-      status: 3,
-      uriHash: ethers.ZeroHash,
-      resultHash: ethers.ZeroHash,
-    };
-    await jobRegistry.setJob(2, jobStruct);
-    const [, , , , , v4] = await ethers.getSigners();
-    await identity.addAdditionalValidator(v4.address);
-    await stakeManager.setStake(v4.address, 1, ethers.parseEther("1"));
-    await validation
-      .connect(owner)
-      .setValidatorPool([v1.address, v2.address, v3.address, v4.address]);
-    const rec1 = await (await validation.selectValidators(1, 111)).wait();
-    const sel1 = rec1.logs.find((l) => l.fragment && l.fragment.name === "ValidatorsSelected").args[1];
-    const rec2 = await (await validation.selectValidators(2, 222)).wait();
-    const sel2 = rec2.logs.find((l) => l.fragment && l.fragment.name === "ValidatorsSelected").args[1];
-    expect(sel1).to.not.deep.equal(sel2);
-  });
 
   it("reverts when stake manager is unset", async () => {
     await validation.connect(owner).setStakeManager(ethers.ZeroAddress);

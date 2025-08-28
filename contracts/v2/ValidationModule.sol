@@ -87,8 +87,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
     mapping(uint256 => mapping(address => bool)) private _validatorLookup;
     mapping(uint256 => uint256) public jobNonce;
-    uint256 private _selectionNonce;
-    mapping(address => uint256) private _selectedNonce;
 
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
@@ -278,23 +276,23 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @notice Update validator count and phase windows.
-    /// @param validators Number of validators per job.
+    /// @param validatorCount Number of validators per job.
     /// @param commitDur Duration of the commit phase in seconds.
     /// @param revealDur Duration of the reveal phase in seconds.
     function setParameters(
-        uint256 validators,
+        uint256 validatorCount,
         uint256 commitDur,
         uint256 revealDur
     ) public onlyOwner {
-        require(validators >= 3, "validators");
+        require(validatorCount >= 3, "validators");
         require(commitDur > 0 && revealDur > 0, "windows");
-        validatorsPerJob = validators;
-        minValidators = validators;
-        maxValidators = validators;
+        validatorsPerJob = validatorCount;
+        minValidators = validatorCount;
+        maxValidators = validatorCount;
         commitWindow = commitDur;
         revealWindow = revealDur;
-        emit ValidatorBoundsUpdated(validators, validators);
-        emit ValidatorsPerJobUpdated(validators);
+        emit ValidatorBoundsUpdated(validatorCount, validatorCount);
+        emit ValidatorsPerJobUpdated(validatorCount);
         emit TimingUpdated(commitDur, revealDur);
     }
 
@@ -471,7 +469,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         selected = new address[](size);
         uint256[] memory stakes = new uint256[](size);
-        _selectionNonce += 1;
 
         address[] memory candidates = new address[](sample);
         uint256[] memory candidateStakes = new uint256[](sample);
@@ -479,10 +476,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 totalStake;
 
         if (selectionStrategy == IValidationModule.SelectionStrategy.Rotating) {
-            uint256 start = validatorPoolRotation;
+            uint256 rotationStart = validatorPoolRotation;
             uint256 i;
             for (; i < n && candidateCount < sample;) {
-                uint256 idx = (start + i) % n;
+                uint256 idx = (rotationStart + i) % n;
                 address candidate = validatorPool[idx];
 
                 uint256 stake = stakeManager.stakeOf(
@@ -537,7 +534,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     ++i;
                 }
             }
-            validatorPoolRotation = (start + i) % n;
+            validatorPoolRotation = (rotationStart + i) % n;
         } else {
             uint256 eligible;
             for (uint256 i; i < n;) {
@@ -636,7 +633,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address val = candidates[chosen];
             selected[i] = val;
             stakes[i] = candidateStakes[chosen];
-            _selectedNonce[val] = _selectionNonce;
 
             totalStake -= candidateStakes[chosen];
             candidateCount -= 1;
@@ -671,7 +667,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         override
         whenNotPaused
         nonReentrant
-        returns (address[] memory validators)
+        returns (address[] memory selected)
     {
         Round storage r = rounds[jobId];
         uint256 n = validatorPool.length;
@@ -681,7 +677,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (size > maxValidators) size = maxValidators;
         if (size > n) size = n;
         r.committeeSize = size;
-        validators = selectValidators(jobId, entropy);
+        selected = selectValidators(jobId, entropy);
     }
 
     /// @notice Internal commit logic shared by overloads.

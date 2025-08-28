@@ -56,20 +56,20 @@ contract OracleValidationModule is IValidationModule, Ownable {
         external
         pure
         override
-        returns (address[] memory validators)
+        returns (address[] memory vals)
     {
-        validators = new address[](0);
+        vals = new address[](0);
     }
 
     /// @inheritdoc IValidationModule
     function start(uint256 jobId, uint256 /*entropy*/)
         external
         override
-        returns (address[] memory validators)
+        returns (address[] memory vals)
     {
-        validators = new address[](0);
+        vals = new address[](0);
         bool approved = oracle.approve(jobId, "");
-        jobRegistry.onValidationResult(jobId, approved, validators);
+        jobRegistry.onValidationResult(jobId, approved, vals);
     }
 
     /// @inheritdoc IValidationModule
