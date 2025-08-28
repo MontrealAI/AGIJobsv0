@@ -495,7 +495,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         require(address(identityRegistry) != address(0), "identity reg");
         uint256 seed;
         if (address(vrf) == address(0)) {
-            require(entropy != 0, "entropy");
             seed = uint256(
                 keccak256(
                     abi.encodePacked(
@@ -731,7 +730,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function start(
         uint256 jobId,
         string calldata /*data*/,
-        uint256 committeeSize
+        uint256 entropy
     )
         external
         override
@@ -742,13 +741,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         Round storage r = rounds[jobId];
         uint256 n = validatorPool.length;
         require(n >= minValidators, "pool");
-        uint256 size = committeeSize;
-        if (size == 0) size = validatorsPerJob;
+        uint256 size = validatorsPerJob;
         if (size < minValidators) size = minValidators;
         if (size > maxValidators) size = maxValidators;
         if (size > n) size = n;
         r.committeeSize = size;
-        validators = selectValidators(jobId, 0);
+        validators = selectValidators(jobId, entropy);
     }
 
     /// @notice Internal commit logic shared by overloads.

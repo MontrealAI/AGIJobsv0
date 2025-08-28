@@ -95,14 +95,23 @@ describe("ValidationModule V2", function () {
 
   it("selects validators without VRF provider", async () => {
     await validation.setVRF(ethers.ZeroAddress);
-    await expect(validation.selectValidators(1, 0)).to.be.revertedWith("entropy");
-    const tx = await validation.selectValidators(1, 123);
+    const tx = await validation.selectValidators(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     );
     const selected = event.args[1];
     expect(selected.length).to.equal(3);
+  });
+
+  it("starts validation without VRF provider", async () => {
+    await validation.setVRF(ethers.ZeroAddress);
+    const tx = await validation.start(1, "", 0);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    );
+    expect(event.args[1].length).to.equal(3);
   });
 
   it("changes selection with different entropy", async () => {
@@ -123,6 +132,12 @@ describe("ValidationModule V2", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(2, jobStruct);
+    const [, , , , , v4] = await ethers.getSigners();
+    await identity.addAdditionalValidator(v4.address);
+    await stakeManager.setStake(v4.address, 1, ethers.parseEther("1"));
+    await validation
+      .connect(owner)
+      .setValidatorPool([v1.address, v2.address, v3.address, v4.address]);
     const rec1 = await (await validation.selectValidators(1, 111)).wait();
     const sel1 = rec1.logs.find((l) => l.fragment && l.fragment.name === "ValidatorsSelected").args[1];
     const rec2 = await (await validation.selectValidators(2, 222)).wait();

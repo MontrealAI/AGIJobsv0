@@ -65,7 +65,7 @@ contract OracleValidationModule is IValidationModule, Ownable {
     function start(
         uint256 jobId,
         string calldata data,
-        uint256 /*committeeSize*/
+        uint256 /*entropy*/
     ) external override returns (address[] memory validators) {
         validators = new address[](0);
         bool approved = oracle.approve(jobId, data);
