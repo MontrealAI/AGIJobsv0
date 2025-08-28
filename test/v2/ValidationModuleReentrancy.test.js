@@ -69,7 +69,7 @@ async function setup() {
   await jobRegistry.setJob(1, jobStruct);
 
   async function prepare(jobId, entropy = 0) {
-    return validation.start(jobId, entropy);
+    return validation.start(jobId, 0, entropy);
   }
 
   return {

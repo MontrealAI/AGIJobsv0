@@ -94,7 +94,7 @@ describe("ValidationModule V2", function () {
   });
 
   it("starts validation", async () => {
-    const tx = await validation.start(1, 0);
+    const tx = await validation.start(1, 0, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
@@ -109,7 +109,7 @@ describe("ValidationModule V2", function () {
     const vrf = await VRF.deploy();
     await vrf.waitForDeployment();
     await validation.connect(owner).setVRF(await vrf.getAddress());
-    const tx = await validation.start(1, 0);
+    const tx = await validation.start(1, 0, 0);
     const receipt = await tx.wait();
     const auto = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "VRFAutoRequested"

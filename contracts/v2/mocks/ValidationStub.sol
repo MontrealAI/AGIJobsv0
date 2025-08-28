@@ -29,12 +29,12 @@ contract ValidationStub is IValidationModule {
         return validatorList;
     }
 
-    function start(uint256 jobId, uint256 /*entropy*/)
-        external
-        override
-        returns (address[] memory vals)
-    {
-        vals = selectValidators(jobId, 0);
+    function start(
+        uint256 jobId,
+        uint256 /*entropy*/,
+        uint256 extraEntropy
+    ) external override returns (address[] memory vals) {
+        vals = selectValidators(jobId, extraEntropy);
     }
 
     function commitValidation(
