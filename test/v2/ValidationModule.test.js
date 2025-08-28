@@ -145,6 +145,12 @@ describe("ValidationModule V2", function () {
     ).to.be.revertedWith("validators");
   });
 
+  it("rejects validator bounds below three", async () => {
+    await expect(
+      validation.connect(owner).setValidatorBounds(2, 3)
+    ).to.be.revertedWith("bounds");
+  });
+
   it("selects stake-weighted validators", async () => {
     const tx = await select(1);
     const receipt = await tx.wait();
@@ -283,10 +289,10 @@ describe("ValidationModule V2", function () {
   });
 
   it("clears commitments after finalization", async () => {
-    await validation.connect(owner).setValidatorBounds(1, 1);
+    await validation.connect(owner).setValidatorBounds(3, 3);
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address]);
+      .setValidatorPool([v1.address, v2.address, v3.address]);
 
     await select(1);
     const nonce = await validation.jobNonce(1);
@@ -311,10 +317,10 @@ describe("ValidationModule V2", function () {
   });
 
   it("clears commitments when job nonce is reset", async () => {
-    await validation.connect(owner).setValidatorBounds(1, 1);
+    await validation.connect(owner).setValidatorBounds(3, 3);
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address]);
+      .setValidatorPool([v1.address, v2.address, v3.address]);
 
     await select(1);
     const nonce1 = await validation.jobNonce(1);
@@ -346,15 +352,17 @@ describe("ValidationModule V2", function () {
   });
 
   it("removes validators from lookup on nonce reset", async () => {
-    await validation.connect(owner).setValidatorBounds(1, 1);
+    await validation.connect(owner).setValidatorBounds(3, 3);
     await validation
       .connect(owner)
-      .setValidatorPool([v1.address]);
+      .setValidatorPool([v1.address, v2.address, v3.address]);
     await select(1);
     await validation.connect(owner).resetJobNonce(1);
+    await identity.addAdditionalValidator(owner.address);
+    await stakeManager.setStake(owner.address, 1, ethers.parseEther("10"));
     await validation
       .connect(owner)
-      .setValidatorPool([v2.address]);
+      .setValidatorPool([v2.address, v3.address, owner.address]);
     await select(1);
     const nonce = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));

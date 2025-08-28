@@ -351,7 +351,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set minimum and maximum validators per round.
     function setValidatorBounds(uint256 minVals, uint256 maxVals) external override onlyOwner {
-        require(minVals > 0 && maxVals >= minVals, "bounds");
+        require(minVals >= 3 && maxVals >= minVals, "bounds");
         minValidators = minVals;
         maxValidators = maxVals;
         if (minVals == maxVals) {
@@ -369,7 +369,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set number of validators selected per job.
     function setValidatorsPerJob(uint256 count) external override onlyOwner {
-        require(count >= minValidators && count <= maxValidators, "bounds");
+        require(count >= 3 && count >= minValidators && count <= maxValidators, "bounds");
         validatorsPerJob = count;
         emit ValidatorsPerJobUpdated(count);
     }
