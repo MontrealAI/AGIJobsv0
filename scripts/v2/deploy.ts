@@ -237,10 +237,58 @@ async function main() {
   );
   await stake.connect(governanceSigner).setMinStake(minStake);
 
+  const SystemPause = await ethers.getContractFactory(
+    "contracts/v2/SystemPause.sol:SystemPause"
+  );
+  const pause = await SystemPause.deploy(
+    await registry.getAddress(),
+    await stake.getAddress(),
+    await validation.getAddress(),
+    await dispute.getAddress(),
+    await platformRegistry.getAddress(),
+    await feePool.getAddress(),
+    await reputation.getAddress(),
+    governance
+  );
+  await pause.waitForDeployment();
+  await pause
+    .connect(governanceSigner)
+    .setModules(
+      await registry.getAddress(),
+      await stake.getAddress(),
+      await validation.getAddress(),
+      await dispute.getAddress(),
+      await platformRegistry.getAddress(),
+      await feePool.getAddress(),
+      await reputation.getAddress()
+    );
+  await stake
+    .connect(governanceSigner)
+    .setGovernance(await pause.getAddress());
+  await registry
+    .connect(governanceSigner)
+    .setGovernance(await pause.getAddress());
+  await validation
+    .connect(governanceSigner)
+    .transferOwnership(await pause.getAddress());
+  await dispute
+    .connect(governanceSigner)
+    .transferOwnership(await pause.getAddress());
+  await platformRegistry
+    .connect(governanceSigner)
+    .transferOwnership(await pause.getAddress());
+  await feePool
+    .connect(governanceSigner)
+    .transferOwnership(await pause.getAddress());
+  await reputation
+    .connect(governanceSigner)
+    .transferOwnership(await pause.getAddress());
+
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());
   console.log("StakeManager:", await stake.getAddress());
   console.log("ReputationEngine:", await reputation.getAddress());
+  console.log("SystemPause:", await pause.getAddress());
   let activeDispute = await dispute.getAddress();
   if (typeof args.arbitrator === "string") {
     const Kleros = await ethers.getContractFactory(
@@ -280,6 +328,7 @@ async function main() {
     platformRegistry: await platformRegistry.getAddress(),
     jobRouter: await jobRouter.getAddress(),
     platformIncentives: await incentives.getAddress(),
+    systemPause: await pause.getAddress(),
   };
 
   writeFileSync(
@@ -356,6 +405,16 @@ async function main() {
     await stake.getAddress(),
     await platformRegistry.getAddress(),
     await jobRouter.getAddress(),
+    governance,
+  ]);
+  await verify(await pause.getAddress(), [
+    await registry.getAddress(),
+    await stake.getAddress(),
+    await validation.getAddress(),
+    await dispute.getAddress(),
+    await platformRegistry.getAddress(),
+    await feePool.getAddress(),
+    await reputation.getAddress(),
     governance,
   ]);
   await verify(await installer.getAddress(), []);

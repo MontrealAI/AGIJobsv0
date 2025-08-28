@@ -77,6 +77,18 @@ describe("SystemPause", function () {
     const feePool = FeePool.attach(feePoolAddr);
     const pause = SystemPause.attach(systemPauseAddr);
 
+    await pause
+      .connect(owner)
+      .setModules(
+        registryAddr,
+        stakeAddr,
+        validationAddr,
+        disputeAddr,
+        platformRegistryAddr,
+        feePoolAddr,
+        reputationAddr
+      );
+
     expect(await stake.paused()).to.equal(false);
     expect(await registry.paused()).to.equal(false);
     expect(await validation.paused()).to.equal(false);
