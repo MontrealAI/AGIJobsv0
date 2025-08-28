@@ -109,6 +109,7 @@ describe("ValidationModule committee size", function () {
       [v1.address.toLowerCase()]: v1,
       [v2.address.toLowerCase()]: v2,
       [v3.address.toLowerCase()]: v3,
+      [v4.address.toLowerCase()]: v4,
     };
 
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
