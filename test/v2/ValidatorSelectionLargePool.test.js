@@ -67,12 +67,10 @@ describe("Validator selection with large pool", function () {
     for (let i = 0; i < poolSize; i++) {
       const addr = ethers.Wallet.createRandom().address;
       validators.push(addr);
-      await stake.setStake(addr, 1, ethers.parseEther("1"));
-      await identity.addAdditionalValidator(addr);
     }
-    await validation.setValidatorPool(validators);
-    await validation.setValidatorsPerJob(3);
-    await expect(validation.selectValidators(1, 0)).to.be.revertedWith("pool limit");
+    await expect(
+      validation.setValidatorPool(validators)
+    ).to.be.revertedWith("pool limit");
   });
 });
 
