@@ -425,6 +425,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @inheritdoc IValidationModule
     /// @dev Randomness is derived from on-chain data and optional caller-supplied entropy.
+    ///      Falls back to mixing the previous block hash and timestamp when `block.prevrandao`
+    ///      is unavailable, avoiding reliance on external randomness providers.
     function selectValidators(uint256 jobId, uint256 entropy)
         public
         override
@@ -439,14 +441,19 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
         jobNonce[jobId] += 1;
+        bytes32 bhash = blockhash(block.number - 1);
+        uint256 randao = uint256(block.prevrandao);
+        if (randao == 0) {
+            randao = uint256(keccak256(abi.encodePacked(bhash, block.timestamp)));
+        }
         uint256 seed = uint256(
             keccak256(
                 abi.encodePacked(
                     jobId,
                     jobNonce[jobId],
                     entropy,
-                    block.prevrandao,
-                    blockhash(block.number - 1)
+                    randao,
+                    bhash
                 )
             )
         );
