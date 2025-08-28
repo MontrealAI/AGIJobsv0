@@ -2,8 +2,18 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("SystemPause", function () {
-  it("pauses and unpauses all modules", async function () {
-    const [owner] = await ethers.getSigners();
+  let owner,
+    stake,
+    registry,
+    validation,
+    dispute,
+    reputation,
+    platformRegistry,
+    feePool,
+    pause;
+
+  beforeEach(async function () {
+    [owner] = await ethers.getSigners();
     const Deployer = await ethers.getContractFactory(
       "contracts/v2/Deployer.sol:Deployer"
     );
@@ -68,14 +78,14 @@ describe("SystemPause", function () {
     const SystemPause = await ethers.getContractFactory(
       "contracts/v2/SystemPause.sol:SystemPause"
     );
-    const stake = StakeManager.attach(stakeAddr);
-    const registry = JobRegistry.attach(registryAddr);
-    const validation = ValidationModule.attach(validationAddr);
-    const dispute = DisputeModule.attach(disputeAddr);
-    const reputation = ReputationEngine.attach(reputationAddr);
-    const platformRegistry = PlatformRegistry.attach(platformRegistryAddr);
-    const feePool = FeePool.attach(feePoolAddr);
-    const pause = SystemPause.attach(systemPauseAddr);
+    stake = StakeManager.attach(stakeAddr);
+    registry = JobRegistry.attach(registryAddr);
+    validation = ValidationModule.attach(validationAddr);
+    dispute = DisputeModule.attach(disputeAddr);
+    reputation = ReputationEngine.attach(reputationAddr);
+    platformRegistry = PlatformRegistry.attach(platformRegistryAddr);
+    feePool = FeePool.attach(feePoolAddr);
+    pause = SystemPause.attach(systemPauseAddr);
 
     await pause
       .connect(owner)
@@ -88,7 +98,9 @@ describe("SystemPause", function () {
         feePoolAddr,
         reputationAddr
       );
+  });
 
+  it("pauses and unpauses all modules", async function () {
     expect(await stake.paused()).to.equal(false);
     expect(await registry.paused()).to.equal(false);
     expect(await validation.paused()).to.equal(false);
@@ -116,6 +128,13 @@ describe("SystemPause", function () {
     expect(await platformRegistry.paused()).to.equal(false);
     expect(await feePool.paused()).to.equal(false);
     expect(await reputation.paused()).to.equal(false);
+  });
+
+  it("allows repeated pauseAll and unpauseAll calls", async function () {
+    await pause.connect(owner).pauseAll();
+    await expect(pause.connect(owner).pauseAll()).to.not.be.reverted;
+    await pause.connect(owner).unpauseAll();
+    await expect(pause.connect(owner).unpauseAll()).to.not.be.reverted;
   });
 });
 
