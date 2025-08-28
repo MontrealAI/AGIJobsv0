@@ -69,7 +69,13 @@ async function setup() {
   await jobRegistry.setJob(1, jobStruct);
 
   async function prepare(jobId, entropy = 0) {
-    return validation.start(jobId, entropy);
+    const addr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [addr, "0x1000000000000000000"]);
+    await ethers.provider.send("hardhat_impersonateAccount", [addr]);
+    const registry = await ethers.getSigner(addr);
+    const tx = await validation.connect(registry).start(jobId, entropy);
+    await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
+    return tx;
   }
 
   return {

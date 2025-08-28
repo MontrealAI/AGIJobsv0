@@ -83,6 +83,16 @@ describe("ValidationModule V2", function () {
     return validation.selectValidators(jobId, entropy);
   }
 
+  async function start(jobId, entropy = 0) {
+    const addr = await jobRegistry.getAddress();
+    await ethers.provider.send("hardhat_setBalance", [addr, "0x1000000000000000000"]);
+    await ethers.provider.send("hardhat_impersonateAccount", [addr]);
+    const registry = await ethers.getSigner(addr);
+    const tx = await validation.connect(registry).start(jobId, entropy);
+    await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
+    return tx;
+  }
+
   it("selects validators", async () => {
     const tx = await validation.selectValidators(1, 0);
     const receipt = await tx.wait();
@@ -93,14 +103,33 @@ describe("ValidationModule V2", function () {
     expect(selected.length).to.equal(3);
   });
 
-    it("starts validation", async () => {
-      const tx = await validation.start(1, 0);
-      const receipt = await tx.wait();
-      const event = receipt.logs.find(
-        (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
-      );
-      expect(event.args[1].length).to.equal(3);
-    });
+  it("starts validation", async () => {
+    const tx = await start(1, 0);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    );
+    expect(event.args[1].length).to.equal(3);
+  });
+
+  it("reverts when called by non-registry", async () => {
+    await expect(validation.start(1, 0)).to.be.revertedWith("only registry");
+  });
+
+  it("reverts if job not submitted", async () => {
+    const jobStruct = {
+      employer: employer.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 2,
+      uriHash: ethers.ZeroHash,
+      resultHash: ethers.ZeroHash,
+    };
+    await jobRegistry.setJob(2, jobStruct);
+    await expect(start(2, 0)).to.be.revertedWith("not submitted");
+  });
 
 
   it("reverts when stake manager is unset", async () => {

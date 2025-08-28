@@ -676,6 +676,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 jobId,
         uint256 entropy
     ) external override whenNotPaused nonReentrant returns (address[] memory selected) {
+        require(msg.sender == address(jobRegistry), "only registry");
+        require(
+            jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
+            "not submitted"
+        );
         Round storage r = rounds[jobId];
         uint256 n = validatorPool.length;
         require(n >= minValidators, "pool");
