@@ -8,7 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -173,7 +173,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token = IERC20(DEFAULT_TOKEN);
         } else {
             IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 18, "decimals");
+            require(meta.decimals() == AGIALPHA_DECIMALS, "decimals");
             token = _token;
         }
 

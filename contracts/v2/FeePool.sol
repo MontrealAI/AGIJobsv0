@@ -7,7 +7,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title FeePool
@@ -82,7 +82,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
             token = IERC20(DEFAULT_TOKEN);
         } else {
             IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 18, "decimals");
+            require(meta.decimals() == AGIALPHA_DECIMALS, "decimals");
             token = _token;
         }
 
