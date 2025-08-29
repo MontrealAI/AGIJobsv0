@@ -2,6 +2,8 @@
 
 A minimal Next.js interface for validators to view pending jobs, commit votes, and automatically reveal them.
 
+Job amounts are formatted with `ethers.formatUnits(..., 18)` when displayed.
+
 ## Setup
 
 ```bash

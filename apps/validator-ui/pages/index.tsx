@@ -19,7 +19,16 @@ export default function Home() {
     const url = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:3000';
     fetch(`${url}/jobs`)
       .then((res) => res.json())
-      .then(setJobs)
+      .then((data) =>
+        setJobs(
+          data.map((job: any) => ({
+            ...job,
+            reward: ethers.formatUnits(job.rewardRaw ?? job.reward, 18),
+            stake: ethers.formatUnits(job.stakeRaw ?? job.stake, 18),
+            fee: ethers.formatUnits(job.feeRaw ?? job.fee, 18)
+          }))
+        )
+      )
       .catch(console.error);
   }, []);
 
@@ -57,7 +66,7 @@ export default function Home() {
       <ul>
         {jobs.map((job) => (
           <li key={job.jobId}>
-            Job {job.jobId}{' '}
+            Job {job.jobId} — reward {job.reward} stake {job.stake} fee {job.fee}{' '}
             <button onClick={() => vote(job.jobId, true)}>Approve</button>{' '}
             <button onClick={() => vote(job.jobId, false)}>Reject</button>
           </li>
