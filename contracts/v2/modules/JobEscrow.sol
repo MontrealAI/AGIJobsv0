@@ -13,10 +13,10 @@ interface IRoutingModule {
 }
 
 /// @title JobEscrow
-/// @notice Minimal job management with escrowed payments in AGIALPHA.
-/// Jobs are routed to operators via the RoutingModule. Rewards are released
-/// to the operator once the employer accepts the submitted result or after a
-/// timeout.
+/// @notice Minimal job management with escrowed payments in an 18-decimal
+/// ERC20 token (AGIALPHA by default). Jobs are routed to operators via the
+/// RoutingModule. Rewards are released to the operator once the employer
+/// accepts the submitted result or after a timeout.
 contract JobEscrow is Ownable {
     using SafeERC20 for IERC20;
 
@@ -28,7 +28,7 @@ contract JobEscrow is Ownable {
     struct Job {
         address employer;
         address operator;
-        uint256 reward;
+        uint256 reward; // token reward in 18-decimal units
         State state;
         uint256 submittedAt;
         string data;
@@ -48,11 +48,26 @@ contract JobEscrow is Ownable {
     event TokenUpdated(address indexed token);
     event RoutingModuleUpdated(address indexed routingModule);
     event JobRegistryUpdated(address indexed jobRegistry);
-    event JobPosted(uint256 indexed jobId, address indexed employer, address indexed operator, uint256 reward, string data);
+    /// @notice Emitted when a job is posted.
+    /// @param jobId Identifier of the job.
+    /// @param employer Address that posted the job.
+    /// @param operator Selected operator for the job.
+    /// @param reward Escrowed reward amount with 18 decimals.
+    /// @param data Metadata describing the job.
+    event JobPosted(
+        uint256 indexed jobId,
+        address indexed employer,
+        address indexed operator,
+        uint256 reward,
+        string data
+    );
     event JobCancelled(uint256 indexed jobId);
     event ResultSubmitted(uint256 indexed jobId, string result);
     event ResultAccepted(uint256 indexed jobId, address caller);
 
+    /// @param _token ERC20 token used for rewards; must have 18 decimals. Pass
+    /// zero address to use the default token.
+    /// @param _routing Routing module used to select operators for new jobs.
     constructor(IERC20 _token, IRoutingModule _routing) Ownable(msg.sender) {
         token =
             address(_token) == address(0)
@@ -66,8 +81,10 @@ contract JobEscrow is Ownable {
     // ---------------------------------------------------------------------
 
     function setToken(IERC20 newToken) external onlyOwner {
-        IERC20Metadata meta = IERC20Metadata(address(newToken));
-        require(meta.decimals() == 18, "decimals");
+        require(
+            IERC20Metadata(address(newToken)).decimals() == 18,
+            "decimals"
+        );
         token = newToken;
         emit TokenUpdated(address(newToken));
     }
@@ -83,7 +100,7 @@ contract JobEscrow is Ownable {
     }
 
     /// @notice Post a new job and escrow the reward.
-    /// @param reward Amount of AGIALPHA tokens to escrow.
+    /// @param reward Amount of tokens to escrow, expressed with 18 decimals.
     /// @param data Metadata describing the job.
     /// @return jobId Identifier of the created job.
     function postJob(uint256 reward, string calldata data) external returns (uint256 jobId) {
