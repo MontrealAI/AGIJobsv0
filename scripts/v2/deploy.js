@@ -1,4 +1,5 @@
 const { ethers, run } = require("hardhat");
+const { AGIALPHA } = require("../constants");
 
 // rudimentary CLI flag parser
 function parseArgs() {
@@ -20,8 +21,6 @@ function parseArgs() {
   return args;
 }
 
-// default staking token (AGIALPHA); override via --token if needed
-const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
 
 async function verify(address, args = []) {
   try {

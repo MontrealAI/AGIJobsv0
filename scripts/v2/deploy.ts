@@ -1,6 +1,7 @@
 import { ethers, run } from "hardhat";
 import { writeFileSync } from "fs";
 import { join } from "path";
+import { AGIALPHA } from "../constants";
 
 // rudimentary CLI flag parser
 function parseArgs() {
@@ -21,9 +22,6 @@ function parseArgs() {
   }
   return args;
 }
-
-// default staking token (AGIALPHA); override via --token if needed
-const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
 
 async function verify(address: string, args: any[] = []) {
   try {

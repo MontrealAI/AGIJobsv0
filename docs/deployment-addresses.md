@@ -8,5 +8,6 @@ npx hardhat run scripts/v2/deploy.ts --network <network>
 ```
 
 Deployments are anchored to the `$AGIALPHA` token at
-`0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`. Pass `--token <address>` only if
-you intentionally wish to override this default.
+`0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`, exported from
+[`scripts/constants.ts`](../scripts/constants.ts). Pass `--token <address>` only
+if you intentionally wish to override this default.
