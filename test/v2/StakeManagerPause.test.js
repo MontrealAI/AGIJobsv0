@@ -6,7 +6,7 @@ describe("StakeManager pause", function () {
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
     const MockRegistry = await ethers.getContractFactory(
       "contracts/legacy/MockV2.sol:MockJobRegistry"

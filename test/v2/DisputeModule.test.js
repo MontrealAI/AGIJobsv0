@@ -87,7 +87,7 @@ describe("DisputeModule", function () {
       [owner, employer, agent, outsider] = await ethers.getSigners();
 
       // deploy token and stake manager
-      const Token = await ethers.getContractFactory("MockERC206Decimals");
+      const Token = await ethers.getContractFactory("MockERC20");
       token = await Token.deploy();
       await token.waitForDeployment();
 

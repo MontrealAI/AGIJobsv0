@@ -6,7 +6,7 @@ describe("FeePool", function () {
 
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
     token2 = await Token.deploy();
 

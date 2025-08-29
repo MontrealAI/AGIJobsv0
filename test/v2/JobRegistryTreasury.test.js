@@ -8,7 +8,7 @@ describe("JobRegistry Treasury", function () {
   beforeEach(async function () {
     [owner, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
 
     const StakeManager = await ethers.getContractFactory(
