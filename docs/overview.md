@@ -25,7 +25,7 @@ graph TD
 | CertificateNFT | Mints ERC‑721 certificates for completed jobs. |
 
 ## Universal Incentive System
-The v2 contracts share a unified incentive model built around the six‑decimal **$AGIALPHA** token. Core modules—`StakeManager`, `PlatformRegistry`, `JobRouter`, `FeePool`, and `PlatformIncentives`—coordinate staking, job routing, and fee distribution:
+The v2 contracts share a unified incentive model built around the 18‑decimal **$AGIALPHA** token. Core modules—`StakeManager`, `PlatformRegistry`, `JobRouter`, `FeePool`, and `PlatformIncentives`—coordinate staking, job routing, and fee distribution:
 
 - **Staking** – Agents, validators, and platform operators stake through `StakeManager` under their respective roles. Stakes secure honest behaviour and unlock job participation.
 - **Routing** – `JobRegistry` locks each job's reward and protocol fee, then routes the fee portion to `FeePool` on finalisation.

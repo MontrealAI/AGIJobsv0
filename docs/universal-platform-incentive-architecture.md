@@ -1,6 +1,6 @@
 # Universal Platform Incentive Architecture
 
-The AGI Jobs v2 suite implements a single, stake‑based framework that treats the main deployer and third‑party operators under the same rules. Every value transfer occurs on‑chain in the 6‑decimal **$AGIALPHA** token.
+The AGI Jobs v2 suite implements a single, stake‑based framework that treats the main deployer and third‑party operators under the same rules. Every value transfer occurs on‑chain in the 18‑decimal **$AGIALPHA** token.
 
 ## Roles
 
@@ -13,7 +13,7 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 ## Core Modules
 
-- **AGIALPHAToken** – 6‑decimal ERC‑20 used for staking, rewards and dispute bonds. Owner can mint/burn and swap tokens across the system.
+- **AGIALPHAToken** – 18‑decimal ERC‑20 used for staking, rewards and dispute bonds. Owner can mint/burn and swap tokens across the system.
 - **StakeManager** – records stakes for all roles, escrows job funds and routes protocol fees to the `FeePool`. Owner setters allow changing the token, minimum stake, slashing percentages and treasury.
 - **PlatformRegistry** – lists operators and computes a routing score derived from stake and reputation. The owner can blacklist addresses or replace the reputation engine.
 - **JobRouter** – selects an operator for new jobs using `PlatformRegistry` scores. Deterministic randomness mixes caller‑supplied seeds with blockhashes; no external oracle is required.

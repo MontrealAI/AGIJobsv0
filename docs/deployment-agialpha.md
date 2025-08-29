@@ -1,6 +1,6 @@
 # Deployment Guide: AGIJobs v2 with $AGIALPHA
 
-This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 6‑decimal **$AGIALPHA** token. By default this token handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
+This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 18‑decimal **$AGIALPHA** token. By default this token handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
 
 ## 1. Prerequisites
 

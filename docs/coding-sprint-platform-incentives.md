@@ -1,7 +1,7 @@
 # Coding Sprint: Platform Incentives
 
 This sprint turns the high level incentive design into production ready code.
-All modules operate on-chain in the 6‑decimal `$AGIALPHA` token and are fully
+All modules operate on-chain in the 18‑decimal `$AGIALPHA` token and are fully
 configurable by the contract owner.
 
 ## Objectives
