@@ -3,7 +3,6 @@ pragma solidity ^0.8.25;
 
 import {Governable} from "./Governable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -38,9 +37,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         Platform
     }
 
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
     /// @notice default minimum stake when constructor param is zero
     uint256 public constant DEFAULT_MIN_STAKE = 1e18;
 
@@ -49,7 +45,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         0x000000000000000000000000000000000000dEaD;
 
     /// @notice ERC20 token used for staking and payouts
-    IERC20 public token;
+    IERC20 public constant token = IERC20(AGIALPHA);
 
     /// @notice percentage of released amount sent to FeePool (0-100)
     uint256 public feePct;
@@ -133,7 +129,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
     event ValidationModuleUpdated(address indexed module);
-    event TokenUpdated(address indexed newToken);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
@@ -147,9 +142,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
 
-    /// @notice Deploys the StakeManager.
-    /// @param _token ERC20 token used for staking and payouts. Defaults to
-    /// DEFAULT_TOKEN when zero address.
+    /// @notice Deploys the StakeManager using the fixed AGIALPHA token.
     /// @param _minStake Minimum stake required to participate. Defaults to
     /// DEFAULT_MIN_STAKE when set to zero.
     /// @param _employerSlashPct Percentage of slashed amount sent to employer
@@ -161,7 +154,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
     /// @param _disputeModule Dispute module authorized to manage dispute fees.
     constructor(
-        IERC20 _token,
         uint256 _minStake,
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
@@ -170,15 +162,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address _disputeModule,
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
-        if (address(_token) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 18, "decimals");
-            token = _token;
-        }
-        emit TokenUpdated(address(token));
-
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
         if (_employerSlashPct + _treasurySlashPct == 0) {
@@ -212,19 +195,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // ---------------------------------------------------------------
     // These helpers are intended for manual use via Etherscan's
     // "Write Contract" tab by the authorized owner.
-
-    /// @notice update the staking/payout token
-    /// @param newToken ERC20 token address using 18 decimals
-    function setToken(IERC20 newToken) external onlyGovernance {
-        if (address(newToken) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(newToken));
-            require(meta.decimals() == 18, "decimals");
-            token = newToken;
-        }
-        emit TokenUpdated(address(token));
-    }
 
     /// @notice update the minimum stake required
     /// @param _minStake minimum token amount with 18 decimals

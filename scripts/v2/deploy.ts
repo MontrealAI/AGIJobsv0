@@ -22,9 +22,6 @@ function parseArgs() {
   return args;
 }
 
-// default staking token (AGIALPHA); override via --token if needed
-const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
-
 async function verify(address: string, args: any[] = []) {
   try {
     await run("verify:verify", {
@@ -44,19 +41,12 @@ async function main() {
     typeof args.governance === "string" ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
-  // -------------------------------------------------------------------------
-  // staking token: defaults to fixed AGIALPHA unless overridden
-  // -------------------------------------------------------------------------
-  const tokenAddress =
-    typeof args.token === "string" ? args.token : AGIALPHA;
-
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
   const treasury =
     typeof args.treasury === "string" ? args.treasury : governance;
   const stake = await Stake.deploy(
-    tokenAddress,
     0,
     0,
     0,
@@ -144,7 +134,6 @@ async function main() {
   );
   const burnPct = typeof args.burnPct === "string" ? parseInt(args.burnPct) : 0;
   const feePool = await FeePool.deploy(
-    tokenAddress,
     await stake.getAddress(),
     burnPct,
     treasury
@@ -326,7 +315,6 @@ async function main() {
   console.log("PlatformIncentives:", await incentives.getAddress());
 
   const addresses = {
-    token: tokenAddress,
     stakeManager: await stake.getAddress(),
     jobRegistry: await registry.getAddress(),
     validationModule: await validation.getAddress(),
@@ -347,7 +335,6 @@ async function main() {
   );
 
   await verify(await stake.getAddress(), [
-    tokenAddress,
     0,
     0,
     0,
@@ -396,7 +383,6 @@ async function main() {
     "All taxes on participants; contract and owner exempt",
   ]);
   await verify(await feePool.getAddress(), [
-    tokenAddress,
     await stake.getAddress(),
     2,
     governance,

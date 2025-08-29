@@ -14,6 +14,7 @@ interface Vm {
     function startPrank(address) external;
     function stopPrank() external;
     function prevrandao(bytes32) external;
+    function etch(address, bytes calldata) external;
 }
 
 contract TestToken is ERC20 {
@@ -68,13 +69,16 @@ contract IntegrationTest {
     address platform2 = address(0x2);
 
     uint256 constant TOKEN = 1e18;
+    address constant AGI = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
     function setUp() public {
         token = new TestToken();
+        vm.etch(AGI, address(token).code);
+        token = TestToken(AGI);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
         registry = new MockPlatformRegistry();
-        feePool = new FeePool(token, stakeManager, 0, address(this));
+        feePool = new FeePool(stakeManager, 0, address(this));
         router = new JobRouter(registry, address(this));
     }
 
@@ -152,8 +156,6 @@ contract IntegrationTest {
 
     function testOwnerReconfigure() public {
         setUp();
-        TestToken token2 = new TestToken();
-        feePool.setToken(token2);
         feePool.setRewardRole(IStakeManager.Role.Validator);
         feePool.setStakeManager(stakeManager);
         feePool.setBurnPct(5);
@@ -163,21 +165,5 @@ contract IntegrationTest {
         require(reverted, "only owner");
     }
 
-    function testFeePoolReentrancy() public {
-        setUp();
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100 * TOKEN);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200 * TOKEN);
-        ReentrantToken mal = new ReentrantToken(feePool);
-        feePool.setToken(mal);
-        mal.mint(address(feePool), 3000 * TOKEN);
-        vm.prank(address(stakeManager));
-        feePool.depositFee(3000 * TOKEN);
-        feePool.distributeFees();
-        mal.trigger();
-        vm.prank(platform1);
-        feePool.claimRewards();
-        require(mal.balanceOf(platform1) == 1000 * TOKEN, "reenter p1");
-        require(mal.balanceOf(address(feePool)) == 2000 * TOKEN, "reenter pool");
-    }
 }
 

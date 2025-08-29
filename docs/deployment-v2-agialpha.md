@@ -15,12 +15,11 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
 3. The script deploys `Deployer.sol`, calls `deployDefaults` (or `deployDefaultsWithoutTaxPolicy`), prints module addresses and verifies each contract on Etherscan.
    ![script output](https://via.placeholder.com/650x150?text=module+addresses)
 
-## 2. Configure token, ENS roots and fees
+## 2. Configure ENS roots and fees
 
 The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% burn, and leaves ENS settings blank. To customise:
 
 - Edit the script to call `deployer.deploy(econ, ids)` instead of `deployDefaults`.
-  - `econ.token` – ERC‑20 used by `StakeManager` and `FeePool`.
   - `econ.feePct` / `econ.burnPct` – protocol fee and burn percentages (whole numbers, e.g. `5` for 5%).
   - `ids.agentRootNode` / `ids.clubRootNode` – namehashes for `agent.agi.eth` and `club.agi.eth`.
   - `ids.agentMerkleRoot` / `ids.validatorMerkleRoot` – optional allowlists for off‑chain membership proofs.

@@ -37,10 +37,9 @@ npx hardhat run scripts/v2/deployDefaults.ts --network <network>
 
 The helper deploys and wires every module using `$AGIALPHA` as the
 staking token. Pass `--no-tax` to omit the optional `TaxPolicy` module.
-To customise the token, protocol fees or ENS roots edit the script to call
+To customise protocol fees or ENS roots edit the script to call
 `deployer.deploy(econ, ids)` and provide:
 
-- `econ.token` – ERC‑20 used by `StakeManager` and `FeePool`
 - `econ.feePct` / `econ.burnPct` – protocol fee and burn percentages
 - `ids.agentRootNode` / `ids.clubRootNode` – namehashes for
   `agent.agi.eth` and `club.agi.eth`
@@ -51,7 +50,7 @@ The script prints module addresses and verifies source on Etherscan.
 
 ## Step-by-Step Deployment
 1. **Deploy `$AGIALPHAToken`** (18 decimals) if it does not already exist.
-2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
+2. **Deploy `StakeManager`** configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
 3. **Deploy `ReputationEngine`** passing the `StakeManager` address.
 4. **Deploy `IdentityRegistry`** with the ENS registry, NameWrapper, `ReputationEngine` address and the namehashes for `agent.agi.eth` and `club.agi.eth`.
 5. **Deploy `ValidationModule`** with `jobRegistry = 0`, the `StakeManager` address and desired timing/validator settings.

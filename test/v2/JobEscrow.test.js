@@ -8,10 +8,7 @@ describe("JobEscrow", function () {
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    token = global.agialpha;
     await token.connect(owner).mint(employer.address, 1000000);
 
     // Mock RoutingModule that always returns operator
@@ -21,23 +18,7 @@ describe("JobEscrow", function () {
     const Escrow = await ethers.getContractFactory(
       "contracts/v2/modules/JobEscrow.sol:JobEscrow"
     );
-    escrow = await Escrow.deploy(await token.getAddress(), await routing.getAddress());
-  });
-
-  it("enforces 18-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
-    const bad = await Bad.deploy();
-    await expect(
-      escrow.connect(owner).setToken(await bad.getAddress())
-    ).to.be.revertedWith("decimals");
-
-    const Good = await ethers.getContractFactory("MockERC206Decimals");
-    const good = await Good.deploy();
-    await expect(
-      escrow.connect(owner).setToken(await good.getAddress())
-    )
-      .to.emit(escrow, "TokenUpdated")
-      .withArgs(await good.getAddress());
+    escrow = await Escrow.deploy(await routing.getAddress());
   });
 
   it("runs normal job flow", async () => {
