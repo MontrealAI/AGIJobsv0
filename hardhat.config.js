@@ -24,5 +24,8 @@ module.exports = {
     enabled: true,
     currency: 'USD',
     showTimeSpent: true,
+  },
+  mocha: {
+    require: ['./test/setup.js']
   }
 };

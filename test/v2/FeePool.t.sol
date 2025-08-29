@@ -28,14 +28,17 @@ contract FeePoolTest {
     address jobRegistry = address(0x123);
     address alice = address(0xA1);
     address bob = address(0xB2);
+    address constant AGI = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
     uint256 constant TOKEN = 1e18;
 
     function setUp() public {
         token = new TestToken();
+        vm.etch(AGI, address(token).code);
+        token = TestToken(AGI);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(token, stakeManager, 0, address(this));
+        feePool = new FeePool(stakeManager, 0, address(this));
         feePool.setRewardRole(IStakeManager.Role.Validator);
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1_000_000 * TOKEN);
         stakeManager.setStake(bob, IStakeManager.Role.Platform, 2_000_000 * TOKEN);
@@ -77,20 +80,6 @@ contract FeePoolTest {
         uint256 bobExpected = (1_500_000 * TOKEN) * (2_000_000 * TOKEN) / (3_000_000 * TOKEN);
         require(token.balanceOf(alice) == aliceExpected, "alice claim");
         require(token.balanceOf(bob) == bobExpected, "bob claim");
-    }
-
-    function testTokenSwitch() public {
-        setUp();
-        TestToken token2 = new TestToken();
-        vm.prank(address(this));
-        feePool.setToken(token2);
-        token2.mint(address(feePool), 1_000_000 * TOKEN);
-        vm.prank(address(stakeManager));
-        feePool.depositFee(1_000_000 * TOKEN);
-        feePool.distributeFees();
-        vm.prank(alice);
-        feePool.claimRewards();
-        require(token2.balanceOf(alice) == 333_333 * TOKEN, "switch");
     }
 
     function testPrecisionSixDecimals() public {

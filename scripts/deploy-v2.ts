@@ -1,16 +1,10 @@
 import { ethers } from "hardhat";
 
-// Default $AGIALPHA token on mainnet
-const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
-
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const tokenAddress = process.env.TOKEN_ADDRESS ?? AGIALPHA;
-
   const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
   const stake = await Stake.deploy(
-    tokenAddress,
     0,
     0,
     0,
@@ -83,7 +77,6 @@ async function main() {
     "contracts/v2/FeePool.sol:FeePool"
   );
   const feePool = await FeePool.deploy(
-    tokenAddress,
     await stake.getAddress(),
     0,
     deployer.address
@@ -123,7 +116,6 @@ async function main() {
   };
 
   await Promise.all([
-    ensureContract(tokenAddress, "Token"),
     ensureContract(await registry.getAddress(), "JobRegistry"),
     ensureContract(await stake.getAddress(), "StakeManager"),
     ensureContract(await validation.getAddress(), "ValidationModule"),
@@ -164,7 +156,6 @@ async function main() {
   await feePool.transferOwnership(await pause.getAddress());
   await reputation.transferOwnership(await pause.getAddress());
 
-  console.log("Token:", tokenAddress);
   console.log("StakeManager:", await stake.getAddress());
   console.log("ReputationEngine:", await reputation.getAddress());
   console.log("IdentityRegistry:", await identity.getAddress());

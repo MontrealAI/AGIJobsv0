@@ -5,7 +5,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
@@ -23,11 +22,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant DEFAULT_BURN_PCT = 5;
 
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
     /// @notice ERC20 token used for fees and rewards
-    IERC20 public token;
+    IERC20 public constant token = IERC20(AGIALPHA);
 
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
@@ -54,7 +50,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event FeesDistributed(uint256 amount);
     event Burned(uint256 amount);
     event RewardsClaimed(address indexed user, uint256 amount);
-    event TokenUpdated(address indexed token);
     event StakeManagerUpdated(address indexed stakeManager);
     event ModulesUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
@@ -63,31 +58,19 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event OwnerWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
 
-    /// @notice Deploys the FeePool.
-    /// @param _token ERC20 token used for fees and rewards. Must use 18 decimals.
-    /// Defaults to DEFAULT_TOKEN when zero address.
+    /// @notice Deploys the FeePool using the fixed AGIALPHA token.
     /// @param _stakeManager StakeManager tracking staker balances.
     /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
     /// DEFAULT_BURN_PCT when set to zero.
     /// @param _treasury Address receiving rounding dust. Defaults to deployer
     /// when zero address.
     constructor(
-        IERC20 _token,
         IStakeManager _stakeManager,
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         require(pct <= 100, "pct");
-        if (address(_token) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 18, "decimals");
-            token = _token;
-        }
-        emit TokenUpdated(address(token));
-
         if (address(_stakeManager) != address(0)) {
             stakeManager = _stakeManager;
             emit StakeManagerUpdated(address(_stakeManager));
@@ -203,15 +186,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     function ownerWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         token.safeTransfer(to, amount);
         emit OwnerWithdrawal(to, amount);
-    }
-
-    /// @notice update ERC20 token used for payouts
-    /// @param newToken fee/reward token address which must use 18 decimals
-    function setToken(IERC20 newToken) external onlyOwner {
-        IERC20Metadata meta = IERC20Metadata(address(newToken));
-        require(meta.decimals() == 18, "decimals");
-        token = newToken;
-        emit TokenUpdated(address(newToken));
     }
 
     /// @notice update StakeManager contract
