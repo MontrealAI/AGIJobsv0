@@ -1,6 +1,6 @@
 # Coding Sprint: ENS Identity & v1 Feature Parity
 
-This sprint ports every capability from `legacy/AGIJobManagerv0.sol` into the modular AGI Jobs v2 suite while enforcing Ethereum Name Service (ENS) subdomain identities for agents and validators. The plan maintains owner control over all parameters and keeps the default payout token as the 6‑decimal `$AGIALPHA`.
+This sprint ports every capability from `legacy/AGIJobManagerv0.sol` into the modular AGI Jobs v2 suite while enforcing Ethereum Name Service (ENS) subdomain identities for agents and validators. The plan maintains owner control over all parameters and keeps the default payout token as the 18‑decimal `$AGIALPHA`.
 
 ## Goals
 - Mirror v0 behaviour across dedicated v2 modules.

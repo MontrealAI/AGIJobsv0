@@ -2,18 +2,18 @@
 
 For screenshots and a deeper explanation see [etherscan-guide.md](etherscan-guide.md). All owner interactions occur through the explorer's **Write Contract** tabs.
 
-All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPHA = 1_000_000 units**). Convert values before entering them on Etherscan.
+All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALPHA = 1_000_000_000_000_000_000 units**). Convert values before entering them on Etherscan.
 
 ## Quick Walkthrough
 
 ### v0
 1. Open the [AGIJobManager v0](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) contract and choose **Contract → Deploy**.
-2. Enter constructor args in 6‑decimal units: token address, base IPFS URL, ENS registry and NameWrapper, plus the namehashes and Merkle roots for `club.agi.eth` and `agent.agi.eth` (`0x00` for open access).
+2. Enter constructor args in 18‑decimal units: token address, base IPFS URL, ENS registry and NameWrapper, plus the namehashes and Merkle roots for `club.agi.eth` and `agent.agi.eth` (`0x00` for open access).
 3. Deploy; the sender becomes owner. Agents need subdomains under `agent.agi.eth` and validators under `club.agi.eth` or matching Merkle proofs.
 
 ### v2
 1. Open the `Deployer` contract and under **Write Contract** call `deployDefaults(ids)` (or `deployDefaultsWithoutTaxPolicy`).
-2. Supply namehashes and optional Merkle roots for the required ENS subdomains. Token amounts still use 6‑decimal `$AGIALPHA` units.
+2. Supply namehashes and optional Merkle roots for the required ENS subdomains. Token amounts still use 18‑decimal `$AGIALPHA` units.
 3. After modules deploy, wire them via `JobRegistry.setModules(...)` and register the identity registry with `JobRegistry.setIdentityRegistry` and `ValidationModule.setIdentityRegistry`.
 4. As with v0, agents require `.agent.agi.eth` subdomains and validators need `.club.agi.eth`.
 

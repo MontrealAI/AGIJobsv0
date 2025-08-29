@@ -51,7 +51,7 @@ After each parameter poll, the owner rewards participating voters through the `G
 | Finalize | Owner | deposit total reward and close the epoch | `GovernanceReward.finalizeEpoch(totalReward)` |
 | Claim | Voter | withdraw an equal share for that epoch | `GovernanceReward.claim(epoch)` |
 
-`totalReward` uses 6‑decimal base units. `finalizeEpoch` increments `currentEpoch` so subsequent `recordVoters` calls start a new epoch.
+`totalReward` uses 18‑decimal base units. `finalizeEpoch` increments `currentEpoch` so subsequent `recordVoters` calls start a new epoch.
 
 ### Sample Solidity
 
@@ -60,8 +60,8 @@ address[] memory voters = new address[](2);
 voters[0] = voter1;
 voters[1] = voter2;
 reward.recordVoters(voters);
-token.approve(address(reward), 200 * 1e6);
-reward.finalizeEpoch(200 * 1e6);
+token.approve(address(reward), 200 * 1e18);
+reward.finalizeEpoch(200 * 1e18);
 // later
 reward.connect(voter1).claim(0);
 ```
@@ -72,8 +72,8 @@ reward.connect(voter1).claim(0);
 # record voters after a poll
 cast send $GOV_REWARD "recordVoters(address[])" "[$VOTER1,$VOTER2]" --from $OWNER
 # deposit rewards and finalize the epoch
-cast send $TOKEN "approve(address,uint256)" $GOV_REWARD 200000000 --from $OWNER
-cast send $GOV_REWARD "finalizeEpoch(uint256)" 200000000 --from $OWNER
+cast send $TOKEN "approve(address,uint256)" $GOV_REWARD 200000000000000000000 --from $OWNER
+cast send $GOV_REWARD "finalizeEpoch(uint256)" 200000000000000000000 --from $OWNER
 # voter claims their share
 cast send $GOV_REWARD "claim(uint256)" 0 --from $VOTER1
 ```
