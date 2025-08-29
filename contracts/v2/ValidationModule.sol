@@ -311,6 +311,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         maxValidators = validatorCount;
         commitWindow = commitDur;
         revealWindow = revealDur;
+        _clampRequiredValidatorApprovals();
         emit ValidatorBoundsUpdated(validatorCount, validatorCount);
         emit ValidatorsPerJobUpdated(validatorCount);
         emit TimingUpdated(commitDur, revealDur);
@@ -384,6 +385,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             validatorsPerJob = maxVals;
             emit ValidatorsPerJobUpdated(maxVals);
         }
+        _clampRequiredValidatorApprovals();
         emit ValidatorBoundsUpdated(minVals, maxVals);
     }
 
@@ -391,7 +393,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function setValidatorsPerJob(uint256 count) external override onlyOwner {
         require(count >= 3 && count >= minValidators && count <= maxValidators, "bounds");
         validatorsPerJob = count;
+        _clampRequiredValidatorApprovals();
         emit ValidatorsPerJobUpdated(count);
+    }
+
+    /// @dev Clamp required approvals to current committee size.
+    function _clampRequiredValidatorApprovals() internal {
+        if (requiredValidatorApprovals > validatorsPerJob) {
+            requiredValidatorApprovals = validatorsPerJob;
+            emit RequiredValidatorApprovalsUpdated(validatorsPerJob);
+        }
     }
 
     /// @notice Individually update commit window duration.
@@ -439,6 +450,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set the required number of validator approvals.
     function setRequiredValidatorApprovals(uint256 count) external override onlyOwner {
+        require(count > 0 && count <= maxValidators, "approvals");
+        if (count > validatorsPerJob) count = validatorsPerJob;
         requiredValidatorApprovals = count;
         emit RequiredValidatorApprovalsUpdated(count);
     }
