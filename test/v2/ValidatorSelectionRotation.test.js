@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Validator selection rotating strategy", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, jobRegistry;
   const poolSize = 10;
   const sampleSize = 3;
 
@@ -19,11 +19,15 @@ describe("Validator selection rotating strategy", function () {
     await identity.setClubRootNode(ethers.ZeroHash);
     await identity.setAgentRootNode(ethers.ZeroHash);
 
+    const Job = await ethers.getContractFactory("MockJobRegistry");
+    jobRegistry = await Job.deploy();
+    await jobRegistry.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
     validation = await Validation.deploy(
-      ethers.ZeroAddress,
+      await jobRegistry.getAddress(),
       await stake.getAddress(),
       1,
       1,
@@ -49,6 +53,17 @@ describe("Validator selection rotating strategy", function () {
   it("randomizes rotation start index between runs", async () => {
     const starts = new Set();
     for (let j = 0; j < 5; j++) {
+      const jobStruct = {
+        employer: ethers.ZeroAddress,
+        agent: ethers.ZeroAddress,
+        reward: 0,
+        stake: 0,
+        success: false,
+        status: 3,
+        uriHash: ethers.ZeroHash,
+        resultHash: ethers.ZeroHash,
+      };
+      await jobRegistry.setJob(j + 1, jobStruct);
       await validation.selectValidators(j + 1, 0);
       await ethers.provider.send("evm_mine", []);
       await validation.selectValidators(j + 1, 0);

@@ -134,6 +134,23 @@ describe("ValidationModule V2", function () {
     await expect(start(2, 0)).to.be.revertedWith("not submitted");
   });
 
+  it("reverts if selecting before submission", async () => {
+    const jobStruct = {
+      employer: employer.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 2,
+      uriHash: ethers.ZeroHash,
+      resultHash: ethers.ZeroHash,
+    };
+    await jobRegistry.setJob(2, jobStruct);
+    await expect(validation.selectValidators(2, 0)).to.be.revertedWith(
+      "not submitted"
+    );
+  });
+
 
   it("reverts when stake manager is unset", async () => {
     await validation.connect(owner).setStakeManager(ethers.ZeroAddress);

@@ -9,6 +9,7 @@ import {IJobRegistry} from "../../contracts/v2/interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
+import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ValidatorSelectionFuzz is Test {
@@ -16,6 +17,7 @@ contract ValidatorSelectionFuzz is Test {
     ValidationModule validation;
     IdentityRegistryToggle identity;
     AGIALPHAToken token;
+    MockJobRegistry jobRegistry;
     mapping(address => uint256) index;
 
     function setUp() public {
@@ -31,8 +33,9 @@ contract ValidatorSelectionFuzz is Test {
             address(this)
         );
         identity = new IdentityRegistryToggle();
+        jobRegistry = new MockJobRegistry();
         validation = new ValidationModule(
-            IJobRegistry(address(0)),
+            IJobRegistry(address(jobRegistry)),
             IStakeManager(address(stake)),
             1,
             1,
@@ -41,6 +44,20 @@ contract ValidatorSelectionFuzz is Test {
             new address[](0)
         );
         validation.setIdentityRegistry(IIdentityRegistry(address(identity)));
+    }
+
+    function _setJob(uint256 jobId) internal {
+        IJobRegistry.Job memory job = IJobRegistry.Job({
+            employer: address(0),
+            agent: address(0),
+            reward: 0,
+            stake: 0,
+            success: false,
+            status: IJobRegistry.Status.Submitted,
+            uriHash: bytes32(0),
+            resultHash: bytes32(0)
+        });
+        jobRegistry.setJob(jobId, job);
     }
 
     function testFuzz_validatorSelection(uint8 poolSize, uint8 selectCount) public {
@@ -60,6 +77,7 @@ contract ValidatorSelectionFuzz is Test {
         validation.setValidatorPool(pool);
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(selectCount);
+        _setJob(1);
         address[] memory selected = validation.selectValidators(1, 1);
         assertEq(selected.length, selectCount);
         for (uint256 i; i < selected.length; i++) {
@@ -93,6 +111,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory counts = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
+            _setJob(j + 1);
             address[] memory sel = validation.selectValidators(j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 counts[index[sel[k]]] += 1;
@@ -108,6 +127,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory countsRev = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
+            _setJob(iterations + j + 1);
             address[] memory sel = validation.selectValidators(iterations + j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 countsRev[index[sel[k]]] += 1;
@@ -146,6 +166,7 @@ contract ValidatorSelectionFuzz is Test {
         uint256[] memory counts = new uint256[](poolSize);
         for (uint256 j; j < iterations; j++) {
             vm.roll(block.number + 1);
+            _setJob(j + 1);
             address[] memory sel = validation.selectValidators(j + 1, 1);
             for (uint256 k; k < sel.length; k++) {
                 counts[index[sel[k]]] += 1;

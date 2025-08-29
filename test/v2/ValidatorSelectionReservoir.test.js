@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Validator selection reservoir strategy", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, jobRegistry;
   let validators;
   const poolSize = 150;
   const sampleSize = 50;
@@ -21,11 +21,15 @@ describe("Validator selection reservoir strategy", function () {
     await identity.setClubRootNode(ethers.ZeroHash);
     await identity.setAgentRootNode(ethers.ZeroHash);
 
+    const Job = await ethers.getContractFactory("MockJobRegistry");
+    jobRegistry = await Job.deploy();
+    await jobRegistry.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
     validation = await Validation.deploy(
-      ethers.ZeroAddress,
+      await jobRegistry.getAddress(),
       await stake.getAddress(),
       1,
       1,
@@ -54,6 +58,17 @@ describe("Validator selection reservoir strategy", function () {
     const counts = {};
     const iterations = 30;
     for (let i = 0; i < iterations; i++) {
+      const jobStruct = {
+        employer: ethers.ZeroAddress,
+        agent: ethers.ZeroAddress,
+        reward: 0,
+        stake: 0,
+        success: false,
+        status: 3,
+        uriHash: ethers.ZeroHash,
+        resultHash: ethers.ZeroHash,
+      };
+      await jobRegistry.setJob(i + 1, jobStruct);
       await validation.selectValidators(i + 1, i + 12345);
       await ethers.provider.send("evm_mine", []);
       await validation.selectValidators(i + 1, 0);

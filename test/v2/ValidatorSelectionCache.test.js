@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Validator selection cache", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, jobRegistry;
 
   beforeEach(async () => {
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
@@ -18,11 +18,15 @@ describe("Validator selection cache", function () {
     await identity.setClubRootNode(ethers.ZeroHash);
     await identity.setAgentRootNode(ethers.ZeroHash);
 
+    const Job = await ethers.getContractFactory("MockJobRegistry");
+    jobRegistry = await Job.deploy();
+    await jobRegistry.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
     validation = await Validation.deploy(
-      ethers.ZeroAddress,
+      await jobRegistry.getAddress(),
       await stake.getAddress(),
       1,
       1,
@@ -47,6 +51,17 @@ describe("Validator selection cache", function () {
   });
 
   async function select(jobId, entropy = 0) {
+    const jobStruct = {
+      employer: ethers.ZeroAddress,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 3,
+      uriHash: ethers.ZeroHash,
+      resultHash: ethers.ZeroHash,
+    };
+    await jobRegistry.setJob(jobId, jobStruct);
     await validation.selectValidators(jobId, entropy);
     await ethers.provider.send("evm_mine", []);
     return validation.selectValidators(jobId, 0);

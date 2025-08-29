@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("ValidationModule pause", function () {
-  let owner, validator, v2, v3, validation;
+  let owner, validator, v2, v3, validation, jobRegistry;
 
   beforeEach(async () => {
     [owner, validator, v2, v3] = await ethers.getSigners();
@@ -20,11 +20,15 @@ describe("ValidationModule pause", function () {
     await identity.addAdditionalValidator(validator.address);
     await identity.addAdditionalValidator(v2.address);
     await identity.addAdditionalValidator(v3.address);
+    const Job = await ethers.getContractFactory("MockJobRegistry");
+    jobRegistry = await Job.deploy();
+    await jobRegistry.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
     validation = await Validation.deploy(
-      ethers.ZeroAddress,
+      await jobRegistry.getAddress(),
       await stakeManager.getAddress(),
       0,
       0,
@@ -33,6 +37,18 @@ describe("ValidationModule pause", function () {
       [validator.address, v2.address, v3.address]
     );
     await validation.setIdentityRegistry(await identity.getAddress());
+
+    const jobStruct = {
+      employer: owner.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 3,
+      uriHash: ethers.ZeroHash,
+      resultHash: ethers.ZeroHash,
+    };
+    await jobRegistry.setJob(1, jobStruct);
   });
 
   it("pauses validator selection", async () => {
