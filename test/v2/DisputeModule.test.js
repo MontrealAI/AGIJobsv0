@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const FEE = 10n ** 18n; // 1 token with 18 decimals
 
 describe("DisputeModule", function () {
   describe("owner controls", function () {
@@ -59,14 +60,14 @@ describe("DisputeModule", function () {
       await expect(dispute.connect(owner).pause())
         .to.emit(dispute, "Paused")
         .withArgs(owner.address);
-      await expect(dispute.connect(owner).setDisputeFee(1))
+      await expect(dispute.connect(owner).setDisputeFee(FEE))
         .to.be.revertedWithCustomError(dispute, "EnforcedPause");
       await expect(dispute.connect(owner).unpause())
         .to.emit(dispute, "Unpaused")
         .withArgs(owner.address);
-      await expect(dispute.connect(owner).setDisputeFee(1))
+      await expect(dispute.connect(owner).setDisputeFee(FEE))
         .to.emit(dispute, "DisputeFeeUpdated")
-        .withArgs(1n);
+        .withArgs(FEE);
     });
 
     it("restricts pause to owner", async () => {
@@ -79,7 +80,7 @@ describe("DisputeModule", function () {
   describe("dispute resolution", function () {
     let owner, employer, agent, outsider;
     let token, stakeManager, registry, dispute;
-    const fee = 100n;
+    const fee = FEE;
     const window = 10n;
 
     beforeEach(async () => {

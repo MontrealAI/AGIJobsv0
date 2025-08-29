@@ -22,8 +22,12 @@ contract DisputeModule is Ownable, Pausable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
 
+    /// @notice Default dispute fee charged when raising a dispute.
+    /// @dev Expressed in token units with 18 decimals; equal to 1 token.
+    uint256 public constant DEFAULT_DISPUTE_FEE = 1e18;
+
     /// @notice Fee required to initiate a dispute, in token units (18 decimals).
-    /// @dev Defaults to 1 token (1e18 units) if zero is provided to the constructor.
+    /// @dev Defaults to `DEFAULT_DISPUTE_FEE` if zero is provided to the constructor.
     uint256 public disputeFee;
 
     /// @notice Time that must elapse before a dispute can be resolved.
@@ -80,7 +84,7 @@ contract DisputeModule is Ownable, Pausable {
         }
         emit ModulesUpdated(address(_jobRegistry), address(0));
 
-        disputeFee = _disputeFee > 0 ? _disputeFee : 1e18;
+        disputeFee = _disputeFee > 0 ? _disputeFee : DEFAULT_DISPUTE_FEE;
         emit DisputeFeeUpdated(disputeFee);
 
         disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
@@ -158,7 +162,7 @@ contract DisputeModule is Ownable, Pausable {
     }
 
     /// @notice Configure the dispute fee in token units (18 decimals).
-    /// @param fee New dispute fee; 0 disables the fee.
+    /// @param fee New dispute fee in token units (18 decimals); 0 disables the fee.
     function setDisputeFee(uint256 fee)
         external
         onlyOwner
