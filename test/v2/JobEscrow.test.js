@@ -24,8 +24,8 @@ describe("JobEscrow", function () {
     escrow = await Escrow.deploy(await token.getAddress(), await routing.getAddress());
   });
 
-  it("enforces 6-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20");
+  it("enforces 18-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
     const bad = await Bad.deploy();
     await expect(
       escrow.connect(owner).setToken(await bad.getAddress())

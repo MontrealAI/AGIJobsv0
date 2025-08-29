@@ -401,7 +401,7 @@ describe("StakeManager", function () {
       stakeManager.connect(user).setToken(await token18.getAddress())
     ).to.be.revertedWith("governance only");
 
-    const Token6 = await ethers.getContractFactory("MockERC206Decimals");
+    const Token6 = await ethers.getContractFactory("MockERC20SixDecimals");
     const token6 = await Token6.deploy();
     await expect(
       stakeManager.connect(owner).setToken(await token6.getAddress())

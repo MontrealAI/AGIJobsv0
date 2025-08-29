@@ -70,6 +70,10 @@ contract GovernanceReward is Ownable {
             address(_token) == address(0)
                 ? IERC20(DEFAULT_TOKEN)
                 : _token;
+        require(
+            IERC20Metadata(address(token)).decimals() == 18,
+            "decimals"
+        );
         emit TokenUpdated(address(token));
 
         feePool = _feePool;
@@ -105,7 +109,7 @@ contract GovernanceReward is Ownable {
     }
 
     /// @notice update the token address used for rewards
-    /// @param newToken ERC20 token using 6 decimals. Set to zero address to
+    /// @param newToken ERC20 token using 18 decimals. Set to zero address to
     /// revert to DEFAULT_TOKEN.
     function setToken(IERC20 newToken) external onlyOwner {
         IERC20 candidate =
@@ -113,7 +117,7 @@ contract GovernanceReward is Ownable {
                 ? IERC20(DEFAULT_TOKEN)
                 : newToken;
         require(
-            IERC20Metadata(address(candidate)).decimals() == 6,
+            IERC20Metadata(address(candidate)).decimals() == 18,
             "decimals"
         );
         token = candidate;

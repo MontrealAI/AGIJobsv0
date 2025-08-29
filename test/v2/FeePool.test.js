@@ -81,8 +81,8 @@ describe("FeePool", function () {
     await stakeManager.connect(user2).depositStake(2, 300);
   });
 
-  it("requires 6-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20");
+  it("requires 18-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
     const bad = await Bad.deploy();
     await expect(
       feePool.connect(owner).setToken(await bad.getAddress())

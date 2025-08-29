@@ -9,15 +9,15 @@ interface IReentrantCaller {
     function reenter() external;
 }
 
-/// @dev ERC20 token with 6 decimals that attempts to reenter the caller during transfers.
+/// @dev ERC20 token with 18 decimals that attempts to reenter the caller during transfers.
 contract ReentrantERC206 is ERC20 {
     IReentrantCaller public caller;
     bool public attack;
 
-    constructor() ERC20("Reentrant6D", "R6D") {}
+    constructor() ERC20("Reentrant18D", "R18D") {}
 
     function decimals() public pure override returns (uint8) {
-        return 6;
+        return 18;
     }
 
     function mint(address to, uint256 amount) external {

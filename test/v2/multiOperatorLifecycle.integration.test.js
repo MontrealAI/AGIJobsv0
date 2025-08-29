@@ -39,6 +39,8 @@ describe("multi-operator job lifecycle", function () {
       owner.address
     );
 
+    await stakeManager.connect(owner).setMinStake(0);
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
     );
