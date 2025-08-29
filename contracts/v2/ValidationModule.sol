@@ -1022,44 +1022,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         return _finalize(jobId);
     }
 
-    /// @notice Check if upkeep is needed for a job based on reveal deadlines.
-    /// @param checkData ABI encoded job identifier.
-    /// @return upkeepNeeded True if performUpkeep should be called.
-    /// @return performData Bytes passed to performUpkeep.
-    function checkUpkeep(bytes calldata checkData)
-        external
-        view
-        returns (bool upkeepNeeded, bytes memory performData)
-    {
-        uint256 jobId = abi.decode(checkData, (uint256));
-        Round storage r = rounds[jobId];
-        upkeepNeeded =
-            !r.tallied &&
-            r.revealDeadline != 0 &&
-            (block.timestamp > r.revealDeadline ||
-                r.revealedCount == r.validators.length);
-        performData = checkData;
-    }
-
-    /// @notice Perform automated finalization when upkeep is required.
-    /// @param performData ABI encoded job identifier.
-    function performUpkeep(bytes calldata performData)
-        external
-        whenNotPaused
-        nonReentrant
-    {
-        uint256 jobId = abi.decode(performData, (uint256));
-        Round storage r = rounds[jobId];
-        bool upkeepNeeded =
-            !r.tallied &&
-            r.revealDeadline != 0 &&
-            (block.timestamp > r.revealDeadline ||
-                r.revealedCount == r.validators.length);
-        require(upkeepNeeded, "upkeep");
-        bool success = _finalize(jobId);
-        emit UpkeepPerformed(jobId, success);
-    }
-
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         require(!r.tallied, "tallied");

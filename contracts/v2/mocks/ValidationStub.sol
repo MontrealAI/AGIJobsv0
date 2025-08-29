@@ -110,16 +110,5 @@ contract ValidationStub is IValidationModule {
 
     function setSelectionStrategy(IValidationModule.SelectionStrategy) external override {}
 
-    function checkUpkeep(bytes calldata)
-        external
-        pure
-        override
-        returns (bool upkeepNeeded, bytes memory performData)
-    {
-        upkeepNeeded = false;
-        performData = bytes("");
-    }
-
-    function performUpkeep(bytes calldata) external pure override {}
 }
 
