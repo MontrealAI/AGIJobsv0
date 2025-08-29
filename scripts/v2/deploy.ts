@@ -22,6 +22,9 @@ function parseArgs() {
   return args;
 }
 
+// default staking token (AGIALPHA); override via --token if needed
+const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
+
 async function verify(address: string, args: any[] = []) {
   try {
     await run("verify:verify", {
@@ -42,19 +45,10 @@ async function main() {
   const governanceSigner = await ethers.getSigner(governance);
 
   // -------------------------------------------------------------------------
-  // optional external token
+  // staking token: defaults to fixed AGIALPHA unless overridden
   // -------------------------------------------------------------------------
-  let tokenAddress: string;
-  if (typeof args.token === "string") {
-    tokenAddress = args.token;
-  } else {
-    const Token = await ethers.getContractFactory(
-      "contracts/legacy/MockERC20.sol:MockERC20"
-    );
-    const token = await Token.deploy();
-    await token.waitForDeployment();
-    tokenAddress = await token.getAddress();
-  }
+  const tokenAddress =
+    typeof args.token === "string" ? args.token : AGIALPHA;
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
