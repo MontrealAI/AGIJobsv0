@@ -79,26 +79,28 @@ describe("GovernanceReward", function () {
 
     await feePool.connect(owner).transferOwnership(await reward.getAddress());
 
-    await token.mint(voter1.address, 100 * 1e6);
-    await token.mint(voter2.address, 300 * 1e6);
+    const stake1 = ethers.parseUnits("100", 18);
+    const stake2 = ethers.parseUnits("300", 18);
+    await token.mint(voter1.address, stake1);
+    await token.mint(voter2.address, stake2);
 
-    await token.connect(voter1).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await token.connect(voter2).approve(await stakeManager.getAddress(), 300 * 1e6);
-    await stakeManager.connect(voter1).depositStake(2, 100 * 1e6);
-    await stakeManager.connect(voter2).depositStake(2, 300 * 1e6);
+    await token.connect(voter1).approve(await stakeManager.getAddress(), stake1);
+    await token.connect(voter2).approve(await stakeManager.getAddress(), stake2);
+    await stakeManager.connect(voter1).depositStake(2, stake1);
+    await stakeManager.connect(voter2).depositStake(2, stake2);
 
     // fund fee pool
-    await token.mint(await feePool.getAddress(), 100 * 1e6);
+    await token.mint(await feePool.getAddress(), ethers.parseUnits("100", 18));
   });
 
-  it("enforces 6-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20");
+  it("enforces 18-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC206Decimals");
     const bad = await Bad.deploy();
     await expect(
       reward.connect(owner).setToken(await bad.getAddress())
     ).to.be.revertedWith("decimals");
 
-    const Good = await ethers.getContractFactory("MockERC206Decimals");
+    const Good = await ethers.getContractFactory("MockERC20");
     const good = await Good.deploy();
     await expect(
       reward.connect(owner).setToken(await good.getAddress())
@@ -115,17 +117,21 @@ describe("GovernanceReward", function () {
 
     await expect(reward.finalizeEpoch())
       .to.emit(reward, "EpochFinalized")
-      .withArgs(0, 50 * 1e6);
+      .withArgs(0, ethers.parseUnits("50", 18));
 
     await expect(reward.connect(voter1).claim(0))
       .to.emit(reward, "RewardClaimed")
-      .withArgs(0, voter1.address, 12500000);
+      .withArgs(0, voter1.address, ethers.parseUnits("12.5", 18));
     await expect(reward.connect(voter2).claim(0))
       .to.emit(reward, "RewardClaimed")
-      .withArgs(0, voter2.address, 37500000);
+      .withArgs(0, voter2.address, ethers.parseUnits("37.5", 18));
 
-    expect(await token.balanceOf(voter1.address)).to.equal(12500000);
-    expect(await token.balanceOf(voter2.address)).to.equal(37500000);
+    expect(await token.balanceOf(voter1.address)).to.equal(
+      ethers.parseUnits("12.5", 18)
+    );
+    expect(await token.balanceOf(voter2.address)).to.equal(
+      ethers.parseUnits("37.5", 18)
+    );
 
     await expect(reward.connect(voter1).claim(0)).to.be.revertedWith("claimed");
   });

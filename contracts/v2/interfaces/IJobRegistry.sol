@@ -172,7 +172,7 @@ interface IJobRegistry {
 
     /// @notice Deposit stake and apply for a job in one call
     /// @param jobId Identifier of the job
-    /// @param amount Stake amount in $AGIALPHA with 6 decimals
+    /// @param amount Stake amount in $AGIALPHA with 18 decimals
     /// @param subdomain ENS subdomain label
     /// @param proof Merkle proof for ENS ownership verification
     function stakeAndApply(

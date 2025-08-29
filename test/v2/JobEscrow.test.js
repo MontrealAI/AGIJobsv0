@@ -12,7 +12,7 @@ describe("JobEscrow", function () {
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
     token = await Token.deploy();
-    await token.connect(owner).mint(employer.address, 1000000);
+    await token.connect(owner).mint(employer.address, ethers.parseUnits("1", 18));
 
     // Mock RoutingModule that always returns operator
     const Routing = await ethers.getContractFactory("MockRoutingModule");
@@ -24,14 +24,14 @@ describe("JobEscrow", function () {
     escrow = await Escrow.deploy(await token.getAddress(), await routing.getAddress());
   });
 
-  it("enforces 6-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20");
+  it("enforces 18-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC206Decimals");
     const bad = await Bad.deploy();
     await expect(
       escrow.connect(owner).setToken(await bad.getAddress())
     ).to.be.revertedWith("decimals");
 
-    const Good = await ethers.getContractFactory("MockERC206Decimals");
+    const Good = await ethers.getContractFactory("MockERC20");
     const good = await Good.deploy();
     await expect(
       escrow.connect(owner).setToken(await good.getAddress())
@@ -41,7 +41,7 @@ describe("JobEscrow", function () {
   });
 
   it("runs normal job flow", async () => {
-    const reward = 1000;
+    const reward = ethers.parseUnits("1", 18);
     await token.connect(employer).approve(await escrow.getAddress(), reward);
     const tx = await escrow.connect(employer).postJob(reward, "ipfs://job");
     const rcpt = await tx.wait();
@@ -54,16 +54,18 @@ describe("JobEscrow", function () {
   });
 
   it("allows cancellation before submission", async () => {
-    const reward = 500;
+    const reward = ethers.parseUnits("0.5", 18);
     await token.connect(employer).approve(await escrow.getAddress(), reward);
     const tx = await escrow.connect(employer).postJob(reward, "job");
     const jobId = (await tx.wait()).logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;
     await escrow.connect(employer).cancelJob(jobId);
-    expect(await token.balanceOf(employer.address)).to.equal(1000000);
+    expect(await token.balanceOf(employer.address)).to.equal(
+      ethers.parseUnits("1", 18)
+    );
   });
 
   it("operator can claim after timeout", async () => {
-    const reward = 700;
+    const reward = ethers.parseUnits("0.7", 18);
     await token.connect(employer).approve(await escrow.getAddress(), reward);
     const tx = await escrow.connect(employer).postJob(reward, "job");
     const jobId = (await tx.wait()).logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;
@@ -74,7 +76,7 @@ describe("JobEscrow", function () {
   });
 
   it("prevents operator claiming before timeout", async () => {
-    const reward = 300;
+    const reward = ethers.parseUnits("0.3", 18);
     await token.connect(employer).approve(await escrow.getAddress(), reward);
     const tx = await escrow.connect(employer).postJob(reward, "job");
     const jobId = (await tx.wait()).logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;

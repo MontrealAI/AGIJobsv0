@@ -22,7 +22,7 @@ node -e "require('./examples/ethers-quickstart').postJob()"
 
 ### Stake tokens
 ```bash
-node -e "require('./examples/ethers-quickstart').stake(1_000000)"
+node -e "require('./examples/ethers-quickstart').stake(1_000000000000000000)"
 ```
 
 ### Validate a submission
@@ -36,7 +36,7 @@ node -e "require('./examples/ethers-quickstart').dispute(1, 'ipfs://evidence')"
 ```
 ## Step‑by‑Step Deployment with $AGIALPHA
 
-Record each address during deployment. The defaults below assume the 6‑decimal `$AGIALPHA` token and can be adjusted later via [`StakeManager.setToken`](contracts/v2/StakeManager.sol):
+Record each address during deployment. The defaults below assume the 18‑decimal `$AGIALPHA` token and can be adjusted later via [`StakeManager.setToken`](contracts/v2/StakeManager.sol):
 
 | Module | Owner‑only setters |
 | --- | --- |
@@ -57,8 +57,8 @@ Record each address during deployment. The defaults below assume the 6‑decimal
    - `StakeManager.setJobRegistry(jobRegistry)` and `ValidationModule.setJobRegistry(jobRegistry)`
    - Load ENS settings with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot`
 3. **Example transactions** – after wiring you can:
-   - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000)` then `StakeManager.depositStake(role, 1_000000)`
-   - Post a job: `JobRegistry.createJob(1_000000, "ipfs://QmHash")`
+   - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` then `StakeManager.depositStake(role, 1_000000000000000000)`
+   - Post a job: `JobRegistry.createJob(1_000000000000000000, "ipfs://QmHash")`
    - Rotate tokens later via `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`
 
 ### Transfer ownership to a multisig or timelock

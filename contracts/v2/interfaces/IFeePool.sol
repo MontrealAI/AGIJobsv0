@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
 /// @notice Minimal interface for depositing job fees
 interface IFeePool {
     /// @notice notify the pool about newly received fees
-    /// @param amount amount of tokens transferred to the pool scaled to 6 decimals
+    /// @param amount amount of tokens transferred to the pool scaled to 18 decimals
     function depositFee(uint256 amount) external;
 
     /// @notice distribute pending fees to stakers
@@ -19,6 +19,6 @@ interface IFeePool {
     /// @notice owner-only emergency withdrawal of tokens from the pool
     /// @dev Amount uses 6 decimal units.
     /// @param to address receiving the tokens
-    /// @param amount token amount with 6 decimals
+    /// @param amount token amount with 18 decimals
     function ownerWithdraw(address to, uint256 amount) external;
 }
