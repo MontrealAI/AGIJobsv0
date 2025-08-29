@@ -2,7 +2,7 @@
 
 # Deployment Guide: AGIJobManager v0 with $AGIALPHA
 
-This guide walks a non‑technical owner through deploying the monolithic **AGIJobManager v0** contract using the 6‑decimal `$AGIALPHA` token for all escrow, staking, validator rewards, and dispute fees. Every parameter can be updated later by the owner without redeploying the contract.
+This guide walks a non‑technical owner through deploying the monolithic **AGIJobManager v0** contract using the 18‑decimal `$AGIALPHA` token for all escrow, staking, validator rewards, and dispute fees. Every parameter can be updated later by the owner without redeploying the contract.
 
 ## Prerequisites
 - `$AGIALPHA` token address.
