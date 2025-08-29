@@ -69,6 +69,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     // cache successful validator authorizations
     mapping(address => bool) public validatorAuthCache;
     mapping(address => uint256) public validatorAuthExpiry;
+    mapping(address => uint256) public validatorAuthVersion;
+    uint256 public validatorAuthCacheVersion;
     uint256 public validatorAuthCacheDuration = 1 days;
 
     struct Round {
@@ -113,6 +115,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorPoolSampleSizeUpdated(uint256 size);
     event MaxValidatorPoolSizeUpdated(uint256 size);
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
+    event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
@@ -183,6 +186,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     {
         require(newPool.length <= maxValidatorPoolSize, "pool limit");
         validatorPool = newPool;
+        bumpValidatorAuthCacheVersion();
         emit ValidatorsUpdated(newPool);
     }
 
@@ -251,6 +255,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function setValidatorAuthCacheDuration(uint256 duration) external onlyOwner {
         validatorAuthCacheDuration = duration;
         emit ValidatorAuthCacheDurationUpdated(duration);
+    }
+
+    /// @notice Increment the validator authorization cache version,
+    /// invalidating all existing cache entries.
+    function bumpValidatorAuthCacheVersion() public onlyOwner {
+        unchecked {
+            ++validatorAuthCacheVersion;
+        }
+        emit ValidatorAuthCacheVersionBumped(validatorAuthCacheVersion);
     }
 
     /// @notice Batch update core validation parameters.
@@ -552,6 +565,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
                 bool authorized =
                     validatorAuthCache[candidate] &&
+                    validatorAuthVersion[candidate] ==
+                    validatorAuthCacheVersion &&
                     validatorAuthExpiry[candidate] > block.timestamp;
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
@@ -565,6 +580,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         validatorAuthCache[candidate] = true;
                         validatorAuthExpiry[candidate] =
                             block.timestamp + validatorAuthCacheDuration;
+                        validatorAuthVersion[candidate] =
+                            validatorAuthCacheVersion;
                     }
                 }
                 if (!authorized) {
@@ -610,6 +627,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
                 bool authorized =
                     validatorAuthCache[candidate] &&
+                    validatorAuthVersion[candidate] ==
+                    validatorAuthCacheVersion &&
                     validatorAuthExpiry[candidate] > block.timestamp;
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
@@ -623,6 +642,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         validatorAuthCache[candidate] = true;
                         validatorAuthExpiry[candidate] =
                             block.timestamp + validatorAuthCacheDuration;
+                        validatorAuthVersion[candidate] =
+                            validatorAuthCacheVersion;
                     }
                 }
                 if (!authorized) {
@@ -767,6 +788,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             proof
         );
         require(authorized, "Not authorized validator");
+        validatorAuthCache[msg.sender] = true;
+        validatorAuthVersion[msg.sender] = validatorAuthCacheVersion;
+        validatorAuthExpiry[msg.sender] =
+            block.timestamp + validatorAuthCacheDuration;
         require(validatorStakes[jobId][msg.sender] > 0, "stake");
         uint256 nonce = jobNonce[jobId];
         require(
@@ -851,6 +876,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             proof
         );
         require(authorized, "Not authorized validator");
+        validatorAuthCache[msg.sender] = true;
+        validatorAuthVersion[msg.sender] = validatorAuthCacheVersion;
+        validatorAuthExpiry[msg.sender] =
+            block.timestamp + validatorAuthCacheDuration;
         uint256 nonce = jobNonce[jobId];
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         require(commitHash != bytes32(0), "no commit");
