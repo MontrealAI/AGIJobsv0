@@ -13,7 +13,7 @@ registry = w3.eth.contract(address=os.environ["JOB_REGISTRY"], abi=registry_abi)
 validation = w3.eth.contract(address=os.environ["VALIDATION_MODULE"], abi=validation_abi)
 
 def post_job():
-    reward = 1_000000  # 1 token in 6‑decimal units
+    reward = Web3.to_wei(1, "ether")  # 1 token in 18‑decimal units
     tx = registry.functions.createJob(reward, "ipfs://job").build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)

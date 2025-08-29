@@ -10,7 +10,7 @@ ERC‑20 utility token used for payments and staking.
 
 ```javascript
 const token = await ethers.getContractAt("AGIALPHAToken", tokenAddress);
-await token.mint(user, ethers.parseUnits("1000", 6));
+await token.mint(user, ethers.parseUnits("1000", 18));
 ```
 
 ## StakeManager
@@ -34,7 +34,7 @@ Coordinates job posting and settlement.
 
 ```javascript
 const registry = await ethers.getContractAt("JobRegistry", registryAddress);
-const tx = await registry.createJob(ethers.parseUnits("10", 6), "ipfs://job.json");
+const tx = await registry.createJob(ethers.parseUnits("10", 18), "ipfs://job.json");
 const receipt = await tx.wait();
 const jobId = receipt.logs[0].args.jobId;
 ```

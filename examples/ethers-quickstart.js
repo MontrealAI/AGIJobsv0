@@ -23,7 +23,7 @@ const stakeManager = new ethers.Contract(process.env.STAKE_MANAGER, stakeAbi, si
 const validation = new ethers.Contract(process.env.VALIDATION_MODULE, validationAbi, signer);
 
 async function postJob() {
-  const reward = ethers.parseUnits("1", 6);
+  const reward = ethers.parseEther("1");
   await registry.createJob(reward, "ipfs://job");
 }
 

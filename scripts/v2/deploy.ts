@@ -131,7 +131,7 @@ async function main() {
   );
   const appealFee = ethers.parseUnits(
     typeof args.appealFee === "string" ? args.appealFee : "0",
-    6
+    18
   );
   const disputeWindow =
     typeof args.disputeWindow === "string" ? Number(args.disputeWindow) : 0;
@@ -162,7 +162,7 @@ async function main() {
   );
   const minPlatformStake = ethers.parseUnits(
     typeof args.minPlatformStake === "string" ? args.minPlatformStake : "1000",
-    6
+    18
   );
   const platformRegistry = await PlatformRegistry.deploy(
     await stake.getAddress(),
@@ -233,7 +233,7 @@ async function main() {
 
   const minStake = ethers.parseUnits(
     typeof args.minStake === "string" ? args.minStake : "0",
-    6
+    18
   );
   await stake.connect(governanceSigner).setMinStake(minStake);
 
