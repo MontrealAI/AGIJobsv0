@@ -18,7 +18,7 @@ resolver, emitting `OwnershipVerified` on success.
 ## Module Responsibilities & Addresses
 | Module | Responsibility | Address |
 | --- | --- | --- |
-| `$AGIALPHA` Token | 6‑decimal ERC‑20 used for payments and staking | `0x2e8fb54C3eC41F55F06c1F082c081A609eAa4eBE` |
+| `$AGIALPHA` Token | 6‑decimal ERC‑20 used for payments and staking | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
 | StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | `TBD` |
 | ReputationEngine | Tracks reputation scores and blacklist status | `TBD` |
 | IdentityRegistry | Verifies ENS subdomains and Merkle allowlists | `TBD` |
@@ -152,7 +152,7 @@ then be performed through the "Write" tabs on each module.
 
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at
-  `0x2e8fb54C3eC41F55F06c1F082c081A609eAa4eBE` (6 decimals).
+  `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` (6 decimals).
 - To swap the token, the owner calls
   `StakeManager.setToken(newToken)`; emit `TokenUpdated(newToken)` to
   verify.

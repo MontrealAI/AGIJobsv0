@@ -151,7 +151,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 
 ## Common Etherscan Flows
 ### Approve $AGIALPHA
-1. Navigate to the [$AGIALPHA token](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe#writeContract).
+1. Navigate to the [$AGIALPHA token](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA#writeContract).
 2. In **Write Contract**, connect your wallet and call **approve(spender, amount)**. Use 6‑decimal base units (e.g., `1_000000` for one token).
 
 ### Acknowledge the tax policy

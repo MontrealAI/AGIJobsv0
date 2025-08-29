@@ -53,7 +53,7 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 
 | Parameter | Recommended value |
 | --- | --- |
-| `token` | `0x2e8fb54C3EC41F55F06C1f082C081A609eAA4EbE` |
+| `token` | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
 | `feePct` | `5` (protocol fee percentage) |
 | `burnPct` | `0` (no burn) |
 | `commitWindow` | `86400` seconds (24h) |
