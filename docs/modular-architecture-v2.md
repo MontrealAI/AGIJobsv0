@@ -110,7 +110,7 @@ rendering deviation economically unattractive.
 
 ## Token Configuration
 The `StakeManager` stores the ERC‑20 used for rewards, staking and dispute fees.  By default it references
-[`$AGIALPHA`](https://etherscan.io/address/0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe) (6 decimals), but the owner can switch
+[`$AGIALPHA`](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) (6 decimals), but the owner can switch
 currencies via `setToken(newToken)` without redeploying other modules.  All amounts must be provided in base units (1 token =
 1e6 units).
 

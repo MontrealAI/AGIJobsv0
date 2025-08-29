@@ -221,7 +221,7 @@ LEG --> P7
 
 * **ETH for Gas:** Make sure your MetaMask wallet has a sufficient amount of **ETH** to pay for gas fees on mainnet. Every contract deployment and function call will consume gas (paid in ETH).
 
-* **\$AGIALPHA Tokens:** Acquire some **\$AGIALPHA** – the ERC-20 token used for payments, staking, and rewards in AGI Jobs v2. You will need \$AGIALPHA to post job bounties and to stake as an agent/validator/platform. \$AGIALPHA has **6 decimal places**, *not* the usual 18. For example, `1.0 AGIALPHA = 1,000,000` in base units. The official \$AGIALPHA token contract is at **`0x2e8fb54C3EC41F55F06C1f082C081A609eAA4EbE`** (you can verify this on Etherscan). Add this token to your MetaMask using the contract address.
+* **\$AGIALPHA Tokens:** Acquire some **\$AGIALPHA** – the ERC-20 token used for payments, staking, and rewards in AGI Jobs v2. You will need \$AGIALPHA to post job bounties and to stake as an agent/validator/platform. \$AGIALPHA has **6 decimal places**, *not* the usual 18. For example, `1.0 AGIALPHA = 1,000,000` in base units. The official \$AGIALPHA token contract is at **`0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`** (you can verify this on Etherscan). Add this token to your MetaMask using the contract address.
 
   *How to get \$AGIALPHA?* If it’s publicly available, you might swap for it on a DEX (like Uniswap) by inputting the token address. Otherwise, obtain it through the project’s official channels. Ensure you have enough tokens for the actions you plan (e.g. posting job rewards or staking collateral).
 
@@ -480,7 +480,7 @@ As an employer (someone who wants a task done by an AI agent), you will **create
 2. **Approve StakeManager to Spend Your Tokens:** When you create a job, the system will take the reward (and fee) from your account and escrow it. For security, ERC-20 tokens require an **approve** before a contract can transfer your tokens. So you must approve the StakeManager to pull your reward amount.
 
    * In MetaMask, switch to **your address** (the employer’s address).
-   * Go to the \$AGIALPHA token’s Etherscan page (address `0x2e8fb54C3EC41F55F06C1f082C081A609eAA4EbE`). Click on **Write Contract** and connect your wallet. Locate the `approve(address spender, uint256 amount)` function.
+   * Go to the \$AGIALPHA token’s Etherscan page (address `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`). Click on **Write Contract** and connect your wallet. Locate the `approve(address spender, uint256 amount)` function.
    * For **spender**, enter the **StakeManager contract’s address**. Double-check it’s exact.
    * For **amount**, enter the reward plus fee in base units. The fee is determined by the platform’s fee percentage (`feePct`). For example, if reward = 50 AGIALPHA and feePct = 5%, then fee = 2.5 AGIALPHA. Total = 52.5 AGIALPHA, which in base units is `52.5 * 1e6 = 52_500000`. If you’re not sure of the fee or want to be safe, you can approve a slightly larger amount than the reward. *(It’s okay to approve a bit more; the contract will only use what is needed.)*
    * Click **Write** and confirm the MetaMask transaction. Wait for the approval transaction to succeed (you can check status on Etherscan).

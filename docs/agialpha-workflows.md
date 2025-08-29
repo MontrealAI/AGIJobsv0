@@ -3,7 +3,7 @@
 This guide summarises Etherscan-based interactions for the $AGIALPHA-powered AGIJobs v2 suite. All token amounts use 6‑decimal base units (`1 AGIALPHA = 1_000000`). Agents must control a subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`. Replace bracketed addresses with deployment values before transacting.
 
 ## 1. Post a Job (Employer)
-1. **Approve reward** – open the [$AGIALPHA token Write tab](https://etherscan.io/address/0x2e8fb54C3EC41F55F06C1F082C081A609eAA4EbE#writeContract) and call `approve(spender, amount)` where `spender` is the `StakeManager` and `amount` is `reward + fee` in base units.
+1. **Approve reward** – open the [$AGIALPHA token Write tab](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA#writeContract) and call `approve(spender, amount)` where `spender` is the `StakeManager` and `amount` is `reward + fee` in base units.
 2. **Create job** – on [`JobRegistry` Write](https://etherscan.io/address/<JobRegistryAddress>#writeContract) call `acknowledgeAndCreateJob(reward, uri)`.
 
 ## 2. Apply for a Job (Agent)

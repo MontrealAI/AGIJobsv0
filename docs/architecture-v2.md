@@ -28,7 +28,7 @@ Each component is immutable once deployed yet configurable by the owner through 
 
 ### Token Configuration
 
-`StakeManager` holds the address of the ERC‑20 used for all payments, staking and dispute fees. The owner may replace this token at any time via `setToken` without redeploying the rest of the system. The default deployment references the $AGIALPHA token at `0x2e8fb54c3ec41f55f06c1f082c081a609eaa4ebe`, which operates with **6 decimals**. All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000` for 100 AGIALPHA). Modules do not assume a specific decimal count, preserving compatibility with future currencies. The `DisputeModule` pulls its `disputeFee` from `StakeManager`, so dispute resolution also uses the selected ERC‑20.
+`StakeManager` holds the address of the ERC‑20 used for all payments, staking and dispute fees. The owner may replace this token at any time via `setToken` without redeploying the rest of the system. The default deployment references the $AGIALPHA token at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`, which operates with **6 decimals**. All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000` for 100 AGIALPHA). Modules do not assume a specific decimal count, preserving compatibility with future currencies. The `DisputeModule` pulls its `disputeFee` from `StakeManager`, so dispute resolution also uses the selected ERC‑20.
 
 | Module | Core responsibility | Owner‑controllable parameters |
 | --- | --- | --- |
