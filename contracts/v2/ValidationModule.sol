@@ -465,8 +465,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         public
         override
         whenNotPaused
+        nonReentrant
         returns (address[] memory selected)
     {
+        require(
+            jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
+            "not submitted"
+        );
         Round storage r = rounds[jobId];
         // Ensure validators are only chosen once per round to prevent
         // re-selection or commit replay.

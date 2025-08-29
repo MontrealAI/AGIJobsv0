@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Validator selection with large pool", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, jobRegistry;
 
   beforeEach(async () => {
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
@@ -17,11 +17,15 @@ describe("Validator selection with large pool", function () {
     await identity.setClubRootNode(ethers.ZeroHash);
     await identity.setAgentRootNode(ethers.ZeroHash);
 
+    const Job = await ethers.getContractFactory("MockJobRegistry");
+    jobRegistry = await Job.deploy();
+    await jobRegistry.waitForDeployment();
+
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
     );
     validation = await Validation.deploy(
-      ethers.ZeroAddress,
+      await jobRegistry.getAddress(),
       await stake.getAddress(),
       1,
       1,
@@ -48,6 +52,17 @@ describe("Validator selection with large pool", function () {
       await validation.setValidatorPool(validators);
       await validation.setValidatorsPerJob(3);
       await validation.setValidatorPoolSampleSize(Math.min(poolSize, 50));
+      const jobStruct = {
+        employer: ethers.ZeroAddress,
+        agent: ethers.ZeroAddress,
+        reward: 0,
+        stake: 0,
+        success: false,
+        status: 3,
+        uriHash: ethers.ZeroHash,
+        resultHash: ethers.ZeroHash,
+      };
+      await jobRegistry.setJob(jobId, jobStruct);
       await validation.selectValidators(jobId, 12345);
       await ethers.provider.send("evm_mine", []);
       const tx = await validation.selectValidators(jobId++, 0);
