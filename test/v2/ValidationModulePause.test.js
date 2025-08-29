@@ -9,8 +9,7 @@ describe("ValidationModule pause", function () {
     const MockStakeManager = await ethers.getContractFactory(
       "contracts/legacy/MockV2.sol:MockStakeManager"
     );
-    const stakeManager = await MockStakeManager.deploy();
-    await stakeManager.setStake(validator.address, 1, 100);
+    const stakeManager = await MockStakeManager.deploy(1, 100);
     await stakeManager.setStake(v2.address, 1, 100);
     await stakeManager.setStake(v3.address, 1, 100);
     const Identity = await ethers.getContractFactory(

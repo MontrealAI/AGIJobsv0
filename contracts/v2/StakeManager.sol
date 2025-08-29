@@ -3,7 +3,6 @@ pragma solidity ^0.8.25;
 
 import {Governable} from "./Governable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -147,8 +146,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event FeePoolUpdated(address indexed feePool);
 
     /// @notice Deploys the StakeManager.
-    /// @param _token ERC20 token used for staking and payouts. Defaults to
-    /// DEFAULT_TOKEN when zero address.
     /// @param _minStake Minimum stake required to participate. Defaults to
     /// DEFAULT_MIN_STAKE when set to zero.
     /// @param _employerSlashPct Percentage of slashed amount sent to employer
@@ -160,7 +157,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
     /// @param _disputeModule Dispute module authorized to manage dispute fees.
     constructor(
-        IERC20 _token,
         uint256 _minStake,
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
@@ -169,13 +165,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address _disputeModule,
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
-        if (address(_token) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 18, "decimals");
-            token = _token;
-        }
+        token = IERC20(DEFAULT_TOKEN);
 
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);

@@ -85,9 +85,7 @@ describe("job finalization integration", function () {
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
     );
-    feePool = await FeePool.deploy(
-      await token.getAddress(),
-      await stakeManager.getAddress(),
+    feePool = await FeePool.deploy(await stakeManager.getAddress(),
       0,
       owner.address
     );

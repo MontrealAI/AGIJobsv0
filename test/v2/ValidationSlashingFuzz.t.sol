@@ -21,7 +21,7 @@ contract ValidationSlashingFuzz is Test {
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e18, 0, 100, address(this), address(0), address(0));
+        stake = new StakeManager(1e18, 0, 100, address(this), address(0), address(0));
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
         identity = new IdentityRegistryToggle();
