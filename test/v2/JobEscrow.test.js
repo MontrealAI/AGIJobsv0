@@ -24,6 +24,17 @@ describe("JobEscrow", function () {
     escrow = await Escrow.deploy(await token.getAddress(), await routing.getAddress());
   });
 
+  it("constructor enforces 18-decimal token", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
+    const bad = await Bad.deploy();
+    const Escrow = await ethers.getContractFactory(
+      "contracts/v2/modules/JobEscrow.sol:JobEscrow"
+    );
+    await expect(
+      Escrow.deploy(await bad.getAddress(), await routing.getAddress())
+    ).to.be.revertedWith("decimals");
+  });
+
   it("enforces 18-decimal tokens", async () => {
     const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
     const bad = await Bad.deploy();
