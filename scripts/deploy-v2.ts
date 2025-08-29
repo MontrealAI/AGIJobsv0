@@ -115,6 +115,22 @@ async function main() {
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
 
+  const ensureContract = async (addr: string, name: string) => {
+    if ((await ethers.provider.getCode(addr)) === "0x") {
+      throw new Error(`${name} must be a deployed contract`);
+    }
+  };
+
+  await Promise.all([
+    ensureContract(await registry.getAddress(), "JobRegistry"),
+    ensureContract(await stake.getAddress(), "StakeManager"),
+    ensureContract(await validation.getAddress(), "ValidationModule"),
+    ensureContract(await dispute.getAddress(), "DisputeModule"),
+    ensureContract(await platformRegistry.getAddress(), "PlatformRegistry"),
+    ensureContract(await feePool.getAddress(), "FeePool"),
+    ensureContract(await reputation.getAddress(), "ReputationEngine"),
+  ]);
+
   const SystemPause = await ethers.getContractFactory(
     "contracts/v2/SystemPause.sol:SystemPause"
   );

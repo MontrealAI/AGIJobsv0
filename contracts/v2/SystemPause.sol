@@ -23,6 +23,14 @@ contract SystemPause is Governable, ReentrancyGuard {
     FeePool public feePool;
     ReputationEngine public reputationEngine;
 
+    error InvalidJobRegistry(address module);
+    error InvalidStakeManager(address module);
+    error InvalidValidationModule(address module);
+    error InvalidDisputeModule(address module);
+    error InvalidPlatformRegistry(address module);
+    error InvalidFeePool(address module);
+    error InvalidReputationEngine(address module);
+
     event ModulesUpdated(
         address jobRegistry,
         address stakeManager,
@@ -43,6 +51,33 @@ contract SystemPause is Governable, ReentrancyGuard {
         ReputationEngine _reputationEngine,
         address _governance
     ) Governable(_governance) {
+        if (
+            address(_jobRegistry) == address(0) ||
+            address(_jobRegistry).code.length == 0
+        ) revert InvalidJobRegistry(address(_jobRegistry));
+        if (
+            address(_stakeManager) == address(0) ||
+            address(_stakeManager).code.length == 0
+        ) revert InvalidStakeManager(address(_stakeManager));
+        if (
+            address(_validationModule) == address(0) ||
+            address(_validationModule).code.length == 0
+        ) revert InvalidValidationModule(address(_validationModule));
+        if (
+            address(_disputeModule) == address(0) ||
+            address(_disputeModule).code.length == 0
+        ) revert InvalidDisputeModule(address(_disputeModule));
+        if (
+            address(_platformRegistry) == address(0) ||
+            address(_platformRegistry).code.length == 0
+        ) revert InvalidPlatformRegistry(address(_platformRegistry));
+        if (address(_feePool) == address(0) || address(_feePool).code.length == 0)
+            revert InvalidFeePool(address(_feePool));
+        if (
+            address(_reputationEngine) == address(0) ||
+            address(_reputationEngine).code.length == 0
+        ) revert InvalidReputationEngine(address(_reputationEngine));
+
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
         validationModule = _validationModule;
@@ -61,6 +96,33 @@ contract SystemPause is Governable, ReentrancyGuard {
         FeePool _feePool,
         ReputationEngine _reputationEngine
     ) external onlyGovernance {
+        if (
+            address(_jobRegistry) == address(0) ||
+            address(_jobRegistry).code.length == 0
+        ) revert InvalidJobRegistry(address(_jobRegistry));
+        if (
+            address(_stakeManager) == address(0) ||
+            address(_stakeManager).code.length == 0
+        ) revert InvalidStakeManager(address(_stakeManager));
+        if (
+            address(_validationModule) == address(0) ||
+            address(_validationModule).code.length == 0
+        ) revert InvalidValidationModule(address(_validationModule));
+        if (
+            address(_disputeModule) == address(0) ||
+            address(_disputeModule).code.length == 0
+        ) revert InvalidDisputeModule(address(_disputeModule));
+        if (
+            address(_platformRegistry) == address(0) ||
+            address(_platformRegistry).code.length == 0
+        ) revert InvalidPlatformRegistry(address(_platformRegistry));
+        if (address(_feePool) == address(0) || address(_feePool).code.length == 0)
+            revert InvalidFeePool(address(_feePool));
+        if (
+            address(_reputationEngine) == address(0) ||
+            address(_reputationEngine).code.length == 0
+        ) revert InvalidReputationEngine(address(_reputationEngine));
+
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
         validationModule = _validationModule;
