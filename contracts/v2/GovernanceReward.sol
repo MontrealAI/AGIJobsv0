@@ -11,8 +11,10 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title GovernanceReward
 /// @notice Distributes a portion of the FeePool to voters based on staked balance snapshots.
-/// @dev Uses 6‑decimal token amounts. Rewards are funded from the FeePool and
+/// @dev Uses 18‑decimal token amounts. Rewards are funded from the FeePool and
 ///      allocated proportionally to each recorded voter's stake for the epoch.
+///      `ACCUMULATOR_SCALE` adds 12 extra decimals of precision (30 total),
+///      which fits well within `uint256` limits.
 contract GovernanceReward is Ownable {
     using SafeERC20 for IERC20;
 

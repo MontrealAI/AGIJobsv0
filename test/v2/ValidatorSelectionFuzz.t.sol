@@ -22,7 +22,7 @@ contract ValidatorSelectionFuzz is Test {
         token = new AGIALPHAToken();
         stake = new StakeManager(
             IERC20(address(token)),
-            1e6,
+            1e18,
             0,
             100,
             address(this),
@@ -51,11 +51,11 @@ contract ValidatorSelectionFuzz is Test {
             address val = address(uint160(uint256(keccak256(abi.encode(i + 1)))));
             pool[i] = val;
             identity.addAdditionalValidator(val);
-            token.mint(val, 1e6);
+            token.mint(val, 1e18);
             vm.prank(val);
-            token.approve(address(stake), 1e6);
+            token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e6);
+            stake.depositStake(StakeManager.Role.Validator, 1e18);
         }
         validation.setValidatorPool(pool);
         validation.setValidatorsPerJob(selectCount);
@@ -79,11 +79,11 @@ contract ValidatorSelectionFuzz is Test {
             pool[i] = val;
             index[val] = i;
             identity.addAdditionalValidator(val);
-            token.mint(val, 1e6);
+            token.mint(val, 1e18);
             vm.prank(val);
-            token.approve(address(stake), 1e6);
+            token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e6);
+            stake.depositStake(StakeManager.Role.Validator, 1e18);
         }
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(sample);
@@ -132,11 +132,11 @@ contract ValidatorSelectionFuzz is Test {
             pool[i] = val;
             index[val] = i;
             identity.addAdditionalValidator(val);
-            token.mint(val, 1e6);
+            token.mint(val, 1e18);
             vm.prank(val);
-            token.approve(address(stake), 1e6);
+            token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e6);
+            stake.depositStake(StakeManager.Role.Validator, 1e18);
         }
         validation.setValidatorsPerJob(selectCount);
         validation.setValidatorPoolSampleSize(sample);

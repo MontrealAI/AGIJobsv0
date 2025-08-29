@@ -13,7 +13,8 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
 /// @dev All token amounts use 18 decimals. Uses an accumulator scaled by 1e12
-///      to avoid precision loss when dividing fees by total stake.
+///      to avoid precision loss when dividing fees by total stake (30 total
+///      decimals, well within `uint256` range).
 
 contract FeePool is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;

@@ -1,6 +1,8 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
+const TOKEN = 10n ** 18n; // 1 token with 18 decimals
+
 describe("Governance reward lifecycle", function () {
   let owner, voter1, voter2, voter3, token, stakeManager, feePool, reward, treasury;
 
@@ -83,19 +85,25 @@ describe("Governance reward lifecycle", function () {
     await feePool.connect(owner).transferOwnership(await reward.getAddress());
 
     // stake setup
-    await token.mint(voter1.address, 100 * 1e6);
-    await token.mint(voter2.address, 100 * 1e6);
-    await token.mint(voter3.address, 100 * 1e6);
+    await token.mint(voter1.address, 100n * TOKEN);
+    await token.mint(voter2.address, 100n * TOKEN);
+    await token.mint(voter3.address, 100n * TOKEN);
 
-    await token.connect(voter1).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await token.connect(voter2).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await token.connect(voter3).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await stakeManager.connect(voter1).depositStake(2, 100 * 1e6);
-    await stakeManager.connect(voter2).depositStake(2, 100 * 1e6);
-    await stakeManager.connect(voter3).depositStake(2, 100 * 1e6);
+    await token
+      .connect(voter1)
+      .approve(await stakeManager.getAddress(), 100n * TOKEN);
+    await token
+      .connect(voter2)
+      .approve(await stakeManager.getAddress(), 100n * TOKEN);
+    await token
+      .connect(voter3)
+      .approve(await stakeManager.getAddress(), 100n * TOKEN);
+    await stakeManager.connect(voter1).depositStake(2, 100n * TOKEN);
+    await stakeManager.connect(voter2).depositStake(2, 100n * TOKEN);
+    await stakeManager.connect(voter3).depositStake(2, 100n * TOKEN);
 
     // fund pool with 200 tokens
-    await token.mint(await feePool.getAddress(), 200 * 1e6);
+    await token.mint(await feePool.getAddress(), 200n * TOKEN);
   });
 
   it("distributes rewards across epochs and allows claims", async () => {
@@ -108,8 +116,8 @@ describe("Governance reward lifecycle", function () {
     await reward.connect(voter1).claim(0);
     await reward.connect(voter2).claim(0);
 
-    expect(await token.balanceOf(voter1.address)).to.equal(50 * 1e6);
-    expect(await token.balanceOf(voter2.address)).to.equal(50 * 1e6);
+    expect(await token.balanceOf(voter1.address)).to.equal(50n * TOKEN);
+    expect(await token.balanceOf(voter2.address)).to.equal(50n * TOKEN);
     await expect(reward.connect(voter1).claim(0)).to.be.revertedWith("claimed");
     await expect(reward.connect(voter3).claim(0)).to.be.revertedWith("not voter");
 
@@ -120,7 +128,7 @@ describe("Governance reward lifecycle", function () {
     await reward.finalizeEpoch();
 
     await reward.connect(voter3).claim(1);
-    expect(await token.balanceOf(voter3.address)).to.equal(50 * 1e6);
+    expect(await token.balanceOf(voter3.address)).to.equal(50n * TOKEN);
   });
 });
 

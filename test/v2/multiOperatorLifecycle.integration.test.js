@@ -6,10 +6,10 @@ describe("multi-operator job lifecycle", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
   let platformRegistry, jobRouter;
   let owner, employer, agent, platform1, platform2;
-  const reward = ethers.parseUnits("1000", 6);
-  const stakeRequired = ethers.parseUnits("200", 6);
-  const platformStake1 = ethers.parseUnits("100", 6);
-  const platformStake2 = ethers.parseUnits("300", 6);
+  const reward = ethers.parseUnits("1000", 18);
+  const stakeRequired = ethers.parseUnits("200", 18);
+  const platformStake1 = ethers.parseUnits("100", 18);
+  const platformStake2 = ethers.parseUnits("300", 18);
   const feePct = 10;
 
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe("multi-operator job lifecycle", function () {
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
     token = await Token.deploy();
-    const mintAmount = ethers.parseUnits("10000", 6);
+    const mintAmount = ethers.parseUnits("10000", 18);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
     await token.mint(platform1.address, mintAmount);

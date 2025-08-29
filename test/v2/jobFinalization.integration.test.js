@@ -5,11 +5,11 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 describe("job finalization integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
   let owner, employer, agent, validator1, validator2;
-  const reward = ethers.parseUnits("1000", 6);
-  const stakeRequired = ethers.parseUnits("200", 6);
+  const reward = ethers.parseUnits("1000", 18);
+  const stakeRequired = ethers.parseUnits("200", 18);
   const feePct = 10;
   const validatorRewardPct = 10;
-  const mintAmount = ethers.parseUnits("10000", 6);
+  const mintAmount = ethers.parseUnits("10000", 18);
 
   beforeEach(async () => {
     [owner, employer, agent, validator1, validator2] = await ethers.getSigners();
@@ -172,7 +172,7 @@ describe("job finalization integration", function () {
     expect(employerAfter).to.equal(mintAmount - reward - fee);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(32);
+    expect(await rep.reputation(agent.address)).to.equal(152n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
@@ -246,7 +246,7 @@ describe("job finalization integration", function () {
     expect(employerAfter).to.equal(employerBefore);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(32);
+    expect(await rep.reputation(agent.address)).to.equal(152n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 });

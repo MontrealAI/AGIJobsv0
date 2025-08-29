@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 // helper constants
-const TOKEN = 1000000n; // 1 token with 6 decimals
+const TOKEN = 1000000000000000000n; // 1 token with 18 decimals
 const STAKE_ALICE = 200n * TOKEN; // 200 tokens
 const STAKE_BOB = 100n * TOKEN; // 100 tokens
 const REWARD = 50n * TOKEN; // job reward 50 tokens

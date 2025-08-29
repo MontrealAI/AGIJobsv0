@@ -13,7 +13,7 @@ async function deployFullSystem() {
 
   const Token = await ethers.getContractFactory("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken");
   const token = await Token.deploy();
-  const mint = ethers.parseUnits("1000", 6);
+  const mint = ethers.parseUnits("1000", 18);
   await token.mint(employer.address, mint);
   await token.mint(agent.address, mint);
   await token.mint(v1.address, mint);
@@ -103,7 +103,7 @@ describe("job lifecycle with dispute and validator failure", function () {
     const env = await deployFullSystem();
     const { employer, agent, v1, v2, token, stake, validation, registry, dispute, moderator } = env;
 
-    const stakeAmount = ethers.parseUnits("1", 6);
+    const stakeAmount = ethers.parseUnits("1", 18);
     for (const signer of [agent, v1, v2]) {
       await token.connect(signer).approve(await stake.getAddress(), stakeAmount);
       const role = signer === agent ? Role.Agent : Role.Validator;
@@ -111,7 +111,7 @@ describe("job lifecycle with dispute and validator failure", function () {
     }
     const initialAgentBalance = await token.balanceOf(agent.address);
 
-    const reward = ethers.parseUnits("100", 6);
+    const reward = ethers.parseUnits("100", 18);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");

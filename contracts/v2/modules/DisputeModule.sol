@@ -14,7 +14,7 @@ import {IValidationModule} from "../interfaces/IValidationModule.sol";
 /// dispute window.
 /// @dev Maintains tax neutrality by rejecting ether and escrowing only token
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
-///      6 decimals (`1 token == 1e6` units).
+///      18 decimals (`1 token == 1e18` units).
 contract DisputeModule is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 1;
@@ -22,8 +22,8 @@ contract DisputeModule is Ownable, Pausable {
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
 
-    /// @notice Fee required to initiate a dispute, in token units (6 decimals).
-    /// @dev Defaults to 1 token (1e6 units) if zero is provided to the constructor.
+    /// @notice Fee required to initiate a dispute, in token units (18 decimals).
+    /// @dev Defaults to 1 token (1e18 units) if zero is provided to the constructor.
     uint256 public disputeFee;
 
     /// @notice Time that must elapse before a dispute can be resolved.
@@ -65,7 +65,7 @@ contract DisputeModule is Ownable, Pausable {
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
-    /// @param _disputeFee Initial dispute fee in token units (6 decimals); defaults to 1e6.
+    /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to 1e18.
     /// @param _disputeWindow Minimum time in seconds before resolution; defaults to 1 day.
     /// @param _moderator Optional moderator address; defaults to the deployer.
     constructor(
@@ -80,7 +80,7 @@ contract DisputeModule is Ownable, Pausable {
         }
         emit ModulesUpdated(address(_jobRegistry), address(0));
 
-        disputeFee = _disputeFee > 0 ? _disputeFee : 1e6;
+        disputeFee = _disputeFee > 0 ? _disputeFee : 1e18;
         emit DisputeFeeUpdated(disputeFee);
 
         disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
@@ -157,7 +157,7 @@ contract DisputeModule is Ownable, Pausable {
         emit ModeratorUpdated(_moderator, 0);
     }
 
-    /// @notice Configure the dispute fee in token units (6 decimals).
+    /// @notice Configure the dispute fee in token units (18 decimals).
     /// @param fee New dispute fee; 0 disables the fee.
     function setDisputeFee(uint256 fee)
         external
