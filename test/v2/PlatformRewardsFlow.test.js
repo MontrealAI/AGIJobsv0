@@ -7,19 +7,15 @@ const STAKE_ALICE = 200n * TOKEN; // 200 tokens
 const STAKE_BOB = 100n * TOKEN; // 100 tokens
 const REWARD = 50n * TOKEN; // job reward 50 tokens
 const FEE = 300n * TOKEN; // fee 300 tokens
-const FEE2 = 300n * TOKEN; // second fee after token swap
 
 describe("Platform reward flow", function () {
   let owner, alice, bob, employer, treasury;
-  let token, token2, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool;
+  let token, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool;
 
   beforeEach(async () => {
     [owner, alice, bob, employer, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    token = global.agialpha;
     await token.mint(alice.address, 1000n * TOKEN);
     await token.mint(bob.address, 1000n * TOKEN);
     await token.mint(employer.address, 1000n * TOKEN);
@@ -28,7 +24,6 @@ describe("Platform reward flow", function () {
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -94,7 +89,6 @@ describe("Platform reward flow", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address
@@ -102,7 +96,7 @@ describe("Platform reward flow", function () {
     await feePool.setBurnPct(0);
   });
 
-  it("handles zero-stake owner, proportional fees, and token swap", async () => {
+  it("handles zero-stake owner and proportional fees", async () => {
     // owner registers with zero stake
     await platformRegistry.connect(owner).register();
     await jobRouter.connect(owner).register();
@@ -160,36 +154,6 @@ describe("Platform reward flow", function () {
     expect(await token.balanceOf(bob.address)).to.equal(bobBefore + STAKE_BOB * FEE / (STAKE_ALICE + STAKE_BOB));
     expect(await token.balanceOf(owner.address)).to.equal(ownerBefore);
 
-    // token swap
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token2 = await Token.deploy();
-    await token2.mint(employer.address, 1000n * TOKEN);
-
-    await stakeManager.connect(owner).setToken(await token2.getAddress());
-    await feePool.connect(owner).setToken(await token2.getAddress());
-
-    // new job with token2
-    const jobId2 = ethers.encodeBytes32String("job2");
-    await token2.connect(employer).approve(await stakeManager.getAddress(), FEE2);
-    await stakeManager
-      .connect(registrySigner)
-      .lockReward(jobId2, employer.address, FEE2);
-    await stakeManager
-      .connect(registrySigner)
-      .finalizeJobFunds(jobId2, bob.address, 0, FEE2, await feePool.getAddress());
-
-    await feePool.distributeFees();
-
-    const alice2Before = await token2.balanceOf(alice.address);
-    const bob2Before = await token2.balanceOf(bob.address);
-    await feePool.connect(alice).claimRewards();
-    await feePool.connect(bob).claimRewards();
-    await feePool.connect(owner).claimRewards();
-    expect(await token2.balanceOf(alice.address)).to.equal(alice2Before + STAKE_ALICE * FEE2 / (STAKE_ALICE + STAKE_BOB));
-    expect(await token2.balanceOf(bob.address)).to.equal(bob2Before + STAKE_BOB * FEE2 / (STAKE_ALICE + STAKE_BOB));
-    expect(await token2.balanceOf(owner.address)).to.equal(0n);
   });
 });
 

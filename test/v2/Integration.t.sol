@@ -152,8 +152,6 @@ contract IntegrationTest {
 
     function testOwnerReconfigure() public {
         setUp();
-        TestToken token2 = new TestToken();
-        feePool.setToken(token2);
         feePool.setRewardRole(IStakeManager.Role.Validator);
         feePool.setStakeManager(stakeManager);
         feePool.setBurnPct(5);
@@ -163,21 +161,5 @@ contract IntegrationTest {
         require(reverted, "only owner");
     }
 
-    function testFeePoolReentrancy() public {
-        setUp();
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100 * TOKEN);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200 * TOKEN);
-        ReentrantToken mal = new ReentrantToken(feePool);
-        feePool.setToken(mal);
-        mal.mint(address(feePool), 3000 * TOKEN);
-        vm.prank(address(stakeManager));
-        feePool.depositFee(3000 * TOKEN);
-        feePool.distributeFees();
-        mal.trigger();
-        vm.prank(platform1);
-        feePool.claimRewards();
-        require(mal.balanceOf(platform1) == 1000 * TOKEN, "reenter p1");
-        require(mal.balanceOf(address(feePool)) == 2000 * TOKEN, "reenter pool");
-    }
 }
 

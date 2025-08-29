@@ -3,7 +3,6 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AGIALPHA} from "./Constants.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
@@ -20,16 +19,13 @@ contract GovernanceReward is Ownable {
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
 
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
     /// @notice default epoch length when constructor param is zero
     uint256 public constant DEFAULT_EPOCH_LENGTH = 1 weeks;
 
     /// @notice default reward percentage when constructor param is zero
     uint256 public constant DEFAULT_REWARD_PCT = 5;
 
-    IERC20 public token;
+    IERC20 public constant token = IERC20(AGIALPHA);
     IFeePool public feePool;
     IStakeManager public stakeManager;
     IStakeManager.Role public rewardRole;
@@ -55,29 +51,17 @@ contract GovernanceReward is Ownable {
     event RewardPctUpdated(uint256 pct);
     event EpochFinalized(uint256 indexed epoch, uint256 rewardAmount);
     event RewardClaimed(uint256 indexed epoch, address indexed voter, uint256 amount);
-    event TokenUpdated(address indexed token);
     event FeePoolUpdated(address indexed feePool);
     event StakeManagerUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
 
     constructor(
-        IERC20 _token,
         IFeePool _feePool,
         IStakeManager _stakeManager,
         IStakeManager.Role _role,
         uint256 _epochLength,
         uint256 _rewardPct
     ) Ownable(msg.sender) {
-        token =
-            address(_token) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : _token;
-        require(
-            IERC20Metadata(address(token)).decimals() == 18,
-            "decimals"
-        );
-        emit TokenUpdated(address(token));
-
         feePool = _feePool;
         stakeManager = _stakeManager;
         rewardRole = _role;
@@ -108,22 +92,6 @@ contract GovernanceReward is Ownable {
         require(pct <= 100, "pct");
         rewardPct = pct;
         emit RewardPctUpdated(pct);
-    }
-
-    /// @notice update the token address used for rewards
-    /// @param newToken ERC20 token using 18 decimals. Set to zero address to
-    /// revert to DEFAULT_TOKEN.
-    function setToken(IERC20 newToken) external onlyOwner {
-        IERC20 candidate =
-            address(newToken) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : newToken;
-        require(
-            IERC20Metadata(address(candidate)).decimals() == 18,
-            "decimals"
-        );
-        token = candidate;
-        emit TokenUpdated(address(candidate));
     }
 
     /// @notice update the FeePool reference
