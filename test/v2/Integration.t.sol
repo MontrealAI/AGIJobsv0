@@ -18,7 +18,7 @@ interface Vm {
 
 contract TestToken is ERC20 {
     constructor() ERC20("Test", "TST") {}
-    function decimals() public pure override returns (uint8) { return 6; }
+    function decimals() public pure override returns (uint8) { return 18; }
     function mint(address to, uint256 amount) external { _mint(to, amount); }
 }
 
@@ -26,7 +26,7 @@ contract ReentrantToken is ERC20 {
     FeePool feePool;
     bool attack;
     constructor(FeePool _feePool) ERC20("Mal", "MAL") { feePool = _feePool; }
-    function decimals() public pure override returns (uint8) { return 6; }
+    function decimals() public pure override returns (uint8) { return 18; }
     function mint(address to, uint256 amount) external { _mint(to, amount); }
     function trigger() external { attack = true; }
     function transfer(address to, uint256 amount) public override returns (bool) {
@@ -67,6 +67,8 @@ contract IntegrationTest {
     address platform1 = address(0x1);
     address platform2 = address(0x2);
 
+    uint256 constant TOKEN = 1e18;
+
     function setUp() public {
         token = new TestToken();
         stakeManager = new MockStakeManager();
@@ -78,8 +80,8 @@ contract IntegrationTest {
 
     function testLifecycle() public {
         setUp();
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200);
+        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100 * TOKEN);
+        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200 * TOKEN);
         registry.register(platform1, 100);
         registry.register(platform2, 200);
         vm.prank(platform1);
@@ -87,23 +89,23 @@ contract IntegrationTest {
         vm.prank(platform2);
         router.register();
         router.selectPlatform(bytes32(uint256(1)));
-        token.mint(address(feePool), 3000);
+        token.mint(address(feePool), 3000 * TOKEN);
         vm.prank(address(stakeManager));
-        feePool.depositFee(3000);
+        feePool.depositFee(3000 * TOKEN);
         feePool.distributeFees();
         vm.prank(platform1);
         feePool.claimRewards();
         vm.prank(platform2);
         feePool.claimRewards();
-        require(token.balanceOf(platform1) == 1000, "p1");
-        require(token.balanceOf(platform2) == 2000, "p2");
+        require(token.balanceOf(platform1) == 1000 * TOKEN, "p1");
+        require(token.balanceOf(platform2) == 2000 * TOKEN, "p2");
     }
 
     function testFuzzRewardDistribution(uint64 s1, uint64 s2, uint64 fee) public {
         setUp();
-        uint256 stake1 = uint256(s1 % 1e12) + 1;
-        uint256 stake2 = uint256(s2 % 1e12) + 1;
-        uint256 amount = uint256(fee % 1e12) + 1;
+        uint256 stake1 = uint256(s1 % 1e18) + 1;
+        uint256 stake2 = uint256(s2 % 1e18) + 1;
+        uint256 amount = uint256(fee % 1e18) + 1;
         stakeManager.setStake(platform1, IStakeManager.Role.Platform, stake1);
         stakeManager.setStake(platform2, IStakeManager.Role.Platform, stake2);
         token.mint(address(feePool), amount);
@@ -123,8 +125,8 @@ contract IntegrationTest {
 
     function testFuzzRoutingFairness(uint64 st1, uint64 st2, bytes32 seed) public {
         setUp();
-        uint256 score1 = uint256(st1 % 1e12);
-        uint256 score2 = uint256(st2 % 1e12);
+        uint256 score1 = uint256(st1 % 1e18);
+        uint256 score2 = uint256(st2 % 1e18);
         if (score1 > 0) {
             registry.register(platform1, score1);
             vm.prank(platform1);
@@ -163,19 +165,19 @@ contract IntegrationTest {
 
     function testFeePoolReentrancy() public {
         setUp();
-        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100);
-        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200);
+        stakeManager.setStake(platform1, IStakeManager.Role.Platform, 100 * TOKEN);
+        stakeManager.setStake(platform2, IStakeManager.Role.Platform, 200 * TOKEN);
         ReentrantToken mal = new ReentrantToken(feePool);
         feePool.setToken(mal);
-        mal.mint(address(feePool), 3000);
+        mal.mint(address(feePool), 3000 * TOKEN);
         vm.prank(address(stakeManager));
-        feePool.depositFee(3000);
+        feePool.depositFee(3000 * TOKEN);
         feePool.distributeFees();
         mal.trigger();
         vm.prank(platform1);
         feePool.claimRewards();
-        require(mal.balanceOf(platform1) == 1000, "reenter p1");
-        require(mal.balanceOf(address(feePool)) == 2000, "reenter pool");
+        require(mal.balanceOf(platform1) == 1000 * TOKEN, "reenter p1");
+        require(mal.balanceOf(address(feePool)) == 2000 * TOKEN, "reenter pool");
     }
 }
 
