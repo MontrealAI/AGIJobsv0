@@ -129,8 +129,8 @@ Stakers withdraw accrued fees from the same contract.
 
 ## Token Conversion Reference
 
-- `1.0 AGIALPHA = 1_000_000 units`
-- `0.5 AGIALPHA = 500_000 units`
-- `25 AGIALPHA = 25_000_000 units`
+- `1.0 AGIALPHA = 1_000_000_000_000_000_000 units`
+- `0.5 AGIALPHA =   500_000_000_000_000_000 units`
+- `25 AGIALPHA = 25_000_000_000_000_000_000 units`
 
 Always enter values in base units on Etherscan.
