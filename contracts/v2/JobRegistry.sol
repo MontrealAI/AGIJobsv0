@@ -126,7 +126,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     // default agent stake requirement configured by owner
     uint96 public jobStake;
-    uint96 public constant DEFAULT_JOB_STAKE = 1e6;
+    uint96 public constant DEFAULT_JOB_STAKE = 1e18;
     uint256 public feePct;
     uint256 public constant DEFAULT_FEE_PCT = 5;
     uint256 public maxJobReward;
@@ -639,9 +639,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /**
      * @notice Acknowledge the tax policy and create a job in one transaction.
-     * @dev `reward` uses 6-decimal base units. Caller must `approve` the
+     * @dev `reward` uses 18-decimal base units. Caller must `approve` the
      *      StakeManager for `reward + fee` $AGIALPHA before calling.
-     * @param reward Job reward in $AGIALPHA with 6 decimals.
+     * @param reward Job reward in $AGIALPHA with 18 decimals.
      * @param uri Metadata URI describing the job.
      * @return jobId Identifier of the newly created job.
      */
@@ -743,7 +743,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /**
      * @notice Acknowledge the current tax policy and apply for a job.
      * @dev No tokens are transferred. Job reward and stake amounts elsewhere
-     *      use 6-decimal $AGIALPHA units. Any stake deposits require prior
+     *      use 18-decimal $AGIALPHA units. Any stake deposits require prior
      *      `approve` calls on the $AGIALPHA token via the `StakeManager`.
      * @param jobId Identifier of the job to apply for.
      */
@@ -759,12 +759,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /**
      * @notice Deposit stake, implicitly acknowledge the tax policy if needed,
      *         and apply for a job in a single call.
-     * @dev `amount` uses 6-decimal base units. Caller must `approve` the
+     * @dev `amount` uses 18-decimal base units. Caller must `approve` the
      *      `StakeManager` to pull `amount` $AGIALPHA beforehand. If the caller
      *      has not yet acknowledged the tax policy, this helper will do so
      *      automatically on their behalf.
      * @param jobId Identifier of the job to apply for.
-     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function stakeAndApply(
         uint256 jobId,
@@ -969,7 +969,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
      * @notice Acknowledge the tax policy if needed and raise a dispute with
      *         supporting evidence stored off-chain.
      * @dev No tokens are transferred; any stake requirements elsewhere use
-     *      6-decimal $AGIALPHA units that must have been approved previously.
+     *      18-decimal $AGIALPHA units that must have been approved previously.
      * @param jobId Identifier of the disputed job.
      * @param evidenceHash Keccak256 hash of the off-chain evidence.
      */

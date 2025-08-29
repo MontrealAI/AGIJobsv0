@@ -67,7 +67,7 @@ contract JobEscrow is Ownable {
 
     function setToken(IERC20 newToken) external onlyOwner {
         IERC20Metadata meta = IERC20Metadata(address(newToken));
-        require(meta.decimals() == 6, "decimals");
+        require(meta.decimals() == 18, "decimals");
         token = newToken;
         emit TokenUpdated(address(newToken));
     }

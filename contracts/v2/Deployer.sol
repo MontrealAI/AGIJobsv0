@@ -45,7 +45,7 @@ contract Deployer is Ownable {
 
     /// @notice Economic configuration applied during deployment.
     /// @dev Zero values use each module's baked-in default such as a 5% fee,
-    ///      5% burn, 1-day commit/reveal windows and a 1e6 minimum stake.
+    ///      5% burn, 1-day commit/reveal windows and a 1e18 minimum stake.
     struct EconParams {
         IERC20 token; // custom token for StakeManager and FeePool (defaults to AGIALPHA)
         uint256 feePct; // protocol fee percentage for JobRegistry
@@ -54,8 +54,8 @@ contract Deployer is Ownable {
         uint256 treasurySlashPct; // slashed stake sent to treasury
         uint256 commitWindow; // validator commit window in seconds
         uint256 revealWindow; // validator reveal window in seconds
-        uint256 minStake; // global minimum stake in StakeManager (6 decimals)
-        uint96 jobStake; // minimum agent stake per job in JobRegistry (6 decimals)
+        uint256 minStake; // global minimum stake in StakeManager (18 decimals)
+        uint96 jobStake; // minimum agent stake per job in JobRegistry (18 decimals)
     }
 
     struct IdentityParams {
@@ -158,7 +158,7 @@ contract Deployer is Ownable {
     }
 
     /// @notice Deploy and wire all modules using module defaults.
-    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e6 minimum stake.
+    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e18 minimum stake.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -194,7 +194,7 @@ contract Deployer is Ownable {
     }
 
     /// @notice Deploy and wire modules with defaults and no TaxPolicy.
-    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e6 minimum stake.
+    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e18 minimum stake.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -257,7 +257,7 @@ contract Deployer is Ownable {
             econ.commitWindow == 0 ? 1 days : econ.commitWindow;
         uint256 revealWindow =
             econ.revealWindow == 0 ? 1 days : econ.revealWindow;
-        uint256 minStake = econ.minStake == 0 ? 1e6 : econ.minStake;
+        uint256 minStake = econ.minStake == 0 ? 1e18 : econ.minStake;
         uint256 employerSlashPct = econ.employerSlashPct;
         uint256 treasurySlashPct = econ.treasurySlashPct;
         if (employerSlashPct + treasurySlashPct == 0) {

@@ -57,7 +57,7 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 
 ## 5. Stake and register a platform
 
-1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000`, `0.1 token = 100000`).
+1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000000000000000`, `0.1 token = 100000000000000000`).
 2. Call `PlatformIncentives.stakeAndActivate(amount)` from the operator's address to register and enable routing. The helper stakes tokens, registers the platform in `PlatformRegistry`, and enrolls it with `JobRouter` for routing priority.
 3. If routing is unnecessary, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` instead.
 4. The owner may register with `amount = 0` to appear in registries without fee or routing boosts.

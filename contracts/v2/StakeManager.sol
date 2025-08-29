@@ -23,10 +23,8 @@ import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 /// @dev Holds only the staking token and rejects direct ether so neither the
 ///      contract nor the owner ever custodies funds that could create tax
 ///      liabilities. All taxes remain the responsibility of employers, agents
-///      and validators. All token amounts are scaled by 1e6 (6 decimals); for
-///      instance `2` tokens should be provided as `2_000_000`. Contracts that
-///      operate on 18‑decimal tokens must downscale by `1e12`, which may cause
-///      precision loss.
+///      and validators. All token amounts are scaled by 1e18 (18 decimals); for
+///      instance `2` tokens should be provided as `2_000000000000000000`.
 contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     using SafeERC20 for IERC20;
 
@@ -44,7 +42,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     address public constant DEFAULT_TOKEN = AGIALPHA;
 
     /// @notice default minimum stake when constructor param is zero
-    uint256 public constant DEFAULT_MIN_STAKE = 1e6;
+    uint256 public constant DEFAULT_MIN_STAKE = 1e18;
 
     /// @notice canonical burn address
     address public constant BURN_ADDRESS =
@@ -176,7 +174,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token = IERC20(DEFAULT_TOKEN);
         } else {
             IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 6, "decimals");
+            require(meta.decimals() == 18, "decimals");
             token = _token;
         }
         emit TokenUpdated(address(token));
@@ -216,20 +214,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // "Write Contract" tab by the authorized owner.
 
     /// @notice update the staking/payout token
-    /// @param newToken ERC20 token address using 6 decimals
+    /// @param newToken ERC20 token address using 18 decimals
     function setToken(IERC20 newToken) external onlyGovernance {
         if (address(newToken) == address(0)) {
             token = IERC20(DEFAULT_TOKEN);
         } else {
             IERC20Metadata meta = IERC20Metadata(address(newToken));
-            require(meta.decimals() == 6, "decimals");
+            require(meta.decimals() == 18, "decimals");
             token = newToken;
         }
         emit TokenUpdated(address(token));
     }
 
     /// @notice update the minimum stake required
-    /// @param _minStake minimum token amount with 6 decimals
+    /// @param _minStake minimum token amount with 18 decimals
     function setMinStake(uint256 _minStake) external onlyGovernance {
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
@@ -362,7 +360,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
-    /// @param maxStake cap on combined stake per address using 6 decimals
+    /// @param maxStake cap on combined stake per address using 18 decimals
     function setMaxStakePerAddress(uint256 maxStake) external onlyGovernance {
         maxStakePerAddress = maxStake;
         emit MaxStakePerAddressUpdated(maxStake);
@@ -460,7 +458,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice lock a portion of a user's stake for a period of time
     /// @param user address whose stake is being locked
-    /// @param amount token amount with 6 decimals
+    /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
     function lockStake(address user, uint256 amount, uint64 lockTime)
         external
@@ -482,7 +480,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice release previously locked stake for a user
     /// @param user address whose stake is being unlocked
-    /// @param amount token amount with 6 decimals to unlock
+    /// @param amount token amount with 18 decimals to unlock
     function releaseStake(address user, uint256 amount)
         external
         onlyJobRegistry
@@ -540,7 +538,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///      user must have acknowledged the current tax policy.
     /// @param user address receiving credit for the stake
     /// @param role participant role for the stake
-    /// @param amount token amount with 6 decimals
+    /// @param amount token amount with 18 decimals
     function depositStakeFor(address user, Role role, uint256 amount)
         external
         whenNotPaused
@@ -562,7 +560,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice deposit stake for caller for a specific role after approving tokens
     /// @param role participant role for the stake
-    /// @param amount token amount with 6 decimals; caller must approve first
+    /// @param amount token amount with 18 decimals; caller must approve first
     function depositStake(Role role, uint256 amount)
         external
         whenNotPaused
@@ -583,12 +581,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /**
      * @notice Acknowledge the tax policy and deposit $AGIALPHA stake in one call.
-     * @dev Uses 6-decimal base units (1 token = 1_000000). Caller must `approve`
+     * @dev Uses 18-decimal base units (1 token = 1_000000000000000000). Caller must `approve`
      *      this contract to transfer at least `amount` $AGIALPHA beforehand.
      *      Invoking this helper implicitly accepts the current tax policy via the
      *      associated `JobRegistry`.
      * @param role Participant role receiving credit for the stake.
-     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndDeposit(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
@@ -602,12 +600,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /**
      * @notice Acknowledge the tax policy and deposit $AGIALPHA stake on behalf of
      *         a user.
-     * @dev Uses 6-decimal base units. The `user` must `approve` this contract to
+     * @dev Uses 18-decimal base units. The `user` must `approve` this contract to
      *      transfer at least `amount` tokens beforehand. Calling this helper
      *      implicitly acknowledges the current tax policy for the `user`.
      * @param user Address receiving credit for the stake.
      * @param role Participant role receiving credit for the stake.
-     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndDepositFor(
         address user,
@@ -656,11 +654,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /**
      * @notice Withdraw previously staked $AGIALPHA for a specific role.
-     * @dev Uses 6-decimal base units (1 token = 1_000000). Stake must be unlocked
+     * @dev Uses 18-decimal base units (1 token = 1_000000000000000000). Stake must be unlocked
      *      and caller must have deposited tokens beforehand via `approve` +
      *      deposit.
      * @param role Participant role of the stake being withdrawn.
-     * @param amount Token amount with 6 decimals to withdraw.
+     * @param amount Token amount with 18 decimals to withdraw.
      */
     function withdrawStake(Role role, uint256 amount)
         external
@@ -679,11 +677,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /**
      * @notice Acknowledge the tax policy and withdraw $AGIALPHA stake in one call.
-     * @dev Uses 6-decimal base units. Caller must have staked tokens previously,
+     * @dev Uses 18-decimal base units. Caller must have staked tokens previously,
      *      which required an `approve` for this contract. Invoking this helper
      *      acknowledges the current tax policy via the associated `JobRegistry`.
      * @param role Participant role of the stake being withdrawn.
-     * @param amount Withdraw amount in $AGIALPHA with 6 decimals.
+     * @param amount Withdraw amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndWithdraw(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
@@ -694,12 +692,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /**
      * @notice Acknowledge the tax policy and withdraw $AGIALPHA stake on behalf of a user.
-     * @dev Uses 6-decimal base units. Caller must be authorized and the `user` must
+     * @dev Uses 18-decimal base units. Caller must be authorized and the `user` must
      *      have previously staked tokens. Invoking this helper acknowledges the
      *      current tax policy for the `user` via the associated `JobRegistry`.
      * @param user Address whose stake is being withdrawn.
      * @param role Participant role of the stake being withdrawn.
-     * @param amount Withdraw amount in $AGIALPHA with 6 decimals.
+     * @param amount Withdraw amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeAndWithdrawFor(
         address user,
@@ -721,7 +719,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///         `releaseReward` or `finalizeJobFunds`
     /// @param jobId unique job identifier
     /// @param from employer providing the escrow
-    /// @param amount token amount with 6 decimals; employer must approve first
+    /// @param amount token amount with 18 decimals; employer must approve first
     function lockReward(bytes32 jobId, address from, uint256 amount)
         external
         onlyJobRegistry
@@ -737,7 +735,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///      tracking a job identifier. The caller is expected to account for the
     ///      escrowed balance.
     /// @param from Address providing the funds; must approve first.
-    /// @param amount Token amount with 6 decimals to lock.
+    /// @param amount Token amount with 18 decimals to lock.
     function lock(address from, uint256 amount) external onlyJobRegistry whenNotPaused {
         token.safeTransferFrom(from, address(this), amount);
         emit StakeEscrowLocked(bytes32(0), from, amount);
@@ -746,7 +744,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice release locked job reward to recipient applying any AGI type bonus
     /// @param jobId unique job identifier
     /// @param to recipient of the release (typically the agent)
-    /// @param amount base token amount with 6 decimals before AGI bonus
+    /// @param amount base token amount with 18 decimals before AGI bonus
     function releaseReward(bytes32 jobId, address to, uint256 amount)
         external
         onlyJobRegistry
@@ -788,7 +786,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Does not adjust job-specific escrows; the caller must ensure
     ///      sufficient balance was locked earlier.
     /// @param to Recipient receiving the tokens.
-    /// @param amount Base token amount with 6 decimals before AGI bonus.
+    /// @param amount Base token amount with 18 decimals before AGI bonus.
     function release(address to, uint256 amount) external onlyJobRegistry whenNotPaused {
         // apply AGI type payout modifier
         uint256 pct = getAgentPayoutPct(to);
@@ -823,8 +821,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice finalize a job by paying the agent and forwarding protocol fees
     /// @param jobId unique job identifier
     /// @param agent recipient of the job reward
-    /// @param reward base amount paid to the agent with 6 decimals before AGI bonus
-    /// @param fee amount forwarded to the fee pool with 6 decimals
+    /// @param reward base amount paid to the agent with 18 decimals before AGI bonus
+    /// @param fee amount forwarded to the fee pool with 18 decimals
     /// @param _feePool fee pool contract receiving protocol fees
     function finalizeJobFunds(
         bytes32 jobId,
@@ -902,7 +900,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice lock the dispute fee from a payer for later payout via
     ///         `payDisputeFee`
     /// @param payer address providing the fee, must approve first
-    /// @param amount token amount with 6 decimals
+    /// @param amount token amount with 18 decimals
     function lockDisputeFee(address payer, uint256 amount)
         external
         onlyDisputeModule
@@ -915,7 +913,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice pay a locked dispute fee to the recipient
     /// @param to recipient of the fee payout
-    /// @param amount token amount with 6 decimals
+    /// @param amount token amount with 18 decimals
     function payDisputeFee(address to, uint256 amount)
         external
         onlyDisputeModule
@@ -995,7 +993,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice slash stake from a user for a specific role and distribute shares
     /// @param user address whose stake will be reduced
     /// @param role participant role of the slashed stake
-    /// @param amount token amount with 6 decimals to slash
+    /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
     function slash(
         address user,
@@ -1008,7 +1006,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice slash a validator's stake during dispute resolution
     /// @param user address whose stake will be reduced
-    /// @param amount token amount with 6 decimals to slash
+    /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient)
         external

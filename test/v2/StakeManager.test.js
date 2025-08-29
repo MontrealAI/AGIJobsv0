@@ -394,7 +394,7 @@ describe("StakeManager", function () {
       .withArgs(user.address, 0, 50);
   });
 
-  it("restricts token updates to owner and enforces 6 decimals", async () => {
+  it("restricts token updates to owner and enforces 18 decimals", async () => {
     const Token6 = await ethers.getContractFactory("MockERC206Decimals");
     const token6 = await Token6.deploy();
     await expect(
@@ -404,15 +404,15 @@ describe("StakeManager", function () {
     const Token18 = await ethers.getContractFactory("MockERC20");
     const token18 = await Token18.deploy();
     await expect(
-      stakeManager.connect(owner).setToken(await token18.getAddress())
+      stakeManager.connect(owner).setToken(await token6.getAddress())
     ).to.be.revertedWith("decimals");
 
     await expect(
-      stakeManager.connect(owner).setToken(await token6.getAddress())
+      stakeManager.connect(owner).setToken(await token18.getAddress())
     )
       .to.emit(stakeManager, "TokenUpdated")
-      .withArgs(await token6.getAddress());
-    expect(await stakeManager.token()).to.equal(await token6.getAddress());
+      .withArgs(await token18.getAddress());
+    expect(await stakeManager.token()).to.equal(await token18.getAddress());
   });
 
   it("uses new token for deposits and payouts after update", async () => {

@@ -12,7 +12,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
-/// @dev All token amounts use 6 decimals. Uses an accumulator scaled by 1e12
+/// @dev All token amounts use 18 decimals. Uses an accumulator scaled by 1e12
 ///      to avoid precision loss when dividing fees by total stake.
 
 contract FeePool is Ownable, Pausable, ReentrancyGuard {
@@ -82,7 +82,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
             token = IERC20(DEFAULT_TOKEN);
         } else {
             IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == 6, "decimals");
+            require(meta.decimals() == 18, "decimals");
             token = _token;
         }
         emit TokenUpdated(address(token));
@@ -113,7 +113,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     ///      contract (typically by `StakeManager.finalizeJobFunds`). Only the
     ///      `StakeManager` may call this to keep accounting trustless while the
     ///      registry itself never holds custody of user funds.
-    /// @param amount fee amount scaled to 6 decimals
+    /// @param amount fee amount scaled to 18 decimals
     function depositFee(uint256 amount) external onlyStakeManager nonReentrant {
         require(amount > 0, "amount");
         pendingFees += amount;
@@ -121,7 +121,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     /// @notice Contribute tokens directly to the reward pool.
-    /// @param amount fee amount scaled to 6 decimals.
+    /// @param amount fee amount scaled to 18 decimals.
     function contribute(uint256 amount) external nonReentrant {
         require(amount > 0, "amount");
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -173,7 +173,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /**
      * @notice Claim accumulated $AGIALPHA rewards for the caller.
      * @dev Invokes the idempotent `distributeFees` so stakers can settle and
-     *      claim in a single Etherscan transaction. Rewards use 6‑decimal units.
+     *      claim in a single Etherscan transaction. Rewards use 18‑decimal units.
      */
     function claimRewards() external nonReentrant {
         _distributeFees();
@@ -196,19 +196,19 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice owner-only emergency escape hatch to withdraw tokens
     /// @dev Intended for stuck-token recovery via Etherscan. Routine fees flow
-    ///      to this pool or the burn address. Amount uses 6 decimal units.
+    ///      to this pool or the burn address. Amount uses 18 decimal units.
     /// @param to recipient address
-    /// @param amount token amount with 6 decimals
+    /// @param amount token amount with 18 decimals
     function ownerWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         token.safeTransfer(to, amount);
         emit OwnerWithdrawal(to, amount);
     }
 
     /// @notice update ERC20 token used for payouts
-    /// @param newToken fee/reward token address which must use 6 decimals
+    /// @param newToken fee/reward token address which must use 18 decimals
     function setToken(IERC20 newToken) external onlyOwner {
         IERC20Metadata meta = IERC20Metadata(address(newToken));
-        require(meta.decimals() == 6, "decimals");
+        require(meta.decimals() == 18, "decimals");
         token = newToken;
         emit TokenUpdated(address(newToken));
     }

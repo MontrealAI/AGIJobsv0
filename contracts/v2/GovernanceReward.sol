@@ -11,7 +11,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title GovernanceReward
 /// @notice Distributes a portion of the FeePool to voters based on staked balance snapshots.
-/// @dev Uses 6‑decimal token amounts. Rewards are funded from the FeePool and
+/// @dev Uses 18‑decimal token amounts. Rewards are funded from the FeePool and
 ///      allocated proportionally to each recorded voter's stake for the epoch.
 contract GovernanceReward is Ownable {
     using SafeERC20 for IERC20;
@@ -105,7 +105,7 @@ contract GovernanceReward is Ownable {
     }
 
     /// @notice update the token address used for rewards
-    /// @param newToken ERC20 token using 6 decimals. Set to zero address to
+    /// @param newToken ERC20 token using 18 decimals. Set to zero address to
     /// revert to DEFAULT_TOKEN.
     function setToken(IERC20 newToken) external onlyOwner {
         IERC20 candidate =
@@ -113,7 +113,7 @@ contract GovernanceReward is Ownable {
                 ? IERC20(DEFAULT_TOKEN)
                 : newToken;
         require(
-            IERC20Metadata(address(candidate)).decimals() == 6,
+            IERC20Metadata(address(candidate)).decimals() == 18,
             "decimals"
         );
         token = candidate;

@@ -8,7 +8,7 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 
 > **Tax Note:** The contracts and their owner are globally tax‑exempt; employers, agents, and validators shoulder all tax duties. Each module exposes `isTaxExempt()` for verification.
 
-> **Base units:** $AGIALPHA uses 6 decimals. Enter amounts as integers (`1` token = `1_000000`, `0.5` token = `500000`, `0.1` token = `100000`).
+> **Base units:** $AGIALPHA uses 18 decimals. Enter amounts as integers (`1` token = `1_000000000000000000`, `0.5` token = `500000000000000000`, `0.1` token = `100000000000000000`).
 
 ## Deploy v2 Modules
 1. Open the [`Deployer`](../contracts/v2/Deployer.sol) contract on Etherscan and connect a wallet under **Write Contract**.
@@ -16,12 +16,12 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 3. To retune payouts, the owner calls [`StakeManager.setToken(newToken)`](../contracts/v2/StakeManager.sol) and [`FeePool.setToken(newToken)`](../contracts/v2/FeePool.sol) – emitting `TokenUpdated` proves the swap. No module redeployment is needed.
 
 ## Role Function Quick Reference
-| Role | Required function calls | Example amounts (6 decimals) |
+| Role | Required function calls | Example amounts (18 decimals) |
 | --- | --- | --- |
-| Employer | `$AGIALPHA.approve(StakeManager, 1_050000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000, uri)` | approve `1_050000` for a 1‑token reward + 5% fee |
-| Agent | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000)` | stake `1_000000` |
-| Validator | `$AGIALPHA.approve(StakeManager, 1_000000)` → `StakeManager.depositStake(1, 1_000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt)` | stake `1_000000` |
-| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner) | dispute fee `1_000000` |
+| Employer | `$AGIALPHA.approve(StakeManager, 1_050000000000000000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000000000000000, uri)` | approve `1_050000000000000000` for a 1‑token reward + 5% fee |
+| Agent | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000000000000000)` | stake `1_000000000000000000` |
+| Validator | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `StakeManager.depositStake(1, 1_000000000000000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt)` | stake `1_000000000000000000` |
+| Disputer | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner) | dispute fee `1_000000000000000000` |
 
 ## ENS prerequisites
 - Agents need an ENS subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`.
@@ -31,7 +31,7 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 
 1. **Connect to Web3** – open the contract on Etherscan, select the **Write Contract** tab, click **Connect to Web3**, and approve the connection.
    ![connect-web3](https://via.placeholder.com/650x150?text=Connect+to+Web3)
-2. **depositStake** – on `StakeManager`, enter the role and amount (6‑decimal base units) in `depositStake(role, amount)`.
+2. **depositStake** – on `StakeManager`, enter the role and amount (18‑decimal base units) in `depositStake(role, amount)`.
    ![deposit-stake](https://via.placeholder.com/650x150?text=depositStake)
 3. **stakeAndActivate** – visit the `PlatformIncentives` address, connect, enter the stake amount, and press **Write** on `stakeAndActivate(amount)`.
    ![stake-and-activate](https://via.placeholder.com/650x150?text=stakeAndActivate)
@@ -50,7 +50,7 @@ When using the **Write Contract** tab as the owner, populate fields with explici
 | `StakeManager` | `setFeePct(pct)` | `20` |
 | `JobRegistry` | `setFeePct(pct)` | `5` |
 | `TaxPolicy` | `setPolicyURI("ipfs://Qm...")` | `ipfs://QmPolicyHash` |
-| `FeePool` | `ownerWithdraw(to, amount)` | `0x1111111111111111111111111111111111111111`, `1000000` |
+| `FeePool` | `ownerWithdraw(to, amount)` | `0x1111111111111111111111111111111111111111`, `1000000000000000000` |
 
 ## Module Addresses & Roles
 | Module | Address | Role |
@@ -152,7 +152,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 ## Common Etherscan Flows
 ### Approve $AGIALPHA
 1. Navigate to the [$AGIALPHA token](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA#writeContract).
-2. In **Write Contract**, connect your wallet and call **approve(spender, amount)**. Use 6‑decimal base units (e.g., `1_000000` for one token).
+2. In **Write Contract**, connect your wallet and call **approve(spender, amount)**. Use 18‑decimal base units (e.g., `1_000000000000000000` for one token).
 
 ### Acknowledge the tax policy
 1. Open `JobRegistry` → **Write**.

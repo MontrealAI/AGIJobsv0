@@ -18,9 +18,9 @@ interface IReputationEngine {
 /// @notice Registers platform operators that stake $AGIALPHA and exposes
 ///         reputation-weighted scores for job routing and discovery.
 /// @dev Holds no tokens and rejects ether to remain tax neutral. All values
-///      use 6 decimals via the `StakeManager`.
+///      use 18 decimals via the `StakeManager`.
 contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
-    uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = 1e6;
+    uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = 1e18;
 
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
@@ -100,8 +100,8 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice Deposit $AGIALPHA stake and register the caller in one step.
      * @dev Caller must `approve` the `StakeManager` for at least `amount` tokens
-     *      beforehand. Uses 6-decimal base units.
-     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     *      beforehand. Uses 18-decimal base units.
+     * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function stakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
@@ -119,7 +119,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @notice Register the caller after acknowledging the tax policy when
      *         necessary.
      * @dev Assumes the caller has already staked the required $AGIALPHA via the
-     *      `StakeManager`, which uses 6-decimal base units and requires prior
+     *      `StakeManager`, which uses 18-decimal base units and requires prior
      *      token `approve` calls. Invoking this helper implicitly accepts the
      *      current tax policy if it has not been acknowledged yet.
      */
@@ -134,10 +134,10 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice Acknowledge the tax policy, stake $AGIALPHA, and register.
      * @dev Caller must `approve` the `StakeManager` for at least `amount` tokens
-     *      beforehand. Uses 6-decimal base units. Invoking this helper
+     *      beforehand. Uses 18-decimal base units. Invoking this helper
      *      implicitly accepts the current tax policy if it has not been
      *      acknowledged yet.
-     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeStakeAndRegister(uint256 amount) external whenNotPaused nonReentrant {
         require(!registered[msg.sender], "registered");
@@ -182,7 +182,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
      * @notice Register an operator after acknowledging the tax policy on their
      *         behalf.
      * @dev The operator must already have the minimum stake recorded in
-     *      6-decimal $AGIALPHA units within the `StakeManager`, requiring a
+     *      18-decimal $AGIALPHA units within the `StakeManager`, requiring a
      *      prior token `approve`. Calling this helper implicitly acknowledges
      *      the tax policy for the operator if needed.
      * @param operator Address to be registered.
@@ -201,11 +201,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice Acknowledge the tax policy, stake $AGIALPHA, and register an operator.
      * @dev Caller must `approve` the `StakeManager` for at least `amount` tokens
-     *      beforehand. Uses 6-decimal base units. Invoking this helper
+     *      beforehand. Uses 18-decimal base units. Invoking this helper
      *      implicitly accepts the current tax policy for the operator if it has
      *      not been acknowledged yet.
      * @param operator Address to be registered.
-     * @param amount Stake amount in $AGIALPHA with 6 decimals.
+     * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
     function acknowledgeStakeAndRegisterFor(
         address operator,
