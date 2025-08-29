@@ -143,24 +143,52 @@ contract SystemPause is Governable, ReentrancyGuard {
 
     /// @notice Pause all core modules.
     function pauseAll() external onlyGovernance nonReentrant {
-        jobRegistry.pause();
-        stakeManager.pause();
-        validationModule.pause();
-        disputeModule.pause();
-        platformRegistry.pause();
-        feePool.pause();
-        reputationEngine.pause();
+        if (!jobRegistry.paused()) {
+            jobRegistry.pause();
+        }
+        if (!stakeManager.paused()) {
+            stakeManager.pause();
+        }
+        if (!validationModule.paused()) {
+            validationModule.pause();
+        }
+        if (!disputeModule.paused()) {
+            disputeModule.pause();
+        }
+        if (!platformRegistry.paused()) {
+            platformRegistry.pause();
+        }
+        if (!feePool.paused()) {
+            feePool.pause();
+        }
+        if (!reputationEngine.paused()) {
+            reputationEngine.pause();
+        }
     }
 
     /// @notice Unpause all core modules.
     function unpauseAll() external onlyGovernance nonReentrant {
-        jobRegistry.unpause();
-        stakeManager.unpause();
-        validationModule.unpause();
-        disputeModule.unpause();
-        platformRegistry.unpause();
-        feePool.unpause();
-        reputationEngine.unpause();
+        if (jobRegistry.paused()) {
+            jobRegistry.unpause();
+        }
+        if (stakeManager.paused()) {
+            stakeManager.unpause();
+        }
+        if (validationModule.paused()) {
+            validationModule.unpause();
+        }
+        if (disputeModule.paused()) {
+            disputeModule.unpause();
+        }
+        if (platformRegistry.paused()) {
+            platformRegistry.unpause();
+        }
+        if (feePool.paused()) {
+            feePool.unpause();
+        }
+        if (reputationEngine.paused()) {
+            reputationEngine.unpause();
+        }
     }
 }
 
