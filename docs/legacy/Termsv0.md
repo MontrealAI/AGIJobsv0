@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # Ticker ($): AGIALPHA
 
 **The Emergence of an AGI-Powered Alpha Agent.**

@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # Production-Scale AGIJobs Platform Sprint Plan
 
 ## 1. System Architecture Evolution

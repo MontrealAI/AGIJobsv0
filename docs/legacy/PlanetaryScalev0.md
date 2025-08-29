@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # AGIJobsv0: Toward a Planetary-Scale AGI Labor Coordination Layer
 
 **Introduction:**

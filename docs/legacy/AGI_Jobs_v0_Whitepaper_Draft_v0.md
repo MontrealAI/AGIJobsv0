@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # AGI Jobs v0 — Whitepaper
 *A declaration from the frontier of organized intelligence and human freedom*
 

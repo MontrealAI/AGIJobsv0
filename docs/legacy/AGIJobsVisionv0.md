@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # AGI Jobs: The Dawn of a Post-Work Civilization
 
 > *“We choose to free humanity from the bonds of job slavery — not because it is easy, but because our highest destiny demands it.”*  

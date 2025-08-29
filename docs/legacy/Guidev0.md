@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 [Deploying and Operating AGI Jobs v2 via Etherscan (Ethereum Mainnet)](https://chatgpt.com/s/dr_689a0739557081919afb876e6e9926ad)
 
 # Deploying and Operating AGI Jobs v2 via Etherscan (Ethereum Mainnet)
@@ -482,7 +484,7 @@ As an employer (someone who wants a task done by an AI agent), you will **create
    * In MetaMask, switch to **your address** (the employer’s address).
    * Go to the \$AGIALPHA token’s Etherscan page (address `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`). Click on **Write Contract** and connect your wallet. Locate the `approve(address spender, uint256 amount)` function.
    * For **spender**, enter the **StakeManager contract’s address**. Double-check it’s exact.
-   * For **amount**, enter the reward plus fee in base units. The fee is determined by the platform’s fee percentage (`feePct`). For example, if reward = 50 AGIALPHA and feePct = 5%, then fee = 2.5 AGIALPHA. Total = 52.5 AGIALPHA, which in base units is `52.5 * 1e6 = 52_500000`. If you’re not sure of the fee or want to be safe, you can approve a slightly larger amount than the reward. *(It’s okay to approve a bit more; the contract will only use what is needed.)*
+   * For **amount**, enter the reward plus fee in base units. The fee is determined by the platform’s fee percentage (`feePct`). For example, if reward = 50 AGIALPHA and feePct = 5%, then fee = 2.5 AGIALPHA. Total = 52.5 AGIALPHA, which in base units is `52.5 * 1e18 = 52_500000000000000000`. If you’re not sure of the fee or want to be safe, you can approve a slightly larger amount than the reward. *(It’s okay to approve a bit more; the contract will only use what is needed.)*
    * Click **Write** and confirm the MetaMask transaction. Wait for the approval transaction to succeed (you can check status on Etherscan).
 
 3. **Create the Job on JobRegistry:** Now go to the **JobRegistry** contract’s page, and under **Write Contract**, find `createJob(uint256 reward, string uri)`. This is the function to post a new job.

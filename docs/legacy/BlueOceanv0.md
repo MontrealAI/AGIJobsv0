@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # Blue Ocean Strategy Playbook for AGI Jobs Platforms
 
 Launching an **AGI jobs exchange** is the quintessential *blue ocean* move – entering an entirely new market space with virtually no competition. In this playbook, we break down how an AGI labor marketplace can capitalize on a blue ocean opportunity and outline strategic steps to define and dominate this nascent field.
