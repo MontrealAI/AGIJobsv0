@@ -46,7 +46,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
 - Run `npx hardhat test`, `forge test`, `npx solhint 'contracts/**/*.sol'` and `npx eslint .` until all pass.
 
 ## 5. Deployment Notes
-- Default token is `$AGIALPHA` (6 decimals). The owner may swap to any ERC‑20 via `StakeManager.setToken`.
+- Default token is `$AGIALPHA` (18 decimals). Token swapping via `StakeManager.setToken` is a legacy capability and not part of v2.
 - Document Etherscan-based deployment: deploy modules, call `setModules` on `JobRegistry`, then update Merkle roots and root nodes.
 
 Completion of this sprint yields a v2 system with full feature parity, ENS identity enforcement and owner-controlled configurability without contract redeployment.

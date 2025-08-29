@@ -18,7 +18,7 @@ resolver, emitting `OwnershipVerified` on success.
 ## Module Responsibilities & Addresses
 | Module | Responsibility | Address |
 | --- | --- | --- |
-| `$AGIALPHA` Token | 6‑decimal ERC‑20 used for payments and staking | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
+| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
 | StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | `TBD` |
 | ReputationEngine | Tracks reputation scores and blacklist status | `TBD` |
 | IdentityRegistry | Verifies ENS subdomains and Merkle allowlists | `TBD` |
@@ -50,7 +50,7 @@ To customise the token, protocol fees or ENS roots edit the script to call
 The script prints module addresses and verifies source on Etherscan.
 
 ## Step-by-Step Deployment
-1. **Deploy `$AGIALPHA` token** with 6 decimals if it does not already exist.
+1. **Deploy `$AGIALPHAToken`** (18 decimals) if it does not already exist.
 2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
 3. **Deploy `ReputationEngine`** passing the `StakeManager` address.
 4. **Deploy `IdentityRegistry`** with the ENS registry, NameWrapper, `ReputationEngine` address and the namehashes for `agent.agi.eth` and `club.agi.eth`.
@@ -72,8 +72,7 @@ The script prints module addresses and verifies source on Etherscan.
 ## Governance Configuration Steps
 After deployment the governance contract can fine‑tune the system without redeploying:
 
-1. **Configure `$AGIALPHA`** – ensure `StakeManager` and `FeePool` point
-   to the desired ERC‑20 via `setToken`.
+1. **Configure `$AGIALPHA`** – `StakeManager` and `FeePool` assume this fixed token; `setToken` is retained only for legacy migrations.
 2. **Set ENS roots** – on `IdentityRegistry` call `setAgentRootNode`,
    `setClubRootNode` and, if using allowlists, `setAgentMerkleRoot` and
    `setValidatorMerkleRoot`.
@@ -132,7 +131,7 @@ then be performed through the "Write" tabs on each module.
 | Action | Contract / Function | Notes |
 | --- | --- | --- |
 | Accept tax terms | `JobRegistry.acknowledgeTaxPolicy()` | Must be called once before staking or disputing |
-| Stake as agent | `StakeManager.depositStake(0, amount)` | `amount` uses 6‑decimal `$AGIALPHA` units |
+| Stake as agent | `StakeManager.depositStake(0, amount)` | `amount` uses 18‑decimal `$AGIALPHA` units |
 | Post a job | `JobRegistry.createJob(reward, uri)` | `reward` in base units; token must be approved |
 | Commit vote | `ValidationModule.commitValidation(jobId, hash, subdomain, proof)` | `hash = keccak256(approve, salt)` |
 | Reveal vote | `ValidationModule.revealValidation(jobId, approve, salt)` | Call after commit phase closes |
@@ -141,7 +140,7 @@ then be performed through the "Write" tabs on each module.
 | Buy certificate | `CertificateNFT.purchase(tokenId)` | Buyer approves token first |
 
 ## Owner Administration
-- **Swap the token:** call `StakeManager.setToken(newToken)` (and any mirrored module setters) from the owner account.
+- **Swap the token:** `StakeManager.setToken(newToken)` remains for legacy deployments but should not be used in new systems.
 - **Adjust parameters:** examples include `StakeManager.setMinStake(amount)`, `JobRegistry.setFeePct(pct)`, `ValidationModule.setCommitWindow(seconds)`, `ValidationModule.setRevealWindow(seconds)` and `DisputeModule.setDisputeFee(fee)`.
 - **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
 - **Transfer ownership:** every module inherits `Ownable`; call
@@ -152,10 +151,9 @@ then be performed through the "Write" tabs on each module.
 
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at
-  `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` (6 decimals).
-- To swap the token, the owner calls
-  `StakeManager.setToken(newToken)`; emit `TokenUpdated(newToken)` to
-  verify.
+  `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` (18 decimals).
+- Token swapping via `StakeManager.setToken(newToken)` is legacy and not
+  part of standard operations.
 
 ## Troubleshooting
 - **Missing subdomain proof** – ensure your ENS label and Merkle proof
@@ -165,7 +163,7 @@ then be performed through the "Write" tabs on each module.
 - **Tax policy** – users must call `acknowledgeTaxPolicy()` on
   `JobRegistry` before staking or disputing.
 - **Wrong decimals** – `setToken` only accepts ERC‑20 tokens with
-  exactly 6 decimals.
+  exactly 18 decimals.
 
 ## Identity Requirements & Merkle Proofs
 Agents must control an `*.agent.agi.eth` subdomain and validators a `*.club.agi.eth` subdomain. When applying or validating, supply the subdomain label and a Merkle proof showing your address is allow‑listed.

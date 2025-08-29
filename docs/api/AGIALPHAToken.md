@@ -1,9 +1,9 @@
 # AGIALPHAToken API
 
-ERC‑20 token with 6 decimals used for payments and staking.
+ERC‑20 token with 18 decimals used for payments and staking.
 
 ## Functions
-- `decimals()` – returns fixed 6 decimal places.
+- `decimals()` – returns fixed 18 decimal places.
 - `mint(address to, uint256 amount)` – owner mints tokens.
 - `burn(address from, uint256 amount)` – owner burns tokens from an address.
 

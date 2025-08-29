@@ -17,7 +17,7 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Addresses for dependent modules may be passed at deployment or left as `0` and wired later. Parameters may be left as `0` to accept the defaults shown below:
 
 1. `AGIALPHAToken()` – after deployment, call `mint(to, amount)` to create the initial supply.
-2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury. The owner can later swap to a different ERC‑20 with `StakeManager.setToken`.
+2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury. `StakeManager.setToken` remains only for legacy migrations and should not be used in new deployments.
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
 5. `ReputationEngine(stakeManager)` – optional reputation weighting (pass `0` to wire later).
@@ -44,7 +44,7 @@ ModuleInstaller.initialize(jobRegistry, stakeManager, validationModule, reputati
 
 This `onlyOwner` call sets cross‑links, assigns the fee pool and optional tax policy, registers `PlatformIncentives` with both the `PlatformRegistry` and `JobRouter`, then automatically transfers ownership of all modules back to you.
 
-Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. No redeployments are required when swapping tokens or adjusting fees.
+Owners can retune parameters any time: `setMinStake`, `FeePool.setBurnPct`, `PlatformRegistry.setBlacklist`, etc. Token swapping via `StakeManager.setToken` is legacy; adjusting fees does not require redeployment.
 
 ## 4. One-call helper summary
 
@@ -57,7 +57,7 @@ Owners can retune parameters any time: `StakeManager.setToken`, `setMinStake`, `
 
 ## 5. Stake and register a platform
 
-1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000`, `0.1 token = 100000`).
+1. In `$AGIALPHA`, approve the `StakeManager` for the desired amount (`1 token = 1_000000000000000000`, `0.1 token = 100000000000000000`).
 2. Call `PlatformIncentives.stakeAndActivate(amount)` from the operator's address to register and enable routing. The helper stakes tokens, registers the platform in `PlatformRegistry`, and enrolls it with `JobRouter` for routing priority.
 3. If routing is unnecessary, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` instead.
 4. The owner may register with `amount = 0` to appear in registries without fee or routing boosts.

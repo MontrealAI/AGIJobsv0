@@ -10,8 +10,8 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
 - Align governance with rewards and ensure all parameters remain owner‑configurable.
 - Embed sybil resistance and regulatory‑flag mitigation through staking gates,
   blacklists and burn sinks.
-- Keep all value flows on‑chain in $AGIALPHA (6 decimals) so the owner can swap
-  the token or tune parameters without redeploying contracts.
+- Keep all value flows on‑chain in $AGIALPHA (18 decimals). The token is fixed
+  across modules; rotation is treated as a legacy capability.
 
 ## Tasks
 1. **FeePool Contract**

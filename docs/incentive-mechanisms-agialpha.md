@@ -1,6 +1,6 @@
 # Incentive Mechanisms for Decentralized AGI Jobs v2 Platforms
 
-This note details how $AGIALPHA (6 decimals) powers a tax‑neutral, reporting‑free rollout of AGI Jobs marketplaces. All mechanisms are implemented on‑chain so operators interact only through pseudonymous addresses.
+This note details how $AGIALPHA (18 decimals) powers a tax‑neutral, reporting‑free rollout of AGI Jobs marketplaces. All mechanisms are implemented on‑chain so operators interact only through pseudonymous addresses.
 
 ## 1. Revenue Sharing via Staking
 - Platform operators stake $AGIALPHA in `StakeManager`.
@@ -26,10 +26,10 @@ Token burns may be configured on every fee so a portion of payouts is destroyed,
 - On-chain tax acknowledgements and blacklist thresholds are owner‑tuned, letting deployments adapt to local compliance signals while keeping addresses pseudonymous.
 - Because the protocol never takes custody or issues off‑chain payouts, there is no centralized revenue that would trigger reporting duties.
 
-All modules expose simple `Ownable` setters so the contract owner can retune fees, stakes, burn rates or even swap the token address through Etherscan without redeploying contracts.
+All modules expose simple `Ownable` setters so the contract owner can retune fees, stakes and burn rates through Etherscan without redeploying contracts. Token rotation is considered legacy and is not part of normal operations.
 
 ## 5. Owner Controls & User Experience
-- The contract owner may update fees, burn rates, stake thresholds, and even swap the token address via `StakeManager.setToken`.
+- The contract owner may update fees, burn rates and stake thresholds. Token swapping via `StakeManager.setToken` is a legacy feature and should be avoided in new deployments.
 - All interactions rely on simple data types, enabling non‑technical users to operate entirely through Etherscan.
 - Each module exposes an `isTaxExempt()` view and rejects direct ETH to prevent the contracts or owner from ever holding taxable funds.
 - Reward flows never touch off‑chain accounts, keeping operators pseudonymous and outside traditional reporting regimes.

@@ -27,8 +27,8 @@ the `StakeManager` address.
    user funds.
 
 ## 3. Post-deploy configuration
-1. **Token rotation** – the owner may change the staking token by calling
-   `setToken(newToken)` on `StakeManager` and `FeePool`.
+1. **Token rotation** – legacy deployments may change the staking token by calling
+   `setToken(newToken)` on `StakeManager` and `FeePool`, but new systems use a fixed `$AGIALPHA` token.
 2. **ENS & Merkle updates** – adjust namehashes and allowlists through
    `IdentityRegistry.setAgentRootNode`, `setClubRootNode`,
    `setAgentMerkleRoot` and `setValidatorMerkleRoot`.
