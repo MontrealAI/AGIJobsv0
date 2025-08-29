@@ -20,9 +20,7 @@ contract ValidatorSelectionFuzz is Test {
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stake = new StakeManager(
-            IERC20(address(token)),
-            1e18,
+        stake = new StakeManager(1e18,
             0,
             100,
             address(this),

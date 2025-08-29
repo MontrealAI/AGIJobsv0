@@ -35,7 +35,7 @@ contract FeePoolTest {
         token = new TestToken();
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(token, stakeManager, 0, address(this));
+        feePool = new FeePool(stakeManager, 0, address(this));
         feePool.setRewardRole(IStakeManager.Role.Validator);
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1_000_000 * TOKEN);
         stakeManager.setStake(bob, IStakeManager.Role.Platform, 2_000_000 * TOKEN);

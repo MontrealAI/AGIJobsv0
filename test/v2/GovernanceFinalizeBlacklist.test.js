@@ -16,9 +16,7 @@ describe("JobRegistry governance finalization", function () {
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
-    stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
-      0,
+    stakeManager = await StakeManager.deploy(0,
       100,
       0,
       treasury.address,

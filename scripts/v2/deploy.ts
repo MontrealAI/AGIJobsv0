@@ -42,11 +42,7 @@ async function main() {
     typeof args.governance === "string" ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
-  // -------------------------------------------------------------------------
-  // staking token: defaults to fixed AGIALPHA unless overridden
-  // -------------------------------------------------------------------------
-  const tokenAddress =
-    typeof args.token === "string" ? args.token : AGIALPHA;
+  const tokenAddress = AGIALPHA;
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
@@ -54,7 +50,6 @@ async function main() {
   const treasury =
     typeof args.treasury === "string" ? args.treasury : governance;
   const stake = await Stake.deploy(
-    tokenAddress,
     0,
     0,
     0,
@@ -142,7 +137,6 @@ async function main() {
   );
   const burnPct = typeof args.burnPct === "string" ? parseInt(args.burnPct) : 0;
   const feePool = await FeePool.deploy(
-    tokenAddress,
     await stake.getAddress(),
     burnPct,
     treasury
@@ -345,7 +339,6 @@ async function main() {
   );
 
   await verify(await stake.getAddress(), [
-    tokenAddress,
     0,
     0,
     0,
@@ -394,10 +387,9 @@ async function main() {
     "All taxes on participants; contract and owner exempt",
   ]);
   await verify(await feePool.getAddress(), [
-    tokenAddress,
     await stake.getAddress(),
-    2,
-    governance,
+    burnPct,
+    treasury,
   ]);
   await verify(await platformRegistry.getAddress(), [
     await stake.getAddress(),

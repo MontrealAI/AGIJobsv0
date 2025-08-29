@@ -29,7 +29,7 @@ contract PlatformIncentivesTest is Test {
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stakeManager = new StakeManager(token, 0, 0, 0, address(this), address(0), address(0));
+        stakeManager = new StakeManager(0, 0, 0, address(this), address(0), address(0));
         jobRegistry = new MockJobRegistry();
         jobRegistry.setTaxPolicyVersion(1);
         stakeManager.setJobRegistry(address(jobRegistry));
@@ -40,9 +40,7 @@ contract PlatformIncentivesTest is Test {
             1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
-        feePool = new FeePool(
-            token,
-            IStakeManager(address(stakeManager)),
+        feePool = new FeePool(IStakeManager(address(stakeManager)),
             0,
             address(this)
         );

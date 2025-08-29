@@ -37,14 +37,12 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const args = parseArgs();
 
-  const tokenAddress =
-    typeof args.token === "string" ? args.token : AGIALPHA;
+  const tokenAddress = AGIALPHA;
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
   const stake = await Stake.deploy(
-    tokenAddress,
     0,
     0,
     0,
@@ -112,7 +110,6 @@ async function main() {
     "contracts/v2/FeePool.sol:FeePool"
   );
   const feePool = await FeePool.deploy(
-    tokenAddress,
     await stake.getAddress(),
     0,
     deployer.address
@@ -152,7 +149,15 @@ async function main() {
   console.log("TaxPolicy:", await tax.getAddress());
   console.log("Token:", tokenAddress);
 
-  await verify(await stake.getAddress(), [tokenAddress, deployer.address]);
+  await verify(await stake.getAddress(), [
+    0,
+    0,
+    0,
+    deployer.address,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    deployer.address,
+  ]);
   await verify(await registry.getAddress(), []);
   await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress()]);
   await verify(await reputation.getAddress(), []);

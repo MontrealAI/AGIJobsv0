@@ -25,9 +25,7 @@ describe("Platform reward flow", function () {
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
-    stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
-      0,
+    stakeManager = await StakeManager.deploy(0,
       100,
       0,
       treasury.address,
@@ -91,9 +89,7 @@ describe("Platform reward flow", function () {
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
     );
-    feePool = await FeePool.deploy(
-      await token.getAddress(),
-      await stakeManager.getAddress(),
+    feePool = await FeePool.deploy(await stakeManager.getAddress(),
       0,
       treasury.address
     );
