@@ -1,6 +1,8 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
+const TOKEN = 10n ** 18n; // 1 token with 18 decimals
+
 describe("GovernanceReward", function () {
   let owner, voter1, voter2, token, stakeManager, feePool, reward, treasury;
 
@@ -81,16 +83,20 @@ describe("GovernanceReward", function () {
 
     await feePool.connect(owner).transferOwnership(await reward.getAddress());
 
-    await token.mint(voter1.address, 100 * 1e6);
-    await token.mint(voter2.address, 300 * 1e6);
+    await token.mint(voter1.address, 100n * TOKEN);
+    await token.mint(voter2.address, 300n * TOKEN);
 
-    await token.connect(voter1).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await token.connect(voter2).approve(await stakeManager.getAddress(), 300 * 1e6);
-    await stakeManager.connect(voter1).depositStake(2, 100 * 1e6);
-    await stakeManager.connect(voter2).depositStake(2, 300 * 1e6);
+    await token
+      .connect(voter1)
+      .approve(await stakeManager.getAddress(), 100n * TOKEN);
+    await token
+      .connect(voter2)
+      .approve(await stakeManager.getAddress(), 300n * TOKEN);
+    await stakeManager.connect(voter1).depositStake(2, 100n * TOKEN);
+    await stakeManager.connect(voter2).depositStake(2, 300n * TOKEN);
 
     // fund fee pool
-    await token.mint(await feePool.getAddress(), 100 * 1e6);
+    await token.mint(await feePool.getAddress(), 100n * TOKEN);
   });
 
   it("enforces 18-decimal tokens", async () => {
@@ -117,17 +123,17 @@ describe("GovernanceReward", function () {
 
     await expect(reward.finalizeEpoch())
       .to.emit(reward, "EpochFinalized")
-      .withArgs(0, 50 * 1e6);
+      .withArgs(0, 50n * TOKEN);
 
     await expect(reward.connect(voter1).claim(0))
       .to.emit(reward, "RewardClaimed")
-      .withArgs(0, voter1.address, 12500000);
+      .withArgs(0, voter1.address, 12500000000000000000n);
     await expect(reward.connect(voter2).claim(0))
       .to.emit(reward, "RewardClaimed")
-      .withArgs(0, voter2.address, 37500000);
+      .withArgs(0, voter2.address, 37500000000000000000n);
 
-    expect(await token.balanceOf(voter1.address)).to.equal(12500000);
-    expect(await token.balanceOf(voter2.address)).to.equal(37500000);
+    expect(await token.balanceOf(voter1.address)).to.equal(12500000000000000000n);
+    expect(await token.balanceOf(voter2.address)).to.equal(37500000000000000000n);
 
     await expect(reward.connect(voter1).claim(0)).to.be.revertedWith("claimed");
   });

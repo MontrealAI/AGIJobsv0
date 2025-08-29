@@ -37,7 +37,7 @@ contract PlatformIncentivesTest is Test {
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
             IReputationEngine(address(rep)),
-            1e6
+            1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
         feePool = new FeePool(

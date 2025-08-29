@@ -5,7 +5,7 @@ describe("PlatformRegistry", function () {
   let owner, platform, sybil, treasury;
   let token, stakeManager, reputationEngine, registry;
 
-  const STAKE = 1e6; // 1 token with 6 decimals
+  const STAKE = 10n ** 18n; // 1 token with 18 decimals
 
   beforeEach(async () => {
     [owner, platform, sybil, treasury] = await ethers.getSigners();

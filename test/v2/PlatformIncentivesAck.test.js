@@ -84,7 +84,7 @@ describe("PlatformIncentives acknowledge", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    const STAKE = 1e6;
+    const STAKE = 10n ** 18n;
     await token.mint(operator.address, STAKE);
     await token
       .connect(operator)
