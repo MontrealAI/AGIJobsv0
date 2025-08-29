@@ -3,8 +3,8 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("comprehensive job flows", function () {
-  const reward = ethers.parseUnits("1000", 6);
-  const stakeRequired = ethers.parseUnits("200", 6);
+  const reward = ethers.parseUnits("1000", 18);
+  const stakeRequired = ethers.parseUnits("200", 18);
   const feePct = 10;
   const disputeFee = 0n;
 
@@ -18,7 +18,7 @@ describe("comprehensive job flows", function () {
       "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
     );
     token = await Token.deploy();
-    const mintAmount = ethers.parseUnits("10000", 6);
+    const mintAmount = ethers.parseUnits("10000", 18);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
     await token.mint(platform.address, mintAmount);
@@ -159,7 +159,7 @@ describe("comprehensive job flows", function () {
       .submit(jobId, ethers.id("result"), "result", "", []);
     await validation.finalize(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
-    const price = ethers.parseUnits("10", 6);
+    const price = ethers.parseUnits("10", 18);
     await nft.connect(agent).list(jobId, price);
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await nft.connect(buyer).purchase(jobId);

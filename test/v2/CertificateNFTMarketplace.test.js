@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("CertificateNFT marketplace", function () {
-  const price = ethers.parseUnits("1", 6);
+  const price = ethers.parseUnits("1", 18);
   let owner, seller, buyer, token, stake, nft;
 
   beforeEach(async () => {

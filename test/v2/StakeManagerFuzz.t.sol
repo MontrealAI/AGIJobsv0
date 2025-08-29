@@ -12,7 +12,7 @@ contract StakeManagerFuzz is Test {
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e6, 50, 50, address(this), address(this), address(this));
+        stake = new StakeManager(IERC20(address(token)), 1e18, 50, 50, address(this), address(this), address(this));
     }
 
     function _deposit(address user, uint256 amount, StakeManager.Role role) internal {

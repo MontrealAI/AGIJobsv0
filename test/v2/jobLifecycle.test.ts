@@ -13,9 +13,9 @@ async function deploySystem() {
 
   const Token = await ethers.getContractFactory("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken");
   const token = await Token.deploy();
-  await token.mint(employer.address, ethers.parseUnits("1000", 6));
-  await token.mint(agent.address, ethers.parseUnits("1000", 6));
-  await token.mint(buyer.address, ethers.parseUnits("1000", 6));
+  await token.mint(employer.address, ethers.parseUnits("1000", 18));
+  await token.mint(agent.address, ethers.parseUnits("1000", 18));
+  await token.mint(buyer.address, ethers.parseUnits("1000", 18));
 
   const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
   const stake = await Stake.deploy(
@@ -108,11 +108,11 @@ describe("Job lifecycle", function () {
     );
     await wrapper.setOwner(BigInt(subnode), agent.address);
 
-    const stakeAmount = ethers.parseUnits("1", 6);
+    const stakeAmount = ethers.parseUnits("1", 18);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
-    const reward = ethers.parseUnits("100", 6);
+    const reward = ethers.parseUnits("100", 18);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
@@ -125,17 +125,17 @@ describe("Job lifecycle", function () {
     await validation.setResult(true);
     await validation.finalize(1);
 
-    expect(await token.balanceOf(agent.address)).to.equal(ethers.parseUnits("1099", 6));
+    expect(await token.balanceOf(agent.address)).to.equal(ethers.parseUnits("1099", 18));
     expect(await nft.ownerOf(1)).to.equal(agent.address);
     expect(await reputation.reputation(agent.address)).to.be.gt(0);
 
-    const price = ethers.parseUnits("50", 6);
+    const price = ethers.parseUnits("50", 18);
     await nft.connect(agent).list(1, price);
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await nft.connect(buyer).purchase(1);
 
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
-    expect(await token.balanceOf(agent.address)).to.equal(ethers.parseUnits("1149", 6));
+    expect(await token.balanceOf(agent.address)).to.equal(ethers.parseUnits("1149", 18));
   });
 
   it("handles validation failure, dispute resolution and blacklisting", async () => {
@@ -148,11 +148,11 @@ describe("Job lifecycle", function () {
     );
     await wrapper.setOwner(BigInt(subnode), agent.address);
 
-    const stakeAmount = ethers.parseUnits("1", 6);
+    const stakeAmount = ethers.parseUnits("1", 18);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
-    const reward = ethers.parseUnits("100", 6);
+    const reward = ethers.parseUnits("100", 18);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");

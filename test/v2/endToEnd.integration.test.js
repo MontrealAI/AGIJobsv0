@@ -5,9 +5,9 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 describe("end-to-end job lifecycle", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
   let owner, employer, agent, platform;
-  const reward = ethers.parseUnits("1000", 6);
-  const stakeRequired = ethers.parseUnits("200", 6);
-  const platformStake = ethers.parseUnits("500", 6);
+  const reward = ethers.parseUnits("1000", 18);
+  const stakeRequired = ethers.parseUnits("200", 18);
+  const platformStake = ethers.parseUnits("500", 18);
   const feePct = 10;
   const disputeFee = 0n;
 
@@ -19,7 +19,7 @@ describe("end-to-end job lifecycle", function () {
     );
     token = await Token.deploy();
     await token.mint(owner.address, 0);
-    const mintAmount = ethers.parseUnits("10000", 6);
+    const mintAmount = ethers.parseUnits("10000", 18);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
     await token.mint(platform.address, mintAmount);

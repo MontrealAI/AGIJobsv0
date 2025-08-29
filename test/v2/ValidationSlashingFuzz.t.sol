@@ -21,7 +21,7 @@ contract ValidationSlashingFuzz is Test {
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e6, 0, 100, address(this), address(0), address(0));
+        stake = new StakeManager(IERC20(address(token)), 1e18, 0, 100, address(this), address(0), address(0));
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
         identity = new IdentityRegistryToggle();
@@ -50,11 +50,11 @@ contract ValidationSlashingFuzz is Test {
             address val = address(uint160(uint256(keccak256(abi.encode(i + 1)))));
             pool[i] = val;
             identity.addAdditionalValidator(val);
-            token.mint(val, 1e6);
+            token.mint(val, 1e18);
             vm.prank(val);
-            token.approve(address(stake), 1e6);
+            token.approve(address(stake), 1e18);
             vm.prank(val);
-            stake.depositStake(StakeManager.Role.Validator, 1e6);
+            stake.depositStake(StakeManager.Role.Validator, 1e18);
         }
         validation.setValidatorPool(pool);
         for (uint8 i; i < size; i++) {

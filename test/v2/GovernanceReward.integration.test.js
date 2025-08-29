@@ -81,19 +81,20 @@ describe("Governance reward lifecycle", function () {
     await feePool.connect(owner).transferOwnership(await reward.getAddress());
 
     // stake setup
-    await token.mint(voter1.address, 100 * 1e6);
-    await token.mint(voter2.address, 100 * 1e6);
-    await token.mint(voter3.address, 100 * 1e6);
+    const stakeAmount = ethers.parseUnits("100", 18);
+    await token.mint(voter1.address, stakeAmount);
+    await token.mint(voter2.address, stakeAmount);
+    await token.mint(voter3.address, stakeAmount);
 
-    await token.connect(voter1).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await token.connect(voter2).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await token.connect(voter3).approve(await stakeManager.getAddress(), 100 * 1e6);
-    await stakeManager.connect(voter1).depositStake(2, 100 * 1e6);
-    await stakeManager.connect(voter2).depositStake(2, 100 * 1e6);
-    await stakeManager.connect(voter3).depositStake(2, 100 * 1e6);
+    await token.connect(voter1).approve(await stakeManager.getAddress(), stakeAmount);
+    await token.connect(voter2).approve(await stakeManager.getAddress(), stakeAmount);
+    await token.connect(voter3).approve(await stakeManager.getAddress(), stakeAmount);
+    await stakeManager.connect(voter1).depositStake(2, stakeAmount);
+    await stakeManager.connect(voter2).depositStake(2, stakeAmount);
+    await stakeManager.connect(voter3).depositStake(2, stakeAmount);
 
     // fund pool with 200 tokens
-    await token.mint(await feePool.getAddress(), 200 * 1e6);
+    await token.mint(await feePool.getAddress(), ethers.parseUnits("200", 18));
   });
 
   it("distributes rewards across epochs and allows claims", async () => {
@@ -106,8 +107,8 @@ describe("Governance reward lifecycle", function () {
     await reward.connect(voter1).claim(0);
     await reward.connect(voter2).claim(0);
 
-    expect(await token.balanceOf(voter1.address)).to.equal(50 * 1e6);
-    expect(await token.balanceOf(voter2.address)).to.equal(50 * 1e6);
+    expect(await token.balanceOf(voter1.address)).to.equal(ethers.parseUnits("50", 18));
+    expect(await token.balanceOf(voter2.address)).to.equal(ethers.parseUnits("50", 18));
     await expect(reward.connect(voter1).claim(0)).to.be.revertedWith("claimed");
     await expect(reward.connect(voter3).claim(0)).to.be.revertedWith("not voter");
 
@@ -118,7 +119,7 @@ describe("Governance reward lifecycle", function () {
     await reward.finalizeEpoch();
 
     await reward.connect(voter3).claim(1);
-    expect(await token.balanceOf(voter3.address)).to.equal(50 * 1e6);
+    expect(await token.balanceOf(voter3.address)).to.equal(ethers.parseUnits("50", 18));
   });
 });
 

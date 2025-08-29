@@ -12,8 +12,8 @@ async function deploySystem() {
   );
   const token = await Token.deploy();
   await token.waitForDeployment();
-  await token.mint(employer.address, ethers.parseUnits("1000", 6));
-  await token.mint(agent.address, ethers.parseUnits("1000", 6));
+  await token.mint(employer.address, ethers.parseUnits("1000", 18));
+  await token.mint(agent.address, ethers.parseUnits("1000", 18));
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
@@ -108,11 +108,11 @@ describe("Mid-job module upgrades", function () {
     const env = await deploySystem();
     const { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute } = env;
 
-    const stakeAmount = ethers.parseUnits("1", 6);
+    const stakeAmount = ethers.parseUnits("1", 18);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
-    const reward = ethers.parseUnits("100", 6);
+    const reward = ethers.parseUnits("100", 18);
     const fee = (reward * 5n) / 100n;
     await token
       .connect(employer)
