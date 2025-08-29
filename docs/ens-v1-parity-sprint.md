@@ -24,7 +24,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
   - Select eligible validators and tally approvals versus disapprovals.
 - **StakeManager**
   - Handle stake deposits/withdrawals, job reward escrow, fee deductions, validator rewards and AGIType payout bonuses.
-  - Owner setters: payout token, minimum stake, slashing percentages.
+  - Owner setters: minimum stake and slashing percentages.
 - **ReputationEngine**
   - Logarithmic reputation growth (`onApply`, `onFinalize`), premium threshold gating and owner-maintained blacklist.
 - **DisputeModule**
@@ -33,7 +33,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
   - Mint completion certificates and support `list`, `purchase`, `delist` marketplace actions.
 
 ## 3. Administrative Controls
-- Each module inherits `Ownable`; only the owner can update parameters or swap tokens.
+- Each module inherits `Ownable`; only the owner can update parameters.
 - No module routes funds to the owner; fees go to `FeePool` or are burned to preserve tax neutrality.
 - Events mirror v0 naming where possible (`JobCreated`, `JobApplied`, `JobSubmitted`, `JobFinalized`, etc.).
 

@@ -5,7 +5,7 @@ This sprint ports every capability from `legacy/AGIJobManagerv0.sol` into the mo
 ## Goals
 - Mirror v0 behaviour across dedicated v2 modules.
 - Require each agent to own a subdomain of `agent.agi.eth` and each validator a subdomain of `club.agi.eth` (or be owner‑approved).
-- Preserve owner flexibility: token swaps, allowlists, and parameter tuning without redeployment.
+- Preserve owner flexibility: allowlists and parameter tuning without redeployment.
 - Keep explorer interactions simple for non‑technical users.
 
 ## Tasks
@@ -40,6 +40,6 @@ This sprint ports every capability from `legacy/AGIJobManagerv0.sol` into the mo
 
 ## Definition of Done
 - All v0 features available through v2 modules with ENS identity enforcement.
-- Owner can retune or swap tokens via setters without redeployment.
+- Owner can retune parameters via setters without redeployment.
 - Documentation updated (`README.md`, `docs/architecture-v2.md`, and this sprint plan).
 - All tests and linters pass.
