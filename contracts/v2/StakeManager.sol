@@ -738,7 +738,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///      escrowed balance.
     /// @param from Address providing the funds; must approve first.
     /// @param amount Token amount with 6 decimals to lock.
-    function lock(address from, uint256 amount) external onlyJobRegistry whenNotPaused {
+    function lock(address from, uint256 amount)
+        external
+        onlyJobRegistry
+        whenNotPaused
+        nonReentrant
+    {
         token.safeTransferFrom(from, address(this), amount);
         emit StakeEscrowLocked(bytes32(0), from, amount);
     }

@@ -15,6 +15,8 @@ interface IStakeManager {
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
 
     function lockReward(bytes32 jobId, address from, uint256 amount) external;
+
+    function lock(address from, uint256 amount) external;
 }
 
 interface IReentrantToken {
@@ -26,12 +28,13 @@ contract ReentrantJobRegistry {
     IStakeManager public stakeManager;
     IReentrantToken public token;
 
-    enum AttackType { None, Finalize, Validator }
+    enum AttackType { None, Finalize, Validator, Lock }
     AttackType public attackType;
     bytes32 public jobId;
     address public agent;
     uint256 public reward;
     uint256 public amount;
+    address public from;
 
     constructor(address sm, address token_) {
         stakeManager = IStakeManager(sm);
@@ -61,12 +64,23 @@ contract ReentrantJobRegistry {
         attackType = AttackType.None;
     }
 
+    function attackLock(address _from, uint256 _amount) external {
+        from = _from;
+        amount = _amount;
+        attackType = AttackType.Lock;
+        token.setAttack(true);
+        stakeManager.lock(from, amount);
+        attackType = AttackType.None;
+    }
+
     // called by the token during transfer to attempt reentrancy
     function reenter() external {
         if (attackType == AttackType.Finalize) {
             stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)));
         } else if (attackType == AttackType.Validator) {
             stakeManager.distributeValidatorRewards(jobId, amount);
+        } else if (attackType == AttackType.Lock) {
+            stakeManager.lock(from, amount);
         }
     }
 }
