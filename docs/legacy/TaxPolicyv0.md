@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # Tax Obligations in the AGI Job Platform Ecosystem
 
 ## Overview of the AGI Jobs Token-Burning Scenario

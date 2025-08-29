@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # Decentralized Multi-Platform AGI Jobs: Key to Winning the AI Race
 
 ## A “Goldilocks” AI Landscape: No Single Dominance

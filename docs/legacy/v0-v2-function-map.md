@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # v0 to v2 Function Map
 
 The table below links common `AGIJobManager v0` functions to their

@@ -1,3 +1,5 @@
+> **Note:** Current deployments use an 18-decimal AGIALPHA token.
+
 # Quickstart: Deploying AGIJobManager v0 with $AGIALPHA on Etherscan
 
 This abbreviated guide walks an owner through deploying the monolithic
