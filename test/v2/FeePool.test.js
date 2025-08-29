@@ -80,6 +80,22 @@ describe("FeePool", function () {
     await stakeManager.connect(user2).depositStake(2, 300);
   });
 
+  it("reverts when token has non-18 decimals", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
+    const bad = await Bad.deploy();
+    const FeePoolFactory = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
+    await expect(
+      FeePoolFactory.deploy(
+        await bad.getAddress(),
+        ethers.ZeroAddress,
+        0,
+        treasury.address
+      )
+    ).to.be.revertedWith("decimals");
+  });
+
   it("allows direct contributions", async () => {
     await token
       .connect(user1)
