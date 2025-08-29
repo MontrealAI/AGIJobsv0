@@ -10,7 +10,7 @@ Manages commit‑reveal voting for submitted jobs.
 - `setValidatorSlashingPct(uint256 pct)` / `setApprovalThreshold(uint256 pct)` / `setRequiredValidatorApprovals(uint256 count)` – configure slashing and thresholds.
 - `setSelectionStrategy(SelectionStrategy strategy)` – choose between a rotating window or reservoir sampling. Governance can adjust this to balance gas cost and fairness.
 - `start(uint256 jobId, uint256 entropy)` – select validators and open the commit window.
-- `selectValidators(uint256 jobId, uint256 entropy)` – pick validators using on-chain randomness.
+- `selectValidators(uint256 jobId, uint256 entropy)` – pick validators using on-chain randomness; mixes `block.prevrandao` or, if unavailable, recent block hashes with `msg.sender` so no off-chain randomness provider is required.
 - `commitValidation(uint256 jobId, bytes32 commitHash)` – validator commits to a vote.
 - `revealValidation(uint256 jobId, bool approve, bytes32 salt)` – reveal vote.
 - `finalize(uint256 jobId)` – tally reveals and trigger payout.

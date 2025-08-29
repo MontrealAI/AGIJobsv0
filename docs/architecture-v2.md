@@ -4,7 +4,7 @@ AGIJobManager v2 decomposes the monolithic v1 contract into immutable modules wi
 
 ## Trust assumptions
 
-- **Deterministic randomness** – validator selection uses commit‑reveal entropy seeded by the owner and on-chain data. No external randomness oracle or subscription is involved, so outcomes are reproducible.
+- **Deterministic randomness** – validator selection uses commit‑reveal entropy seeded by the owner and on-chain data. When `block.prevrandao` is unavailable, the module mixes recent block hashes and the caller address, removing any need for off‑chain randomness providers.
 - **Owner control** – `Ownable` setters let the owner swap tokens or retune parameters at will. Users must trust this address to act in good faith.
 - **No external dependencies** – the architecture avoids Chainlink VRF and subscription services entirely.
 
