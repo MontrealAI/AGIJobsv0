@@ -30,7 +30,7 @@ EOA ownership is not possible.
 ## Upgrading through the timelock
 
 1. Encode the desired function call on the target contract (for example
-   `setToken(newToken)` on `StakeManager`).
+   `setToken(newToken)` on `StakeManager` for legacy migrations).
 2. Submit the call to the timelock or multisig:
    - For OpenZeppelin timelocks, use `schedule` with the target, value,
      data, predecessor, salt and delay parameters.

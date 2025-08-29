@@ -67,9 +67,9 @@ P1a["🦊 MetaMask on Ethereum Mainnet"]:::step
 P1b["🔗 Etherscan → Connect to Web3 (sign popups)"]:::step
 P1c["⛽ Hold ETH for gas"]:::step
 P1d["💠 Acquire $AGIALPHA & add as Custom Token"]:::step
-P1e["🧮 Remember: $AGIALPHA has 6 decimals
-• 10.0 = 10_000000
-• 0.5 = 500_000"]:::info
+P1e["🧮 Remember: $AGIALPHA has 18 decimals
+• 10.0 = 10_000000000000000000
+• 0.5 = 500_000000000000000"]:::info
 end
 class P1 phase
 
@@ -185,7 +185,7 @@ class P7 phase
 subgraph LEG["🧭 Legend & Golden Rules"]
 direction TB
 L1["Role IDs → Agent=0 • Validator=1 • Platform=2"]:::info
-L2["$AGIALPHA uses 6 decimals (base units)"]:::info
+L2["$AGIALPHA uses 18 decimals (base units)"]:::info
 L3["All interactions are Etherscan ‘Write’ calls, authorized by wallet signatures"]:::info
 L4["Owner-only steps live in Phases 2–4"]:::info
 L5["Optional modules: DisputeModule, JobRouter/PlatformRegistry"]:::info
@@ -221,17 +221,17 @@ LEG --> P7
 
 * **ETH for Gas:** Make sure your MetaMask wallet has a sufficient amount of **ETH** to pay for gas fees on mainnet. Every contract deployment and function call will consume gas (paid in ETH).
 
-* **\$AGIALPHA Tokens:** Acquire some **\$AGIALPHA** – the ERC-20 token used for payments, staking, and rewards in AGI Jobs v2. You will need \$AGIALPHA to post job bounties and to stake as an agent/validator/platform. \$AGIALPHA has **6 decimal places**, *not* the usual 18. For example, `1.0 AGIALPHA = 1,000,000` in base units. The official \$AGIALPHA token contract is at **`0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`** (you can verify this on Etherscan). Add this token to your MetaMask using the contract address.
+* **\$AGIALPHA Tokens:** Acquire some **\$AGIALPHA** – the ERC-20 token used for payments, staking, and rewards in AGI Jobs v2. You will need \$AGIALPHA to post job bounties and to stake as an agent/validator/platform. \$AGIALPHA has **18 decimal places**. For example, `1.0 AGIALPHA = 1_000000000000000000` in base units. The official \$AGIALPHA token contract is at **`0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`** (you can verify this on Etherscan). Add this token to your MetaMask using the contract address.
 
   *How to get \$AGIALPHA?* If it’s publicly available, you might swap for it on a DEX (like Uniswap) by inputting the token address. Otherwise, obtain it through the project’s official channels. Ensure you have enough tokens for the actions you plan (e.g. posting job rewards or staking collateral).
 
 * **Add Token to Wallet:** In MetaMask, add a **Custom Token** for \$AGIALPHA using the address above so you can see your balance.
 
-* **Important Units Reminder:** All **token amounts** in this guide (rewards, stakes, fees) must be input in the token’s smallest units (with 6 decimals). For example:
+* **Important Units Reminder:** All **token amounts** in this guide (rewards, stakes, fees) must be input in the token’s smallest units (with 18 decimals). For example:
 
-  * `10 AGIALPHA` = **`10_000000`** in the input field.
-  * `0.5 AGIALPHA` = **`500_000`**.
-  * `100 AGIALPHA` = **`100_000000`**.
+  * `10 AGIALPHA` = **`10_000000000000000000`** in the input field.
+  * `0.5 AGIALPHA` = **`500_000000000000000`**.
+  * `100 AGIALPHA` = **`100_000000000000000000`**.
 
 Keep this conversion in mind whenever you enter token amounts in Etherscan forms.
 
@@ -417,7 +417,7 @@ After linking, all modules should now reference each other correctly. The JobReg
 
 Next, set initial parameters like required stakes, fee percentages, and slashing rates. As the owner, you can adjust these using the following functions on the respective contracts (via Etherscan Write):
 
-* **StakeManager – Minimum Stake:** It’s wise to require a minimum stake for agents/validators to prevent Sybil attacks. On **StakeManager**, call `setMinStake(uint256 _minStake)` to set the minimum staking amount (in \$AGIALPHA base units). For example, to require at least 5 AGIALPHA, input `5_000000`. This applies to both agents and validators typically (and possibly platform operators, unless PlatformRegistry has its own minimum).
+* **StakeManager – Minimum Stake:** It’s wise to require a minimum stake for agents/validators to prevent Sybil attacks. On **StakeManager**, call `setMinStake(uint256 _minStake)` to set the minimum staking amount (in \$AGIALPHA base units). For example, to require at least 5 AGIALPHA, input `5_000000000000000000`. This applies to both agents and validators typically (and possibly platform operators, unless PlatformRegistry has its own minimum).
 
 * **StakeManager – Slashing Percentages:** Call `setSlashingPercentages(uint256 employerSlashPct, uint256 treasurySlashPct)` on StakeManager to define how a slashed stake is divided. For instance, you might want that when an agent is slashed for a failed job, part of their staked collateral goes back to the employer as compensation and part goes to the platform treasury. If you set employerSlashPct = 50 and treasurySlashPct = 50, half of the slashed amount goes to the employer and half to the `treasury` address set in StakeManager. (Ensure the two percentages sum to ≤100; any remainder stays with the contract if not enforced to exactly 100.)
 
@@ -425,7 +425,7 @@ Next, set initial parameters like required stakes, fee percentages, and slashing
 
 * **JobRegistry – Job Parameters:** On **JobRegistry**, there may be a function like `setJobParameters(uint256 reward, uint256 stake)` or individual ones to set default job requirements. For instance, if `setJobParameters` exists, it might define the **default job reward and required agent stake** for jobs. However, in this v2, the job reward is specified per job when created, and `jobStake` (the required agent collateral for each job) is a parameter we likely set. Check if `JobRegistry.setJobParameters` or similar exists:
 
-  * If **JobRegistry.setJobParameters**(reward, stake) exists, you could use it to set a template. Otherwise, look for `setJobStake(uint96 stake)` in JobRegistry (the code shows `jobStake` as a public variable). If a function is present (maybe named `updateJobStake` or included in `JobParametersUpdated` event), call it to set how much an agent must stake to take a job. For example, if every job requires the agent to stake 1 AGIALPHA, set jobStake = `1_000000`. If the job poster (employer) can specify any reward, you might not need to set a default reward.
+  * If **JobRegistry.setJobParameters**(reward, stake) exists, you could use it to set a template. Otherwise, look for `setJobStake(uint96 stake)` in JobRegistry (the code shows `jobStake` as a public variable). If a function is present (maybe named `updateJobStake` or included in `JobParametersUpdated` event), call it to set how much an agent must stake to take a job. For example, if every job requires the agent to stake 1 AGIALPHA, set jobStake = `1_000000000000000000`. If the job poster (employer) can specify any reward, you might not need to set a default reward.
   * Also note `feePct` in JobRegistry, which is the percentage of each job’s reward that will be taken as a protocol fee (and sent to FeePool). You can set this via `JobRegistry.setFeePct(uint256 _feePct)`. For example, to take a 5% fee from each job, input `5`. (Ensure you do this **after** linking FeePool, since it only matters if a FeePool is set).
 
 * **ValidationModule – Validation Parameters:** The ValidationModule likely has a function `setParameters(...)` to set how validation works (e.g. number of validators per job, commit/reveal durations, reward/slash rates for validators). On **ValidationModule**, find `setParameters` and input the desired values:

@@ -32,7 +32,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 - Use deterministic on‑chain randomness; avoid Chainlink VRF or subscription services.
 
 ### 4. StakeManager
-- Custody all funds in $AGIALPHA (6 decimals) with owner‑settable token address.
+- Custody all funds in $AGIALPHA (18 decimals) with a fixed token address (legacy `setToken` calls retained only for migrations).
 - Handle deposits, withdrawals, escrow locking, releases and slashing.
 - Apply protocol fees and validator rewards; support AGIType payout bonuses and per‑job validator splits.
 - Provide a `contribute` function for reward‑pool top‑ups to match v1's `contributeToRewardPool` and emit `RewardPoolContribution`.
@@ -50,7 +50,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 ### 7. CertificateNFT & Marketplace
 - Mint one certificate per completed job to the worker.
 - Add `list`, `purchase`, and `delist` functions using $AGIALPHA`; transfer proceeds to the seller.
-- Owner can set base URI, `JobRegistry` address, and swap payout token via `StakeManager.setToken`.
+- Owner can set base URI, `JobRegistry` address, and (legacy) swap payout token via `StakeManager.setToken`.
 
 ### 8. Documentation & Tests
 - Update `README.md` with an AGIALPHA deployment guide and Etherscan walkthrough.

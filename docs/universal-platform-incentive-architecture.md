@@ -46,7 +46,7 @@ The main deployer follows the same process but typically stakes `0`. With zero s
 
 All modules are `Ownable`. The owner can:
 
-- Swap out the staking token (`StakeManager.setToken` and related setters).
+- Swap out the staking token (`StakeManager.setToken` and related setters) – legacy only.
 - Adjust minimum stakes, slashing percentages and burn rates.
 - Replace auxiliary modules like the reputation engine or dispute handler.
 - Authorise helpers (`PlatformRegistry.setRegistrar`, `JobRouter.setRegistrar`).

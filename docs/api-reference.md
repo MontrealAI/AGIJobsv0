@@ -17,7 +17,7 @@ Coordinates the lifecycle of jobs and mediates between modules.
 
 ### Example
 ```solidity
-JobRegistry(registry).createJob(1_000000, "ipfs://QmHash");
+JobRegistry(registry).createJob(1_000000000000000000, "ipfs://QmHash");
 ```
 
 ## StakeManager
@@ -33,7 +33,7 @@ Holds token deposits for agents, validators and dispute fees.
 
 ### Example
 ```solidity
-StakeManager(stake).depositStake(0, 1_000000);
+StakeManager(stake).depositStake(0, 1_000000000000000000);
 ```
 
 ## ValidationModule
@@ -112,23 +112,23 @@ Below are common flows in TypeScript (ethers.js) and Python (web3.py).
 ```ts
 // TypeScript
 const registry = new ethers.Contract(JOB_REGISTRY, ['function createJob(uint256,string)'], wallet);
-await registry.createJob(1_000000, 'ipfs://QmHash');
+await registry.createJob(1_000000000000000000, 'ipfs://QmHash');
 ```
 ```python
 # Python
 registry = w3.eth.contract(address=JOB_REGISTRY, abi=['function createJob(uint256,string)'])
-tx = registry.functions.createJob(1_000000, 'ipfs://QmHash').transact({'from': acct})
+tx = registry.functions.createJob(1_000000000000000000, 'ipfs://QmHash').transact({'from': acct})
 w3.eth.wait_for_transaction_receipt(tx)
 ```
 
 ### Stake Tokens
 ```ts
 const stake = new ethers.Contract(STAKE_MANAGER, ['function depositStake(uint8,uint256)'], wallet);
-await stake.depositStake(0, 1_000000);
+await stake.depositStake(0, 1_000000000000000000);
 ```
 ```python
 stake = w3.eth.contract(address=STAKE_MANAGER, abi=['function depositStake(uint8,uint256)'])
-tx = stake.functions.depositStake(0, 1_000000).transact({'from': acct})
+tx = stake.functions.depositStake(0, 1_000000000000000000).transact({'from': acct})
 w3.eth.wait_for_transaction_receipt(tx)
 ```
 

@@ -23,8 +23,8 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
    [AGIJobManager v0 contract](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code)
    on Etherscan and select **Contract → Deploy**.
 2. Supply constructor parameters:
-   - `_agiTokenAddress` – [$AGIALPHA token](https://etherscan.io/token/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D).
-     Remember that 6‑decimal base units are required (e.g. `10.5` tokens = `10_500000`).
+   - `_agiTokenAddress` – [$AGIALPHA token](https://etherscan.io/token/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA).
+     Remember that 18‑decimal base units are required (e.g. `10.5` tokens = `10_500000000000000000`).
    - `_baseIpfsUrl` – common prefix for job metadata such as `ipfs://`.
    - `_ensAddress` – [ENS Registry](https://etherscan.io/address/0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e).
    - `_nameWrapperAddress` – [ENS NameWrapper](https://etherscan.io/address/0x253553366Da8546fC250F225fe3d25d0C782303b).
@@ -33,19 +33,17 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
    - `_validatorMerkleRoot` and `_agentMerkleRoot` – allowlist roots or `0x00` for open access.
 3. Submit the transaction; the deploying wallet becomes the owner.
 4. Post‑deployment owner actions appear under **Write Contract**:
-   - `updateAGITokenAddress(newToken)` swaps the payout token without redeploying
-     ([example](https://etherscan.io/tx/0x9efa2044bc0d0112f21724baacecf72719297c9db1d97e49a9281863684a668a)).
+   - `updateAGITokenAddress(newToken)` (legacy) swapped the payout token without redeploying
+     ([example](https://etherscan.io/tx/0x9efa2044bc0d0112f21724baacecf72719297c9db1d97e49a9281863684a668a)). v2 deployments assume a fixed token.
    - `setRootNodes(clubRootNode, agentRootNode)` and `setMerkleRoots(validatorRoot, agentRoot)` adjust
      ENS and Merkle allowlists as policies evolve.
    - `addAdditionalAgent(address)` whitelists specific addresses; the paired `addAdditionalValidator`
      provides similar overrides.
    - `blacklist(address, true)` blocks misbehaving agents or validators.
-   - Token transfers and payouts use 6‑decimal units, as illustrated by
-     [this 10 666.56 AGIALPHA transfer](https://etherscan.io/tx/0x7d16c9a27d2d852c04ccca086d32fcc03f6931635ff63a7ab37dc8d24f659fee).
-5. These setters mirror module controls in the v2 architecture—`StakeManager.setToken`,
+   - Token transfers and payouts use 18‑decimal units.
+5. These setters mirror module controls in the v2 architecture—`StakeManager.setToken` (legacy),
    `ENSOwnershipVerifier.setRootNodes`, `IdentityRegistry.setMerkleRoots`, `JobRegistry.addAdditionalAgent`,
-   and `ReputationEngine.blacklist`—demonstrating that the owner can retune parameters or swap tokens
-   without redeploying contracts.
+   and `ReputationEngine.blacklist`—demonstrating that the owner can retune parameters without redeploying contracts.
 
 ## One-click Etherscan deployment
 
@@ -94,7 +92,7 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 
 ### Owner-only setters
 
-- `StakeManager.setToken(newToken)`
+- `StakeManager.setToken(newToken)` (legacy)
 - `StakeManager.setMinStake(amount)`
 - `JobRegistry.setFeePct(fee)`
 - `ValidationModule.setCommitRevealWindows(commitWindow, revealWindow)`
@@ -109,7 +107,7 @@ All token amounts use the 6 decimal base units of $AGIALPHA (e.g., **1 AGIALPH
 - [ ] `setMerkleRoots(validatorRoot, agentRoot)`
 
 ### v2
-- [ ] `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`
+- [ ] (legacy) `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`
 - [ ] `ENSOwnershipVerifier.setRootNodes(clubRootNode, agentRootNode)`
 - [ ] `IdentityRegistry.setMerkleRoots(validatorRoot, agentRoot)`
 - [ ] `JobRegistry.setModules(...)`

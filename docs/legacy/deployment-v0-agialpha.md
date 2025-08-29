@@ -22,10 +22,10 @@ This guide walks a non‑technical owner through deploying the monolithic **AGIJ
    - Tune parameters like `setRequiredValidatorApprovals`, `setValidationRewardPercentage`, `setMaxJobPayout`, and blacklist users.
 
 ## Usage Notes
-- All token amounts use 6‑decimal units (`1 token = 1_000000`).
+- All token amounts use 18‑decimal units (`1 token = 1_000000000000000000`).
 - Employers post jobs with `createJob` after approving the token.
 - Agents call `applyForJob` with their subdomain and optional Merkle proof.
 - Validators vote through `validateJob` or `disapproveJob` and earn rewards once `_completeJob` runs.
 - The owner may refund or slash parties through dispute functions without ever redeploying the contract.
 
-By keeping `$AGIALPHA` configurable through `updateAGITokenAddress`, the deployment stays flexible while offering a simple explorer‑based workflow for non‑technical participants.
+By keeping `$AGIALPHA` configurable through `updateAGITokenAddress` (legacy), the deployment stays flexible while offering a simple explorer‑based workflow for non‑technical participants.

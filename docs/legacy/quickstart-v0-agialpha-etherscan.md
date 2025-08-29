@@ -20,7 +20,7 @@ roots and Merkle roots—remain owner‑configurable after deployment.
    retune any parameter via the contract's write methods.
 
 ## 2. Approve tokens and stake
-All token amounts use 6‑decimal units (`1 AGIALPHA = 1_000000`).
+All token amounts use 18‑decimal units (`1 AGIALPHA = 1_000000000000000000`).
 
 1. **Employers** approve the job reward on `$AGIALPHA` then call
    `createJob` with `reward` and a metadata URI.
@@ -38,6 +38,6 @@ All token amounts use 6‑decimal units (`1 AGIALPHA = 1_000000`).
    `resolveDispute` finalises the outcome.
 
 Throughout the lifecycle the owner may update the payout token with
-`updateAGITokenAddress`, adjust ENS roots or Merkle proofs, and tweak
+`updateAGITokenAddress` (legacy), adjust ENS roots or Merkle proofs, and tweak
 limits such as `setMaxJobPayout` or `setValidationRewardPercentage`
 without redeploying the contract.

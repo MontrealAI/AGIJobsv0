@@ -71,7 +71,7 @@ For a step-by-step deployment walkthrough with owner-only setters, see [deployme
 | JobRegistry | `setModules` (none set), `setJobParameters` (`reward=0`, `stake=0`), `setFeePool` (0 address), `setFeePct` (`0`), `setTaxPolicy` (0 address) | Wire modules, set template stake/reward, and configure fees/tax policy. |
 | ValidationModule | `setValidatorPool` (empty), `setReputationEngine` (0 address), `setCommitRevealWindows` (`0`, `0`), `setValidatorBounds` (`0`, `0`) | Choose validators and tune commit/reveal timing and committee sizes. |
 | DisputeModule | `addModerator(address, weight)` / `removeModerator(address)` (owner), majority-signed `resolve(jobId, verdict, signatures)`, `setDisputeFee` (`0`), `setJobRegistry` (constructor address) | Configure dispute bond and weighted arbiters; disputes finalize via moderator vote or owner call. |
-| StakeManager | `setToken` (constructor token), `setMinStake` (`0`), `setSlashingPercentages` (`0`, `100`), `setTreasury` (constructor treasury), `setJobRegistry` (0 address), `setDisputeModule` (0 address), `setMaxStakePerAddress` (`0`) | Adjust staking token, minimums, slashing rules, and authorised modules. |
+| StakeManager | `setToken` (constructor token, legacy), `setMinStake` (`0`), `setSlashingPercentages` (`0`, `100`), `setTreasury` (constructor treasury), `setJobRegistry` (0 address), `setDisputeModule` (0 address), `setMaxStakePerAddress` (`0`) | Adjust staking token, minimums, slashing rules, and authorised modules. |
 | ReputationEngine | `setCaller` (`false`), `setStakeManager` (0 address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
 | CertificateNFT | `setJobRegistry` (0 address) | Authorise minting registry; URIs emitted in events with hashes on-chain. |
 
@@ -92,7 +92,7 @@ When calibrated so that honest behaviour yields the lowest `G`, deviations carry
 | Contract | Network | Address |
 | --- | --- | --- |
 | AGIJobManager v0 | Ethereum mainnet | [0x0178b6bad606aaf908f72135b8ec32fc1d5ba477](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477) |
-| $AGI Token | Ethereum mainnet | [0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D](https://etherscan.io/address/0xf0780F43b86c13B3d0681B1Cf6DaeB1499e7f14D) |
+| $AGIALPHA Token | Ethereum mainnet | [0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) |
 
 ## Quick Start
 1. Clone the repository and install dependencies:
