@@ -4,6 +4,12 @@
 transaction. After deployment, wire module addresses using
 `setModules` and then use `pauseAll` or `unpauseAll` as needed.
 
+Each module address passed to the constructor or `setModules` must be a
+non-zero address pointing to a deployed contract. The contract reverts with
+`InvalidJobRegistry`, `InvalidStakeManager`, `InvalidValidationModule`,
+`InvalidDisputeModule`, `InvalidPlatformRegistry`, `InvalidFeePool`, or
+`InvalidReputationEngine` if validation fails.
+
 ## Hardhat CLI
 ```sh
 npx hardhat console --network <network>
