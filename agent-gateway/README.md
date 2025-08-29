@@ -2,6 +2,8 @@
 
 The agent gateway bridges on-chain job events to off-chain agents. It watches the `JobRegistry` contract and dispatches jobs to registered agents over WebSocket or HTTP. The gateway also monitors job submissions and validation rounds, scheduling follow-up actions such as finalizing results or cancelling expired jobs.
 
+Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.formatUnits(..., 18)` and include both formatted and raw values.
+
 ## Environment Variables
 
 - `RPC_URL` (default `http://localhost:8545`)

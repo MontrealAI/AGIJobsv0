@@ -125,9 +125,13 @@ registry.on('JobCreated', (jobId, employer, agentAddr, reward, stake, fee) => {
     jobId: jobId.toString(),
     employer,
     agent: agentAddr,
-    reward: reward.toString(),
-    stake: stake.toString(),
-    fee: fee.toString()
+    // include raw values alongside 18-decimal formatted strings
+    rewardRaw: reward.toString(),
+    reward: ethers.formatUnits(reward, 18),
+    stakeRaw: stake.toString(),
+    stake: ethers.formatUnits(stake, 18),
+    feeRaw: fee.toString(),
+    fee: ethers.formatUnits(fee, 18)
   };
   jobs.set(job.jobId, job);
   broadcast({ type: 'JobCreated', job });
