@@ -167,18 +167,5 @@ contract NoValidationModule is IValidationModule, Ownable {
         override
     {}
 
-    /// @inheritdoc IValidationModule
-    function checkUpkeep(bytes calldata)
-        external
-        pure
-        override
-        returns (bool upkeepNeeded, bytes memory performData)
-    {
-        upkeepNeeded = false;
-        performData = bytes("");
-    }
-
-    /// @inheritdoc IValidationModule
-    function performUpkeep(bytes calldata) external pure override {}
 }
 
