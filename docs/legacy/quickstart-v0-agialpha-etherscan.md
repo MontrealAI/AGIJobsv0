@@ -3,7 +3,7 @@
 # Quickstart: Deploying AGIJobManager v0 with $AGIALPHA on Etherscan
 
 This abbreviated guide walks an owner through deploying the monolithic
-`AGIJobManager v0` contract and interacting with it using the 6‑decimal
+`AGIJobManager v0` contract and interacting with it using the 18‑decimal
 `$AGIALPHA` token. All parameters—including the token address, ENS
 roots and Merkle roots—remain owner‑configurable after deployment.
 

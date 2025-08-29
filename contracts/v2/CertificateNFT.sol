@@ -96,7 +96,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         emit NFTListed(tokenId, msg.sender, price);
     }
 
-    /// @notice Purchase a listed certificate using 6‑decimal $AGIALPHA tokens.
+    /// @notice Purchase a listed certificate using 18‑decimal $AGIALPHA tokens.
     function purchase(uint256 tokenId) external nonReentrant {
         Listing storage listing = listings[tokenId];
         require(listing.active, "not listed");
