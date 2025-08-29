@@ -1,7 +1,5 @@
 import { ethers } from "hardhat";
-
-// Default $AGIALPHA token on mainnet
-const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
+import { AGIALPHA } from "./constants";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
