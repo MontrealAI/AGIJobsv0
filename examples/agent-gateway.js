@@ -23,11 +23,11 @@ const REGISTRY_ABI = [
 const registry = new ethers.Contract(JOB_REGISTRY, REGISTRY_ABI, wallet);
 
 console.log('Listening for jobs...');
-registry.on('JobCreated', async (jobId, employer, agent) => {
+registry.on('JobCreated', async (jobId, employer, agent, reward) => {
   // Only apply if job is unassigned
   if (agent === ethers.ZeroAddress) {
     try {
-      console.log(`Applying for job ${jobId}`);
+      console.log(`Applying for job ${jobId} with reward ${ethers.formatEther(reward)}`);
       const tx = await registry.applyForJob(jobId, '', '0x');
       await tx.wait();
       console.log(`Applied in tx ${tx.hash}`);

@@ -13,7 +13,7 @@ const token = await ethers.getContractAt("AGIALPHAToken", tokenAddress);
 const stake = await ethers.getContractAt("StakeManager", stakeAddress);
 const registry = await ethers.getContractAt("JobRegistry", registryAddress);
 
-const reward = ethers.parseUnits("10", 6);
+const reward = ethers.parseUnits("10", 18);
 await token.approve(stakeAddress, reward);
 await stake.depositStake(0, reward); // escrow for job
 const tx = await registry.createJob(reward, "ipfs://job.json");
