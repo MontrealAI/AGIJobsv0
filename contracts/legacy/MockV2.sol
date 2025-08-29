@@ -50,7 +50,6 @@ contract MockStakeManager is IStakeManager {
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
 
-    function setToken(IERC20) external override {}
     function setMinStake(uint256) external override {}
     function setSlashingPercentages(uint256, uint256) external override {}
     function setSlashingParameters(uint256, uint256) external override {}
@@ -101,7 +100,6 @@ contract MockStakeManager is IStakeManager {
     }
 
     // legacy helper for tests
-    function setTokenLegacy(address) external {}
 }
 
 contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {

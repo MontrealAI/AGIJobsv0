@@ -35,7 +35,6 @@ interface IStakeManager {
     event DisputeModuleUpdated(address module);
     event ValidationModuleUpdated(address module);
     event ModulesUpdated(address jobRegistry, address disputeModule);
-    event TokenUpdated(address indexed token);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
@@ -135,7 +134,6 @@ interface IStakeManager {
     function slash(address user, uint256 amount, address recipient) external;
 
     /// @notice owner configuration helpers
-    function setToken(IERC20 newToken) external;
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;

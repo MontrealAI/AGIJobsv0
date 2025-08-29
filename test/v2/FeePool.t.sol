@@ -79,20 +79,6 @@ contract FeePoolTest {
         require(token.balanceOf(bob) == bobExpected, "bob claim");
     }
 
-    function testTokenSwitch() public {
-        setUp();
-        TestToken token2 = new TestToken();
-        vm.prank(address(this));
-        feePool.setToken(token2);
-        token2.mint(address(feePool), 1_000_000 * TOKEN);
-        vm.prank(address(stakeManager));
-        feePool.depositFee(1_000_000 * TOKEN);
-        feePool.distributeFees();
-        vm.prank(alice);
-        feePool.claimRewards();
-        require(token2.balanceOf(alice) == 333_333 * TOKEN, "switch");
-    }
-
     function testPrecisionSixDecimals() public {
         setUp();
         token.mint(address(feePool), 1_000_000 * TOKEN);

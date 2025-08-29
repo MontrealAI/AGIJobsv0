@@ -13,7 +13,6 @@ configurable by the contract owner.
 ## Tasks
 1. **StakeManager integration**
    - Deploy `StakeManager(token, owner, treasury)` and wire to `JobRegistry`.
-   - Implement `setToken` (legacy) so the owner may swap the staking token later if migrating.
 2. **PlatformRegistry & JobRouter**
    - Require `minPlatformStake` for registration.
    - Compute routing scores from stake and reputation; allow owner to blacklist.

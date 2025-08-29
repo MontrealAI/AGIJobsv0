@@ -3,7 +3,7 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The **v2** release under `contracts/v2` is the only supported version. Deprecated v0 artifacts now live in `contracts/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
 
-All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits. Token‑swapping functions such as `StakeManager.setToken` and `FeePool.setToken` remain for legacy deployments but are not used in new systems.
+All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment.
 
 ## Migrating from legacy
 
@@ -41,14 +41,14 @@ Record each address during deployment. The defaults below assume the 18‑decima
 | Module | Owner‑only setters |
 | --- | --- |
 | [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) | `mint`, `burn` |
-| [`StakeManager`](contracts/v2/StakeManager.sol) | `setToken` (legacy), `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
+| [`StakeManager`](contracts/v2/StakeManager.sol) | `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
 | [`JobRegistry`](contracts/v2/JobRegistry.sol) | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot` |
 | [`ValidationModule`](contracts/v2/ValidationModule.sol) | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry` |
 | [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol) | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setAgentProfileURI` |
 | [`DisputeModule`](contracts/v2/modules/DisputeModule.sol) | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
 | [`ReputationEngine`](contracts/v2/ReputationEngine.sol) | `setCaller`, `setWeights`, `blacklist`, `unblacklist` |
 | [`CertificateNFT`](contracts/v2/CertificateNFT.sol) | `setJobRegistry`, `setStakeManager`, `setBaseURI` |
-| [`FeePool`](contracts/v2/FeePool.sol) | `setToken` (legacy), `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury` |
+| [`FeePool`](contracts/v2/FeePool.sol) | `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury` |
 
 ### Etherscan steps
 1. **Deploy contracts** – open each verified contract → **Contract → Deploy** and provide the constructor parameters listed above.
@@ -59,7 +59,6 @@ Record each address during deployment. The defaults below assume the 18‑decima
 3. **Example transactions** – after wiring you can:
    - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` then `StakeManager.depositStake(role, 1_000000000000000000)`
    - Post a job: `JobRegistry.createJob(1_000000000000000000, "ipfs://QmHash")`
-   - Token rotation via `setToken` functions is legacy and should not be used.
 
 ### Transfer ownership to a multisig or timelock
 After deployment hand control of each module to a governance contract so no

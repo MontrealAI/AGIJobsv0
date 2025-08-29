@@ -72,7 +72,7 @@ The script prints module addresses and verifies source on Etherscan.
 ## Governance Configuration Steps
 After deployment the governance contract can fine‑tune the system without redeploying:
 
-1. **Configure `$AGIALPHA`** – `StakeManager` and `FeePool` assume this fixed token; `setToken` is retained only for legacy migrations.
+1. **Configure `$AGIALPHA`** – `StakeManager` and `FeePool` assume this fixed token.
 2. **Set ENS roots** – on `IdentityRegistry` call `setAgentRootNode`,
    `setClubRootNode` and, if using allowlists, `setAgentMerkleRoot` and
    `setValidatorMerkleRoot`.
@@ -140,7 +140,6 @@ then be performed through the "Write" tabs on each module.
 | Buy certificate | `CertificateNFT.purchase(tokenId)` | Buyer approves token first |
 
 ## Owner Administration
-- **Swap the token:** `StakeManager.setToken(newToken)` remains for legacy deployments but should not be used in new systems.
 - **Adjust parameters:** examples include `StakeManager.setMinStake(amount)`, `JobRegistry.setFeePct(pct)`, `ValidationModule.setCommitWindow(seconds)`, `ValidationModule.setRevealWindow(seconds)` and `DisputeModule.setDisputeFee(fee)`.
 - **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
 - **Transfer ownership:** every module inherits `Ownable`; call
@@ -152,8 +151,6 @@ then be performed through the "Write" tabs on each module.
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at
   `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` (18 decimals).
-- Token swapping via `StakeManager.setToken(newToken)` is legacy and not
-  part of standard operations.
 
 ## Troubleshooting
 - **Missing subdomain proof** – ensure your ENS label and Merkle proof
@@ -162,8 +159,6 @@ then be performed through the "Write" tabs on each module.
   the staking token.
 - **Tax policy** – users must call `acknowledgeTaxPolicy()` on
   `JobRegistry` before staking or disputing.
-- **Wrong decimals** – `setToken` only accepts ERC‑20 tokens with
-  exactly 18 decimals.
 
 ## Identity Requirements & Merkle Proofs
 Agents must control an `*.agent.agi.eth` subdomain and validators a `*.club.agi.eth` subdomain. When applying or validating, supply the subdomain label and a Merkle proof showing your address is allow‑listed.

@@ -25,7 +25,7 @@ graph LR
 | Module | Core responsibility | Owner abilities |
 | --- | --- | --- |
 | **JobRegistry** | canonical registry for job metadata and state transitions; routes calls to companion modules | swap module addresses with `setModules`, pause job creation, and adjust global settings |
-| **StakeManager** | holds escrowed rewards and participant stakes; executes payouts and slashing | `setToken` (legacy), tune minimum stakes and slashing percentages |
+| **StakeManager** | holds escrowed rewards and participant stakes; executes payouts and slashing | tune minimum stakes and slashing percentages |
 | **ValidationModule** | selects validators and runs the commit‑reveal finalization | update committee size and timing windows through `setParameters` |
 | **ReputationEngine** | accrues or subtracts reputation; enforces blacklists | alter reputation weights, thresholds and blacklist entries |
 | **DisputeModule** | optional dispute layer for contested jobs | set dispute fees and moderator/jury addresses |
@@ -56,12 +56,10 @@ interface IJobRegistry {
 }
 
 interface IStakeManager {
-    event TokenUpdated(address newToken);
     function depositStake(uint256 amount) external;
     function lockReward(address from, uint256 amount) external;
     function payReward(address to, uint256 amount) external;
     function slash(address offender, address beneficiary, uint256 amount) external; // `beneficiary` must not be zero when employer share > 0
-    function setToken(address newToken) external; // legacy
 }
 
 interface IValidationModule {
@@ -111,7 +109,7 @@ rendering deviation economically unattractive.
 ## Token Configuration
 The `StakeManager` stores the ERC‑20 used for rewards, staking and dispute fees.  By default it references
 [`$AGIALPHA`](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) (18 decimals). Token rotation via
-`setToken(newToken)` is a legacy feature and should not be used in new deployments.  All amounts must be provided in base units
+The $AGIALPHA token address is fixed at deployment. All amounts must be provided in base units
 (1 token = 1e18 units).
 
 ## Explorer‑Friendly Design

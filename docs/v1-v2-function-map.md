@@ -23,7 +23,7 @@ The table below maps common public functions from the monolithic `AGIJobManagerV
 | `listNFT` | `CertificateNFT` | `list` |
 | `purchaseNFT` | `CertificateNFT` | `purchase` |
 | `delistNFT` | `CertificateNFT` | `delist` |
-| `updateAGITokenAddress` | `StakeManager` / `FeePool` | `setToken` on each module (legacy) |
+| `updateAGITokenAddress` | `StakeManager` / `FeePool` | removed – token address is immutable |
 | `blacklistAgent` / `clearAgentBlacklist` | `ReputationEngine` | `blacklist(user, status)` |
 | `blacklistValidator` / `clearValidatorBlacklist` | `ReputationEngine` | `blacklist(user, status)` |
 | `addModerator` / `removeModerator` | `DisputeModule` | `addModerator` / `removeModerator` |

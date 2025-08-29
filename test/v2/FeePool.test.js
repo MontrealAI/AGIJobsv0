@@ -2,13 +2,12 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("FeePool", function () {
-  let token, token2, stakeManager, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
+  let token, stakeManager, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
 
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
     const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
-    token2 = await Token.deploy();
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -79,14 +78,6 @@ describe("FeePool", function () {
     await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
     await stakeManager.connect(user1).depositStake(2, 100);
     await stakeManager.connect(user2).depositStake(2, 300);
-  });
-
-  it("requires 18-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
-    const bad = await Bad.deploy();
-    await expect(
-      feePool.connect(owner).setToken(await bad.getAddress())
-    ).to.be.revertedWith("decimals");
   });
 
   it("allows direct contributions", async () => {
@@ -192,36 +183,6 @@ describe("FeePool", function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(45n);
     const burnAddr = "0x000000000000000000000000000000000000dEaD";
     expect(await token.balanceOf(burnAddr)).to.equal(20n);
-  });
-
-  it("uses new token after token swap", async () => {
-    await stakeManager.connect(owner).setToken(await token2.getAddress());
-    await feePool.connect(owner).setToken(await token2.getAddress());
-
-    await token2.mint(employer.address, 1000);
-    const feeAmount = 100;
-    const jobId = ethers.encodeBytes32String("job3");
-    await token2.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
-    await stakeManager
-      .connect(registrySigner)
-      .lockReward(jobId, employer.address, feeAmount);
-    await stakeManager
-      .connect(registrySigner)
-      .finalizeJobFunds(
-        jobId,
-        user1.address,
-        0,
-        feeAmount,
-        await feePool.getAddress()
-      );
-
-    const before1 = await token2.balanceOf(user1.address);
-    const before2 = await token2.balanceOf(user2.address);
-    await feePool.connect(owner).distributeFees();
-    await feePool.connect(user1).claimRewards();
-    await feePool.connect(user2).claimRewards();
-    expect((await token2.balanceOf(user1.address)) - before1).to.equal(25n);
-    expect((await token2.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
   it("emits zero payout for owner without stake", async () => {
