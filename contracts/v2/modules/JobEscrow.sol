@@ -45,7 +45,6 @@ contract JobEscrow is Ownable {
     mapping(uint256 => Job) public jobs;
     address public jobRegistry;
 
-    event TokenUpdated(address indexed token);
     event RoutingModuleUpdated(address indexed routingModule);
     event JobRegistryUpdated(address indexed jobRegistry);
     /// @notice Emitted when a job is posted.
@@ -82,15 +81,6 @@ contract JobEscrow is Ownable {
     // ---------------------------------------------------------------------
     // Owner setters (use Etherscan's "Write Contract" tab)
     // ---------------------------------------------------------------------
-
-    function setToken(IERC20 newToken) external onlyOwner {
-        require(
-            IERC20Metadata(address(newToken)).decimals() == 18,
-            "decimals"
-        );
-        token = newToken;
-        emit TokenUpdated(address(newToken));
-    }
 
     function setRoutingModule(IRoutingModule newRouting) external onlyOwner {
         routingModule = newRouting;

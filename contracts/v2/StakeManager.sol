@@ -133,7 +133,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
     event ValidationModuleUpdated(address indexed module);
-    event TokenUpdated(address indexed newToken);
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
@@ -177,7 +176,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             require(meta.decimals() == 18, "decimals");
             token = _token;
         }
-        emit TokenUpdated(address(token));
 
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
@@ -212,19 +210,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // ---------------------------------------------------------------
     // These helpers are intended for manual use via Etherscan's
     // "Write Contract" tab by the authorized owner.
-
-    /// @notice update the staking/payout token
-    /// @param newToken ERC20 token address using 18 decimals
-    function setToken(IERC20 newToken) external onlyGovernance {
-        if (address(newToken) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(newToken));
-            require(meta.decimals() == 18, "decimals");
-            token = newToken;
-        }
-        emit TokenUpdated(address(token));
-    }
 
     /// @notice update the minimum stake required
     /// @param _minStake minimum token amount with 18 decimals

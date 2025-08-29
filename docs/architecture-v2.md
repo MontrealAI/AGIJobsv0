@@ -28,7 +28,7 @@ Each component is immutable once deployed yet configurable by the owner through 
 
 ### Token Configuration
 
-`StakeManager` holds the address of the ERC‑20 used for all payments, staking and dispute fees. Earlier versions allowed the owner to swap this token via `setToken`, but v2 deployments fix the token to $AGIALPHA at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`, which operates with **18 decimals**. All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000000000000000` for 100 AGIALPHA). The `DisputeModule` pulls its `disputeFee` from `StakeManager`, so dispute resolution also uses this ERC‑20.
+`StakeManager` holds the address of the ERC‑20 used for all payments, staking and dispute fees. v2 deployments fix this token to $AGIALPHA at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`, which operates with **18 decimals**. All economic parameters (stakes, rewards, fees) must therefore be provided in base units of this token (e.g., `100_000000000000000000` for 100 AGIALPHA). The `DisputeModule` pulls its `disputeFee` from `StakeManager`, so dispute resolution also uses this ERC‑20.
 
 | Module | Core responsibility | Owner‑controllable parameters |
 | --- | --- | --- |
@@ -48,7 +48,6 @@ All public methods accept plain `uint256` values (wei and seconds) so they can b
 - Every setter is gated by `onlyOwner`, ensuring a single governance address (or multisig) tunes parameters.
 - `JobRegistry` can re‑point to replacement modules via `setModules`, enabling upgrades without migrating state.
 - Functions use primitive types and include NatSpec comments so Etherscan displays human‑readable names and prompts.
-- `StakeManager.setToken` (legacy) previously let the owner swap the payment currency—including dispute fees—without redeploying other contracts.
 
 ## Module Interactions
 ```mermaid
@@ -149,7 +148,6 @@ interface IStakeManager {
     function withdrawStake(Role role, uint256 amount) external;
     function lockStake(address user, Role role, uint256 payout) external;
     function slash(address user, Role role, uint256 payout, address employer) external; // `employer` must not be zero when employer share > 0
-    function setToken(address token) external; // legacy
     function setMinStake(uint256 minStake) external;
     function setSlashingPercentages(
         uint256 employerSlashPct,
@@ -171,7 +169,7 @@ Each module exposes minimal `onlyOwner` setters so governance can tune economics
 | JobRegistry | `setValidationModule`, `setReputationEngine`, `setStakeManager`, `setCertificateNFT`, `setDisputeModule`, `setJobParameters` | Wire module addresses and set per‑job rewards/stake |
 | ValidationModule | `setParameters` | Adjust stake ratios, rewards, slashing and timing windows |
 | DisputeModule | `setAppealParameters` | Configure dispute fees, jury size and moderator address |
-| StakeManager | `setToken` (legacy), `setMinStake`, `setSlashingPercentages`, `setTreasury` | Tune minimum stake, slashing shares and treasury |
+| StakeManager | `setMinStake`, `setSlashingPercentages`, `setTreasury` | Tune minimum stake, slashing shares and treasury |
 | ReputationEngine | `setCaller`, `setThreshold`, `setBlacklist` | Authorise callers, set reputation floors, manage blacklist |
 | CertificateNFT | `setJobRegistry` | Configure authorized JobRegistry |
 

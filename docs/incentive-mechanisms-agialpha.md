@@ -29,7 +29,7 @@ Token burns may be configured on every fee so a portion of payouts is destroyed,
 All modules expose simple `Ownable` setters so the contract owner can retune fees, stakes and burn rates through Etherscan without redeploying contracts. Token rotation is considered legacy and is not part of normal operations.
 
 ## 5. Owner Controls & User Experience
-- The contract owner may update fees, burn rates and stake thresholds. Token swapping via `StakeManager.setToken` is a legacy feature and should be avoided in new deployments.
+- The contract owner may update fees, burn rates and stake thresholds. The $AGIALPHA token address is immutable after deployment.
 - All interactions rely on simple data types, enabling non‑technical users to operate entirely through Etherscan.
 - Each module exposes an `isTaxExempt()` view and rejects direct ETH to prevent the contracts or owner from ever holding taxable funds.
 - Reward flows never touch off‑chain accounts, keeping operators pseudonymous and outside traditional reporting regimes.

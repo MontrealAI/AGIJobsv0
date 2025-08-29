@@ -13,7 +13,7 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 ## Deploy v2 Modules
 1. Open the [`Deployer`](../contracts/v2/Deployer.sol) contract on Etherscan and connect a wallet under **Write Contract**.
 2. Execute **deployDefaults(ids)**; blank fields use `$AGIALPHA` and baked‑in economics while wiring all modules. The caller becomes the owner.
-3. Legacy deployments allowed token swaps via [`StakeManager.setToken(newToken)`](../contracts/v2/StakeManager.sol) and [`FeePool.setToken(newToken)`](../contracts/v2/FeePool.sol). New systems assume a fixed token and should not invoke these functions.
+3. Legacy deployments allowed token swaps, but new systems assume a fixed token and no longer expose those functions.
 
 ## Role Function Quick Reference
 | Role | Required function calls | Example amounts (18 decimals) |
@@ -188,7 +188,6 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | Function | Parameters | Typical Use Case |
 | --- | --- | --- |
 | `depositStake(uint8 role, uint256 amount)` | `role` – 0 Agent, 1 Validator, 2 Platform; `amount` – tokens | Participants bond tokens for their role. |
-| `setToken(address newToken)` | `newToken` – ERC‑20 address | Legacy: owner swapped the staking and reward token. |
 | `slash(address offender, address beneficiary, uint256 amount)` | offending address, beneficiary address, amount | Owner penalises misbehaviour and redirects stake. Beneficiary cannot be the zero address if an employer share is due. |
 
 ### ValidationModule

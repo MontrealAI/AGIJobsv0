@@ -41,7 +41,7 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
      provides similar overrides.
    - `blacklist(address, true)` blocks misbehaving agents or validators.
    - Token transfers and payouts use 18‑decimal units.
-5. These setters mirror module controls in the v2 architecture—`StakeManager.setToken` (legacy),
+5. These setters mirror module controls in the v2 architecture.
    `ENSOwnershipVerifier.setRootNodes`, `IdentityRegistry.setMerkleRoots`, `JobRegistry.addAdditionalAgent`,
    and `ReputationEngine.blacklist`—demonstrating that the owner can retune parameters without redeploying contracts.
 
@@ -92,7 +92,6 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
 
 ### Owner-only setters
 
-- `StakeManager.setToken(newToken)` (legacy)
 - `StakeManager.setMinStake(amount)`
 - `JobRegistry.setFeePct(fee)`
 - `ValidationModule.setCommitRevealWindows(commitWindow, revealWindow)`
@@ -107,7 +106,6 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
 - [ ] `setMerkleRoots(validatorRoot, agentRoot)`
 
 ### v2
-- [ ] (legacy) `StakeManager.setToken(newToken)` and `FeePool.setToken(newToken)`
 - [ ] `ENSOwnershipVerifier.setRootNodes(clubRootNode, agentRootNode)`
 - [ ] `IdentityRegistry.setMerkleRoots(validatorRoot, agentRoot)`
 - [ ] `JobRegistry.setModules(...)`

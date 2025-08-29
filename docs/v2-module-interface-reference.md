@@ -42,12 +42,10 @@ interface IJobRegistry {
 }
 
 interface IStakeManager {
-    event TokenUpdated(address newToken);
     function depositStake(uint256 amount) external;
     function lockReward(address from, uint256 amount) external;
     function payReward(address to, uint256 amount) external;
     function slash(address offender, address beneficiary, uint256 amount) external; // `beneficiary` must not be zero when employer share > 0
-    function setToken(address newToken) external; // legacy
 }
 
 interface IValidationModule {
@@ -101,7 +99,7 @@ interface ICertificateNFT {
 Stakes form potential energy \(H\); commit–reveal voting injects entropy \(S\). Owner‑tuned parameters act as temperature \(T\). The network evolves toward minimum Gibbs free energy \(G = H - TS\), making honest behaviour the dominant, low‑energy strategy. Slashing raises \(H\) for cheaters, while random validator selection increases \(S\), keeping collusion energetically unfavourable.
 
 ## Owner Control & Token Flexibility
-All setters are `onlyOwner`. Legacy versions exposed `StakeManager.setToken` to swap the payment/staking token, but v2 assumes the 18‑decimal [$AGIALPHA](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) token for all modules. All amounts are supplied in base units (1 token = 1e18). For example `0.1` token is `100_000000000000000` and `12` tokens are `12_000000000000000000`.
+All setters are `onlyOwner`. v2 assumes the 18‑decimal [$AGIALPHA](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) token for all modules with the address fixed at deployment. All amounts are supplied in base units (1 token = 1e18). For example `0.1` token is `100_000000000000000` and `12` tokens are `12_000000000000000000`.
 
 ## Governance Composability
 - Modules are immutable once deployed; to upgrade a component the owner deploys a new module and calls `JobRegistry.setModules` with the replacement address.

@@ -54,7 +54,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event FeesDistributed(uint256 amount);
     event Burned(uint256 amount);
     event RewardsClaimed(address indexed user, uint256 amount);
-    event TokenUpdated(address indexed token);
     event StakeManagerUpdated(address indexed stakeManager);
     event ModulesUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
@@ -86,7 +85,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
             require(meta.decimals() == 18, "decimals");
             token = _token;
         }
-        emit TokenUpdated(address(token));
 
         if (address(_stakeManager) != address(0)) {
             stakeManager = _stakeManager;
@@ -203,15 +201,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     function ownerWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
         token.safeTransfer(to, amount);
         emit OwnerWithdrawal(to, amount);
-    }
-
-    /// @notice update ERC20 token used for payouts
-    /// @param newToken fee/reward token address which must use 18 decimals
-    function setToken(IERC20 newToken) external onlyOwner {
-        IERC20Metadata meta = IERC20Metadata(address(newToken));
-        require(meta.decimals() == 18, "decimals");
-        token = newToken;
-        emit TokenUpdated(address(newToken));
     }
 
     /// @notice update StakeManager contract

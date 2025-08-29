@@ -25,7 +25,7 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
   - `ids.agentRootNode` / `ids.clubRootNode` – namehashes for `agent.agi.eth` and `club.agi.eth`.
   - `ids.agentMerkleRoot` / `ids.validatorMerkleRoot` – optional allowlists for off‑chain membership proofs.
   ![config script](https://via.placeholder.com/650x150?text=configure+econ+ids)
-- After deployment the owner can still adjust parameters on‑chain with `JobRegistry.setFeePct` and `FeePool.setBurnPct`. `StakeManager.setToken` and `FeePool.setToken` are legacy functions retained only for migrations.
+- After deployment the owner can still adjust parameters on‑chain with `JobRegistry.setFeePct` and `FeePool.setBurnPct`.
 
 ## 3. Post-deploy wiring
 

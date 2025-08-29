@@ -8,7 +8,7 @@ Holds platform fees and distributes rewards.
 - `distributeFees()` – move accumulated fees to the reward pool and burn portion.
 - `claimRewards()` – stakers claim their share of rewards.
 - `ownerWithdraw(address to, uint256 amount)` – owner emergency withdrawal.
-- `setToken(address newToken)` (legacy) / `setStakeManager(address manager)` – owner wires token and modules.
+- `setStakeManager(address manager)` – owner wires modules.
 - `setRewardRole(uint8 role)` – choose which stakers earn rewards.
 - `setBurnPct(uint256 pct)` / `setTreasury(address treasury)` – configure fee splits.
 
@@ -17,7 +17,7 @@ Holds platform fees and distributes rewards.
 - `FeesDistributed(uint256 amount)`
 - `Burned(uint256 amount)`
 - `RewardsClaimed(address user, uint256 amount)`
-- `TokenUpdated(address token)` / `StakeManagerUpdated(address stakeManager)`
+- `StakeManagerUpdated(address stakeManager)`
 - `RewardRoleUpdated(uint8 role)`
 - `BurnPctUpdated(uint256 pct)`
 - `TreasuryUpdated(address treasury)`

@@ -55,7 +55,6 @@ contract GovernanceReward is Ownable {
     event RewardPctUpdated(uint256 pct);
     event EpochFinalized(uint256 indexed epoch, uint256 rewardAmount);
     event RewardClaimed(uint256 indexed epoch, address indexed voter, uint256 amount);
-    event TokenUpdated(address indexed token);
     event FeePoolUpdated(address indexed feePool);
     event StakeManagerUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
@@ -76,7 +75,6 @@ contract GovernanceReward is Ownable {
             IERC20Metadata(address(token)).decimals() == 18,
             "decimals"
         );
-        emit TokenUpdated(address(token));
 
         feePool = _feePool;
         stakeManager = _stakeManager;
@@ -108,22 +106,6 @@ contract GovernanceReward is Ownable {
         require(pct <= 100, "pct");
         rewardPct = pct;
         emit RewardPctUpdated(pct);
-    }
-
-    /// @notice update the token address used for rewards
-    /// @param newToken ERC20 token using 18 decimals. Set to zero address to
-    /// revert to DEFAULT_TOKEN.
-    function setToken(IERC20 newToken) external onlyOwner {
-        IERC20 candidate =
-            address(newToken) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : newToken;
-        require(
-            IERC20Metadata(address(candidate)).decimals() == 18,
-            "decimals"
-        );
-        token = candidate;
-        emit TokenUpdated(address(candidate));
     }
 
     /// @notice update the FeePool reference
