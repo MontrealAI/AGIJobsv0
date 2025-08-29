@@ -9,19 +9,20 @@ import {IJobRegistry} from "../../contracts/v2/interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ValidatorSelectionFuzz is Test {
     StakeManager stake;
     ValidationModule validation;
     IdentityRegistryToggle identity;
     AGIALPHAToken token;
+    address constant AGI = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
     mapping(address => uint256) index;
 
     function setUp() public {
         token = new AGIALPHAToken();
+        vm.etch(AGI, address(token).code);
+        token = AGIALPHAToken(AGI);
         stake = new StakeManager(
-            IERC20(address(token)),
             1e18,
             0,
             100,

@@ -4,15 +4,17 @@ pragma solidity ^0.8.25;
 import "forge-std/Test.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract StakeManagerFuzz is Test {
     StakeManager stake;
     AGIALPHAToken token;
+    address constant AGI = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
     function setUp() public {
         token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e18, 50, 50, address(this), address(this), address(this));
+        vm.etch(AGI, address(token).code);
+        token = AGIALPHAToken(AGI);
+        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
     }
 
     function _deposit(address user, uint256 amount, StakeManager.Role role) internal {

@@ -8,14 +8,12 @@ describe("StakeManager extras", function () {
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
-    token = await Token.deploy();
+    token = global.agialpha;
     await token.mint(user.address, 1000);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -89,21 +87,5 @@ describe("StakeManager extras", function () {
     ).to.be.revertedWith("max stake");
   });
 
-  it("emits event and accepts new token after token swap", async () => {
-    await setupRegistryAck(user);
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
-    const token2 = await Token.deploy();
-    await token2.mint(user.address, 200);
-    await expect(
-      stakeManager.connect(owner).setToken(await token2.getAddress())
-    )
-      .to.emit(stakeManager, "TokenUpdated")
-      .withArgs(await token2.getAddress());
-    await token2
-      .connect(user)
-      .approve(await stakeManager.getAddress(), 200);
-    await stakeManager.connect(user).depositStake(0, 200);
-    expect(await stakeManager.stakeOf(user.address, 0)).to.equal(200n);
-  });
 });
 

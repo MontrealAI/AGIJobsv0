@@ -9,16 +9,12 @@ describe("GovernanceReward", function () {
   beforeEach(async () => {
     [owner, voter1, voter2, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    token = global.agialpha;
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -62,7 +58,6 @@ describe("GovernanceReward", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address
@@ -73,7 +68,6 @@ describe("GovernanceReward", function () {
       "contracts/v2/GovernanceReward.sol:GovernanceReward"
     );
     reward = await Reward.deploy(
-      await token.getAddress(),
       await feePool.getAddress(),
       await stakeManager.getAddress(),
       2,
@@ -97,22 +91,6 @@ describe("GovernanceReward", function () {
 
     // fund fee pool
     await token.mint(await feePool.getAddress(), 100n * TOKEN);
-  });
-
-  it("enforces 18-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
-    const bad = await Bad.deploy();
-    await expect(
-      reward.connect(owner).setToken(await bad.getAddress())
-    ).to.be.revertedWith("decimals");
-
-    const Good = await ethers.getContractFactory("MockERC206Decimals");
-    const good = await Good.deploy();
-    await expect(
-      reward.connect(owner).setToken(await good.getAddress())
-    )
-      .to.emit(reward, "TokenUpdated")
-      .withArgs(await good.getAddress());
   });
 
   it("rewards voters proportional to staked balance", async () => {
