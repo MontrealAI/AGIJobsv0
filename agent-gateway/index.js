@@ -11,6 +11,7 @@ const VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS || '';
 const WALLET_KEYS = process.env.WALLET_KEYS || '';
 const PORT = process.env.PORT || 3000;
 const BOT_WALLET = process.env.BOT_WALLET || '';
+const TOKEN_DECIMALS = 18; // $AGIALPHA uses 18 decimal places
 
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
@@ -125,13 +126,13 @@ registry.on('JobCreated', (jobId, employer, agentAddr, reward, stake, fee) => {
     jobId: jobId.toString(),
     employer,
     agent: agentAddr,
-    // include raw values alongside 18-decimal formatted strings
+    // include raw values alongside formatted token strings
     rewardRaw: reward.toString(),
-    reward: ethers.formatUnits(reward, 18),
+    reward: ethers.formatUnits(reward, TOKEN_DECIMALS),
     stakeRaw: stake.toString(),
-    stake: ethers.formatUnits(stake, 18),
+    stake: ethers.formatUnits(stake, TOKEN_DECIMALS),
     feeRaw: fee.toString(),
-    fee: ethers.formatUnits(fee, 18)
+    fee: ethers.formatUnits(fee, TOKEN_DECIMALS)
   };
   jobs.set(job.jobId, job);
   broadcast({ type: 'JobCreated', job });
