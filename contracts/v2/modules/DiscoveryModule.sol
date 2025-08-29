@@ -14,7 +14,7 @@ contract DiscoveryModule is Ownable {
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
 
-    uint256 public constant DEFAULT_MIN_STAKE = 1e6;
+    uint256 public constant DEFAULT_MIN_STAKE = 1e18;
 
     uint256 public minStake;
 

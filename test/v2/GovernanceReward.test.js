@@ -26,6 +26,8 @@ describe("GovernanceReward", function () {
       owner.address
     );
 
+    await stakeManager.connect(owner).setMinStake(0);
+
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
@@ -91,8 +93,8 @@ describe("GovernanceReward", function () {
     await token.mint(await feePool.getAddress(), 100 * 1e6);
   });
 
-  it("enforces 6-decimal tokens", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20");
+  it("enforces 18-decimal tokens", async () => {
+    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
     const bad = await Bad.deploy();
     await expect(
       reward.connect(owner).setToken(await bad.getAddress())
