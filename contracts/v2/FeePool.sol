@@ -63,8 +63,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event RewardPoolContribution(address indexed contributor, uint256 amount);
 
     /// @notice Deploys the FeePool.
-    /// @param _token ERC20 token used for fees and rewards. Defaults to
-    /// DEFAULT_TOKEN when zero address.
+    /// @param _token ERC20 token used for fees and rewards. Must use 18 decimals.
+    /// Defaults to DEFAULT_TOKEN when zero address.
     /// @param _stakeManager StakeManager tracking staker balances.
     /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
     /// DEFAULT_BURN_PCT when set to zero.
@@ -113,7 +113,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     ///      contract (typically by `StakeManager.finalizeJobFunds`). Only the
     ///      `StakeManager` may call this to keep accounting trustless while the
     ///      registry itself never holds custody of user funds.
-    /// @param amount fee amount scaled to 18 decimals
+    /// @param amount fee amount with 18 decimals
     function depositFee(uint256 amount) external onlyStakeManager nonReentrant {
         require(amount > 0, "amount");
         pendingFees += amount;
@@ -121,7 +121,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     /// @notice Contribute tokens directly to the reward pool.
-    /// @param amount fee amount scaled to 18 decimals.
+    /// @param amount token amount with 18 decimals.
     function contribute(uint256 amount) external nonReentrant {
         require(amount > 0, "amount");
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -130,7 +130,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     /// @notice Distribute accumulated fees to stakers.
-    /// @dev All fee amounts use 6 decimal units. Safe to call when no fees are
+    /// @dev All fee amounts use 18 decimal units. Safe to call when no fees are
     ///      pending or when no stake is present; in the latter case funds are
     ///      burned/forwarded to the treasury so non-technical callers never see
     ///      a revert.
@@ -173,7 +173,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /**
      * @notice Claim accumulated $AGIALPHA rewards for the caller.
      * @dev Invokes the idempotent `distributeFees` so stakers can settle and
-     *      claim in a single Etherscan transaction. Rewards use 6‑decimal units.
+     *      claim in a single Etherscan transaction. Rewards use 18‑decimal units.
      */
     function claimRewards() external nonReentrant {
         _distributeFees();
