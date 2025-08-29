@@ -6,8 +6,8 @@ async function deploySystem() {
   const [owner, employer, agent] = await ethers.getSigners();
   const Token = await ethers.getContractFactory("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken");
   const token = await Token.deploy();
-  await token.mint(employer.address, ethers.parseUnits("1000", 6));
-  await token.mint(agent.address, ethers.parseUnits("1000", 6));
+  await token.mint(employer.address, ethers.parseUnits("1000", 18));
+  await token.mint(agent.address, ethers.parseUnits("1000", 18));
 
   const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
   const stake = await Stake.deploy(
@@ -79,9 +79,9 @@ describe("Mid-job module replacement fuzz", function () {
       const env = await deploySystem();
       const { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute } = env;
 
-      const reward = ethers.parseUnits(String(10 + Math.floor(Math.random() * 90)), 6);
+      const reward = ethers.parseUnits(String(10 + Math.floor(Math.random() * 90)), 18);
       const result = Math.random() > 0.5;
-      const stakeAmount = ethers.parseUnits("1", 6);
+      const stakeAmount = ethers.parseUnits("1", 18);
       await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
       await stake.connect(agent).depositStake(0, stakeAmount);
       await token

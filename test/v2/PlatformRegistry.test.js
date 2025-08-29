@@ -282,13 +282,13 @@ describe("PlatformRegistry", function () {
     await registry.connect(platform).register();
     expect(await registry.getScore(platform.address)).to.equal(STAKE);
     await reputationEngine.add(platform.address, 5);
-    expect(await registry.getScore(platform.address)).to.equal(STAKE + 4);
+    expect(await registry.getScore(platform.address)).to.equal(STAKE + 4n);
   });
 
   it("owner can update settings", async () => {
-    await expect(registry.setMinPlatformStake(STAKE * 2))
+    await expect(registry.setMinPlatformStake(STAKE * 2n))
       .to.emit(registry, "MinPlatformStakeUpdated")
-      .withArgs(STAKE * 2);
+      .withArgs(STAKE * 2n);
   });
 
   it("enforces owner-managed blacklist", async () => {
