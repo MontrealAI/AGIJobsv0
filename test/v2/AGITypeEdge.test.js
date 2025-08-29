@@ -9,7 +9,7 @@ describe("StakeManager AGIType bonuses", function () {
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
 
     const StakeManager = await ethers.getContractFactory(

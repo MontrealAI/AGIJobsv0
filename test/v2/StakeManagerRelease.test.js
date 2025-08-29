@@ -6,7 +6,7 @@ describe("StakeManager release", function () {
 
   beforeEach(async () => {
     [owner, user1, user2, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
 
     const StakeManager = await ethers.getContractFactory(

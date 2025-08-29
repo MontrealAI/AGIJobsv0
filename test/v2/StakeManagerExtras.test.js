@@ -8,7 +8,7 @@ describe("StakeManager extras", function () {
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
     await token.mint(user.address, 1000);
     const StakeManager = await ethers.getContractFactory(
@@ -91,7 +91,7 @@ describe("StakeManager extras", function () {
 
   it("emits event and accepts new token after token swap", async () => {
     await setupRegistryAck(user);
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     const token2 = await Token.deploy();
     await token2.mint(user.address, 200);
     await expect(

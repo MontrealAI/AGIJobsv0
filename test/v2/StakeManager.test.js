@@ -7,7 +7,7 @@ describe("StakeManager", function () {
 
   beforeEach(async () => {
     [owner, user, employer, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     token = await Token.deploy();
     await token.mint(user.address, 1000);
     await token.mint(employer.address, 1000);
@@ -416,7 +416,7 @@ describe("StakeManager", function () {
   });
 
   it("uses new token for deposits and payouts after update", async () => {
-    const Token2 = await ethers.getContractFactory("MockERC206Decimals");
+    const Token2 = await ethers.getContractFactory("MockERC20");
     const token2 = await Token2.deploy();
 
     // wire job registry so user can stake
@@ -996,7 +996,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
 
-    const Token = await ethers.getContractFactory("MockERC206Decimals");
+    const Token = await ethers.getContractFactory("MockERC20");
     const token2 = await Token.deploy();
     await token2.mint(user.address, 500);
     await stakeManager.connect(owner).setToken(await token2.getAddress());

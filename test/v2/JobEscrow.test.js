@@ -31,7 +31,7 @@ describe("JobEscrow", function () {
       escrow.connect(owner).setToken(await bad.getAddress())
     ).to.be.revertedWith("decimals");
 
-    const Good = await ethers.getContractFactory("MockERC206Decimals");
+    const Good = await ethers.getContractFactory("MockERC20");
     const good = await Good.deploy();
     await expect(
       escrow.connect(owner).setToken(await good.getAddress())
