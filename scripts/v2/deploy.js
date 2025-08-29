@@ -1,5 +1,28 @@
 const { ethers, run } = require("hardhat");
 
+// rudimentary CLI flag parser
+function parseArgs() {
+  const argv = process.argv.slice(2);
+  const args = {};
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith("--")) {
+      const key = arg.slice(2);
+      const next = argv[i + 1];
+      if (next && !next.startsWith("--")) {
+        args[key] = next;
+        i++;
+      } else {
+        args[key] = true;
+      }
+    }
+  }
+  return args;
+}
+
+// default staking token (AGIALPHA); override via --token if needed
+const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
+
 async function verify(address, args = []) {
   try {
     await run("verify:verify", {
@@ -13,16 +36,16 @@ async function verify(address, args = []) {
 
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const args = parseArgs();
 
-  const Token = await ethers.getContractFactory("contracts/legacy/MockERC20.sol:MockERC20");
-  const token = await Token.deploy();
-  await token.waitForDeployment();
+  const tokenAddress =
+    typeof args.token === "string" ? args.token : AGIALPHA;
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
   const stake = await Stake.deploy(
-    await token.getAddress(),
+    tokenAddress,
     0,
     0,
     0,
@@ -90,7 +113,7 @@ async function main() {
     "contracts/v2/FeePool.sol:FeePool"
   );
   const feePool = await FeePool.deploy(
-    await token.getAddress(),
+    tokenAddress,
     await stake.getAddress(),
     0,
     deployer.address
@@ -128,8 +151,9 @@ async function main() {
   console.log("CertificateNFT:", await nft.getAddress());
   console.log("FeePool:", await feePool.getAddress());
   console.log("TaxPolicy:", await tax.getAddress());
+  console.log("Token:", tokenAddress);
 
-  await verify(await stake.getAddress(), [await token.getAddress(), deployer.address]);
+  await verify(await stake.getAddress(), [tokenAddress, deployer.address]);
   await verify(await registry.getAddress(), []);
   await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress()]);
   await verify(await reputation.getAddress(), []);
