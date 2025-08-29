@@ -69,10 +69,13 @@ contract JobEscrow is Ownable {
     /// zero address to use the default token.
     /// @param _routing Routing module used to select operators for new jobs.
     constructor(IERC20 _token, IRoutingModule _routing) Ownable(msg.sender) {
-        token =
-            address(_token) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : _token;
+        if (address(_token) == address(0)) {
+            token = IERC20(DEFAULT_TOKEN);
+        } else {
+            IERC20Metadata meta = IERC20Metadata(address(_token));
+            require(meta.decimals() == 18, "decimals");
+            token = _token;
+        }
         routingModule = _routing;
     }
     
