@@ -113,6 +113,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorPoolSampleSizeUpdated(uint256 size);
     event MaxValidatorPoolSizeUpdated(uint256 size);
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
+    event SelectionReset(uint256 indexed jobId);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -457,7 +458,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Finalization path using the stored entropy and future blockhash.
         require(block.number > selectionBlock[jobId], "await blockhash");
         bytes32 bhash = blockhash(selectionBlock[jobId]);
-        require(bhash != bytes32(0), "bhash");
+        if (bhash == bytes32(0)) {
+            pendingEntropy[jobId] = entropy;
+            selectionBlock[jobId] = block.number + 1;
+            emit SelectionReset(jobId);
+            return selected;
+        }
 
         uint256 randao = uint256(block.prevrandao);
         if (randao == 0) {
@@ -1106,6 +1112,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         );
         _cleanup(jobId);
         emit JobNonceReset(jobId);
+    }
+
+    /// @notice Reset pending entropy and selection block for a job to allow reselection.
+    /// @param jobId Identifier of the job.
+    function resetSelection(uint256 jobId) external onlyOwner {
+        delete pendingEntropy[jobId];
+        delete selectionBlock[jobId];
+        emit SelectionReset(jobId);
     }
 
     /// @dev Check whether an address is a selected validator for a job.
