@@ -2,4 +2,9 @@
 pragma solidity ^0.8.25;
 
 // Shared AGI Jobs v2 constants.
+
+// Canonical $AGIALPHA token on Ethereum mainnet.
 address constant AGIALPHA = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
+
+// Standard decimals for $AGIALPHA.
+uint8 constant AGIALPHA_DECIMALS = 18;
