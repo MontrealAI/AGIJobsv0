@@ -28,8 +28,12 @@ const registry = new ethers.Contract(process.env.JOB_REGISTRY, registryAbi, sign
 const stakeManager = new ethers.Contract(process.env.STAKE_MANAGER, stakeAbi, signer);
 const validation = new ethers.Contract(process.env.VALIDATION_MODULE, validationAbi, signer);
 
-async function postJob() {
-  const reward = ethers.parseEther("1");
+// Post a job with a reward denominated in AGIALPHA.
+// The optional `amount` parameter represents whole tokens and defaults to `1`.
+// Values are converted using the token's decimal configuration so the script
+// remains correct if the project ever changes decimals in the future.
+async function postJob(amount = "1") {
+  const reward = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
   await registry.createJob(reward, "ipfs://job");
 }
 
