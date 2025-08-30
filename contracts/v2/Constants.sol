@@ -8,3 +8,6 @@ address constant AGIALPHA = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
 // Standard decimals for $AGIALPHA.
 uint8 constant AGIALPHA_DECIMALS = 18;
+
+// Scaling factor for token amounts.
+uint256 constant TOKEN_SCALE = 10 ** AGIALPHA_DECIMALS;

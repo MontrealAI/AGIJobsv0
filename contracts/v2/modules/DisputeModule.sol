@@ -8,13 +8,14 @@ import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/Messa
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
+import {TOKEN_SCALE} from "../Constants.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes and resolves them after a
 /// dispute window.
 /// @dev Maintains tax neutrality by rejecting ether and escrowing only token
 ///      based dispute fees via the StakeManager. Assumes all token amounts use
-///      18 decimals (`1 token == 1e18` units).
+///      18 decimals (`1 token == TOKEN_SCALE` units).
 contract DisputeModule is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
@@ -24,7 +25,7 @@ contract DisputeModule is Ownable, Pausable {
 
     /// @notice Default dispute fee charged when raising a dispute.
     /// @dev Expressed in token units with 18 decimals; equal to 1 token.
-    uint256 public constant DEFAULT_DISPUTE_FEE = 1e18;
+    uint256 public constant DEFAULT_DISPUTE_FEE = TOKEN_SCALE;
 
     /// @notice Fee required to initiate a dispute, in token units (18 decimals).
     /// @dev Defaults to `DEFAULT_DISPUTE_FEE` if zero is provided to the constructor.
@@ -69,7 +70,7 @@ contract DisputeModule is Ownable, Pausable {
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
-    /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to 1e18.
+    /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
     /// @param _disputeWindow Minimum time in seconds before resolution; defaults to 1 day.
     /// @param _moderator Optional moderator address; defaults to the deployer.
     constructor(

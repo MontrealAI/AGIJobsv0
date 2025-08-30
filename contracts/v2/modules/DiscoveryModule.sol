@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
+import {TOKEN_SCALE} from "../Constants.sol";
 
 /// @title DiscoveryModule
 /// @notice Ranks registered platforms based on operator scores combining stake and reputation
@@ -14,7 +15,7 @@ contract DiscoveryModule is Ownable {
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
 
-    uint256 public constant DEFAULT_MIN_STAKE = 1e18;
+    uint256 public constant DEFAULT_MIN_STAKE = TOKEN_SCALE;
 
     uint256 public minStake;
 

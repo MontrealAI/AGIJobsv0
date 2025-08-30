@@ -90,8 +90,8 @@ interface IReputationEngine {
     function setStakeManager(address manager) external;
 
     /// @notice Update weighting factors for stake and reputation contributions
-    /// @param stakeWeight Weight applied to stake (scaled by 1e18)
-    /// @param reputationWeight Weight applied to reputation (scaled by 1e18)
+    /// @param stakeWeight Weight applied to stake (scaled by TOKEN_SCALE)
+    /// @param reputationWeight Weight applied to reputation (scaled by TOKEN_SCALE)
     function setScoringWeights(uint256 stakeWeight, uint256 reputationWeight) external;
 }
 

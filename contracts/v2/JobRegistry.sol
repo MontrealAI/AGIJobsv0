@@ -10,6 +10,7 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
+import {TOKEN_SCALE} from "./Constants.sol";
 
 interface IReputationEngine {
     function version() external view returns (uint256);
@@ -126,7 +127,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     // default agent stake requirement configured by owner
     uint96 public jobStake;
-    uint96 public constant DEFAULT_JOB_STAKE = 1e18;
+    uint96 public constant DEFAULT_JOB_STAKE = uint96(TOKEN_SCALE);
     uint256 public feePct;
     uint256 public constant DEFAULT_FEE_PCT = 5;
     uint256 public maxJobReward;

@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IPlatformRegistry} from "../interfaces/IPlatformRegistry.sol";
+import {TOKEN_SCALE} from "../Constants.sol";
 
 /// @title JobRouter
 /// @notice Routes jobs to registered platform operators based on stake and reputation scores.
@@ -89,7 +90,7 @@ contract JobRouter is Ownable {
     }
 
     /// @notice Compute routing weight for an operator as a fraction of total score.
-    /// @dev Returned value is scaled by 1e18 for precision.
+    /// @dev Returned value is scaled by TOKEN_SCALE for precision.
     function routingWeight(address operator) public view returns (uint256) {
         if (!registered[operator] || !platformRegistry.registered(operator)) return 0;
         uint256 score = platformRegistry.getScore(operator);
@@ -104,7 +105,7 @@ contract JobRouter is Ownable {
             total += s;
         }
         if (total == 0) return 0;
-        return (score * 1e18) / total;
+        return (score * TOKEN_SCALE) / total;
     }
 
     /// @notice Select a platform using blockhash/seed based randomness weighted by score.
