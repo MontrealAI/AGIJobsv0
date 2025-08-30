@@ -17,7 +17,7 @@ import {IValidationModule} from "../interfaces/IValidationModule.sol";
 ///      18 decimals (`1 token == 1e18` units).
 contract DisputeModule is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;

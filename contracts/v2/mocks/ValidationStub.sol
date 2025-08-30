@@ -7,7 +7,7 @@ import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 /// @notice Simple validation module stub returning a preset outcome.
 contract ValidationStub is IValidationModule {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     bool public result;
     address public jobRegistry;

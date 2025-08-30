@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2
+- Bumped all `contracts/v2` module `version` constants to `2` and updated related checks and documentation.
+
 ## v1
 - Updated Solidity compiler to version 0.8.21 across contracts, configuration, and docs.
 - Updated dependencies: Node.js 22.x LTS, Hardhat 2.26.1, @nomicfoundation/hardhat-toolbox 6.1.0, and OpenZeppelin Contracts 5.4.0.

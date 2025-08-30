@@ -18,7 +18,7 @@ interface IValidationOracle {
 /// @dev Useful for specialised off-chain evaluation logic.
 contract OracleValidationModule is IValidationModule, Ownable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     IJobRegistry public jobRegistry;
     IValidationOracle public oracle;

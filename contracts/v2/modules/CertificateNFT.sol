@@ -11,7 +11,7 @@ import {ICertificateNFT} from "../interfaces/ICertificateNFT.sol";
 ///      ether and rejects unsolicited transfers.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;

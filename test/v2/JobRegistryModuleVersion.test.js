@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("JobRegistry module version checks", function () {
-  let owner, registry, v1, v2;
+  let owner, registry, good, bad;
 
   beforeEach(async function () {
     [owner] = await ethers.getSigners();
@@ -25,8 +25,8 @@ describe("JobRegistry module version checks", function () {
     const Version = await ethers.getContractFactory(
       "contracts/v2/mocks/VersionMock.sol:VersionMock"
     );
-    v1 = await Version.deploy(1);
-    v2 = await Version.deploy(2);
+    good = await Version.deploy(2);
+    bad = await Version.deploy(3);
   });
 
   it("reverts for mismatched validation module", async function () {
@@ -34,11 +34,11 @@ describe("JobRegistry module version checks", function () {
       registry
         .connect(owner)
         .setModules(
-          await v2.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
+          await bad.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
           ethers.ZeroAddress,
           []
         )
@@ -50,11 +50,11 @@ describe("JobRegistry module version checks", function () {
       registry
         .connect(owner)
         .setModules(
-          await v1.getAddress(),
-          await v2.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
+          await good.getAddress(),
+          await bad.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
           ethers.ZeroAddress,
           []
         )
@@ -66,11 +66,11 @@ describe("JobRegistry module version checks", function () {
       registry
         .connect(owner)
         .setModules(
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v2.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await bad.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
           ethers.ZeroAddress,
           []
         )
@@ -82,11 +82,11 @@ describe("JobRegistry module version checks", function () {
       registry
         .connect(owner)
         .setModules(
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v2.getAddress(),
-          await v1.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await bad.getAddress(),
+          await good.getAddress(),
           ethers.ZeroAddress,
           []
         )
@@ -98,11 +98,11 @@ describe("JobRegistry module version checks", function () {
       registry
         .connect(owner)
         .setModules(
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v1.getAddress(),
-          await v2.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await good.getAddress(),
+          await bad.getAddress(),
           ethers.ZeroAddress,
           []
         )
@@ -113,14 +113,16 @@ describe("JobRegistry module version checks", function () {
     await registry
       .connect(owner)
       .setModules(
-        await v1.getAddress(),
-        await v1.getAddress(),
-        await v1.getAddress(),
-        await v1.getAddress(),
-        await v1.getAddress(),
+        await good.getAddress(),
+        await good.getAddress(),
+        await good.getAddress(),
+        await good.getAddress(),
+        await good.getAddress(),
         ethers.ZeroAddress,
         []
       );
-    expect(await registry.validationModule()).to.equal(await v1.getAddress());
+    expect(await registry.validationModule()).to.equal(
+      await good.getAddress()
+    );
   });
 });

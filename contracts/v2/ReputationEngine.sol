@@ -12,7 +12,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 ///      owner ever custodies assets or incurs tax liabilities.
 contract ReputationEngine is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     mapping(address => uint256) public reputation;
     mapping(address => bool) private blacklisted;

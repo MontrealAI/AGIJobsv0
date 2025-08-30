@@ -7,7 +7,7 @@ import {IFeePool} from "../interfaces/IFeePool.sol";
 
 /// @dev Stake manager mock that attempts to reenter ValidationModule calls.
 contract ReentrantStakeManager is IStakeManager {
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     mapping(address => mapping(Role => uint256)) private _stakes;
     mapping(Role => uint256) public totalStakes;
