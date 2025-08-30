@@ -1,5 +1,11 @@
 const { ethers } = require("ethers");
 
+// Load token decimals (defaults to config value, typically 18)
+const { decimals: AGIALPHA_DECIMALS } = require("../config/agialpha.json");
+const TOKEN_DECIMALS = Number(
+  process.env.TOKEN_DECIMALS || AGIALPHA_DECIMALS
+);
+
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
@@ -28,7 +34,8 @@ async function postJob() {
 }
 
 async function stake(amount) {
-  const parsed = ethers.parseUnits(amount.toString(), 18);
+  // Convert using the token's decimal count (previously fixed at 18)
+  const parsed = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
   await stakeManager.depositStake(0, parsed);
 }
 
