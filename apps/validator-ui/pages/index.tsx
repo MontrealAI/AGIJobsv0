@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { generateCommit, scheduleReveal } from '../lib/commit';
+import agiConfig from '../../../config/agialpha.json';
 
 interface Job {
   jobId: string;
@@ -10,6 +11,10 @@ interface Job {
   stake: string;
   fee: string;
 }
+
+const DECIMALS = Number(
+  process.env.NEXT_PUBLIC_AGIALPHA_DECIMALS ?? agiConfig.decimals
+);
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -23,9 +28,9 @@ export default function Home() {
         setJobs(
           data.map((job: any) => ({
             ...job,
-            reward: ethers.formatUnits(job.rewardRaw ?? job.reward, 18),
-            stake: ethers.formatUnits(job.stakeRaw ?? job.stake, 18),
-            fee: ethers.formatUnits(job.feeRaw ?? job.fee, 18)
+            reward: ethers.formatUnits(job.rewardRaw ?? job.reward, DECIMALS),
+            stake: ethers.formatUnits(job.stakeRaw ?? job.stake, DECIMALS),
+            fee: ethers.formatUnits(job.feeRaw ?? job.fee, DECIMALS)
           }))
         )
       )
