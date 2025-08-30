@@ -7,7 +7,10 @@ describe("StakeManager pause", function () {
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken",
+      AGIALPHA
+    );
     const MockRegistry = await ethers.getContractFactory(
       "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
@@ -25,25 +28,35 @@ describe("StakeManager pause", function () {
       owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
-    await token.mint(user.address, 1000);
-    await token.connect(user).approve(await stakeManager.getAddress(), 1000);
+    await token.mint(user.address, ethers.parseEther("1000"));
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), ethers.parseEther("1000"));
   });
 
   it("pauses deposits and withdrawals", async () => {
     await stakeManager.connect(owner).pause();
     await expect(
-      stakeManager.connect(user).depositStake(0, 100)
+      stakeManager
+        .connect(user)
+        .depositStake(0, ethers.parseEther("100"))
     ).to.be.revertedWithCustomError(stakeManager, "EnforcedPause");
 
     await stakeManager.connect(owner).unpause();
-    await stakeManager.connect(user).depositStake(0, 100);
+    await stakeManager
+      .connect(user)
+      .depositStake(0, ethers.parseEther("100"));
 
     await stakeManager.connect(owner).pause();
     await expect(
-      stakeManager.connect(user).withdrawStake(0, 100)
+      stakeManager
+        .connect(user)
+        .withdrawStake(0, ethers.parseEther("100"))
     ).to.be.revertedWithCustomError(stakeManager, "EnforcedPause");
 
     await stakeManager.connect(owner).unpause();
-    await stakeManager.connect(user).withdrawStake(0, 100);
+    await stakeManager
+      .connect(user)
+      .withdrawStake(0, ethers.parseEther("100"));
   });
 });
