@@ -4,7 +4,19 @@ import { AGIALPHA } from "./constants";
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const tokenAddress = process.env.TOKEN_ADDRESS ?? AGIALPHA;
+  // Canonical $AGIALPHA token on all networks. If the token is not
+  // already deployed (e.g. on a local testnet), deploy a minimal instance
+  // for development purposes. This keeps deployments fixed to a single
+  // ERC‑20 without requiring environment overrides.
+  let tokenAddress = AGIALPHA;
+  if ((await ethers.provider.getCode(AGIALPHA)) === "0x") {
+    const Token = await ethers.getContractFactory(
+      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
+    );
+    const token = await Token.deploy();
+    await token.waitForDeployment();
+    tokenAddress = await token.getAddress();
+  }
 
   const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
   const stake = await Stake.deploy(
