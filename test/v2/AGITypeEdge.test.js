@@ -143,7 +143,7 @@ describe("StakeManager AGIType bonuses", function () {
       stakeManager
         .connect(registrySigner)
         .releaseReward(jobId, agent.address, 100)
-    ).to.be.revertedWith("escrow");
+    ).to.be.revertedWithCustomError(stakeManager, "InsufficientEscrow");
   });
 });
 

@@ -26,7 +26,7 @@ describe("StakeManager ether rejection", function () {
   it("reverts on direct ether transfer", async () => {
     await expect(
       owner.sendTransaction({ to: await stakeManager.getAddress(), value: 1 })
-    ).to.be.revertedWith("StakeManager: no ether");
+    ).to.be.revertedWithCustomError(stakeManager, "EtherNotAccepted");
   });
 
   it("reverts on unknown calldata with value", async () => {
@@ -36,7 +36,7 @@ describe("StakeManager ether rejection", function () {
         data: "0x12345678",
         value: 1,
       })
-    ).to.be.revertedWith("StakeManager: no ether");
+    ).to.be.revertedWithCustomError(stakeManager, "EtherNotAccepted");
   });
 
   it("reports tax exemption", async () => {
