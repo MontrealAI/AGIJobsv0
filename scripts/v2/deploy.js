@@ -1,5 +1,4 @@
 const { ethers, run } = require("hardhat");
-const { AGIALPHA, AGIALPHA_DECIMALS } = require("../constants");
 
 // rudimentary CLI flag parser
 function parseArgs() {
@@ -37,14 +36,10 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const args = parseArgs();
 
-  const tokenAddress =
-    typeof args.token === "string" ? args.token : AGIALPHA;
-
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
   const stake = await Stake.deploy(
-    tokenAddress,
     0,
     0,
     0,
@@ -112,7 +107,6 @@ async function main() {
     "contracts/v2/FeePool.sol:FeePool"
   );
   const feePool = await FeePool.deploy(
-    tokenAddress,
     await stake.getAddress(),
     0,
     deployer.address
@@ -150,9 +144,14 @@ async function main() {
   console.log("CertificateNFT:", await nft.getAddress());
   console.log("FeePool:", await feePool.getAddress());
   console.log("TaxPolicy:", await tax.getAddress());
-  console.log("Token:", tokenAddress);
-
-  await verify(await stake.getAddress(), [tokenAddress, deployer.address]);
+  await verify(await stake.getAddress(), [
+    0,
+    0,
+    0,
+    deployer.address,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+  ]);
   await verify(await registry.getAddress(), []);
   await verify(await validation.getAddress(), [await registry.getAddress(), await stake.getAddress()]);
   await verify(await reputation.getAddress(), []);
