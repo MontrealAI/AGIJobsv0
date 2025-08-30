@@ -28,7 +28,8 @@ async function postJob() {
 }
 
 async function stake(amount) {
-  await stakeManager.depositStake(0, amount);
+  const parsed = ethers.parseUnits(amount.toString(), 18);
+  await stakeManager.depositStake(0, parsed);
 }
 
 async function apply(jobId, label, proof) {

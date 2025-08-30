@@ -26,7 +26,7 @@ node -e "require('./examples/ethers-quickstart').postJob()"
 
 ### Stake tokens
 ```bash
-node -e "require('./examples/ethers-quickstart').stake(1_000000000000000000)"
+node -e "require('./examples/ethers-quickstart').stake('1')"
 ```
 
 ### Validate a submission
