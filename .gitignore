@@ -4,3 +4,6 @@ artifacts/
 cache/
 
 .next/
+
+# Ignore built scripts
+scripts/**/*.js
