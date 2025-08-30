@@ -4,6 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobEscrow", function () {
   let token, routing, escrow, owner, employer, operator;
+  const seed = ethers.ZeroHash;
 
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
@@ -38,7 +39,7 @@ describe("JobEscrow", function () {
   it("runs normal job flow", async () => {
     const reward = 1000;
     await token.connect(employer).approve(await escrow.getAddress(), reward);
-    const tx = await escrow.connect(employer).postJob(reward, "ipfs://job");
+    const tx = await escrow.connect(employer).postJob(reward, "ipfs://job", seed);
     const rcpt = await tx.wait();
     const jobId = rcpt.logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;
 
@@ -51,7 +52,7 @@ describe("JobEscrow", function () {
   it("allows cancellation before submission", async () => {
     const reward = 500;
     await token.connect(employer).approve(await escrow.getAddress(), reward);
-    const tx = await escrow.connect(employer).postJob(reward, "job");
+    const tx = await escrow.connect(employer).postJob(reward, "job", seed);
     const jobId = (await tx.wait()).logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;
     await escrow.connect(employer).cancelJob(jobId);
     expect(await token.balanceOf(employer.address)).to.equal(1000000);
@@ -60,7 +61,7 @@ describe("JobEscrow", function () {
   it("operator can claim after timeout", async () => {
     const reward = 700;
     await token.connect(employer).approve(await escrow.getAddress(), reward);
-    const tx = await escrow.connect(employer).postJob(reward, "job");
+    const tx = await escrow.connect(employer).postJob(reward, "job", seed);
     const jobId = (await tx.wait()).logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;
     await escrow.connect(operator).submitResult(jobId, "res");
     await time.increase(3 * 24 * 60 * 60 + 1);
@@ -71,7 +72,7 @@ describe("JobEscrow", function () {
   it("prevents operator claiming before timeout", async () => {
     const reward = 300;
     await token.connect(employer).approve(await escrow.getAddress(), reward);
-    const tx = await escrow.connect(employer).postJob(reward, "job");
+    const tx = await escrow.connect(employer).postJob(reward, "job", seed);
     const jobId = (await tx.wait()).logs.find((l) => l.fragment && l.fragment.name === "JobPosted").args.jobId;
     await escrow.connect(operator).submitResult(jobId, "res");
     await expect(escrow.connect(operator).acceptResult(jobId)).to.be.revertedWith(
@@ -112,7 +113,7 @@ describe("JobEscrow", function () {
     await token.connect(employer).approve(await escrow.getAddress(), reward);
     const tx = await escrow
       .connect(employer)
-      .postJob(reward, "ipfs://job");
+      .postJob(reward, "ipfs://job", seed);
     const jobId = (await tx.wait()).logs.find(
       (l) => l.fragment && l.fragment.name === "JobPosted"
     ).args.jobId;
