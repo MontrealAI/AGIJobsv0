@@ -3,9 +3,8 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
+import {AGIALPHA} from "./Constants.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -20,16 +19,13 @@ contract GovernanceReward is Ownable {
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
 
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
     /// @notice default epoch length when constructor param is zero
     uint256 public constant DEFAULT_EPOCH_LENGTH = 1 weeks;
 
     /// @notice default reward percentage when constructor param is zero
     uint256 public constant DEFAULT_REWARD_PCT = 5;
 
-    IERC20 public immutable token;
+    IERC20 public immutable token = IERC20(AGIALPHA);
     IFeePool public feePool;
     IStakeManager public stakeManager;
     IStakeManager.Role public rewardRole;
@@ -60,22 +56,12 @@ contract GovernanceReward is Ownable {
     event RewardRoleUpdated(IStakeManager.Role role);
 
     constructor(
-        IERC20 _token,
         IFeePool _feePool,
         IStakeManager _stakeManager,
         IStakeManager.Role _role,
         uint256 _epochLength,
         uint256 _rewardPct
     ) Ownable(msg.sender) {
-        token =
-            address(_token) == address(0)
-                ? IERC20(DEFAULT_TOKEN)
-                : _token;
-        require(
-            IERC20Metadata(address(token)).decimals() == AGIALPHA_DECIMALS,
-            "decimals"
-        );
-
         feePool = _feePool;
         stakeManager = _stakeManager;
         rewardRole = _role;

@@ -3,12 +3,11 @@ pragma solidity ^0.8.25;
 
 import {Governable} from "./Governable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
+import {AGIALPHA} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -38,9 +37,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         Platform
     }
 
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
     /// @notice default minimum stake when constructor param is zero
     uint256 public constant DEFAULT_MIN_STAKE = 1e18;
 
@@ -48,8 +44,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     address public constant BURN_ADDRESS =
         0x000000000000000000000000000000000000dEaD;
 
-    /// @notice ERC20 token used for staking and payouts (immutable)
-    IERC20 public immutable token;
+    /// @notice ERC20 token used for staking and payouts (immutable $AGIALPHA)
+    IERC20 public immutable token = IERC20(AGIALPHA);
 
     /// @notice percentage of released amount sent to FeePool (0-100)
     uint256 public feePct;
@@ -147,8 +143,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event FeePoolUpdated(address indexed feePool);
 
     /// @notice Deploys the StakeManager.
-    /// @param _token ERC20 token used for staking and payouts. Defaults to
-    /// DEFAULT_TOKEN when zero address.
     /// @param _minStake Minimum stake required to participate. Defaults to
     /// DEFAULT_MIN_STAKE when set to zero.
     /// @param _employerSlashPct Percentage of slashed amount sent to employer
@@ -160,7 +154,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
     /// @param _disputeModule Dispute module authorized to manage dispute fees.
     constructor(
-        IERC20 _token,
         uint256 _minStake,
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
@@ -169,13 +162,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address _disputeModule,
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
-        if (address(_token) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == AGIALPHA_DECIMALS, "decimals");
-            token = _token;
-        }
 
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);

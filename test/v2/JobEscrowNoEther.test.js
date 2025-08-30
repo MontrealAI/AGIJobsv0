@@ -2,16 +2,14 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("JobEscrow ether rejection", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, employer, operator, token, routing, escrow;
 
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
-    await token.connect(owner).mint(employer.address, 1000);
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    await token.mint(employer.address, 1000);
 
     const Routing = await ethers.getContractFactory(
       "contracts/legacy/MockRoutingModule.sol:MockRoutingModule"
@@ -21,7 +19,7 @@ describe("JobEscrow ether rejection", function () {
     const Escrow = await ethers.getContractFactory(
       "contracts/v2/modules/JobEscrow.sol:JobEscrow"
     );
-    escrow = await Escrow.deploy(await token.getAddress(), await routing.getAddress());
+    escrow = await Escrow.deploy(await routing.getAddress());
   });
 
   it("reverts on direct ether transfer", async () => {

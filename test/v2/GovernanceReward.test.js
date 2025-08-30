@@ -4,21 +4,18 @@ const { ethers } = require("hardhat");
 const TOKEN = 10n ** 18n; // 1 token with 18 decimals
 
 describe("GovernanceReward", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, voter1, voter2, token, stakeManager, feePool, reward, treasury;
 
   beforeEach(async () => {
     [owner, voter1, voter2, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -62,7 +59,6 @@ describe("GovernanceReward", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address
@@ -73,7 +69,6 @@ describe("GovernanceReward", function () {
       "contracts/v2/GovernanceReward.sol:GovernanceReward"
     );
     reward = await Reward.deploy(
-      await token.getAddress(),
       await feePool.getAddress(),
       await stakeManager.getAddress(),
       2,

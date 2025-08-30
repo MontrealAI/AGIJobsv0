@@ -9,14 +9,13 @@ describe("StakeManager AGIType bonuses", function () {
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    const { AGIALPHA } = require("../../scripts/constants");
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,

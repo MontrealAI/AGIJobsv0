@@ -4,18 +4,17 @@ const { ethers } = require("hardhat");
 // Additional StakeManager unit tests focusing on staking flows and limits
 
 describe("StakeManager extras", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let token, stakeManager, owner, user, treasury;
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     await token.mint(user.address, 1000);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,

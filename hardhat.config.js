@@ -20,6 +20,9 @@ module.exports = {
       blockGasLimit: 100000000
     }
   },
+  mocha: {
+    require: ["./test/setup.js"],
+  },
   gasReporter: {
     enabled: true,
     currency: 'USD',

@@ -2,10 +2,9 @@
 pragma solidity ^0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AGIALPHA, AGIALPHA_DECIMALS} from "../Constants.sol";
+import {AGIALPHA} from "../Constants.sol";
 import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
 
 interface IRoutingModule {
@@ -36,11 +35,8 @@ contract JobEscrow is Ownable {
     }
 
     uint256 public constant TIMEOUT = 3 days;
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
-    /// @notice ERC20 token used for rewards (immutable)
-    IERC20 public immutable token;
+    /// @notice ERC20 token used for rewards (immutable $AGIALPHA)
+    IERC20 public immutable token = IERC20(AGIALPHA);
     IRoutingModule public routingModule;
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
@@ -65,17 +61,8 @@ contract JobEscrow is Ownable {
     event ResultSubmitted(uint256 indexed jobId, string result);
     event ResultAccepted(uint256 indexed jobId, address caller);
 
-    /// @param _token ERC20 token used for rewards; must have 18 decimals. Pass
-    /// zero address to use the default token.
     /// @param _routing Routing module used to select operators for new jobs.
-    constructor(IERC20 _token, IRoutingModule _routing) Ownable(msg.sender) {
-        if (address(_token) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == AGIALPHA_DECIMALS, "decimals");
-            token = _token;
-        }
+    constructor(IRoutingModule _routing) Ownable(msg.sender) {
         routingModule = _routing;
     }
     

@@ -5,9 +5,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
+import {AGIALPHA} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title FeePool
@@ -23,11 +22,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant DEFAULT_BURN_PCT = 5;
 
-    /// @notice default $AGIALPHA token used when no token is specified
-    address public constant DEFAULT_TOKEN = AGIALPHA;
-
-    /// @notice ERC20 token used for fees and rewards (immutable)
-    IERC20 public immutable token;
+    /// @notice ERC20 token used for fees and rewards (immutable $AGIALPHA)
+    IERC20 public immutable token = IERC20(AGIALPHA);
 
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
@@ -63,28 +59,18 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event RewardPoolContribution(address indexed contributor, uint256 amount);
 
     /// @notice Deploys the FeePool.
-    /// @param _token ERC20 token used for fees and rewards. Must use 18 decimals.
-    /// Defaults to DEFAULT_TOKEN when zero address.
     /// @param _stakeManager StakeManager tracking staker balances.
     /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
     /// DEFAULT_BURN_PCT when set to zero.
     /// @param _treasury Address receiving rounding dust. Defaults to deployer
     /// when zero address.
     constructor(
-        IERC20 _token,
         IStakeManager _stakeManager,
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         require(pct <= 100, "pct");
-        if (address(_token) == address(0)) {
-            token = IERC20(DEFAULT_TOKEN);
-        } else {
-            IERC20Metadata meta = IERC20Metadata(address(_token));
-            require(meta.decimals() == AGIALPHA_DECIMALS, "decimals");
-            token = _token;
-        }
 
         if (address(_stakeManager) != address(0)) {
             stakeManager = _stakeManager;

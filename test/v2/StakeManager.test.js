@@ -3,19 +3,18 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("StakeManager", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let token, stakeManager, owner, user, employer, treasury;
 
   beforeEach(async () => {
     [owner, user, employer, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     await token.mint(user.address, 1000);
     await token.mint(employer.address, 1000);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       50,
       50,
@@ -25,26 +24,6 @@ describe("StakeManager", function () {
       owner.address
     );
     await stakeManager.connect(owner).setMinStake(0);
-  });
-
-  it("reverts when token has non-18 decimals", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
-    const bad = await Bad.deploy();
-    const StakeManagerFactory = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
-    );
-    await expect(
-      StakeManagerFactory.deploy(
-        await bad.getAddress(),
-        0,
-        50,
-        50,
-        treasury.address,
-        ethers.ZeroAddress,
-        ethers.ZeroAddress,
-        owner.address
-      )
-    ).to.be.revertedWith("decimals");
   });
 
   it("reverts when staking without job registry", async () => {

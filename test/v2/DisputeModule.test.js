@@ -87,15 +87,13 @@ describe("DisputeModule", function () {
       [owner, employer, agent, outsider] = await ethers.getSigners();
 
       // deploy token and stake manager
-      const Token = await ethers.getContractFactory("MockERC20");
-      token = await Token.deploy();
-      await token.waitForDeployment();
+      const { AGIALPHA } = require("../../scripts/constants");
+      token = await ethers.getContractAt("MockERC20", AGIALPHA);
 
       const StakeManager = await ethers.getContractFactory(
         "contracts/v2/StakeManager.sol:StakeManager"
       );
       stakeManager = await StakeManager.deploy(
-        await token.getAddress(),
         0,
         0,
         0,
