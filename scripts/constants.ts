@@ -1,5 +1,11 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+const configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
+const { address, decimals } = JSON.parse(fs.readFileSync(configPath, 'utf8')) as { address: string; decimals: number };
+
 // Canonical $AGIALPHA token address on Ethereum mainnet.
-export const AGIALPHA = "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA";
+export const AGIALPHA = address;
 
 // Standard decimals for $AGIALPHA.
-export const AGIALPHA_DECIMALS = 18;
+export const AGIALPHA_DECIMALS = decimals;

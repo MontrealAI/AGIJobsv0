@@ -12,7 +12,7 @@ const WALLET_KEYS = process.env.WALLET_KEYS || '';
 const PORT = process.env.PORT || 3000;
 const BOT_WALLET = process.env.BOT_WALLET || '';
 // $AGIALPHA token parameters
-const { AGIALPHA_DECIMALS } = require('../scripts/constants');
+const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
 // Provider and wallet manager
