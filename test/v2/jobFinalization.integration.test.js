@@ -14,11 +14,9 @@ describe("job finalization integration", function () {
   beforeEach(async () => {
     [owner, employer, agent, validator1, validator2] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
-    await token.mint(owner.address, 0);
+    const { AGIALPHA } = require("../../scripts/constants");
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    await token.mint(owner.address, mintAmount);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
 
@@ -26,7 +24,6 @@ describe("job finalization integration", function () {
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await Stake.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -86,7 +83,6 @@ describe("job finalization integration", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       owner.address

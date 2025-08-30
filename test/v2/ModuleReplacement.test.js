@@ -7,19 +7,16 @@ const Role = { Agent: 0, Validator: 1, Platform: 2 };
 async function deploySystem() {
   const [owner, employer, agent] = await ethers.getSigners();
 
-  const Token = await ethers.getContractFactory(
-    "contracts/legacy/MockERC20.sol:MockERC20"
-  );
-  const token = await Token.deploy();
-  await token.waitForDeployment();
+  const { AGIALPHA } = require("../../scripts/constants");
+  const token = await ethers.getContractAt("MockERC20", AGIALPHA);
   await token.mint(employer.address, ethers.parseUnits("1000", 18));
   await token.mint(agent.address, ethers.parseUnits("1000", 18));
+  await token.mint(owner.address, ethers.parseUnits("1000", 18));
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
   const stake = await Stake.deploy(
-    await token.getAddress(),
     0,
     0,
     0,

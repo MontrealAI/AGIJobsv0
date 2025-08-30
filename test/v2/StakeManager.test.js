@@ -9,6 +9,7 @@ describe("StakeManager", function () {
   beforeEach(async () => {
     [owner, user, employer, treasury] = await ethers.getSigners();
     token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    await token.mint(owner.address, 1000);
     await token.mint(user.address, 1000);
     await token.mint(employer.address, 1000);
     const StakeManager = await ethers.getContractFactory(

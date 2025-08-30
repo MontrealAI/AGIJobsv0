@@ -8,18 +8,16 @@ describe("CertificateNFT marketplace", function () {
   beforeEach(async () => {
     [owner, seller, buyer] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/legacy/MockERC20.sol:MockERC20"
-    );
-    token = await Token.deploy();
+    const { AGIALPHA } = require("../../scripts/constants");
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     await token.mint(buyer.address, price);
     await token.mint(seller.address, price);
+    await token.mint(owner.address, price);
 
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stake = await Stake.deploy(
-      await token.getAddress(),
       0,
       0,
       0,
@@ -28,6 +26,7 @@ describe("CertificateNFT marketplace", function () {
       ethers.ZeroAddress,
       owner.address
     );
+    await stake.setMinStake(0);
 
     const NFT = await ethers.getContractFactory(
       "contracts/v2/CertificateNFT.sol:CertificateNFT"

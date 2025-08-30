@@ -15,17 +15,14 @@ describe("Governance via Timelock", function () {
     await timelock.grantRole(proposerRole, admin.address);
     await timelock.grantRole(executorRole, admin.address);
 
-    const Token = await ethers.getContractFactory(
-      "contracts/legacy/MockERC20.sol:MockERC20"
-    );
-    const token = await Token.deploy();
-    await token.waitForDeployment();
+    const { AGIALPHA } = require("../../scripts/constants");
+    const token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    await token.mint(admin.address, 1000);
 
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     const stake = await Stake.deploy(
-      await token.getAddress(),
       0,
       0,
       0,

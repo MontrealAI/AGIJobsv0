@@ -5,16 +5,15 @@ describe("PlatformIncentives acknowledge", function () {
   it("acknowledgeStakeAndActivate records acknowledgement", async () => {
     const [owner, operator, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    const token = await Token.deploy();
+    const { AGIALPHA } = require("../../scripts/constants");
+    const token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    await token.mint(owner.address, 1000);
+    await token.mint(operator.address, 1000);
 
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     const stakeManager = await Stake.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
