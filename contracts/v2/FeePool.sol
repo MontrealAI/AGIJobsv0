@@ -26,8 +26,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice default $AGIALPHA token used when no token is specified
     address public constant DEFAULT_TOKEN = AGIALPHA;
 
-    /// @notice ERC20 token used for fees and rewards
-    IERC20 public token;
+    /// @notice ERC20 token used for fees and rewards (immutable)
+    IERC20 public immutable token;
 
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
