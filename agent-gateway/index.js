@@ -15,6 +15,23 @@ const BOT_WALLET = process.env.BOT_WALLET || '';
 const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
+// Startup validation for required addresses
+if (!JOB_REGISTRY_ADDRESS || !ethers.isAddress(JOB_REGISTRY_ADDRESS)) {
+  console.error(
+    'JOB_REGISTRY_ADDRESS is required and must be set to a valid Ethereum address.'
+  );
+  process.exit(1);
+}
+
+if ('VALIDATION_MODULE_ADDRESS' in process.env) {
+  if (!VALIDATION_MODULE_ADDRESS || !ethers.isAddress(VALIDATION_MODULE_ADDRESS)) {
+    console.error(
+      'VALIDATION_MODULE_ADDRESS must be set to a valid Ethereum address when using validation features.'
+    );
+    process.exit(1);
+  }
+}
+
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const walletManager = new WalletManager(WALLET_KEYS, provider);
