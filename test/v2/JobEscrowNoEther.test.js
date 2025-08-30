@@ -8,7 +8,7 @@ describe("JobEscrow ether rejection", function () {
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(employer.address, 1000);
 
     const Routing = await ethers.getContractFactory(

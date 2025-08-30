@@ -88,7 +88,7 @@ describe("DisputeModule", function () {
 
       // deploy token and stake manager
       const { AGIALPHA } = require("../../scripts/constants");
-      token = await ethers.getContractAt("MockERC20", AGIALPHA);
+      token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
 
       const StakeManager = await ethers.getContractFactory(
         "contracts/v2/StakeManager.sol:StakeManager"
