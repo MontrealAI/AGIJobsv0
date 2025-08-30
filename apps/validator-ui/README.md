@@ -2,7 +2,7 @@
 
 A minimal Next.js interface for validators to view pending jobs, commit votes, and automatically reveal them.
 
-Job amounts are formatted with `ethers.formatUnits(..., 18)` when displayed.
+Job amounts are formatted with `ethers.formatUnits(..., decimals)` where `decimals` comes from the `NEXT_PUBLIC_AGIALPHA_DECIMALS` environment variable or defaults to the value in `config/agialpha.json`.
 
 ## Setup
 
@@ -16,6 +16,7 @@ Create a `.env.local` file with:
 NEXT_PUBLIC_GATEWAY_URL=http://localhost:3000
 NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS=0xYourValidationModule
 NEXT_PUBLIC_REVEAL_DELAY_MS=5000
+NEXT_PUBLIC_AGIALPHA_DECIMALS=18
 ```
 
 ## Running
