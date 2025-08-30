@@ -6,7 +6,7 @@ contracts have already been deployed.  For full details see the individual
 contract pages under `docs/api/`.
 
 ## AGIALPHAToken
-ERC‑20 utility token used for payments and staking.
+ERC‑20 utility token used for payments and staking. The production `$AGIALPHA` token is deployed externally; [`AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) is a mock for local development.
 
 ```javascript
 const token = await ethers.getContractAt("AGIALPHAToken", tokenAddress);

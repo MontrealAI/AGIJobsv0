@@ -16,7 +16,7 @@ describe("Governance via Timelock", function () {
     await timelock.grantRole(executorRole, admin.address);
 
     const { AGIALPHA } = require("../../scripts/constants");
-    const token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(admin.address, 1000);
 
     const Stake = await ethers.getContractFactory(

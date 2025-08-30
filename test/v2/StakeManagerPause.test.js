@@ -8,7 +8,7 @@ describe("StakeManager pause", function () {
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
     token = await ethers.getContractAt(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken",
+      "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
       AGIALPHA
     );
     const MockRegistry = await ethers.getContractFactory(

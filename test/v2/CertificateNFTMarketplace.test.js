@@ -9,7 +9,7 @@ describe("CertificateNFT marketplace", function () {
     [owner, seller, buyer] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(buyer.address, price);
     await token.mint(seller.address, price);
     await token.mint(owner.address, price);

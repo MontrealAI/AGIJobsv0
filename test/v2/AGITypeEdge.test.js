@@ -10,7 +10,7 @@ describe("StakeManager AGIType bonuses", function () {
     [owner, employer, agent] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"

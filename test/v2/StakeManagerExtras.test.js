@@ -10,7 +10,7 @@ describe("StakeManager extras", function () {
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
     token = await ethers.getContractAt(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken",
+      "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
       AGIALPHA
     );
     await token.mint(user.address, ethers.parseEther("1000"));

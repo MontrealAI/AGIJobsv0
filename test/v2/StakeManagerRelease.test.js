@@ -8,7 +8,7 @@ describe("StakeManager release", function () {
     [owner, user1, user2, treasury] = await ethers.getSigners();
     const { AGIALPHA } = require("../../scripts/constants");
     token = await ethers.getContractAt(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken",
+      "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
       AGIALPHA
     );
 

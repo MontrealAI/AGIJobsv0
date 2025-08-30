@@ -7,7 +7,7 @@ describe("FeePool", function () {
   const { AGIALPHA } = require("../../scripts/constants");
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"

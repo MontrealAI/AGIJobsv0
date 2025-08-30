@@ -13,7 +13,7 @@ async function deploySystem() {
     await ethers.getSigners();
 
   const Token = await ethers.getContractFactory(
-    "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
+    "contracts/test/AGIALPHAToken.sol:AGIALPHAToken"
   );
   const token = await Token.deploy();
   const mint = ethers.parseUnits("1000", 18);

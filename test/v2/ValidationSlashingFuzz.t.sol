@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import {ValidationModule} from "../../contracts/v2/ValidationModule.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {IdentityRegistryToggle} from "../../contracts/v2/mocks/IdentityRegistryToggle.sol";
-import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
+import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IJobRegistry} from "../../contracts/v2/interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";

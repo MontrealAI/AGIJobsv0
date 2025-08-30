@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
-import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
+import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {PlatformRegistry} from "../../contracts/v2/PlatformRegistry.sol";
 import {JobRouter} from "../../contracts/v2/modules/JobRouter.sol";
