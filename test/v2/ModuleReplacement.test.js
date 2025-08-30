@@ -171,22 +171,22 @@ describe("Module replacement", function () {
 
     await expect(
       stake.connect(owner).setDisputeModule(await bad.getAddress())
-    ).to.be.revertedWith("Invalid dispute module");
+    ).to.be.revertedWithCustomError(stake, "InvalidDisputeModule");
 
     await expect(
       stake.connect(owner).setValidationModule(await bad.getAddress())
-    ).to.be.revertedWith("Invalid validation module");
+    ).to.be.revertedWithCustomError(stake, "InvalidValidationModule");
 
     await expect(
       stake
         .connect(owner)
         .setModules(await bad.getAddress(), await dispute.getAddress())
-    ).to.be.revertedWith("Invalid job registry");
+    ).to.be.revertedWithCustomError(stake, "InvalidJobRegistry");
 
     await expect(
       stake
         .connect(owner)
         .setModules(await registry.getAddress(), await bad.getAddress())
-    ).to.be.revertedWith("Invalid dispute module");
+    ).to.be.revertedWithCustomError(stake, "InvalidDisputeModule");
   });
 });

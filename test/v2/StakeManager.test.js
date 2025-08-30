@@ -31,7 +31,7 @@ describe("StakeManager", function () {
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await expect(
       stakeManager.connect(user).depositStake(0, 100)
-    ).to.be.revertedWith("registry");
+    ).to.be.revertedWithCustomError(stakeManager, "JobRegistryNotSet");
   });
 
   it("handles staking, job escrow and slashing", async () => {
@@ -121,7 +121,7 @@ describe("StakeManager", function () {
           10,
           ethers.ZeroAddress
         )
-    ).to.be.revertedWith("recipient");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidRecipient");
   });
 
   it("rejects unauthorized slashing and excessive amounts", async () => {
@@ -163,7 +163,7 @@ describe("StakeManager", function () {
           10,
           employer.address
         )
-    ).to.be.revertedWith("only job registry");
+    ).to.be.revertedWithCustomError(stakeManager, "OnlyJobRegistry");
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
@@ -181,7 +181,7 @@ describe("StakeManager", function () {
           200,
           employer.address
         )
-    ).to.be.revertedWith("stake");
+    ).to.be.revertedWithCustomError(stakeManager, "InsufficientStake");
   });
 
   it("reverts when treasury is zero during slashing", async () => {
@@ -239,7 +239,7 @@ describe("StakeManager", function () {
           100,
           employer.address
         )
-    ).to.be.revertedWith("treasury not set");
+    ).to.be.revertedWithCustomError(stakeManager, "TreasuryNotSet");
   });
 
   it("supports staking and slashing for all roles", async () => {
@@ -440,10 +440,10 @@ describe("StakeManager", function () {
     // deposits below min stake revert for both roles
     await expect(
       stakeManager.connect(user).depositStake(0, 50)
-    ).to.be.revertedWith("min stake");
+    ).to.be.revertedWithCustomError(stakeManager, "BelowMinimumStake");
     await expect(
       stakeManager.connect(user).depositStake(1, 50)
-    ).to.be.revertedWith("min stake");
+    ).to.be.revertedWithCustomError(stakeManager, "BelowMinimumStake");
 
     // deposits meeting min stake succeed
     await stakeManager.connect(user).depositStake(0, 100);
@@ -452,10 +452,10 @@ describe("StakeManager", function () {
     // partial withdrawals leaving below min stake revert
     await expect(
       stakeManager.connect(user).withdrawStake(0, 10)
-    ).to.be.revertedWith("min stake");
+    ).to.be.revertedWithCustomError(stakeManager, "BelowMinimumStake");
     await expect(
       stakeManager.connect(user).withdrawStake(1, 10)
-    ).to.be.revertedWith("min stake");
+    ).to.be.revertedWithCustomError(stakeManager, "BelowMinimumStake");
 
     // full withdrawals succeed
     await stakeManager.connect(user).withdrawStake(0, 100);
@@ -476,7 +476,7 @@ describe("StakeManager", function () {
   it("reverts when percentages do not sum to 100", async () => {
     await expect(
       stakeManager.connect(owner).setSlashingPercentages(60, 20)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidPercentage");
   });
 
   it("slashes full amount when percentages sum to 100", async () => {
@@ -513,19 +513,19 @@ describe("StakeManager", function () {
   it("reverts when slashing percentages sum over 100", async () => {
     await expect(
       stakeManager.connect(owner).setSlashingPercentages(60, 50)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidPercentage");
   });
 
   it("reverts when slashing percentages sum under 100", async () => {
     await expect(
       stakeManager.connect(owner).setSlashingPercentages(40, 50)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidPercentage");
   });
 
   it("reverts when individual slashing percentage exceeds 100", async () => {
     await expect(
       stakeManager.connect(owner).setSlashingPercentages(101, 0)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidPercentage");
   });
 
   it("routes full slashing to treasury when employer share is zero", async () => {
@@ -654,7 +654,7 @@ describe("StakeManager", function () {
 
     await expect(
       stakeManager.connect(user).withdrawStake(0, 1)
-    ).to.be.revertedWith("locked");
+    ).to.be.revertedWithCustomError(stakeManager, "InsufficientLocked");
 
     await time.increase(lockDuration);
 
@@ -805,7 +805,7 @@ describe("StakeManager", function () {
 
     await expect(
       stakeManager.connect(user).depositStake(0, 0)
-    ).to.be.revertedWith("amount");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidAmount");
   });
 
   it("allows withdrawal after slashing", async () => {

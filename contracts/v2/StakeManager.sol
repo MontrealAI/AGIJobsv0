@@ -17,6 +17,32 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 
+error InvalidPercentage();
+error InvalidTreasury();
+error InvalidDisputeModule();
+error InvalidValidationModule();
+error InvalidModule();
+error InvalidJobRegistry();
+error InvalidParams();
+error MaxAGITypesReached();
+error OnlyJobRegistry();
+error OnlyDisputeModule();
+error InsufficientStake();
+error InsufficientLocked();
+error BelowMinimumStake();
+error MaxStakeExceeded();
+error JobRegistryNotSet();
+error InvalidUser();
+error InvalidRole();
+error InvalidAmount();
+error InvalidRecipient();
+error TreasuryNotSet();
+error ValidationModuleNotSet();
+error NoValidators();
+error InsufficientEscrow();
+error AGITypeNotFound();
+error EtherNotAccepted();
+
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
 /// @dev Holds only the staking token and rejects direct ether so neither the
@@ -168,10 +194,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             employerSlashPct = 0;
             treasurySlashPct = 100;
         } else {
-            require(
-                _employerSlashPct + _treasurySlashPct == 100,
-                "pct"
-            );
+            if (_employerSlashPct + _treasurySlashPct != 100) {
+                revert InvalidPercentage();
+            }
             employerSlashPct = _employerSlashPct;
             treasurySlashPct = _treasurySlashPct;
         }
@@ -208,11 +233,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
     ) internal {
-        require(
-            _employerSlashPct <= 100 && _treasurySlashPct <= 100,
-            "pct"
-        );
-        require(_employerSlashPct + _treasurySlashPct == 100, "pct");
+        if (
+            _employerSlashPct > 100 || _treasurySlashPct > 100
+        ) revert InvalidPercentage();
+        if (_employerSlashPct + _treasurySlashPct != 100) revert InvalidPercentage();
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
@@ -241,7 +265,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update treasury recipient address
     /// @param _treasury address receiving treasury slash share
     function setTreasury(address _treasury) external onlyGovernance {
-        require(_treasury != address(0), "treasury");
+        if (_treasury == address(0)) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
@@ -257,7 +281,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external onlyGovernance {
-        require(IDisputeModule(module).version() == 2, "Invalid dispute module");
+        if (IDisputeModule(module).version() != 2) revert InvalidDisputeModule();
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
@@ -265,7 +289,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
     function setValidationModule(address module) external onlyGovernance {
-        require(IValidationModule(module).version() == 2, "Invalid validation module");
+        if (IValidationModule(module).version() != 2) revert InvalidValidationModule();
         validationModule = IValidationModule(module);
         emit ValidationModuleUpdated(module);
     }
@@ -278,9 +302,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         external
         onlyGovernance
     {
-        require(_jobRegistry != address(0) && _disputeModule != address(0), "module");
-        require(IJobRegistry(_jobRegistry).version() == 2, "Invalid job registry");
-        require(IDisputeModule(_disputeModule).version() == 2, "Invalid dispute module");
+        if (_jobRegistry == address(0) || _disputeModule == address(0)) revert InvalidModule();
+        if (IJobRegistry(_jobRegistry).version() != 2) revert InvalidJobRegistry();
+        if (IDisputeModule(_disputeModule).version() != 2) revert InvalidDisputeModule();
         jobRegistry = _jobRegistry;
         disputeModule = _disputeModule;
         emit JobRegistryUpdated(_jobRegistry);
@@ -301,7 +325,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
     function setFeePct(uint256 pct) external onlyGovernance {
-        require(pct + burnPct + validatorRewardPct <= 100, "pct");
+        if (pct + burnPct + validatorRewardPct > 100) revert InvalidPercentage();
         feePct = pct;
         emit FeePctUpdated(pct);
     }
@@ -316,7 +340,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update burn percentage applied on release
     /// @param pct percentage of released amount burned (0-100)
     function setBurnPct(uint256 pct) external onlyGovernance {
-        require(feePct + pct + validatorRewardPct <= 100, "pct");
+        if (feePct + pct + validatorRewardPct > 100) revert InvalidPercentage();
         burnPct = pct;
         emit BurnPctUpdated(pct);
     }
@@ -324,7 +348,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update validator reward percentage
     /// @param pct percentage of released amount allocated to validators (0-100)
     function setValidatorRewardPct(uint256 pct) external onlyGovernance {
-        require(feePct + burnPct + pct <= 100, "pct");
+        if (feePct + burnPct + pct > 100) revert InvalidPercentage();
         validatorRewardPct = pct;
         emit ValidatorRewardPctUpdated(pct);
     }
@@ -348,7 +372,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///      bonus and values above 100 increase the payout. Values below 100 can
     ///      be used to provide a discount.
     function addAGIType(address nft, uint256 payoutPct) external onlyGovernance {
-        require(nft != address(0) && payoutPct > 0, "params");
+        if (nft == address(0) || payoutPct == 0) revert InvalidParams();
         uint256 length = agiTypes.length;
         for (uint256 i; i < length; ) {
             if (agiTypes[i].nft == nft) {
@@ -360,7 +384,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 ++i;
             }
         }
-        require(length < maxAGITypes, "max types");
+        if (length >= maxAGITypes) revert MaxAGITypesReached();
         agiTypes.push(AGIType({nft: nft, payoutPct: payoutPct}));
         emit AGITypeUpdated(nft, payoutPct);
     }
@@ -379,7 +403,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 ++i;
             }
         }
-        revert("AGIType: not found");
+        revert AGITypeNotFound();
     }
 
     /// @notice Return all AGI types
@@ -417,12 +441,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice require caller to acknowledge current tax policy
 
     modifier onlyJobRegistry() {
-        require(msg.sender == jobRegistry, "only job registry");
+        if (msg.sender != jobRegistry) revert OnlyJobRegistry();
         _;
     }
 
     modifier onlyDisputeModule() {
-        require(msg.sender == disputeModule, "only dispute");
+        if (msg.sender != disputeModule) revert OnlyDisputeModule();
         _;
     }
 
@@ -439,7 +463,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             stakes[user][Role.Agent] +
             stakes[user][Role.Validator] +
             stakes[user][Role.Platform];
-        require(total >= lockedStakes[user] + amount, "stake");
+        if (total < lockedStakes[user] + amount) revert InsufficientStake();
         uint64 newUnlock = uint64(block.timestamp + lockTime);
         if (newUnlock > unlockTime[user]) {
             unlockTime[user] = newUnlock;
@@ -457,7 +481,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         whenNotPaused
     {
         uint256 locked = lockedStakes[user];
-        require(locked >= amount, "locked");
+        if (locked < amount) revert InsufficientLocked();
         lockedStakes[user] = locked - amount;
         if (lockedStakes[user] == 0) {
             unlockTime[user] = 0;
@@ -468,14 +492,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev internal stake deposit routine shared by deposit helpers
     function _deposit(address user, Role role, uint256 amount) internal {
         uint256 newStake = stakes[user][role] + amount;
-        require(newStake >= minStake, "min stake");
+        if (newStake < minStake) revert BelowMinimumStake();
         if (maxStakePerAddress > 0) {
             uint256 total =
                 stakes[user][Role.Agent] +
                 stakes[user][Role.Validator] +
                 stakes[user][Role.Platform] +
                 amount;
-            require(total <= maxStakePerAddress, "max stake");
+            if (total > maxStakePerAddress) revert MaxStakeExceeded();
         }
         stakes[user][role] = newStake;
         totalStakes[role] += amount;
@@ -494,7 +518,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function _policyFor(address account) internal view returns (ITaxPolicy) {
         if (account != owner()) {
             address registry = jobRegistry;
-            require(registry != address(0), "job registry");
+            if (registry == address(0)) revert JobRegistryNotSet();
             return IJobRegistryTax(registry).taxPolicy();
         }
         return ITaxPolicy(address(0));
@@ -521,9 +545,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         )
         nonReentrant
     {
-        require(user != address(0), "user");
-        require(role <= Role.Platform, "role");
-        require(amount > 0, "amount");
+        if (user == address(0)) revert InvalidUser();
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
 
         _deposit(user, role, amount);
     }
@@ -543,9 +567,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         )
         nonReentrant
     {
-        require(role <= Role.Platform, "role");
-        require(amount > 0, "amount");
-        require(jobRegistry != address(0), "registry");
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
+        if (jobRegistry == address(0)) revert JobRegistryNotSet();
         _deposit(msg.sender, role, amount);
     }
 
@@ -559,10 +583,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      */
     function acknowledgeAndDeposit(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
-        require(registry != address(0), "registry");
+        if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(msg.sender);
-        require(role <= Role.Platform, "role");
-        require(amount > 0, "amount");
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
         _deposit(msg.sender, role, amount);
     }
 
@@ -581,22 +605,22 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         Role role,
         uint256 amount
     ) external whenNotPaused nonReentrant {
-        require(user != address(0), "user");
+        if (user == address(0)) revert InvalidUser();
         address registry = jobRegistry;
-        require(registry != address(0), "registry");
+        if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(user);
-        require(role <= Role.Platform, "role");
-        require(amount > 0, "amount");
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
         _deposit(user, role, amount);
     }
 
     /// @dev internal stake withdrawal routine shared by withdraw helpers
     function _withdraw(address user, Role role, uint256 amount) internal {
-        require(role <= Role.Platform, "role");
+        if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
-        require(staked >= amount, "stake");
+        if (staked < amount) revert InsufficientStake();
         uint256 newStake = staked - amount;
-        require(newStake == 0 || newStake >= minStake, "min stake");
+        if (newStake != 0 && newStake < minStake) revert BelowMinimumStake();
 
         uint256 locked = lockedStakes[user];
         uint64 unlock = unlockTime[user];
@@ -607,7 +631,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 remaining = totalStakeUser - amount;
         if (locked > 0) {
             if (block.timestamp < unlock) {
-                require(remaining >= locked, "locked");
+                if (remaining < locked) revert InsufficientLocked();
             } else {
                 lockedStakes[user] = 0;
                 unlockTime[user] = 0;
@@ -653,7 +677,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      */
     function acknowledgeAndWithdraw(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
-        require(registry != address(0), "registry");
+        if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(msg.sender);
         _withdraw(msg.sender, role, amount);
     }
@@ -673,9 +697,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         Role role,
         uint256 amount
     ) external onlyGovernance whenNotPaused nonReentrant {
-        require(user != address(0), "user");
+        if (user == address(0)) revert InvalidUser();
         address registry = jobRegistry;
-        require(registry != address(0), "registry");
+        if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(user);
         _withdraw(user, role, amount);
     }
@@ -727,7 +751,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 payout = modified - feeAmount - burnAmount;
         uint256 total = payout + feeAmount + burnAmount;
         uint256 escrow = jobEscrows[jobId];
-        require(escrow >= total, "escrow");
+        if (escrow < total) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - total;
 
         if (feeAmount > 0) {
@@ -806,7 +830,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 payout = modified - burnAmount;
         uint256 total = payout + fee + burnAmount;
         uint256 escrow = jobEscrows[jobId];
-        require(escrow >= total, "escrow");
+        if (escrow < total) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - total;
         if (payout > 0) {
             token.safeTransfer(agent, payout);
@@ -840,12 +864,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     {
         if (amount == 0) return;
         address vm = address(validationModule);
-        require(vm != address(0), "validation module");
+        if (vm == address(0)) revert ValidationModuleNotSet();
         address[] memory vals = validationModule.validators(uint256(jobId));
         uint256 count = vals.length;
-        require(count > 0, "validators");
+        if (count == 0) revert NoValidators();
         uint256 escrow = jobEscrows[jobId];
-        require(escrow >= amount, "escrow");
+        if (escrow < amount) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - amount;
         uint256 perValidator = amount / count;
         uint256 remainder = amount - perValidator * count;
@@ -904,13 +928,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 amount,
         address recipient
     ) internal {
-        require(role <= Role.Platform, "role");
+        if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
-        require(staked >= amount, "stake");
-        require(
-            employerSlashPct + treasurySlashPct == 100,
-            "pct"
-        );
+        if (staked < amount) revert InsufficientStake();
+        if (employerSlashPct + treasurySlashPct != 100) revert InvalidPercentage();
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
@@ -931,7 +952,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
 
         if (employerShare > 0) {
-            require(recipient != address(0), "recipient");
+            if (recipient == address(0)) revert InvalidRecipient();
             if (recipient == address(feePool) && address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), employerShare);
                 feePool.depositFee(employerShare);
@@ -941,7 +962,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
         if (treasuryShare > 0) {
-            require(treasury != address(0), "treasury not set");
+            if (treasury == address(0)) revert TreasuryNotSet();
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
@@ -1010,12 +1031,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @dev Reject direct ETH transfers to keep the contract tax neutral.
     receive() external payable {
-        revert("StakeManager: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("StakeManager: no ether");
+        revert EtherNotAccepted();
     }
 }
 

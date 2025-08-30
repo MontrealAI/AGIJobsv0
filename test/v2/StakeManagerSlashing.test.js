@@ -25,6 +25,6 @@ describe("StakeManager slashing configuration", function () {
   it("rejects percentages that do not sum to 100", async () => {
     await expect(
       stakeManager.setSlashingPercentages(60, 30)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidPercentage");
   });
 });

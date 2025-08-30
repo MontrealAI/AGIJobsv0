@@ -9,6 +9,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {AGIALPHA} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
+error InvalidPercentage();
+error NotStakeManager();
+error ZeroAmount();
+error EtherNotAccepted();
+
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
 /// @dev All token amounts use 18 decimals. Uses an accumulator scaled by 1e12
@@ -70,7 +75,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         address _treasury
     ) Ownable(msg.sender) {
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
-        require(pct <= 100, "pct");
+        if (pct > 100) revert InvalidPercentage();
 
         if (address(_stakeManager) != address(0)) {
             stakeManager = _stakeManager;
@@ -89,7 +94,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     modifier onlyStakeManager() {
-        require(msg.sender == address(stakeManager), "only stake manager");
+        if (msg.sender != address(stakeManager)) revert NotStakeManager();
         _;
     }
 
@@ -100,7 +105,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     ///      registry itself never holds custody of user funds.
     /// @param amount fee amount with 18 decimals
     function depositFee(uint256 amount) external onlyStakeManager nonReentrant {
-        require(amount > 0, "amount");
+        if (amount == 0) revert ZeroAmount();
         pendingFees += amount;
         emit FeeDeposited(msg.sender, amount);
     }
@@ -108,7 +113,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice Contribute tokens directly to the reward pool.
     /// @param amount token amount with 18 decimals.
     function contribute(uint256 amount) external nonReentrant {
-        require(amount > 0, "amount");
+        if (amount == 0) revert ZeroAmount();
         token.safeTransferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
         emit RewardPoolContribution(msg.sender, amount);
@@ -207,7 +212,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice update percentage of each fee to burn
     /// @param pct percentage of fees burned (0-100)
     function setBurnPct(uint256 pct) external onlyOwner {
-        require(pct <= 100, "pct");
+        if (pct > 100) revert InvalidPercentage();
         burnPct = pct;
         emit BurnPctUpdated(pct);
     }
@@ -234,12 +239,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     /// @dev Reject direct ETH transfers to keep the contract tax neutral.
     receive() external payable {
-        revert("FeePool: no ether");
+        revert EtherNotAccepted();
     }
 
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
-        revert("FeePool: no ether");
+        revert EtherNotAccepted();
     }
 }
 
