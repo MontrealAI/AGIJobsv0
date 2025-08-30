@@ -3,11 +3,12 @@ pragma solidity ^0.8.25;
 
 import {Governable} from "./Governable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -162,6 +163,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address _disputeModule,
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
+        require(
+            IERC20Metadata(AGIALPHA).decimals() == AGIALPHA_DECIMALS,
+            "decimals"
+        );
 
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
