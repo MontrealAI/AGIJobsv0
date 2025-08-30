@@ -1,5 +1,5 @@
 const { ethers, run } = require("hardhat");
-const { AGIALPHA } = require("../constants");
+const { AGIALPHA, AGIALPHA_DECIMALS } = require("../constants");
 
 // rudimentary CLI flag parser
 function parseArgs() {
