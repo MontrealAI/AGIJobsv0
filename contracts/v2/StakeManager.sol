@@ -124,8 +124,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
+    /// @notice Upper limit on the number of AGI types to prevent excessive gas usage
+    uint256 public constant MAX_AGI_TYPES_CAP = 50;
+
     /// @notice Maximum allowed AGI types to avoid excessive gas
-    uint256 public maxAGITypes = 50;
+    uint256 public maxAGITypes = MAX_AGI_TYPES_CAP;
 
     struct AGIType {
         address nft;
@@ -362,6 +365,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice Update the maximum number of AGI types allowed
     function setMaxAGITypes(uint256 newMax) external onlyGovernance {
+        require(newMax <= MAX_AGI_TYPES_CAP, "maxAGITypes");
         uint256 old = maxAGITypes;
         maxAGITypes = newMax;
         emit MaxAGITypesUpdated(old, newMax);
