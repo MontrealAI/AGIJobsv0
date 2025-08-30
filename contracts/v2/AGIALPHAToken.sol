@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {AGIALPHA_DECIMALS} from "./Constants.sol";
 
 /// @title AGIALPHAToken
 /// @notice ERC20 token with 18 decimals used across AGI Jobs v2.
@@ -11,7 +12,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 ///      contract holds no special tax logic and never accepts ether to
 ///      preserve tax neutrality for the owner.
 contract AGIALPHAToken is ERC20, Ownable {
-    uint8 private constant DECIMALS = 18;
 
     /// @notice tracks addresses that acknowledged token terms
     mapping(address => bool) private _acknowledged;
@@ -24,8 +24,9 @@ contract AGIALPHAToken is ERC20, Ownable {
     }
 
     /// @notice Returns token decimals (18).
+    /// @dev Uses shared constant to guarantee consistency across contracts.
     function decimals() public pure override returns (uint8) {
-        return DECIMALS;
+        return AGIALPHA_DECIMALS;
     }
 
     // ---------------------------------------------------------------------
