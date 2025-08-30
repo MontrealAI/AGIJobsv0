@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
-// @deprecated Legacy contract for v0; use modules under contracts/v2 instead.
+// @dev Test utility token used to provide an ERC20 code stub for AGIALPHA
+// in Hardhat tests. This mock contract deploys a basic ERC20 and allows
+// minting additional tokens during tests.
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
