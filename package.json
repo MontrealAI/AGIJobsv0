@@ -4,7 +4,7 @@
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)",
   "main": "index.js",
   "scripts": {
-    "compile": "npx hardhat compile",
+    "compile": "node scripts/generate-constants.js && npx hardhat compile",
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint .",
     "test": "npx hardhat test",
     "gateway": "node agent-gateway/index.js"

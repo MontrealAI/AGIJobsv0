@@ -3,7 +3,11 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The **v2** release under `contracts/v2` is the only supported version. Deprecated v0 artifacts now live in `contracts/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
 
-All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical token address lives in [`scripts/constants.ts`](scripts/constants.ts) and is imported by all deployment utilities to avoid duplication.
+All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical address and decimals live in [`config/agialpha.json`](config/agialpha.json) and feed both Solidity and TypeScript consumers.
+
+### AGIALPHA configuration
+
+Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol`.
 
 ## Migrating from legacy
 
