@@ -52,7 +52,6 @@ async function main() {
   const treasury =
     typeof args.treasury === "string" ? args.treasury : governance;
   const stake = await Stake.deploy(
-    AGIALPHA,
     0,
     0,
     0,
@@ -140,7 +139,6 @@ async function main() {
   );
   const burnPct = typeof args.burnPct === "string" ? parseInt(args.burnPct) : 0;
   const feePool = await FeePool.deploy(
-    AGIALPHA,
     await stake.getAddress(),
     burnPct,
     treasury
@@ -343,7 +341,6 @@ async function main() {
   );
 
   await verify(await stake.getAddress(), [
-    AGIALPHA,
     0,
     0,
     0,
@@ -392,10 +389,9 @@ async function main() {
     "All taxes on participants; contract and owner exempt",
   ]);
   await verify(await feePool.getAddress(), [
-    AGIALPHA,
     await stake.getAddress(),
-    2,
-    governance,
+    burnPct,
+    treasury,
   ]);
   await verify(await platformRegistry.getAddress(), [
     await stake.getAddress(),
