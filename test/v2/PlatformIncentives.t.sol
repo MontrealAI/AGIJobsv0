@@ -13,7 +13,7 @@ import {IPlatformRegistry} from "../../contracts/v2/interfaces/IPlatformRegistry
 import {IReputationEngine} from "../../contracts/v2/interfaces/IReputationEngine.sol";
 import {FeePool} from "../../contracts/v2/FeePool.sol";
 import {PlatformIncentives} from "../../contracts/v2/PlatformIncentives.sol";
-import {MockJobRegistry, MockReputationEngine} from "../../contracts/legacy/MockV2.sol";
+import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 
 contract PlatformIncentivesTest is Test {
@@ -24,21 +24,19 @@ contract PlatformIncentivesTest is Test {
     FeePool feePool;
     PlatformIncentives incentives;
     MockJobRegistry jobRegistry;
-    MockReputationEngine rep;
 
     address operator = address(0xBEEF);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
-        token = AGIALPHAToken(AGIALPHA);
+        token = AGIALPHAToken(payable(AGIALPHA));
         jobRegistry = new MockJobRegistry();
         jobRegistry.setTaxPolicyVersion(1);
         stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
-        rep = new MockReputationEngine();
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
-            IReputationEngine(address(rep)),
+            IReputationEngine(address(0)),
             1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
