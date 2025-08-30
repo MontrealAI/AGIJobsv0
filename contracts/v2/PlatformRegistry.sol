@@ -6,6 +6,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
+import {TOKEN_SCALE} from "./Constants.sol";
 
 interface IReputationEngine {
     function reputation(address user) external view returns (uint256);
@@ -20,7 +21,7 @@ interface IReputationEngine {
 /// @dev Holds no tokens and rejects ether to remain tax neutral. All values
 ///      use 18 decimals via the `StakeManager`.
 contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
-    uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = 1e18;
+    uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = TOKEN_SCALE;
 
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
@@ -238,7 +239,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         uint256 rep = reputationEngine.reputation(operator);
         uint256 stakeW = reputationEngine.stakeWeight();
         uint256 repW = reputationEngine.reputationWeight();
-        return ((stake * stakeW) + (rep * repW)) / 1e18;
+        return ((stake * stakeW) + (rep * repW)) / TOKEN_SCALE;
     }
 
     // ---------------------------------------------------------------

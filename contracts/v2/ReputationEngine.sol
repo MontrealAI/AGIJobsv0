@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {TOKEN_SCALE} from "./Constants.sol";
 
 /// @title ReputationEngine
 /// @notice Tracks reputation scores with blacklist enforcement.
@@ -19,8 +20,8 @@ contract ReputationEngine is Ownable, Pausable {
     mapping(address => bool) public callers;
     uint256 public premiumThreshold;
     IStakeManager public stakeManager;
-    uint256 public stakeWeight = 1e18;
-    uint256 public reputationWeight = 1e18;
+    uint256 public stakeWeight = TOKEN_SCALE;
+    uint256 public reputationWeight = TOKEN_SCALE;
     uint256 public validationRewardPercentage = 8;
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
@@ -67,8 +68,8 @@ contract ReputationEngine is Ownable, Pausable {
     }
 
     /// @notice Configure weighting factors for stake and reputation.
-    /// @param stakeW Weight applied to stake (scaled by 1e18)
-    /// @param repW Weight applied to reputation (scaled by 1e18)
+    /// @param stakeW Weight applied to stake (scaled by TOKEN_SCALE)
+    /// @param repW Weight applied to reputation (scaled by TOKEN_SCALE)
     function setScoringWeights(uint256 stakeW, uint256 repW) external onlyOwner {
         stakeWeight = stakeW;
         reputationWeight = repW;
@@ -218,7 +219,7 @@ contract ReputationEngine is Ownable, Pausable {
 
     /// @notice Compute reputation gain based on payout and duration.
     function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
-        uint256 scaledPayout = payout / 1e18;
+        uint256 scaledPayout = payout / TOKEN_SCALE;
         uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
         return log2(1 + payoutPoints * 1e6) + duration / 10000;
     }
@@ -258,10 +259,10 @@ contract ReputationEngine is Ownable, Pausable {
     /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = current + points;
-        uint256 numerator = newReputation * newReputation * 1e18;
+        uint256 numerator = newReputation * newReputation * TOKEN_SCALE;
         uint256 denominator = maxReputation * maxReputation;
-        uint256 factor = 1e18 + (numerator / denominator);
-        uint256 diminishedReputation = (newReputation * 1e18) / factor;
+        uint256 factor = TOKEN_SCALE + (numerator / denominator);
+        uint256 diminishedReputation = (newReputation * TOKEN_SCALE) / factor;
         if (diminishedReputation > maxReputation) {
             return maxReputation;
         }
@@ -277,7 +278,7 @@ contract ReputationEngine is Ownable, Pausable {
             stake = stakeManager.stakeOf(operator, IStakeManager.Role.Agent);
         }
         uint256 rep = reputation[operator];
-        return ((stake * stakeWeight) + (rep * reputationWeight)) / 1e18;
+        return ((stake * stakeWeight) + (rep * reputationWeight)) / TOKEN_SCALE;
     }
 
     /// @notice Confirms the contract and its owner cannot incur tax obligations.

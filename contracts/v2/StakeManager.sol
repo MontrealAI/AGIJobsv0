@@ -7,7 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, TOKEN_SCALE} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -23,7 +23,7 @@ import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 ///      contract nor the owner ever custodies funds that could create tax
 ///      liabilities. All taxes remain the responsibility of employers, agents
 ///      and validators. All token amounts use 18 decimals where one token is
-///      represented by `1e18` base units.
+///      represented by `TOKEN_SCALE` base units.
 contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     using SafeERC20 for IERC20;
 
@@ -38,7 +38,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice default minimum stake when constructor param is zero
-    uint256 public constant DEFAULT_MIN_STAKE = 1e18;
+    uint256 public constant DEFAULT_MIN_STAKE = TOKEN_SCALE;
 
     /// @notice canonical burn address
     address public constant BURN_ADDRESS =

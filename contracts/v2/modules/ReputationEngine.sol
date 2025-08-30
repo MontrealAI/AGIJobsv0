@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {TOKEN_SCALE} from "../Constants.sol";
 
 /// @title ReputationEngine (module)
 /// @notice Tracks reputation for agents and validators with premium gating
@@ -160,7 +161,7 @@ contract ReputationEngine is Ownable {
 
     /// @notice Compute reputation gain based on payout and duration.
     function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
-        uint256 scaledPayout = payout / 1e18;
+        uint256 scaledPayout = payout / TOKEN_SCALE;
         uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
         return log2(1 + payoutPoints * 1e6) + duration / 10000;
     }
@@ -198,10 +199,10 @@ contract ReputationEngine is Ownable {
     /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = current + points;
-        uint256 numerator = newReputation * newReputation * 1e18;
+        uint256 numerator = newReputation * newReputation * TOKEN_SCALE;
         uint256 denominator = maxReputation * maxReputation;
-        uint256 factor = 1e18 + (numerator / denominator);
-        uint256 diminishedReputation = (newReputation * 1e18) / factor;
+        uint256 factor = TOKEN_SCALE + (numerator / denominator);
+        uint256 diminishedReputation = (newReputation * TOKEN_SCALE) / factor;
         if (diminishedReputation > maxReputation) {
             return maxReputation;
         }

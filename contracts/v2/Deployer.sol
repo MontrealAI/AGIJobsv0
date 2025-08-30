@@ -32,6 +32,7 @@ import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.sol";
+import {TOKEN_SCALE} from "./Constants.sol";
 
 /// @title Deployer
 /// @notice One shot helper that deploys and wires the core module set.
@@ -44,7 +45,7 @@ contract Deployer is Ownable {
 
     /// @notice Economic configuration applied during deployment.
     /// @dev Zero values use each module's baked-in default such as a 5% fee,
-    ///      5% burn, 1-day commit/reveal windows and a 1e18 minimum stake.
+    ///      5% burn, 1-day commit/reveal windows and a TOKEN_SCALE minimum stake.
     struct EconParams {
         uint256 feePct; // protocol fee percentage for JobRegistry
         uint256 burnPct; // portion of fees burned by FeePool
@@ -156,7 +157,7 @@ contract Deployer is Ownable {
     }
 
     /// @notice Deploy and wire all modules using module defaults.
-    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e18 minimum stake.
+    /// @dev Mirrors module constants: 5% fee, 5% burn and a TOKEN_SCALE minimum stake.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -192,7 +193,7 @@ contract Deployer is Ownable {
     }
 
     /// @notice Deploy and wire modules with defaults and no TaxPolicy.
-    /// @dev Mirrors module constants: 5% fee, 5% burn and a 1e18 minimum stake.
+    /// @dev Mirrors module constants: 5% fee, 5% burn and a TOKEN_SCALE minimum stake.
     /// @return stakeManager Address of the StakeManager
     /// @return jobRegistry Address of the JobRegistry
     /// @return validationModule Address of the ValidationModule
@@ -255,7 +256,7 @@ contract Deployer is Ownable {
             econ.commitWindow == 0 ? 1 days : econ.commitWindow;
         uint256 revealWindow =
             econ.revealWindow == 0 ? 1 days : econ.revealWindow;
-        uint256 minStake = econ.minStake == 0 ? 1e18 : econ.minStake;
+        uint256 minStake = econ.minStake == 0 ? TOKEN_SCALE : econ.minStake;
         uint256 employerSlashPct = econ.employerSlashPct;
         uint256 treasurySlashPct = econ.treasurySlashPct;
         if (employerSlashPct + treasurySlashPct == 0) {
