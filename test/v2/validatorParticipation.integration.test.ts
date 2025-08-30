@@ -11,7 +11,7 @@ enum Role {
 async function deployFullSystem() {
   const [owner, employer, agent, v1, v2, moderator] = await ethers.getSigners();
 
-  const Token = await ethers.getContractFactory("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken");
+  const Token = await ethers.getContractFactory("contracts/test/AGIALPHAToken.sol:AGIALPHAToken");
   const token = await Token.deploy();
   const mint = ethers.parseUnits("1000", 18);
   await token.mint(employer.address, mint);

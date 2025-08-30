@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AGIALPHA_DECIMALS} from "./Constants.sol";
+import {AGIALPHA_DECIMALS} from "../v2/Constants.sol";
 
 /// @title AGIALPHAToken
 /// @notice ERC20 token with 18 decimals used across AGI Jobs v2.

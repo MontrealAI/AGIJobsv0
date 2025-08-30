@@ -15,7 +15,7 @@ describe("Platform reward flow", function () {
   beforeEach(async () => {
     [owner, alice, bob, employer, treasury] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(alice.address, 1000n * TOKEN);
     await token.mint(bob.address, 1000n * TOKEN);
     await token.mint(employer.address, 1000n * TOKEN);

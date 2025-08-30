@@ -18,7 +18,7 @@ resolver, emitting `OwnershipVerified` on success.
 ## Module Responsibilities & Addresses
 | Module | Responsibility | Address |
 | --- | --- | --- |
-| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
+| `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking (external mainnet contract) | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
 | StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | `TBD` |
 | ReputationEngine | Tracks reputation scores and blacklist status | `TBD` |
 | IdentityRegistry | Verifies ENS subdomains and Merkle allowlists | `TBD` |
@@ -50,7 +50,7 @@ To customise the token, protocol fees or ENS roots edit the script to call
 The script prints module addresses and verifies source on Etherscan.
 
 ## Step-by-Step Deployment
-1. **Deploy `$AGIALPHAToken`** (18 decimals) if it does not already exist.
+1. **Ensure `$AGIALPHA` token exists** – use the external address above or deploy [`contracts/test/AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) on local networks for testing.
 2. **Deploy `StakeManager`** pointing at the token and configuring `_minStake`, `_employerSlashPct`, `_treasurySlashPct` and `_treasury`. Leave `_jobRegistry` and `_disputeModule` as `0`.
 3. **Deploy `ReputationEngine`** passing the `StakeManager` address.
 4. **Deploy `IdentityRegistry`** with the ENS registry, NameWrapper, `ReputationEngine` address and the namehashes for `agent.agi.eth` and `club.agi.eth`.

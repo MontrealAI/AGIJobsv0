@@ -1,6 +1,6 @@
 # Deployment Guide: AGIJobs v2 with $AGIALPHA
 
-This guide shows how to deploy the modular v2 contracts using the helper script at `scripts/v2/deployDefaults.ts`. The script spins up the full stack with the 18‑decimal **$AGIALPHA** token and wires modules automatically.
+This guide shows how to deploy the modular v2 contracts using the helper script at `scripts/v2/deployDefaults.ts`. The script spins up the full stack assuming the 18‑decimal **$AGIALPHA** token already exists. For local networks without the canonical token, deploy [`contracts/test/AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) and supply its address to the script.
 
 ## 1. Run the deployment script
 

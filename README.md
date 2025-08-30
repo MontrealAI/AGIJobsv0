@@ -3,7 +3,7 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The **v2** release under `contracts/v2` is the only supported version. Deprecated v0 artifacts now live in `contracts/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
 
-All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical address and decimals live in [`config/agialpha.json`](config/agialpha.json) and feed both Solidity and TypeScript consumers.
+All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical token is deployed externally; this repository ships [`contracts/test/AGIALPHAToken.sol`](contracts/test/AGIALPHAToken.sol) for local testing only. Token address and decimal configuration live in [`config/agialpha.json`](config/agialpha.json) and feed both Solidity and TypeScript consumers.
 
 ### AGIALPHA configuration
 
@@ -44,7 +44,7 @@ Record each address during deployment. The defaults below assume the 18‑decima
 
 | Module | Owner‑only setters |
 | --- | --- |
-| [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol) | `mint`, `burn` |
+| [`AGIALPHAToken`](contracts/test/AGIALPHAToken.sol) *(local testing only)* | `mint`, `burn` |
 | [`StakeManager`](contracts/v2/StakeManager.sol) | `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
 | [`JobRegistry`](contracts/v2/JobRegistry.sol) | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot` |
 | [`ValidationModule`](contracts/v2/ValidationModule.sol) | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry` |
@@ -108,7 +108,7 @@ The contract owner can retune live systems from block‑explorer **Write** tabs:
 
 The v2 release decomposes the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system. Deploy modules in the following order:
 
-1. [`AGIALPHAToken`](contracts/v2/AGIALPHAToken.sol)
+1. `$AGIALPHA` token – external mainnet contract (use [`contracts/test/AGIALPHAToken.sol`](contracts/test/AGIALPHAToken.sol) on local networks)
 2. [`StakeManager`](contracts/v2/StakeManager.sol)
 3. [`ReputationEngine`](contracts/v2/ReputationEngine.sol)
 4. [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol)

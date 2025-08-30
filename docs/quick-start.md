@@ -2,7 +2,9 @@
 
 This guide demonstrates the basic lifecycle of a job on AGIJobs using
 `ethers.js` scripts.  The examples assume the core contracts are already
-deployed and that you have the contract addresses available.
+deployed and that you have the contract addresses available. The `$AGIALPHA`
+token itself is external; the repository's [`AGIALPHAToken`](../contracts/test/AGIALPHAToken.sol)
+contract is provided only for local testing.
 
 ## 1. Post a Job
 Employers escrow the reward and publish job metadata.

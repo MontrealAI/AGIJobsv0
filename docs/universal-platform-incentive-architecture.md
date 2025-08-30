@@ -13,7 +13,7 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 ## Core Modules
 
-- **AGIALPHAToken** – 18‑decimal ERC‑20 used for staking, rewards and dispute bonds. Owner can mint or burn but cannot swap the token used across the system.
+- **AGIALPHAToken** – 18‑decimal ERC‑20 used for staking, rewards and dispute bonds. The production `$AGIALPHA` token lives outside this repository; [`AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) is provided only for local testing.
 - **StakeManager** – records stakes for all roles, escrows job funds and routes protocol fees to the `FeePool`. Owner setters allow changing the minimum stake, slashing percentages and treasury.
 - **PlatformRegistry** – lists operators and computes a routing score derived from stake and reputation. The owner can blacklist addresses or replace the reputation engine.
 - **JobRouter** – selects an operator for new jobs using `PlatformRegistry` scores. Deterministic randomness mixes caller‑supplied seeds with blockhashes; no external oracle is required.

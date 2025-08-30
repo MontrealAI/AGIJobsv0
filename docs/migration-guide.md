@@ -13,7 +13,7 @@ All legacy AGIJobManager contracts have been moved to the `legacy/` directory. T
 | `DisputeModule.sol`, `DisputeResolution.sol` | `contracts/v2/modules/DisputeModule.sol` |
 | `ReputationEngine.sol` | `contracts/v2/ReputationEngine.sol` |
 | `CertificateNFT.sol` | `contracts/v2/CertificateNFT.sol` |
-| `AGIALPHAToken.sol` | `contracts/v2/AGIALPHAToken.sol` |
+| `AGIALPHAToken.sol` | `contracts/test/AGIALPHAToken.sol` (local testing only) |
 
 For function‑level differences see:
 

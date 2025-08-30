@@ -8,7 +8,7 @@ import {IdentityRegistryToggle} from "../../contracts/v2/mocks/IdentityRegistryT
 import {IJobRegistry} from "../../contracts/v2/interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
-import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
+import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ValidatorSelectionFuzz is Test {

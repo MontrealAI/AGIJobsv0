@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
-import {AGIALPHAToken} from "../../contracts/v2/AGIALPHAToken.sol";
+import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract StakeManagerFuzz is Test {

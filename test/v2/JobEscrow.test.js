@@ -10,7 +10,7 @@ describe("JobEscrow", function () {
     [owner, employer, operator] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(employer.address, 1000000);
 
     // Mock RoutingModule that always returns operator

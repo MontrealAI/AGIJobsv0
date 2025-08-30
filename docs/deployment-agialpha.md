@@ -1,6 +1,6 @@
 # Deployment Guide: AGIJobs v2 with $AGIALPHA
 
-This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 18‑decimal **$AGIALPHA** token. By default this token handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
+This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 18‑decimal **$AGIALPHA** token. The canonical token is deployed separately on mainnet; this repository includes [`contracts/test/AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) solely for local testing. By default $AGIALPHA handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
 
 ## 1. Prerequisites
 
@@ -16,7 +16,7 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 
 Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Addresses for dependent modules may be passed at deployment or left as `0` and wired later. Parameters may be left as `0` to accept the defaults shown below:
 
-1. `AGIALPHAToken()` – after deployment, call `mint(to, amount)` to create the initial supply.
+1. Use the existing `$AGIALPHA` token. Deploy [`AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) only on local networks and call `mint(to, amount)` to create a test supply.
 2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury.
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.

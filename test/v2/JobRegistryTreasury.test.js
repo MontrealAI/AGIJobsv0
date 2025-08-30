@@ -9,7 +9,7 @@ describe("JobRegistry Treasury", function () {
   beforeEach(async function () {
     [owner, treasury] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
