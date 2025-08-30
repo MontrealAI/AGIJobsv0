@@ -11,6 +11,7 @@ import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
+import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 contract ValidationSlashingFuzz is Test {
     ValidationModule validation;
@@ -20,8 +21,10 @@ contract ValidationSlashingFuzz is Test {
     MockJobRegistry jobRegistry;
 
     function setUp() public {
-        token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e18, 0, 100, address(this), address(0), address(0));
+        AGIALPHAToken impl = new AGIALPHAToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = AGIALPHAToken(AGIALPHA);
+        stake = new StakeManager(1e18, 0, 100, address(this), address(0), address(0), address(this));
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
         identity = new IdentityRegistryToggle();

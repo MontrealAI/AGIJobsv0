@@ -5,12 +5,14 @@ import "contracts/v2/FeePool.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/legacy/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {AGIALPHA} from "contracts/v2/Constants.sol";
 
 // minimal cheatcode interface
 interface Vm {
     function prank(address) external;
     function startPrank(address) external;
     function stopPrank() external;
+    function etch(address, bytes memory) external;
 }
 
 contract TestToken is ERC20 {
@@ -32,49 +34,50 @@ contract FeePoolTest {
     uint256 constant TOKEN = 1e18;
 
     function setUp() public {
-        token = new TestToken();
+        TestToken impl = new TestToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = TestToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(token, stakeManager, 0, address(this));
-        feePool.setRewardRole(IStakeManager.Role.Validator);
-        stakeManager.setStake(alice, IStakeManager.Role.Platform, 1_000_000 * TOKEN);
-        stakeManager.setStake(bob, IStakeManager.Role.Platform, 2_000_000 * TOKEN);
+        feePool = new FeePool(stakeManager, 0, address(this));
+        stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
+        stakeManager.setStake(bob, IStakeManager.Role.Platform, 2 * TOKEN);
     }
 
     function testDepositFee() public {
         setUp();
-        token.mint(address(feePool), 1_000_000 * TOKEN);
+        token.mint(address(feePool), 1 * TOKEN);
         vm.prank(address(stakeManager));
-        feePool.depositFee(1_000_000 * TOKEN);
+        feePool.depositFee(1 * TOKEN);
         feePool.distributeFees();
-        uint256 expected = 1_000_000 * feePool.ACCUMULATOR_SCALE() / 3_000_000;
+        uint256 expected = feePool.ACCUMULATOR_SCALE() / 3;
         require(feePool.cumulativePerToken() == expected, "acc");
-        require(token.balanceOf(address(feePool)) == 1_000_000 * TOKEN, "bal");
+        require(token.balanceOf(address(feePool)) == 1 * TOKEN, "bal");
     }
 
     function testContribute() public {
         setUp();
-        token.mint(alice, 500_000 * TOKEN);
+        token.mint(alice, TOKEN / 2);
         vm.startPrank(alice);
-        token.approve(address(feePool), 500_000 * TOKEN);
-        feePool.contribute(500_000 * TOKEN);
+        token.approve(address(feePool), TOKEN / 2);
+        feePool.contribute(TOKEN / 2);
         vm.stopPrank();
-        require(token.balanceOf(address(feePool)) == 500_000 * TOKEN, "pool bal");
-        require(feePool.pendingFees() == 500_000 * TOKEN, "pending");
+        require(token.balanceOf(address(feePool)) == TOKEN / 2, "pool bal");
+        require(feePool.pendingFees() == TOKEN / 2, "pending");
     }
 
     function testClaimRewards() public {
         setUp();
-        token.mint(address(feePool), 1_500_000 * TOKEN);
+        token.mint(address(feePool), 3 * TOKEN);
         vm.prank(address(stakeManager));
-        feePool.depositFee(1_500_000 * TOKEN);
+        feePool.depositFee(3 * TOKEN);
         feePool.distributeFees();
         vm.prank(alice);
         feePool.claimRewards();
         vm.prank(bob);
         feePool.claimRewards();
-        uint256 aliceExpected = (1_500_000 * TOKEN) * (1_000_000 * TOKEN) / (3_000_000 * TOKEN);
-        uint256 bobExpected = (1_500_000 * TOKEN) * (2_000_000 * TOKEN) / (3_000_000 * TOKEN);
+        uint256 aliceExpected = TOKEN;
+        uint256 bobExpected = 2 * TOKEN;
         require(token.balanceOf(alice) == aliceExpected, "alice claim");
         require(token.balanceOf(bob) == bobExpected, "bob claim");
     }
@@ -82,19 +85,19 @@ contract FeePoolTest {
     /// @notice ensures rewards distribute precisely with 18-decimal tokens
     function testDistributionPrecision() public {
         setUp();
-        token.mint(address(feePool), 1_000_000 * TOKEN);
+        token.mint(address(feePool), 1 * TOKEN);
         vm.prank(address(stakeManager));
-        feePool.depositFee(1_000_000 * TOKEN);
+        feePool.depositFee(1 * TOKEN);
         feePool.distributeFees();
         vm.prank(alice);
         feePool.claimRewards();
         vm.prank(bob);
         feePool.claimRewards();
-        require(token.balanceOf(alice) == 333_333_333_333_333_333_333_333, "alice");
-        require(token.balanceOf(bob) == 666_666_666_666_666_666_666_666, "bob");
+        require(token.balanceOf(alice) == 333_333_333_333_333_333, "alice");
+        require(token.balanceOf(bob) == 666_666_666_666_666_666, "bob");
         // one wei of rounding dust remains in the contract
         require(
-            token.balanceOf(alice) + token.balanceOf(bob) == 1_000_000 * TOKEN - 1,
+            token.balanceOf(alice) + token.balanceOf(bob) == TOKEN - 1,
             "sum"
         );
     }

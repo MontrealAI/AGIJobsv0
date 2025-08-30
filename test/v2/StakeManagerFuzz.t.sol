@@ -5,14 +5,17 @@ import "forge-std/Test.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 contract StakeManagerFuzz is Test {
     StakeManager stake;
     AGIALPHAToken token;
 
     function setUp() public {
-        token = new AGIALPHAToken();
-        stake = new StakeManager(IERC20(address(token)), 1e18, 50, 50, address(this), address(this), address(this));
+        AGIALPHAToken impl = new AGIALPHAToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = AGIALPHAToken(AGIALPHA);
+        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
     }
 
     function _deposit(address user, uint256 amount, StakeManager.Role role) internal {

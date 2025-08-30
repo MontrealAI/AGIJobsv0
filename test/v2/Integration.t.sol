@@ -8,12 +8,14 @@ import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/v2/interfaces/IPlatformRegistry.sol";
 import "contracts/legacy/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {AGIALPHA} from "contracts/v2/Constants.sol";
 
 interface Vm {
     function prank(address) external;
     function startPrank(address) external;
     function stopPrank() external;
     function prevrandao(bytes32) external;
+    function etch(address, bytes memory) external;
 }
 
 contract TestToken is ERC20 {
@@ -70,12 +72,14 @@ contract IntegrationTest {
     uint256 constant TOKEN = 1e18;
 
     function setUp() public {
-        token = new TestToken();
+        TestToken impl = new TestToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = TestToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
         registry = new MockPlatformRegistry();
-        feePool = new FeePool(token, stakeManager, 0, address(this));
-        router = new JobRouter(registry, address(this));
+        feePool = new FeePool(stakeManager, 0, address(this));
+        router = new JobRouter(registry);
     }
 
     function testLifecycle() public {
