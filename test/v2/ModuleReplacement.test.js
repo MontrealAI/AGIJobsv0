@@ -163,7 +163,7 @@ describe("Module replacement", function () {
     const Version = await ethers.getContractFactory(
       "contracts/v2/mocks/VersionMock.sol:VersionMock"
     );
-    const bad = await Version.deploy(2);
+    const bad = await Version.deploy(3);
 
     await expect(
       registry.connect(owner).setDisputeModule(await bad.getAddress())

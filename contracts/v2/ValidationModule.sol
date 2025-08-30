@@ -20,7 +20,7 @@ import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 ///      participating validators and job parties bear tax obligations.
 contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;

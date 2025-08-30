@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockStakeManager is IStakeManager {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     mapping(address => mapping(Role => uint256)) private _stakes;
     mapping(Role => uint256) public totalStakes;
@@ -103,7 +103,7 @@ contract MockStakeManager is IStakeManager {
 }
 
 contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
     constructor() Ownable(msg.sender) {}
     mapping(uint256 => Job) private _jobs;
     uint256 public taxPolicyVersion;
@@ -419,7 +419,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
 contract MockReputationEngine is IReputationEngine {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     mapping(address => uint256) private _rep;
     mapping(address => bool) private _blacklist;

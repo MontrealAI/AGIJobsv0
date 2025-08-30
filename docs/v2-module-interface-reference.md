@@ -1,6 +1,6 @@
 # AGIJobs v2 Module & Interface Reference
 
-This document condenses the production-scale architecture into standalone modules, each with a minimal interface and owner-only governance hooks. It is a companion to `docs/architecture-v2.md` and `docs/deployment-agialpha.md` and focuses on contract boundaries and Solidity structure tips.
+This document condenses the production-scale architecture into standalone modules, each with a minimal interface and owner-only governance hooks. It is a companion to `docs/architecture-v2.md` and `docs/deployment-agialpha.md` and focuses on contract boundaries and Solidity structure tips. All modules now expose `version()` returning **2** so other components can verify compatibility during upgrades.
 
 ## Module Graph
 ```mermaid

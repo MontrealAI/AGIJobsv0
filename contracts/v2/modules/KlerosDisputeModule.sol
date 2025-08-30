@@ -10,7 +10,7 @@ import {IDisputeModule} from "../interfaces/IDisputeModule.sol";
 /// with the final ruling via {resolve}.
 contract KlerosDisputeModule is IDisputeModule {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     /// @notice Address with permission to update module settings.
     address public governance;

@@ -9,7 +9,7 @@ import {IReputationEngine} from "../interfaces/IReputationEngine.sol";
 /// @notice Selects platform operators for jobs weighted by stake and optional reputation.
 contract RoutingModule is Ownable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;

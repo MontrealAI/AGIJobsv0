@@ -28,7 +28,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     using SafeERC20 for IERC20;
 
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     /// @notice participant roles
     enum Role {
@@ -257,7 +257,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external onlyGovernance {
-        require(IDisputeModule(module).version() == 1, "Invalid dispute module");
+        require(IDisputeModule(module).version() == 2, "Invalid dispute module");
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
@@ -265,7 +265,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
     function setValidationModule(address module) external onlyGovernance {
-        require(IValidationModule(module).version() == 1, "Invalid validation module");
+        require(IValidationModule(module).version() == 2, "Invalid validation module");
         validationModule = IValidationModule(module);
         emit ValidationModuleUpdated(module);
     }
@@ -279,8 +279,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         onlyGovernance
     {
         require(_jobRegistry != address(0) && _disputeModule != address(0), "module");
-        require(IJobRegistry(_jobRegistry).version() == 1, "Invalid job registry");
-        require(IDisputeModule(_disputeModule).version() == 1, "Invalid dispute module");
+        require(IJobRegistry(_jobRegistry).version() == 2, "Invalid job registry");
+        require(IDisputeModule(_disputeModule).version() == 2, "Invalid dispute module");
         jobRegistry = _jobRegistry;
         disputeModule = _disputeModule;
         emit JobRegistryUpdated(_jobRegistry);
