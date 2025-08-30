@@ -2,14 +2,18 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("JobEscrow ether rejection", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
+  const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
   let owner, employer, operator, token, routing, escrow;
 
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
-    await token.mint(employer.address, 1000);
+    token = await ethers.getContractAt(
+      "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
+      AGIALPHA
+    );
+    const initialBalance = ethers.parseUnits("1", AGIALPHA_DECIMALS);
+    await token.mint(employer.address, initialBalance);
 
     const Routing = await ethers.getContractFactory(
       "contracts/legacy/MockRoutingModule.sol:MockRoutingModule"
