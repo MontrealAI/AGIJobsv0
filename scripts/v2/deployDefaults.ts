@@ -50,13 +50,13 @@ async function main() {
 
   await verify(deployerAddress);
   await verify(stakeManager, [
-    ethers.ZeroAddress,
-    1_000_000,
+    ethers.parseUnits("1", 18),
     0,
     100,
     owner.address,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
+    owner.address,
   ]);
   await verify(jobRegistry, [
     ethers.ZeroAddress,
@@ -90,10 +90,8 @@ async function main() {
     jobRouter,
   ]);
   await verify(feePool, [
-    ethers.ZeroAddress,
     stakeManager,
     2,
-    5,
     owner.address,
   ]);
   if (withTax) {
