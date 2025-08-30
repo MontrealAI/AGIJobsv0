@@ -9,7 +9,7 @@ import {IPlatformRegistry} from "../interfaces/IPlatformRegistry.sol";
 ///         Falls back to the deployer when no eligible operator exists.
 contract JobRouter is Ownable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     IPlatformRegistry public platformRegistry;
 

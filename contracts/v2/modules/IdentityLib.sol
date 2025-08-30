@@ -16,7 +16,7 @@ interface IResolver {
 /// @notice Module providing ENS ownership verification for agents and validators.
 contract IdentityLib is Ownable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     IENS public ens;
     INameWrapper public nameWrapper;

@@ -50,7 +50,7 @@ interface ICertificateNFT {
 /// the owner‑controlled `TaxPolicy` reference.
 contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausable {
     /// @notice Module version for compatibility checks.
-    uint256 public constant version = 1;
+    uint256 public constant version = 2;
 
     error JobParametersUnset();
     error RewardOverflow();
@@ -240,31 +240,31 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
         emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
-            require(_validation.version() == 1, "Invalid validation module");
+            require(_validation.version() == 2, "Invalid validation module");
             validationModule = _validation;
             emit ValidationModuleUpdated(address(_validation));
             emit ModuleUpdated("ValidationModule", address(_validation));
         }
         if (address(_stakeMgr) != address(0)) {
-            require(_stakeMgr.version() == 1, "Invalid stake manager");
+            require(_stakeMgr.version() == 2, "Invalid stake manager");
             stakeManager = _stakeMgr;
             emit StakeManagerUpdated(address(_stakeMgr));
             emit ModuleUpdated("StakeManager", address(_stakeMgr));
         }
         if (address(_reputation) != address(0)) {
-            require(_reputation.version() == 1, "Invalid reputation module");
+            require(_reputation.version() == 2, "Invalid reputation module");
             reputationEngine = _reputation;
             emit ReputationEngineUpdated(address(_reputation));
             emit ModuleUpdated("ReputationEngine", address(_reputation));
         }
         if (address(_dispute) != address(0)) {
-            require(_dispute.version() == 1, "Invalid dispute module");
+            require(_dispute.version() == 2, "Invalid dispute module");
             disputeModule = _dispute;
             emit DisputeModuleUpdated(address(_dispute));
             emit ModuleUpdated("DisputeModule", address(_dispute));
         }
         if (address(_certNFT) != address(0)) {
-            require(_certNFT.version() == 1, "Invalid certificate NFT");
+            require(_certNFT.version() == 2, "Invalid certificate NFT");
             certificateNFT = _certNFT;
             emit CertificateNFTUpdated(address(_certNFT));
             emit ModuleUpdated("CertificateNFT", address(_certNFT));
@@ -309,11 +309,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         require(address(_dispute) != address(0), "dispute");
         require(address(_certNFT) != address(0), "nft");
 
-        require(_validation.version() == 1, "Invalid validation module");
-        require(_stakeMgr.version() == 1, "Invalid stake manager");
-        require(_reputation.version() == 1, "Invalid reputation module");
-        require(_dispute.version() == 1, "Invalid dispute module");
-        require(_certNFT.version() == 1, "Invalid certificate NFT");
+        require(_validation.version() == 2, "Invalid validation module");
+        require(_stakeMgr.version() == 2, "Invalid stake manager");
+        require(_reputation.version() == 2, "Invalid reputation module");
+        require(_dispute.version() == 2, "Invalid dispute module");
+        require(_certNFT.version() == 2, "Invalid certificate NFT");
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -356,7 +356,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param module Address of the new dispute module contract.
     function setDisputeModule(IDisputeModule module) external onlyGovernance {
         require(address(module) != address(0), "dispute");
-        require(module.version() == 1, "Invalid dispute module");
+        require(module.version() == 2, "Invalid dispute module");
         disputeModule = module;
         emit DisputeModuleUpdated(address(module));
         emit ModuleUpdated("DisputeModule", address(module));
