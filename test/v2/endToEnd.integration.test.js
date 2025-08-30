@@ -15,7 +15,7 @@ describe("end-to-end job lifecycle", function () {
     [owner, employer, agent, platform] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     const mintAmount = ethers.parseUnits("10000", 18);
     await token.mint(owner.address, mintAmount);
     await token.mint(employer.address, mintAmount);

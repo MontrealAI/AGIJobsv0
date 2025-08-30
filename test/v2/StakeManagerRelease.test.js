@@ -7,7 +7,7 @@ describe("StakeManager release", function () {
   beforeEach(async () => {
     [owner, user1, user2, treasury] = await ethers.getSigners();
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"

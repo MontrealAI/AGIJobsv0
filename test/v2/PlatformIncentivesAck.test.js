@@ -6,7 +6,7 @@ describe("PlatformIncentives acknowledge", function () {
     const [owner, operator, treasury] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
-    const token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    const token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(owner.address, 1000);
     await token.mint(operator.address, 1000);
 

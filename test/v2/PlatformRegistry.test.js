@@ -11,7 +11,7 @@ describe("PlatformRegistry", function () {
     [owner, platform, sybil, treasury] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(platform.address, STAKE);
     await token.mint(owner.address, STAKE);
 

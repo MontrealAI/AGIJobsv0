@@ -5,7 +5,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 async function deploySystem() {
   const [owner, employer, agent] = await ethers.getSigners();
   const { AGIALPHA } = require("../../scripts/constants");
-  const token = await ethers.getContractAt("MockERC20", AGIALPHA);
+  const token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
   await token.mint(employer.address, ethers.parseUnits("1000", 18));
   await token.mint(agent.address, ethers.parseUnits("1000", 18));
   await token.mint(owner.address, ethers.parseUnits("1000", 18));

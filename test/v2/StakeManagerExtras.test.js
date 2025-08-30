@@ -9,7 +9,7 @@ describe("StakeManager extras", function () {
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
-    token = await ethers.getContractAt("MockERC20", AGIALPHA);
+    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(user.address, 1000);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
