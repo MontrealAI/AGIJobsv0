@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - Introduced AGIJobManagerV1 contract and updated deployment script.
 - Expanded README with security notice and toolchain verification steps.
 - Standardised on 18‑decimal `$AGIALPHA` token at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`; token swapping instructions marked as legacy.
+- Removed legacy `MockERC20SixDecimals` test token following 18‑decimal migration.
 
 ## v0
 - Initial release of AGIJobManager with core job management, reputation, and NFT marketplace features.
