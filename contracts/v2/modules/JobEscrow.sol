@@ -39,7 +39,8 @@ contract JobEscrow is Ownable {
     /// @notice default $AGIALPHA token used when no token is specified
     address public constant DEFAULT_TOKEN = AGIALPHA;
 
-    IERC20 public token;
+    /// @notice ERC20 token used for rewards (immutable)
+    IERC20 public immutable token;
     IRoutingModule public routingModule;
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;

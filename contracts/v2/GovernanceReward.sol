@@ -29,7 +29,7 @@ contract GovernanceReward is Ownable {
     /// @notice default reward percentage when constructor param is zero
     uint256 public constant DEFAULT_REWARD_PCT = 5;
 
-    IERC20 public token;
+    IERC20 public immutable token;
     IFeePool public feePool;
     IStakeManager public stakeManager;
     IStakeManager.Role public rewardRole;

@@ -48,8 +48,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     address public constant BURN_ADDRESS =
         0x000000000000000000000000000000000000dEaD;
 
-    /// @notice ERC20 token used for staking and payouts
-    IERC20 public token;
+    /// @notice ERC20 token used for staking and payouts (immutable)
+    IERC20 public immutable token;
 
     /// @notice percentage of released amount sent to FeePool (0-100)
     uint256 public feePct;

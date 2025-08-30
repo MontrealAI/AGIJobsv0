@@ -23,7 +23,7 @@ This sprint ports every capability from `legacy/AGIJobManagerv0.sol` into the mo
 
 ### 3. Reputation & Rewards
 - **ReputationEngine**: logarithmic growth formula, premium threshold view, and blacklist storage. Provide `onApply`, `onFinalize`, and `rewardValidator` hooks.
-- **StakeManager**: custody `$AGIALPHA`, owner‑settable token address, minimum stakes, slashing percentages, fee/burn ratios, and AGIType payout bonuses.
+- **StakeManager**: custody `$AGIALPHA` (token address fixed at deployment), minimum stakes, slashing percentages, fee/burn ratios, and AGIType payout bonuses.
 - Pay agents and validators via `StakeManager.release` and update reputation on success; handle slashing and refunds on failure.
 
 ### 4. Administration & Upgradability
