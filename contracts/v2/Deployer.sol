@@ -29,7 +29,6 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.sol";
@@ -47,7 +46,6 @@ contract Deployer is Ownable {
     /// @dev Zero values use each module's baked-in default such as a 5% fee,
     ///      5% burn, 1-day commit/reveal windows and a 1e18 minimum stake.
     struct EconParams {
-        IERC20 token; // custom token for StakeManager and FeePool (defaults to AGIALPHA)
         uint256 feePct; // protocol fee percentage for JobRegistry
         uint256 burnPct; // portion of fees burned by FeePool
         uint256 employerSlashPct; // slashed stake sent to employer
@@ -264,10 +262,7 @@ contract Deployer is Ownable {
             treasurySlashPct = 100;
         }
         uint96 jobStake = econ.jobStake;
-        IERC20 token = econ.token;
-
         StakeManager stake = new StakeManager(
-            token,
             minStake,
             employerSlashPct,
             treasurySlashPct,
@@ -317,7 +312,6 @@ contract Deployer is Ownable {
         certificate.setJobRegistry(address(registry));
 
         FeePool pool = new FeePool(
-            token,
             IStakeManager(address(stake)),
             burnPct,
             owner_

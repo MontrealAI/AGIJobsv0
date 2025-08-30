@@ -15,11 +15,10 @@ describe("multi-operator job lifecycle", function () {
   beforeEach(async () => {
     [owner, employer, agent, platform1, platform2] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    const { AGIALPHA } = require("../../scripts/constants");
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     const mintAmount = ethers.parseUnits("10000", 18);
+    await token.mint(owner.address, mintAmount);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
     await token.mint(platform1.address, mintAmount);
@@ -29,7 +28,6 @@ describe("multi-operator job lifecycle", function () {
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await Stake.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -87,7 +85,6 @@ describe("multi-operator job lifecycle", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePoolF.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       owner.address

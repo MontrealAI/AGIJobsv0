@@ -4,6 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, policy, identity;
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, employer, agent, treasury;
 
   const reward = 100;
@@ -12,13 +13,11 @@ describe("JobRegistry integration", function () {
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -183,7 +182,6 @@ describe("JobRegistry integration", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     const feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address

@@ -8,16 +8,14 @@ const STAKE_BOB = 100n * TOKEN; // 100 tokens
 const REWARD = 50n * TOKEN; // job reward 50 tokens
 const FEE = 300n * TOKEN; // fee 300 tokens
 describe("Platform reward flow", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, alice, bob, employer, treasury;
   let token, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool;
 
   beforeEach(async () => {
     [owner, alice, bob, employer, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     await token.mint(alice.address, 1000n * TOKEN);
     await token.mint(bob.address, 1000n * TOKEN);
     await token.mint(employer.address, 1000n * TOKEN);
@@ -26,7 +24,6 @@ describe("Platform reward flow", function () {
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -92,7 +89,6 @@ describe("Platform reward flow", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address

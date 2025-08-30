@@ -3,6 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Job expiration boundary", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let token, stakeManager, rep, validation, nft, registry, dispute, policy;
   let owner, employer, agent, treasury;
   const reward = 100;
@@ -10,13 +11,11 @@ describe("Job expiration boundary", function () {
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,

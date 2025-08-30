@@ -2,23 +2,24 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("StakeManager reentrancy", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, employer, agent, validator, treasury;
   let token, stakeManager, jobRegistry;
 
   beforeEach(async () => {
     [owner, employer, agent, validator, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
+    const artifact = await artifacts.readArtifact(
       "contracts/legacy/ReentrantERC206.sol:ReentrantERC206"
     );
-    token = await Token.deploy();
+    await network.provider.send("hardhat_setCode", [AGIALPHA, artifact.deployedBytecode]);
+    token = await ethers.getContractAt("ReentrantERC206", AGIALPHA);
     await token.mint(employer.address, 1000);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       50,
       50,
@@ -34,7 +35,7 @@ describe("StakeManager reentrancy", function () {
     );
     jobRegistry = await JobRegistry.deploy(
       await stakeManager.getAddress(),
-      await token.getAddress()
+      AGIALPHA
     );
 
     await token.setCaller(await jobRegistry.getAddress());

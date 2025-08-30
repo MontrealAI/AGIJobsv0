@@ -6,14 +6,13 @@ describe("StakeManager release", function () {
 
   beforeEach(async () => {
     [owner, user1, user2, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    const { AGIALPHA } = require("../../scripts/constants");
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -55,7 +54,6 @@ describe("StakeManager release", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address

@@ -2,19 +2,16 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("StakeManager slashing configuration", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, treasury, token, stakeManager;
 
   beforeEach(async () => {
     [owner, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       50,
       50,

@@ -10,17 +10,15 @@ describe("PlatformRegistry", function () {
   beforeEach(async () => {
     [owner, platform, sybil, treasury] = await ethers.getSigners();
 
-    const Token = await ethers.getContractFactory(
-      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    token = await Token.connect(owner).deploy();
+    const { AGIALPHA } = require("../../scripts/constants");
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     await token.mint(platform.address, STAKE);
+    await token.mint(owner.address, STAKE);
 
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await Stake.connect(platform).deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -323,7 +321,6 @@ describe("PlatformRegistry", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     const feePool = await FeePool.connect(owner).deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address

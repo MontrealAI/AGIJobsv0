@@ -2,12 +2,12 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("StakeManager pause", function () {
+  const { AGIALPHA } = require("../../scripts/constants");
   let owner, user, token, stakeManager;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
     const MockRegistry = await ethers.getContractFactory(
       "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
@@ -16,7 +16,6 @@ describe("StakeManager pause", function () {
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,

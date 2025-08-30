@@ -4,16 +4,15 @@ const { ethers } = require("hardhat");
 describe("FeePool", function () {
   let token, stakeManager, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
 
+  const { AGIALPHA } = require("../../scripts/constants");
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await ethers.getContractAt("MockERC20", AGIALPHA);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
     stakeManager = await StakeManager.deploy(
-      await token.getAddress(),
       0,
       100,
       0,
@@ -60,7 +59,6 @@ describe("FeePool", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     feePool = await FeePool.deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address
@@ -78,22 +76,6 @@ describe("FeePool", function () {
     await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
     await stakeManager.connect(user1).depositStake(2, 100);
     await stakeManager.connect(user2).depositStake(2, 300);
-  });
-
-  it("reverts when token has non-18 decimals", async () => {
-    const Bad = await ethers.getContractFactory("MockERC20SixDecimals");
-    const bad = await Bad.deploy();
-    const FeePoolFactory = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
-    );
-    await expect(
-      FeePoolFactory.deploy(
-        await bad.getAddress(),
-        ethers.ZeroAddress,
-        0,
-        treasury.address
-      )
-    ).to.be.revertedWith("decimals");
   });
 
   it("allows direct contributions", async () => {
