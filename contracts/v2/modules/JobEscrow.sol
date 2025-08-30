@@ -9,7 +9,7 @@ import {AGIALPHA, AGIALPHA_DECIMALS} from "../Constants.sol";
 import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
 
 interface IRoutingModule {
-    function selectOperator(bytes32 jobId) external returns (address);
+    function selectOperator(bytes32 jobId, bytes32 seed) external returns (address);
 }
 
 /// @title JobEscrow
@@ -96,10 +96,11 @@ contract JobEscrow is Ownable {
     /// @notice Post a new job and escrow the reward.
     /// @param reward Amount of tokens to escrow, expressed with 18 decimals.
     /// @param data Metadata describing the job.
+    /// @param seed Randomness reveal used for operator selection.
     /// @return jobId Identifier of the created job.
-    function postJob(uint256 reward, string calldata data) external returns (uint256 jobId) {
+    function postJob(uint256 reward, string calldata data, bytes32 seed) external returns (uint256 jobId) {
         require(reward > 0, "reward");
-        address operator = routingModule.selectOperator(bytes32(nextJobId));
+        address operator = routingModule.selectOperator(bytes32(nextJobId), seed);
         require(operator != address(0), "operator");
         jobId = nextJobId++;
         token.safeTransferFrom(msg.sender, address(this), reward);

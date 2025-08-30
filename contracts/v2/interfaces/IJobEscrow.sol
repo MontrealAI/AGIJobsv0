@@ -5,7 +5,7 @@ pragma solidity ^0.8.25;
 /// @notice Minimal interface for job escrow helpers
 interface IJobEscrow {
     /// @notice Post a new job and escrow the reward
-    function postJob(uint256 reward, string calldata data) external returns (uint256);
+    function postJob(uint256 reward, string calldata data, bytes32 seed) external returns (uint256);
 
     /// @notice Operator submits the result for a job
     function submitResult(uint256 jobId, string calldata result) external;
