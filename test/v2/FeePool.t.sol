@@ -79,7 +79,8 @@ contract FeePoolTest {
         require(token.balanceOf(bob) == bobExpected, "bob claim");
     }
 
-    function testPrecisionSixDecimals() public {
+    /// @notice ensures rewards distribute precisely with 18-decimal tokens
+    function testDistributionPrecision() public {
         setUp();
         token.mint(address(feePool), 1_000_000 * TOKEN);
         vm.prank(address(stakeManager));
@@ -91,6 +92,7 @@ contract FeePoolTest {
         feePool.claimRewards();
         require(token.balanceOf(alice) == 333_333_333_333_333_333_333_333, "alice");
         require(token.balanceOf(bob) == 666_666_666_666_666_666_666_666, "bob");
+        // one wei of rounding dust remains in the contract
         require(
             token.balanceOf(alice) + token.balanceOf(bob) == 1_000_000 * TOKEN - 1,
             "sum"
