@@ -7,7 +7,10 @@ describe("StakeManager release", function () {
   beforeEach(async () => {
     [owner, user1, user2, treasury] = await ethers.getSigners();
     const { AGIALPHA } = require("../../scripts/constants");
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken",
+      AGIALPHA
+    );
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -67,18 +70,29 @@ describe("StakeManager release", function () {
     ]);
     registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
-    await token.mint(user1.address, 1000);
-    await token.mint(user2.address, 1000);
-    await token.connect(user1).approve(await stakeManager.getAddress(), 1000);
-    await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
-    await stakeManager.connect(user1).depositStake(2, 100);
-    await stakeManager.connect(user2).depositStake(2, 300);
+    await token.mint(user1.address, ethers.parseEther("1000"));
+    await token.mint(user2.address, ethers.parseEther("1000"));
+    await token
+      .connect(user1)
+      .approve(await stakeManager.getAddress(), ethers.parseEther("1000"));
+    await token
+      .connect(user2)
+      .approve(await stakeManager.getAddress(), ethers.parseEther("1000"));
+    await stakeManager
+      .connect(user1)
+      .depositStake(2, ethers.parseEther("100"));
+    await stakeManager
+      .connect(user2)
+      .depositStake(2, ethers.parseEther("300"));
 
     await stakeManager.connect(owner).setFeePool(await feePool.getAddress());
     await stakeManager.connect(owner).setFeePct(20);
     await stakeManager.connect(owner).setBurnPct(10);
 
-    await token.mint(await stakeManager.getAddress(), 100);
+    await token.mint(
+      await stakeManager.getAddress(),
+      ethers.parseEther("100")
+    );
   });
 
   it("diverts fee and burn on release", async () => {
@@ -88,26 +102,41 @@ describe("StakeManager release", function () {
     const beforeBurn = await token.balanceOf(burnAddr);
 
     await expect(
-      stakeManager.connect(registrySigner).release(user1.address, 100)
+      stakeManager
+        .connect(registrySigner)
+        .release(user1.address, ethers.parseEther("100"))
     )
       .to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, await feePool.getAddress(), 20)
+      .withArgs(
+        ethers.ZeroHash,
+        await feePool.getAddress(),
+        ethers.parseEther("20")
+      )
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, burnAddr, 10)
+      .withArgs(ethers.ZeroHash, burnAddr, ethers.parseEther("10"))
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, user1.address, 70);
+      .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther("70"));
 
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(70n);
-    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(10n);
-    expect(await token.balanceOf(await feePool.getAddress())).to.equal(20n);
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(
+      ethers.parseEther("70")
+    );
+    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(
+      ethers.parseEther("10")
+    );
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
+      ethers.parseEther("20")
+    );
 
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
 
-    expect((await token.balanceOf(user1.address)) - (before1 + 70n)).to.equal(
-      5n
+    expect(
+      (await token.balanceOf(user1.address)) -
+        (before1 + ethers.parseEther("70"))
+    ).to.equal(ethers.parseEther("5"));
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(
+      ethers.parseEther("15")
     );
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(15n);
   });
 
   it("splits job fund release with fee and burn", async () => {
@@ -116,33 +145,46 @@ describe("StakeManager release", function () {
     const before1 = await token.balanceOf(user1.address);
     await stakeManager
       .connect(registrySigner)
-      .lockReward(jobId, user2.address, 100);
+      .lockReward(jobId, user2.address, ethers.parseEther("100"));
     const before2 = await token.balanceOf(user2.address);
     const beforeBurn = await token.balanceOf(burnAddr);
 
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, user1.address, 100)
+        .releaseReward(jobId, user1.address, ethers.parseEther("100"))
     )
       .to.emit(stakeManager, "StakeReleased")
-      .withArgs(jobId, await feePool.getAddress(), 20)
+      .withArgs(
+        jobId,
+        await feePool.getAddress(),
+        ethers.parseEther("20")
+      )
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(jobId, burnAddr, 10)
+      .withArgs(jobId, burnAddr, ethers.parseEther("10"))
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(jobId, user1.address, 70);
+      .withArgs(jobId, user1.address, ethers.parseEther("70"));
 
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(70n);
-    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(10n);
-    expect(await token.balanceOf(await feePool.getAddress())).to.equal(20n);
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(
+      ethers.parseEther("70")
+    );
+    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(
+      ethers.parseEther("10")
+    );
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
+      ethers.parseEther("20")
+    );
 
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
 
-    expect((await token.balanceOf(user1.address)) - (before1 + 70n)).to.equal(
-      5n
+    expect(
+      (await token.balanceOf(user1.address)) -
+        (before1 + ethers.parseEther("70"))
+    ).to.equal(ethers.parseEther("5"));
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(
+      ethers.parseEther("15")
     );
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(15n);
   });
 
   it("burns fee when fee pool unset", async () => {
@@ -153,18 +195,26 @@ describe("StakeManager release", function () {
     const beforeBurn = await token.balanceOf(burnAddr);
 
     await expect(
-      stakeManager.connect(registrySigner).release(user1.address, 100)
+      stakeManager
+        .connect(registrySigner)
+        .release(user1.address, ethers.parseEther("100"))
     )
       .to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, burnAddr, 20)
+      .withArgs(ethers.ZeroHash, burnAddr, ethers.parseEther("20"))
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, burnAddr, 10)
+      .withArgs(ethers.ZeroHash, burnAddr, ethers.parseEther("10"))
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, user1.address, 70);
+      .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther("70"));
 
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(70n);
-    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(30n);
-    expect(await token.balanceOf(await feePool.getAddress())).to.equal(0n);
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(
+      ethers.parseEther("70")
+    );
+    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(
+      ethers.parseEther("30")
+    );
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
+      ethers.parseEther("0")
+    );
   });
 
   it("restricts fee configuration to owner", async () => {

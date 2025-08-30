@@ -14,7 +14,7 @@ describe("StakeManager reentrancy", function () {
     );
     await network.provider.send("hardhat_setCode", [AGIALPHA, artifact.deployedBytecode]);
     token = await ethers.getContractAt("ReentrantERC206", AGIALPHA);
-    await token.mint(employer.address, 1000);
+    await token.mint(employer.address, ethers.parseEther("1000"));
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -46,7 +46,7 @@ describe("StakeManager reentrancy", function () {
 
   it("guards finalizeJobFunds against reentrancy", async () => {
     const jobId = ethers.encodeBytes32String("job1");
-    const reward = 100;
+    const reward = ethers.parseEther("100");
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
@@ -62,7 +62,7 @@ describe("StakeManager reentrancy", function () {
 
   it("guards distributeValidatorRewards against reentrancy", async () => {
     const jobId = ethers.encodeBytes32String("job2");
-    const amount = 100;
+    const amount = ethers.parseEther("100");
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/mocks/ValidationStub.sol:ValidationStub"

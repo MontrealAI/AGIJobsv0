@@ -9,8 +9,11 @@ describe("StakeManager extras", function () {
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
-    token = await ethers.getContractAt("contracts/v2/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
-    await token.mint(user.address, 1000);
+    token = await ethers.getContractAt(
+      "contracts/v2/AGIALPHAToken.sol:AGIALPHAToken",
+      AGIALPHA
+    );
+    await token.mint(user.address, ethers.parseEther("1000"));
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -64,27 +67,47 @@ describe("StakeManager extras", function () {
 
   it("allows deposit and withdrawal of stake", async () => {
     await setupRegistryAck(user);
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
-    await stakeManager.connect(user).depositStake(0, 200);
-    await stakeManager.connect(user).withdrawStake(0, 50);
-    expect(await stakeManager.stakeOf(user.address, 0)).to.equal(150n);
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), ethers.parseEther("200"));
+    await stakeManager
+      .connect(user)
+      .depositStake(0, ethers.parseEther("200"));
+    await stakeManager
+      .connect(user)
+      .withdrawStake(0, ethers.parseEther("50"));
+    expect(await stakeManager.stakeOf(user.address, 0)).to.equal(
+      ethers.parseEther("150")
+    );
   });
 
   it("requires tax policy acknowledgement before staking", async () => {
     await setupRegistryAck();
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), ethers.parseEther("100"));
     await expect(
-      stakeManager.connect(user).depositStake(0, 100)
+      stakeManager
+        .connect(user)
+        .depositStake(0, ethers.parseEther("100"))
     ).to.be.revertedWith("acknowledge tax policy");
   });
 
   it("enforces max stake per address", async () => {
     await setupRegistryAck(user);
-    await stakeManager.connect(owner).setMaxStakePerAddress(150);
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
-    await stakeManager.connect(user).depositStake(0, 100);
+    await stakeManager
+      .connect(owner)
+      .setMaxStakePerAddress(ethers.parseEther("150"));
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), ethers.parseEther("200"));
+    await stakeManager
+      .connect(user)
+      .depositStake(0, ethers.parseEther("100"));
     await expect(
-      stakeManager.connect(user).depositStake(0, 100)
+      stakeManager
+        .connect(user)
+        .depositStake(0, ethers.parseEther("100"))
     ).to.be.revertedWith("max stake");
   });
 
