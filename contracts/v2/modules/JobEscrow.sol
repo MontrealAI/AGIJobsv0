@@ -2,9 +2,10 @@
 pragma solidity ^0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {AGIALPHA} from "../Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "../Constants.sol";
 import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
 
 interface IRoutingModule {
@@ -63,6 +64,10 @@ contract JobEscrow is Ownable {
 
     /// @param _routing Routing module used to select operators for new jobs.
     constructor(IRoutingModule _routing) Ownable(msg.sender) {
+        require(
+            IERC20Metadata(AGIALPHA).decimals() == AGIALPHA_DECIMALS,
+            "decimals"
+        );
         routingModule = _routing;
     }
     
