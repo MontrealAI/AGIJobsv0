@@ -321,7 +321,6 @@ describe("PlatformRegistry", function () {
       "contracts/v2/FeePool.sol:FeePool"
     );
     const feePool = await FeePool.connect(owner).deploy(
-      await token.getAddress(),
       await stakeManager.getAddress(),
       0,
       treasury.address
