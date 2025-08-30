@@ -1,7 +1,7 @@
 import { ethers, run } from "hardhat";
 import { writeFileSync } from "fs";
 import { join } from "path";
-import { AGIALPHA } from "../constants";
+import { AGIALPHA, AGIALPHA_DECIMALS } from "../constants";
 
 // rudimentary CLI flag parser
 function parseArgs() {
@@ -123,7 +123,7 @@ async function main() {
   );
   const appealFee = ethers.parseUnits(
     typeof args.appealFee === "string" ? args.appealFee : "0",
-    18
+    AGIALPHA_DECIMALS
   );
   const disputeWindow =
     typeof args.disputeWindow === "string" ? Number(args.disputeWindow) : 0;
@@ -154,7 +154,7 @@ async function main() {
   );
   const minPlatformStake = ethers.parseUnits(
     typeof args.minPlatformStake === "string" ? args.minPlatformStake : "1000",
-    18
+    AGIALPHA_DECIMALS
   );
   const platformRegistry = await PlatformRegistry.deploy(
     await stake.getAddress(),
@@ -225,7 +225,7 @@ async function main() {
 
   const minStake = ethers.parseUnits(
     typeof args.minStake === "string" ? args.minStake : "0",
-    18
+    AGIALPHA_DECIMALS
   );
   await stake.connect(governanceSigner).setMinStake(minStake);
 

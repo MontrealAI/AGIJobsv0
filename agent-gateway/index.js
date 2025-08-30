@@ -11,7 +11,9 @@ const VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS || '';
 const WALLET_KEYS = process.env.WALLET_KEYS || '';
 const PORT = process.env.PORT || 3000;
 const BOT_WALLET = process.env.BOT_WALLET || '';
-const TOKEN_DECIMALS = 18; // $AGIALPHA uses 18 decimal places
+// $AGIALPHA token parameters
+const { AGIALPHA_DECIMALS } = require('../scripts/constants');
+const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
