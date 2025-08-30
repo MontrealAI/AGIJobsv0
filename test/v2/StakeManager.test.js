@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("StakeManager", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
+  const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
   let token, stakeManager, owner, user, employer, treasury;
 
   beforeEach(async () => {
@@ -886,9 +886,12 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
 
-    await token.mint(user.address, 1000000);
-    await token.connect(user).approve(await stakeManager.getAddress(), 1000000);
-    await stakeManager.connect(user).depositStake(0, 1000000);
+    const initial = ethers.parseUnits("1000000", AGIALPHA_DECIMALS);
+    await token.mint(user.address, initial);
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), initial);
+    await stakeManager.connect(user).depositStake(0, initial);
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
@@ -897,8 +900,7 @@ describe("StakeManager", function () {
     ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
-    const amount = 123456n;
-    const amount18 = amount * 10n ** 12n;
+    const amount = ethers.parseUnits("123456", AGIALPHA_DECIMALS);
     const employerBefore = await token.balanceOf(employer.address);
     const treasuryBefore = await token.balanceOf(treasury.address);
 
@@ -913,15 +915,13 @@ describe("StakeManager", function () {
 
     const employerAfter = await token.balanceOf(employer.address);
     const treasuryAfter = await token.balanceOf(treasury.address);
-    const share6 = (amount * 50n) / 100n;
+    const share = (amount * 50n) / 100n;
 
-    expect(employerAfter - employerBefore).to.equal(share6);
-    expect(treasuryAfter - treasuryBefore).to.equal(share6);
+    expect(employerAfter - employerBefore).to.equal(share);
+    expect(treasuryAfter - treasuryBefore).to.equal(share);
 
-    const shareFrom18 = (amount18 * 50n) / 100n / 10n ** 12n;
-    expect(share6).to.equal(shareFrom18);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(
-      1000000n - amount
+      initial - amount
     );
   });
 
