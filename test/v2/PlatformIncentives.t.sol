@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
-import {PlatformRegistry} from "../../contracts/v2/PlatformRegistry.sol";
+import {PlatformRegistry, IReputationEngine as IPRReputationEngine} from "../../contracts/v2/PlatformRegistry.sol";
 import {JobRouter} from "../../contracts/v2/modules/JobRouter.sol";
 import {IPlatformRegistryFull} from "../../contracts/v2/interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "../../contracts/v2/interfaces/IJobRouter.sol";
@@ -13,7 +13,7 @@ import {IPlatformRegistry} from "../../contracts/v2/interfaces/IPlatformRegistry
 import {IReputationEngine} from "../../contracts/v2/interfaces/IReputationEngine.sol";
 import {FeePool} from "../../contracts/v2/FeePool.sol";
 import {PlatformIncentives} from "../../contracts/v2/PlatformIncentives.sol";
-import {MockJobRegistry, MockReputationEngine} from "../../contracts/legacy/MockV2.sol";
+import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 
 contract PlatformIncentivesTest is Test {
@@ -24,21 +24,19 @@ contract PlatformIncentivesTest is Test {
     FeePool feePool;
     PlatformIncentives incentives;
     MockJobRegistry jobRegistry;
-    MockReputationEngine rep;
 
     address operator = address(0xBEEF);
 
     function setUp() public {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
-        token = AGIALPHAToken(AGIALPHA);
+        token = AGIALPHAToken(payable(AGIALPHA));
         jobRegistry = new MockJobRegistry();
         jobRegistry.setTaxPolicyVersion(1);
         stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
-        rep = new MockReputationEngine();
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
-            IReputationEngine(address(rep)),
+            IPRReputationEngine(address(0)),
             1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
