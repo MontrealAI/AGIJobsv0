@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
+import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 import {StakeManager} from "../../contracts/v2/StakeManager.sol";
 import {PlatformRegistry} from "../../contracts/v2/PlatformRegistry.sol";
 import {JobRouter} from "../../contracts/v2/modules/JobRouter.sol";
@@ -28,11 +29,12 @@ contract PlatformIncentivesTest is Test {
     address operator = address(0xBEEF);
 
     function setUp() public {
-        token = new AGIALPHAToken();
-        stakeManager = new StakeManager(token, 0, 0, 0, address(this), address(0), address(0));
+        AGIALPHAToken impl = new AGIALPHAToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = AGIALPHAToken(AGIALPHA);
         jobRegistry = new MockJobRegistry();
         jobRegistry.setTaxPolicyVersion(1);
-        stakeManager.setJobRegistry(address(jobRegistry));
+        stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
         rep = new MockReputationEngine();
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
@@ -40,12 +42,7 @@ contract PlatformIncentivesTest is Test {
             1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
-        feePool = new FeePool(
-            token,
-            IStakeManager(address(stakeManager)),
-            0,
-            address(this)
-        );
+        feePool = new FeePool(IStakeManager(address(stakeManager)), 0, address(this));
         incentives = new PlatformIncentives(
             IStakeManager(address(stakeManager)),
             IPlatformRegistryFull(address(platformRegistry)),
@@ -54,7 +51,7 @@ contract PlatformIncentivesTest is Test {
         platformRegistry.setRegistrar(address(incentives), true);
         jobRouter.setRegistrar(address(incentives), true);
 
-        token.mint(operator, 20e6);
+        token.mint(operator, 20e18);
         vm.startPrank(operator);
         jobRegistry.acknowledgeTaxPolicy();
         token.approve(address(stakeManager), type(uint256).max);
@@ -63,8 +60,8 @@ contract PlatformIncentivesTest is Test {
 
     function testStakeAndActivate() public {
         vm.prank(operator);
-        incentives.stakeAndActivate(10e6);
-        assertEq(stakeManager.stakeOf(operator, StakeManager.Role.Platform), 10e6);
+        incentives.stakeAndActivate(10e18);
+        assertEq(stakeManager.stakeOf(operator, StakeManager.Role.Platform), 10e18);
         assertTrue(platformRegistry.registered(operator));
         assertTrue(jobRouter.registered(operator));
 
@@ -74,16 +71,16 @@ contract PlatformIncentivesTest is Test {
         assertEq(platformRegistry.getScore(address(this)), 0);
         assertEq(jobRouter.routingWeight(address(this)), 0);
 
-        token.mint(address(this), 5e6);
-        token.transfer(address(feePool), 5e6);
+        token.mint(address(this), 5e18);
+        token.transfer(address(feePool), 5e18);
         vm.prank(address(stakeManager));
-        feePool.depositFee(5e6);
+        feePool.depositFee(5e18);
         feePool.distributeFees();
 
         uint256 before = token.balanceOf(operator);
         vm.prank(operator);
         feePool.claimRewards();
-        assertEq(token.balanceOf(operator) - before, 5e6);
+        assertEq(token.balanceOf(operator) - before, 5e18);
 
         uint256 ownerBefore = token.balanceOf(address(this));
         vm.expectEmit(true, false, false, true, address(feePool));

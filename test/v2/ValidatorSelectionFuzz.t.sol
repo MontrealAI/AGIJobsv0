@@ -10,6 +10,7 @@ import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
 import {IIdentityRegistry} from "../../contracts/v2/interfaces/IIdentityRegistry.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 contract ValidatorSelectionFuzz is Test {
     StakeManager stake;
@@ -19,9 +20,10 @@ contract ValidatorSelectionFuzz is Test {
     mapping(address => uint256) index;
 
     function setUp() public {
-        token = new AGIALPHAToken();
+        AGIALPHAToken impl = new AGIALPHAToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = AGIALPHAToken(AGIALPHA);
         stake = new StakeManager(
-            IERC20(address(token)),
             1e18,
             0,
             100,
