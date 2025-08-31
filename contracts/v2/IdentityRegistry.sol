@@ -167,7 +167,7 @@ contract IdentityRegistry is Ownable {
         string calldata uri
     ) external {
         require(
-            this.isAuthorizedAgent(msg.sender, subdomain, proof),
+            isAuthorizedAgent(msg.sender, subdomain, proof),
             "Not authorized agent"
         );
         agentProfileURI[msg.sender] = uri;
@@ -182,7 +182,7 @@ contract IdentityRegistry is Ownable {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external view returns (bool) {
+    ) public view returns (bool) {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
@@ -208,7 +208,7 @@ contract IdentityRegistry is Ownable {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external view returns (bool) {
+    ) public view returns (bool) {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
