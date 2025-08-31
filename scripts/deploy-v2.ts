@@ -15,6 +15,7 @@ async function main() {
   );
   await stake.waitForDeployment();
 
+  // Deploy the sole ReputationEngine implementation
   const Reputation = await ethers.getContractFactory("contracts/v2/ReputationEngine.sol:ReputationEngine");
   const reputation = await Reputation.deploy(await stake.getAddress());
   await reputation.waitForDeployment();

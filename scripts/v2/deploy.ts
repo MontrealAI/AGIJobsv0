@@ -112,6 +112,7 @@ async function main() {
   );
   await validation.waitForDeployment();
 
+  // Single ReputationEngine implementation deployed from contracts/v2/ReputationEngine.sol
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"
   );
