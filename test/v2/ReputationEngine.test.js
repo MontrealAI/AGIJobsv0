@@ -96,4 +96,29 @@ describe("ReputationEngine", function () {
       "not authorized"
     );
   });
+
+  it("handles large payouts without overflow", async () => {
+    const largePayout = ethers.parseEther("1000000000"); // 1 billion tokens
+    const largeDuration = 1000000;
+
+    // calculateReputationPoints should return a positive value and not overflow
+    const gain = await engine.calculateReputationPoints(
+      largePayout,
+      largeDuration
+    );
+    expect(gain).to.be.gt(0n);
+
+    // Finalize with the large payout; reputation should increase but remain
+    // within bounds.
+    await expect(
+      engine
+        .connect(caller)
+        .onFinalize(user.address, true, largePayout, largeDuration)
+    ).to.not.be.reverted;
+
+    const rep = await engine.reputationOf(user.address);
+    const max = await engine.MAX_REPUTATION();
+    expect(rep).to.be.gt(0n);
+    expect(rep).to.be.lte(max);
+  });
 });
