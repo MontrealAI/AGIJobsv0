@@ -7,7 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {AGIALPHA, TOKEN_SCALE} from "./Constants.sol";
+import {AGIALPHA, TOKEN_SCALE, BURN_ADDRESS} from "./Constants.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -65,10 +65,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice default minimum stake when constructor param is zero
     uint256 public constant DEFAULT_MIN_STAKE = TOKEN_SCALE;
-
-    /// @notice canonical burn address
-    address public constant BURN_ADDRESS =
-        0x000000000000000000000000000000000000dEaD;
 
     /// @notice ERC20 token used for staking and payouts (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);

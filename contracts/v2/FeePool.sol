@@ -6,7 +6,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 error InvalidPercentage();
@@ -24,7 +24,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
-    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant DEFAULT_BURN_PCT = 5;
 
     /// @notice ERC20 token used for fees and rewards (immutable $AGIALPHA)
