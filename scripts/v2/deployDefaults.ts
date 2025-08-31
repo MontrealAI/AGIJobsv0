@@ -1,4 +1,5 @@
 import { ethers, run } from "hardhat";
+import { AGIALPHA_DECIMALS } from "../constants";
 
 async function verify(address: string, args: any[] = []) {
   try {
@@ -50,7 +51,7 @@ async function main() {
 
   await verify(deployerAddress);
   await verify(stakeManager, [
-    ethers.parseUnits("1", 18),
+    ethers.parseUnits("1", AGIALPHA_DECIMALS),
     0,
     100,
     owner.address,
