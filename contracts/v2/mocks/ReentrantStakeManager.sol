@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
 import {IFeePool} from "../interfaces/IFeePool.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @dev Stake manager mock that attempts to reenter ValidationModule calls.
 contract ReentrantStakeManager is IStakeManager {
@@ -75,6 +76,10 @@ contract ReentrantStakeManager is IStakeManager {
 
     function burnPct() external pure override returns (uint256) {
         return 0;
+    }
+
+    function token() external pure override returns (IERC20) {
+        return IERC20(address(0));
     }
 
     function slash(address user, Role role, uint256 amount, address) external override {

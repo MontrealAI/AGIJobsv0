@@ -6,8 +6,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {StakeManager} from "./StakeManager.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title CertificateNFT
 /// @notice ERC721 certificate minted upon successful job completion.
@@ -25,7 +25,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
 
-    StakeManager public stakeManager;
+    IStakeManager public stakeManager;
 
     struct Listing {
         address seller;
@@ -63,7 +63,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
 
     function setStakeManager(address manager) external onlyOwner {
         if (manager == address(0)) revert ZeroAddress();
-        stakeManager = StakeManager(payable(manager));
+        stakeManager = IStakeManager(manager);
         emit StakeManagerUpdated(manager);
     }
 
