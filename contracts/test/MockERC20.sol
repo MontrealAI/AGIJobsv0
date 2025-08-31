@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.21;
+pragma solidity ^0.8.25;
 
 // @dev Test utility token used to provide an ERC20 code stub for AGIALPHA
 // in Hardhat tests. This mock contract deploys a basic ERC20 and allows
