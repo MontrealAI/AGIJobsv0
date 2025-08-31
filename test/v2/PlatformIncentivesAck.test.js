@@ -89,10 +89,6 @@ describe("PlatformIncentives acknowledge", function () {
       .connect(operator)
       .approve(await stakeManager.getAddress(), STAKE);
 
-    await expect(
-      incentives.connect(operator).acknowledgeStakeAndActivate(STAKE)
-    ).to.be.revertedWith("acknowledge tax policy");
-    await jobRegistry.connect(operator).acknowledgeTaxPolicy();
     await incentives.connect(operator).acknowledgeStakeAndActivate(STAKE);
     expect(await policy.hasAcknowledged(operator.address)).to.equal(true);
   });
