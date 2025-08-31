@@ -4,10 +4,9 @@ pragma solidity ^0.8.25;
 /// @title ITaxPolicy
 /// @notice Interface for retrieving tax policy details.
 interface ITaxPolicy {
-    /// @notice Record that `user` has acknowledged the current policy.
-    /// @param user Address of the participant acknowledging.
+    /// @notice Record that the caller has acknowledged the current policy.
     /// @return disclaimer Confirmation text stating the caller bears all tax liability.
-    function acknowledge(address user) external returns (string memory disclaimer);
+    function acknowledge() external returns (string memory disclaimer);
 
     /// @notice Check if a user has acknowledged the policy.
     /// @param user Address of the participant.

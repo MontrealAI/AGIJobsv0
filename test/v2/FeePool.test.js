@@ -42,14 +42,11 @@ describe("FeePool", function () {
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      "ipfs://policy",
-      "ack"
-    );
-    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
     await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user1).acknowledgeTaxPolicy();
-    await jobRegistry.connect(user2).acknowledgeTaxPolicy();
+    await policy.connect(user1).acknowledge();
+    await policy.connect(user2).acknowledge();
 
     await token.mint(user1.address, 1000);
     await token.mint(user2.address, 1000);

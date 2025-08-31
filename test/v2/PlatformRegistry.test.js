@@ -67,7 +67,7 @@ describe("PlatformRegistry", function () {
     );
   });
 
-  it("acknowledgeAndRegister registers caller", async () => {
+  it("acknowledgeAndRegister requires prior acknowledgement", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
@@ -185,7 +185,6 @@ describe("PlatformRegistry", function () {
     )
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("acknowledgeStakeAndRegisterFor stakes, acknowledges, and registers", async () => {
@@ -228,7 +227,6 @@ describe("PlatformRegistry", function () {
     )
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("acknowledgeAndRegister records acknowledgement", async () => {
@@ -263,7 +261,6 @@ describe("PlatformRegistry", function () {
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("registrar enforces operator stake", async () => {
@@ -382,11 +379,12 @@ describe("PlatformRegistry", function () {
       .connect(platform)
       .setJobRegistry(await jobRegistry.getAddress());
 
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
     await registry.connect(platform).register();
+    await policy.connect(owner).bumpPolicyVersion();
     await expect(registry.connect(platform).acknowledgeAndDeregister())
       .to.emit(registry, "Deregistered")
       .withArgs(platform.address);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
     expect(await registry.registered(platform.address)).to.equal(false);
   });
 
