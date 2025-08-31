@@ -1,10 +1,11 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("comprehensive job flows", function () {
-  const reward = ethers.parseUnits("1000", 18);
-  const stakeRequired = ethers.parseUnits("200", 18);
+  const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
+  const stakeRequired = ethers.parseUnits("200", AGIALPHA_DECIMALS);
   const feePct = 10;
   const disputeFee = 0n;
 
@@ -14,9 +15,8 @@ describe("comprehensive job flows", function () {
   beforeEach(async () => {
     [owner, employer, agent, platform, buyer] = await ethers.getSigners();
 
-    const { AGIALPHA } = require("../../scripts/constants");
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
-    const mintAmount = ethers.parseUnits("10000", 18);
+    const mintAmount = ethers.parseUnits("10000", AGIALPHA_DECIMALS);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
     await token.mint(platform.address, mintAmount);
@@ -158,7 +158,7 @@ describe("comprehensive job flows", function () {
       .submit(jobId, ethers.id("result"), "result", "", []);
     await validation.finalize(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
-    const price = ethers.parseUnits("10", 18);
+    const price = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await nft.connect(agent).list(jobId, price);
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await nft.connect(buyer).purchase(jobId);

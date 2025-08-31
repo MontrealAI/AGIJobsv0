@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { AGIALPHA_DECIMALS } from "../../scripts/constants";
 
 enum Role {
   Agent,
@@ -16,7 +17,7 @@ async function deploySystem() {
     "contracts/test/AGIALPHAToken.sol:AGIALPHAToken"
   );
   const token = await Token.deploy();
-  const mint = ethers.parseUnits("1000", 18);
+  const mint = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
   for (const s of [employer, agent, v1, v2]) {
     await token.mint(s.address, mint);
   }
@@ -133,7 +134,7 @@ describe("Kleros dispute module", function () {
     const { employer, agent, v1, v2, token, stake, validation, registry, mockArb } =
       env;
 
-    const stakeAmount = ethers.parseUnits("1", 18);
+    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     for (const signer of [agent, v1, v2]) {
       await token.connect(signer).approve(await stake.getAddress(), stakeAmount);
       const role = signer === agent ? Role.Agent : Role.Validator;
@@ -141,7 +142,7 @@ describe("Kleros dispute module", function () {
     }
     const initialAgentBalance = await token.balanceOf(agent.address);
 
-    const reward = ethers.parseUnits("100", 18);
+    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry

@@ -1,17 +1,17 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 const Role = { Agent: 0, Validator: 1, Platform: 2 };
 
 async function deploySystem() {
   const [owner, employer, agent] = await ethers.getSigners();
 
-  const { AGIALPHA } = require("../../scripts/constants");
   const token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
-  await token.mint(employer.address, ethers.parseUnits("1000", 18));
-  await token.mint(agent.address, ethers.parseUnits("1000", 18));
-  await token.mint(owner.address, ethers.parseUnits("1000", 18));
+  await token.mint(employer.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
+  await token.mint(agent.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
+  await token.mint(owner.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
 
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
@@ -106,11 +106,11 @@ describe("Module replacement", function () {
     const env = await deploySystem();
     const { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute } = env;
 
-    const stakeAmount = ethers.parseUnits("1", 18);
+    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
-    const reward = ethers.parseUnits("100", 18);
+    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     const fee = (reward * 5n) / 100n;
     await token
       .connect(employer)

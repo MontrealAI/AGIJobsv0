@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { AGIALPHA_DECIMALS } from "../../scripts/constants";
 
 enum Role {
   Agent,
@@ -13,7 +14,7 @@ async function deploySystem() {
 
   const Token = await ethers.getContractFactory("contracts/test/AGIALPHAToken.sol:AGIALPHAToken");
   const token = await Token.deploy();
-  const mint = ethers.parseUnits("1000", 18);
+  const mint = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
   for (const s of [employer, agent, v1]) {
     await token.mint(s.address, mint);
   }
@@ -100,13 +101,13 @@ describe("regression scenarios", function () {
     const env = await deploySystem();
     const { employer, agent, token, stake, validation, registry } = env;
 
-    const stakeAmount = ethers.parseUnits("1", 18);
+    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
     // no validators set
     await validation.setValidatorsPerJob(1);
 
-    const reward = ethers.parseUnits("10", 18);
+    const reward = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
@@ -119,7 +120,7 @@ describe("regression scenarios", function () {
     const env = await deploySystem();
     const { employer, agent, v1, token, stake, validation, registry } = env;
 
-    const stakeAmount = ethers.parseUnits("1", 18);
+    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     for (const s of [agent, v1]) {
       await token.connect(s).approve(await stake.getAddress(), stakeAmount);
       const role = s === agent ? Role.Agent : Role.Validator;
@@ -129,7 +130,7 @@ describe("regression scenarios", function () {
     await validation.setValidatorsPerJob(1);
     await validation.setValidatorSlashingPct(100);
 
-    const reward = ethers.parseUnits("10", 18);
+    const reward = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline1 = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline1, "ipfs://job1");
@@ -172,13 +173,13 @@ describe("regression scenarios", function () {
 
     expect(await registry.validationModule()).to.equal(await stub.getAddress());
 
-    const stakeAmount = ethers.parseUnits("1", 18);
+    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     for (const s of [agent]) {
       await token.connect(s).approve(await stake.getAddress(), stakeAmount);
       await stake.connect(s).depositStake(Role.Agent, stakeAmount);
     }
 
-    const reward = ethers.parseUnits("10", 18);
+    const reward = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");

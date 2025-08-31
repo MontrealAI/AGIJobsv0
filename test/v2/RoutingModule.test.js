@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 // This test covers JobRouter.selectPlatform even though the file name is
 // RoutingModule.test.js for backward compatibility with the existing suite.
@@ -67,9 +68,9 @@ describe("JobRouter", function () {
   it("computes routing weight based on stake", async () => {
     const w1 = await router.routingWeight(op1.address);
     const w2 = await router.routingWeight(op2.address);
-    const quarter = ethers.parseUnits("0.25", 18);
-    const threeQuarter = ethers.parseUnits("0.75", 18);
-    expect(w1).to.be.closeTo(quarter, ethers.parseUnits("0.05", 18));
-    expect(w2).to.be.closeTo(threeQuarter, ethers.parseUnits("0.05", 18));
+    const quarter = ethers.parseUnits("0.25", AGIALPHA_DECIMALS);
+    const threeQuarter = ethers.parseUnits("0.75", AGIALPHA_DECIMALS);
+    expect(w1).to.be.closeTo(quarter, ethers.parseUnits("0.05", AGIALPHA_DECIMALS));
+    expect(w2).to.be.closeTo(threeQuarter, ethers.parseUnits("0.05", AGIALPHA_DECIMALS));
   });
 });
