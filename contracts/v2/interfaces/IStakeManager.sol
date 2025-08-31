@@ -104,6 +104,9 @@ interface IStakeManager {
     /// @notice Current burn percentage applied to rewards
     function burnPct() external view returns (uint256);
 
+    /// @notice ERC20 token used for staking operations
+    function token() external view returns (IERC20);
+
     /// @notice set the dispute module authorized to manage dispute fees
     function setDisputeModule(address module) external;
 
