@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, artifacts, network } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobEscrow", function () {
@@ -11,6 +11,13 @@ describe("JobEscrow", function () {
     [owner, employer, operator] = await ethers.getSigners();
 
     const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
       AGIALPHA
@@ -83,9 +90,9 @@ describe("JobEscrow", function () {
       (l) => l.fragment && l.fragment.name === "JobPosted"
     ).args.jobId;
     await escrow.connect(operator).submitResult(jobId, "res");
-    await expect(escrow.connect(operator).acceptResult(jobId)).to.be.revertedWith(
-      "timeout"
-    );
+    await expect(
+      escrow.connect(operator).acceptResult(jobId)
+    ).to.be.revertedWithCustomError(escrow, "Timeout");
   });
 
   it("acknowledgeAndAcceptResult accepts and records acknowledgement", async () => {

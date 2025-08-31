@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, artifacts, network } = require("hardhat");
 
 describe("JobEscrow ether rejection", function () {
   const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
@@ -8,6 +8,13 @@ describe("JobEscrow ether rejection", function () {
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
 
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
       AGIALPHA
@@ -29,7 +36,7 @@ describe("JobEscrow ether rejection", function () {
   it("reverts on direct ether transfer", async () => {
     await expect(
       owner.sendTransaction({ to: await escrow.getAddress(), value: 1 })
-    ).to.be.revertedWith("JobEscrow: no ether");
+    ).to.be.revertedWithCustomError(escrow, "NoEther");
   });
 
   it("reverts on unknown calldata with value", async () => {
@@ -39,7 +46,7 @@ describe("JobEscrow ether rejection", function () {
         data: "0x12345678",
         value: 1,
       })
-    ).to.be.revertedWith("JobEscrow: no ether");
+    ).to.be.revertedWithCustomError(escrow, "NoEther");
   });
 
   it("reports tax exemption for owner and helper", async () => {
