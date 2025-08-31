@@ -4,6 +4,12 @@
 
 const { ethers } = require('ethers');
 
+// Canonical $AGIALPHA token uses fixed decimal configuration
+const {
+  decimals: AGIALPHA_DECIMALS
+} = require('../config/agialpha.json');
+const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
+
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 const JOB_REGISTRY = process.env.JOB_REGISTRY;
 
@@ -27,7 +33,8 @@ registry.on('JobCreated', async (jobId, employer, agent, reward) => {
   // Only apply if job is unassigned
   if (agent === ethers.ZeroAddress) {
     try {
-      console.log(`Applying for job ${jobId} with reward ${ethers.formatEther(reward)}`);
+      const display = ethers.formatUnits(reward, TOKEN_DECIMALS);
+      console.log(`Applying for job ${jobId} with reward ${display}`);
       const tx = await registry.applyForJob(jobId, '', '0x');
       await tx.wait();
       console.log(`Applied in tx ${tx.hash}`);
