@@ -3,8 +3,9 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA} from "./Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -55,6 +56,8 @@ contract GovernanceReward is Ownable {
     event StakeManagerUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
 
+    error InvalidTokenDecimals();
+
     constructor(
         IFeePool _feePool,
         IStakeManager _stakeManager,
@@ -65,6 +68,9 @@ contract GovernanceReward is Ownable {
         feePool = _feePool;
         stakeManager = _stakeManager;
         rewardRole = _role;
+        if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
+            revert InvalidTokenDecimals();
+        }
         emit FeePoolUpdated(address(_feePool));
         emit StakeManagerUpdated(address(_stakeManager));
         emit RewardRoleUpdated(_role);
