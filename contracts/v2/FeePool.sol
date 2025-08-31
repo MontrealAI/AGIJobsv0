@@ -5,14 +5,16 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA, BURN_ADDRESS} from "./Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 error InvalidPercentage();
 error NotStakeManager();
 error ZeroAmount();
 error EtherNotAccepted();
+error InvalidTokenDecimals();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -73,6 +75,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
+        if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
+            revert InvalidTokenDecimals();
+        }
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         if (pct > 100) revert InvalidPercentage();
 

@@ -2,10 +2,11 @@
 pragma solidity ^0.8.25;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {AGIALPHA} from "../Constants.sol";
+import {AGIALPHA, AGIALPHA_DECIMALS} from "../Constants.sol";
 import {IJobRegistryAck} from "../interfaces/IJobRegistryAck.sol";
 
 interface IRoutingModule {
@@ -20,6 +21,7 @@ error NotEmployer();
 error InvalidCaller();
 error Timeout();
 error NoEther();
+error InvalidTokenDecimals();
 
 /// @title JobEscrow
 /// @notice Minimal job management with escrowed payments in an 18-decimal
@@ -73,6 +75,9 @@ contract JobEscrow is Ownable, ReentrancyGuard {
 
     /// @param _routing Routing module used to select operators for new jobs.
     constructor(IRoutingModule _routing) Ownable(msg.sender) {
+        if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
+            revert InvalidTokenDecimals();
+        }
         routingModule = _routing;
     }
     
