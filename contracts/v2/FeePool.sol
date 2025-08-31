@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -43,6 +44,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice address receiving rounding dust after distribution
     address public treasury;
 
+    /// @notice timelock or governance contract authorized for withdrawals
+    TimelockController public governance;
+
     /// @notice cumulative fee per staked token scaled by ACCUMULATOR_SCALE
     uint256 public cumulativePerToken;
 
@@ -61,7 +65,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event RewardRoleUpdated(IStakeManager.Role role);
     event BurnPctUpdated(uint256 pct);
     event TreasuryUpdated(address indexed treasury);
-    event OwnerWithdrawal(address indexed to, uint256 amount);
+    event GovernanceUpdated(address indexed governance);
+    event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
 
     /// @notice Deploys the FeePool.
@@ -99,6 +104,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     modifier onlyStakeManager() {
         if (msg.sender != address(stakeManager)) revert NotStakeManager();
+        _;
+    }
+
+    modifier onlyGovernance() {
+        require(msg.sender == address(governance), "governance only");
         _;
     }
 
@@ -185,17 +195,28 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------------
-    // Owner setters (use Etherscan's "Write Contract" tab)
+    // Owner and governance setters (use Etherscan's "Write Contract" tab)
     // ---------------------------------------------------------------------
 
-    /// @notice owner-only emergency escape hatch to withdraw tokens
-    /// @dev Intended for stuck-token recovery via Etherscan. Routine fees flow
-    ///      to this pool or the burn address. Amount uses 18 decimal units.
+    /// @notice designate the timelock or governance contract for withdrawals
+    /// @param _governance Timelock or governance address
+    function setGovernance(address _governance) external onlyOwner {
+        require(_governance != address(0), "governance");
+        governance = TimelockController(payable(_governance));
+        emit GovernanceUpdated(_governance);
+    }
+
+    /// @notice governance-controlled emergency escape hatch to withdraw tokens
+    /// @dev Only callable by the configured governance contract. Amount uses 18 decimal units.
     /// @param to recipient address
     /// @param amount token amount with 18 decimals
-    function ownerWithdraw(address to, uint256 amount) external onlyOwner nonReentrant {
+    function governanceWithdraw(address to, uint256 amount)
+        external
+        onlyGovernance
+        nonReentrant
+    {
         token.safeTransfer(to, amount);
-        emit OwnerWithdrawal(to, amount);
+        emit GovernanceWithdrawal(to, amount);
     }
 
     /// @notice update StakeManager contract

@@ -724,7 +724,7 @@ Steps to become a Platform Operator:
 5. **Governance (if applicable):** As a platform operator, you might also be involved in governance. If the system has a **GovernanceReward** module (as hinted in docs for parameter voting), you could stake and vote on proposals to change system parameters. If so:
 
    * The owner might deploy a `GovernanceReward` contract. It would let you (and possibly other stakers) vote on proposals, then reward you for participation.
-   * While not detailed in this guide, the quick link mentioned that after a governance vote, the owner would call `recordVoters([...])` and `finalizeEpoch(totalReward)` on GovernanceReward, and you as a voter could then claim from it. This is beyond basic operation, but just know if such a module is available, your role might extend to voting on upgrades.
+   * While not detailed in this guide, the quick link mentioned that after a governance vote, the owner would withdraw rewards from the FeePool via `governanceWithdraw`, record voters with `recordVoters([...])`, and finalize with `finalizeEpoch(totalReward)`. You as a voter could then claim from it. This is beyond basic operation, but just know if such a module is available, your role might extend to voting on upgrades.
 
 6. **Unstaking as Platform Operator:** If you ever want to exit being a platform operator, you can withdraw your stake similar to the others:
 

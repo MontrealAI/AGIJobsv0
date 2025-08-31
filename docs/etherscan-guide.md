@@ -43,14 +43,15 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 
 ### Sample Owner Parameters
 
-When using the **Write Contract** tab as the owner, populate fields with explicit values:
+When using the **Write Contract** tab as the owner, populate fields with explicit values.
+Emergency withdrawals must be scheduled and executed by the timelock via `governanceWithdraw`:
 
 | Contract | Function | Example parameters |
 | --- | --- | --- |
 | `StakeManager` | `setFeePct(pct)` | `20` |
 | `JobRegistry` | `setFeePct(pct)` | `5` |
 | `TaxPolicy` | `setPolicyURI("ipfs://Qm...")` | `ipfs://QmPolicyHash` |
-| `FeePool` | `ownerWithdraw(to, amount)` | `0x1111111111111111111111111111111111111111`, `1000000000000000000` |
+| `FeePool` | `governanceWithdraw(to, amount)` (via timelock) | `0x1111111111111111111111111111111111111111`, `1000000000000000000` |
 
 ## Module Addresses & Roles
 | Module | Address | Role |
