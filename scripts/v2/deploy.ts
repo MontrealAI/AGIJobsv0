@@ -42,6 +42,15 @@ async function main() {
     typeof args.governance === "string" ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
+  const token = await ethers.getContractAt(
+    ["function decimals() view returns (uint8)"],
+    AGIALPHA
+  );
+  const decimals = Number(await token.decimals());
+  if (decimals !== 18) {
+    throw new Error(`AGIALPHA token must have 18 decimals, got ${decimals}`);
+  }
+
   // -------------------------------------------------------------------------
   // staking token: fixed to canonical AGIALPHA address
   // -------------------------------------------------------------------------
