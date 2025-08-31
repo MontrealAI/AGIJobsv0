@@ -45,11 +45,11 @@ contract AGIALPHAToken is ERC20, Ownable {
         return _acknowledged[account];
     }
 
-    /// @dev Require acknowledgement for transfers from EOAs, except owner ops.
+    /// @dev Require acknowledgement for non-owner transfers.
     function _update(address from, address to, uint256 value) internal override {
         bool ownerOp = msg.sender == owner() || from == owner() || to == owner();
-        if (!ownerOp && from != address(0) && from.code.length == 0) {
-            require(_acknowledged[from], "AGIALPHA: sender not acknowledged");
+        if (!ownerOp && from != address(0)) {
+            require(hasAcknowledged(from), "AGIALPHA: sender not acknowledged");
         }
         super._update(from, to, value);
     }
