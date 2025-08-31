@@ -7,6 +7,7 @@
     "compile": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && npx hardhat compile",
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint .",
     "pretest": "npx tsc scripts/constants.ts",
+    "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "test": "npx hardhat test",
     "gateway": "node agent-gateway/index.js"
   },
