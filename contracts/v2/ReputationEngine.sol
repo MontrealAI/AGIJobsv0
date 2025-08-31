@@ -15,6 +15,27 @@ contract ReputationEngine is Ownable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
+    /// @notice Scaling divisor for the cubed payout component.
+    uint256 public constant PAYOUT_SCALE = 1e5;
+
+    /// @notice Multiplier applied before the logarithm to widen reputation gain.
+    uint256 public constant LOG_FACTOR = 1e6;
+
+    /// @notice Divisor applied to job duration when computing reputation gain.
+    uint256 public constant DURATION_SCALE = 10_000;
+
+    /// @notice Denominator for percentage calculations (100%).
+    uint256 public constant PERCENTAGE_SCALE = 100;
+
+    /// @notice Default percentage of agent gain awarded to validators.
+    uint256 public constant DEFAULT_VALIDATION_REWARD_PERCENTAGE = 8;
+
+    /// @notice Maximum reputation score a user can achieve.
+    uint256 public constant MAX_REPUTATION = 88_888;
+
+    /// @notice Exponent applied to payout in reputation calculations.
+    uint256 public constant PAYOUT_EXPONENT = 3;
+
     mapping(address => uint256) public reputation;
     mapping(address => bool) private blacklisted;
     mapping(address => bool) public callers;
@@ -22,7 +43,7 @@ contract ReputationEngine is Ownable, Pausable {
     IStakeManager public stakeManager;
     uint256 public stakeWeight = TOKEN_SCALE;
     uint256 public reputationWeight = TOKEN_SCALE;
-    uint256 public validationRewardPercentage = 8;
+    uint256 public validationRewardPercentage = DEFAULT_VALIDATION_REWARD_PERCENTAGE;
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
     event BlacklistUpdated(address indexed user, bool status);
@@ -78,7 +99,7 @@ contract ReputationEngine is Ownable, Pausable {
 
     /// @notice Set percentage of agent gain given to validators.
     function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
-        require(percentage <= 100, "invalid percentage");
+        require(percentage <= PERCENTAGE_SCALE, "invalid percentage");
         validationRewardPercentage = percentage;
         emit ValidationRewardPercentageUpdated(percentage);
     }
@@ -220,13 +241,13 @@ contract ReputationEngine is Ownable, Pausable {
     /// @notice Compute reputation gain based on payout and duration.
     function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
         uint256 scaledPayout = payout / TOKEN_SCALE;
-        uint256 payoutPoints = (scaledPayout ** 3) / 1e5;
-        return log2(1 + payoutPoints * 1e6) + duration / 10000;
+        uint256 payoutPoints = (scaledPayout ** PAYOUT_EXPONENT) / PAYOUT_SCALE;
+        return log2(1 + payoutPoints * LOG_FACTOR) + duration / DURATION_SCALE;
     }
 
     /// @notice Compute validator reputation gain from agent gain.
     function calculateValidatorReputationPoints(uint256 agentReputationGain) public view returns (uint256) {
-        return (agentReputationGain * validationRewardPercentage) / 100;
+        return (agentReputationGain * validationRewardPercentage) / PERCENTAGE_SCALE;
     }
 
     /// @notice Log base 2 implementation from v1.
@@ -254,17 +275,15 @@ contract ReputationEngine is Ownable, Pausable {
         }
     }
 
-    uint256 public constant maxReputation = 88_888;
-
     /// @notice Apply diminishing returns and cap to reputation growth using v1 formula.
     function _enforceReputationGrowth(uint256 current, uint256 points) internal pure returns (uint256) {
         uint256 newReputation = current + points;
         uint256 numerator = newReputation * newReputation * TOKEN_SCALE;
-        uint256 denominator = maxReputation * maxReputation;
+        uint256 denominator = MAX_REPUTATION * MAX_REPUTATION;
         uint256 factor = TOKEN_SCALE + (numerator / denominator);
         uint256 diminishedReputation = (newReputation * TOKEN_SCALE) / factor;
-        if (diminishedReputation > maxReputation) {
-            return maxReputation;
+        if (diminishedReputation > MAX_REPUTATION) {
+            return MAX_REPUTATION;
         }
         return diminishedReputation;
     }
