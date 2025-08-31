@@ -39,7 +39,7 @@ if ('VALIDATION_MODULE_ADDRESS' in process.env) {
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
 // verify on-chain token decimals against config to prevent misformatted broadcasts
-(async () => {
+async function verifyTokenDecimals() {
   try {
     const token = new ethers.Contract(
       AGIALPHA_ADDRESS,
@@ -48,15 +48,15 @@ const provider = new ethers.JsonRpcProvider(RPC_URL);
     );
     const chainDecimals = await token.decimals();
     if (Number(chainDecimals) !== Number(TOKEN_DECIMALS)) {
-      console.error(
+      throw new Error(
         `AGIALPHA decimals mismatch: config ${TOKEN_DECIMALS} vs chain ${chainDecimals}`
       );
-      process.exit(1);
     }
   } catch (err) {
-    console.warn('Unable to verify AGIALPHA token decimals', err);
+    throw new Error(`Unable to verify AGIALPHA token decimals: ${err.message}`);
   }
-})();
+}
+
 const walletManager = new WalletManager(WALLET_KEYS, provider);
 let automationWallet;
 if (BOT_WALLET) {
@@ -311,44 +311,60 @@ app.post('/jobs/:id/reveal', async (req, res) => {
 });
 
 // HTTP & WebSocket server
-const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+let server;
+let wss;
 
-wss.on('connection', (ws) => {
-  ws.on('message', (data) => {
-    let msg;
-    try {
-      msg = JSON.parse(data);
-    } catch (err) {
-      return;
-    }
-    if (msg.type === 'register') {
-      const { id, wallet } = msg;
-      if (!id || !wallet) return;
-      const existing = agents.get(id) || {};
-      agents.set(id, { url: existing.url, wallet, ws });
-      if (!pendingJobs.has(id)) pendingJobs.set(id, []);
-      pendingJobs.get(id).forEach((job) => {
-        ws.send(JSON.stringify({ type: 'job', job }));
+verifyTokenDecimals()
+  .then(() => {
+    server = http.createServer(app);
+    wss = new WebSocketServer({ server });
+
+    wss.on('connection', (ws) => {
+      ws.on('message', (data) => {
+        let msg;
+        try {
+          msg = JSON.parse(data);
+        } catch (err) {
+          return;
+        }
+        if (msg.type === 'register') {
+          const { id, wallet } = msg;
+          if (!id || !wallet) return;
+          const existing = agents.get(id) || {};
+          agents.set(id, { url: existing.url, wallet, ws });
+          if (!pendingJobs.has(id)) pendingJobs.set(id, []);
+          pendingJobs.get(id).forEach((job) => {
+            ws.send(JSON.stringify({ type: 'job', job }));
+          });
+        } else if (msg.type === 'ack') {
+          const { id, jobId } = msg;
+          const queue = pendingJobs.get(id) || [];
+          pendingJobs.set(
+            id,
+            queue.filter((j) => j.jobId !== String(jobId))
+          );
+        }
       });
-    } else if (msg.type === 'ack') {
-      const { id, jobId } = msg;
-      const queue = pendingJobs.get(id) || [];
-      pendingJobs.set(
-        id,
-        queue.filter((j) => j.jobId !== String(jobId))
-      );
-    }
-  });
 
-  ws.on('close', () => {
-    agents.forEach((info) => {
-      if (info.ws === ws) info.ws = null;
+      ws.on('close', () => {
+        agents.forEach((info) => {
+          if (info.ws === ws) info.ws = null;
+        });
+      });
     });
+
+    server.listen(PORT, () => {
+      console.log(`Agent gateway listening on port ${PORT}`);
+      console.log('Wallets:', walletManager.list());
+    });
+  })
+  .catch((err) => {
+    console.error('AGIALPHA decimals verification failed', err);
+    process.exit(1);
   });
-});
 
 function broadcast(payload) {
+  if (!wss) return;
   wss.clients.forEach((client) => {
     if (client.readyState === 1) {
       client.send(JSON.stringify(payload));
@@ -372,9 +388,8 @@ function dispatch(job) {
   });
 }
 
-server.listen(PORT, () => {
-  console.log(`Agent gateway listening on port ${PORT}`);
-  console.log('Wallets:', walletManager.list());
+module.exports = { app, commitHelper, revealHelper };
+Object.defineProperty(module.exports, 'server', {
+  enumerable: true,
+  get: () => server
 });
-
-module.exports = { app, server, commitHelper, revealHelper };
