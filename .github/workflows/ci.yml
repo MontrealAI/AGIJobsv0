@@ -24,3 +24,10 @@ jobs:
         run: npm run lint
       - name: Run tests
         run: npm test
+      - name: Install Foundry
+        run: |
+          curl -L https://foundry.paradigm.xyz | bash
+          ~/.foundry/bin/foundryup
+          echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
+      - name: Run Forge tests
+        run: forge test
