@@ -6,6 +6,9 @@ pragma solidity ^0.8.25;
 // Canonical $AGIALPHA token on Ethereum mainnet.
 address constant AGIALPHA = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 
+// Canonical burn address.
+address constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
 // Standard decimals for $AGIALPHA.
 uint8 constant AGIALPHA_DECIMALS = 18;
 
