@@ -67,7 +67,7 @@ describe("PlatformRegistry", function () {
     );
   });
 
-  it("acknowledgeAndRegister registers caller", async () => {
+  it("acknowledgeAndRegister requires prior acknowledgement", async () => {
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
@@ -95,6 +95,10 @@ describe("PlatformRegistry", function () {
     await stakeManager
       .connect(platform)
       .setJobRegistry(await jobRegistry.getAddress());
+    await expect(
+      registry.connect(platform).acknowledgeAndRegister()
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
@@ -143,6 +147,10 @@ describe("PlatformRegistry", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await expect(
       registry.connect(owner).acknowledgeAndRegisterFor(platform.address)
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
+    await expect(
+      registry.connect(owner).acknowledgeAndRegisterFor(platform.address)
     )
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
@@ -182,10 +190,13 @@ describe("PlatformRegistry", function () {
       .approve(await stakeManager.getAddress(), STAKE);
     await expect(
       registry.connect(platform).acknowledgeStakeAndRegister(STAKE)
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
+    await expect(
+      registry.connect(platform).acknowledgeStakeAndRegister(STAKE)
     )
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("acknowledgeStakeAndRegisterFor stakes, acknowledges, and registers", async () => {
@@ -225,10 +236,15 @@ describe("PlatformRegistry", function () {
       registry
         .connect(owner)
         .acknowledgeStakeAndRegisterFor(platform.address, STAKE)
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
+    await expect(
+      registry
+        .connect(owner)
+        .acknowledgeStakeAndRegisterFor(platform.address, STAKE)
     )
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("acknowledgeAndRegister records acknowledgement", async () => {
@@ -260,10 +276,13 @@ describe("PlatformRegistry", function () {
       .connect(platform)
       .setJobRegistry(await jobRegistry.getAddress());
 
+    await expect(
+      registry.connect(platform).acknowledgeAndRegister()
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, "Registered")
       .withArgs(platform.address);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("registrar enforces operator stake", async () => {
@@ -382,11 +401,16 @@ describe("PlatformRegistry", function () {
       .connect(platform)
       .setJobRegistry(await jobRegistry.getAddress());
 
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
     await registry.connect(platform).register();
+    await policy.connect(owner).bumpPolicyVersion();
+    await expect(
+      registry.connect(platform).acknowledgeAndDeregister()
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
     await expect(registry.connect(platform).acknowledgeAndDeregister())
       .to.emit(registry, "Deregistered")
       .withArgs(platform.address);
-    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
     expect(await registry.registered(platform.address)).to.equal(false);
   });
 

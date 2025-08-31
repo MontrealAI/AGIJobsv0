@@ -93,4 +93,12 @@ describe("JobRegistry tax policy integration", function () {
       .to.be.revertedWithCustomError(policy, "OwnableUnauthorizedAccount")
       .withArgs(user.address);
   });
+
+  it("prevents acknowledging for another address", async () => {
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await registry.connect(owner).setAcknowledger(owner.address, true);
+    await registry.connect(owner).acknowledgeFor(user.address);
+    expect(await policy.hasAcknowledged(user.address)).to.equal(false);
+    expect(await policy.hasAcknowledged(owner.address)).to.equal(true);
+  });
 });

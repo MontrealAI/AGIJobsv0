@@ -84,13 +84,13 @@ contract TaxPolicy is Ownable, ITaxPolicy {
 
     /// @notice Record that the caller acknowledges the current tax policy.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
-    function acknowledge(address user)
+    function acknowledge()
         external
         override
         returns (string memory disclaimer)
     {
-        _acknowledgedVersion[user] = _version;
-        emit PolicyAcknowledged(user, _version);
+        _acknowledgedVersion[msg.sender] = _version;
+        emit PolicyAcknowledged(msg.sender, _version);
         return _acknowledgement;
     }
 

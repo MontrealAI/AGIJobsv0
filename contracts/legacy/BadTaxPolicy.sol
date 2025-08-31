@@ -14,8 +14,8 @@ contract BadTaxPolicy is ITaxPolicy {
         _version = 1;
     }
 
-    function acknowledge(address user) external returns (string memory) {
-        acknowledgedUsers[user] = true;
+    function acknowledge() external returns (string memory) {
+        acknowledgedUsers[msg.sender] = true;
         return "bad";
     }
 

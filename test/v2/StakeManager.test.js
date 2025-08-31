@@ -967,6 +967,10 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await expect(
+      stakeManager.connect(user).acknowledgeAndDeposit(0, 100)
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);
     await expect(
@@ -1004,15 +1008,16 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy2.getAddress());
 
     await expect(
-      stakeManager.connect(user).withdrawStake(0, 50)
+      stakeManager.connect(user).acknowledgeAndWithdraw(0, 50)
     ).to.be.revertedWith("acknowledge tax policy");
-
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await stakeManager.connect(user).acknowledgeAndWithdraw(0, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await policy2.hasAcknowledged(user.address)).to.equal(true);
@@ -1048,6 +1053,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
@@ -1057,6 +1063,10 @@ describe("StakeManager", function () {
       stakeManager.connect(user).acknowledgeAndWithdrawFor(user.address, 0, 50)
     ).to.be.revertedWith("governance only");
 
+    await expect(
+      stakeManager.connect(owner).acknowledgeAndWithdrawFor(user.address, 0, 50)
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await stakeManager
       .connect(owner)
       .acknowledgeAndWithdrawFor(user.address, 0, 50);

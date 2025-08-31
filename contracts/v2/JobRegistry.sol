@@ -517,11 +517,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit AcknowledgerUpdated(acknowledger, allowed);
     }
 
-    /// @notice Internal helper to acknowledge the current tax policy for a user.
-    function _acknowledge(address user) internal returns (string memory ack) {
+    /// @notice Internal helper to acknowledge the current tax policy.
+    function _acknowledge() internal returns (string memory ack) {
         require(address(taxPolicy) != address(0), "policy");
-        ack = taxPolicy.acknowledge(user);
-        emit TaxAcknowledged(user, taxPolicy.policyVersion(), ack);
+        ack = taxPolicy.acknowledge();
+        emit TaxAcknowledged(msg.sender, taxPolicy.policyVersion(), ack);
     }
 
     /// @notice Acknowledge the current tax policy.
@@ -531,15 +531,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @return ack Human‑readable disclaimer confirming the caller bears all
     /// tax responsibility.
     function acknowledgeTaxPolicy() external returns (string memory ack) {
-        ack = _acknowledge(msg.sender);
+        ack = _acknowledge();
     }
 
     /// @notice Acknowledge the current tax policy on behalf of a user.
-    /// @param user Address whose acknowledgement is recorded.
-    /// @return ack Human-readable disclaimer confirming the user bears all tax responsibility.
-    function acknowledgeFor(address user) external returns (string memory ack) {
+    /// @return ack Human-readable disclaimer confirming the caller bears all tax responsibility.
+    function acknowledgeFor(address /* user */) external returns (string memory ack) {
         require(acknowledgers[msg.sender], "acknowledger");
-        ack = _acknowledge(user);
+        ack = _acknowledge();
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyGovernance {
@@ -651,7 +650,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint64 deadline,
         string calldata uri
     ) external returns (uint256 jobId) {
-        _acknowledge(msg.sender);
+        _acknowledge();
         jobId = _createJob(reward, deadline, 3, uri);
     }
 
@@ -661,7 +660,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint8 agentTypes,
         string calldata uri
     ) external returns (uint256 jobId) {
-        _acknowledge(msg.sender);
+        _acknowledge();
         jobId = _createJob(reward, deadline, agentTypes, uri);
     }
 
@@ -753,7 +752,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         string calldata subdomain,
         bytes32[] calldata proof
     ) external nonReentrant {
-        _acknowledge(msg.sender);
+        _acknowledge();
         _applyForJob(jobId, subdomain, proof);
     }
 
@@ -773,7 +772,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         string calldata subdomain,
         bytes32[] calldata proof
     ) external nonReentrant {
-        _acknowledge(msg.sender);
+        _acknowledge();
         stakeManager.depositStakeFor(
             msg.sender,
             IStakeManager.Role.Agent,
@@ -863,7 +862,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         string calldata subdomain,
         bytes32[] calldata proof
     ) external {
-        _acknowledge(msg.sender);
+        _acknowledge();
         submit(jobId, resultHash, resultURI, subdomain, proof);
     }
 
@@ -979,7 +978,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             address(taxPolicy) != address(0) &&
             !taxPolicy.hasAcknowledged(msg.sender)
         ) {
-            _acknowledge(msg.sender);
+            _acknowledge();
         }
         dispute(jobId, evidenceHash);
     }
@@ -1177,14 +1176,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Acknowledge the tax policy and finalise the job in one call.
     /// @param jobId Identifier of the job to finalise
     function acknowledgeAndFinalize(uint256 jobId) external {
-        _acknowledge(msg.sender);
+        _acknowledge();
         finalize(jobId);
     }
 
     /// @notice Acknowledge the tax policy and cancel a job in one call.
     /// @param jobId Identifier of the job to cancel
     function acknowledgeAndCancel(uint256 jobId) external {
-        _acknowledge(msg.sender);
+        _acknowledge();
         cancelJob(jobId);
     }
 

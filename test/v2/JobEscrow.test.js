@@ -135,6 +135,10 @@ describe("JobEscrow", function () {
     await escrow.connect(operator).submitResult(jobId, "ipfs://result");
     await expect(
       escrow.connect(employer).acknowledgeAndAcceptResult(jobId)
+    ).to.be.revertedWith("acknowledge tax policy");
+    await jobRegistry.connect(employer).acknowledgeTaxPolicy();
+    await expect(
+      escrow.connect(employer).acknowledgeAndAcceptResult(jobId)
     )
       .to.emit(escrow, "ResultAccepted")
       .withArgs(jobId, employer.address);
