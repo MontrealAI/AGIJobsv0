@@ -21,10 +21,26 @@ export default function Home() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:3000';
-    fetch(`${url}/jobs`)
-      .then((res) => res.json())
-      .then((data) =>
+    async function loadJobs() {
+      try {
+        const rpcUrl =
+          process.env.NEXT_PUBLIC_RPC_URL || 'http://localhost:8545';
+        const agiAddress =
+          process.env.NEXT_PUBLIC_AGIALPHA_ADDRESS || agiConfig.address;
+        const tokenAbi = ['function decimals() view returns (uint8)'];
+        const provider = new ethers.JsonRpcProvider(rpcUrl);
+        const token = new ethers.Contract(agiAddress, tokenAbi, provider);
+        const chainDecimals = Number(await token.decimals());
+        if (chainDecimals !== DECIMALS) {
+          alert(
+            `Configured decimals (${DECIMALS}) do not match on-chain decimals (${chainDecimals}).`
+          );
+          setMessage('Token decimals mismatch; jobs cannot be displayed');
+          return;
+        }
+        const url =
+          process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:3000';
+        const data = await fetch(`${url}/jobs`).then((res) => res.json());
         setJobs(
           data.map((job: any) => ({
             ...job,
@@ -32,9 +48,12 @@ export default function Home() {
             stake: ethers.formatUnits(job.stakeRaw ?? job.stake, DECIMALS),
             fee: ethers.formatUnits(job.feeRaw ?? job.fee, DECIMALS)
           }))
-        )
-      )
-      .catch(console.error);
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadJobs();
   }, []);
 
   async function vote(jobId: string, approve: boolean) {
