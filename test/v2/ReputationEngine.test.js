@@ -18,13 +18,14 @@ describe("ReputationEngine", function () {
     const payout = ethers.parseEther("100");
     const duration = 100000;
     const gain = await engine.calculateReputationPoints(payout, duration);
+    const tokenScale = 10n ** 18n;
+    const max = BigInt(await engine.MAX_REPUTATION());
     const enforceGrowth = (current, points) => {
-      const max = 88888n;
       const newRep = current + points;
-      const numerator = newRep * newRep * 10n ** 18n;
+      const numerator = newRep * newRep * tokenScale;
       const denominator = max * max;
-      const factor = 10n ** 18n + numerator / denominator;
-      const diminished = (newRep * 10n ** 18n) / factor;
+      const factor = tokenScale + numerator / denominator;
+      const diminished = (newRep * tokenScale) / factor;
       return diminished > max ? max : diminished;
     };
     const expectedAgent = enforceGrowth(0n, gain);
@@ -33,7 +34,9 @@ describe("ReputationEngine", function () {
       .onFinalize(user.address, true, payout, duration);
     expect(await engine.reputationOf(user.address)).to.equal(expectedAgent);
 
-    const validatorGain = (gain * 8n) / 100n;
+    const percentageScale = BigInt(await engine.PERCENTAGE_SCALE());
+    const validatorPercentage = BigInt(await engine.validationRewardPercentage());
+    const validatorGain = (gain * validatorPercentage) / percentageScale;
     const expectedValidator = enforceGrowth(0n, validatorGain);
     await engine
       .connect(caller)
