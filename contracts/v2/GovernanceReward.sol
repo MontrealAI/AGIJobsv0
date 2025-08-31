@@ -133,15 +133,21 @@ contract GovernanceReward is Ownable {
         }
     }
 
-    /// @notice finalize the current epoch and pull rewards from the FeePool
-    function finalizeEpoch() external onlyOwner {
+    /// @notice finalize the current epoch and allocate rewards
+    /// @dev Governance must first withdraw the reward amount from the FeePool
+    ///      via `FeePool.governanceWithdraw` and send the tokens here. The
+    ///      provided `rewardAmount` must equal the configured `rewardPct` of
+    ///      the FeePool's balance prior to withdrawal.
+    /// @param rewardAmount token amount transferred from the FeePool for this epoch
+    function finalizeEpoch(uint256 rewardAmount) external onlyOwner {
         require(block.timestamp >= lastEpochTime + epochLength, "early");
         uint256 epoch = currentEpoch;
         uint256 total = totalStake[epoch];
         require(total > 0, "no voters");
-        uint256 poolBal = token.balanceOf(address(feePool));
-        uint256 rewardAmount = (poolBal * rewardPct) / 100;
-        feePool.governanceWithdraw(address(this), rewardAmount);
+        uint256 poolBalAfter = token.balanceOf(address(feePool));
+        uint256 expected = ((poolBalAfter + rewardAmount) * rewardPct) / 100;
+        require(rewardAmount == expected, "reward");
+        require(token.balanceOf(address(this)) >= rewardAmount, "funds");
         rewardPerStake[epoch] = (rewardAmount * ACCUMULATOR_SCALE) / total;
         emit EpochFinalized(epoch, rewardAmount);
         currentEpoch = epoch + 1;

@@ -64,6 +64,7 @@ describe("GovernanceReward", function () {
       treasury.address
     );
     await feePool.setBurnPct(0);
+    await feePool.setGovernance(owner.address);
 
     const Reward = await ethers.getContractFactory(
       "contracts/v2/GovernanceReward.sol:GovernanceReward"
@@ -100,7 +101,11 @@ describe("GovernanceReward", function () {
     await ethers.provider.send("evm_increaseTime", [1]);
     await ethers.provider.send("evm_mine", []);
 
-    await expect(reward.finalizeEpoch())
+    await feePool
+      .connect(owner)
+      .governanceWithdraw(await reward.getAddress(), 50n * TOKEN);
+
+    await expect(reward.finalizeEpoch(50n * TOKEN))
       .to.emit(reward, "EpochFinalized")
       .withArgs(0, 50n * TOKEN);
 
