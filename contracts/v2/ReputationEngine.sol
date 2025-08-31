@@ -19,6 +19,10 @@ contract ReputationEngine is Ownable, Pausable {
     uint256 public constant PAYOUT_SCALE = 1e5;
 
     /// @notice Multiplier applied before the logarithm to widen reputation gain.
+    /// @dev Dimensionless constant tuned for 18-decimal payouts. Since `payout`
+    ///      is first scaled down by {TOKEN_SCALE} to whole tokens, this value
+    ///      does not require adjustment when changing token precision from 6 to
+    ///      18 decimals.
     uint256 public constant LOG_FACTOR = 1e6;
 
     /// @notice Divisor applied to job duration when computing reputation gain.
@@ -240,6 +244,8 @@ contract ReputationEngine is Ownable, Pausable {
 
     /// @notice Compute reputation gain based on payout and duration.
     function calculateReputationPoints(uint256 payout, uint256 duration) public pure returns (uint256) {
+        // Convert the 18-decimal payout into whole tokens so subsequent math
+        // remains independent of token precision.
         uint256 scaledPayout = payout / TOKEN_SCALE;
         uint256 payoutPoints = (scaledPayout ** PAYOUT_EXPONENT) / PAYOUT_SCALE;
         return log2(1 + payoutPoints * LOG_FACTOR) + duration / DURATION_SCALE;
