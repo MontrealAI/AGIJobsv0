@@ -46,7 +46,7 @@ Record each address during deployment. The defaults below assume the 18‑decima
 | --- | --- |
 | [`AGIALPHAToken`](contracts/test/AGIALPHAToken.sol) *(local testing only)* | `mint`, `burn` |
 | [`StakeManager`](contracts/v2/StakeManager.sol) | `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
-| [`JobRegistry`](contracts/v2/JobRegistry.sol) | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot` |
+| [`JobRegistry`](contracts/v2/JobRegistry.sol) | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot`,<br>`setTreasury`, `setIdentityRegistry` |
 | [`ValidationModule`](contracts/v2/ValidationModule.sol) | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry` |
 | [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol) | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setAgentProfileURI` |
 | [`DisputeModule`](contracts/v2/modules/DisputeModule.sol) | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
