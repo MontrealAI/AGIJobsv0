@@ -1,22 +1,22 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("end-to-end job lifecycle", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
   let owner, employer, agent, platform;
-  const reward = ethers.parseUnits("1000", 18);
-  const stakeRequired = ethers.parseUnits("200", 18);
-  const platformStake = ethers.parseUnits("500", 18);
+  const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
+  const stakeRequired = ethers.parseUnits("200", AGIALPHA_DECIMALS);
+  const platformStake = ethers.parseUnits("500", AGIALPHA_DECIMALS);
   const feePct = 10;
   const disputeFee = 0n;
 
   beforeEach(async () => {
     [owner, employer, agent, platform] = await ethers.getSigners();
 
-    const { AGIALPHA } = require("../../scripts/constants");
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
-    const mintAmount = ethers.parseUnits("10000", 18);
+    const mintAmount = ethers.parseUnits("10000", AGIALPHA_DECIMALS);
     await token.mint(owner.address, mintAmount);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);

@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { AGIALPHA_DECIMALS } from "../../scripts/constants";
 
 enum Role {
   Agent,
@@ -16,7 +17,7 @@ async function deploySystem() {
     "contracts/test/AGIALPHAToken.sol:AGIALPHAToken"
   );
   const token = await Token.deploy();
-  const mint = ethers.parseUnits("1000", 18);
+  const mint = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
   await token.mint(employer.address, mint);
   await token.mint(agent.address, mint);
   await token.mint(validator.address, mint);
@@ -78,7 +79,7 @@ async function deploySystem() {
   const Registry = await ethers.getContractFactory(
     "contracts/v2/JobRegistry.sol:JobRegistry"
   );
-  const stakeAmt = ethers.parseUnits("1", 18);
+  const stakeAmt = ethers.parseUnits("1", AGIALPHA_DECIMALS);
   const registry = await Registry.deploy(
     await validation.getAddress(),
     await stake.getAddress(),
@@ -190,7 +191,7 @@ describe("Commit-reveal job lifecycle", function () {
       .approve(await stake.getAddress(), stakeAmt);
     await stake.connect(validator).depositStake(Role.Validator, stakeAmt);
 
-    const reward = ethers.parseUnits("100", 18);
+    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
@@ -214,10 +215,10 @@ describe("Commit-reveal job lifecycle", function () {
 
     expect(await nft.ownerOf(1)).to.equal(agent.address);
     expect(await token.balanceOf(agent.address)).to.equal(
-      ethers.parseUnits("1100", 18)
+      ethers.parseUnits("1100", AGIALPHA_DECIMALS)
     );
 
-    const price = ethers.parseUnits("50", 18);
+    const price = ethers.parseUnits("50", AGIALPHA_DECIMALS);
     await nft.connect(agent).list(1, price);
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await nft.connect(buyer).purchase(1);
@@ -261,7 +262,7 @@ describe("Commit-reveal job lifecycle", function () {
       .approve(await stake.getAddress(), stakeAmt);
     await stake.connect(validator).depositStake(Role.Validator, stakeAmt);
 
-    const reward = ethers.parseUnits("100", 18);
+    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
@@ -293,7 +294,7 @@ describe("Commit-reveal job lifecycle", function () {
 
     expect(await stake.stakeOf(agent.address, Role.Agent)).to.equal(0);
     expect(await token.balanceOf(employer.address)).to.equal(
-      ethers.parseUnits("1001", 18)
+      ethers.parseUnits("1001", AGIALPHA_DECIMALS)
     );
   });
 });

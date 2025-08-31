@@ -1,14 +1,14 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("CertificateNFT marketplace", function () {
-  const price = ethers.parseUnits("1", 18);
+  const price = ethers.parseUnits("1", AGIALPHA_DECIMALS);
   let owner, seller, buyer, token, stake, nft;
 
   beforeEach(async () => {
     [owner, seller, buyer] = await ethers.getSigners();
 
-    const { AGIALPHA } = require("../../scripts/constants");
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(buyer.address, price);
     await token.mint(seller.address, price);

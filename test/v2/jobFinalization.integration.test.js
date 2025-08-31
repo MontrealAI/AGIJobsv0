@@ -1,20 +1,20 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("job finalization integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
   let owner, employer, agent, validator1, validator2;
-  const reward = ethers.parseUnits("1000", 18);
-  const stakeRequired = ethers.parseUnits("200", 18);
+  const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
+  const stakeRequired = ethers.parseUnits("200", AGIALPHA_DECIMALS);
   const feePct = 10;
   const validatorRewardPct = 10;
-  const mintAmount = ethers.parseUnits("10000", 18);
+  const mintAmount = ethers.parseUnits("10000", AGIALPHA_DECIMALS);
 
   beforeEach(async () => {
     [owner, employer, agent, validator1, validator2] = await ethers.getSigners();
 
-    const { AGIALPHA } = require("../../scripts/constants");
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(owner.address, mintAmount);
     await token.mint(employer.address, mintAmount);
