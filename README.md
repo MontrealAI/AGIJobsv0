@@ -59,6 +59,8 @@ Record each address during deployment. The defaults below assume the 18‑decima
 2. **Wire modules** – from each contract’s **Write** tab call:
    - `JobRegistry.setModules(stakeManager, validationModule, disputeModule, certificateNFT, reputationEngine, feePool)`
    - `StakeManager.setJobRegistry(jobRegistry)` and `ValidationModule.setJobRegistry(jobRegistry)`
+   - `JobRegistry.setIdentityRegistry(identityRegistry)`
+   - `ValidationModule.setIdentityRegistry(identityRegistry)`
    - Load ENS settings with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot`
 3. **Example transactions** – after wiring you can:
    - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` then `StakeManager.depositStake(role, 1_000000000000000000)`
