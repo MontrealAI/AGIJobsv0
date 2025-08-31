@@ -12,7 +12,10 @@ const WALLET_KEYS = process.env.WALLET_KEYS || '';
 const PORT = process.env.PORT || 3000;
 const BOT_WALLET = process.env.BOT_WALLET || '';
 // $AGIALPHA token parameters
-const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
+const {
+  address: AGIALPHA_ADDRESS,
+  decimals: AGIALPHA_DECIMALS
+} = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
 // Startup validation for required addresses
@@ -34,6 +37,26 @@ if ('VALIDATION_MODULE_ADDRESS' in process.env) {
 
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
+
+// verify on-chain token decimals against config to prevent misformatted broadcasts
+(async () => {
+  try {
+    const token = new ethers.Contract(
+      AGIALPHA_ADDRESS,
+      ['function decimals() view returns (uint8)'],
+      provider
+    );
+    const chainDecimals = await token.decimals();
+    if (Number(chainDecimals) !== Number(TOKEN_DECIMALS)) {
+      console.error(
+        `AGIALPHA decimals mismatch: config ${TOKEN_DECIMALS} vs chain ${chainDecimals}`
+      );
+      process.exit(1);
+    }
+  } catch (err) {
+    console.warn('Unable to verify AGIALPHA token decimals', err);
+  }
+})();
 const walletManager = new WalletManager(WALLET_KEYS, provider);
 let automationWallet;
 if (BOT_WALLET) {
