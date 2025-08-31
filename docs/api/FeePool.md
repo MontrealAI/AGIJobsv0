@@ -7,10 +7,11 @@ Holds platform fees and distributes rewards.
 - `contribute(uint256 amount)` – anyone can add to the reward pool.
 - `distributeFees()` – move accumulated fees to the reward pool and burn portion.
 - `claimRewards()` – stakers claim their share of rewards.
-- `ownerWithdraw(address to, uint256 amount)` – owner emergency withdrawal.
+- `governanceWithdraw(address to, uint256 amount)` – governance timelock emergency withdrawal.
 - `setStakeManager(address manager)` – owner wires modules.
 - `setRewardRole(uint8 role)` – choose which stakers earn rewards.
 - `setBurnPct(uint256 pct)` / `setTreasury(address treasury)` – configure fee splits.
+- `setGovernance(address governance)` – set timelock enabled for withdrawals.
 
 ## Events
 - `FeeDeposited(address from, uint256 amount)`
@@ -21,5 +22,6 @@ Holds platform fees and distributes rewards.
 - `RewardRoleUpdated(uint8 role)`
 - `BurnPctUpdated(uint256 pct)`
 - `TreasuryUpdated(address treasury)`
-- `OwnerWithdrawal(address to, uint256 amount)`
+- `GovernanceUpdated(address governance)`
+- `GovernanceWithdrawal(address to, uint256 amount)`
 - `RewardPoolContribution(address contributor, uint256 amount)`

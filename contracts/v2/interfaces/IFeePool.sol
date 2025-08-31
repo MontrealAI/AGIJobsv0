@@ -16,9 +16,9 @@ interface IFeePool {
     /// @dev Rewards use 18 decimal units.
     function claimRewards() external;
 
-    /// @notice owner-only emergency withdrawal of tokens from the pool
+    /// @notice governance-controlled emergency withdrawal of tokens from the pool
     /// @dev Amount uses 18 decimal units.
     /// @param to address receiving the tokens
     /// @param amount token amount with 18 decimals
-    function ownerWithdraw(address to, uint256 amount) external;
+    function governanceWithdraw(address to, uint256 amount) external;
 }
