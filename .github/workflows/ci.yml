@@ -25,8 +25,7 @@ jobs:
       - name: Install Foundry
         run: |
           curl -L https://foundry.paradigm.xyz | bash
-          source ~/.bashrc
-          foundryup
+          ~/.foundry/bin/foundryup
           echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
       - name: Run Forge tests
         run: forge test
