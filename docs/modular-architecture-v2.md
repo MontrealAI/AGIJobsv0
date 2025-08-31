@@ -51,7 +51,9 @@ interface IJobRegistry {
         address stake,
         address reputation,
         address dispute,
-        address certificate
+        address certificate,
+        address feePool,
+        address[] calldata ackModules
     ) external;
 }
 

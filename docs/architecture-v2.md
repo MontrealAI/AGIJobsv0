@@ -101,10 +101,12 @@ interface IJobRegistry {
     function finalize(uint256 jobId) external;
     function setModules(
         address validation,
-        address reputation,
         address stake,
+        address reputation,
         address dispute,
-        address cert
+        address cert,
+        address feePool,
+        address[] calldata ackModules
     ) external;
     function setJobParameters(uint256 reward, uint256 stake) external;
 }
