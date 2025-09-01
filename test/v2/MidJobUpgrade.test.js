@@ -82,6 +82,16 @@ async function deploySystem() {
   );
   await dispute.waitForDeployment();
 
+  const FeePool = await ethers.getContractFactory(
+    "contracts/v2/FeePool.sol:FeePool"
+  );
+  const feePool = await FeePool.deploy(
+    await stake.getAddress(),
+    0,
+    owner.address
+  );
+  await feePool.waitForDeployment();
+
   await stake.setModules(await registry.getAddress(), await dispute.getAddress());
   await validation.setJobRegistry(await registry.getAddress());
   await nft.setJobRegistry(await registry.getAddress());
@@ -92,19 +102,20 @@ async function deploySystem() {
     await reputation.getAddress(),
     await dispute.getAddress(),
     await nft.getAddress(),
-    ethers.ZeroAddress,
+    await feePool.getAddress(),
     []
   );
   await registry.setIdentityRegistry(await identity.getAddress());
   await reputation.setCaller(await registry.getAddress(), true);
+  await stake.connect(owner).setFeePool(await feePool.getAddress());
 
-  return { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute };
+  return { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool };
 }
 
 describe("Mid-job module upgrades", function () {
   it("retains job state when swapping validation module mid-job", async function () {
     const env = await deploySystem();
-    const { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute } = env;
+    const { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool } = env;
 
     const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
@@ -141,7 +152,7 @@ describe("Mid-job module upgrades", function () {
         await reputation.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
-        ethers.ZeroAddress,
+        await feePool.getAddress(),
         []
       );
 

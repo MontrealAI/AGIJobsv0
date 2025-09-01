@@ -39,7 +39,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
-          ethers.ZeroAddress,
+          await good.getAddress(),
           []
         )
     ).to.be.revertedWith("Invalid validation module");
@@ -55,7 +55,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
-          ethers.ZeroAddress,
+          await good.getAddress(),
           []
         )
     ).to.be.revertedWith("Invalid stake manager");
@@ -71,7 +71,7 @@ describe("JobRegistry module version checks", function () {
           await bad.getAddress(),
           await good.getAddress(),
           await good.getAddress(),
-          ethers.ZeroAddress,
+          await good.getAddress(),
           []
         )
     ).to.be.revertedWith("Invalid reputation module");
@@ -87,7 +87,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           await bad.getAddress(),
           await good.getAddress(),
-          ethers.ZeroAddress,
+          await good.getAddress(),
           []
         )
     ).to.be.revertedWith("Invalid dispute module");
@@ -103,7 +103,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           await good.getAddress(),
           await bad.getAddress(),
-          ethers.ZeroAddress,
+          await good.getAddress(),
           []
         )
     ).to.be.revertedWith("Invalid certificate NFT");
@@ -118,7 +118,7 @@ describe("JobRegistry module version checks", function () {
         await good.getAddress(),
         await good.getAddress(),
         await good.getAddress(),
-        ethers.ZeroAddress,
+        await good.getAddress(),
         []
       );
     expect(await registry.validationModule()).to.equal(

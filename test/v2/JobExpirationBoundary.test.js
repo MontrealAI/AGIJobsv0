@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Job expiration boundary", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let token, stakeManager, rep, validation, nft, registry, dispute, policy;
+  let token, stakeManager, rep, validation, nft, registry, dispute, policy, feePool;
   let owner, employer, agent, treasury;
   const reward = 100;
   const stake = 200;
@@ -38,6 +38,14 @@ describe("Job expiration boundary", function () {
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );
     nft = await NFT.deploy("Cert", "CERT");
+    const FeePool = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
+    feePool = await FeePool.deploy(
+      await stakeManager.getAddress(),
+      0,
+      treasury.address
+    );
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
@@ -74,7 +82,7 @@ describe("Job expiration boundary", function () {
         await rep.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
-        ethers.ZeroAddress,
+        await feePool.getAddress(),
         []
       );
     await validation.setJobRegistry(await registry.getAddress());
@@ -84,6 +92,9 @@ describe("Job expiration boundary", function () {
     await stakeManager
       .connect(owner)
       .setValidationModule(await validation.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setFeePool(await feePool.getAddress());
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );

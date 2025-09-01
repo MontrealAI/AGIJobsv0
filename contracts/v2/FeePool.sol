@@ -28,6 +28,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
     uint256 public constant DEFAULT_BURN_PCT = 5;
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 2;
 
     /// @notice ERC20 token used for fees and rewards (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);

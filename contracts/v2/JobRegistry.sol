@@ -315,6 +315,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         require(_reputation.version() == 2, "Invalid reputation module");
         require(_dispute.version() == 2, "Invalid dispute module");
         require(_certNFT.version() == 2, "Invalid certificate NFT");
+        require(address(_feePool) != address(0) && _feePool.version() == 2, "Invalid fee pool");
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -407,6 +408,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /// @notice update the FeePool contract used for revenue sharing
     function setFeePool(IFeePool _feePool) external onlyGovernance {
+        require(address(_feePool) != address(0) && _feePool.version() == 2, "Invalid fee pool");
         feePool = _feePool;
         emit FeePoolUpdated(address(_feePool));
         emit ModuleUpdated("FeePool", address(_feePool));
