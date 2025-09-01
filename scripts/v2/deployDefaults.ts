@@ -25,8 +25,8 @@ async function main() {
   console.log("Deployer", deployerAddress);
 
   const tx = withTax
-    ? await deployer.deployDefaults()
-    : await deployer.deployDefaultsWithoutTaxPolicy();
+    ? await deployer.deployDefaults(owner.address)
+    : await deployer.deployDefaultsWithoutTaxPolicy(owner.address);
   const receipt = await tx.wait();
   const log = receipt.logs.find((l) => l.address === deployerAddress)!;
   const decoded = deployer.interface.decodeEventLog(

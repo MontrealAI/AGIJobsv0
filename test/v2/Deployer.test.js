@@ -1,9 +1,17 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, artifacts, network } = require("hardhat");
+const { AGIALPHA } = require("../../scripts/constants");
 
 describe("Deployer", function () {
   it("deploys and wires modules, transferring ownership", async function () {
-    const [owner] = await ethers.getSigners();
+    const [, governance] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     const Deployer = await ethers.getContractFactory(
       "contracts/v2/Deployer.sol:Deployer"
     );
@@ -29,10 +37,15 @@ describe("Deployer", function () {
       agentMerkleRoot: ethers.ZeroHash,
     };
 
-    const addresses = await deployer.deploy.staticCall(econ, ids);
-    await expect(deployer.deploy(econ, ids))
-      .to.emit(deployer, "Deployed")
-      .withArgs(...addresses);
+    const tx = await deployer.deploy(econ, ids, governance.address);
+    const receipt = await tx.wait();
+    const deployerAddress = await deployer.getAddress();
+    const log = receipt.logs.find((l) => l.address === deployerAddress);
+    const decoded = deployer.interface.decodeEventLog(
+      "Deployed",
+      log.data,
+      log.topics
+    );
 
     const [
       stake,
@@ -48,7 +61,7 @@ describe("Deployer", function () {
       taxPolicy,
       identityRegistryAddr,
       systemPause,
-    ] = addresses;
+    ] = decoded;
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -110,14 +123,14 @@ describe("Deployer", function () {
     expect(await validationC.owner()).to.equal(systemPause);
     expect(await reputationC.owner()).to.equal(systemPause);
     expect(await disputeC.owner()).to.equal(systemPause);
-    expect(await certificateC.owner()).to.equal(owner.address);
+    expect(await certificateC.owner()).to.equal(governance.address);
     expect(await platformRegistryC.owner()).to.equal(systemPause);
-    expect(await routerC.owner()).to.equal(owner.address);
-    expect(await incentivesC.owner()).to.equal(owner.address);
+    expect(await routerC.owner()).to.equal(governance.address);
+    expect(await incentivesC.owner()).to.equal(governance.address);
     expect(await feePoolC.owner()).to.equal(systemPause);
-    expect(await taxPolicyC.owner()).to.equal(owner.address);
-    expect(await identityRegistryC.owner()).to.equal(owner.address);
-    expect(await systemPauseC.owner()).to.equal(owner.address);
+    expect(await taxPolicyC.owner()).to.equal(governance.address);
+    expect(await identityRegistryC.owner()).to.equal(governance.address);
+    expect(await systemPauseC.owner()).to.equal(governance.address);
 
     expect(await systemPauseC.jobRegistry()).to.equal(registry);
     expect(await systemPauseC.stakeManager()).to.equal(stake);
@@ -157,6 +170,14 @@ describe("Deployer", function () {
   });
 
   it("can skip tax policy", async function () {
+    const [, governance] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     const Deployer = await ethers.getContractFactory(
       "contracts/v2/Deployer.sol:Deployer"
     );
@@ -180,15 +201,21 @@ describe("Deployer", function () {
       validatorMerkleRoot: ethers.ZeroHash,
       agentMerkleRoot: ethers.ZeroHash,
     };
-    const addresses = await deployer.deployWithoutTaxPolicy.staticCall(
+    const tx2 = await deployer.deployWithoutTaxPolicy(
       econ,
-      ids
+      ids,
+      governance.address
     );
-    await expect(deployer.deployWithoutTaxPolicy(econ, ids))
-      .to.emit(deployer, "Deployed")
-      .withArgs(...addresses);
-    const registry = addresses[1];
-    const taxPolicy = addresses[10];
+    const receipt2 = await tx2.wait();
+    const deployerAddress2 = await deployer.getAddress();
+    const log2 = receipt2.logs.find((l) => l.address === deployerAddress2);
+    const decoded = deployer.interface.decodeEventLog(
+      "Deployed",
+      log2.data,
+      log2.topics
+    );
+    const registry = decoded[1];
+    const taxPolicy = decoded[10];
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
