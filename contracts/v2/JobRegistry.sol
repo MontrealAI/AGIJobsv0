@@ -348,6 +348,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Update the identity registry used for agent verification.
     /// @param registry Address of the IdentityRegistry contract.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyGovernance {
+        require(address(registry) != address(0), "identity reg");
+        require(registry.version() == 2, "Invalid identity registry");
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
         emit ModuleUpdated("IdentityRegistry", address(registry));

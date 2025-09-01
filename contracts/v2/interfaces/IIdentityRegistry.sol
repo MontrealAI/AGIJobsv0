@@ -2,6 +2,8 @@
 pragma solidity ^0.8.25;
 
 interface IIdentityRegistry {
+    /// @notice Module version for compatibility checks.
+    function version() external view returns (uint256);
     enum AgentType {
         Human,
         AI

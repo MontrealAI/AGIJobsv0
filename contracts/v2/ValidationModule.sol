@@ -212,6 +212,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Update the identity registry used for validator verification.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
+        require(address(registry) != address(0), "identity reg");
+        require(registry.version() == 2, "Invalid identity registry");
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
     }
