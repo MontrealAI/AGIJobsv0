@@ -7,7 +7,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ### AGIALPHA configuration
 
-Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol`.
+Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol` with the canonical token address, decimals, scaling factor and burn address.
 
 ## Migrating from legacy
 
