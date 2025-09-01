@@ -176,11 +176,18 @@ describe("IdentityRegistry ENS verification", function () {
       .withArgs(alice.address, "ipfs://cap1");
     expect(await id.agentProfileURI(alice.address)).to.equal("ipfs://cap1");
 
+    // alice cannot update profile until authorized
+    await expect(
+      id.connect(alice).updateAgentProfile("sub", [], "ipfs://cap2")
+    ).to.be.revertedWithCustomError(id, "UnauthorizedAgent");
+
     // allow alice as additional agent then self-update profile
     await id.addAdditionalAgent(alice.address);
-    await id
-      .connect(alice)
-      .updateAgentProfile("sub", [], "ipfs://cap2");
+    await expect(
+      id.connect(alice).updateAgentProfile("sub", [], "ipfs://cap2")
+    )
+      .to.emit(id, "AgentProfileUpdated")
+      .withArgs(alice.address, "ipfs://cap2");
     expect(await id.agentProfileURI(alice.address)).to.equal("ipfs://cap2");
   });
 
