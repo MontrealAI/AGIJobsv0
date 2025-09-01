@@ -5,6 +5,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @notice Identity registry mock with toggled verification result.
 contract IdentityRegistryToggle is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 2;
+
     bool public result;
     bytes32 public clubRootNode;
     bytes32 public agentRootNode;
