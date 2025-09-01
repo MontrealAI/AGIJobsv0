@@ -142,11 +142,17 @@ then be performed through the "Write" tabs on each module.
 ## Owner Administration
 - **Adjust parameters:** examples include `StakeManager.setMinStake(amount)`, `JobRegistry.setFeePct(pct)`, `ValidationModule.setCommitWindow(seconds)`, `ValidationModule.setRevealWindow(seconds)` and `DisputeModule.setDisputeFee(fee)`.
 - **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
-- **Transfer ownership:** every module inherits `Ownable`; call
-  `transferOwnership(multisig)` to hand control to a multisig or timelock.
-  To rotate later, the current owner invokes `transferOwnership(newOwner)`
-  and waits for the `OwnershipTransferred` event before using the new
-  address.
+- **Transfer ownership:** hand governance to a multisig or timelock so no
+  single key can change parameters:
+  - `StakeManager.setGovernance(multisig)`
+  - `JobRegistry.setGovernance(multisig)`
+  - `transferOwnership(multisig)` on `ValidationModule`, `ReputationEngine`,
+    `IdentityRegistry`, `CertificateNFT`, `DisputeModule`, `FeePool`,
+    `PlatformRegistry`, `JobRouter`, `PlatformIncentives`, `TaxPolicy` and
+    `SystemPause`.
+  To rotate later, the current governance executes `setGovernance(newOwner)`
+  or `transferOwnership(newOwner)` and waits for the corresponding event
+  before using the new address.
 
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at

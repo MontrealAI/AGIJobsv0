@@ -72,13 +72,18 @@ single key can change parameters:
 
 1. Deploy a multisig wallet or an OpenZeppelin
    `TimelockController`.
-2. From the deployer account call
-   `transferOwnership(multisig)` on every module such as
-   `JobRegistry`, `StakeManager`, and `ValidationModule`.
+2. From the deployer account hand over control of each module:
+   - `StakeManager.setGovernance(multisig)`
+   - `JobRegistry.setGovernance(multisig)`
+   - `transferOwnership(multisig)` on all other modules such as
+     `ValidationModule`, `ReputationEngine`, `IdentityRegistry`,
+     `CertificateNFT`, `DisputeModule`, `FeePool`, `PlatformRegistry`,
+     `JobRouter`, `PlatformIncentives`, `TaxPolicy` and `SystemPause`.
 3. To rotate governance later, the current multisig executes
-   `transferOwnership(newOwner)` and the new address assumes control after the
-   `OwnershipTransferred` event. Timelock contracts must schedule and execute
-   the call; direct EOA transactions will revert once ownership has moved.
+   `setGovernance(newOwner)` or `transferOwnership(newOwner)` as
+   appropriate and the new address assumes control after the relevant
+   event. Timelock contracts must schedule and execute the call; direct EOA
+   transactions will revert once ownership has moved.
 
 ### ENS subdomain prerequisites
 - Agents must control an ENS subdomain ending in `.agent.agi.eth`.
