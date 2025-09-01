@@ -14,13 +14,13 @@ This walkthrough shows a non‑technical owner how to deploy and wire the modula
 
 ## 2. Deploy core modules
 
-Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Addresses for dependent modules may be passed at deployment or left as `0` and wired later. Parameters may be left as `0` to accept the defaults shown below:
+Deploy each contract **in the order listed below** from the **Write Contract** tabs (the deployer automatically becomes the owner). Addresses for dependent modules may be passed at deployment or left as `0` and wired later, except `ReputationEngine` which now requires a valid `StakeManager` address. Parameters may be left as `0` to accept the defaults shown below:
 
 1. Use the existing `$AGIALPHA` token. Deploy [`AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) only on local networks and call `mint(to, amount)` to create a test supply.
 2. `StakeManager(token, minStake, employerPct, treasuryPct, treasury)` – pass `address(0)` for `token` to use the default $AGIALPHA and `0,0` for the slashing percentages to send 100% of any slash to the treasury.
 3. `JobRegistry(validation, stakeMgr, reputation, dispute, certNFT, feePool, taxPolicy, feePct, jobStake)` – leaving `feePct = 0` applies a 5% protocol fee. Supplying a nonzero `taxPolicy` sets the disclaimer at deployment; otherwise the owner may call `setTaxPolicy` later.
 4. `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, minValidators, maxValidators, validatorPool)` – zero values default to 1‑day windows and a 1–3 validator set.
-5. `ReputationEngine(stakeManager)` – optional reputation weighting (pass `0` to wire later).
+5. `ReputationEngine(stakeManager)` – requires a valid `StakeManager` address.
 6. `DisputeModule(jobRegistry, disputeFee, disputeWindow, moderator)` – manages
    appeals and dispute fees. The fourth argument optionally seeds an initial
    moderator; the deployer remains owner and can add weighted moderators with

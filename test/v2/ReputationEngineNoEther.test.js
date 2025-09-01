@@ -6,10 +6,12 @@ describe("ReputationEngine ether rejection", function () {
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Engine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    engine = await Engine.deploy(ethers.ZeroAddress);
+    engine = await Engine.deploy(await stake.getAddress());
     await engine.waitForDeployment();
   });
 

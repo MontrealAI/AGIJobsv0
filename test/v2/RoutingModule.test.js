@@ -15,7 +15,7 @@ describe("JobRouter", function () {
     const Reputation = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    reputation = await Reputation.deploy(ethers.ZeroAddress);
+    reputation = await Reputation.deploy(await stakeManager.getAddress());
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
