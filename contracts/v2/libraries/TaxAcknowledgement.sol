@@ -4,6 +4,8 @@ pragma solidity ^0.8.25;
 import {ITaxPolicy} from "../interfaces/ITaxPolicy.sol";
 
 abstract contract TaxAcknowledgement {
+    error TaxPolicyNotAcknowledged(address account);
+
     modifier requiresTaxAcknowledgement(
         ITaxPolicy policy,
         address account,
@@ -17,10 +19,9 @@ abstract contract TaxAcknowledgement {
             account != exempt2 &&
             address(policy) != address(0)
         ) {
-            require(
-                policy.hasAcknowledged(account),
-                "acknowledge tax policy"
-            );
+            if (!policy.hasAcknowledged(account)) {
+                revert TaxPolicyNotAcknowledged(account);
+            }
         }
         _;
     }

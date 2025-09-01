@@ -375,7 +375,9 @@ describe("StakeManager", function () {
 
     await expect(
       stakeManager.connect(user).depositStake(0, 100)
-    ).to.be.revertedWith("acknowledge tax policy");
+    )
+      .to.be.revertedWithCustomError(stakeManager, "TaxPolicyNotAcknowledged")
+      .withArgs(user.address);
 
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await expect(stakeManager.connect(user).depositStake(0, 100)).to.emit(
@@ -386,7 +388,9 @@ describe("StakeManager", function () {
     await taxPolicy.connect(owner).bumpPolicyVersion();
     await expect(
       stakeManager.connect(user).withdrawStake(0, 50)
-    ).to.be.revertedWith("acknowledge tax policy");
+    )
+      .to.be.revertedWithCustomError(stakeManager, "TaxPolicyNotAcknowledged")
+      .withArgs(user.address);
 
     await jobRegistry.connect(user).acknowledgeTaxPolicy();
     await expect(stakeManager.connect(user).withdrawStake(0, 50))
