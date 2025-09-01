@@ -156,6 +156,8 @@ async function main() {
   await platformRegistry.transferOwnership(await pause.getAddress());
   await feePool.transferOwnership(await pause.getAddress());
   await reputation.transferOwnership(await pause.getAddress());
+  await nft.transferOwnership(await pause.getAddress());
+  await identity.transferOwnership(await pause.getAddress());
 
   console.log("StakeManager:", await stake.getAddress());
   console.log("ReputationEngine:", await reputation.getAddress());
