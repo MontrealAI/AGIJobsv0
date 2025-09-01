@@ -181,6 +181,16 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 ### JobRegistry
 To wire deployed modules, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))`. The final array `_ackModules` lists modules that must acknowledge the tax policy before interacting.
 
+#### Link the identity registry
+After wiring modules, the governance/owner account must associate the identity registry by calling:
+
+```
+JobRegistry.setIdentityRegistry(identityRegistry)
+ValidationModule.setIdentityRegistry(identityRegistry)
+```
+
+Linking enables ENS subdomain checks and membership proofs through a shared registry. Once connected, configure the ENS name and its Merkle root within the registry to reflect permitted subdomains and the current member set.
+
 | Function | Parameters | Typical Use Case |
 | --- | --- | --- |
 | `createJob(string details, uint256 reward)` | `details` – off-chain URI, `reward` – escrowed token amount | Employer posts a new job and locks payment. |
