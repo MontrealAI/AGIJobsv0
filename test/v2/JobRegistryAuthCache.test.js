@@ -43,8 +43,8 @@ describe("JobRegistry agent auth cache", function () {
     );
     policy = await Policy.deploy("uri", "ack");
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
 
     await registry.connect(owner).setMaxJobReward(1000);
     await registry.connect(owner).setJobDurationLimit(1000);
@@ -123,8 +123,8 @@ describe("JobRegistry agent auth cache", function () {
     );
     const policy2 = await Policy.deploy("uri", "ack");
     await registry2.connect(owner).setTaxPolicy(await policy2.getAddress());
-    await registry2.connect(employer).acknowledgeTaxPolicy();
-    await registry2.connect(agent).acknowledgeTaxPolicy();
+    await policy2.connect(employer).acknowledge();
+    await policy2.connect(agent).acknowledge();
 
     await registry2.connect(owner).setMaxJobReward(1000);
     await registry2.connect(owner).setJobDurationLimit(1000);

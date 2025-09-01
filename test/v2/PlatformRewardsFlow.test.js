@@ -104,8 +104,8 @@ describe("Platform reward flow", function () {
     expect(await jobRouter.routingWeight(owner.address)).to.equal(0n);
 
     // Alice and Bob acknowledge tax policy
-    await jobRegistry.connect(alice).acknowledgeTaxPolicy();
-    await jobRegistry.connect(bob).acknowledgeTaxPolicy();
+    await taxPolicy.connect(alice).acknowledge();
+    await taxPolicy.connect(bob).acknowledge();
 
     // stake and register
     await token.connect(alice).approve(await stakeManager.getAddress(), STAKE_ALICE);

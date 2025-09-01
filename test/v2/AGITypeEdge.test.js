@@ -50,7 +50,7 @@ describe("StakeManager AGIType bonuses", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(agent).acknowledgeTaxPolicy();
+    await taxPolicy.connect(agent).acknowledge();
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [

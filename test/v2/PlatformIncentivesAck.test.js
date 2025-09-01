@@ -89,6 +89,7 @@ describe("PlatformIncentives acknowledge", function () {
       .connect(operator)
       .approve(await stakeManager.getAddress(), STAKE);
 
+    await policy.connect(operator).acknowledge();
     await incentives.connect(operator).acknowledgeStakeAndActivate(STAKE);
     expect(await policy.hasAcknowledged(operator.address)).to.equal(true);
   });

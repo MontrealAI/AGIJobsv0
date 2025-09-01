@@ -139,11 +139,11 @@ describe("multi-operator job lifecycle", function () {
     await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
-    await registry.acknowledgeTaxPolicy();
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
-    await registry.connect(platform1).acknowledgeTaxPolicy();
-    await registry.connect(platform2).acknowledgeTaxPolicy();
+    await policy.acknowledge();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
+    await policy.connect(platform1).acknowledge();
+    await policy.connect(platform2).acknowledge();
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"

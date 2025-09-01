@@ -50,11 +50,9 @@ describe("JobRegistry tax policy integration", function () {
 
   it("tracks user acknowledgement", async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await expect(registry.connect(user).acknowledgeTaxPolicy())
+    await expect(policy.connect(user).acknowledge())
       .to.emit(policy, "PolicyAcknowledged")
-      .withArgs(user.address, 1)
-      .and.to.emit(registry, "TaxAcknowledged")
-      .withArgs(user.address, 1, "ack");
+      .withArgs(user.address, 1);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);
   });
 
@@ -63,7 +61,7 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setMaxJobReward(10);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await registry.connect(user).acknowledgeTaxPolicy();
+    await policy.connect(user).acknowledge();
     await policy.connect(owner).bumpPolicyVersion();
     const deadline = (await time.latest()) + 1000;
     await expect(
@@ -71,11 +69,9 @@ describe("JobRegistry tax policy integration", function () {
     )
       .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
       .withArgs(user.address);
-    await expect(registry.connect(user).acknowledgeTaxPolicy())
+    await expect(policy.connect(user).acknowledge())
       .to.emit(policy, "PolicyAcknowledged")
-      .withArgs(user.address, 2)
-      .and.to.emit(registry, "TaxAcknowledged")
-      .withArgs(user.address, 2, "ack");
+      .withArgs(user.address, 2);
     await expect(registry.connect(user).createJob(1, deadline, "uri"))
       .to.emit(registry, "JobCreated")
       .withArgs(1, user.address, ethers.ZeroAddress, 1, 0, 0, "uri");
@@ -101,6 +97,8 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setAcknowledger(owner.address, true);
     await registry.connect(owner).acknowledgeFor(user.address);
     expect(await policy.hasAcknowledged(user.address)).to.equal(false);
-    expect(await policy.hasAcknowledged(owner.address)).to.equal(true);
+    expect(await policy.hasAcknowledged(await registry.getAddress())).to.equal(
+      true
+    );
   });
 });

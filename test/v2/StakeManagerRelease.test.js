@@ -50,8 +50,8 @@ describe("StakeManager release", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user1).acknowledgeTaxPolicy();
-    await jobRegistry.connect(user2).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user1).acknowledge();
+    await taxPolicy.connect(user2).acknowledge();
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"

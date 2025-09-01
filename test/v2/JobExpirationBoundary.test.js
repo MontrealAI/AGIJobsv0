@@ -105,9 +105,9 @@ describe("Job expiration boundary", function () {
     );
     policy = await Policy.deploy("ipfs://policy", "ack");
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await registry.connect(owner).acknowledgeTaxPolicy();
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
+    await policy.connect(owner).acknowledge();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
     await token

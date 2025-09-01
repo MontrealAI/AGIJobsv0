@@ -122,9 +122,9 @@ describe("job finalization integration", function () {
     await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
-    await registry.acknowledgeTaxPolicy();
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
+    await policy.acknowledge();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
     );

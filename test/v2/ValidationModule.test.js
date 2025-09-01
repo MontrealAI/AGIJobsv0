@@ -448,7 +448,7 @@ describe("ValidationModule V2", function () {
       .to.be.revertedWithCustomError(validation, "TaxPolicyNotAcknowledged")
       .withArgs(val.address);
 
-    await jobRegistry.connect(val).acknowledgeTaxPolicy();
+    await policy.connect(val).acknowledge();
     await expect(
       validation.connect(val).commitValidation(1, commit, "", [])
     ).to.emit(validation, "ValidationCommitted");
@@ -461,7 +461,7 @@ describe("ValidationModule V2", function () {
       .to.be.revertedWithCustomError(validation, "TaxPolicyNotAcknowledged")
       .withArgs(val.address);
 
-    await jobRegistry.connect(val).acknowledgeTaxPolicy();
+    await policy.connect(val).acknowledge();
     await expect(
       validation.connect(val).revealValidation(1, true, salt, "", [])
     ).to.emit(validation, "ValidationRevealed");
