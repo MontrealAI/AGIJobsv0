@@ -175,4 +175,35 @@ describe("IdentityRegistry ENS verification", function () {
       .updateAgentProfile("sub", [], "ipfs://cap2");
     expect(await id.agentProfileURI(alice.address)).to.equal("ipfs://cap2");
   });
+
+  it("requires new owner to accept ownership", async () => {
+    const [owner, other] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory("MockENS");
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory("MockNameWrapper");
+    const wrapper = await Wrapper.deploy();
+
+    const Rep = await ethers.getContractFactory(
+      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    );
+    const rep = await Rep.deploy(ethers.ZeroAddress);
+
+    const Registry = await ethers.getContractFactory(
+      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
+    );
+    const id = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      await rep.getAddress(),
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
+
+    await id.transferOwnership(other.address);
+    expect(await id.owner()).to.equal(owner.address);
+    await id.connect(other).acceptOwnership();
+    expect(await id.owner()).to.equal(other.address);
+  });
 });

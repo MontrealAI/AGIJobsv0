@@ -196,6 +196,7 @@ describe("Ownable modules", function () {
         ENSVerifier.attach(identityRegistryAddr),
         owner,
         (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress),
+        true,
       ],
       [
         modCert,
@@ -210,12 +211,18 @@ describe("Ownable modules", function () {
       ],
     ];
 
-    for (const [inst, signer, call] of modules) {
+    for (const [inst, signer, call, twoStep] of modules) {
       await expect(call(inst, other)).to.be.reverted;
       await inst.connect(signer).transferOwnership(other.address);
+      if (twoStep) {
+        await inst.connect(other).acceptOwnership();
+      }
       await expect(call(inst, signer)).to.be.reverted;
       await call(inst, other);
       await inst.connect(other).transferOwnership(await signer.getAddress());
+      if (twoStep) {
+        await inst.connect(signer).acceptOwnership();
+      }
     }
 
     await network.provider.request({
