@@ -27,5 +27,8 @@ module.exports = {
     enabled: true,
     currency: 'USD',
     showTimeSpent: true,
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
   }
 };
