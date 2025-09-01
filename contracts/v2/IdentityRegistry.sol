@@ -8,6 +8,9 @@ import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 
+error ZeroAddress();
+error InvalidAgentType();
+
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
 /// for agents and validators. Provides helper views that also check
@@ -116,7 +119,9 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     function addAdditionalAgent(address agent) external onlyOwner {
-        require(agent != address(0), "agent");
+        if (agent == address(0)) {
+            revert ZeroAddress();
+        }
         additionalAgents[agent] = true;
         emit AdditionalAgentUpdated(agent, true);
     }
@@ -127,7 +132,9 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     function addAdditionalValidator(address validator) external onlyOwner {
-        require(validator != address(0), "validator");
+        if (validator == address(0)) {
+            revert ZeroAddress();
+        }
         additionalValidators[validator] = true;
         emit AdditionalValidatorUpdated(validator, true);
     }
@@ -138,8 +145,12 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     function setAgentType(address agent, uint8 _type) external onlyOwner {
-        require(agent != address(0), "agent");
-        require(_type <= uint8(AgentType.AI), "type");
+        if (agent == address(0)) {
+            revert ZeroAddress();
+        }
+        if (_type > uint8(AgentType.AI)) {
+            revert InvalidAgentType();
+        }
         agentType[agent] = AgentType(_type);
         emit AgentTypeUpdated(agent, AgentType(_type));
     }
@@ -155,7 +166,9 @@ contract IdentityRegistry is Ownable2Step {
     /// @notice Set or overwrite an agent's capability metadata URI.
     /// @dev Restricted to governance/owner.
     function setAgentProfileURI(address agent, string calldata uri) external onlyOwner {
-        require(agent != address(0), "agent");
+        if (agent == address(0)) {
+            revert ZeroAddress();
+        }
         agentProfileURI[agent] = uri;
         emit AgentProfileUpdated(agent, uri);
     }
