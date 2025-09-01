@@ -59,7 +59,7 @@ The script prints module addresses and verifies source on Etherscan.
 7. **Deploy `CertificateNFT`** supplying a name and symbol.
 8. **Deploy `JobRegistry`** passing the governance contract address as the
    final constructor argument, then wire modules by calling
-   `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, new address[](0))` from the
+   `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))` from the
    governance account.
 9. **Point modules back to `JobRegistry`** by calling `setJobRegistry` on `StakeManager`, `ValidationModule`, `DisputeModule` and `CertificateNFT`, and `setIdentityRegistry` on `ValidationModule`.
 10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
