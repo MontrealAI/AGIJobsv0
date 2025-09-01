@@ -15,6 +15,9 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     bool public approve;
     bytes32 public salt;
 
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 2;
+
     function setValidationModule(address vm) external {
         validation = IValidationModule(vm);
     }

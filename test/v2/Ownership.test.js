@@ -150,7 +150,8 @@ describe("Ownable modules", function () {
       [
         ValidationModule.attach(validation),
         systemPauseSigner,
-        (inst, signer) => inst.connect(signer).setIdentityRegistry(ethers.ZeroAddress),
+        (inst, signer) =>
+          inst.connect(signer).setIdentityRegistry(identityRegistryAddr),
       ],
       [
         ReputationEngine.attach(reputation),

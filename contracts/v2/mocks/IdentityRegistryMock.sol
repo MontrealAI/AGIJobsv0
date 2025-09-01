@@ -5,6 +5,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @notice Simple identity registry mock that always authorizes.
 contract IdentityRegistryMock is Ownable {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 2;
+
     address public ens;
     address public nameWrapper;
     address public reputationEngine;

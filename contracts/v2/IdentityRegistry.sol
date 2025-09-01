@@ -13,6 +13,8 @@ import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 /// for agents and validators. Provides helper views that also check
 /// reputation blacklists.
 contract IdentityRegistry is Ownable2Step {
+    /// @notice Module version for compatibility checks.
+    uint256 public constant version = 2;
     enum AgentType {
         Human,
         AI
