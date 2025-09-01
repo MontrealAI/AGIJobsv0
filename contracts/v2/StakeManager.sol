@@ -753,6 +753,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param jobId unique job identifier
     /// @param to recipient of the release (typically the agent)
     /// @param amount base token amount with 18 decimals before AGI bonus
+    /// @dev Deposits fees into the FeePool without distributing them;
+    ///      an external process should call `FeePool.distributeFees()`
+    ///      periodically to settle rewards.
     function releaseReward(bytes32 jobId, address to, uint256 amount)
         external
         onlyJobRegistry
@@ -773,7 +776,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), feeAmount);
                 feePool.depositFee(feeAmount);
-                feePool.distributeFees();
+                // Fees accumulate in the pool; distribution must be triggered
+                // separately via `FeePool.distributeFees()` (e.g. by an
+                // off-chain keeper).
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
                 token.safeTransfer(BURN_ADDRESS, feeAmount);
@@ -792,7 +797,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice Release funds previously locked via {lock}.
     /// @dev Does not adjust job-specific escrows; the caller must ensure
-    ///      sufficient balance was locked earlier.
+    ///      sufficient balance was locked earlier. Fees accumulate in the
+    ///      FeePool until `FeePool.distributeFees()` is called separately.
     /// @param to Recipient receiving the tokens.
     /// @param amount Base token amount with 18 decimals before AGI bonus.
     function release(address to, uint256 amount) external onlyJobRegistry whenNotPaused {
@@ -809,7 +815,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), feeAmount);
                 feePool.depositFee(feeAmount);
-                feePool.distributeFees();
+                // Fees remain pending until `FeePool.distributeFees()` is
+                // invoked separately.
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
                 token.safeTransfer(BURN_ADDRESS, feeAmount);
