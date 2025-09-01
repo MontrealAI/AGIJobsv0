@@ -90,7 +90,9 @@ describe("StakeManager extras", function () {
       stakeManager
         .connect(user)
         .depositStake(0, ethers.parseEther("100"))
-    ).to.be.revertedWith("acknowledge tax policy");
+    )
+      .to.be.revertedWithCustomError(stakeManager, "TaxPolicyNotAcknowledged")
+      .withArgs(user.address);
   });
 
   it("enforces max stake per address", async () => {

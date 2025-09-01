@@ -118,6 +118,8 @@ describe("JobRegistry agent gating", function () {
     await policy.bumpPolicyVersion();
     await expect(
       registry.connect(agent).applyForJob(jobId, "a", [])
-    ).to.be.revertedWith("acknowledge tax policy");
+    )
+      .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
+      .withArgs(agent.address);
   });
 });

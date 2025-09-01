@@ -250,7 +250,9 @@ describe("comprehensive job flows", function () {
     const deadline = (await time.latest()) + 1000;
     await expect(
       registry.connect(employer).createJob(reward, deadline, "uri")
-    ).to.be.revertedWith("acknowledge tax policy");
+    )
+      .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
+      .withArgs(employer.address);
   });
 });
 

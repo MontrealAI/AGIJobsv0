@@ -68,7 +68,9 @@ describe("JobRegistry tax policy integration", function () {
     const deadline = (await time.latest()) + 1000;
     await expect(
       registry.connect(user).createJob(1, deadline, "uri")
-    ).to.be.revertedWith("acknowledge tax policy");
+    )
+      .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
+      .withArgs(user.address);
     await expect(registry.connect(user).acknowledgeTaxPolicy())
       .to.emit(policy, "PolicyAcknowledged")
       .withArgs(user.address, 2)
