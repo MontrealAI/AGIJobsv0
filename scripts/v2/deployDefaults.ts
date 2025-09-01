@@ -24,9 +24,18 @@ async function main() {
   const deployerAddress = await deployer.getAddress();
   console.log("Deployer", deployerAddress);
 
+  const ids = {
+    ens: ethers.ZeroAddress,
+    nameWrapper: ethers.ZeroAddress,
+    clubRootNode: ethers.ZeroHash,
+    agentRootNode: ethers.ZeroHash,
+    validatorMerkleRoot: ethers.ZeroHash,
+    agentMerkleRoot: ethers.ZeroHash,
+  };
+
   const tx = withTax
-    ? await deployer.deployDefaults(owner.address)
-    : await deployer.deployDefaultsWithoutTaxPolicy(owner.address);
+    ? await deployer.deployDefaults(ids, owner.address)
+    : await deployer.deployDefaultsWithoutTaxPolicy(ids, owner.address);
   const receipt = await tx.wait();
   const log = receipt.logs.find((l) => l.address === deployerAddress)!;
   const decoded = deployer.interface.decodeEventLog(
@@ -47,6 +56,8 @@ async function main() {
     platformIncentives,
     feePool,
     taxPolicy,
+    identityRegistry,
+    systemPause,
   ] = decoded as string[];
 
   await verify(deployerAddress);
@@ -90,9 +101,22 @@ async function main() {
     platformRegistry,
     jobRouter,
   ]);
-  await verify(feePool, [
+  await verify(feePool, [stakeManager, 2, owner.address]);
+  await verify(identityRegistry, [
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    reputationEngine,
+    ethers.ZeroHash,
+    ethers.ZeroHash,
+  ]);
+  await verify(systemPause, [
+    jobRegistry,
     stakeManager,
-    2,
+    validationModule,
+    disputeModule,
+    platformRegistry,
+    feePool,
+    reputationEngine,
     owner.address,
   ]);
   if (withTax) {
