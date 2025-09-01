@@ -278,6 +278,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Staking is disabled until a nonzero registry is configured.
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
     function setJobRegistry(address _jobRegistry) external onlyGovernance {
+        if (_jobRegistry == address(0) || IJobRegistry(_jobRegistry).version() != 2) {
+            revert InvalidJobRegistry();
+        }
         jobRegistry = _jobRegistry;
         emit JobRegistryUpdated(_jobRegistry);
     }
