@@ -44,6 +44,8 @@ error InsufficientEscrow();
 error AGITypeNotFound();
 error EtherNotAccepted();
 error InvalidTokenDecimals();
+error InvalidFeePool();
+error MaxAGITypesExceeded();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -340,7 +342,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update FeePool contract
     /// @param pool FeePool receiving protocol fees
     function setFeePool(IFeePool pool) external onlyGovernance {
-        require(address(pool) != address(0) && pool.version() == 2, "invalid pool");
+        if (address(pool) == address(0) || pool.version() != 2) {
+            revert InvalidFeePool();
+        }
         feePool = pool;
         emit FeePoolUpdated(address(pool));
     }
@@ -370,7 +374,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice Update the maximum number of AGI types allowed
     function setMaxAGITypes(uint256 newMax) external onlyGovernance {
-        require(newMax <= MAX_AGI_TYPES_CAP, "maxAGITypes");
+        if (newMax > MAX_AGI_TYPES_CAP) {
+            revert MaxAGITypesExceeded();
+        }
         uint256 old = maxAGITypes;
         maxAGITypes = newMax;
         emit MaxAGITypesUpdated(old, newMax);

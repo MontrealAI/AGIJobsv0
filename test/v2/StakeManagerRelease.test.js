@@ -190,7 +190,7 @@ describe("StakeManager release", function () {
   it("reverts when setting fee pool to zero", async () => {
     await expect(
       stakeManager.connect(owner).setFeePool(ethers.ZeroAddress)
-    ).to.be.revertedWith("invalid pool");
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidFeePool");
   });
 
   it("restricts fee configuration to owner", async () => {
