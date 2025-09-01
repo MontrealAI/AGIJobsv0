@@ -187,34 +187,10 @@ describe("StakeManager release", function () {
     );
   });
 
-  it("burns fee when fee pool unset", async () => {
-    const burnAddr = "0x000000000000000000000000000000000000dEaD";
-    await stakeManager.connect(owner).setFeePool(ethers.ZeroAddress);
-
-    const before1 = await token.balanceOf(user1.address);
-    const beforeBurn = await token.balanceOf(burnAddr);
-
+  it("reverts when setting fee pool to zero", async () => {
     await expect(
-      stakeManager
-        .connect(registrySigner)
-        .release(user1.address, ethers.parseEther("100"))
-    )
-      .to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, burnAddr, ethers.parseEther("20"))
-      .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, burnAddr, ethers.parseEther("10"))
-      .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther("70"));
-
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(
-      ethers.parseEther("70")
-    );
-    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(
-      ethers.parseEther("30")
-    );
-    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
-      ethers.parseEther("0")
-    );
+      stakeManager.connect(owner).setFeePool(ethers.ZeroAddress)
+    ).to.be.revertedWith("invalid pool");
   });
 
   it("restricts fee configuration to owner", async () => {

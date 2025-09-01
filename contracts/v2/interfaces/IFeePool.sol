@@ -4,6 +4,9 @@ pragma solidity ^0.8.25;
 /// @title IFeePool
 /// @notice Minimal interface for depositing job fees
 interface IFeePool {
+    /// @notice contract version for compatibility checks
+    function version() external view returns (uint256);
+
     /// @notice notify the pool about newly received fees
     /// @param amount amount of tokens transferred to the pool scaled to 18 decimals
     function depositFee(uint256 amount) external;

@@ -6,6 +6,7 @@ describe("JobRegistry integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, policy, identity;
   const { AGIALPHA } = require("../../scripts/constants");
   let owner, employer, agent, treasury;
+  let feePool;
 
   const reward = 100;
   const stake = 200;
@@ -40,6 +41,14 @@ describe("JobRegistry integration", function () {
       "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
     );
     nft = await NFT.deploy("Cert", "CERT");
+    const FeePool = await ethers.getContractFactory(
+      "contracts/v2/FeePool.sol:FeePool"
+    );
+    feePool = await FeePool.deploy(
+      await stakeManager.getAddress(),
+      0,
+      treasury.address
+    );
     const Registry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );
@@ -79,7 +88,7 @@ describe("JobRegistry integration", function () {
         await rep.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
-        ethers.ZeroAddress,
+        await feePool.getAddress(),
         []
       );
     await validation.setJobRegistry(await registry.getAddress());
@@ -101,6 +110,9 @@ describe("JobRegistry integration", function () {
     await stakeManager
       .connect(owner)
       .setValidationModule(await validation.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setFeePool(await feePool.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
     await registry
       .connect(owner)
@@ -291,7 +303,7 @@ describe("JobRegistry integration", function () {
           await rep.getAddress(),
           await dispute.getAddress(),
           await nft.getAddress(),
-          ethers.ZeroAddress,
+          await feePool.getAddress(),
           []
         )
     )
@@ -323,7 +335,7 @@ describe("JobRegistry integration", function () {
         await rep.getAddress(),
         await dispute.getAddress(),
         await nft.getAddress(),
-        ethers.ZeroAddress,
+        await feePool.getAddress(),
         [treasury.address]
       );
 

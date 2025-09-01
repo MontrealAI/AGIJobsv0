@@ -340,6 +340,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update FeePool contract
     /// @param pool FeePool receiving protocol fees
     function setFeePool(IFeePool pool) external onlyGovernance {
+        require(address(pool) != address(0) && pool.version() == 2, "invalid pool");
         feePool = pool;
         emit FeePoolUpdated(address(pool));
     }
