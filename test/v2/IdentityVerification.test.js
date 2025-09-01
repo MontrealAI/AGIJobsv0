@@ -67,8 +67,8 @@ describe("Identity verification enforcement", function () {
       );
       const policy = await Policy.deploy("uri", "ack");
       await registry.connect(owner).setTaxPolicy(await policy.getAddress());
-      await registry.connect(employer).acknowledgeTaxPolicy();
-      await registry.connect(agent).acknowledgeTaxPolicy();
+      await policy.connect(employer).acknowledge();
+      await policy.connect(agent).acknowledge();
       await registry.connect(owner).setMaxJobReward(1000);
       await registry.connect(owner).setJobDurationLimit(1000);
       await registry.connect(owner).setFeePct(0);

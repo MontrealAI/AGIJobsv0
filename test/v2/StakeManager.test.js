@@ -59,7 +59,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await expect(stakeManager.connect(user).depositStake(0, 200))
@@ -149,7 +149,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(user).depositStake(0, 100);
@@ -209,7 +209,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(user).depositStake(0, 100);
@@ -267,7 +267,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 600);
 
@@ -318,7 +318,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await expect(
@@ -379,7 +379,7 @@ describe("StakeManager", function () {
       .to.be.revertedWithCustomError(stakeManager, "TaxPolicyNotAcknowledged")
       .withArgs(user.address);
 
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
     await expect(stakeManager.connect(user).depositStake(0, 100)).to.emit(
       stakeManager,
       "StakeDeposited"
@@ -392,7 +392,7 @@ describe("StakeManager", function () {
       .to.be.revertedWithCustomError(stakeManager, "TaxPolicyNotAcknowledged")
       .withArgs(user.address);
 
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
     await expect(stakeManager.connect(user).withdrawStake(0, 50))
       .to.emit(stakeManager, "StakeWithdrawn")
       .withArgs(user.address, 0, 50);
@@ -437,7 +437,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 400);
 
@@ -633,7 +633,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
@@ -694,7 +694,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
@@ -746,7 +746,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
@@ -805,7 +805,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await expect(
       stakeManager.connect(user).depositStake(0, 0)
@@ -837,7 +837,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
@@ -888,7 +888,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await taxPolicy.connect(user).acknowledge();
 
     const initial = ethers.parseUnits("1000000", AGIALPHA_DECIMALS);
     await token.mint(user.address, initial);
@@ -972,7 +972,10 @@ describe("StakeManager", function () {
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
-    expect(await policy.hasAcknowledged(user.address)).to.equal(true);
+    expect(
+      await policy.hasAcknowledged(await jobRegistry.getAddress())
+    ).to.equal(true);
+    expect(await policy.hasAcknowledged(user.address)).to.equal(false);
     await expect(
       jobRegistry.connect(user).acknowledgeFor(user.address)
     ).to.be.revertedWith("acknowledger");
@@ -1008,7 +1011,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await policy1.connect(user).acknowledge();
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
@@ -1016,7 +1019,10 @@ describe("StakeManager", function () {
 
     await stakeManager.connect(user).acknowledgeAndWithdraw(0, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
-    expect(await policy2.hasAcknowledged(user.address)).to.equal(true);
+    expect(await policy2.hasAcknowledged(user.address)).to.equal(false);
+    expect(
+      await policy2.hasAcknowledged(await jobRegistry.getAddress())
+    ).to.equal(true);
   });
 
   it("acknowledgeAndWithdrawFor requires authorization and re-acknowledges", async () => {
@@ -1049,7 +1055,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
 
     await token.connect(user).approve(await stakeManager.getAddress(), 100);
-    await jobRegistry.connect(user).acknowledgeTaxPolicy();
+    await policy1.connect(user).acknowledge();
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
@@ -1064,6 +1070,8 @@ describe("StakeManager", function () {
       .acknowledgeAndWithdrawFor(user.address, 0, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await policy2.hasAcknowledged(user.address)).to.equal(false);
-    expect(await policy2.hasAcknowledged(owner.address)).to.equal(true);
+    expect(
+      await policy2.hasAcknowledged(await jobRegistry.getAddress())
+    ).to.equal(true);
   });
 });

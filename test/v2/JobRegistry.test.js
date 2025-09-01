@@ -105,9 +105,9 @@ describe("JobRegistry integration", function () {
     await registry
       .connect(owner)
       .setTaxPolicy(await policy.getAddress());
-    await registry.connect(owner).acknowledgeTaxPolicy();
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
+    await policy.connect(owner).acknowledge();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
 
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
@@ -170,6 +170,7 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
+    await policy.connect(newAgent).acknowledge();
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "JobApplied")
       .withArgs(1, newAgent.address);

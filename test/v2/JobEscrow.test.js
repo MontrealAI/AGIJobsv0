@@ -125,6 +125,7 @@ describe("JobEscrow", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
+    await policy.connect(employer).acknowledge();
     await token.connect(employer).approve(await escrow.getAddress(), reward);
     const tx = await escrow
       .connect(employer)

@@ -82,17 +82,17 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         emit PolicyVersionUpdated(_version);
     }
 
-    /// @notice Record that the transaction origin acknowledges the current tax policy.
-    /// @dev Records `tx.origin` so helper contracts can funnel acknowledgements
-    ///      while still binding the originating EOA. Contracts cannot spoof
-    ///      another user's acknowledgement.
+    /// @notice Record that the caller acknowledges the current tax policy.
+    /// @dev Records `msg.sender`, so intermediary contracts acknowledge on their
+    ///      own behalf. Contracts cannot spoof another user's acknowledgement;
+    ///      meta-transaction forwarders must preserve the caller's address.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
     function acknowledge()
         external
         override
         returns (string memory disclaimer)
     {
-        address user = tx.origin;
+        address user = msg.sender;
         _acknowledgedVersion[user] = _version;
         emit PolicyAcknowledged(user, _version);
         return _acknowledgement;

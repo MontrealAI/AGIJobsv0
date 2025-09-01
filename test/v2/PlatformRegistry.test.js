@@ -379,7 +379,7 @@ describe("PlatformRegistry", function () {
       .connect(platform)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await jobRegistry.connect(platform).acknowledgeTaxPolicy();
+    await policy.connect(platform).acknowledge();
     await registry.connect(platform).register();
     await policy.connect(owner).bumpPolicyVersion();
     await expect(registry.connect(platform).acknowledgeAndDeregister())

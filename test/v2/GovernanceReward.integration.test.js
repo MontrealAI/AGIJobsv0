@@ -52,9 +52,9 @@ describe("Governance reward lifecycle", function () {
     );
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
     await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
-    await jobRegistry.connect(voter1).acknowledgeTaxPolicy();
-    await jobRegistry.connect(voter2).acknowledgeTaxPolicy();
-    await jobRegistry.connect(voter3).acknowledgeTaxPolicy();
+    await taxPolicy.connect(voter1).acknowledge();
+    await taxPolicy.connect(voter2).acknowledge();
+    await taxPolicy.connect(voter3).acknowledge();
 
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"

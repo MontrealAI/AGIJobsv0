@@ -60,9 +60,9 @@ describe("StakeManager extras", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
     if (signer) {
-      await jobRegistry.connect(signer).acknowledgeTaxPolicy();
+      await taxPolicy.connect(signer).acknowledge();
     }
-    return { jobRegistry };
+    return { jobRegistry, taxPolicy };
   }
 
   it("allows deposit and withdrawal of stake", async () => {

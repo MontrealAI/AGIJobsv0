@@ -123,10 +123,10 @@ describe("end-to-end job lifecycle", function () {
     await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
-    await registry.acknowledgeTaxPolicy();
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
-    await registry.connect(platform).acknowledgeTaxPolicy();
+    await policy.acknowledge();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
+    await policy.connect(platform).acknowledge();
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"

@@ -10,7 +10,7 @@ const FEE = 300n * TOKEN; // fee 300 tokens
 describe("Platform reward flow", function () {
   const { AGIALPHA } = require("../../scripts/constants");
   let owner, alice, bob, employer, treasury;
-  let token, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool;
+  let token, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool, taxPolicy;
 
   beforeEach(async () => {
     [owner, alice, bob, employer, treasury] = await ethers.getSigners();
@@ -54,10 +54,7 @@ describe("Platform reward flow", function () {
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      "ipfs://policy",
-      "ack"
-    );
+    taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
 
     await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
@@ -104,8 +101,8 @@ describe("Platform reward flow", function () {
     expect(await jobRouter.routingWeight(owner.address)).to.equal(0n);
 
     // Alice and Bob acknowledge tax policy
-    await jobRegistry.connect(alice).acknowledgeTaxPolicy();
-    await jobRegistry.connect(bob).acknowledgeTaxPolicy();
+    await taxPolicy.connect(alice).acknowledge();
+    await taxPolicy.connect(bob).acknowledge();
 
     // stake and register
     await token.connect(alice).approve(await stakeManager.getAddress(), STAKE_ALICE);

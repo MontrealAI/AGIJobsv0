@@ -131,11 +131,11 @@ describe("comprehensive job flows", function () {
     await rep.setThreshold(0);
     await nft.transferOwnership(await registry.getAddress());
 
-    await registry.acknowledgeTaxPolicy();
-    await registry.connect(employer).acknowledgeTaxPolicy();
-    await registry.connect(agent).acknowledgeTaxPolicy();
-    await registry.connect(platform).acknowledgeTaxPolicy();
-    await registry.connect(buyer).acknowledgeTaxPolicy();
+    await policy.acknowledge();
+    await policy.connect(employer).acknowledge();
+    await policy.connect(agent).acknowledge();
+    await policy.connect(platform).acknowledge();
+    await policy.connect(buyer).acknowledge();
   });
 
   it("executes successful job flow with certificate trade", async () => {
