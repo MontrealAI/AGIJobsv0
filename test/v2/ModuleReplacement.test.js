@@ -178,6 +178,10 @@ describe("Module replacement", function () {
     ).to.be.revertedWithCustomError(stake, "InvalidValidationModule");
 
     await expect(
+      stake.connect(owner).setJobRegistry(await bad.getAddress())
+    ).to.be.revertedWithCustomError(stake, "InvalidJobRegistry");
+
+    await expect(
       stake
         .connect(owner)
         .setModules(await bad.getAddress(), await dispute.getAddress())

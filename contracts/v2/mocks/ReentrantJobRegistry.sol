@@ -33,6 +33,10 @@ contract ReentrantJobRegistry {
     uint256 public reward;
     uint256 public amount;
 
+    function version() external pure returns (uint256) {
+        return 2;
+    }
+
     constructor(address sm, address token_) {
         stakeManager = IStakeManager(sm);
         token = IReentrantToken(token_);
