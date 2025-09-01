@@ -184,7 +184,7 @@ describe("comprehensive job flows", function () {
     await registry.connect(employer).createJob(reward, deadline, "uri");
     await expect(
       registry.connect(agent).applyForJob(1, "", [])
-    ).to.be.revertedWith("Not authorized agent");
+    ).to.be.revertedWithCustomError(registry, "NotAuthorizedAgent");
   });
 
   it("resolves disputes with stake slashing", async () => {
@@ -239,7 +239,7 @@ describe("comprehensive job flows", function () {
     await rep.setBlacklist(agent.address, true);
     await expect(
       registry.connect(agent).applyForJob(1, "", [])
-    ).to.be.revertedWith("Blacklisted agent");
+    ).to.be.revertedWithCustomError(registry, "BlacklistedAgent");
   });
 
   it("enforces fresh tax policy acknowledgements", async () => {

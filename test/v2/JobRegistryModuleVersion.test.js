@@ -42,7 +42,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           []
         )
-    ).to.be.revertedWith("Invalid validation module");
+    ).to.be.revertedWithCustomError(registry, "InvalidValidationModule");
   });
 
   it("reverts for mismatched stake manager", async function () {
@@ -58,7 +58,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           []
         )
-    ).to.be.revertedWith("Invalid stake manager");
+    ).to.be.revertedWithCustomError(registry, "InvalidStakeManager");
   });
 
   it("reverts for mismatched reputation module", async function () {
@@ -74,7 +74,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           []
         )
-    ).to.be.revertedWith("Invalid reputation module");
+    ).to.be.revertedWithCustomError(registry, "InvalidReputationModule");
   });
 
   it("reverts for mismatched dispute module", async function () {
@@ -90,7 +90,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           []
         )
-    ).to.be.revertedWith("Invalid dispute module");
+    ).to.be.revertedWithCustomError(registry, "InvalidDisputeModule");
   });
 
   it("reverts for mismatched certificate NFT", async function () {
@@ -106,7 +106,7 @@ describe("JobRegistry module version checks", function () {
           await good.getAddress(),
           []
         )
-    ).to.be.revertedWith("Invalid certificate NFT");
+    ).to.be.revertedWithCustomError(registry, "InvalidCertificateNFT");
   });
 
   it("succeeds for matching versions", async function () {

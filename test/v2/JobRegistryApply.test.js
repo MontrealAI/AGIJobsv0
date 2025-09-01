@@ -93,7 +93,7 @@ describe("JobRegistry agent gating", function () {
     const jobId = await createJob();
     await expect(
       registry.connect(agent).applyForJob(jobId, "a", [])
-    ).to.be.revertedWith("Not authorized agent");
+    ).to.be.revertedWithCustomError(registry, "NotAuthorizedAgent");
   });
 
   it("allows manual allowlisted agents", async () => {
@@ -110,7 +110,7 @@ describe("JobRegistry agent gating", function () {
     const jobId = await createJob();
     await expect(
       registry.connect(agent).applyForJob(jobId, "a", [])
-    ).to.be.revertedWith("Blacklisted agent");
+    ).to.be.revertedWithCustomError(registry, "BlacklistedAgent");
   });
 
   it("rejects agents without acknowledging tax policy", async () => {

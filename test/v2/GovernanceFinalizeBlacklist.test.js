@@ -122,9 +122,8 @@ describe("JobRegistry governance finalization", function () {
     await rep.connect(owner).blacklist(agent.address, true);
     await setJobState(jobId, true);
 
-    await expect(registry.connect(agent).finalize(jobId)).to.be.revertedWith(
-      "Blacklisted"
-    );
+    await expect(registry.connect(agent).finalize(jobId))
+      .to.be.revertedWithCustomError(registry, "Blacklisted");
 
     await expect(registry.connect(owner).finalize(jobId))
       .to.emit(registry, "GovernanceFinalized")
@@ -154,7 +153,7 @@ describe("JobRegistry governance finalization", function () {
 
     await expect(
       registry.connect(employer).finalize(jobId)
-    ).to.be.revertedWith("Blacklisted");
+    ).to.be.revertedWithCustomError(registry, "Blacklisted");
 
     await expect(registry.connect(owner).finalize(jobId))
       .to.emit(registry, "GovernanceFinalized")

@@ -45,7 +45,7 @@ describe("JobRegistry Treasury", function () {
   it("rejects zero treasury address", async function () {
     await expect(
       registry.connect(owner).setTreasury(ethers.ZeroAddress)
-    ).to.be.revertedWith("treasury");
+    ).to.be.revertedWithCustomError(registry, "InvalidTreasury");
   });
 
   it("sets a valid treasury address", async function () {

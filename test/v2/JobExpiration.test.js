@@ -163,7 +163,7 @@ describe("Job expiration", function () {
     await registry.connect(agent).applyForJob(jobId, "", []);
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
-    ).to.be.revertedWith("not expired");
+    ).to.be.revertedWithCustomError(registry, "DeadlineNotReached");
   });
 
   it("respects non-zero expiration grace period", async () => {
@@ -177,7 +177,7 @@ describe("Job expiration", function () {
     await time.increase(120);
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
-    ).to.be.revertedWith("not expired");
+    ).to.be.revertedWithCustomError(registry, "DeadlineNotReached");
     await time.increase(60);
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
