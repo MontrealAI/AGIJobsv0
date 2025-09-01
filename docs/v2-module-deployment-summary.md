@@ -18,8 +18,10 @@ the `StakeManager` address.
 
 ## 2. Wiring
 1. On `JobRegistry` call
-   `setModules(stakeManager, validationModule, reputationEngine,
-   disputeModule, certificateNFT, feePool)`.
+   `setModules(validationModule, stakeManager, reputationEngine,
+   disputeModule, certificateNFT, feePool, [])`.
+   - The arguments must follow `(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, ackModules)`.
+   - Use `[]` for `ackModules` if no acknowledgement modules are required.
 2. Call `setJobRegistry(jobRegistry)` on `StakeManager`,
    `ValidationModule`, `DisputeModule` and `CertificateNFT`.
 3. On `ValidationModule` also call `setIdentityRegistry(identityRegistry)`.

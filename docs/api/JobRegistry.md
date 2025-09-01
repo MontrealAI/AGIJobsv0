@@ -8,7 +8,7 @@ Coordinates job posting, assignment and dispute resolution.
 - `submit(uint256 jobId, bytes32 resultHash, string resultURI)` – agent submits work.
 - `finalize(uint256 jobId)` – releases rewards after validation succeeds.
 - `raiseDispute(uint256 jobId, string evidence)` – escalate to the dispute module.
-- `setModules(address stakeManager, address validationModule, address disputeModule, address certificateNFT, address reputationEngine, address feePool)` – owner wires modules.
+- `setModules(address validationModule, address stakeManager, address reputationEngine, address disputeModule, address certificateNFT, address feePool, address[] ackModules)` – owner wires modules. Use `[]` for `ackModules` when none are needed.
 - `setTaxPolicy(address policy)` / `acknowledgeTaxPolicy()` – configure tax policy and acknowledge.
 - `setAgentRootNode(bytes32 node)` / `setAgentMerkleRoot(bytes32 root)` – load ENS allowlists.
 

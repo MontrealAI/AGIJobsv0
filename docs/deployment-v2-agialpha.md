@@ -31,7 +31,9 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
 
 `deployDefaults.ts` wires modules automatically. If you deploy contracts individually, complete the wiring manually:
 
-1. On `JobRegistry`, call `setModules(stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformRegistry, jobRouter, platformIncentives, feePool, taxPolicy)`.
+1. On `JobRegistry`, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, [])`.
+   - Supply parameters exactly in that order: `(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, ackModules)`.
+   - Pass an empty array (`[]`) for `ackModules` when no acknowledgement modules are used.
    ![setModules](https://via.placeholder.com/650x150?text=setModules)
 2. On `StakeManager`, `ValidationModule` and `CertificateNFT`, call `setJobRegistry(jobRegistry)`.
    ![setJobRegistry](https://via.placeholder.com/650x150?text=setJobRegistry)

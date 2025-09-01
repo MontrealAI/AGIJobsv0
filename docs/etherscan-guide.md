@@ -183,7 +183,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 | --- | --- | --- |
 | `createJob(string details, uint256 reward)` | `details` – off-chain URI, `reward` – escrowed token amount | Employer posts a new job and locks payment. |
 | `acknowledgeTaxPolicy()` | none | Participant confirms tax disclaimer before interacting. |
-| `setModules(address validation, address stake, address reputation, address dispute, address certificate)` | module addresses | Owner wires modules after deployment. |
+| `setModules(address validation, address stake, address reputation, address dispute, address certificate, address feePool, address[] ackModules)` | module addresses and acknowledgement modules | Owner wires modules after deployment. Use `[]` when no acknowledgement modules are needed. |
 
 ### StakeManager
 | Function | Parameters | Typical Use Case |
