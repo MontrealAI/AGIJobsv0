@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
@@ -11,7 +12,7 @@ import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
 /// for agents and validators. Provides helper views that also check
 /// reputation blacklists.
-contract IdentityRegistry is Ownable {
+contract IdentityRegistry is Ownable2Step {
     enum AgentType {
         Human,
         AI

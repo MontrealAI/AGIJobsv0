@@ -118,6 +118,7 @@ describe("Deployer", function () {
     const systemPauseC = SystemPause.attach(systemPause);
 
     // ownership
+    await identityRegistryC.connect(governance).acceptOwnership();
     expect(await stakeC.owner()).to.equal(systemPause);
     expect(await registryC.owner()).to.equal(systemPause);
     expect(await validationC.owner()).to.equal(systemPause);

@@ -94,8 +94,8 @@ describe("Ownable modules", function () {
     const TaxPolicy = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
-    const ENSVerifier = await ethers.getContractFactory(
-      "contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier"
+    const IdentityRegistry = await ethers.getContractFactory(
+      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
     );
     const SystemPause = await ethers.getContractFactory(
       "contracts/v2/SystemPause.sol:SystemPause"
@@ -118,6 +118,9 @@ describe("Ownable modules", function () {
       ethers.ZeroHash
     );
     await identity.waitForDeployment();
+
+    const identityRegistry = IdentityRegistry.attach(identityRegistryAddr);
+    await identityRegistry.connect(owner).acceptOwnership();
 
     const systemPauseSignerAddr = systemPause;
     await network.provider.send("hardhat_setBalance", [
@@ -193,9 +196,10 @@ describe("Ownable modules", function () {
         (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new"),
       ],
       [
-        ENSVerifier.attach(identityRegistryAddr),
+        identityRegistry,
         owner,
         (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress),
+        true,
       ],
       [
         modCert,
@@ -210,12 +214,18 @@ describe("Ownable modules", function () {
       ],
     ];
 
-    for (const [inst, signer, call] of modules) {
+    for (const [inst, signer, call, twoStep] of modules) {
       await expect(call(inst, other)).to.be.reverted;
       await inst.connect(signer).transferOwnership(other.address);
+      if (twoStep) {
+        await inst.connect(other).acceptOwnership();
+      }
       await expect(call(inst, signer)).to.be.reverted;
       await call(inst, other);
       await inst.connect(other).transferOwnership(await signer.getAddress());
+      if (twoStep) {
+        await inst.connect(signer).acceptOwnership();
+      }
     }
 
     await network.provider.request({
