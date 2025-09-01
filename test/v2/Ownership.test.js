@@ -1,5 +1,6 @@
 const { expect } = require("chai");
-const { ethers, network } = require("hardhat");
+const { ethers, network, artifacts } = require("hardhat");
+const { AGIALPHA } = require("../../scripts/constants");
 
 describe("Ownable modules", function () {
   it("enforces ownership and transfer across modules", async function () {
@@ -27,8 +28,22 @@ describe("Ownable modules", function () {
       validatorMerkleRoot: ethers.ZeroHash,
       agentMerkleRoot: ethers.ZeroHash,
     };
-    const addresses = await deployer.deploy.staticCall(econ, ids);
-    await deployer.deploy(econ, ids);
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const tx = await deployer.deploy(econ, ids, owner.address);
+    const receipt = await tx.wait();
+    const deployerAddress = await deployer.getAddress();
+    const log = receipt.logs.find((l) => l.address === deployerAddress);
+    const decoded = deployer.interface.decodeEventLog(
+      "Deployed",
+      log.data,
+      log.topics
+    );
 
     const [
       stake,
@@ -44,7 +59,7 @@ describe("Ownable modules", function () {
       taxPolicy,
       identityRegistryAddr,
       systemPause,
-    ] = addresses;
+    ] = decoded;
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"

@@ -37,7 +37,8 @@ import {TOKEN_SCALE} from "./Constants.sol";
 /// @title Deployer
 /// @notice One shot helper that deploys and wires the core module set.
 /// @dev Each module is deployed with default parameters (zero values) and
-///      ownership is transferred to the caller once wiring is complete.
+///      ownership is transferred to the SystemPause contract or a supplied
+///      governance address once wiring is complete.
 contract Deployer is Ownable {
     bool public deployed;
 
@@ -99,10 +100,11 @@ contract Deployer is Ownable {
     // Deployment entrypoints (use Etherscan's "Write Contract" tab)
     // ---------------------------------------------------------------------
 
-    function deploy(EconParams calldata econ, IdentityParams calldata ids)
-        external
-        onlyOwner
-        returns (
+    function deploy(
+        EconParams calldata econ,
+        IdentityParams calldata ids,
+        address governance
+    ) external onlyOwner returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -118,7 +120,7 @@ contract Deployer is Ownable {
             address systemPause
         )
     {
-        return _deploy(true, econ, ids);
+        return _deploy(true, econ, ids, governance);
     }
 
     /// @notice Deploy and wire all modules without the TaxPolicy.
@@ -134,10 +136,11 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployWithoutTaxPolicy(EconParams calldata econ, IdentityParams calldata ids)
-        external
-        onlyOwner
-        returns (
+    function deployWithoutTaxPolicy(
+        EconParams calldata econ,
+        IdentityParams calldata ids,
+        address governance
+    ) external onlyOwner returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -153,7 +156,7 @@ contract Deployer is Ownable {
             address systemPause
         )
     {
-        return _deploy(false, econ, ids);
+        return _deploy(false, econ, ids, governance);
     }
 
     /// @notice Deploy and wire all modules using module defaults.
@@ -169,7 +172,7 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy
-    function deployDefaults(IdentityParams calldata ids)
+    function deployDefaults(IdentityParams calldata ids, address governance)
         external
         onlyOwner
         returns (
@@ -189,7 +192,7 @@ contract Deployer is Ownable {
         )
     {
         EconParams memory econ;
-        return _deploy(true, econ, ids);
+        return _deploy(true, econ, ids, governance);
     }
 
     /// @notice Deploy and wire modules with defaults and no TaxPolicy.
@@ -205,10 +208,10 @@ contract Deployer is Ownable {
     /// @return platformIncentives Address of the PlatformIncentives helper
     /// @return feePool Address of the FeePool
     /// @return taxPolicy Address of the TaxPolicy (always zero)
-    function deployDefaultsWithoutTaxPolicy(IdentityParams calldata ids)
-        external
-        onlyOwner
-        returns (
+    function deployDefaultsWithoutTaxPolicy(
+        IdentityParams calldata ids,
+        address governance
+    ) external onlyOwner returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -225,12 +228,15 @@ contract Deployer is Ownable {
         )
     {
         EconParams memory econ;
-        return _deploy(false, econ, ids);
+        return _deploy(false, econ, ids, governance);
     }
 
-    function _deploy(bool withTaxPolicy, EconParams memory econ, IdentityParams memory ids)
-        internal
-        returns (
+    function _deploy(
+        bool withTaxPolicy,
+        EconParams memory econ,
+        IdentityParams memory ids,
+        address governance
+    ) internal returns (
             address stakeManager,
             address jobRegistry,
             address validationModule,
@@ -248,7 +254,7 @@ contract Deployer is Ownable {
     {
         require(!deployed, "deployed");
         deployed = true;
-        address owner_ = owner();
+        require(governance != address(0), "governance");
 
         uint256 feePct = econ.feePct == 0 ? 5 : econ.feePct;
         uint256 burnPct = econ.burnPct == 0 ? 5 : econ.burnPct;
@@ -267,7 +273,7 @@ contract Deployer is Ownable {
             minStake,
             employerSlashPct,
             treasurySlashPct,
-            owner_,
+            governance,
             address(0),
             address(0),
             address(this)
@@ -306,7 +312,7 @@ contract Deployer is Ownable {
             IJobRegistry(address(registry)),
             0,
             0,
-            owner_
+            governance
         );
 
         CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
@@ -315,7 +321,7 @@ contract Deployer is Ownable {
         FeePool pool = new FeePool(
             IStakeManager(address(stake)),
             burnPct,
-            owner_
+            governance
         );
 
         IdentityRegistry identity = new IdentityRegistry(
@@ -395,7 +401,7 @@ contract Deployer is Ownable {
             pRegistry,
             pool,
             reputation,
-            owner_
+            governance
         );
         // hand over governance to SystemPause
         stake.setGovernance(address(pause));
@@ -405,15 +411,15 @@ contract Deployer is Ownable {
         validation.transferOwnership(address(pause));
         reputation.transferOwnership(address(pause));
         dispute.transferOwnership(address(pause));
-        certificate.transferOwnership(owner_);
+        certificate.transferOwnership(governance);
         pRegistry.transferOwnership(address(pause));
-        router.transferOwnership(owner_);
-        incentives.transferOwnership(owner_);
+        router.transferOwnership(governance);
+        incentives.transferOwnership(governance);
         pool.transferOwnership(address(pause));
         if (address(policy) != address(0)) {
-            policy.transferOwnership(owner_);
+            policy.transferOwnership(governance);
         }
-        identity.transferOwnership(owner_);
+        identity.transferOwnership(governance);
 
         emit Deployed(
             address(stake),
