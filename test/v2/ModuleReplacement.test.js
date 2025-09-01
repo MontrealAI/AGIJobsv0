@@ -178,7 +178,7 @@ describe("Module replacement", function () {
 
     await expect(
       registry.connect(owner).setDisputeModule(await bad.getAddress())
-    ).to.be.revertedWith("Invalid dispute module");
+    ).to.be.revertedWithCustomError(registry, "InvalidDisputeModule");
 
     await expect(
       stake.connect(owner).setDisputeModule(await bad.getAddress())

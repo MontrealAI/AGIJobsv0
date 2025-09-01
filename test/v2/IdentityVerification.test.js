@@ -85,7 +85,7 @@ describe("Identity verification enforcement", function () {
       const jobId = await createJob();
       await expect(
         registry.connect(agent).applyForJob(jobId, "a", [])
-      ).to.be.revertedWith("Not authorized agent");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorizedAgent");
     });
 
     it("rejects unauthorized agent submissions", async () => {
@@ -97,7 +97,7 @@ describe("Identity verification enforcement", function () {
         registry
           .connect(agent)
           .submit(jobId, ethers.id("res"), "res", "a", [])
-      ).to.be.revertedWith("Not authorized agent");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorizedAgent");
     });
   });
 

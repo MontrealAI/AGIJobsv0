@@ -978,7 +978,7 @@ describe("StakeManager", function () {
     expect(await policy.hasAcknowledged(user.address)).to.equal(false);
     await expect(
       jobRegistry.connect(user).acknowledgeFor(user.address)
-    ).to.be.revertedWith("acknowledger");
+    ).to.be.revertedWithCustomError(jobRegistry, "NotAcknowledger");
   });
 
   it("acknowledgeAndWithdraw re-acknowledges and withdraws", async () => {

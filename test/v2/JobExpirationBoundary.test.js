@@ -140,7 +140,7 @@ describe("Job expiration boundary", function () {
     await time.increase(deadline + grace - 1 - (await time.latest()));
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
-    ).to.be.revertedWith("not expired");
+    ).to.be.revertedWithCustomError(registry, "DeadlineNotReached");
   });
 
   it("cancels at deadline + grace and updates state and balances", async () => {

@@ -153,6 +153,6 @@ describe("JobRegistry agent auth cache", function () {
     await registry2.connect(employer).createJob(1, deadline, "uri");
     await expect(
       registry2.connect(agent).applyForJob(3, "a", [])
-    ).to.be.revertedWith("Not authorized agent");
+    ).to.be.revertedWithCustomError(registry2, "NotAuthorizedAgent");
   });
 });

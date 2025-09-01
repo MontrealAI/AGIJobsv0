@@ -286,11 +286,11 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setValidatorRewardPct(60);
     await expect(
       registry.connect(owner).setFeePct(50)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(registry, "InvalidPercentage");
     await registry.connect(owner).setFeePct(40);
     await expect(
       registry.connect(owner).setValidatorRewardPct(70)
-    ).to.be.revertedWith("pct");
+    ).to.be.revertedWithCustomError(registry, "InvalidPercentage");
   });
 
   it("emits events when setting modules", async () => {

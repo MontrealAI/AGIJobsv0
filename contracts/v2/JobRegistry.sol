@@ -32,6 +32,40 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error DurationTooLong();
     error InvalidPercentages();
     error BlacklistedEmployer();
+    error CannotExpire();
+    error DeadlineNotReached();
+    error InvalidPercentage();
+    error InvalidValidationModule();
+    error InvalidStakeManager();
+    error InvalidReputationModule();
+    error InvalidDisputeModule();
+    error InvalidCertificateNFT();
+    error PolicyNotTaxExempt();
+    error InvalidFeePool();
+    error InvalidIdentityRegistry();
+    error IdentityRegistryNotSet();
+    error InvalidTaxPolicy();
+    error InvalidTreasury();
+    error NotAcknowledger();
+    error StakeOverflow();
+    error NotOpen();
+    error BlacklistedAgent();
+    error NotAuthorizedAgent();
+    error AgentTypeNotAllowed();
+    error InvalidJobState();
+    error OnlyAgent();
+    error DeadlinePassed();
+    error OnlyValidationModule();
+    error NotSubmitted();
+    error EvidenceMissing();
+    error OnlyParticipant();
+    error CannotDispute();
+    error Blacklisted();
+    error OnlyDisputeModule();
+    error NoDispute();
+    error NotReady();
+    error CannotCancel();
+    error OnlyEmployer();
 
     enum State {
         None,
@@ -88,11 +122,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     modifier onlyAfterDeadline(uint256 jobId) {
         Job storage job = jobs[jobId];
-        require(job.state == State.Applied, "cannot expire");
-        require(
-            block.timestamp > uint256(job.deadline) + expirationGracePeriod,
-            "not expired"
-        );
+        if (job.state != State.Applied) revert CannotExpire();
+        if (
+            block.timestamp <=
+            uint256(job.deadline) + expirationGracePeriod
+        ) revert DeadlineNotReached();
         _;
     }
 
@@ -206,37 +240,37 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
         uint256 pct = _feePct == 0 ? DEFAULT_FEE_PCT : _feePct;
-        require(pct <= 100, "pct");
+        if (pct > 100) revert InvalidPercentage();
         feePct = pct;
         jobStake = _jobStake == 0 ? DEFAULT_JOB_STAKE : _jobStake;
         validatorRewardPct = DEFAULT_VALIDATOR_REWARD_PCT;
         emit ValidatorRewardPctUpdated(validatorRewardPct);
         if (address(_validation) != address(0)) {
-            require(_validation.version() == 2, "Invalid validation module");
+            if (_validation.version() != 2) revert InvalidValidationModule();
             validationModule = _validation;
             emit ValidationModuleUpdated(address(_validation));
             emit ModuleUpdated("ValidationModule", address(_validation));
         }
         if (address(_stakeMgr) != address(0)) {
-            require(_stakeMgr.version() == 2, "Invalid stake manager");
+            if (_stakeMgr.version() != 2) revert InvalidStakeManager();
             stakeManager = _stakeMgr;
             emit StakeManagerUpdated(address(_stakeMgr));
             emit ModuleUpdated("StakeManager", address(_stakeMgr));
         }
         if (address(_reputation) != address(0)) {
-            require(_reputation.version() == 2, "Invalid reputation module");
+            if (_reputation.version() != 2) revert InvalidReputationModule();
             reputationEngine = _reputation;
             emit ReputationEngineUpdated(address(_reputation));
             emit ModuleUpdated("ReputationEngine", address(_reputation));
         }
         if (address(_dispute) != address(0)) {
-            require(_dispute.version() == 2, "Invalid dispute module");
+            if (_dispute.version() != 2) revert InvalidDisputeModule();
             disputeModule = _dispute;
             emit DisputeModuleUpdated(address(_dispute));
             emit ModuleUpdated("DisputeModule", address(_dispute));
         }
         if (address(_certNFT) != address(0)) {
-            require(_certNFT.version() == 2, "Invalid certificate NFT");
+            if (_certNFT.version() != 2) revert InvalidCertificateNFT();
             certificateNFT = _certNFT;
             emit CertificateNFTUpdated(address(_certNFT));
             emit ModuleUpdated("CertificateNFT", address(_certNFT));
@@ -248,7 +282,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         emit FeePctUpdated(feePct);
         if (address(_policy) != address(0)) {
-            require(_policy.isTaxExempt(), "not tax exempt");
+            if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
             taxPolicy = _policy;
             emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
         }
@@ -275,18 +309,19 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         IFeePool _feePool,
         address[] calldata _ackModules
     ) external onlyGovernance {
-        require(address(_validation) != address(0), "validation");
-        require(address(_stakeMgr) != address(0), "stake");
-        require(address(_reputation) != address(0), "reputation");
-        require(address(_dispute) != address(0), "dispute");
-        require(address(_certNFT) != address(0), "nft");
+        if (address(_validation) == address(0)) revert InvalidValidationModule();
+        if (address(_stakeMgr) == address(0)) revert InvalidStakeManager();
+        if (address(_reputation) == address(0)) revert InvalidReputationModule();
+        if (address(_dispute) == address(0)) revert InvalidDisputeModule();
+        if (address(_certNFT) == address(0)) revert InvalidCertificateNFT();
 
-        require(_validation.version() == 2, "Invalid validation module");
-        require(_stakeMgr.version() == 2, "Invalid stake manager");
-        require(_reputation.version() == 2, "Invalid reputation module");
-        require(_dispute.version() == 2, "Invalid dispute module");
-        require(_certNFT.version() == 2, "Invalid certificate NFT");
-        require(address(_feePool) != address(0) && _feePool.version() == 2, "Invalid fee pool");
+        if (_validation.version() != 2) revert InvalidValidationModule();
+        if (_stakeMgr.version() != 2) revert InvalidStakeManager();
+        if (_reputation.version() != 2) revert InvalidReputationModule();
+        if (_dispute.version() != 2) revert InvalidDisputeModule();
+        if (_certNFT.version() != 2) revert InvalidCertificateNFT();
+        if (address(_feePool) == address(0) || _feePool.version() != 2)
+            revert InvalidFeePool();
 
         validationModule = _validation;
         stakeManager = _stakeMgr;
@@ -320,8 +355,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Update the identity registry used for agent verification.
     /// @param registry Address of the IdentityRegistry contract.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyGovernance {
-        require(address(registry) != address(0), "identity reg");
-        require(registry.version() == 2, "Invalid identity registry");
+        if (address(registry) == address(0)) revert InvalidIdentityRegistry();
+        if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
         emit ModuleUpdated("IdentityRegistry", address(registry));
@@ -330,8 +365,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Switch the active dispute module.
     /// @param module Address of the new dispute module contract.
     function setDisputeModule(IDisputeModule module) external onlyGovernance {
-        require(address(module) != address(0), "dispute");
-        require(module.version() == 2, "Invalid dispute module");
+        if (address(module) == address(0)) revert InvalidDisputeModule();
+        if (module.version() != 2) revert InvalidDisputeModule();
         disputeModule = module;
         emit DisputeModuleUpdated(address(module));
         emit ModuleUpdated("DisputeModule", address(module));
@@ -340,7 +375,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Update the ENS root node used for agent verification.
     /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
     function setAgentRootNode(bytes32 node) external onlyGovernance {
-        require(address(identityRegistry) != address(0), "identity reg");
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         identityRegistry.setAgentRootNode(node);
         emit AgentRootNodeUpdated(node);
     }
@@ -348,7 +383,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Update the Merkle root for the agent allowlist.
     /// @param root Merkle root of approved agent addresses.
     function setAgentMerkleRoot(bytes32 root) external onlyGovernance {
-        require(address(identityRegistry) != address(0), "identity reg");
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         identityRegistry.setAgentMerkleRoot(root);
         unchecked {
             agentAuthCacheVersion++;
@@ -379,7 +414,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /// @notice update the FeePool contract used for revenue sharing
     function setFeePool(IFeePool _feePool) external onlyGovernance {
-        require(address(_feePool) != address(0) && _feePool.version() == 2, "Invalid fee pool");
+        if (address(_feePool) == address(0) || _feePool.version() != 2)
+            revert InvalidFeePool();
         feePool = _feePool;
         emit FeePoolUpdated(address(_feePool));
         emit ModuleUpdated("FeePool", address(_feePool));
@@ -387,7 +423,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /// @notice update the treasury address used for blacklisted payouts
     function setTreasury(address _treasury) external onlyGovernance {
-        require(_treasury != address(0), "treasury");
+        if (_treasury == address(0)) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
@@ -400,16 +436,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /// @notice update the percentage of each job reward taken as a protocol fee
     function setFeePct(uint256 _feePct) external onlyGovernance {
-        require(_feePct <= 100, "pct");
-        require(_feePct + validatorRewardPct <= 100, "pct");
+        if (_feePct > 100) revert InvalidPercentage();
+        if (_feePct + validatorRewardPct > 100) revert InvalidPercentage();
         feePct = _feePct;
         emit FeePctUpdated(_feePct);
     }
 
     /// @notice update validator reward percentage of job reward
     function setValidatorRewardPct(uint256 pct) external onlyGovernance {
-        require(pct <= 100, "pct");
-        require(feePct + pct <= 100, "pct");
+        if (pct > 100) revert InvalidPercentage();
+        if (feePct + pct > 100) revert InvalidPercentage();
         validatorRewardPct = pct;
         emit ValidatorRewardPctUpdated(pct);
     }
@@ -436,8 +472,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @dev Only callable by the owner; the policy address cannot be zero and
     /// must explicitly report tax exemption.
     function setTaxPolicy(ITaxPolicy _policy) external onlyGovernance {
-        require(address(_policy) != address(0), "policy");
-        require(_policy.isTaxExempt(), "not tax exempt");
+        if (address(_policy) == address(0)) revert InvalidTaxPolicy();
+        if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
         taxPolicy = _policy;
         emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
         emit ModuleUpdated("TaxPolicy", address(_policy));
@@ -494,7 +530,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /// @notice Internal helper to acknowledge the current tax policy.
     function _acknowledge() internal returns (string memory ack) {
-        require(address(taxPolicy) != address(0), "policy");
+        if (address(taxPolicy) == address(0)) revert InvalidTaxPolicy();
         ack = taxPolicy.acknowledge();
         emit TaxAcknowledged(msg.sender, taxPolicy.policyVersion(), ack);
     }
@@ -512,12 +548,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Acknowledge the current tax policy on behalf of a user.
     /// @return ack Human-readable disclaimer confirming the caller bears all tax responsibility.
     function acknowledgeFor(address /* user */) external returns (string memory ack) {
-        require(acknowledgers[msg.sender], "acknowledger");
+        if (!acknowledgers[msg.sender]) revert NotAcknowledger();
         ack = _acknowledge();
     }
 
     function setJobParameters(uint256 reward, uint256 stake) external onlyGovernance {
-        require(stake <= type(uint96).max, "overflow");
+        if (stake > type(uint96).max) revert StakeOverflow();
         jobStake = uint96(stake);
         emit JobParametersUpdated(reward, stake, maxJobReward, maxJobDuration);
     }
@@ -655,14 +691,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         )
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Created, "not open");
+        if (job.state != State.Created) revert NotOpen();
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted agent"
-            );
+            if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
         }
-        require(address(identityRegistry) != address(0), "identity reg");
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         bool authorized =
             agentAuthCache[msg.sender] &&
             agentAuthExpiry[msg.sender] > block.timestamp &&
@@ -680,15 +713,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 agentAuthVersion[msg.sender] = agentAuthCacheVersion;
             }
         }
-        require(authorized, "Not authorized agent");
+        if (!authorized) revert NotAuthorizedAgent();
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender
             );
-            require(
-                (job.agentTypes & (1 << uint8(aType))) != 0,
-                "Agent type not allowed"
-            );
+            if ((job.agentTypes & (1 << uint8(aType))) == 0)
+                revert AgentTypeNotAllowed();
         }
         if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
@@ -778,34 +809,26 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         )
     {
         Job storage job = jobs[jobId];
-        require(job.state == State.Applied, "invalid state");
-        require(msg.sender == job.agent, "only agent");
-        require(block.timestamp <= job.deadline, "deadline");
+        if (job.state != State.Applied) revert InvalidJobState();
+        if (msg.sender != job.agent) revert OnlyAgent();
+        if (block.timestamp > job.deadline) revert DeadlinePassed();
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted agent"
-            );
-            require(
-                !reputationEngine.isBlacklisted(job.employer),
-                "Blacklisted employer"
-            );
+            if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
+            if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
-        require(address(identityRegistry) != address(0), "identity reg");
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         bool authorized = identityRegistry.verifyAgent(
             msg.sender,
             subdomain,
             proof
         );
-        require(authorized, "Not authorized agent");
+        if (!authorized) revert NotAuthorizedAgent();
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender
             );
-            require(
-                (job.agentTypes & (1 << uint8(aType))) != 0,
-                "Agent type not allowed"
-            );
+            if ((job.agentTypes & (1 << uint8(aType))) == 0)
+                revert AgentTypeNotAllowed();
         }
         job.resultHash = resultHash;
         job.state = State.Submitted;
@@ -858,9 +881,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             address(validationModule)
         )
     {
-        require(msg.sender == address(validationModule), "only validation");
+        if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         Job storage job = jobs[jobId];
-        require(job.state == State.Submitted, "not submitted");
+        if (job.state != State.Submitted) revert NotSubmitted();
         job.success = success;
         job.state = success ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, success);
@@ -900,33 +923,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             address(validationModule)
         )
     {
-        require(evidenceHash != bytes32(0), "evidence");
+        if (evidenceHash == bytes32(0)) revert EvidenceMissing();
         Job storage job = jobs[jobId];
-        require(
-            msg.sender == job.agent || msg.sender == job.employer,
-            "only participant"
-        );
-        require(
-            job.state == State.Completed ||
-                (job.state == State.Disputed && !job.success),
-            "cannot dispute"
-        );
+        if (msg.sender != job.agent && msg.sender != job.employer)
+            revert OnlyParticipant();
+        if (
+            !(job.state == State.Completed ||
+                (job.state == State.Disputed && !job.success))
+        ) revert CannotDispute();
         if (job.state == State.Completed) {
             job.state = State.Disputed;
         }
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted"
-            );
-            require(
-                !reputationEngine.isBlacklisted(job.agent),
-                "Blacklisted agent"
-            );
-            require(
-                !reputationEngine.isBlacklisted(job.employer),
-                "Blacklisted employer"
-            );
+            if (reputationEngine.isBlacklisted(msg.sender)) revert Blacklisted();
+            if (reputationEngine.isBlacklisted(job.agent)) revert BlacklistedAgent();
+            if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (address(disputeModule) != address(0)) {
             disputeModule.raiseDispute(jobId, msg.sender, evidenceHash);
@@ -967,9 +978,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param jobId Identifier of the disputed job
     /// @param employerWins True if the employer won the dispute
     function resolveDispute(uint256 jobId, bool employerWins) external {
-        require(msg.sender == address(disputeModule), "only dispute");
+        if (msg.sender != address(disputeModule)) revert OnlyDisputeModule();
         Job storage job = jobs[jobId];
-        require(job.state == State.Disputed, "no dispute");
+        if (job.state != State.Disputed) revert NoDispute();
 
         job.success = !employerWins;
         job.state = State.Completed;
@@ -997,7 +1008,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     function _finalize(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
-        require(job.state == State.Completed, "not ready");
+        if (job.state != State.Completed) revert NotReady();
         bool isGov = msg.sender == address(governance);
         bool agentBlacklisted;
         bool employerBlacklisted;
@@ -1005,12 +1016,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             agentBlacklisted = reputationEngine.isBlacklisted(job.agent);
             employerBlacklisted = reputationEngine.isBlacklisted(job.employer);
             if (!isGov) {
-                require(
-                    !reputationEngine.isBlacklisted(msg.sender),
-                    "Blacklisted"
-                );
-                require(!agentBlacklisted, "Blacklisted agent");
-                require(!employerBlacklisted, "Blacklisted employer");
+                if (reputationEngine.isBlacklisted(msg.sender)) revert Blacklisted();
+                if (agentBlacklisted) revert BlacklistedAgent();
+                if (employerBlacklisted) revert BlacklistedEmployer();
             }
         }
         job.state = State.Finalized;
@@ -1174,10 +1182,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Cancel a job before completion and refund the employer.
     function _cancelJob(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
-        require(
-            job.state == State.Created && job.agent == address(0),
-            "cannot cancel"
-        );
+        if (!(job.state == State.Created && job.agent == address(0)))
+            revert CannotCancel();
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
@@ -1201,12 +1207,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         )
     {
         Job storage job = jobs[jobId];
-        require(msg.sender == job.employer, "only employer");
+        if (msg.sender != job.employer) revert OnlyEmployer();
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted employer"
-            );
+            if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedEmployer();
         }
         _cancelJob(jobId);
     }
