@@ -80,6 +80,15 @@ interface IReputationEngine {
 
     function rewardValidator(address validator, uint256 agentGain) external;
 
+    /// @notice Compute reputation gain for an agent based on payout and duration.
+    /// @param payout Amount paid to the agent (18-decimal).
+    /// @param duration Job duration in seconds.
+    /// @return Reputation points awarded to the agent.
+    function calculateReputationPoints(uint256 payout, uint256 duration)
+        external
+        view
+        returns (uint256);
+
     /// @notice Retrieve combined operator score using stake and reputation
     /// @param operator Address to query
     /// @return Weighted score used for ranking

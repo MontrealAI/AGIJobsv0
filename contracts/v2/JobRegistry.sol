@@ -10,39 +10,10 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
+import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
+import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
-
-interface IReputationEngine {
-    function version() external view returns (uint256);
-    function onApply(address user) external;
-    function onFinalize(
-        address user,
-        bool success,
-        uint256 payout,
-        uint256 duration
-    ) external;
-    function rewardValidator(address validator, uint256 agentGain) external;
-    function calculateReputationPoints(
-        uint256 payout,
-        uint256 duration
-    ) external view returns (uint256);
-    function isBlacklisted(address user) external view returns (bool);
-}
-
-interface IDisputeModule {
-    function version() external view returns (uint256);
-    function raiseDispute(
-        uint256 jobId,
-        address claimant,
-        bytes32 evidenceHash
-    ) external;
-    function resolve(uint256 jobId, bool employerWins) external;
-}
-
-interface ICertificateNFT {
-    function version() external view returns (uint256);
-    function mint(address to, uint256 jobId, bytes32 uriHash) external returns (uint256);
-}
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
