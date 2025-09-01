@@ -492,6 +492,15 @@ contract MockReputationEngine is IReputationEngine {
         _rep[user] += 1;
     }
 
+    function calculateReputationPoints(uint256, uint256)
+        external
+        pure
+        override
+        returns (uint256)
+    {
+        return 0;
+    }
+
     function getOperatorScore(address user) external view override returns (uint256) {
         return _rep[user];
     }
