@@ -12,7 +12,7 @@ describe("DiscoveryModule", function () {
     const Engine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    engine = await Engine.deploy(ethers.ZeroAddress);
+    engine = await Engine.deploy(await stakeManager.getAddress());
     await engine
       .connect(owner)
       .setAuthorizedCaller(owner.address, true);

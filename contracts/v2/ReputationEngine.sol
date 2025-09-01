@@ -58,11 +58,11 @@ contract ReputationEngine is Ownable, Pausable {
     event ModulesUpdated(address indexed stakeManager);
     event ValidationRewardPercentageUpdated(uint256 percentage);
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
-        if (address(_stakeManager) != address(0)) {
-            stakeManager = _stakeManager;
-            emit StakeManagerUpdated(address(_stakeManager));
-            emit ModulesUpdated(address(_stakeManager));
-        }
+        require(address(_stakeManager) != address(0), "invalid stake manager");
+        require(_stakeManager.version() == 2, "incompatible version");
+        stakeManager = _stakeManager;
+        emit StakeManagerUpdated(address(_stakeManager));
+        emit ModulesUpdated(address(_stakeManager));
     }
 
     modifier onlyCaller() {
@@ -87,6 +87,8 @@ contract ReputationEngine is Ownable, Pausable {
 
     /// @notice Set the StakeManager used for stake lookups.
     function setStakeManager(IStakeManager manager) external onlyOwner {
+        require(address(manager) != address(0), "invalid stake manager");
+        require(manager.version() == 2, "incompatible version");
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
         emit ModulesUpdated(address(manager));

@@ -6,10 +6,12 @@ describe("ReputationEngine", function () {
 
   beforeEach(async () => {
     [owner, caller, user, validator] = await ethers.getSigners();
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Engine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    engine = await Engine.deploy(ethers.ZeroAddress);
+    engine = await Engine.deploy(await stake.getAddress());
     await engine.connect(owner).setCaller(caller.address, true);
     await engine.connect(owner).setPremiumThreshold(2);
   });

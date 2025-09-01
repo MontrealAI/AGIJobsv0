@@ -72,7 +72,7 @@ For a step-by-step deployment walkthrough with owner-only setters, see [deployme
 | ValidationModule | `setValidatorPool` (empty), `setReputationEngine` (0 address), `setCommitRevealWindows` (`0`, `0`), `setValidatorBounds` (`0`, `0`) | Choose validators and tune commit/reveal timing and committee sizes. |
 | DisputeModule | `addModerator(address, weight)` / `removeModerator(address)` (owner), majority-signed `resolve(jobId, verdict, signatures)`, `setDisputeFee` (`0`), `setJobRegistry` (constructor address) | Configure dispute bond and weighted arbiters; disputes finalize via moderator vote or owner call. |
 | StakeManager | `setMinStake` (`0`), `setSlashingPercentages` (`0`, `100`), `setTreasury` (constructor treasury), `setJobRegistry` (0 address), `setDisputeModule` (0 address), `setMaxStakePerAddress` (`0`) | Adjust staking token, minimums, slashing rules, and authorised modules. |
-| ReputationEngine | `setCaller` (`false`), `setStakeManager` (0 address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
+| ReputationEngine | `setCaller` (`false`), `setStakeManager` (constructor address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`) | Manage scoring weights, authorised callers, and blacklist threshold. |
 | CertificateNFT | `setJobRegistry` (0 address) | Authorise minting registry; URIs emitted in events with hashes on-chain. |
 
 Example of swapping validation logic:

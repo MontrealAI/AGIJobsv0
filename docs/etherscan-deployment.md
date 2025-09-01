@@ -63,7 +63,7 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
 2. Deploy `JobRegistry()`.
 3. Deploy `TaxPolicy(uri, acknowledgement)` and call `JobRegistry.setTaxPolicy(taxPolicy)`.
 4. Deploy `ValidationModule(jobRegistry, stakeManager, commitWindow, revealWindow, 1, 3, [])`.
-5. Deploy `ReputationEngine(stakeManager)` or `ReputationEngine(address(0))` if wiring later.
+5. Deploy `ReputationEngine(stakeManager)`.
 6. Deploy `CertificateNFT("AGI Jobs", "AGIJOB")`.
 7. Deploy `DisputeModule(jobRegistry, 0, owner, owner)`.
 8. Deploy `FeePool(token, stakeManager, burnPct, treasury)`; rewards default to platform stakers.

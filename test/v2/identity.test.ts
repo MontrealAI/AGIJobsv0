@@ -14,10 +14,12 @@ describe("IdentityRegistry ENS verification", function () {
     const Wrapper = await ethers.getContractFactory("MockNameWrapper");
     const wrapper = await Wrapper.deploy();
 
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.deploy(ethers.ZeroAddress);
+    const rep = await Rep.deploy(await stake.getAddress());
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
@@ -56,10 +58,12 @@ describe("IdentityRegistry ENS verification", function () {
     const Resolver = await ethers.getContractFactory("MockResolver");
     const resolver = await Resolver.deploy();
 
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.deploy(ethers.ZeroAddress);
+    const rep = await Rep.deploy(await stake.getAddress());
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
@@ -105,10 +109,12 @@ describe("IdentityRegistry ENS verification", function () {
     const Wrapper = await ethers.getContractFactory("MockNameWrapper");
     const wrapper = await Wrapper.deploy();
 
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.deploy(ethers.ZeroAddress);
+    const rep = await Rep.deploy(await stake.getAddress());
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
@@ -144,10 +150,12 @@ describe("IdentityRegistry ENS verification", function () {
     const Wrapper = await ethers.getContractFactory("MockNameWrapper");
     const wrapper = await Wrapper.deploy();
 
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.deploy(ethers.ZeroAddress);
+    const rep = await Rep.deploy(await stake.getAddress());
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
@@ -185,10 +193,12 @@ describe("IdentityRegistry ENS verification", function () {
     const Wrapper = await ethers.getContractFactory("MockNameWrapper");
     const wrapper = await Wrapper.deploy();
 
+    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const stake = await Stake.deploy();
     const Rep = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    const rep = await Rep.deploy(ethers.ZeroAddress);
+    const rep = await Rep.deploy(await stake.getAddress());
 
     const Registry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
