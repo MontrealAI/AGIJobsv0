@@ -10,6 +10,7 @@ import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 
 error ZeroAddress();
 error InvalidAgentType();
+error UnauthorizedAgent();
 
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
@@ -182,10 +183,9 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof,
         string calldata uri
     ) external {
-        require(
-            isAuthorizedAgent(msg.sender, subdomain, proof),
-            "Not authorized agent"
-        );
+        if (!isAuthorizedAgent(msg.sender, subdomain, proof)) {
+            revert UnauthorizedAgent();
+        }
         agentProfileURI[msg.sender] = uri;
         emit AgentProfileUpdated(msg.sender, uri);
     }
