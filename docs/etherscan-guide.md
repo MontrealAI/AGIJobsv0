@@ -179,11 +179,13 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 ## Function Reference
 
 ### JobRegistry
+To wire deployed modules, call `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))`. The final array `_ackModules` lists modules that must acknowledge the tax policy before interacting.
+
 | Function | Parameters | Typical Use Case |
 | --- | --- | --- |
 | `createJob(string details, uint256 reward)` | `details` – off-chain URI, `reward` – escrowed token amount | Employer posts a new job and locks payment. |
 | `acknowledgeTaxPolicy()` | none | Participant confirms tax disclaimer before interacting. |
-| `setModules(address validation, address stake, address reputation, address dispute, address certificate)` | module addresses | Owner wires modules after deployment. |
+| `setModules(address validation, address stake, address reputation, address dispute, address certificate, address feePool, address[] ackModules)` | module addresses and ack modules | Owner wires modules and sets acknowledgement requirements. |
 
 ### StakeManager
 | Function | Parameters | Typical Use Case |
