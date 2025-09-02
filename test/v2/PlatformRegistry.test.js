@@ -89,6 +89,9 @@ describe("PlatformRegistry", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
@@ -135,6 +138,9 @@ describe("PlatformRegistry", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
@@ -171,6 +177,9 @@ describe("PlatformRegistry", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
@@ -214,6 +223,9 @@ describe("PlatformRegistry", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
@@ -251,6 +263,9 @@ describe("PlatformRegistry", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
@@ -372,6 +387,9 @@ describe("PlatformRegistry", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);

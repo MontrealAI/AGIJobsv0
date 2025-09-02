@@ -52,6 +52,9 @@ describe("JobRegistry agent gating", function () {
     );
     policy = await Policy.deploy("uri", "ack");
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await policy.connect(employer).acknowledge();
     await policy.connect(agent).acknowledge();
 

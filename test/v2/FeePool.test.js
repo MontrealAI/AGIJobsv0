@@ -44,6 +44,9 @@ describe("FeePool", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
     await policy.connect(user1).acknowledge();
     await policy.connect(user2).acknowledge();

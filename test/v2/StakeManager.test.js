@@ -56,6 +56,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -146,6 +147,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -206,6 +208,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -264,6 +267,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -315,6 +319,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -368,6 +373,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -440,6 +446,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -636,6 +643,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -697,6 +705,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -749,6 +758,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -808,6 +818,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -840,6 +851,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -891,6 +903,7 @@ describe("StakeManager", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
@@ -969,6 +982,10 @@ describe("StakeManager", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await stakeManager.getAddress(), true);
@@ -1009,6 +1026,13 @@ describe("StakeManager", function () {
     );
     const policy1 = await TaxPolicy.deploy("ipfs://policy1", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy1.getAddress());
+    await policy1.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
+    await policy1
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
+    await policy1
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await stakeManager.getAddress(), true);
@@ -1021,6 +1045,13 @@ describe("StakeManager", function () {
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy2.getAddress());
+    await policy2.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
+    await policy2
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
+    await policy2
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
 
     await stakeManager.connect(user).acknowledgeAndWithdraw(0, 50);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
@@ -1049,6 +1080,7 @@ describe("StakeManager", function () {
     );
     const policy1 = await TaxPolicy.deploy("ipfs://policy1", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy1.getAddress());
+    await policy1.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
     await jobRegistry
       .connect(owner)
       .setAcknowledger(await stakeManager.getAddress(), true);
@@ -1061,6 +1093,7 @@ describe("StakeManager", function () {
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await policy2.getAddress());
+    await policy2.connect(owner).setAcknowledger(await jobRegistry.getAddress(), true);
 
     await expect(
       stakeManager.connect(user).acknowledgeAndWithdrawFor(user.address, 0, 50)

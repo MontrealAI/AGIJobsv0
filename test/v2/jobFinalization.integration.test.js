@@ -107,9 +107,12 @@ describe("job finalization integration", function () {
     []
   );
   await validation.setJobRegistry(await registry.getAddress());
-  await registry.setFeePct(feePct);
+    await registry.setFeePct(feePct);
     await registry.setValidatorRewardPct(validatorRewardPct);
     await registry.setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await registry.setJobParameters(0, stakeRequired);
     await registry.setMaxJobReward(reward);
     await registry.setJobDurationLimit(86400);

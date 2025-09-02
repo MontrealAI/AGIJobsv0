@@ -111,6 +111,9 @@ describe("end-to-end job lifecycle", function () {
     await registry.setFeePct(feePct);
     await registry.setValidatorRewardPct(0);
     await registry.setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await registry.setJobParameters(0, stakeRequired);
     await registry.setMaxJobReward(reward);
     await registry.setJobDurationLimit(86400);

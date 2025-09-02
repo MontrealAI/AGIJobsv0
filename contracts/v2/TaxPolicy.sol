@@ -25,6 +25,18 @@ contract TaxPolicy is Ownable, ITaxPolicy {
     /// @notice Tracks which policy version each address has acknowledged.
     mapping(address => uint256) private _acknowledgedVersion;
 
+    /// @notice Addresses allowed to acknowledge on behalf of others.
+    mapping(address => bool) public acknowledgers;
+
+    /// @notice Emitted when an acknowledger role is updated.
+    /// @param acknowledger Address being granted or revoked the role.
+    /// @param allowed Whether the address can acknowledge for others.
+    event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
+
+    /// @notice Thrown when a caller attempts to acknowledge for another user
+    /// without being granted the acknowledger role.
+    error NotAcknowledger();
+
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
 
@@ -82,6 +94,14 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         emit PolicyVersionUpdated(_version);
     }
 
+    /// @notice Allow or revoke an acknowledger address.
+    /// @param acknowledger Address granted permission to acknowledge for users.
+    /// @param allowed Whether the address can acknowledge for others.
+    function setAcknowledger(address acknowledger, bool allowed) external onlyOwner {
+        acknowledgers[acknowledger] = allowed;
+        emit AcknowledgerUpdated(acknowledger, allowed);
+    }
+
     /// @notice Record that the caller acknowledges the current tax policy.
     /// @dev Records `msg.sender`, so intermediary contracts acknowledge on their
     ///      own behalf. Contracts cannot spoof another user's acknowledgement;
@@ -106,6 +126,7 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         override
         returns (string memory disclaimer)
     {
+        if (msg.sender != user && !acknowledgers[msg.sender]) revert NotAcknowledger();
         _acknowledgedVersion[user] = _version;
         emit PolicyAcknowledged(user, _version);
         return _acknowledgement;
