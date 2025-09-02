@@ -263,4 +263,23 @@ describe("FeePool", function () {
     expect(await feePool.pendingFees()).to.equal(0);
     expect(await feePool.cumulativePerToken()).to.equal(cumulative);
   });
+
+  it("reverts when setting a zero stake manager", async () => {
+    await expect(
+      feePool.connect(owner).setStakeManager(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(feePool, "ZeroAddress");
+  });
+
+  it("reverts when stake manager has wrong version", async () => {
+    const Mock = await ethers.getContractFactory(
+      "contracts/v2/mocks/VersionMock.sol:VersionMock"
+    );
+    const bad = await Mock.deploy(1);
+    await expect(
+      feePool.connect(owner).setStakeManager(await bad.getAddress())
+    ).to.be.revertedWithCustomError(
+      feePool,
+      "InvalidStakeManagerVersion"
+    );
+  });
 });
