@@ -19,6 +19,7 @@ error InvalidStakeManager();
 error InvalidValidatorBounds();
 error InvalidWindows();
 error PoolLimitExceeded();
+error ZeroValidatorAddress();
 error ZeroIdentityRegistry();
 error InvalidIdentityRegistry();
 error InvalidSampleSize();
@@ -228,6 +229,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         onlyOwner
     {
         if (newPool.length > maxValidatorPoolSize) revert PoolLimitExceeded();
+        for (uint256 i = 0; i < newPool.length; i++) {
+            if (newPool[i] == address(0)) revert ZeroValidatorAddress();
+        }
         validatorPool = newPool;
         bumpValidatorAuthCacheVersion();
         emit ValidatorsUpdated(newPool);

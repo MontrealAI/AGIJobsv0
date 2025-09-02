@@ -83,6 +83,14 @@ describe("ValidationModule access controls", function () {
     return validation.selectValidators(jobId, 0);
   }
 
+  it("reverts when validator pool contains zero address", async () => {
+    await expect(
+      validation
+        .connect(owner)
+        .setValidatorPool([v1.address, ethers.ZeroAddress, v3.address])
+    ).to.be.revertedWithCustomError(validation, "ZeroValidatorAddress");
+  });
+
   it("rejects unauthorized validators", async () => {
     const tx = await select(1);
     const receipt = await tx.wait();
