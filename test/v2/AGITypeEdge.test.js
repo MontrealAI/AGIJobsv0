@@ -145,5 +145,17 @@ describe("StakeManager AGIType bonuses", function () {
         .releaseReward(jobId, agent.address, 100)
     ).to.be.revertedWithCustomError(stakeManager, "InsufficientEscrow");
   });
+
+  it("reverts when setting max below current AGI types", async () => {
+    await stakeManager
+      .connect(owner)
+      .addAGIType(await nft1.getAddress(), 150);
+    await expect(
+      stakeManager.connect(owner).setMaxAGITypes(0)
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      "MaxAGITypesBelowCurrent"
+    );
+  });
 });
 
