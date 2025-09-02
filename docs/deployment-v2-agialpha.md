@@ -8,10 +8,10 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
    ![npm install](https://via.placeholder.com/650x150?text=npm+install)
 2. Execute the helper:
    ```bash
-   npx hardhat run scripts/v2/deployDefaults.ts --network <network>
+   npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <address>
    ```
    ![deploy defaults](https://via.placeholder.com/650x150?text=deployDefaults.ts)
-   Use `--no-tax` to omit `TaxPolicy`.
+   Use `--governance` to set the multisig or timelock owner and `--no-tax` to omit `TaxPolicy`.
 3. The script deploys `Deployer.sol`, calls `deployDefaults` (or `deployDefaultsWithoutTaxPolicy`), prints module addresses and verifies each contract on Etherscan.
    ![script output](https://via.placeholder.com/650x150?text=module+addresses)
 
