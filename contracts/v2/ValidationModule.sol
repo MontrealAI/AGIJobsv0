@@ -295,6 +295,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @notice Update the maximum allowable size of the validator pool.
     /// @param size Maximum number of validators permitted in the pool.
     function setMaxValidatorPoolSize(uint256 size) external onlyOwner {
+        if (size == 0) revert InvalidSampleSize();
+        if (size < validatorsPerJob) revert InvalidValidatorBounds();
+        if (size < validatorPoolSampleSize) revert InvalidSampleSize();
         maxValidatorPoolSize = size;
         emit MaxValidatorPoolSizeUpdated(size);
     }

@@ -63,6 +63,7 @@ describe("Validator selection with large pool", function () {
 
   it("reverts when validator pool exceeds max size", async () => {
     const maxSize = 50;
+    await validation.setValidatorPoolSampleSize(maxSize);
     await validation.setMaxValidatorPoolSize(maxSize);
     const poolSize = maxSize + 1;
     const validators = [];
