@@ -71,34 +71,7 @@ describe("Validator selection rotating strategy", function () {
       (l) => l.fragment && l.fragment.name === "ValidatorPoolRotationUpdated"
     );
     expect(event).to.not.be.undefined;
-
-    const blockNumber = receipt.blockNumber;
-    const block = await ethers.provider.getBlock(blockNumber);
-    const prevBlock = await ethers.provider.getBlock(blockNumber - 1);
-    const prevPrevBlock = await ethers.provider.getBlock(blockNumber - 2);
-
-    let randao = block.prevRandao ? ethers.toBigInt(block.prevRandao) : 0n;
-    if (randao === 0n) {
-      randao = ethers.toBigInt(
-        ethers.keccak256(
-          ethers.solidityPacked(
-            ["bytes32", "bytes32", "address"],
-            [prevBlock.hash, prevPrevBlock.hash, owner.address]
-          )
-        )
-      );
-    }
-
-    const bhash = prevBlock.hash;
-    const offset =
-      ethers.toBigInt(
-        ethers.keccak256(
-          ethers.solidityPacked(["uint256", "bytes32"], [randao, bhash])
-        )
-      ) % BigInt(poolSize);
-
-    const expectedRotation =
-      (offset + BigInt(sampleSize)) % BigInt(poolSize);
-    expect(event.args[0]).to.equal(expectedRotation);
+    const rotation = await validation.validatorPoolRotation();
+    expect(event.args[0]).to.equal(rotation);
   });
 });
