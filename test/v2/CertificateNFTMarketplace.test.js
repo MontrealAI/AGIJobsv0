@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, artifacts, network } = require("hardhat");
 const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("CertificateNFT marketplace", function () {
@@ -9,7 +9,17 @@ describe("CertificateNFT marketplace", function () {
   beforeEach(async () => {
     [owner, seller, buyer] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    token = await ethers.getContractAt(
+      "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
+      AGIALPHA
+    );
     await token.mint(buyer.address, price);
     await token.mint(seller.address, price);
     await token.mint(owner.address, price);
@@ -127,6 +137,54 @@ describe("CertificateNFT marketplace", function () {
         nft,
         "SelfPurchase"
       );
+    });
+
+  it("pauses and unpauses marketplace actions", async () => {
+      await expect(nft.connect(seller).pause()).to.be.revertedWithCustomError(
+        nft,
+        "OwnableUnauthorizedAccount"
+      ).withArgs(seller.address);
+
+      await nft.connect(owner).pause();
+      await expect(nft.connect(seller).list(1, price)).to.be.revertedWithCustomError(
+        nft,
+        "EnforcedPause"
+      );
+
+      await nft.connect(owner).unpause();
+      await nft.connect(seller).list(1, price);
+      await token.connect(buyer).approve(await nft.getAddress(), price);
+
+      await nft.connect(owner).pause();
+      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
+        nft,
+        "EnforcedPause"
+      );
+      await expect(nft.connect(seller).delist(1)).to.be.revertedWithCustomError(
+        nft,
+        "EnforcedPause"
+      );
+
+      await nft.connect(owner).unpause();
+      await expect(nft.connect(buyer).purchase(1))
+        .to.emit(nft, "NFTPurchased")
+        .withArgs(1, buyer.address, price);
+
+      await nft.mint(
+        seller.address,
+        2,
+        ethers.keccak256(ethers.toUtf8Bytes("ipfs://2"))
+      );
+      await nft.connect(seller).list(2, price);
+      await nft.connect(owner).pause();
+      await expect(nft.connect(seller).delist(2)).to.be.revertedWithCustomError(
+        nft,
+        "EnforcedPause"
+      );
+      await nft.connect(owner).unpause();
+      await expect(nft.connect(seller).delist(2))
+        .to.emit(nft, "NFTDelisted")
+        .withArgs(2);
     });
 
   it("guards purchase against reentrancy", async () => {
