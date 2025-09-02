@@ -141,6 +141,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     // Block number whose hash will be used to finalize committee selection.
     mapping(uint256 => uint256) public selectionBlock;
 
+    // Track unique entropy contributors for each job and round
+    mapping(uint256 => uint256) public entropyContributorCount;
+    mapping(uint256 => uint256) public entropyRound;
+    mapping(uint256 => mapping(uint256 => mapping(address => bool)))
+        private entropyContributed;
+    uint256 public constant MIN_ENTROPY_CONTRIBUTORS = 2;
+
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
@@ -543,6 +550,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
             selectionBlock[jobId] = block.number + 1;
+            entropyRound[jobId] += 1;
+            entropyContributorCount[jobId] = 1;
+            entropyContributed[jobId][entropyRound[jobId]][msg.sender] = true;
             return selected;
         }
 
@@ -552,16 +562,49 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             pendingEntropy[jobId] ^= uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
+            uint256 round = entropyRound[jobId];
+            if (!entropyContributed[jobId][round][msg.sender]) {
+                entropyContributed[jobId][round][msg.sender] = true;
+                unchecked {
+                    entropyContributorCount[jobId] += 1;
+                }
+            }
             return selected;
         }
 
         // Finalization path using the stored entropy and future blockhash.
         if (block.number <= selectionBlock[jobId]) revert AwaitBlockhash();
-        bytes32 bhash = blockhash(selectionBlock[jobId]);
-        if (bhash == bytes32(0)) {
+        uint256 round = entropyRound[jobId];
+        if (!entropyContributed[jobId][round][msg.sender]) {
+            pendingEntropy[jobId] ^= uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
+            entropyContributed[jobId][round][msg.sender] = true;
+            unchecked {
+                entropyContributorCount[jobId] += 1;
+            }
+        }
+        if (entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS) {
+            round += 1;
+            entropyRound[jobId] = round;
             pendingEntropy[jobId] = uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
+            entropyContributorCount[jobId] = 1;
+            entropyContributed[jobId][round][msg.sender] = true;
+            selectionBlock[jobId] = block.number + 1;
+            emit SelectionReset(jobId);
+            return selected;
+        }
+        bytes32 bhash = blockhash(selectionBlock[jobId]);
+        if (bhash == bytes32(0)) {
+            round += 1;
+            entropyRound[jobId] = round;
+            pendingEntropy[jobId] = uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
+            entropyContributorCount[jobId] = 1;
+            entropyContributed[jobId][round][msg.sender] = true;
             selectionBlock[jobId] = block.number + 1;
             emit SelectionReset(jobId);
             return selected;
@@ -841,7 +884,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.committeeSize = size;
 
         // Initialize entropy and schedule finalization using a future blockhash.
-        pendingEntropy[jobId] = entropy;
+        uint256 round = ++entropyRound[jobId];
+        pendingEntropy[jobId] = uint256(
+            keccak256(abi.encodePacked(msg.sender, entropy))
+        );
+        entropyContributorCount[jobId] = 1;
+        entropyContributed[jobId][round][msg.sender] = true;
         selectionBlock[jobId] = block.number + 1;
     }
 

@@ -2,13 +2,16 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Validator selection reservoir strategy", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, other;
   let validators;
   const poolSize = 150;
   const sampleSize = 50;
   const committeeSize = 3;
 
   beforeEach(async () => {
+    const [_, o] = await ethers.getSigners();
+    other = o;
+
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
@@ -56,7 +59,7 @@ describe("Validator selection reservoir strategy", function () {
     for (let i = 0; i < iterations; i++) {
       await validation.selectValidators(i + 1, i + 12345);
       await ethers.provider.send("evm_mine", []);
-      await validation.selectValidators(i + 1, 0);
+      await validation.connect(other).selectValidators(i + 1, 0);
       const selected = await validation.validators(i + 1);
       for (const v of selected) {
         counts[v] = (counts[v] || 0) + 1;

@@ -3,9 +3,12 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Validator selection cache", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, other;
 
   beforeEach(async () => {
+    const [_, o] = await ethers.getSigners();
+    other = o;
+
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
@@ -49,7 +52,7 @@ describe("Validator selection cache", function () {
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(other).selectValidators(jobId, 0);
   }
 
   it("skips repeat ENS checks and expires cache", async () => {

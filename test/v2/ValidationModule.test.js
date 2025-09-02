@@ -82,7 +82,7 @@ describe("ValidationModule V2", function () {
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   async function start(jobId, entropy = 0) {
@@ -93,7 +93,7 @@ describe("ValidationModule V2", function () {
     await validation.connect(registry).start(jobId, entropy);
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   it("selects validators", async () => {
@@ -164,10 +164,31 @@ describe("ValidationModule V2", function () {
 
     await unconfigured.selectValidators(1, 0);
     await ethers.provider.send("evm_mine", []);
-    await expect(unconfigured.selectValidators(1, 0)).to.be.revertedWithCustomError(
-      unconfigured,
-      "StakeManagerNotSet"
+    await expect(
+      unconfigured.connect(v1).selectValidators(1, 0)
+    ).to.be.revertedWithCustomError(unconfigured, "StakeManagerNotSet");
+  });
+
+  it("requires multiple entropy contributors before finalization", async () => {
+    const jobId = 1;
+    await validation.connect(v1).selectValidators(jobId, 123);
+    await ethers.provider.send("evm_mine", []);
+
+    await expect(
+      validation.connect(v1).selectValidators(jobId, 0)
+    ).to.emit(validation, "SelectionReset");
+
+    let selected = await validation.validators(jobId);
+    expect(selected.length).to.equal(0);
+
+    await validation.connect(v2).selectValidators(jobId, 456);
+    await ethers.provider.send("evm_mine", []);
+    const tx = await validation.connect(v1).selectValidators(jobId, 0);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
     );
+    expect(event.args[1].length).to.equal(3);
   });
 
   it("rejects zero stake manager address", async () => {

@@ -2,11 +2,14 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("Validator selection rotating strategy", function () {
-  let validation, stake, identity;
+  let validation, stake, identity, other;
   const poolSize = 10;
   const sampleSize = 3;
 
   beforeEach(async () => {
+    const [_, o] = await ethers.getSigners();
+    other = o;
+
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
@@ -51,7 +54,7 @@ describe("Validator selection rotating strategy", function () {
     for (let j = 0; j < 5; j++) {
       await validation.selectValidators(j + 1, 0);
       await ethers.provider.send("evm_mine", []);
-      await validation.selectValidators(j + 1, 0);
+      await validation.connect(other).selectValidators(j + 1, 0);
       const rotation = await validation.validatorPoolRotation();
       const start = Number(
         (rotation + BigInt(poolSize) - BigInt(sampleSize)) % BigInt(poolSize)
@@ -65,7 +68,7 @@ describe("Validator selection rotating strategy", function () {
     const [owner] = await ethers.getSigners();
     await validation.selectValidators(1, 0);
     await ethers.provider.send("evm_mine", []);
-    const tx = await validation.selectValidators(1, 0);
+    const tx = await validation.connect(other).selectValidators(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === "ValidatorPoolRotationUpdated"

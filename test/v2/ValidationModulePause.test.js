@@ -43,7 +43,7 @@ describe("ValidationModule pause", function () {
     await validation.connect(owner).unpause();
     await validation.selectValidators(1, 0);
     await ethers.provider.send("evm_mine", []);
-    await validation.selectValidators(1, 0);
+    await validation.connect(v2).selectValidators(1, 0);
     const selected = await validation.validators(1);
     expect(selected.length).to.equal(3);
     expect(selected).to.include(validator.address);
