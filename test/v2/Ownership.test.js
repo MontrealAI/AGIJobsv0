@@ -195,6 +195,7 @@ describe("Ownable modules", function () {
         TaxPolicy.attach(taxPolicy),
         owner,
         (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new"),
+        true,
       ],
       [
         identityRegistry,

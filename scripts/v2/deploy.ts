@@ -394,7 +394,6 @@ async function main() {
   }
   await verify(await nft.getAddress(), ["Cert", "CERT", governance]);
   await verify(await tax.getAddress(), [
-    governance,
     "ipfs://policy",
     "All taxes on participants; contract and owner exempt",
   ]);

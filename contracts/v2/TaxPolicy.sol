@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 /// @title TaxPolicy
@@ -12,7 +13,7 @@ import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 /// provides only an on-chain pointer for off-chain responsibilities. AGI
 /// Employers, AGI Agents, and Validators bear all tax obligations while the
 /// infrastructure and its owner remain perpetually exempt.
-contract TaxPolicy is Ownable, ITaxPolicy {
+contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @notice Off-chain document describing tax responsibilities.
     string private _policyURI;
 
