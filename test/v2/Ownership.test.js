@@ -120,7 +120,9 @@ describe("Ownable modules", function () {
     await identity.waitForDeployment();
 
     const identityRegistry = IdentityRegistry.attach(identityRegistryAddr);
+    const taxPolicyC = TaxPolicy.attach(taxPolicy);
     await identityRegistry.connect(owner).acceptOwnership();
+    await taxPolicyC.connect(owner).acceptOwnership();
 
     const systemPauseSignerAddr = systemPause;
     await network.provider.send("hardhat_setBalance", [
@@ -192,9 +194,10 @@ describe("Ownable modules", function () {
         (inst, signer) => inst.connect(signer).setBurnPct(0),
       ],
       [
-        TaxPolicy.attach(taxPolicy),
+        taxPolicyC,
         owner,
         (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new"),
+        true,
       ],
       [
         identityRegistry,
