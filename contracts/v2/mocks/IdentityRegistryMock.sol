@@ -23,7 +23,7 @@ contract IdentityRegistryMock is Ownable {
         Human,
         AI
     }
-    mapping(address => AgentType) public agentType;
+    mapping(address => AgentType) public agentTypes;
 
     constructor() Ownable(msg.sender) {}
 
@@ -87,13 +87,13 @@ contract IdentityRegistryMock is Ownable {
         emit AdditionalValidatorUpdated(validator, false);
     }
 
-    function setAgentType(address agent, uint8 _type) external {
-        agentType[agent] = AgentType(_type);
-        emit AgentTypeUpdated(agent, AgentType(_type));
+    function setAgentType(address agent, AgentType agentType) external {
+        agentTypes[agent] = agentType;
+        emit AgentTypeUpdated(agent, agentType);
     }
 
     function getAgentType(address agent) external view returns (AgentType) {
-        return agentType[agent];
+        return agentTypes[agent];
     }
 
     function isAuthorizedAgent(
