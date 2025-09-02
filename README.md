@@ -72,10 +72,10 @@ Record each address during deployment. The defaults below assume the 18‑decima
 2. **Wire modules** – from each contract’s **Write** tab call:
    - `JobRegistry.setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))`
      - any `_ackModules` passed to this call must implement `IJobRegistryAck` and successfully respond to `acknowledgeFor(address(0))`
-   - `StakeManager.setJobRegistry(jobRegistry)` and `ValidationModule.setJobRegistry(jobRegistry)`
-   - `JobRegistry.setIdentityRegistry(identityRegistry)`
-   - `ValidationModule.setIdentityRegistry(identityRegistry)`
-   - Load ENS settings with `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot`
+   - Point modules back to the registry with `StakeManager.setJobRegistry(jobRegistry)`, `ValidationModule.setJobRegistry(jobRegistry)`, `DisputeModule.setJobRegistry(jobRegistry)` and `CertificateNFT.setJobRegistry(jobRegistry)`
+   - Authorise cross‑module calls using `StakeManager.setDisputeModule(disputeModule)` and `CertificateNFT.setStakeManager(stakeManager)`
+   - `JobRegistry.setIdentityRegistry(identityRegistry)` and `ValidationModule.setIdentityRegistry(identityRegistry)`
+   - Load ENS settings with `IdentityRegistry.setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot`
 3. **Example transactions** – after wiring you can:
    - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` then `StakeManager.depositStake(role, 1_000000000000000000)`
    - Post a job: `JobRegistry.createJob(1_000000000000000000, "ipfs://QmHash")`
