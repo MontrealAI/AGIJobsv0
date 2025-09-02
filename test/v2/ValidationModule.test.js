@@ -116,7 +116,10 @@ describe("ValidationModule V2", function () {
   });
 
   it("reverts when called by non-registry", async () => {
-    await expect(validation.start(1, 0)).to.be.revertedWith("only registry");
+    await expect(validation.start(1, 0)).to.be.revertedWithCustomError(
+      validation,
+      "OnlyJobRegistry"
+    );
   });
 
   it("reverts if job not submitted", async () => {
@@ -131,7 +134,10 @@ describe("ValidationModule V2", function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(2, jobStruct);
-    await expect(start(2, 0)).to.be.revertedWith("not submitted");
+    await expect(start(2, 0)).to.be.revertedWithCustomError(
+      validation,
+      "JobNotSubmitted"
+    );
   });
 
 
@@ -158,8 +164,9 @@ describe("ValidationModule V2", function () {
 
     await unconfigured.selectValidators(1, 0);
     await ethers.provider.send("evm_mine", []);
-    await expect(unconfigured.selectValidators(1, 0)).to.be.revertedWith(
-      "stake manager"
+    await expect(unconfigured.selectValidators(1, 0)).to.be.revertedWithCustomError(
+      unconfigured,
+      "StakeManagerNotSet"
     );
   });
 
@@ -172,13 +179,13 @@ describe("ValidationModule V2", function () {
   it("rejects validators less than three via setParameters", async () => {
     await expect(
       validation.connect(owner).setParameters(2, 60, 60)
-    ).to.be.revertedWith("validators");
+    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
   });
 
   it("rejects validator bounds below three", async () => {
     await expect(
       validation.connect(owner).setValidatorBounds(2, 3)
-    ).to.be.revertedWith("bounds");
+    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
   });
 
   it("selects stake-weighted validators", async () => {
@@ -315,7 +322,7 @@ describe("ValidationModule V2", function () {
       validation
         .connect(v1)
         .revealValidation(1, true, salt, "", [])
-    ).to.be.revertedWith("invalid reveal");
+    ).to.be.revertedWithCustomError(validation, "InvalidReveal");
   });
 
   it("clears commitments after finalization", async () => {
@@ -363,7 +370,7 @@ describe("ValidationModule V2", function () {
 
     await expect(
       validation.connect(v1).commitValidation(1, commit1, "", [])
-    ).to.be.revertedWith("already committed");
+    ).to.be.revertedWithCustomError(validation, "AlreadyCommitted");
 
     await validation.connect(owner).resetJobNonce(1);
     expect(await validation.jobNonce(1)).to.equal(0n);
@@ -402,7 +409,7 @@ describe("ValidationModule V2", function () {
     );
     await expect(
       validation.connect(v1).commitValidation(1, commit, "", [])
-    ).to.be.revertedWith("not validator");
+    ).to.be.revertedWithCustomError(validation, "NotValidator");
   });
 
   it("allows owner to reassign registry and stake manager", async () => {
@@ -438,7 +445,7 @@ describe("ValidationModule V2", function () {
 
     await expect(
       validation.selectValidators(1, 0)
-    ).to.be.revertedWith("already selected");
+    ).to.be.revertedWithCustomError(validation, "ValidatorsAlreadySelected");
 
     await validation.connect(owner).resetJobNonce(1);
     await expect(select(1)).to.not.be.reverted;

@@ -102,7 +102,7 @@ describe("Validator ENS integration", function () {
     await ethers.provider.send("evm_mine", []);
     await expect(
       validation.selectValidators(1, 0)
-    ).to.be.revertedWith("insufficient validators");
+    ).to.be.revertedWithCustomError(validation, "InsufficientValidators");
 
     await validation.setValidatorSubdomains([validator.address], ["v"]);
     await wrapper.setOwner(
@@ -182,7 +182,7 @@ describe("Validator ENS integration", function () {
       validation
         .connect(validator)
         .commitValidation(1, ethers.id("h"), "v", [])
-    ).to.be.revertedWith("Not authorized validator");
+    ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
 
     // non-owner cannot override
     await expect(
@@ -232,6 +232,6 @@ describe("Validator ENS integration", function () {
     await ethers.provider.send("evm_mine", []);
     await expect(
       validation.selectValidators(1, 0)
-    ).to.be.revertedWith("insufficient validators");
+    ).to.be.revertedWithCustomError(validation, "InsufficientValidators");
   });
 });

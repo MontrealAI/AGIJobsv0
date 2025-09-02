@@ -113,7 +113,10 @@ describe("regression scenarios", function () {
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
     await registry.connect(agent).applyForJob(1, "agent", []);
 
-    await expect(validation.selectValidators(1, 1)).to.be.revertedWith("insufficient validators");
+    await expect(validation.selectValidators(1, 1)).to.be.revertedWithCustomError(
+      validation,
+      "InsufficientValidators"
+    );
   });
 
   it("prevents validation after stake exhaustion", async () => {
@@ -148,7 +151,10 @@ describe("regression scenarios", function () {
     const deadline2 = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline2, "ipfs://job2");
     await registry.connect(agent).applyForJob(2, "agent", []);
-    await expect(validation.selectValidators(2, 1)).to.be.revertedWith("insufficient validators");
+    await expect(validation.selectValidators(2, 1)).to.be.revertedWithCustomError(
+      validation,
+      "InsufficientValidators"
+    );
   });
 
   it("supports validation module replacement", async () => {

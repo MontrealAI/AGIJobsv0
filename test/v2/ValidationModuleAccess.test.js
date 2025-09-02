@@ -114,9 +114,9 @@ describe("ValidationModule access controls", function () {
       ["uint256", "uint256", "bool", "bytes32"],
       [1n, nonce, true, salt]
     );
-    await expect(
-      validation.connect(signer).commitValidation(1, commit, "", [])
-    ).to.be.revertedWith("Not authorized validator");
+      await expect(
+        validation.connect(signer).commitValidation(1, commit, "", [])
+      ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
 
     // allow commit then block reveal
     await identity.addAdditionalValidator(val);
@@ -127,9 +127,9 @@ describe("ValidationModule access controls", function () {
     await advance(61);
     await identity.removeAdditionalValidator(val);
     await toggle.setResult(false);
-    await expect(
-      validation.connect(signer).revealValidation(1, true, salt, "", [])
-    ).to.be.revertedWith("Not authorized validator");
+      await expect(
+        validation.connect(signer).revealValidation(1, true, salt, "", [])
+      ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
   });
 
   it("rejects blacklisted validators", async () => {
@@ -155,7 +155,7 @@ describe("ValidationModule access controls", function () {
     await reputation.setBlacklist(val, true);
     await expect(
       validation.connect(signer).commitValidation(1, commit, "", [])
-    ).to.be.revertedWith("Blacklisted validator");
+    ).to.be.revertedWithCustomError(validation, "BlacklistedValidator");
 
     await reputation.setBlacklist(val, false);
     await (
@@ -165,7 +165,7 @@ describe("ValidationModule access controls", function () {
     await reputation.setBlacklist(val, true);
     await expect(
       validation.connect(signer).revealValidation(1, true, salt, "", [])
-    ).to.be.revertedWith("Blacklisted validator");
+    ).to.be.revertedWithCustomError(validation, "BlacklistedValidator");
   });
 
   it("finalize updates job registry based on tally", async () => {

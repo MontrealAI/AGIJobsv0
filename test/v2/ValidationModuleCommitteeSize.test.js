@@ -102,10 +102,10 @@ describe("ValidationModule committee size", function () {
 
     await expect(
       validation.connect(owner).setValidatorsPerJob(2)
-    ).to.be.revertedWith("bounds");
+    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
     await expect(
       validation.connect(owner).setValidatorsPerJob(10)
-    ).to.be.revertedWith("bounds");
+    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
   });
 
   it("uses stored committee size for quorum", async () => {

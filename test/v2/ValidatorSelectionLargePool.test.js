@@ -72,7 +72,7 @@ describe("Validator selection with large pool", function () {
     }
     await expect(
       validation.setValidatorPool(validators)
-    ).to.be.revertedWith("pool limit");
+    ).to.be.revertedWithCustomError(validation, "PoolLimitExceeded");
   });
 });
 
