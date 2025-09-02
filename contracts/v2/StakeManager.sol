@@ -290,7 +290,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external onlyGovernance {
-        if (IDisputeModule(module).version() != 2) revert InvalidDisputeModule();
+        if (module == address(0) || IDisputeModule(module).version() != 2)
+            revert InvalidDisputeModule();
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
@@ -298,7 +299,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
     function setValidationModule(address module) external onlyGovernance {
-        if (IValidationModule(module).version() != 2) revert InvalidValidationModule();
+        if (module == address(0) || IValidationModule(module).version() != 2)
+            revert InvalidValidationModule();
         validationModule = IValidationModule(module);
         emit ValidationModuleUpdated(module);
     }

@@ -168,6 +168,19 @@ describe("Module replacement", function () {
     expect(after.state).to.equal(6); // Finalized
   });
 
+  it("rejects zero address modules", async function () {
+    const env = await deploySystem();
+    const { owner, stake } = env;
+
+    await expect(
+      stake.connect(owner).setDisputeModule(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(stake, "InvalidDisputeModule");
+
+    await expect(
+      stake.connect(owner).setValidationModule(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(stake, "InvalidValidationModule");
+  });
+
   it("rejects modules with mismatched versions", async function () {
     const env = await deploySystem();
     const { owner, registry, stake, dispute } = env;
