@@ -16,6 +16,41 @@ import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 
 error InvalidJobRegistry();
 error InvalidStakeManager();
+error InvalidValidatorBounds();
+error InvalidWindows();
+error PoolLimitExceeded();
+error ZeroIdentityRegistry();
+error InvalidIdentityRegistry();
+error InvalidSampleSize();
+error SampleSizeTooSmall();
+error InvalidApprovalThreshold();
+error InvalidSlashingPercentage();
+error InvalidArrayLength();
+error InvalidCommitWindow();
+error InvalidRevealWindow();
+error InvalidPercentage();
+error InvalidApprovals();
+error ValidatorsAlreadySelected();
+error AwaitBlockhash();
+error InsufficientValidators();
+error StakeManagerNotSet();
+error OnlyJobRegistry();
+error JobNotSubmitted();
+error ValidatorPoolTooSmall();
+error BlacklistedValidator();
+error NotValidator();
+error UnauthorizedValidator();
+error NoStake();
+error AlreadyCommitted();
+error CommitPhaseActive();
+error RevealPhaseClosed();
+error CommitPhaseClosed();
+error CommitMissing();
+error AlreadyRevealed();
+error InvalidReveal();
+error AlreadyTallied();
+error RevealPending();
+error UnauthorizedCaller();
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -167,15 +202,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             _minValidators == 0 ? DEFAULT_MIN_VALIDATORS : _minValidators;
         maxValidators =
             _maxValidators == 0 ? DEFAULT_MAX_VALIDATORS : _maxValidators;
-        require(minValidators >= 3, "validators");
+        if (minValidators < 3) revert InvalidValidatorBounds();
         emit ValidatorBoundsUpdated(minValidators, maxValidators);
         validatorsPerJob = minValidators;
         emit ValidatorsPerJobUpdated(validatorsPerJob);
 
         emit ApprovalThresholdUpdated(approvalThreshold);
 
-        require(commitWindow > 0 && revealWindow > 0, "windows");
-        require(maxValidators >= minValidators, "bounds");
+        if (commitWindow == 0 || revealWindow == 0) revert InvalidWindows();
+        if (maxValidators < minValidators) revert InvalidValidatorBounds();
         if (_validatorPool.length != 0) {
             validatorPool = _validatorPool;
             emit ValidatorsUpdated(_validatorPool);
@@ -192,7 +227,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         external
         onlyOwner
     {
-        require(newPool.length <= maxValidatorPoolSize, "pool limit");
+        if (newPool.length > maxValidatorPoolSize) revert PoolLimitExceeded();
         validatorPool = newPool;
         bumpValidatorAuthCacheVersion();
         emit ValidatorsUpdated(newPool);
@@ -226,8 +261,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Update the identity registry used for validator verification.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyOwner {
-        require(address(registry) != address(0), "identity reg");
-        require(registry.version() == 2, "Invalid identity registry");
+        if (address(registry) == address(0)) revert ZeroIdentityRegistry();
+        if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
     }
@@ -245,9 +280,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @notice Update the maximum number of pool entries sampled during selection.
     /// @param size Maximum number of validators examined on-chain.
     function setValidatorPoolSampleSize(uint256 size) external onlyOwner {
-        require(size > 0, "size");
-        require(size <= maxValidatorPoolSize, "pool limit");
-        require(size >= validatorsPerJob, "lt validators");
+        if (size == 0) revert InvalidSampleSize();
+        if (size > maxValidatorPoolSize) revert PoolLimitExceeded();
+        if (size < validatorsPerJob) revert SampleSizeTooSmall();
         validatorPoolSampleSize = size;
         emit ValidatorPoolSampleSizeUpdated(size);
     }
@@ -296,8 +331,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 slashPct
     ) external override onlyOwner {
         setParameters(committeeSize, commitDur, revealDur);
-        require(approvalPct > 0 && approvalPct <= 100, "approval");
-        require(slashPct <= 100, "slash");
+        if (approvalPct == 0 || approvalPct > 100) revert InvalidApprovalThreshold();
+        if (slashPct > 100) revert InvalidSlashingPercentage();
         approvalThreshold = approvalPct;
         validatorSlashingPercentage = slashPct;
         emit ApprovalThresholdUpdated(approvalPct);
@@ -320,8 +355,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 commitDur,
         uint256 revealDur
     ) public onlyOwner {
-        require(validatorCount >= 3, "validators");
-        require(commitDur > 0 && revealDur > 0, "windows");
+        if (validatorCount < 3) revert InvalidValidatorBounds();
+        if (commitDur == 0 || revealDur == 0) revert InvalidWindows();
         validatorsPerJob = validatorCount;
         minValidators = validatorCount;
         maxValidators = validatorCount;
@@ -348,7 +383,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         address[] calldata accounts,
         string[] calldata subdomains
     ) external onlyOwner {
-        require(accounts.length == subdomains.length, "length");
+        if (accounts.length != subdomains.length) revert InvalidArrayLength();
         for (uint256 i; i < accounts.length;) {
             validatorSubdomains[accounts[i]] = subdomains[i];
             emit ValidatorSubdomainUpdated(accounts[i], subdomains[i]);
@@ -364,7 +399,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         override
         onlyOwner
     {
-        require(commitDur > 0 && revealDur > 0, "windows");
+        if (commitDur == 0 || revealDur == 0) revert InvalidWindows();
         commitWindow = commitDur;
         revealWindow = revealDur;
         emit TimingUpdated(commitDur, revealDur);
@@ -378,7 +413,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         external
         onlyOwner
     {
-        require(commitDur > 0 && revealDur > 0, "windows");
+        if (commitDur == 0 || revealDur == 0) revert InvalidWindows();
         commitWindow = commitDur;
         revealWindow = revealDur;
         emit TimingUpdated(commitDur, revealDur);
@@ -388,7 +423,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set minimum and maximum validators per round.
     function setValidatorBounds(uint256 minVals, uint256 maxVals) external override onlyOwner {
-        require(minVals >= 3 && maxVals >= minVals, "bounds");
+        if (minVals < 3 || maxVals < minVals) revert InvalidValidatorBounds();
         minValidators = minVals;
         maxValidators = maxVals;
         if (minVals == maxVals) {
@@ -407,7 +442,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set number of validators selected per job.
     function setValidatorsPerJob(uint256 count) external override onlyOwner {
-        require(count >= 3 && count >= minValidators && count <= maxValidators, "bounds");
+        if (count < 3 || count < minValidators || count > maxValidators) revert InvalidValidatorBounds();
         validatorsPerJob = count;
         _clampRequiredValidatorApprovals();
         emit ValidatorsPerJobUpdated(count);
@@ -423,7 +458,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Individually update commit window duration.
     function setCommitWindow(uint256 commitDur) external onlyOwner {
-        require(commitDur > 0, "commit");
+        if (commitDur == 0) revert InvalidCommitWindow();
         commitWindow = commitDur;
         emit TimingUpdated(commitDur, revealWindow);
         emit CommitWindowUpdated(commitDur);
@@ -431,7 +466,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Individually update reveal window duration.
     function setRevealWindow(uint256 revealDur) external onlyOwner {
-        require(revealDur > 0, "reveal");
+        if (revealDur == 0) revert InvalidRevealWindow();
         revealWindow = revealDur;
         emit TimingUpdated(commitWindow, revealDur);
         emit RevealWindowUpdated(revealDur);
@@ -439,34 +474,34 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Individually update minimum validators.
     function setMinValidators(uint256 minVals) external onlyOwner {
-        require(minVals > 0 && minVals <= maxValidators, "bounds");
+        if (minVals == 0 || minVals > maxValidators) revert InvalidValidatorBounds();
         minValidators = minVals;
         emit ValidatorBoundsUpdated(minVals, maxValidators);
     }
 
     /// @notice Individually update maximum validators.
     function setMaxValidators(uint256 maxVals) external onlyOwner {
-        require(maxVals >= minValidators && maxVals > 0, "bounds");
+        if (maxVals < minValidators || maxVals == 0) revert InvalidValidatorBounds();
         maxValidators = maxVals;
         emit ValidatorBoundsUpdated(minValidators, maxVals);
     }
 
     function setValidatorSlashingPct(uint256 pct) external onlyOwner {
-        require(pct <= 100, "pct");
+        if (pct > 100) revert InvalidPercentage();
         validatorSlashingPercentage = pct;
         emit ValidatorSlashingPctUpdated(pct);
     }
 
     /// @notice Update approval threshold percentage.
     function setApprovalThreshold(uint256 pct) external onlyOwner {
-        require(pct > 0 && pct <= 100, "pct");
+        if (pct == 0 || pct > 100) revert InvalidPercentage();
         approvalThreshold = pct;
         emit ApprovalThresholdUpdated(pct);
     }
 
     /// @notice Set the required number of validator approvals.
     function setRequiredValidatorApprovals(uint256 count) external override onlyOwner {
-        require(count > 0 && count <= maxValidators, "approvals");
+        if (count == 0 || count > maxValidators) revert InvalidApprovals();
         if (count > validatorsPerJob) count = validatorsPerJob;
         requiredValidatorApprovals = count;
         emit RequiredValidatorApprovalsUpdated(count);
@@ -488,10 +523,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         Round storage r = rounds[jobId];
         // Ensure validators are only chosen once per round to prevent
         // re-selection or commit replay.
-        require(r.validators.length == 0, "already selected");
+        if (r.validators.length != 0) revert ValidatorsAlreadySelected();
         // Identity registry must be configured so candidates can be
         // verified on-chain via ENS ownership.
-        require(address(identityRegistry) != address(0), "identity reg");
+        if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
 
         // If selection has not been initiated, seed the entropy pool and set the
         // target block whose hash will anchor the final randomness.
@@ -513,7 +548,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
 
         // Finalization path using the stored entropy and future blockhash.
-        require(block.number > selectionBlock[jobId], "await blockhash");
+        if (block.number <= selectionBlock[jobId]) revert AwaitBlockhash();
         bytes32 bhash = blockhash(selectionBlock[jobId]);
         if (bhash == bytes32(0)) {
             pendingEntropy[jobId] = uint256(
@@ -554,9 +589,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         );
 
         uint256 n = validatorPool.length;
-        require(n > 0, "insufficient validators");
-        require(n <= maxValidatorPoolSize, "pool limit");
-        require(address(stakeManager) != address(0), "stake manager");
+        if (n == 0) revert InsufficientValidators();
+        if (n > maxValidatorPoolSize) revert PoolLimitExceeded();
+        if (address(stakeManager) == address(0)) revert StakeManagerNotSet();
 
         uint256 sample = validatorPoolSampleSize;
         if (sample > n) sample = n;
@@ -567,7 +602,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             r.committeeSize = size;
         }
 
-        require(sample >= size, "sample too small");
+        if (sample < size) revert SampleSizeTooSmall();
 
         selected = new address[](size);
         uint256[] memory stakes = new uint256[](size);
@@ -726,7 +761,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
-        require(candidateCount >= size, "insufficient validators");
+        if (candidateCount < size) revert InsufficientValidators();
 
         for (uint256 i; i < size;) {
             seed = uint256(keccak256(abi.encodePacked(seed, i)));
@@ -784,14 +819,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 jobId,
         uint256 entropy
     ) external override whenNotPaused nonReentrant returns (address[] memory selected) {
-        require(msg.sender == address(jobRegistry), "only registry");
-        require(
-            jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
-            "not submitted"
-        );
+        if (msg.sender != address(jobRegistry)) revert OnlyJobRegistry();
+        if (jobRegistry.jobs(jobId).status != IJobRegistry.Status.Submitted)
+            revert JobNotSubmitted();
         Round storage r = rounds[jobId];
         uint256 n = validatorPool.length;
-        require(n >= minValidators, "pool");
+        if (n < minValidators) revert ValidatorPoolTooSmall();
         uint256 size = validatorsPerJob;
         if (size < minValidators) size = minValidators;
         if (size > maxValidators) size = maxValidators;
@@ -811,38 +844,30 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32[] memory proof
     ) internal whenNotPaused {
         Round storage r = rounds[jobId];
-        require(
-            jobRegistry.jobs(jobId).status == IJobRegistry.Status.Submitted,
-            "not submitted"
-        );
-        require(
-            r.commitDeadline != 0 && block.timestamp <= r.commitDeadline,
-            "commit closed"
-        );
+        if (jobRegistry.jobs(jobId).status != IJobRegistry.Status.Submitted)
+            revert JobNotSubmitted();
+        if (r.commitDeadline == 0 || block.timestamp > r.commitDeadline)
+            revert CommitPhaseClosed();
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted validator"
-            );
+            if (reputationEngine.isBlacklisted(msg.sender))
+                revert BlacklistedValidator();
         }
-        require(address(identityRegistry) != address(0), "identity reg");
-        require(_isValidator(jobId, msg.sender), "not validator");
+        if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
+        if (!_isValidator(jobId, msg.sender)) revert NotValidator();
         bool authorized = identityRegistry.verifyValidator(
             msg.sender,
             subdomain,
             proof
         );
-        require(authorized, "Not authorized validator");
+        if (!authorized) revert UnauthorizedValidator();
         validatorAuthCache[msg.sender] = true;
         validatorAuthVersion[msg.sender] = validatorAuthCacheVersion;
         validatorAuthExpiry[msg.sender] =
             block.timestamp + validatorAuthCacheDuration;
-        require(validatorStakes[jobId][msg.sender] > 0, "stake");
+        if (validatorStakes[jobId][msg.sender] == 0) revert NoStake();
         uint256 nonce = jobNonce[jobId];
-        require(
-            commitments[jobId][msg.sender][nonce] == bytes32(0),
-            "already committed"
-        );
+        if (commitments[jobId][msg.sender][nonce] != bytes32(0))
+            revert AlreadyCommitted();
 
         commitments[jobId][msg.sender][nonce] = commitHash;
         emit ValidationCommitted(jobId, msg.sender, commitHash);
@@ -850,7 +875,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     function _policy() internal view returns (ITaxPolicy) {
         address registry = address(jobRegistry);
-        require(registry != address(0), "job registry");
+        if (registry == address(0)) revert InvalidJobRegistry();
         return IJobRegistryTax(registry).taxPolicy();
     }
 
@@ -905,38 +930,35 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32[] memory proof
     ) internal whenNotPaused {
         Round storage r = rounds[jobId];
-        require(block.timestamp > r.commitDeadline, "commit phase");
-        require(block.timestamp <= r.revealDeadline, "reveal closed");
-        require(_isValidator(jobId, msg.sender), "not validator");
+        if (block.timestamp <= r.commitDeadline) revert CommitPhaseActive();
+        if (block.timestamp > r.revealDeadline) revert RevealPhaseClosed();
+        if (!_isValidator(jobId, msg.sender)) revert NotValidator();
         if (address(reputationEngine) != address(0)) {
-            require(
-                !reputationEngine.isBlacklisted(msg.sender),
-                "Blacklisted validator"
-            );
+            if (reputationEngine.isBlacklisted(msg.sender))
+                revert BlacklistedValidator();
         }
-        require(address(identityRegistry) != address(0), "identity reg");
+        if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
         bool authorized = identityRegistry.verifyValidator(
             msg.sender,
             subdomain,
             proof
         );
-        require(authorized, "Not authorized validator");
+        if (!authorized) revert UnauthorizedValidator();
         validatorAuthCache[msg.sender] = true;
         validatorAuthVersion[msg.sender] = validatorAuthCacheVersion;
         validatorAuthExpiry[msg.sender] =
             block.timestamp + validatorAuthCacheDuration;
         uint256 nonce = jobNonce[jobId];
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
-        require(commitHash != bytes32(0), "no commit");
-        require(!revealed[jobId][msg.sender], "already revealed");
-        require(
-            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) ==
-                commitHash,
-            "invalid reveal"
-        );
+        if (commitHash == bytes32(0)) revert CommitMissing();
+        if (revealed[jobId][msg.sender]) revert AlreadyRevealed();
+        if (
+            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) !=
+            commitHash
+        ) revert InvalidReveal();
 
         uint256 stake = validatorStakes[jobId][msg.sender];
-        require(stake > 0, "stake");
+        if (stake == 0) revert NoStake();
         revealed[jobId][msg.sender] = true;
         votes[jobId][msg.sender] = approve;
         r.participants.push(msg.sender);
@@ -1056,9 +1078,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
-        require(!r.tallied, "tallied");
+        if (r.tallied) revert AlreadyTallied();
         if (r.revealedCount != r.validators.length) {
-            require(block.timestamp > r.revealDeadline, "reveal pending");
+            if (block.timestamp <= r.revealDeadline) revert RevealPending();
         }
 
         uint256 total = r.approvals + r.rejections;
@@ -1151,10 +1173,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.
     /// @param jobId Identifier of the job
     function resetJobNonce(uint256 jobId) external override {
-        require(
-            msg.sender == owner() || msg.sender == address(jobRegistry),
-            "not authorized"
-        );
+        if (msg.sender != owner() && msg.sender != address(jobRegistry))
+            revert UnauthorizedCaller();
         _cleanup(jobId);
         emit JobNonceReset(jobId);
     }

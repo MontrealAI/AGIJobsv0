@@ -145,7 +145,10 @@ describe("ValidationModule finalize flows", function () {
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
     await validation.connect(v3).commitValidation(1, commit3, "", []);
-    await expect(validation.finalize(1)).to.be.revertedWith("reveal pending");
+    await expect(validation.finalize(1)).to.be.revertedWithCustomError(
+      validation,
+      "RevealPending"
+    );
   });
 
   it("records majority rejection as dispute", async () => {

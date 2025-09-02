@@ -25,10 +25,10 @@ describe("ValidationModule required approvals", function () {
   it("reverts for invalid counts", async () => {
     await expect(
       validation.connect(owner).setRequiredValidatorApprovals(0)
-    ).to.be.revertedWith("approvals");
+    ).to.be.revertedWithCustomError(validation, "InvalidApprovals");
     await expect(
       validation.connect(owner).setRequiredValidatorApprovals(5)
-    ).to.be.revertedWith("approvals");
+    ).to.be.revertedWithCustomError(validation, "InvalidApprovals");
   });
 
   it("updates and clamps to committee size", async () => {

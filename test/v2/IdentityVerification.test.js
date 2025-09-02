@@ -228,7 +228,7 @@ describe("Identity verification enforcement", function () {
       );
       await expect(
         validation.connect(signer).commitValidation(1, commit, "", [])
-      ).to.be.revertedWith("Not authorized validator");
+      ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
 
       await identity.addAdditionalValidator(val);
       await (
@@ -242,7 +242,7 @@ describe("Identity verification enforcement", function () {
         validation
           .connect(signer)
           .revealValidation(1, true, salt, "", [])
-      ).to.be.revertedWith("Not authorized validator");
+      ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
     });
   });
 });
