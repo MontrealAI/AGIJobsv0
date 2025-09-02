@@ -58,6 +58,7 @@ Record each address during deployment. The defaults below assume the 18‑decima
 1. **Deploy contracts** – open each verified contract → **Contract → Deploy** and provide the constructor parameters listed above.
 2. **Wire modules** – from each contract’s **Write** tab call:
    - `JobRegistry.setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))`
+     - any `_ackModules` passed to this call must implement `IJobRegistryAck` and successfully respond to `acknowledgeFor(address(0))`
    - `StakeManager.setJobRegistry(jobRegistry)` and `ValidationModule.setJobRegistry(jobRegistry)`
    - `JobRegistry.setIdentityRegistry(identityRegistry)`
    - `ValidationModule.setIdentityRegistry(identityRegistry)`

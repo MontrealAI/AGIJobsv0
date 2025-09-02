@@ -13,6 +13,7 @@ import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
+import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 
 /// @title JobRegistry
@@ -46,6 +47,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error IdentityRegistryNotSet();
     error InvalidTaxPolicy();
     error InvalidTreasury();
+    error InvalidAckModule();
     error NotAcknowledger();
     error StakeOverflow();
     error NotOpen();
@@ -344,6 +346,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit FeePoolUpdated(address(_feePool));
         emit ModuleUpdated("FeePool", address(_feePool));
         for (uint256 i; i < _ackModules.length;) {
+            (bool ok, bytes memory data) = _ackModules[i].staticcall(
+                abi.encodeWithSelector(
+                    IJobRegistryAck.acknowledgeFor.selector,
+                    address(0)
+                )
+            );
+            if (!ok || data.length < 64) revert InvalidAckModule();
             acknowledgers[_ackModules[i]] = true;
             emit AcknowledgerUpdated(_ackModules[i], true);
             unchecked {

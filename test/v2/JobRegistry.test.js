@@ -326,6 +326,10 @@ describe("JobRegistry integration", function () {
       await registry.acknowledgers(await stakeManager.getAddress())
     ).to.equal(true);
 
+    const AckStub = await ethers.getContractFactory(
+      "contracts/v2/mocks/JobRegistryAckStub.sol:JobRegistryAckStub"
+    );
+    const ack = await AckStub.deploy(ethers.ZeroAddress);
     await registry
       .connect(owner)
       .setModules(
@@ -335,10 +339,10 @@ describe("JobRegistry integration", function () {
         await dispute.getAddress(),
         await nft.getAddress(),
         await feePool.getAddress(),
-        [treasury.address]
+        [await ack.getAddress()]
       );
 
-    expect(await registry.acknowledgers(treasury.address)).to.equal(true);
+    expect(await registry.acknowledgers(await ack.getAddress())).to.equal(true);
   });
 
   it("updates additional agents individually", async () => {
