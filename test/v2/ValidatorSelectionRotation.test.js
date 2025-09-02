@@ -60,4 +60,18 @@ describe("Validator selection rotating strategy", function () {
     }
     expect(starts.size).to.be.gt(1);
   });
+
+  it("emits rotation update event with expected value", async () => {
+    const [owner] = await ethers.getSigners();
+    await validation.selectValidators(1, 0);
+    await ethers.provider.send("evm_mine", []);
+    const tx = await validation.selectValidators(1, 0);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorPoolRotationUpdated"
+    );
+    expect(event).to.not.be.undefined;
+    const rotation = await validation.validatorPoolRotation();
+    expect(event.args[0]).to.equal(rotation);
+  });
 });
