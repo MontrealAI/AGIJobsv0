@@ -19,13 +19,13 @@ resolver, emitting `OwnershipVerified` on success.
 | Module | Responsibility | Address |
 | --- | --- | --- |
 | `$AGIALPHA` Token | 18‑decimal ERC‑20 used for payments and staking (external mainnet contract) | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
-| StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | `TBD` |
-| ReputationEngine | Tracks reputation scores and blacklist status | `TBD` |
-| IdentityRegistry | Verifies ENS subdomains and Merkle allowlists | `TBD` |
-| ValidationModule | Runs commit–reveal validation and selects committees | `TBD` |
-| DisputeModule | Escrows dispute fees and finalises appeals | `TBD` |
-| CertificateNFT | Issues ERC‑721 certificates for completed jobs | `TBD` |
-| JobRegistry | Orchestrates job lifecycle and wires all modules | `TBD` |
+| StakeManager | Custodies stakes, escrows rewards, slashes misbehaviour | `0x0000000000000000000000000000000000000000` |
+| ReputationEngine | Tracks reputation scores and blacklist status | `0x0000000000000000000000000000000000000000` |
+| IdentityRegistry | Verifies ENS subdomains and Merkle allowlists | `0x0000000000000000000000000000000000000000` |
+| ValidationModule | Runs commit–reveal validation and selects committees | `0x0000000000000000000000000000000000000000` |
+| DisputeModule | Escrows dispute fees and finalises appeals | `0x0000000000000000000000000000000000000000` |
+| CertificateNFT | Issues ERC‑721 certificates for completed jobs | `0x0000000000000000000000000000000000000000` |
+| JobRegistry | Orchestrates job lifecycle and wires all modules | `0x0000000000000000000000000000000000000000` |
 
 ## Deployment Script Outline
 For a scripted deployment the repository ships with

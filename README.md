@@ -38,6 +38,19 @@ node -e "require('./examples/ethers-quickstart').validate(1, '0xhash', '0xlabel'
 ```bash
 node -e "require('./examples/ethers-quickstart').dispute(1, 'ipfs://evidence')"
 ```
+
+## Deployed Addresses
+
+| Module | Address |
+| --- | --- |
+| `$AGIALPHA` Token | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
+| StakeManager | `0x0000000000000000000000000000000000000000` |
+| ReputationEngine | `0x0000000000000000000000000000000000000000` |
+| IdentityRegistry | `0x0000000000000000000000000000000000000000` |
+| ValidationModule | `0x0000000000000000000000000000000000000000` |
+| DisputeModule | `0x0000000000000000000000000000000000000000` |
+| CertificateNFT | `0x0000000000000000000000000000000000000000` |
+| JobRegistry | `0x0000000000000000000000000000000000000000` |
 ## Step‑by‑Step Deployment with $AGIALPHA
 
 Record each address during deployment. The defaults below assume the 18‑decimal `$AGIALPHA` token; token rotation is considered legacy and is not supported in new deployments.
