@@ -356,9 +356,7 @@ contract Deployer is Ownable {
         }
 
         // Wire modules
-        address[] memory acks = new address[](2);
-        acks[0] = address(pRegistry);
-        acks[1] = address(incentives);
+        address[] memory acks = new address[](0);
         registry.setModules(
             validation,
             IStakeManager(address(stake)),
