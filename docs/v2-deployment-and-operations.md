@@ -68,8 +68,11 @@ The script prints module addresses and verifies source on Etherscan.
    - `CertificateNFT.setJobRegistry(jobRegistry)`
    - `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)`
    - `ValidationModule.setIdentityRegistry(identityRegistry)`
-10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
-11. **Governance setup** – deploy a multisig wallet or timelock controller
+10. **Verify wiring** – run `npm run verify:wiring` to confirm module getters
+    match the addresses recorded in `docs/deployment-addresses.json`.
+11. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`,
+    `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
+12. **Governance setup** – deploy a multisig wallet or timelock controller
     and pass its address to the `StakeManager` and `JobRegistry` constructors.
     Transfer ownership of every remaining `Ownable` module
     (for example `IdentityRegistry`, `CertificateNFT`, `ValidationModule`,

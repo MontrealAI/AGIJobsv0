@@ -20,6 +20,8 @@ jobs:
         run: npm ci
       - name: Verify AGIALPHA constants
         run: npm run verify:agialpha
+      - name: Verify module wiring
+        run: npm run verify:wiring
       - name: Run lint
         run: npm run lint
       - name: Run tests
