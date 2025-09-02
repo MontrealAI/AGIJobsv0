@@ -135,11 +135,38 @@ describe("ValidationModule V2", function () {
   });
 
 
-  it("reverts when stake manager is unset", async () => {
-    await validation.connect(owner).setStakeManager(ethers.ZeroAddress);
-    await expect(select(1)).to.be.revertedWith(
+  it("reverts when selecting without stake manager configured", async () => {
+    const Validation = await ethers.getContractFactory(
+      "contracts/v2/ValidationModule.sol:ValidationModule"
+    );
+    const unconfigured = await Validation.deploy(
+      await jobRegistry.getAddress(),
+      ethers.ZeroAddress,
+      60,
+      60,
+      3,
+      3,
+      []
+    );
+    await unconfigured.waitForDeployment();
+    await unconfigured
+      .connect(owner)
+      .setIdentityRegistry(await identity.getAddress());
+    await unconfigured
+      .connect(owner)
+      .setValidatorPool([v1.address, v2.address, v3.address]);
+
+    await unconfigured.selectValidators(1, 0);
+    await ethers.provider.send("evm_mine", []);
+    await expect(unconfigured.selectValidators(1, 0)).to.be.revertedWith(
       "stake manager"
     );
+  });
+
+  it("rejects zero stake manager address", async () => {
+    await expect(
+      validation.connect(owner).setStakeManager(ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(validation, "InvalidStakeManager");
   });
 
   it("rejects validators less than three via setParameters", async () => {
