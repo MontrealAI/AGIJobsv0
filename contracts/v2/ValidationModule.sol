@@ -574,25 +574,37 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         // Finalization path using the stored entropy and future blockhash.
         if (block.number <= selectionBlock[jobId]) revert AwaitBlockhash();
+        uint256 round = entropyRound[jobId];
+        if (!entropyContributed[jobId][round][msg.sender]) {
+            pendingEntropy[jobId] ^= uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
+            entropyContributed[jobId][round][msg.sender] = true;
+            unchecked {
+                entropyContributorCount[jobId] += 1;
+            }
+        }
         if (entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS) {
-            entropyRound[jobId] += 1;
+            round += 1;
+            entropyRound[jobId] = round;
             pendingEntropy[jobId] = uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
             entropyContributorCount[jobId] = 1;
-            entropyContributed[jobId][entropyRound[jobId]][msg.sender] = true;
+            entropyContributed[jobId][round][msg.sender] = true;
             selectionBlock[jobId] = block.number + 1;
             emit SelectionReset(jobId);
             return selected;
         }
         bytes32 bhash = blockhash(selectionBlock[jobId]);
         if (bhash == bytes32(0)) {
-            entropyRound[jobId] += 1;
+            round += 1;
+            entropyRound[jobId] = round;
             pendingEntropy[jobId] = uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
             entropyContributorCount[jobId] = 1;
-            entropyContributed[jobId][entropyRound[jobId]][msg.sender] = true;
+            entropyContributed[jobId][round][msg.sender] = true;
             selectionBlock[jobId] = block.number + 1;
             emit SelectionReset(jobId);
             return selected;
@@ -872,7 +884,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.committeeSize = size;
 
         // Initialize entropy and schedule finalization using a future blockhash.
-        pendingEntropy[jobId] = entropy;
+        uint256 round = ++entropyRound[jobId];
+        pendingEntropy[jobId] = uint256(
+            keccak256(abi.encodePacked(msg.sender, entropy))
+        );
+        entropyContributorCount[jobId] = 1;
+        entropyContributed[jobId][round][msg.sender] = true;
         selectionBlock[jobId] = block.number + 1;
     }
 

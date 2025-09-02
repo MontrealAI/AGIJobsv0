@@ -82,7 +82,7 @@ describe("ValidationModule V2", function () {
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   async function start(jobId, entropy = 0) {
@@ -93,7 +93,7 @@ describe("ValidationModule V2", function () {
     await validation.connect(registry).start(jobId, entropy);
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   it("selects validators", async () => {
@@ -164,10 +164,9 @@ describe("ValidationModule V2", function () {
 
     await unconfigured.selectValidators(1, 0);
     await ethers.provider.send("evm_mine", []);
-    await expect(unconfigured.selectValidators(1, 0)).to.be.revertedWithCustomError(
-      unconfigured,
-      "StakeManagerNotSet"
-    );
+    await expect(
+      unconfigured.connect(v1).selectValidators(1, 0)
+    ).to.be.revertedWithCustomError(unconfigured, "StakeManagerNotSet");
   });
 
   it("requires multiple entropy contributors before finalization", async () => {

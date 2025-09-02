@@ -3,9 +3,11 @@ const { ethers } = require("hardhat");
 
 describe("Validator selection weighted by stake", function () {
   let validation, stake, identity;
-  let validators;
+  let validators, other;
 
   beforeEach(async () => {
+    const [_, o] = await ethers.getSigners();
+    other = o;
     const StakeMock = await ethers.getContractFactory("MockStakeManager");
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
@@ -55,7 +57,7 @@ describe("Validator selection weighted by stake", function () {
   async function select(jobId, entropy) {
     await validation.selectValidators(jobId, entropy);
     await ethers.provider.send("evm_mine", []);
-    await validation.selectValidators(jobId, 0);
+    await validation.connect(other).selectValidators(jobId, 0);
     return await validation.validators(jobId);
   }
 

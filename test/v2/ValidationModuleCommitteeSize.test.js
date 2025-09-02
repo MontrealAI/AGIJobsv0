@@ -84,7 +84,7 @@ describe("ValidationModule committee size", function () {
     await validation.connect(registry).start(jobId, entropy);
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   it("respects validator count bounds", async () => {

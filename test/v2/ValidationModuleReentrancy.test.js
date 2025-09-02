@@ -76,7 +76,7 @@ async function setup() {
     await validation.connect(registry).start(jobId, entropy);
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(validator).selectValidators(jobId, 0);
   }
 
   return {

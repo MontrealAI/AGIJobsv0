@@ -80,7 +80,7 @@ describe("ValidationModule access controls", function () {
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
     await ethers.provider.send("evm_mine", []);
-    return validation.selectValidators(jobId, 0);
+    return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   it("reverts when validator pool contains zero address", async () => {
