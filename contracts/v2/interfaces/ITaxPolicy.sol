@@ -17,6 +17,11 @@ interface ITaxPolicy {
     /// @param user Address of the participant.
     function hasAcknowledged(address user) external view returns (bool);
 
+    /// @notice Returns the policy version a user has acknowledged.
+    /// @param user Address of the participant.
+    /// @return version Policy version acknowledged by `user`.
+    function acknowledgedVersion(address user) external view returns (uint256 version);
+
     /// @notice Returns the acknowledgement text without recording acceptance.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
     function acknowledgement() external view returns (string memory disclaimer);
