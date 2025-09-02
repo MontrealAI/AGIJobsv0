@@ -61,7 +61,13 @@ The script prints module addresses and verifies source on Etherscan.
    final constructor argument, then wire modules by calling
    `setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))` from the
    governance account.
-9. **Point modules back to `JobRegistry`** by calling `setJobRegistry` on `StakeManager`, `ValidationModule`, `DisputeModule` and `CertificateNFT`, and `setIdentityRegistry` on `ValidationModule`.
+9. **Point modules back to `JobRegistry`** by calling:
+   - `StakeManager.setJobRegistry(jobRegistry)`
+   - `ValidationModule.setJobRegistry(jobRegistry)`
+   - `DisputeModule.setJobRegistry(jobRegistry)`
+   - `CertificateNFT.setJobRegistry(jobRegistry)`
+   - `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)`
+   - `ValidationModule.setIdentityRegistry(identityRegistry)`
 10. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
 11. **Governance setup** – deploy a multisig wallet or timelock controller
     and pass its address to the `StakeManager` and `JobRegistry` constructors.
@@ -81,9 +87,10 @@ After deployment the governance contract can fine‑tune the system without rede
 3. **Update parameters** – adjust economic settings through `setFeePct`,
    `setBurnPct`, `setMinStake`, timing windows and other governance‑only
    setters or the helper script `scripts/updateParams.ts`.
-4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(uri)` and
-   instruct participants to acknowledge via
-   `JobRegistry.acknowledgeTaxPolicy()` before staking or disputing.
+4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(taxPolicy)` then
+   `DisputeModule.setTaxPolicy(taxPolicy)` and instruct participants to
+   acknowledge via `JobRegistry.acknowledgeTaxPolicy()` before staking or
+   disputing.
 
 ## Interacting via Etherscan
 Before any user interaction, open `JobRegistry` → **Write Contract** and
