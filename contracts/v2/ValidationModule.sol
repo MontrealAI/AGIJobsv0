@@ -161,6 +161,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
+    event ValidatorPoolRotationUpdated(uint256 newRotation);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -684,6 +685,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 }
             }
             validatorPoolRotation = (rotationStart + i) % n;
+            emit ValidatorPoolRotationUpdated(validatorPoolRotation);
         } else {
             uint256 eligible;
             for (uint256 i; i < n;) {
