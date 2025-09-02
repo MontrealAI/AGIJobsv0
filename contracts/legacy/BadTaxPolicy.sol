@@ -9,6 +9,7 @@ import "../v2/interfaces/ITaxPolicy.sol";
 contract BadTaxPolicy is ITaxPolicy {
     uint256 private _version;
     mapping(address => bool) public acknowledgedUsers;
+    mapping(address => bool) public acknowledgers;
 
     constructor() {
         _version = 1;
@@ -20,6 +21,7 @@ contract BadTaxPolicy is ITaxPolicy {
     }
 
     function acknowledgeFor(address user) external returns (string memory) {
+        require(msg.sender == user || acknowledgers[msg.sender], "not acknowledger");
         acknowledgedUsers[user] = true;
         return "bad";
     }
@@ -50,5 +52,9 @@ contract BadTaxPolicy is ITaxPolicy {
 
     function isTaxExempt() external pure returns (bool) {
         return false;
+    }
+
+    function setAcknowledger(address acknowledger, bool allowed) external {
+        acknowledgers[acknowledger] = allowed;
     }
 }

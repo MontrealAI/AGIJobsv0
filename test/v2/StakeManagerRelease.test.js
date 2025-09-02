@@ -47,6 +47,9 @@ describe("StakeManager release", function () {
     );
     const taxPolicy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());

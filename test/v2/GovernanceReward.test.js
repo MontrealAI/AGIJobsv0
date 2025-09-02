@@ -51,6 +51,9 @@ describe("GovernanceReward", function () {
       "ack"
     );
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(voter1).acknowledge();
     await taxPolicy.connect(voter2).acknowledge();

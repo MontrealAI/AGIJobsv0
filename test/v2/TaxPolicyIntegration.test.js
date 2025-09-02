@@ -50,6 +50,9 @@ describe("JobRegistry tax policy integration", function () {
 
   it("tracks user acknowledgement", async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await expect(policy.connect(user).acknowledge())
       .to.emit(policy, "PolicyAcknowledged")
       .withArgs(user.address, 1);
@@ -61,6 +64,9 @@ describe("JobRegistry tax policy integration", function () {
     await registry.connect(owner).setMaxJobReward(10);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await policy.connect(user).acknowledge();
     await policy.connect(owner).bumpPolicyVersion();
     const deadline = (await time.latest()) + 1000;
@@ -94,6 +100,9 @@ describe("JobRegistry tax policy integration", function () {
 
   it("allows acknowledging for another address", async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await registry.connect(owner).setAcknowledger(owner.address, true);
     await registry.connect(owner).acknowledgeFor(user.address);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);

@@ -478,6 +478,9 @@ describe("ValidationModule V2", function () {
     );
     const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
     await jobRegistry.setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
     const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
