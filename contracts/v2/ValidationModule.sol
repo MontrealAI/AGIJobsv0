@@ -20,7 +20,10 @@ error InvalidStakeManager();
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
 /// @dev Holds no ether and keeps the owner and contract tax neutral; only
-///      participating validators and job parties bear tax obligations.
+///      participating validators and job parties bear tax obligations. Validator
+///      selection mixes entropy from multiple participants: callers may
+///      contribute random values which are XORed together and later combined
+///      with recent block data to mitigate miner bias.
 contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
@@ -95,7 +98,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => uint256)) public validatorStakes;
     mapping(uint256 => mapping(address => bool)) private _validatorLookup;
     mapping(uint256 => uint256) public jobNonce;
-    // Initial entropy provided when a job is submitted.
+    // Aggregated entropy contributed by job parties prior to final selection.
+    // Each call to `selectValidators` before the target block XORs a
+    // caller-supplied value (mixed with the caller address) into this pool.
     mapping(uint256 => uint256) public pendingEntropy;
     // Block number whose hash will be used to finalize committee selection.
     mapping(uint256 => uint256) public selectionBlock;
@@ -468,10 +473,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @inheritdoc IValidationModule
-    /// @dev Randomness is derived from on-chain data and optional caller-supplied entropy.
-    ///      Falls back to mixing multiple historical block hashes and `msg.sender` when
-    ///      `block.prevrandao` is unavailable, avoiding reliance on external randomness
-    ///      providers.
+    /// @dev Randomness draws from aggregated caller-provided entropy and on-chain data.
+    ///      Callers may submit additional entropy prior to finalization; each
+    ///      contribution is XORed into an entropy pool. The pool is then mixed with
+    ///      a future blockhash and `block.prevrandao` (or historical hashes and
+    ///      `msg.sender` as fallback) to avoid external randomness providers and
+    ///      minimize miner influence.
     function selectValidators(uint256 jobId, uint256 entropy)
         public
         override
@@ -486,10 +493,22 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // verified on-chain via ENS ownership.
         require(address(identityRegistry) != address(0), "identity reg");
 
-        // If selection has not been initiated, store entropy and target block.
+        // If selection has not been initiated, seed the entropy pool and set the
+        // target block whose hash will anchor the final randomness.
         if (selectionBlock[jobId] == 0) {
-            pendingEntropy[jobId] = entropy;
+            pendingEntropy[jobId] = uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
             selectionBlock[jobId] = block.number + 1;
+            return selected;
+        }
+
+        // Before the target block is mined, allow additional parties to
+        // contribute entropy. Each contribution is mixed into the pool via XOR.
+        if (block.number <= selectionBlock[jobId]) {
+            pendingEntropy[jobId] ^= uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
             return selected;
         }
 
@@ -497,7 +516,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         require(block.number > selectionBlock[jobId], "await blockhash");
         bytes32 bhash = blockhash(selectionBlock[jobId]);
         if (bhash == bytes32(0)) {
-            pendingEntropy[jobId] = entropy;
+            pendingEntropy[jobId] = uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
             selectionBlock[jobId] = block.number + 1;
             emit SelectionReset(jobId);
             return selected;
