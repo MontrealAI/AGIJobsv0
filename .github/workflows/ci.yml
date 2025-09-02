@@ -24,3 +24,5 @@ jobs:
         run: npm run lint
       - name: Run tests
         run: npm test
+      - name: Check module governance
+        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/transfer-ownership.ts --new-owner 0x0000000000000000000000000000000000000000

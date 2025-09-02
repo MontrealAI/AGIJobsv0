@@ -104,6 +104,15 @@ single key can change parameters:
      `ValidationModule`, `ReputationEngine`, `IdentityRegistry`,
      `CertificateNFT`, `DisputeModule`, `FeePool`, `PlatformRegistry`,
      `JobRouter`, `PlatformIncentives`, `TaxPolicy` and `SystemPause`.
+   To automate this step run:
+
+   ```bash
+   npx ts-node --compiler-options '{"module":"commonjs"}' scripts/transfer-ownership.ts --new-owner <address>
+   ```
+
+   The script reads `docs/deployment-addresses.json` and issues the
+   appropriate `setGovernance` or `transferOwnership` calls for each
+   deployed module.
 3. To rotate governance later, the current multisig executes
    `setGovernance(newOwner)` or `transferOwnership(newOwner)` as
    appropriate and the new address assumes control after the relevant
