@@ -121,6 +121,18 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         return _acknowledgedVersion[user] == _version;
     }
 
+    /// @notice Returns the policy version a user has acknowledged.
+    /// @param user Address of the participant.
+    /// @return version Policy version acknowledged by `user` (0 if never).
+    function acknowledgedVersion(address user)
+        external
+        view
+        override
+        returns (uint256 version)
+    {
+        return _acknowledgedVersion[user];
+    }
+
     /// @notice Returns the acknowledgement text without recording acceptance.
     /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
     function acknowledgement()

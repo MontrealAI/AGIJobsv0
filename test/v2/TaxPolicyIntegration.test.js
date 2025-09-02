@@ -54,6 +54,18 @@ describe("JobRegistry tax policy integration", function () {
       .to.emit(policy, "PolicyAcknowledged")
       .withArgs(user.address, 1);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);
+    expect(await policy.acknowledgedVersion(user.address)).to.equal(1);
+  });
+
+  it("exposes acknowledged version for users", async () => {
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    expect(await policy.acknowledgedVersion(user.address)).to.equal(0);
+    await policy.connect(user).acknowledge();
+    expect(await policy.acknowledgedVersion(user.address)).to.equal(1);
+    await policy.connect(owner).bumpPolicyVersion();
+    expect(await policy.acknowledgedVersion(user.address)).to.equal(1);
+    await policy.connect(user).acknowledge();
+    expect(await policy.acknowledgedVersion(user.address)).to.equal(2);
   });
 
   it("requires re-acknowledgement after version bump", async () => {
