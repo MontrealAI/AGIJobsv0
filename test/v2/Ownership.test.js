@@ -199,7 +199,7 @@ describe("Ownable modules", function () {
       [
         identityRegistry,
         owner,
-        (inst, signer) => inst.connect(signer).setENS(ethers.ZeroAddress),
+        (inst, signer) => inst.connect(signer).setENS(other.address),
         true,
       ],
       [
