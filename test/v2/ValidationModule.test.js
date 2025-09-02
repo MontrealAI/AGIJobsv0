@@ -170,6 +170,28 @@ describe("ValidationModule V2", function () {
     );
   });
 
+  it("requires multiple entropy contributors before finalization", async () => {
+    const jobId = 1;
+    await validation.connect(v1).selectValidators(jobId, 123);
+    await ethers.provider.send("evm_mine", []);
+
+    await expect(
+      validation.connect(v1).selectValidators(jobId, 0)
+    ).to.emit(validation, "SelectionReset");
+
+    let selected = await validation.validators(jobId);
+    expect(selected.length).to.equal(0);
+
+    await validation.connect(v2).selectValidators(jobId, 456);
+    await ethers.provider.send("evm_mine", []);
+    const tx = await validation.connect(v1).selectValidators(jobId, 0);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+    );
+    expect(event.args[1].length).to.equal(3);
+  });
+
   it("rejects zero stake manager address", async () => {
     await expect(
       validation.connect(owner).setStakeManager(ethers.ZeroAddress)
