@@ -15,6 +15,11 @@ async function verify(address: string, args: any[] = []) {
 async function main() {
   const [owner] = await ethers.getSigners();
   const withTax = !process.argv.includes("--no-tax");
+  const governanceArgIndex = process.argv.indexOf("--governance");
+  const governance =
+    governanceArgIndex !== -1
+      ? process.argv[governanceArgIndex + 1]
+      : owner.address;
 
   const Deployer = await ethers.getContractFactory(
     "contracts/v2/Deployer.sol:Deployer"
@@ -34,8 +39,8 @@ async function main() {
   };
 
   const tx = withTax
-    ? await deployer.deployDefaults(ids, owner.address)
-    : await deployer.deployDefaultsWithoutTaxPolicy(ids, owner.address);
+    ? await deployer.deployDefaults(ids, governance)
+    : await deployer.deployDefaultsWithoutTaxPolicy(ids, governance);
   const receipt = await tx.wait();
   const log = receipt.logs.find((l) => l.address === deployerAddress)!;
   const decoded = deployer.interface.decodeEventLog(
@@ -65,10 +70,10 @@ async function main() {
     ethers.parseUnits("1", AGIALPHA_DECIMALS),
     0,
     100,
-    owner.address,
+    governance,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address,
+    governance,
   ]);
   await verify(jobRegistry, [
     ethers.ZeroAddress,
@@ -92,7 +97,7 @@ async function main() {
     [],
   ]);
   await verify(reputationEngine);
-  await verify(disputeModule, [jobRegistry, 0, 0, owner.address]);
+  await verify(disputeModule, [jobRegistry, 0, 0, governance]);
   await verify(certificateNFT, ["Cert", "CERT"]);
   await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
   await verify(jobRouter, [platformRegistry]);
@@ -101,7 +106,7 @@ async function main() {
     platformRegistry,
     jobRouter,
   ]);
-  await verify(feePool, [stakeManager, 2, owner.address]);
+  await verify(feePool, [stakeManager, 2, governance]);
   await verify(identityRegistry, [
     ethers.ZeroAddress,
     ethers.ZeroAddress,
@@ -117,7 +122,7 @@ async function main() {
     platformRegistry,
     feePool,
     reputationEngine,
-    owner.address,
+    governance,
   ]);
   if (withTax) {
     await verify(taxPolicy, [

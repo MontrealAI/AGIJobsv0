@@ -9,6 +9,16 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol` with the canonical token address, decimals, scaling factor and burn address.
 
+### Deploy defaults
+
+Spin up the full stack with a single helper script:
+
+```bash
+npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <address>
+```
+
+Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax` to skip deploying `TaxPolicy`.
+
 ## Migrating from legacy
 
 The original v0 and v1 contracts are preserved under the `legacy` git tag for reference only and receive no support. New development should target the v2 modules in `contracts/v2`. See [docs/migration-guide.md](docs/migration-guide.md) for help mapping legacy entry points to their v2 equivalents.
