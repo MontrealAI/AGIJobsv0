@@ -22,6 +22,13 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     /// @dev Emitted when a zero address is supplied where non-zero is required.
     error ZeroAddress();
 
+    error NotTokenOwner();
+    error InvalidPrice();
+    error AlreadyListed();
+    error NotListed();
+    error SelfPurchase();
+    error InsufficientAllowance();
+
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
 
@@ -86,10 +93,10 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     }
 
     function list(uint256 tokenId, uint256 price) external {
-        require(ownerOf(tokenId) == msg.sender, "owner");
-        require(price > 0, "price");
+        if (ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
+        if (price == 0) revert InvalidPrice();
         Listing storage listing = listings[tokenId];
-        require(!listing.active, "listed");
+        if (listing.active) revert AlreadyListed();
         listing.seller = msg.sender;
         listing.price = price;
         listing.active = true;
@@ -99,14 +106,11 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     /// @notice Purchase a listed certificate using 18‑decimal $AGIALPHA tokens.
     function purchase(uint256 tokenId) external nonReentrant {
         Listing storage listing = listings[tokenId];
-        require(listing.active, "not listed");
+        if (!listing.active) revert NotListed();
         address seller = listing.seller;
-        require(seller != msg.sender, "self");
+        if (seller == msg.sender) revert SelfPurchase();
         IERC20 token = stakeManager.token();
-        require(
-            token.allowance(msg.sender, address(this)) >= listing.price,
-            "allowance"
-        );
+        if (token.allowance(msg.sender, address(this)) < listing.price) revert InsufficientAllowance();
         uint256 price = listing.price;
         delete listings[tokenId];
         token.safeTransferFrom(msg.sender, seller, price);
@@ -116,8 +120,8 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
 
     function delist(uint256 tokenId) external {
         Listing storage listing = listings[tokenId];
-        require(listing.active, "not listed");
-        require(listing.seller == msg.sender, "owner");
+        if (!listing.active) revert NotListed();
+        if (listing.seller != msg.sender) revert NotTokenOwner();
         delete listings[tokenId];
         emit NFTDelisted(tokenId);
     }

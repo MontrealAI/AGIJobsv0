@@ -50,12 +50,14 @@ describe("CertificateNFT marketplace", function () {
         .to.emit(nft, "NFTListed")
         .withArgs(1, seller.address, price);
 
-      await expect(nft.connect(seller).list(1, price)).to.be.revertedWith(
-        "listed"
+      await expect(nft.connect(seller).list(1, price)).to.be.revertedWithCustomError(
+        nft,
+        "AlreadyListed"
       );
 
-      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
-        "allowance"
+      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
+        nft,
+        "InsufficientAllowance"
       );
 
       await token.connect(buyer).approve(await nft.getAddress(), price);
@@ -83,19 +85,28 @@ describe("CertificateNFT marketplace", function () {
     });
 
   it("rejects invalid listings", async () => {
-      await expect(nft.connect(buyer).list(1, price)).to.be.revertedWith(
-        "owner"
+      await expect(nft.connect(buyer).list(1, price)).to.be.revertedWithCustomError(
+        nft,
+        "NotTokenOwner"
       );
-      await expect(nft.connect(seller).list(1, 0)).to.be.revertedWith("price");
+      await expect(nft.connect(seller).list(1, 0)).to.be.revertedWithCustomError(
+        nft,
+        "InvalidPrice"
+      );
 
-      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
-        "not listed"
+      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
+        nft,
+        "NotListed"
       );
 
       await nft.connect(seller).list(1, price);
-      await expect(nft.connect(buyer).delist(1)).to.be.revertedWith("owner");
-      await expect(nft.connect(seller).list(1, price)).to.be.revertedWith(
-        "listed"
+      await expect(nft.connect(buyer).delist(1)).to.be.revertedWithCustomError(
+        nft,
+        "NotTokenOwner"
+      );
+      await expect(nft.connect(seller).list(1, price)).to.be.revertedWithCustomError(
+        nft,
+        "AlreadyListed"
       );
     });
 
@@ -103,16 +114,18 @@ describe("CertificateNFT marketplace", function () {
       await nft.connect(seller).list(1, price);
       await nft.connect(seller).delist(1);
       await token.connect(buyer).approve(await nft.getAddress(), price);
-      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWith(
-        "not listed"
+      await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
+        nft,
+        "NotListed"
       );
     });
 
   it("prevents self purchase", async () => {
       await nft.connect(seller).list(1, price);
       await token.connect(seller).approve(await nft.getAddress(), price);
-      await expect(nft.connect(seller).purchase(1)).to.be.revertedWith(
-        "self"
+      await expect(nft.connect(seller).purchase(1)).to.be.revertedWithCustomError(
+        nft,
+        "SelfPurchase"
       );
     });
 
