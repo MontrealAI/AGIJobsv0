@@ -134,6 +134,8 @@ describe("JobEscrow", function () {
       (l) => l.fragment && l.fragment.name === "JobPosted"
     ).args.jobId;
     await escrow.connect(operator).submitResult(jobId, "ipfs://result");
+    await policy.connect(owner).bumpPolicyVersion();
+    expect(await policy.hasAcknowledged(employer.address)).to.equal(false);
     await expect(
       escrow.connect(employer).acknowledgeAndAcceptResult(jobId)
     )

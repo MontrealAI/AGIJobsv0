@@ -92,13 +92,13 @@ describe("JobRegistry tax policy integration", function () {
       .withArgs(user.address);
   });
 
-  it("prevents acknowledging for another address", async () => {
+  it("allows acknowledging for another address", async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await registry.connect(owner).setAcknowledger(owner.address, true);
     await registry.connect(owner).acknowledgeFor(user.address);
-    expect(await policy.hasAcknowledged(user.address)).to.equal(false);
+    expect(await policy.hasAcknowledged(user.address)).to.equal(true);
     expect(await policy.hasAcknowledged(await registry.getAddress())).to.equal(
-      true
+      false
     );
   });
 });
