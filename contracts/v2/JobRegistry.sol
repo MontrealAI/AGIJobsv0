@@ -110,6 +110,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
+    /// @dev Each acknowledger must be a valid contract or externally owned account.
     mapping(address => bool) public acknowledgers;
 
     // cache successful agent authorizations
@@ -530,9 +531,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     /// @notice Allow or revoke an acknowledger address.
+    /// @dev When `allowed` is true, `acknowledger` must be a non-zero address representing a valid contract or EOA.
     /// @param acknowledger Address granted permission to acknowledge for users.
     /// @param allowed True to allow the address, false to revoke.
     function setAcknowledger(address acknowledger, bool allowed) external onlyGovernance {
+        if (allowed) require(acknowledger != address(0));
         acknowledgers[acknowledger] = allowed;
         emit AcknowledgerUpdated(acknowledger, allowed);
     }
