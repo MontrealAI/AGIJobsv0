@@ -14,6 +14,9 @@ import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 
+error InvalidJobRegistry();
+error InvalidStakeManager();
+
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
 /// @dev Holds no ether and keeps the owner and contract tax neutral; only
@@ -198,6 +201,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Update the JobRegistry reference.
     function setJobRegistry(IJobRegistry registry) external onlyOwner {
+        if (address(registry) == address(0) || registry.version() != 2) {
+            revert InvalidJobRegistry();
+        }
         jobRegistry = registry;
         emit JobRegistryUpdated(address(registry));
         emit ModulesUpdated(address(registry), address(stakeManager));
@@ -205,6 +211,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Update the StakeManager reference.
     function setStakeManager(IStakeManager manager) external onlyOwner {
+        if (address(manager) == address(0) || manager.version() != 2) {
+            revert InvalidStakeManager();
+        }
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
         emit ModulesUpdated(address(jobRegistry), address(manager));
