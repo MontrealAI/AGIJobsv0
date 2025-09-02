@@ -47,7 +47,7 @@ interface IIdentityRegistry {
     function addAdditionalValidator(address validator) external;
     function removeAdditionalValidator(address validator) external;
 
-    function setAgentType(address agent, uint8 agentType) external;
+    function setAgentType(address agent, AgentType agentType) external;
 
     // views
     function additionalAgents(address account) external view returns (bool);

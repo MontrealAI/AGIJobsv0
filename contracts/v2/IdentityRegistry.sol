@@ -9,7 +9,6 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 
 error ZeroAddress();
-error InvalidAgentType();
 error UnauthorizedAgent();
 
 /// @title IdentityRegistry
@@ -34,7 +33,7 @@ contract IdentityRegistry is Ownable2Step {
 
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
-    mapping(address => AgentType) public agentType;
+    mapping(address => AgentType) public agentTypes;
     /// @notice Optional metadata URI describing agent capabilities.
     mapping(address => string) public agentProfileURI;
 
@@ -154,19 +153,16 @@ contract IdentityRegistry is Ownable2Step {
         emit AdditionalValidatorUpdated(validator, false);
     }
 
-    function setAgentType(address agent, uint8 _type) external onlyOwner {
+    function setAgentType(address agent, AgentType agentType) external onlyOwner {
         if (agent == address(0)) {
             revert ZeroAddress();
         }
-        if (_type > uint8(AgentType.AI)) {
-            revert InvalidAgentType();
-        }
-        agentType[agent] = AgentType(_type);
-        emit AgentTypeUpdated(agent, AgentType(_type));
+        agentTypes[agent] = agentType;
+        emit AgentTypeUpdated(agent, agentType);
     }
 
     function getAgentType(address agent) external view returns (AgentType) {
-        return agentType[agent];
+        return agentTypes[agent];
     }
 
     // ---------------------------------------------------------------------

@@ -87,7 +87,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     function addAdditionalValidator(address) external {}
     function removeAdditionalValidator(address) external {}
 
-    function setAgentType(address, uint8) external {}
+    function setAgentType(address, AgentType) external {}
 
     function additionalAgents(address) external pure returns (bool) {
         return true;
