@@ -46,6 +46,7 @@ error EtherNotAccepted();
 error InvalidTokenDecimals();
 error InvalidFeePool();
 error MaxAGITypesExceeded();
+error MaxAGITypesBelowCurrent();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -378,6 +379,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function setMaxAGITypes(uint256 newMax) external onlyGovernance {
         if (newMax > MAX_AGI_TYPES_CAP) {
             revert MaxAGITypesExceeded();
+        }
+        if (newMax < agiTypes.length) {
+            revert MaxAGITypesBelowCurrent();
         }
         uint256 old = maxAGITypes;
         maxAGITypes = newMax;
