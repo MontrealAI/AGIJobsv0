@@ -85,16 +85,25 @@ contract IdentityRegistry is Ownable2Step {
     // ---------------------------------------------------------------------
 
     function setENS(address ensAddr) external onlyOwner {
+        if (ensAddr == address(0)) {
+            revert ZeroAddress();
+        }
         ens = IENS(ensAddr);
         emit ENSUpdated(ensAddr);
     }
 
     function setNameWrapper(address wrapper) external onlyOwner {
+        if (wrapper == address(0)) {
+            revert ZeroAddress();
+        }
         nameWrapper = INameWrapper(wrapper);
         emit NameWrapperUpdated(wrapper);
     }
 
     function setReputationEngine(address engine) external onlyOwner {
+        if (engine == address(0)) {
+            revert ZeroAddress();
+        }
         reputationEngine = IReputationEngine(engine);
         emit ReputationEngineUpdated(engine);
     }
