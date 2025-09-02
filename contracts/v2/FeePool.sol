@@ -16,6 +16,8 @@ error NotStakeManager();
 error ZeroAmount();
 error EtherNotAccepted();
 error InvalidTokenDecimals();
+error ZeroAddress();
+error InvalidStakeManagerVersion();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -224,6 +226,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice update StakeManager contract
     /// @param manager contract orchestrating fee deposits and staking
     function setStakeManager(IStakeManager manager) external onlyOwner {
+        if (address(manager) == address(0)) revert ZeroAddress();
+        if (manager.version() != version) revert InvalidStakeManagerVersion();
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
         emit ModulesUpdated(address(manager));
