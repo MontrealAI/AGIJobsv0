@@ -156,8 +156,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         taxPolicy = ITaxPolicy(policy);
     }
 
-    function setTaxPolicyVersion(uint256 version) external {
-        taxPolicyVersion = version;
+    function setTaxPolicyVersion(uint256 _version) external {
+        taxPolicyVersion = _version;
     }
 
     function setValidationModule(address module) external override {

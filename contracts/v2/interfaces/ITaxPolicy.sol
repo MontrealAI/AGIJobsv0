@@ -8,6 +8,11 @@ interface ITaxPolicy {
     /// @return disclaimer Confirmation text stating the caller bears all tax liability.
     function acknowledge() external returns (string memory disclaimer);
 
+    /// @notice Record that `user` has acknowledged the current policy.
+    /// @param user Address of the participant.
+    /// @return disclaimer Confirmation text stating the participant bears all tax liability.
+    function acknowledgeFor(address user) external returns (string memory disclaimer);
+
     /// @notice Check if a user has acknowledged the policy.
     /// @param user Address of the participant.
     function hasAcknowledged(address user) external view returns (bool);

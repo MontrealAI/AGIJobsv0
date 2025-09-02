@@ -98,6 +98,19 @@ contract TaxPolicy is Ownable, ITaxPolicy {
         return _acknowledgement;
     }
 
+    /// @notice Record that `user` acknowledges the current tax policy.
+    /// @param user Address of the participant acknowledging the policy.
+    /// @return disclaimer Confirms all taxes fall on employers, agents, and validators.
+    function acknowledgeFor(address user)
+        external
+        override
+        returns (string memory disclaimer)
+    {
+        _acknowledgedVersion[user] = _version;
+        emit PolicyAcknowledged(user, _version);
+        return _acknowledgement;
+    }
+
     /// @notice Check if a user has acknowledged the policy.
     function hasAcknowledged(address user)
         external

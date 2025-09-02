@@ -386,6 +386,7 @@ describe("PlatformRegistry", function () {
       .to.emit(registry, "Deregistered")
       .withArgs(platform.address);
     expect(await registry.registered(platform.address)).to.equal(false);
+    expect(await policy.hasAcknowledged(platform.address)).to.equal(true);
   });
 
   it("allows operator to deregister", async () => {

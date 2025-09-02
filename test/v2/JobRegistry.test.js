@@ -182,7 +182,6 @@ describe("JobRegistry integration", function () {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
-    await policy.connect(newAgent).acknowledge();
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "JobApplied")
       .withArgs(1, newAgent.address);
