@@ -6,6 +6,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -13,7 +14,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @notice ERC721 certificate minted upon successful job completion.
 /// @dev Holds no ether so neither the contract nor its owner ever custodies
 ///      assets or accrues taxable exposure in any jurisdiction.
-contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
+contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
 
     /// @notice Module version for compatibility checks.
@@ -74,6 +75,14 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         emit StakeManagerUpdated(manager);
     }
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
     function mint(
         address to,
         uint256 jobId,
@@ -92,7 +101,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         revert("Off-chain URI");
     }
 
-    function list(uint256 tokenId, uint256 price) external {
+    function list(uint256 tokenId, uint256 price) external whenNotPaused {
         if (ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
         if (price == 0) revert InvalidPrice();
         Listing storage listing = listings[tokenId];
@@ -104,7 +113,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
     }
 
     /// @notice Purchase a listed certificate using 18‑decimal $AGIALPHA tokens.
-    function purchase(uint256 tokenId) external nonReentrant {
+    function purchase(uint256 tokenId) external nonReentrant whenNotPaused {
         Listing storage listing = listings[tokenId];
         if (!listing.active) revert NotListed();
         address seller = listing.seller;
@@ -118,7 +127,7 @@ contract CertificateNFT is ERC721, Ownable, ReentrancyGuard, ICertificateNFT {
         emit NFTPurchased(tokenId, msg.sender, price);
     }
 
-    function delist(uint256 tokenId) external {
+    function delist(uint256 tokenId) external whenNotPaused {
         Listing storage listing = listings[tokenId];
         if (!listing.active) revert NotListed();
         if (listing.seller != msg.sender) revert NotTokenOwner();
