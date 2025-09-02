@@ -28,7 +28,7 @@ describe("StakeManager reentrancy", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/mocks/ReentrantJobRegistry.sol:ReentrantJobRegistry"

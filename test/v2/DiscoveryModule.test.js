@@ -26,7 +26,7 @@ describe("DiscoveryModule", function () {
       await engine.getAddress(),
       0
     );
-    await discovery.connect(owner).setMinStake(0);
+    await discovery.connect(owner).setMinStake(1);
   });
 
   it("orders and paginates platforms by score", async () => {
