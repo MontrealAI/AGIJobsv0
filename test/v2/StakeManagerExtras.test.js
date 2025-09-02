@@ -26,7 +26,7 @@ describe("StakeManager extras", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
   });
 
   async function setupRegistryAck(signer) {

@@ -36,7 +36,7 @@ describe("CertificateNFT marketplace", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stake.setMinStake(0);
+    await stake.setMinStake(1);
 
     const NFT = await ethers.getContractFactory(
       "contracts/v2/CertificateNFT.sol:CertificateNFT"

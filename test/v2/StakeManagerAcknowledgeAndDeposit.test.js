@@ -35,7 +35,7 @@ describe("StakeManager acknowledgeAndDeposit", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
   });
 
   it("reverts without acknowledgement then succeeds", async () => {

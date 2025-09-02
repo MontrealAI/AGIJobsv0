@@ -25,7 +25,7 @@ describe("JobRegistry governance finalization", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
 
     const Rep = await ethers.getContractFactory(

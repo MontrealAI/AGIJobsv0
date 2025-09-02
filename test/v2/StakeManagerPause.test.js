@@ -27,7 +27,7 @@ describe("StakeManager pause", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
     await token.mint(user.address, ethers.parseEther("1000"));
     await token
       .connect(user)

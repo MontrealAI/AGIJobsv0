@@ -36,6 +36,7 @@ error JobRegistryNotSet();
 error InvalidUser();
 error InvalidRole();
 error InvalidAmount();
+error InvalidMinStake();
 error InvalidRecipient();
 error TreasuryNotSet();
 error ValidationModuleNotSet();
@@ -231,6 +232,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update the minimum stake required
     /// @param _minStake minimum token amount with 18 decimals
     function setMinStake(uint256 _minStake) external onlyGovernance {
+        if (_minStake == 0) revert InvalidMinStake();
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
     }

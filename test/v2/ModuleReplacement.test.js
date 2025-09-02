@@ -26,7 +26,7 @@ async function deploySystem() {
     owner.address
   );
   await stake.waitForDeployment();
-  await stake.setMinStake(0);
+  await stake.setMinStake(1);
 
   const Reputation = await ethers.getContractFactory(
     "contracts/v2/ReputationEngine.sol:ReputationEngine"

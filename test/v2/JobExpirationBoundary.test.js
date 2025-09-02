@@ -24,7 +24,7 @@ describe("Job expiration boundary", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
     const Validation = await ethers.getContractFactory(
       "contracts/v2/mocks/ValidationStub.sol:ValidationStub"

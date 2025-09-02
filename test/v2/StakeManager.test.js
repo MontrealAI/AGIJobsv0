@@ -24,7 +24,7 @@ describe("StakeManager", function () {
       ethers.ZeroAddress,
       owner.address
     );
-    await stakeManager.connect(owner).setMinStake(0);
+    await stakeManager.connect(owner).setMinStake(1);
   });
 
   it("reverts when staking without job registry", async () => {
@@ -402,10 +402,16 @@ describe("StakeManager", function () {
     await expect(
       stakeManager.connect(user).setMinStake(1)
     ).to.be.revertedWith("governance only");
-    await expect(stakeManager.connect(owner).setMinStake(1))
+    await expect(stakeManager.connect(owner).setMinStake(2))
       .to.emit(stakeManager, "MinStakeUpdated")
-      .withArgs(1);
-    expect(await stakeManager.minStake()).to.equal(1n);
+      .withArgs(2n);
+    expect(await stakeManager.minStake()).to.equal(2n);
+  });
+
+  it("reverts when setting min stake to zero", async () => {
+    await expect(
+      stakeManager.connect(owner).setMinStake(0)
+    ).to.be.revertedWithCustomError(stakeManager, "InvalidMinStake");
   });
 
   it("enforces min stake on deposits and withdrawals for agent and validator", async () => {
