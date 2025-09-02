@@ -601,11 +601,25 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      *      current tax policy via the associated `JobRegistry`.
      * @param role Participant role receiving credit for the stake.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
-     */
+    */
     function acknowledgeAndDeposit(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(msg.sender);
+        _acknowledgedDeposit(role, amount);
+    }
+
+    /// @dev Deposits stake for the caller after verifying tax acknowledgement.
+    function _acknowledgedDeposit(Role role, uint256 amount)
+        internal
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+    {
         if (role > Role.Platform) revert InvalidRole();
         if (amount == 0) revert InvalidAmount();
         _deposit(msg.sender, role, amount);
