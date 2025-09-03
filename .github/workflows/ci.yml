@@ -20,6 +20,8 @@ jobs:
         run: npm ci
       - name: Verify AGIALPHA constants
         run: npm run verify:agialpha
+      - name: Detect ungenerated constants
+        run: npm run compile && git diff --exit-code contracts/v2/Constants.sol
       - name: Verify module wiring
         run: npm run verify:wiring
       - name: Run lint
