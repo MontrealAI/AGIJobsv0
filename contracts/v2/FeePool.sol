@@ -128,7 +128,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     ///      `StakeManager` may call this to keep accounting trustless while the
     ///      registry itself never holds custody of user funds.
     /// @param amount fee amount with 18 decimals
-    function depositFee(uint256 amount) external onlyStakeManager nonReentrant {
+    function depositFee(uint256 amount) external onlyStakeManager whenNotPaused nonReentrant {
         if (amount == 0) revert ZeroAmount();
         pendingFees += amount;
         emit FeeDeposited(msg.sender, amount);
@@ -136,7 +136,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Contribute tokens directly to the reward pool.
     /// @param amount token amount with 18 decimals.
-    function contribute(uint256 amount) external nonReentrant {
+    function contribute(uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert ZeroAmount();
         token.safeTransferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
@@ -148,7 +148,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     ///      pending or when no stake is present; in the latter case funds are
     ///      burned/forwarded to the treasury so non-technical callers never see
     ///      a revert.
-    function distributeFees() public nonReentrant {
+    function distributeFees() public whenNotPaused nonReentrant {
         _distributeFees();
     }
 
