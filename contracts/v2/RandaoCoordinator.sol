@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
+
+/// @title RandaoCoordinator
+/// @notice Simple commit-reveal randomness aggregator with penalties for
+///         non-revealing participants. Participants commit hashed secrets
+///         during the commit window and must reveal before the reveal window
+///         expires. Revealed secrets are XORed together to form the final
+///         random value accessible via {random}.
+contract RandaoCoordinator is Ownable, IRandaoCoordinator {
+    /// @notice Duration of the commit phase in seconds.
+    uint256 public immutable commitWindow;
+    /// @notice Duration of the reveal phase in seconds.
+    uint256 public immutable revealWindow;
+    /// @notice Deposit required with each commit, forfeited if reveal is missed.
+    uint256 public immutable deposit;
+
+    struct Round {
+        uint256 commitDeadline;
+        uint256 revealDeadline;
+        uint256 randomness;
+        uint256 commits;
+        uint256 reveals;
+        mapping(address => uint256) deposits;
+    }
+
+    mapping(bytes32 => Round) private rounds;
+    mapping(bytes32 => mapping(address => bytes32)) public commitments;
+    mapping(bytes32 => mapping(address => bool)) public revealed;
+
+    event Committed(bytes32 indexed tag, address indexed user, bytes32 commitment);
+    event Revealed(bytes32 indexed tag, address indexed user, uint256 secret);
+    event DepositForfeited(bytes32 indexed tag, address indexed user, uint256 amount);
+
+    constructor(uint256 _commitWindow, uint256 _revealWindow, uint256 _deposit)
+        Ownable(msg.sender)
+    {
+        commitWindow = _commitWindow;
+        revealWindow = _revealWindow;
+        deposit = _deposit;
+    }
+
+    /// @notice Commit a secret hash for a given tag.
+    function commit(bytes32 tag, bytes32 commitment) external payable override {
+        Round storage r = rounds[tag];
+        if (r.commitDeadline == 0) {
+            r.commitDeadline = block.timestamp + commitWindow;
+            r.revealDeadline = r.commitDeadline + revealWindow;
+        }
+        if (block.timestamp > r.commitDeadline) revert("commit closed");
+        if (commitments[tag][msg.sender] != bytes32(0)) revert("already committed");
+        if (msg.value != deposit) revert("bad deposit");
+
+        commitments[tag][msg.sender] = commitment;
+        r.deposits[msg.sender] = msg.value;
+        r.commits += 1;
+        emit Committed(tag, msg.sender, commitment);
+    }
+
+    /// @notice Reveal the secret used in the commitment.
+    function reveal(bytes32 tag, uint256 secret) external override {
+        Round storage r = rounds[tag];
+        if (block.timestamp <= r.commitDeadline) revert("reveal not started");
+        if (block.timestamp > r.revealDeadline) revert("reveal closed");
+        if (revealed[tag][msg.sender]) revert("already revealed");
+
+        bytes32 expected = keccak256(abi.encodePacked(msg.sender, tag, secret));
+        if (commitments[tag][msg.sender] != expected) revert("bad reveal");
+
+        revealed[tag][msg.sender] = true;
+        r.randomness ^= secret;
+        r.reveals += 1;
+
+        uint256 dep = r.deposits[msg.sender];
+        if (dep > 0) {
+            r.deposits[msg.sender] = 0;
+            payable(msg.sender).transfer(dep);
+        }
+        emit Revealed(tag, msg.sender, secret);
+    }
+
+    /// @notice Retrieve aggregated randomness for a tag once reveal window passes.
+    function random(bytes32 tag) external view override returns (uint256) {
+        Round storage r = rounds[tag];
+        if (r.revealDeadline == 0 || block.timestamp <= r.revealDeadline)
+            revert("random not ready");
+        return r.randomness;
+    }
+
+    /// @notice Flag a participant's deposit as forfeited after reveal deadline.
+    function forfeit(bytes32 tag, address user) external {
+        Round storage r = rounds[tag];
+        if (block.timestamp <= r.revealDeadline) revert("too early");
+        uint256 dep = r.deposits[user];
+        if (dep == 0) revert("no deposit");
+        r.deposits[user] = 0;
+        emit DepositForfeited(tag, user, dep);
+    }
+
+    /// @notice Withdraw accumulated forfeited deposits.
+    function withdraw(address payable to) external onlyOwner {
+        to.transfer(address(this).balance);
+    }
+
+    // receive ether from commits
+    receive() external payable {}
+}
