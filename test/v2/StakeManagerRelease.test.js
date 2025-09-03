@@ -96,10 +96,9 @@ describe("StakeManager release", function () {
   });
 
   it("diverts fee and burn on release", async () => {
-    const burnAddr = "0x000000000000000000000000000000000000dEaD";
     const before1 = await token.balanceOf(user1.address);
     const before2 = await token.balanceOf(user2.address);
-    const beforeBurn = await token.balanceOf(burnAddr);
+    const supplyBefore = await token.totalSupply();
 
     await expect(
       stakeManager
@@ -113,16 +112,15 @@ describe("StakeManager release", function () {
         ethers.parseEther("20")
       )
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(ethers.ZeroHash, burnAddr, ethers.parseEther("10"))
+      .withArgs(ethers.ZeroHash, ethers.ZeroAddress, ethers.parseEther("10"))
       .and.to.emit(stakeManager, "StakeReleased")
       .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther("70"));
 
     expect((await token.balanceOf(user1.address)) - before1).to.equal(
       ethers.parseEther("70")
     );
-    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(
-      ethers.parseEther("10")
-    );
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(ethers.parseEther("10"));
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       ethers.parseEther("20")
     );
@@ -140,14 +138,13 @@ describe("StakeManager release", function () {
   });
 
   it("splits job fund release with fee and burn", async () => {
-    const burnAddr = "0x000000000000000000000000000000000000dEaD";
     const jobId = ethers.encodeBytes32String("jobA");
     const before1 = await token.balanceOf(user1.address);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, user2.address, ethers.parseEther("100"));
     const before2 = await token.balanceOf(user2.address);
-    const beforeBurn = await token.balanceOf(burnAddr);
+    const supplyBefore = await token.totalSupply();
 
     await expect(
       stakeManager
@@ -161,16 +158,15 @@ describe("StakeManager release", function () {
         ethers.parseEther("20")
       )
       .and.to.emit(stakeManager, "StakeReleased")
-      .withArgs(jobId, burnAddr, ethers.parseEther("10"))
+      .withArgs(jobId, ethers.ZeroAddress, ethers.parseEther("10"))
       .and.to.emit(stakeManager, "StakeReleased")
       .withArgs(jobId, user1.address, ethers.parseEther("70"));
 
     expect((await token.balanceOf(user1.address)) - before1).to.equal(
       ethers.parseEther("70")
     );
-    expect((await token.balanceOf(burnAddr)) - beforeBurn).to.equal(
-      ethers.parseEther("10")
-    );
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(ethers.parseEther("10"));
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       ethers.parseEther("20")
     );

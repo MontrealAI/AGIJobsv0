@@ -9,6 +9,7 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {AGIALPHA, TOKEN_SCALE, BURN_ADDRESS, AGIALPHA_DECIMALS} from "./Constants.sol";
+import {IERC20Burnable} from "./interfaces/IERC20Burnable.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
@@ -249,6 +250,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
+    }
+
+    /// @dev internal helper to burn tokens using IERC20Burnable when no burn
+    ///      address is configured, otherwise transfers to the burn address
+    function _burnToken(uint256 amount) internal {
+        if (amount == 0) return;
+        if (BURN_ADDRESS == address(0)) {
+            IERC20Burnable(AGIALPHA).burn(amount);
+        } else {
+            token.safeTransfer(BURN_ADDRESS, amount);
+        }
     }
 
     /// @notice update slashing percentage splits
@@ -803,12 +815,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // off-chain keeper).
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
-                token.safeTransfer(BURN_ADDRESS, feeAmount);
+                _burnToken(feeAmount);
                 emit StakeReleased(jobId, BURN_ADDRESS, feeAmount);
             }
         }
         if (burnAmount > 0) {
-            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            _burnToken(burnAmount);
             emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
         }
         if (payout > 0) {
@@ -841,12 +853,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // invoked separately.
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
-                token.safeTransfer(BURN_ADDRESS, feeAmount);
+                _burnToken(feeAmount);
                 emit StakeReleased(bytes32(0), BURN_ADDRESS, feeAmount);
             }
         }
         if (burnAmount > 0) {
-            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            _burnToken(burnAmount);
             emit StakeReleased(bytes32(0), BURN_ADDRESS, burnAmount);
         }
         if (payout > 0) {
@@ -887,12 +899,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
-                token.safeTransfer(BURN_ADDRESS, fee);
+                _burnToken(fee);
                 emit StakeReleased(jobId, BURN_ADDRESS, fee);
             }
         }
         if (burnAmount > 0) {
-            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            _burnToken(burnAmount);
             emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
         }
     }
@@ -1010,7 +1022,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
-            token.safeTransfer(BURN_ADDRESS, burnShare);
+            _burnToken(burnShare);
         }
 
         emit StakeSlashed(

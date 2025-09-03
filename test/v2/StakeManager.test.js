@@ -578,8 +578,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await mockRegistry.getAddress());
     await token.connect(owner).approve(await stakeManager.getAddress(), 101);
     await stakeManager.connect(owner).depositStake(0, 101);
-    const burnAddress = "0x000000000000000000000000000000000000dEaD";
-    const burnBefore = await token.balanceOf(burnAddress);
+    const supplyBefore = await token.totalSupply();
     const treasuryBefore = await token.balanceOf(treasury.address);
     const employerBefore = await token.balanceOf(employer.address);
     const registryAddr = await mockRegistry.getAddress();
@@ -596,10 +595,10 @@ describe("StakeManager", function () {
         101,
         employer.address
       );
-    const burnAfter = await token.balanceOf(burnAddress);
+    const supplyAfter = await token.totalSupply();
     const treasuryAfter = await token.balanceOf(treasury.address);
     const employerAfter = await token.balanceOf(employer.address);
-    expect(burnAfter - burnBefore).to.equal(1n);
+    expect(supplyBefore - supplyAfter).to.equal(1n);
     expect(treasuryAfter - treasuryBefore).to.equal(40n);
     expect(employerAfter - employerBefore).to.equal(60n);
   });
