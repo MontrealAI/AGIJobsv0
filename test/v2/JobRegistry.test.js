@@ -11,6 +11,7 @@ describe("JobRegistry integration", function () {
   const reward = 100;
   const stake = 200;
   const disputeFee = 0;
+  const specHash = ethers.id("spec");
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
@@ -142,7 +143,9 @@ describe("JobRegistry integration", function () {
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await expect(registry.connect(employer).createJob(reward, deadline, "uri"))
+    await expect(
+      registry.connect(employer).createJob(reward, deadline, specHash, "uri")
+    )
       .to.emit(registry, "JobCreated")
       .withArgs(
         1,
@@ -154,6 +157,8 @@ describe("JobRegistry integration", function () {
         "uri"
       );
     const jobId = 1;
+    const job = await registry.jobs(jobId);
+    expect(job.specHash).to.equal(specHash);
     await expect(registry.connect(agent).applyForJob(jobId, "", []))
       .to.emit(registry, "JobApplied")
       .withArgs(jobId, agent.address);
@@ -181,7 +186,9 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setJobParameters(reward, 0);
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "JobApplied")
       .withArgs(1, newAgent.address);
@@ -214,7 +221,9 @@ describe("JobRegistry integration", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + reward / 10);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
@@ -235,7 +244,9 @@ describe("JobRegistry integration", function () {
   it("allows employer to cancel before completion", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await expect(registry.connect(employer).cancelJob(jobId))
       .to.emit(registry, "JobCancelled")
@@ -248,7 +259,9 @@ describe("JobRegistry integration", function () {
   it("allows owner to delist unassigned job", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await expect(registry.connect(owner).delistJob(jobId))
       .to.emit(registry, "JobCancelled")

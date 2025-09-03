@@ -194,7 +194,10 @@ describe("Commit-reveal job lifecycle", function () {
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
@@ -204,8 +207,8 @@ describe("Commit-reveal job lifecycle", function () {
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
     const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
+      ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+      [1n, nonce, true, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, "", []);
     await time.increase(2);
@@ -223,6 +226,56 @@ describe("Commit-reveal job lifecycle", function () {
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await nft.connect(buyer).purchase(1);
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
+  });
+
+  it("reverts reveal on spec hash mismatch", async () => {
+    const env = await deploySystem();
+    const { token, stake, identity, validation, registry, employer, agent, validator } = env;
+
+    const label = "agent";
+    const aLeaf = ethers.solidityPackedKeccak256(
+      ["bytes32", "bytes32"],
+      [ethers.ZeroHash, ethers.id(label)]
+    );
+    await identity.setAgentMerkleRoot(aLeaf);
+    const vLeaf = ethers.solidityPackedKeccak256([
+      "address",
+    ], [validator.address]);
+    await identity.setValidatorMerkleRoot(vLeaf);
+
+    const stakeAmt = ethers.parseUnits("100", AGIALPHA_DECIMALS);
+    await token.connect(agent).approve(await stake.getAddress(), stakeAmt);
+    await stake.connect(agent).depositStake(Role.Agent, stakeAmt);
+    await token
+      .connect(validator)
+      .approve(await stake.getAddress(), stakeAmt);
+    await stake.connect(validator).depositStake(Role.Validator, stakeAmt);
+
+    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
+    await token.connect(employer).approve(await stake.getAddress(), reward);
+    const deadline = BigInt((await time.latest()) + 3600);
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
+
+    await registry.connect(agent).applyForJob(1, label, []);
+    await registry
+      .connect(agent)
+      .submit(1, ethers.id("ipfs://result"), "ipfs://result", label, []);
+
+    const nonce = await validation.jobNonce(1);
+    const salt = ethers.id("salt");
+    const wrongSpec = ethers.id("wrong");
+    const commit = ethers.solidityPackedKeccak256(
+      ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+      [1n, nonce, true, salt, wrongSpec]
+    );
+    await validation.connect(validator).commitValidation(1, commit, "", []);
+    await time.increase(2);
+    await expect(
+      validation.connect(validator).revealValidation(1, true, salt, "", [])
+    ).to.be.revertedWithCustomError(validation, "InvalidReveal");
   });
 
   it("handles dispute resolution with slashing", async () => {
@@ -265,7 +318,10 @@ describe("Commit-reveal job lifecycle", function () {
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
@@ -275,8 +331,8 @@ describe("Commit-reveal job lifecycle", function () {
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
     const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt]
+      ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+      [1n, nonce, false, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, "", []);
     await time.increase(2);
