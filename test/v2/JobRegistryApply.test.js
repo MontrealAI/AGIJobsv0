@@ -5,6 +5,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 describe("JobRegistry agent gating", function () {
   let owner, employer, agent;
   let registry, rep, verifier, policy;
+  const specHash = ethers.id("spec");
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
@@ -65,7 +66,7 @@ describe("JobRegistry agent gating", function () {
 
   async function createJob() {
     const deadline = (await time.latest()) + 100;
-    await registry.connect(employer).createJob(1, deadline, "uri");
+    await registry.connect(employer).createJob(1, deadline, specHash, "uri");
     return 1;
   }
 

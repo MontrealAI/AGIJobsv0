@@ -203,9 +203,10 @@ describe("Commit-reveal job lifecycle", function () {
 
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
+    const specHash = ethers.id("ipfs://job");
     const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
+      ["uint256", "bytes32", "uint256", "bool", "bytes32"],
+      [1n, specHash, nonce, true, salt]
     );
     await validation.connect(validator).commitValidation(1, commit, "", []);
     await time.increase(2);
@@ -274,9 +275,10 @@ describe("Commit-reveal job lifecycle", function () {
 
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
+    const specHash2 = ethers.id("ipfs://job");
     const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt]
+      ["uint256", "bytes32", "uint256", "bool", "bytes32"],
+      [1n, specHash2, nonce, false, salt]
     );
     await validation.connect(validator).commitValidation(1, commit, "", []);
     await time.increase(2);

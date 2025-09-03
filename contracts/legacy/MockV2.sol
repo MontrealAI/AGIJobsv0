@@ -244,6 +244,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             stake: jobStake,
             success: false,
             status: Status.Created,
+            specHash: uriHash,
             uriHash: uriHash,
             resultHash: bytes32(0)
         });

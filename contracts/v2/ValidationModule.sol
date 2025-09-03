@@ -1065,9 +1065,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         if (commitHash == bytes32(0)) revert CommitMissing();
         if (revealed[jobId][msg.sender]) revert AlreadyRevealed();
+        bytes32 specHash = jobRegistry.jobs(jobId).specHash;
         if (
-            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) !=
-            commitHash
+            keccak256(
+                abi.encodePacked(jobId, specHash, nonce, approve, salt)
+            ) != commitHash
         ) revert InvalidReveal();
 
         uint256 stake = validatorStakes[jobId][msg.sender];
