@@ -3,12 +3,11 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
 import {TOKEN_SCALE} from "../Constants.sol";
+import {ArbitratorCommittee} from "../ArbitratorCommittee.sol";
 
 /// @title DisputeModule
 /// @notice Allows job participants to raise disputes and resolves them after a
@@ -35,11 +34,8 @@ contract DisputeModule is Ownable, Pausable {
     /// @dev Defaults to 1 day if zero is provided to the constructor.
     uint256 public disputeWindow;
 
-    /// @notice Voting weight allocated to each moderator.
-    mapping(address => uint256) public moderatorWeights;
-
-    /// @notice Sum of all moderator voting weights.
-    uint256 public totalModeratorWeight;
+    /// @notice Address of the arbitrator committee contract.
+    address public committee;
 
     struct Dispute {
         address claimant;
@@ -62,22 +58,22 @@ contract DisputeModule is Ownable, Pausable {
         address indexed resolver,
         bool employerWins
     );
-    event ModeratorUpdated(address moderator, uint256 weight);
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
     event StakeManagerUpdated(IStakeManager newManager);
     event ModulesUpdated(address indexed jobRegistry, address indexed stakeManager);
+    event CommitteeUpdated(address indexed committee);
 
     /// @param _jobRegistry Address of the JobRegistry contract.
     /// @param _disputeFee Initial dispute fee in token units (18 decimals); defaults to TOKEN_SCALE.
     /// @param _disputeWindow Minimum time in seconds before resolution; defaults to 1 day.
-    /// @param _moderator Optional moderator address; defaults to the deployer.
+    /// @param _committee Address of the arbitrator committee contract.
     constructor(
         IJobRegistry _jobRegistry,
         uint256 _disputeFee,
         uint256 _disputeWindow,
-        address _moderator
+        address _committee
     ) Ownable(msg.sender) {
         if (address(_jobRegistry) != address(0)) {
             jobRegistry = _jobRegistry;
@@ -90,12 +86,8 @@ contract DisputeModule is Ownable, Pausable {
 
         disputeWindow = _disputeWindow > 0 ? _disputeWindow : 1 days;
         emit DisputeWindowUpdated(disputeWindow);
-
-        address initialModerator =
-            _moderator != address(0) ? _moderator : msg.sender;
-        moderatorWeights[initialModerator] = 1;
-        totalModeratorWeight = 1;
-        emit ModeratorUpdated(initialModerator, 1);
+        committee = _committee;
+        emit CommitteeUpdated(_committee);
     }
 
     /// @notice Restrict functions to the JobRegistry.
@@ -132,34 +124,15 @@ contract DisputeModule is Ownable, Pausable {
         emit ModulesUpdated(address(jobRegistry), address(newManager));
     }
 
-    /// @notice Add or update a moderator with a specific voting weight.
-    /// @param _moderator Address granted moderator rights.
-    /// @param weight Voting weight assigned to the moderator.
-    function addModerator(address _moderator, uint256 weight)
+    /// @notice Update the arbitrator committee contract.
+    /// @param newCommittee New committee contract address.
+    function setCommittee(address newCommittee)
         external
         onlyOwner
         whenNotPaused
     {
-        require(_moderator != address(0), "moderator");
-        require(weight > 0, "weight");
-        uint256 previous = moderatorWeights[_moderator];
-        totalModeratorWeight = totalModeratorWeight - previous + weight;
-        moderatorWeights[_moderator] = weight;
-        emit ModeratorUpdated(_moderator, weight);
-    }
-
-    /// @notice Remove a moderator and its voting weight.
-    /// @param _moderator Address to revoke moderator rights from.
-    function removeModerator(address _moderator)
-        external
-        onlyOwner
-        whenNotPaused
-    {
-        uint256 weight = moderatorWeights[_moderator];
-        require(weight > 0, "not moderator");
-        totalModeratorWeight -= weight;
-        delete moderatorWeights[_moderator];
-        emit ModeratorUpdated(_moderator, 0);
+        committee = newCommittee;
+        emit CommitteeUpdated(newCommittee);
     }
 
     /// @notice Configure the dispute fee in token units (18 decimals).
@@ -233,24 +206,22 @@ contract DisputeModule is Ownable, Pausable {
             });
 
         emit DisputeRaised(jobId, claimant, evidenceHash);
+
+        if (committee != address(0)) {
+            ArbitratorCommittee(committee).openCase(jobId);
+        }
     }
 
     /// @notice Resolve an existing dispute after the dispute window elapses.
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.
-    /// @param signatures Moderator approvals supporting the resolution.
-    function resolve(
-        uint256 jobId,
-        bool employerWins,
-        bytes[] calldata signatures
-    ) external whenNotPaused {
+    /// @dev Only callable by the arbitrator committee.
+    function resolve(uint256 jobId, bool employerWins) external whenNotPaused {
+        require(msg.sender == committee, "not committee");
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
         require(block.timestamp >= d.raisedAt + disputeWindow, "window");
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-
-        uint256 weight = _verifySignatures(jobId, employerWins, signatures);
-        require(weight * 2 > totalModeratorWeight, "insufficient weight");
 
         d.resolved = true;
 
@@ -279,27 +250,6 @@ contract DisputeModule is Ownable, Pausable {
         }
 
         emit DisputeResolved(jobId, msg.sender, employerWins);
-    }
-
-    function _verifySignatures(
-        uint256 jobId,
-        bool employerWins,
-        bytes[] calldata signatures
-    ) internal view returns (uint256 weight) {
-        bytes32 hash = MessageHashUtils.toEthSignedMessageHash(
-            keccak256(abi.encodePacked(address(this), jobId, employerWins))
-        );
-        address[] memory seen = new address[](signatures.length);
-        for (uint256 i; i < signatures.length; ++i) {
-            address signer = ECDSA.recover(hash, signatures[i]);
-            uint256 w = moderatorWeights[signer];
-            require(w > 0, "bad sig");
-            for (uint256 j; j < i; ++j) {
-                require(seen[j] != signer, "dup sig");
-            }
-            seen[i] = signer;
-            weight += w;
-        }
     }
 
     function _stakeManager() internal view returns (IStakeManager) {

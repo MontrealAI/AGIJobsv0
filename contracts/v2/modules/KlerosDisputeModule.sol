@@ -15,6 +15,10 @@ contract KlerosDisputeModule is IDisputeModule {
     /// @notice Address with permission to update module settings.
     address public governance;
 
+    event GovernanceUpdated(address governance);
+    event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 evidenceHash);
+    event DisputeResolved(uint256 indexed jobId, bool employerWins);
+
     /// @notice Job registry that created disputes originate from.
     IJobRegistry public immutable jobRegistry;
 
@@ -53,7 +57,7 @@ contract KlerosDisputeModule is IDisputeModule {
     }
 
     /// @notice Update governance address.
-    function setGovernance(address _governance) external override onlyGovernance {
+    function setGovernance(address _governance) external onlyGovernance {
         governance = _governance;
         emit GovernanceUpdated(_governance);
     }
@@ -90,19 +94,19 @@ contract KlerosDisputeModule is IDisputeModule {
     // Unused legacy interfaces - maintained for compatibility
     // ---------------------------------------------------------------------
 
-    function addModerator(address) external pure override {
+    function addModerator(address) external pure {
         revert("unsupported");
     }
 
-    function removeModerator(address) external pure override {
+    function removeModerator(address) external pure {
         revert("unsupported");
     }
 
-    function setQuorum(uint256) external pure override {
+    function setQuorum(uint256) external pure {
         revert("unsupported");
     }
 
-    function getModerators() external pure override returns (address[] memory) {
+    function getModerators() external pure returns (address[] memory) {
         return new address[](0);
     }
 }
