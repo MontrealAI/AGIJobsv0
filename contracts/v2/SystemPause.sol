@@ -9,6 +9,7 @@ import {DisputeModule} from "./modules/DisputeModule.sol";
 import {PlatformRegistry} from "./PlatformRegistry.sol";
 import {FeePool} from "./FeePool.sol";
 import {ReputationEngine} from "./ReputationEngine.sol";
+import {ArbitratorCommittee} from "./ArbitratorCommittee.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title SystemPause
@@ -22,6 +23,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     PlatformRegistry public platformRegistry;
     FeePool public feePool;
     ReputationEngine public reputationEngine;
+    ArbitratorCommittee public arbitratorCommittee;
 
     error InvalidJobRegistry(address module);
     error InvalidStakeManager(address module);
@@ -30,6 +32,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     error InvalidPlatformRegistry(address module);
     error InvalidFeePool(address module);
     error InvalidReputationEngine(address module);
+    error InvalidArbitratorCommittee(address module);
 
     event ModulesUpdated(
         address jobRegistry,
@@ -38,7 +41,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         address disputeModule,
         address platformRegistry,
         address feePool,
-        address reputationEngine
+        address reputationEngine,
+        address arbitratorCommittee
     );
 
     constructor(
@@ -49,6 +53,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         PlatformRegistry _platformRegistry,
         FeePool _feePool,
         ReputationEngine _reputationEngine,
+        ArbitratorCommittee _arbitratorCommittee,
         address _governance
     ) Governable(_governance) {
         if (
@@ -77,6 +82,10 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_reputationEngine) == address(0) ||
             address(_reputationEngine).code.length == 0
         ) revert InvalidReputationEngine(address(_reputationEngine));
+        if (
+            address(_arbitratorCommittee) == address(0) ||
+            address(_arbitratorCommittee).code.length == 0
+        ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
 
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
@@ -85,6 +94,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         platformRegistry = _platformRegistry;
         feePool = _feePool;
         reputationEngine = _reputationEngine;
+        arbitratorCommittee = _arbitratorCommittee;
     }
 
     function setModules(
@@ -94,7 +104,8 @@ contract SystemPause is Governable, ReentrancyGuard {
         DisputeModule _disputeModule,
         PlatformRegistry _platformRegistry,
         FeePool _feePool,
-        ReputationEngine _reputationEngine
+        ReputationEngine _reputationEngine,
+        ArbitratorCommittee _arbitratorCommittee
     ) external onlyGovernance {
         if (
             address(_jobRegistry) == address(0) ||
@@ -122,6 +133,10 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_reputationEngine) == address(0) ||
             address(_reputationEngine).code.length == 0
         ) revert InvalidReputationEngine(address(_reputationEngine));
+        if (
+            address(_arbitratorCommittee) == address(0) ||
+            address(_arbitratorCommittee).code.length == 0
+        ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
 
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
@@ -130,6 +145,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         platformRegistry = _platformRegistry;
         feePool = _feePool;
         reputationEngine = _reputationEngine;
+        arbitratorCommittee = _arbitratorCommittee;
         emit ModulesUpdated(
             address(_jobRegistry),
             address(_stakeManager),
@@ -137,7 +153,8 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_disputeModule),
             address(_platformRegistry),
             address(_feePool),
-            address(_reputationEngine)
+            address(_reputationEngine),
+            address(_arbitratorCommittee)
         );
     }
 
@@ -150,6 +167,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         platformRegistry.pause();
         feePool.pause();
         reputationEngine.pause();
+        arbitratorCommittee.pause();
     }
 
     /// @notice Unpause all core modules.
@@ -161,6 +179,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         platformRegistry.unpause();
         feePool.unpause();
         reputationEngine.unpause();
+        arbitratorCommittee.unpause();
     }
 }
 

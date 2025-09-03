@@ -80,6 +80,9 @@ describe("SystemPause", function () {
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
     );
+    const Committee = await ethers.getContractFactory(
+      "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+    );
     const SystemPause = await ethers.getContractFactory(
       "contracts/v2/SystemPause.sol:SystemPause"
     );
@@ -90,18 +93,34 @@ describe("SystemPause", function () {
     const reputation = ReputationEngine.attach(reputationAddr);
     const platformRegistry = PlatformRegistry.attach(platformRegistryAddr);
     const feePool = FeePool.attach(feePoolAddr);
+    const committeeAddr = await dispute.committee();
+    const committee = Committee.attach(committeeAddr);
     const pause = SystemPause.attach(systemPauseAddr);
 
-    await pause
-      .connect(owner)
-      .setModules(
+    await expect(
+      pause
+        .connect(owner)
+        .setModules(
+          registryAddr,
+          stakeAddr,
+          validationAddr,
+          disputeAddr,
+          platformRegistryAddr,
+          feePoolAddr,
+          reputationAddr,
+          committeeAddr
+        )
+    )
+      .to.emit(pause, "ModulesUpdated")
+      .withArgs(
         registryAddr,
         stakeAddr,
         validationAddr,
         disputeAddr,
         platformRegistryAddr,
         feePoolAddr,
-        reputationAddr
+        reputationAddr,
+        committeeAddr
       );
 
     expect(await stake.paused()).to.equal(false);
@@ -111,6 +130,7 @@ describe("SystemPause", function () {
     expect(await platformRegistry.paused()).to.equal(false);
     expect(await feePool.paused()).to.equal(false);
     expect(await reputation.paused()).to.equal(false);
+    expect(await committee.paused()).to.equal(false);
 
     await pause.connect(owner).pauseAll();
 
@@ -121,6 +141,7 @@ describe("SystemPause", function () {
     expect(await platformRegistry.paused()).to.equal(true);
     expect(await feePool.paused()).to.equal(true);
     expect(await reputation.paused()).to.equal(true);
+    expect(await committee.paused()).to.equal(true);
 
     await pause.connect(owner).unpauseAll();
 
@@ -131,6 +152,7 @@ describe("SystemPause", function () {
     expect(await platformRegistry.paused()).to.equal(false);
     expect(await feePool.paused()).to.equal(false);
     expect(await reputation.paused()).to.equal(false);
+    expect(await committee.paused()).to.equal(false);
   });
 });
 

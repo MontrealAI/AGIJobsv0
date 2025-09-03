@@ -140,9 +140,18 @@ async function main() {
     await registry.getAddress(),
     appealFee,
     disputeWindow,
-    moderator
+    ethers.ZeroAddress
   );
   await dispute.waitForDeployment();
+  const Committee = await ethers.getContractFactory(
+    "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+  );
+  const committee = await Committee.deploy(
+    await registry.getAddress(),
+    await dispute.getAddress()
+  );
+  await committee.waitForDeployment();
+  await dispute.setCommittee(await committee.getAddress());
 
   const FeePool = await ethers.getContractFactory(
     "contracts/v2/FeePool.sol:FeePool"
@@ -262,6 +271,7 @@ async function main() {
     await platformRegistry.getAddress(),
     await feePool.getAddress(),
     await reputation.getAddress(),
+    await committee.getAddress(),
     governance
   );
   await pause.waitForDeployment();
@@ -274,7 +284,8 @@ async function main() {
       await dispute.getAddress(),
       await platformRegistry.getAddress(),
       await feePool.getAddress(),
-      await reputation.getAddress()
+      await reputation.getAddress(),
+      await committee.getAddress()
     );
   await stake
     .connect(governanceSigner)
@@ -297,6 +308,7 @@ async function main() {
   await reputation
     .connect(governanceSigner)
     .transferOwnership(await pause.getAddress());
+  await committee.transferOwnership(await pause.getAddress());
 
   console.log("JobRegistry deployed to:", await registry.getAddress());
   console.log("ValidationModule:", await validation.getAddress());

@@ -99,6 +99,9 @@ describe("Deployer", function () {
     const IdentityRegistry = await ethers.getContractFactory(
       "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
     );
+    const Committee = await ethers.getContractFactory(
+      "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+    );
     const SystemPause = await ethers.getContractFactory(
       "contracts/v2/SystemPause.sol:SystemPause"
     );
@@ -115,6 +118,8 @@ describe("Deployer", function () {
     const feePoolC = FeePool.attach(feePool);
     const taxPolicyC = TaxPolicy.attach(taxPolicy);
     const identityRegistryC = IdentityRegistry.attach(identityRegistryAddr);
+    const committee = await disputeC.committee();
+    const committeeC = Committee.attach(committee);
     const systemPauseC = SystemPause.attach(systemPause);
 
     // ownership
@@ -125,6 +130,7 @@ describe("Deployer", function () {
     expect(await validationC.owner()).to.equal(systemPause);
     expect(await reputationC.owner()).to.equal(systemPause);
     expect(await disputeC.owner()).to.equal(systemPause);
+    expect(await committeeC.owner()).to.equal(systemPause);
     expect(await certificateC.owner()).to.equal(governance.address);
     expect(await platformRegistryC.owner()).to.equal(systemPause);
     expect(await routerC.owner()).to.equal(governance.address);
@@ -141,6 +147,7 @@ describe("Deployer", function () {
     expect(await systemPauseC.platformRegistry()).to.equal(platformRegistry);
     expect(await systemPauseC.feePool()).to.equal(feePool);
     expect(await systemPauseC.reputationEngine()).to.equal(reputation);
+    expect(await systemPauseC.arbitratorCommittee()).to.equal(committee);
 
     // wiring
     expect(await stakeC.jobRegistry()).to.equal(registry);
