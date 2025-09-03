@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
@@ -11,7 +12,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 /// @notice Handles commit-reveal voting by job validators to resolve disputes.
 /// @dev Jurors are the validators already selected for the disputed job via the
 ///      ValidationModule's RANDAO-based selection.
-contract ArbitratorCommittee is Ownable {
+contract ArbitratorCommittee is Ownable, Pausable {
     IJobRegistry public jobRegistry;
     IDisputeModule public disputeModule;
 
@@ -75,7 +76,7 @@ contract ArbitratorCommittee is Ownable {
     /// @notice Opens a new dispute case and seats jurors using validators
     ///         selected by the ValidationModule via RANDAO.
     /// @dev Only callable by the DisputeModule when a dispute is raised.
-    function openCase(uint256 jobId) external onlyDisputeModule {
+    function openCase(uint256 jobId) external onlyDisputeModule whenNotPaused {
         Case storage c = cases[jobId];
         require(c.jurors.length == 0, "exists");
         address valMod = address(jobRegistry.validationModule());
@@ -88,7 +89,7 @@ contract ArbitratorCommittee is Ownable {
     }
 
     /// @notice Commit a hashed vote for the given job dispute.
-    function commit(uint256 jobId, bytes32 commitment) external {
+    function commit(uint256 jobId, bytes32 commitment) external whenNotPaused {
         Case storage c = cases[jobId];
         require(c.jurors.length != 0, "no case");
         require(block.timestamp <= c.commitDeadline, "commit over");
@@ -99,7 +100,7 @@ contract ArbitratorCommittee is Ownable {
     }
 
     /// @notice Reveal a vote previously committed.
-    function reveal(uint256 jobId, bool employerWins, uint256 salt) external {
+    function reveal(uint256 jobId, bool employerWins, uint256 salt) external whenNotPaused {
         Case storage c = cases[jobId];
         require(_isJuror(c.jurors, msg.sender), "not juror");
         require(block.timestamp > c.commitDeadline, "commit phase");
@@ -116,7 +117,7 @@ contract ArbitratorCommittee is Ownable {
     }
 
     /// @notice Finalize a case once all jurors have revealed. Majority wins.
-    function finalize(uint256 jobId) external {
+    function finalize(uint256 jobId) external whenNotPaused {
         Case storage c = cases[jobId];
         require(!c.finalized, "finalized");
         require(c.jurors.length != 0, "no case");
@@ -148,6 +149,16 @@ contract ArbitratorCommittee is Ownable {
             }
         }
         return false;
+    }
+
+    /// @notice Pause dispute resolution activities.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Unpause dispute resolution activities.
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }
 
