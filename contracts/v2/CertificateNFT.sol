@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPaymentRouter} from "./interfaces/IPaymentRouter.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
@@ -118,11 +119,12 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         if (!listing.active) revert NotListed();
         address seller = listing.seller;
         if (seller == msg.sender) revert SelfPurchase();
+        IPaymentRouter router = stakeManager.router();
         IERC20 token = stakeManager.token();
-        if (token.allowance(msg.sender, address(this)) < listing.price) revert InsufficientAllowance();
         uint256 price = listing.price;
+        if (token.allowance(msg.sender, address(router)) < price) revert InsufficientAllowance();
         delete listings[tokenId];
-        token.safeTransferFrom(msg.sender, seller, price);
+        router.transferFrom(msg.sender, seller, price);
         _safeTransfer(seller, msg.sender, tokenId, "");
         emit NFTPurchased(tokenId, msg.sender, price);
     }

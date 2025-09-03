@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {IFeePool} from "./IFeePool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPaymentRouter} from "./IPaymentRouter.sol";
 
 /// @title IStakeManager
 /// @notice Interface for staking balances, job escrows and slashing logic
@@ -45,6 +46,9 @@ interface IStakeManager {
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
+
+    /// @notice payment router used for token transfers
+    function router() external view returns (IPaymentRouter);
 
     /// @notice deposit stake for caller for a specific role
     /// @param role participant role receiving credit

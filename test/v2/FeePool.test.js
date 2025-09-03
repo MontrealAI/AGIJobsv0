@@ -2,12 +2,17 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("FeePool", function () {
-  let token, stakeManager, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
+  let token, stakeManager, router, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
 
   const { AGIALPHA } = require("../../scripts/constants");
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -19,7 +24,8 @@ describe("FeePool", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -57,6 +63,7 @@ describe("FeePool", function () {
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       treasury.address
     );
@@ -69,16 +76,14 @@ describe("FeePool", function () {
     ]);
     registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
-    await token.connect(user1).approve(await stakeManager.getAddress(), 1000);
-    await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
+    await token.connect(user1).approve(await router.getAddress(), 1000);
+    await token.connect(user2).approve(await router.getAddress(), 1000);
     await stakeManager.connect(user1).depositStake(2, 100);
     await stakeManager.connect(user2).depositStake(2, 300);
   });
 
   it("allows direct contributions", async () => {
-    await token
-      .connect(user1)
-      .approve(await feePool.getAddress(), 100);
+    await token.connect(user1).approve(await router.getAddress(), 100);
     await expect(feePool.connect(user1).contribute(100))
       .to.emit(feePool, "RewardPoolContribution")
       .withArgs(user1.address, 100);
@@ -89,7 +94,7 @@ describe("FeePool", function () {
   it("distributes rewards proportionally", async () => {
     const feeAmount = 100;
     const jobId = ethers.encodeBytes32String("job1");
-    await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
+    await token.connect(employer).approve(await router.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, feeAmount);
@@ -116,7 +121,7 @@ describe("FeePool", function () {
     // additional validator stakes
     await token
       .connect(user1)
-      .approve(await stakeManager.getAddress(), 100);
+      .approve(await router.getAddress(), 100);
     await token
       .connect(user2)
       .approve(await stakeManager.getAddress(), 300);

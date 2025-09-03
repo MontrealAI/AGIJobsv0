@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("StakeManager", function () {
   const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
-  let token, stakeManager, owner, user, employer, treasury;
+  let token, stakeManager, router, owner, user, employer, treasury;
 
   beforeEach(async () => {
     [owner, user, employer, treasury] = await ethers.getSigners();
@@ -12,6 +12,10 @@ describe("StakeManager", function () {
     await token.mint(owner.address, 1000);
     await token.mint(user.address, 1000);
     await token.mint(employer.address, 1000);
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -22,13 +26,14 @@ describe("StakeManager", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
   });
 
   it("reverts when staking without job registry", async () => {
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await expect(
       stakeManager.connect(user).depositStake(0, 100)
     ).to.be.revertedWithCustomError(stakeManager, "JobRegistryNotSet");
@@ -61,7 +66,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await token.connect(user).approve(await router.getAddress(), 200);
     await expect(stakeManager.connect(user).depositStake(0, 200))
       .to.emit(stakeManager, "StakeDeposited")
       .withArgs(user.address, 0, 200);
@@ -81,7 +86,7 @@ describe("StakeManager", function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const jobId = ethers.encodeBytes32String("job1");
-    await token.connect(employer).approve(await stakeManager.getAddress(), 300);
+    await token.connect(employer).approve(await router.getAddress(), 300);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, 300);
@@ -151,7 +156,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await stakeManager.connect(user).depositStake(0, 100);
 
     await expect(
@@ -211,7 +216,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await stakeManager.connect(user).depositStake(0, 100);
 
     // treasury storage slot accounting for inherited and packed variables
@@ -269,7 +274,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 600);
+    await token.connect(user).approve(await router.getAddress(), 600);
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
@@ -320,7 +325,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await expect(
       stakeManager.connect(user).depositStake(3, 100)
     ).to.be.revertedWithoutReason();
@@ -371,7 +376,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await token.connect(user).approve(await router.getAddress(), 200);
 
     await expect(
       stakeManager.connect(user).depositStake(0, 100)
@@ -445,7 +450,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 400);
+    await token.connect(user).approve(await router.getAddress(), 400);
 
     // deposits below min stake revert for both roles
     await expect(
@@ -498,7 +503,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await mockRegistry.getAddress());
-    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await token.connect(owner).approve(await router.getAddress(), 100);
     await stakeManager.connect(owner).depositStake(0, 100);
     const registryAddr = await mockRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
@@ -547,7 +552,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await mockRegistry.getAddress());
-    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await token.connect(owner).approve(await router.getAddress(), 100);
     await stakeManager.connect(owner).depositStake(0, 100);
     const registryAddr = await mockRegistry.getAddress();
     await ethers.provider.send("hardhat_setBalance", [
@@ -576,7 +581,7 @@ describe("StakeManager", function () {
     await stakeManager
       .connect(owner)
       .setJobRegistry(await mockRegistry.getAddress());
-    await token.connect(owner).approve(await stakeManager.getAddress(), 101);
+    await token.connect(owner).approve(await router.getAddress(), 101);
     await stakeManager.connect(owner).depositStake(0, 101);
     const supplyBefore = await token.totalSupply();
     const treasuryBefore = await token.balanceOf(treasury.address);
@@ -640,7 +645,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await token.connect(user).approve(await router.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
@@ -701,7 +706,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await token.connect(user).approve(await router.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
@@ -753,7 +758,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await token.connect(user).approve(await router.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
@@ -844,7 +849,7 @@ describe("StakeManager", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(user).acknowledge();
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await token.connect(user).approve(await router.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
 
     const registryAddr = await jobRegistry.getAddress();
@@ -899,7 +904,7 @@ describe("StakeManager", function () {
     await token.mint(user.address, initial);
     await token
       .connect(user)
-      .approve(await stakeManager.getAddress(), initial);
+      .approve(await router.getAddress(), initial);
     await stakeManager.connect(user).depositStake(0, initial);
 
     const registryAddr = await jobRegistry.getAddress();
@@ -975,7 +980,7 @@ describe("StakeManager", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);
     expect(
@@ -1015,7 +1020,7 @@ describe("StakeManager", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
@@ -1055,7 +1060,7 @@ describe("StakeManager", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
     await stakeManager.connect(user).acknowledgeAndDeposit(0, 100);
 
     const policy2 = await TaxPolicy.deploy("ipfs://policy2", "ack");
