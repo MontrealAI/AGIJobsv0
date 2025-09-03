@@ -16,7 +16,7 @@ Holds platform fees and distributes rewards.
 ## Events
 - `FeeDeposited(address from, uint256 amount)`
 - `FeesDistributed(uint256 amount)`
-- `Burned(uint256 amount)`
+- `FeesBurned(address caller, uint256 amount)`
 - `RewardsClaimed(address user, uint256 amount)`
 - `StakeManagerUpdated(address stakeManager)`
 - `RewardRoleUpdated(uint8 role)`

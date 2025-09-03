@@ -19,7 +19,7 @@ error EtherNotAccepted();
 error InvalidTokenDecimals();
 error ZeroAddress();
 error InvalidStakeManagerVersion();
-error BurnAddressNotZero();
+error BadBurnAddress();
 error TokenNotBurnable();
 
 /// @title FeePool
@@ -65,7 +65,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     event FeeDeposited(address indexed from, uint256 amount);
     event FeesDistributed(uint256 amount);
-    event Burned(uint256 amount);
+    event FeesBurned(address indexed caller, uint256 amount);
     event RewardsClaimed(address indexed user, uint256 amount);
     event StakeManagerUpdated(address indexed stakeManager);
     event ModulesUpdated(address indexed stakeManager);
@@ -88,7 +88,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         address _treasury
     ) Ownable(msg.sender) {
         if (BURN_ADDRESS != address(0)) {
-            revert BurnAddressNotZero();
+            revert BadBurnAddress();
         }
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
@@ -161,7 +161,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
-            _burnFees(burnAmount);
+            _burnFees(msg.sender, burnAmount);
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);
@@ -183,12 +183,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         emit FeesDistributed(accounted);
     }
 
-    function _burnFees(uint256 amt) internal {
+    function _burnFees(address caller, uint256 amt) internal {
         if (BURN_ADDRESS != address(0)) {
-            revert BurnAddressNotZero();
+            revert BadBurnAddress();
         }
         try IERC20Burnable(address(token)).burn(amt) {
-            emit Burned(amt);
+            emit FeesBurned(caller, amt);
         } catch {
             revert TokenNotBurnable();
         }
