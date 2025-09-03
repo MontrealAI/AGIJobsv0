@@ -150,5 +150,32 @@ contract FeePoolTest {
             "sum"
         );
     }
+
+    function testDepositFeePausedReverts() public {
+        setUp();
+        feePool.pause();
+        token.mint(address(feePool), TOKEN);
+        vm.prank(address(stakeManager));
+        vm.expectRevert();
+        feePool.depositFee(TOKEN);
+    }
+
+    function testContributePausedReverts() public {
+        setUp();
+        feePool.pause();
+        token.mint(alice, TOKEN);
+        vm.startPrank(alice);
+        token.approve(address(feePool), TOKEN);
+        vm.expectRevert();
+        feePool.contribute(TOKEN);
+        vm.stopPrank();
+    }
+
+    function testDistributeFeesPausedReverts() public {
+        setUp();
+        feePool.pause();
+        vm.expectRevert();
+        feePool.distributeFees();
+    }
 }
 
