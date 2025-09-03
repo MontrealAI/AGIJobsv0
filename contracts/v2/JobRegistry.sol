@@ -910,6 +910,29 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         finalizeAfterValidation(jobId, success);
     }
 
+    /// @notice Force finalize a job when validation quorum is not met
+    /// @param jobId Identifier of the job
+    function forceFinalize(uint256 jobId)
+        external
+        whenNotPaused
+        nonReentrant
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
+        if (msg.sender != address(validationModule)) revert OnlyValidationModule();
+        Job storage job = jobs[jobId];
+        if (job.state != State.Submitted) revert NotSubmitted();
+        job.success = false;
+        job.state = State.Completed;
+        emit JobCompleted(jobId, false);
+        _finalize(jobId);
+    }
+
     /// @notice Receive validation outcome from the ValidationModule
     /// @param jobId Identifier of the job
     /// @param success True if validators approved the job

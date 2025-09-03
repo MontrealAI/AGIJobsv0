@@ -82,6 +82,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
     uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
     uint256 public constant DEFAULT_MAX_VALIDATORS = 3;
+    uint256 public constant FORCE_FINALIZE_GRACE = 1 hours;
 
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
@@ -389,6 +390,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function validators(uint256 jobId) external view override returns (address[] memory validators_) {
         Round storage r = rounds[jobId];
         validators_ = r.tallied ? r.participants : r.validators;
+    }
+
+    /// @notice Retrieve the reveal deadline for a job
+    /// @param jobId Identifier of the job
+    /// @return deadline Timestamp when the reveal phase ends
+    function revealDeadline(uint256 jobId) external view returns (uint256 deadline) {
+        deadline = rounds[jobId].revealDeadline;
     }
 
     /// @notice Map validators to their ENS subdomains for selection-time checks.
@@ -1131,6 +1139,55 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         returns (bool success)
     {
         return _finalize(jobId);
+    }
+
+    /// @notice Force finalize a job after the reveal deadline plus grace period.
+    /// @dev If quorum was not met, no result is recorded and the employer/agent are refunded.
+    /// @param jobId Identifier of the job
+    /// @return success True if validators approved the job
+    function forceFinalize(uint256 jobId)
+        external
+        override
+        whenNotPaused
+        nonReentrant
+        returns (bool success)
+    {
+        Round storage r = rounds[jobId];
+        if (r.tallied) revert AlreadyTallied();
+        if (block.timestamp <= r.revealDeadline + FORCE_FINALIZE_GRACE)
+            revert RevealPending();
+        uint256 size = r.committeeSize == 0 ? validatorsPerJob : r.committeeSize;
+        if (r.revealedCount >= size) {
+            return _finalize(jobId);
+        }
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
+        for (uint256 i; i < r.validators.length;) {
+            address val = r.validators[i];
+            if (!revealed[jobId][val]) {
+                uint256 stake = validatorStakes[jobId][val];
+                uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
+                if (slashAmount > 0) {
+                    stakeManager.slash(
+                        val,
+                        IStakeManager.Role.Validator,
+                        slashAmount,
+                        job.employer
+                    );
+                }
+                if (address(reputationEngine) != address(0)) {
+                    reputationEngine.subtract(val, 1);
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        r.tallied = true;
+        emit ValidationTallied(jobId, false, r.approvals, r.rejections);
+        emit ValidationResult(jobId, false);
+        jobRegistry.forceFinalize(jobId);
+        _cleanup(jobId);
+        return false;
     }
 
     function _finalize(uint256 jobId) internal returns (bool success) {

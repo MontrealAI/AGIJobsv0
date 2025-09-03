@@ -113,6 +113,11 @@ contract OracleValidationModule is IValidationModule, Ownable {
     }
 
     /// @inheritdoc IValidationModule
+    function forceFinalize(uint256) external pure override returns (bool) {
+        return true;
+    }
+
+    /// @inheritdoc IValidationModule
     function setParameters(
         uint256,
         uint256,

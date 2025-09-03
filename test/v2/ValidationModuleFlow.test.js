@@ -232,6 +232,52 @@ describe("ValidationModule finalize flows", function () {
     expect(job.status).to.equal(5); // Disputed
   });
 
+  it("allows force finalize after deadline and slashes no-shows", async () => {
+    const { v1, v2, v3, validation, stakeManager, jobRegistry, select } = await setup();
+    await select(1);
+    await advance(61); // end commit
+    await advance(61 + 3600 + 1); // end reveal + grace
+    await validation.forceFinalize(1);
+    const job = await jobRegistry.jobs(1);
+    expect(job.status).to.equal(6); // Finalized
+    expect(await stakeManager.stakeOf(v1.address, 1)).to.equal(
+      ethers.parseEther("50")
+    );
+    expect(await stakeManager.stakeOf(v2.address, 1)).to.equal(
+      ethers.parseEther("25")
+    );
+    expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
+      ethers.parseEther("12.5")
+    );
+  });
+
+  it("force finalize only slashes selected validators", async () => {
+    const { owner, employer, v1, v2, v3, validation, stakeManager, jobRegistry, identity, select } =
+      await setup();
+    const signers = await ethers.getSigners();
+    const v4 = signers[5];
+    await identity.addAdditionalValidator(v4.address);
+    await stakeManager.setStake(v4.address, 1, ethers.parseEther("10"));
+    await validation
+      .connect(owner)
+      .setValidatorPool([v1.address, v2.address, v3.address, v4.address]);
+    await select(1);
+    const chosen = await validation.validators(1);
+    const beforeV4 = await stakeManager.stakeOf(v4.address, 1);
+    await advance(61); // end commit
+    await advance(61 + 3600 + 1); // end reveal + grace
+    await validation.forceFinalize(1);
+    const isV4Selected = chosen.includes(v4.address);
+    const afterV4 = await stakeManager.stakeOf(v4.address, 1);
+    if (isV4Selected) {
+      expect(afterV4).to.equal(beforeV4 / 2n);
+    } else {
+      expect(afterV4).to.equal(beforeV4);
+    }
+    const job = await jobRegistry.jobs(1);
+    expect(job.status).to.equal(6); // Finalized
+  });
+
   it("disputes when approvals fall below threshold", async () => {
     const { v1, v2, v3, validation, jobRegistry, stakeManager, select } = await setup();
     await stakeManager.setStake(v1.address, 1, ethers.parseEther("50"));
