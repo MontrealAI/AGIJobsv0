@@ -988,7 +988,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Backwards-compatible commit function without ENS parameters.
     /// @param jobId Identifier of the job.
-    /// @param commitHash Hash of the vote and salt.
+    /// @param commitHash Hash of the jobId, nonce, approval flag, salt and spec hash.
     function commitValidation(uint256 jobId, bytes32 commitHash)
         public
         whenNotPaused
@@ -1037,9 +1037,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         if (commitHash == bytes32(0)) revert CommitMissing();
         if (revealed[jobId][msg.sender]) revert AlreadyRevealed();
+        IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         if (
-            keccak256(abi.encodePacked(jobId, nonce, approve, salt)) !=
-            commitHash
+            keccak256(
+                abi.encodePacked(jobId, nonce, approve, salt, job.specHash)
+            ) != commitHash
         ) revert InvalidReveal();
 
         uint256 stake = validatorStakes[jobId][msg.sender];

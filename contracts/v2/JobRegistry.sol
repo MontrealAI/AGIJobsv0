@@ -32,6 +32,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error InvalidAgentTypes();
     error DurationTooLong();
     error InvalidPercentages();
+    error InvalidSpecHash();
     error BlacklistedEmployer();
     error CannotExpire();
     error DeadlineNotReached();
@@ -91,6 +92,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint8 agentTypes;
         uint64 deadline;
         uint64 assignedAt;
+        bytes32 specHash;
         bytes32 uriHash;
         bytes32 resultHash;
     }
@@ -579,6 +581,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 reward,
         uint64 deadline,
         uint8 agentTypes,
+        bytes32 specHash,
         string calldata uri
     )
         internal
@@ -598,6 +601,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (maxJobReward != 0 && reward > maxJobReward) revert RewardTooHigh();
         if (deadline <= block.timestamp) revert InvalidDeadline();
         if (agentTypes == 0 || agentTypes > 3) revert InvalidAgentTypes();
+        if (specHash == bytes32(0)) revert InvalidSpecHash();
         if (
             maxJobDuration > 0 &&
             uint256(deadline) - block.timestamp > maxJobDuration
@@ -625,6 +629,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             assignedAt: 0,
             state: State.Created,
             success: false,
+            specHash: specHash,
             uriHash: uriHash,
             resultHash: bytes32(0),
             agentTypes: agentTypes
@@ -648,18 +653,20 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function createJob(
         uint256 reward,
         uint64 deadline,
+        bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId) {
-        jobId = _createJob(reward, deadline, 3, uri);
+        jobId = _createJob(reward, deadline, 3, specHash, uri);
     }
 
     function createJobWithAgentTypes(
         uint256 reward,
         uint64 deadline,
         uint8 agentTypes,
+        bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId) {
-        jobId = _createJob(reward, deadline, agentTypes, uri);
+        jobId = _createJob(reward, deadline, agentTypes, specHash, uri);
     }
 
     /**
@@ -673,20 +680,22 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function acknowledgeAndCreateJob(
         uint256 reward,
         uint64 deadline,
+        bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId) {
         _acknowledge(msg.sender);
-        jobId = _createJob(reward, deadline, 3, uri);
+        jobId = _createJob(reward, deadline, 3, specHash, uri);
     }
 
     function acknowledgeAndCreateJobWithAgentTypes(
         uint256 reward,
         uint64 deadline,
         uint8 agentTypes,
+        bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId) {
         _acknowledge(msg.sender);
-        jobId = _createJob(reward, deadline, agentTypes, uri);
+        jobId = _createJob(reward, deadline, agentTypes, specHash, uri);
     }
 
     function _applyForJob(

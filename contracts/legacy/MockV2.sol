@@ -217,6 +217,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     function createJob(
         uint256 reward,
         uint64 deadline,
+        bytes32 specHash,
         string calldata uri
     ) external override returns (uint256 jobId) {
         require(
@@ -235,6 +236,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             uint256(deadline) - block.timestamp <= maxJobDuration,
             "duration"
         );
+        require(specHash != bytes32(0), "specHash");
         jobId = ++nextJobId;
         bytes32 uriHash = keccak256(bytes(uri));
         _jobs[jobId] = Job({
@@ -244,6 +246,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             stake: jobStake,
             success: false,
             status: Status.Created,
+            specHash: specHash,
             uriHash: uriHash,
             resultHash: bytes32(0)
         });

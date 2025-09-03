@@ -24,6 +24,7 @@ interface IJobRegistry {
         uint256 stake;
         bool success;
         Status status;
+        bytes32 specHash;
         bytes32 uriHash;
         bytes32 resultHash;
     }
@@ -156,6 +157,7 @@ interface IJobRegistry {
     function createJob(
         uint256 reward,
         uint64 deadline,
+        bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId);
 
