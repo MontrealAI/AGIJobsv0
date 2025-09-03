@@ -6,7 +6,7 @@ describe("JobRegistry integration", function () {
   let token, stakeManager, rep, validation, nft, registry, dispute, policy, identity;
   const { AGIALPHA } = require("../../scripts/constants");
   let owner, employer, agent, treasury;
-  let feePool;
+  let feePool, router;
 
   const reward = 100;
   const stake = 200;
@@ -15,6 +15,11 @@ describe("JobRegistry integration", function () {
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -25,7 +30,8 @@ describe("JobRegistry integration", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -46,6 +52,7 @@ describe("JobRegistry integration", function () {
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       treasury.address
     );
@@ -126,7 +133,7 @@ describe("JobRegistry integration", function () {
 
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), stake + disputeFee);
+      .approve(await router.getAddress(), stake + disputeFee);
     await stakeManager.connect(agent).depositStake(0, stake);
     await stakeManager.connect(owner).setDisputeModule(await dispute.getAddress());
 
@@ -140,7 +147,7 @@ describe("JobRegistry integration", function () {
   });
 
   it("runs successful job lifecycle", async () => {
-    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await expect(registry.connect(employer).createJob(reward, deadline, "uri"))
       .to.emit(registry, "JobCreated")
@@ -179,7 +186,7 @@ describe("JobRegistry integration", function () {
   it("acknowledges and applies in one call for zero-stake jobs", async () => {
     const [, , , newAgent] = await ethers.getSigners();
     await registry.connect(owner).setJobParameters(reward, 0);
-    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
@@ -190,21 +197,22 @@ describe("JobRegistry integration", function () {
 
   it("distributes platform fee to stakers", async () => {
     // set up fee pool rewarding platform stakers
-    const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
-    );
-    const feePool = await FeePool.deploy(
-      await stakeManager.getAddress(),
-      0,
-      treasury.address
-    );
+      const FeePool = await ethers.getContractFactory(
+        "contracts/v2/FeePool.sol:FeePool"
+      );
+      const feePool = await FeePool.deploy(
+        await stakeManager.getAddress(),
+        await router.getAddress(),
+        0,
+        treasury.address
+      );
     await feePool.setBurnPct(0);
     await registry.connect(owner).setFeePool(await feePool.getAddress());
     await registry.connect(owner).setFeePct(10); // 10%
     await token.mint(owner.address, reward);
-    await token
-      .connect(owner)
-      .approve(await stakeManager.getAddress(), reward);
+      await token
+        .connect(owner)
+        .approve(await router.getAddress(), reward);
     await stakeManager
       .connect(owner)
       .depositStake(2, reward); // owner is platform operator
@@ -212,7 +220,7 @@ describe("JobRegistry integration", function () {
     // employer locks reward + fee
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + reward / 10);
+      .approve(await router.getAddress(), reward + reward / 10);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
@@ -233,7 +241,7 @@ describe("JobRegistry integration", function () {
 
 
   it("allows employer to cancel before completion", async () => {
-    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
@@ -246,7 +254,7 @@ describe("JobRegistry integration", function () {
   });
 
   it("allows owner to delist unassigned job", async () => {
-    await token.connect(employer).approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;

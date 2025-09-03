@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("StakeManager pause", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let owner, user, token, stakeManager;
+  let owner, user, token, stakeManager, router;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
@@ -15,6 +15,10 @@ describe("StakeManager pause", function () {
       "contracts/legacy/MockV2.sol:MockJobRegistry"
     );
     const mockReg = await MockRegistry.deploy();
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -25,13 +29,14 @@ describe("StakeManager pause", function () {
       owner.address,
       await mockReg.getAddress(),
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
     await token.mint(user.address, ethers.parseEther("1000"));
     await token
       .connect(user)
-      .approve(await stakeManager.getAddress(), ethers.parseEther("1000"));
+      .approve(await router.getAddress(), ethers.parseEther("1000"));
   });
 
   it("pauses deposits and withdrawals", async () => {

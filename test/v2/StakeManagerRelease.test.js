@@ -1,8 +1,8 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("StakeManager release", function () {
-  let token, stakeManager, jobRegistry, feePool, owner, user1, user2, treasury, registrySigner;
+  describe("StakeManager release", function () {
+    let token, stakeManager, jobRegistry, feePool, owner, user1, user2, treasury, registrySigner, router;
 
   beforeEach(async () => {
     [owner, user1, user2, treasury] = await ethers.getSigners();
@@ -12,19 +12,25 @@ describe("StakeManager release", function () {
       AGIALPHA
     );
 
-    const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
-    );
-    stakeManager = await StakeManager.deploy(
-      0,
-      100,
-      0,
-      treasury.address,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      owner.address
-    );
-    await stakeManager.connect(owner).setMinStake(1);
+      const Router = await ethers.getContractFactory(
+        "contracts/v2/PaymentRouter.sol:PaymentRouter"
+      );
+      router = await Router.deploy(owner.address);
+
+      const StakeManager = await ethers.getContractFactory(
+        "contracts/v2/StakeManager.sol:StakeManager"
+      );
+      stakeManager = await StakeManager.deploy(
+        0,
+        100,
+        0,
+        treasury.address,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        owner.address,
+        await router.getAddress()
+      );
+      await stakeManager.connect(owner).setMinStake(1);
 
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
@@ -56,11 +62,12 @@ describe("StakeManager release", function () {
     const FeePool = await ethers.getContractFactory(
       "contracts/v2/FeePool.sol:FeePool"
     );
-    feePool = await FeePool.deploy(
-      await stakeManager.getAddress(),
-      0,
-      treasury.address
-    );
+      feePool = await FeePool.deploy(
+        await stakeManager.getAddress(),
+        await router.getAddress(),
+        0,
+        treasury.address
+      );
     await feePool.connect(owner).setBurnPct(0);
 
     const registryAddr = await jobRegistry.getAddress();
@@ -72,12 +79,12 @@ describe("StakeManager release", function () {
 
     await token.mint(user1.address, ethers.parseEther("1000"));
     await token.mint(user2.address, ethers.parseEther("1000"));
-    await token
-      .connect(user1)
-      .approve(await stakeManager.getAddress(), ethers.parseEther("1000"));
-    await token
-      .connect(user2)
-      .approve(await stakeManager.getAddress(), ethers.parseEther("1000"));
+      await token
+        .connect(user1)
+        .approve(await router.getAddress(), ethers.parseEther("1000"));
+      await token
+        .connect(user2)
+        .approve(await router.getAddress(), ethers.parseEther("1000"));
     await stakeManager
       .connect(user1)
       .depositStake(2, ethers.parseEther("100"));

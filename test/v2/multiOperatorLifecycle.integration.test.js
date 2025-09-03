@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("multi-operator job lifecycle", function () {
-  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
+  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy, router;
   let platformRegistry, jobRouter;
   let owner, employer, agent, platform1, platform2;
   const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
@@ -24,6 +24,11 @@ describe("multi-operator job lifecycle", function () {
     await token.mint(platform1.address, mintAmount);
     await token.mint(platform2.address, mintAmount);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -34,7 +39,8 @@ describe("multi-operator job lifecycle", function () {
       owner.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
 
     await stakeManager.connect(owner).setMinStake(1);
@@ -86,6 +92,7 @@ describe("multi-operator job lifecycle", function () {
     );
     feePool = await FeePoolF.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       owner.address
     );
@@ -157,26 +164,26 @@ describe("multi-operator job lifecycle", function () {
 
     await token
       .connect(platform1)
-      .approve(await stakeManager.getAddress(), platformStake1);
+      .approve(await router.getAddress(), platformStake1);
     await stakeManager.connect(platform1).depositStake(2, platformStake1);
     await platformRegistry.connect(platform1).register();
     await jobRouter.connect(platform1).register();
 
     await token
       .connect(platform2)
-      .approve(await stakeManager.getAddress(), platformStake2);
+      .approve(await router.getAddress(), platformStake2);
     await stakeManager.connect(platform2).depositStake(2, platformStake2);
     await platformRegistry.connect(platform2).register();
     await jobRouter.connect(platform2).register();
 
     await token
       .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      .approve(await router.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
 
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      .approve(await router.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;

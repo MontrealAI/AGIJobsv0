@@ -5,12 +5,17 @@ const TOKEN = 10n ** 18n; // 1 token with 18 decimals
 
 describe("GovernanceReward", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let owner, voter1, voter2, token, stakeManager, feePool, reward, treasury;
+  let owner, voter1, voter2, token, stakeManager, feePool, reward, treasury, router;
 
   beforeEach(async () => {
     [owner, voter1, voter2, treasury] = await ethers.getSigners();
 
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -22,7 +27,8 @@ describe("GovernanceReward", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
 
     await stakeManager.connect(owner).setMinStake(1);
@@ -60,6 +66,7 @@ describe("GovernanceReward", function () {
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       treasury.address
     );
@@ -82,12 +89,8 @@ describe("GovernanceReward", function () {
     await token.mint(voter1.address, 100n * TOKEN);
     await token.mint(voter2.address, 300n * TOKEN);
 
-    await token
-      .connect(voter1)
-      .approve(await stakeManager.getAddress(), 100n * TOKEN);
-    await token
-      .connect(voter2)
-      .approve(await stakeManager.getAddress(), 300n * TOKEN);
+    await token.connect(voter1).approve(await router.getAddress(), 100n * TOKEN);
+    await token.connect(voter2).approve(await router.getAddress(), 300n * TOKEN);
     await stakeManager.connect(voter1).depositStake(2, 100n * TOKEN);
     await stakeManager.connect(voter2).depositStake(2, 300n * TOKEN);
 

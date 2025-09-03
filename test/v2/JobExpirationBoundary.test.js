@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("Job expiration boundary", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let token, stakeManager, rep, validation, nft, registry, dispute, policy, feePool;
+  let token, stakeManager, rep, validation, nft, registry, dispute, policy, feePool, router;
   let owner, employer, agent, treasury;
   const reward = 100;
   const stake = 200;
@@ -12,6 +12,11 @@ describe("Job expiration boundary", function () {
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -22,7 +27,8 @@ describe("Job expiration boundary", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -43,6 +49,7 @@ describe("Job expiration boundary", function () {
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       treasury.address
     );
@@ -121,13 +128,9 @@ describe("Job expiration boundary", function () {
     await policy.connect(agent).acknowledge();
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stake);
+    await token.connect(agent).approve(await router.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
   });
 
   it("cannot be canceled at deadline + grace - 1", async () => {

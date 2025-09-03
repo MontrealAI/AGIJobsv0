@@ -10,6 +10,9 @@ async function deploySystem() {
   await token.mint(agent.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
   await token.mint(owner.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
 
+  const Router = await ethers.getContractFactory("contracts/v2/PaymentRouter.sol:PaymentRouter");
+  const router = await Router.deploy(owner.address);
+
   const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
   const stake = await Stake.deploy(
     0,
@@ -18,7 +21,8 @@ async function deploySystem() {
     owner.address,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await router.getAddress()
   );
 
   await stake.setMinStake(1);
@@ -55,7 +59,12 @@ async function deploySystem() {
   const dispute = await Dispute.deploy(await registry.getAddress(), 0, 0, owner.address);
 
   const FeePool = await ethers.getContractFactory("contracts/v2/FeePool.sol:FeePool");
-  const feePool = await FeePool.deploy(await stake.getAddress(), 0, owner.address);
+  const feePool = await FeePool.deploy(
+    await stake.getAddress(),
+    await router.getAddress(),
+    0,
+    owner.address
+  );
 
   await stake.setModules(await registry.getAddress(), await dispute.getAddress());
   await validation.setJobRegistry(await registry.getAddress());
@@ -74,7 +83,7 @@ async function deploySystem() {
   await reputation.setCaller(await registry.getAddress(), true);
   await stake.setFeePool(await feePool.getAddress());
 
-  return { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool };
+  return { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool, router };
 }
 
 describe("Mid-job module replacement fuzz", function () {
@@ -86,11 +95,11 @@ describe("Mid-job module replacement fuzz", function () {
       const reward = ethers.parseUnits(String(10 + Math.floor(Math.random() * 90)), AGIALPHA_DECIMALS);
       const result = Math.random() > 0.5;
       const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
-      await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
+      await token.connect(agent).approve(await router.getAddress(), stakeAmount);
       await stake.connect(agent).depositStake(0, stakeAmount);
       await token
         .connect(employer)
-        .approve(await stake.getAddress(), reward + (reward * 5n) / 100n);
+        .approve(await router.getAddress(), reward + (reward * 5n) / 100n);
       const deadline = BigInt((await time.latest()) + 3600);
       await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
       await registry.connect(agent).applyForJob(1, "agent", []);

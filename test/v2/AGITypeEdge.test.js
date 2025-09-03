@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 
 describe("StakeManager AGIType bonuses", function () {
   let owner, employer, agent, registrySigner;
-  let token, stakeManager, jobRegistry;
+  let token, stakeManager, jobRegistry, router;
   let nft1, nft2, malicious;
 
   beforeEach(async () => {
@@ -11,6 +11,11 @@ describe("StakeManager AGIType bonuses", function () {
 
     const { AGIALPHA } = require("../../scripts/constants");
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -22,7 +27,8 @@ describe("StakeManager AGIType bonuses", function () {
       owner.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -86,7 +92,7 @@ describe("StakeManager AGIType bonuses", function () {
     const jobId = ethers.encodeBytes32String("job1");
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), 200);
+      .approve(await router.getAddress(), 200);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, 200);
@@ -111,7 +117,7 @@ describe("StakeManager AGIType bonuses", function () {
     const jobId = ethers.encodeBytes32String("job2");
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), 100);
+      .approve(await router.getAddress(), 100);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, 100);
@@ -134,7 +140,7 @@ describe("StakeManager AGIType bonuses", function () {
     const jobId = ethers.encodeBytes32String("job3");
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), 100);
+      .approve(await router.getAddress(), 100);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, 100);

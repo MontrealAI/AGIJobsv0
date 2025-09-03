@@ -79,7 +79,7 @@ describe("DisputeModule", function () {
 
   describe("dispute resolution", function () {
     let owner, employer, agent, outsider;
-    let token, stakeManager, registry, dispute;
+    let token, stakeManager, registry, dispute, router;
     const fee = FEE;
     const window = 10n;
 
@@ -89,6 +89,11 @@ describe("DisputeModule", function () {
       // deploy token and stake manager
       const { AGIALPHA } = require("../../scripts/constants");
       token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+
+      const Router = await ethers.getContractFactory(
+        "contracts/v2/PaymentRouter.sol:PaymentRouter"
+      );
+      router = await Router.deploy(owner.address);
 
       const StakeManager = await ethers.getContractFactory(
         "contracts/v2/StakeManager.sol:StakeManager"
@@ -100,7 +105,8 @@ describe("DisputeModule", function () {
         owner.address,
         ethers.ZeroAddress,
         ethers.ZeroAddress,
-        owner.address
+        owner.address,
+        await router.getAddress()
       );
       await stakeManager.waitForDeployment();
 
@@ -131,12 +137,8 @@ describe("DisputeModule", function () {
       // mint tokens and approve for dispute fee
       await token.mint(agent.address, fee);
       await token.mint(employer.address, fee);
-      await token
-        .connect(agent)
-        .approve(await stakeManager.getAddress(), fee);
-      await token
-        .connect(employer)
-        .approve(await stakeManager.getAddress(), fee);
+      await token.connect(agent).approve(await router.getAddress(), fee);
+      await token.connect(employer).approve(await router.getAddress(), fee);
 
       // initialise job in completed state
       await registry.setJob(1, {

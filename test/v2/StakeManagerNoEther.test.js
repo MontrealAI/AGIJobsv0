@@ -3,11 +3,16 @@ const { ethers } = require("hardhat");
 
 describe("StakeManager ether rejection", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let owner, token, stakeManager;
+  let owner, token, stakeManager, router;
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -18,7 +23,8 @@ describe("StakeManager ether rejection", function () {
       owner.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.waitForDeployment();
   });

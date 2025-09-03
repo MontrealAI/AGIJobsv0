@@ -119,12 +119,8 @@ describe("FeePool", function () {
 
   it("distributes rewards to validators when configured", async () => {
     // additional validator stakes
-    await token
-      .connect(user1)
-      .approve(await router.getAddress(), 100);
-    await token
-      .connect(user2)
-      .approve(await stakeManager.getAddress(), 300);
+    await token.connect(user1).approve(await router.getAddress(), 100);
+    await token.connect(user2).approve(await router.getAddress(), 300);
     await stakeManager.connect(user1).depositStake(1, 100);
     await stakeManager.connect(user2).depositStake(1, 300);
     await feePool.connect(owner).setRewardRole(1);
@@ -133,7 +129,7 @@ describe("FeePool", function () {
     const jobId = ethers.encodeBytes32String("jobV");
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), feeAmount);
+      .approve(await router.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, feeAmount);
@@ -162,7 +158,7 @@ describe("FeePool", function () {
     const jobId = ethers.encodeBytes32String("job2");
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), feeAmount);
+      .approve(await router.getAddress(), feeAmount);
     const supplyBefore = await token.totalSupply();
     await stakeManager
       .connect(registrySigner)
@@ -190,7 +186,7 @@ describe("FeePool", function () {
   it("emits zero payout for owner without stake", async () => {
     const feeAmount = 50;
     const jobId = ethers.encodeBytes32String("job4");
-    await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
+    await token.connect(employer).approve(await router.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, feeAmount);

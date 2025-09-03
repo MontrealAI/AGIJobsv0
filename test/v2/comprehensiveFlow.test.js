@@ -9,7 +9,7 @@ describe("comprehensive job flows", function () {
   const feePct = 10;
   const disputeFee = 0n;
 
-  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy, identity;
+    let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy, identity, router;
   let owner, employer, agent, platform, buyer;
 
   beforeEach(async () => {
@@ -23,20 +23,26 @@ describe("comprehensive job flows", function () {
     await token.mint(buyer.address, mintAmount);
     await token.mint(owner.address, mintAmount);
 
-    const Stake = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
-    );
-    stakeManager = await Stake.deploy(
-      0,
-      100,
-      0,
-      owner.address,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      owner.address
-    );
+      const Router = await ethers.getContractFactory(
+        "contracts/v2/PaymentRouter.sol:PaymentRouter"
+      );
+      router = await Router.deploy(owner.address);
 
-    await stakeManager.connect(owner).setMinStake(1);
+      const Stake = await ethers.getContractFactory(
+        "contracts/v2/StakeManager.sol:StakeManager"
+      );
+      stakeManager = await Stake.deploy(
+        0,
+        100,
+        0,
+        owner.address,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        owner.address,
+        await router.getAddress()
+      );
+
+      await stakeManager.connect(owner).setMinStake(1);
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
@@ -82,14 +88,15 @@ describe("comprehensive job flows", function () {
     await dispute.setDisputeFee(disputeFee);
     await dispute.setDisputeWindow(0);
 
-    const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
-    );
-    feePool = await FeePool.deploy(
-      await stakeManager.getAddress(),
-      0,
-      owner.address
-    );
+      const FeePool = await ethers.getContractFactory(
+        "contracts/v2/FeePool.sol:FeePool"
+      );
+      feePool = await FeePool.deploy(
+        await stakeManager.getAddress(),
+        await router.getAddress(),
+        0,
+        owner.address
+      );
     await feePool.setBurnPct(0);
 
     const Policy = await ethers.getContractFactory(
@@ -141,13 +148,13 @@ describe("comprehensive job flows", function () {
   it("executes successful job flow with certificate trade", async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
     await identity.addAdditionalAgent(agent.address);
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      await token
+        .connect(agent)
+        .approve(await router.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      await token
+        .connect(employer)
+        .approve(await router.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
@@ -160,7 +167,7 @@ describe("comprehensive job flows", function () {
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
     const price = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await nft.connect(agent).list(jobId, price);
-    await token.connect(buyer).approve(await nft.getAddress(), price);
+      await token.connect(buyer).approve(await router.getAddress(), price);
     await nft.connect(buyer).purchase(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(buyer.address);
   });
@@ -172,14 +179,14 @@ describe("comprehensive job flows", function () {
     const verifier = await Verifier.deploy();
     await verifier.setResult(false);
     await registry.setIdentityRegistry(await verifier.getAddress());
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      await token
+        .connect(agent)
+        .approve(await router.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     const fee = (reward * BigInt(feePct)) / 100n;
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      await token
+        .connect(employer)
+        .approve(await router.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     await expect(
@@ -190,13 +197,13 @@ describe("comprehensive job flows", function () {
   it("resolves disputes with stake slashing", async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
     await identity.addAdditionalAgent(agent.address);
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      await token
+        .connect(agent)
+        .approve(await router.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      await token
+        .connect(employer)
+        .approve(await router.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;
@@ -227,13 +234,13 @@ describe("comprehensive job flows", function () {
   it("blocks blacklisted agents", async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
     await identity.addAdditionalAgent(agent.address);
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stakeRequired);
+      await token
+        .connect(agent)
+        .approve(await router.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      await token
+        .connect(employer)
+        .approve(await router.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     await rep.setBlacklist(agent.address, true);
@@ -244,9 +251,9 @@ describe("comprehensive job flows", function () {
 
   it("enforces fresh tax policy acknowledgements", async () => {
     await policy.bumpPolicyVersion();
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+      await token
+        .connect(employer)
+        .approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await expect(
       registry.connect(employer).createJob(reward, deadline, "uri")

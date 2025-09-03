@@ -13,6 +13,11 @@ async function deploySystem() {
   await token.mint(agent.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
   await token.mint(owner.address, ethers.parseUnits("1000", AGIALPHA_DECIMALS));
 
+  const Router = await ethers.getContractFactory(
+    "contracts/v2/PaymentRouter.sol:PaymentRouter"
+  );
+  const router = await Router.deploy(owner.address);
+
   const Stake = await ethers.getContractFactory(
     "contracts/v2/StakeManager.sol:StakeManager"
   );
@@ -23,7 +28,8 @@ async function deploySystem() {
     owner.address,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    owner.address
+    owner.address,
+    await router.getAddress()
   );
   await stake.waitForDeployment();
   await stake.setMinStake(1);
@@ -87,6 +93,7 @@ async function deploySystem() {
   );
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
+    await router.getAddress(),
     0,
     owner.address
   );
@@ -109,7 +116,7 @@ async function deploySystem() {
   await reputation.setCaller(await registry.getAddress(), true);
   await stake.connect(owner).setFeePool(await feePool.getAddress());
 
-  return { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool };
+  return { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool, router };
 }
 
 describe("Mid-job module upgrades", function () {
@@ -118,14 +125,14 @@ describe("Mid-job module upgrades", function () {
     const { owner, employer, agent, token, stake, reputation, validation, nft, registry, dispute, feePool } = env;
 
     const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
-    await token.connect(agent).approve(await stake.getAddress(), stakeAmount);
+    await token.connect(agent).approve(await router.getAddress(), stakeAmount);
     await stake.connect(agent).depositStake(Role.Agent, stakeAmount);
 
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     const fee = (reward * 5n) / 100n;
     await token
       .connect(employer)
-      .approve(await stake.getAddress(), reward + fee);
+      .approve(await router.getAddress(), reward + fee);
     const deadline = BigInt((await time.latest()) + 3600);
     await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
 
