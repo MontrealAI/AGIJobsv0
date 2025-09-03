@@ -49,6 +49,11 @@ error InvalidTokenDecimals();
 error InvalidFeePool();
 error MaxAGITypesExceeded();
 error MaxAGITypesBelowCurrent();
+error UnbondPending();
+error NoUnbond();
+error UnbondLocked();
+error Jailed();
+error PendingPenalty();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -72,6 +77,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice default minimum stake when constructor param is zero
     uint256 public constant DEFAULT_MIN_STAKE = TOKEN_SCALE;
+
+    /// @notice time tokens remain locked after a withdraw request
+    uint256 public constant UNBONDING_PERIOD = 7 days;
 
     /// @notice ERC20 token used for staking and payouts (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);
@@ -118,6 +126,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice unlock timestamp for a user's locked stake
     mapping(address => uint64) public unlockTime;
 
+    struct Unbond {
+        uint256 amt;
+        uint64 unlockAt;
+        bool jailed;
+    }
+
+    /// @notice pending withdraw requests per user
+    mapping(address => Unbond) public unbonds;
+
     /// @notice maximum total stake allowed per address
     uint256 public maxStakePerAddress;
 
@@ -146,6 +163,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
+    event WithdrawRequested(address indexed user, Role indexed role, uint256 amount, uint64 unlockAt);
     event StakeSlashed(
         address indexed user,
         Role indexed role,
@@ -663,6 +681,59 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _deposit(user, role, amount);
     }
 
+    /// @notice request withdrawal of staked tokens subject to unbonding period
+    /// @param role participant role of the stake
+    /// @param amount token amount with 18 decimals to withdraw
+    function requestWithdraw(Role role, uint256 amount) external whenNotPaused {
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
+        uint256 staked = stakes[msg.sender][role];
+        if (staked < amount) revert InsufficientStake();
+        uint256 newStake = staked - amount;
+        if (newStake != 0 && newStake < minStake) revert BelowMinimumStake();
+
+        uint256 locked = lockedStakes[msg.sender];
+        uint64 unlock = unlockTime[msg.sender];
+        uint256 totalStakeUser =
+            stakes[msg.sender][Role.Agent] +
+            stakes[msg.sender][Role.Validator] +
+            stakes[msg.sender][Role.Platform];
+        uint256 remaining = totalStakeUser - amount;
+        if (locked > 0 && block.timestamp < unlock && remaining < locked)
+            revert InsufficientLocked();
+
+        Unbond storage u = unbonds[msg.sender];
+        if (u.amt != 0) revert UnbondPending();
+        u.amt = amount;
+        u.unlockAt = uint64(block.timestamp + UNBONDING_PERIOD);
+        u.jailed = false;
+        emit WithdrawRequested(msg.sender, role, amount, u.unlockAt);
+    }
+
+    /// @notice finalize a previously requested withdrawal after unbonding period
+    /// @param role participant role of the stake being withdrawn
+    function finalizeWithdraw(Role role)
+        external
+        whenNotPaused
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+        nonReentrant
+    {
+        Unbond storage u = unbonds[msg.sender];
+        uint256 amount = u.amt;
+        if (amount == 0) revert NoUnbond();
+        if (u.jailed) revert Jailed();
+        if (block.timestamp < u.unlockAt) revert UnbondLocked();
+        if (lockedStakes[msg.sender] != 0) revert PendingPenalty();
+        delete unbonds[msg.sender];
+        _withdraw(msg.sender, role, amount);
+    }
+
     /// @dev internal stake withdrawal routine shared by withdraw helpers
     function _withdraw(address user, Role role, uint256 amount) internal {
         if (role > Role.Platform) revert InvalidRole();
@@ -995,6 +1066,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         stakes[user][role] = staked - amount;
         totalStakes[role] -= amount;
+
+        unbonds[user].jailed = true;
 
         uint256 locked = lockedStakes[user];
         if (locked > 0) {
