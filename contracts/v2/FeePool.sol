@@ -20,6 +20,7 @@ error InvalidTokenDecimals();
 error ZeroAddress();
 error InvalidStakeManagerVersion();
 error BurnAddressNotZero();
+error TokenNotBurnable();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -160,8 +161,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
-            IERC20Burnable(AGIALPHA).burn(burnAmount);
-            emit Burned(burnAmount);
+            try IERC20Burnable(AGIALPHA).burn(burnAmount) {
+                emit Burned(burnAmount);
+            } catch {
+                revert TokenNotBurnable();
+            }
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);

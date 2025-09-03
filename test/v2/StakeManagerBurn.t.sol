@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import {StakeManager} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager, TokenNotBurnable} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {AGIALPHA, BURN_ADDRESS} from "../../contracts/v2/Constants.sol";
 
@@ -50,7 +50,7 @@ contract StakeManagerBurnTest is Test {
     function testBurnTokenRevertsWithoutBurnFunction() public {
         NoBurnToken nb = new NoBurnToken();
         vm.etch(AGIALPHA, address(nb).code);
-        vm.expectRevert();
+        vm.expectRevert(TokenNotBurnable.selector);
         stake.exposedBurn(1);
     }
 

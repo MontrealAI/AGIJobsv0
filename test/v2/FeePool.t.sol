@@ -14,6 +14,7 @@ interface Vm {
     function stopPrank() external;
     function etch(address, bytes memory) external;
     function expectRevert() external;
+    function expectRevert(bytes4) external;
 }
 
 contract TestToken is ERC20 {
@@ -119,7 +120,7 @@ contract FeePoolTest {
         nbToken.mint(address(feePool), TOKEN);
         vm.prank(address(stakeManager));
         feePool.depositFee(TOKEN);
-        vm.expectRevert();
+        vm.expectRevert(TokenNotBurnable.selector);
         feePool.distributeFees();
     }
 
