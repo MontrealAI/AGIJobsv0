@@ -10,6 +10,7 @@ interface Job {
   reward: string;
   stake: string;
   fee: string;
+  specHash: string;
 }
 
 const DECIMALS = Number(
@@ -46,7 +47,8 @@ export default function Home() {
             ...job,
             reward: ethers.formatUnits(job.rewardRaw ?? job.reward, DECIMALS),
             stake: ethers.formatUnits(job.stakeRaw ?? job.stake, DECIMALS),
-            fee: ethers.formatUnits(job.feeRaw ?? job.fee, DECIMALS)
+            fee: ethers.formatUnits(job.feeRaw ?? job.fee, DECIMALS),
+            specHash: job.specHash ?? ethers.ZeroHash
           }))
         );
       } catch (err) {
@@ -56,7 +58,7 @@ export default function Home() {
     loadJobs();
   }, []);
 
-  async function vote(jobId: string, approve: boolean) {
+  async function vote(jobId: string, approve: boolean, specHash: string) {
     if (!(window as any).ethereum) {
       alert('wallet not found');
       return;
@@ -75,12 +77,25 @@ export default function Home() {
     ];
     const contract = new ethers.Contract(validationAddr, abi, signer);
     const nonce: bigint = await contract.jobNonce(jobId);
-    const { commitHash, salt } = generateCommit(BigInt(jobId), nonce, approve);
+    const { commitHash, salt } = generateCommit(
+      BigInt(jobId),
+      nonce,
+      approve,
+      undefined,
+      specHash
+    );
     const tx = await contract.commitValidation(jobId, commitHash);
     await tx.wait();
     setMessage('Commit submitted, scheduling reveal');
     const delay = Number(process.env.NEXT_PUBLIC_REVEAL_DELAY_MS || '5000');
-    await scheduleReveal(contract, BigInt(jobId), approve, salt, delay);
+    await scheduleReveal(
+      contract,
+      BigInt(jobId),
+      approve,
+      salt,
+      delay,
+      specHash
+    );
     setMessage('Reveal submitted');
   }
 
@@ -91,8 +106,8 @@ export default function Home() {
         {jobs.map((job) => (
           <li key={job.jobId}>
             Job {job.jobId} — reward {job.reward} stake {job.stake} fee {job.fee}{' '}
-            <button onClick={() => vote(job.jobId, true)}>Approve</button>{' '}
-            <button onClick={() => vote(job.jobId, false)}>Reject</button>
+            <button onClick={() => vote(job.jobId, true, job.specHash)}>Approve</button>{' '}
+            <button onClick={() => vote(job.jobId, false, job.specHash)}>Reject</button>
           </li>
         ))}
       </ul>

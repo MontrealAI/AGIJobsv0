@@ -145,8 +145,9 @@ describe("JobRegistry integration", function () {
     const specHash = ethers.id("spec");
     await expect(
       registry
-        .connect(employer)
-        .createJob(reward, deadline, specHash, "uri")
+        .connect(employer)[
+          "createJob(uint256,uint64,bytes32,string)"
+        ](reward, deadline, specHash, "uri")
     )
       .to.emit(registry, "JobCreated")
       .withArgs(

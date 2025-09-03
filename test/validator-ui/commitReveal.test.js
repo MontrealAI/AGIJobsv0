@@ -10,9 +10,10 @@ describe('validator-ui commit/reveal', function () {
     await contract.waitForDeployment();
     const jobId = 1n;
     const nonce = await contract.nonces(jobId);
-    const { commitHash, salt } = generateCommit(jobId, nonce, true);
+    const specHash = ethers.id('spec');
+    const { commitHash, salt } = generateCommit(jobId, nonce, true, undefined, specHash);
     await (await contract.connect(v).commit(jobId, commitHash)).wait();
-    await scheduleReveal(contract.connect(v), jobId, true, salt, 0);
+    await scheduleReveal(contract.connect(v), jobId, true, salt, 0, specHash);
     const revealed = await contract.revealed(jobId, v.address);
     expect(revealed).to.equal(true);
   });

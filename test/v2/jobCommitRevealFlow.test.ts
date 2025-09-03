@@ -196,8 +196,9 @@ describe("Commit-reveal job lifecycle", function () {
     const deadline = BigInt((await time.latest()) + 3600);
     const specHash = ethers.id("spec1");
     await registry
-      .connect(employer)
-      .createJob(reward, deadline, specHash, "ipfs://job");
+      .connect(employer)[
+        "createJob(uint256,uint64,bytes32,string)"
+      ](reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
@@ -270,8 +271,9 @@ describe("Commit-reveal job lifecycle", function () {
     const deadline = BigInt((await time.latest()) + 3600);
     const specHash = ethers.id("spec2");
     await registry
-      .connect(employer)
-      .createJob(reward, deadline, specHash, "ipfs://job");
+      .connect(employer)[
+        "createJob(uint256,uint64,bytes32,string)"
+      ](reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
