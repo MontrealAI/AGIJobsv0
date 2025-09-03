@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, artifacts, network } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 const FEE = 10n ** 18n;
 
@@ -8,6 +8,13 @@ describe("ArbitratorCommittee", function () {
     const [owner, employer, agent, v1, v2, v3] = await ethers.getSigners();
 
     const { AGIALPHA } = require("../../scripts/constants");
+    const artifact = await artifacts.readArtifact(
+      "contracts/test/MockERC20.sol:MockERC20"
+    );
+    await network.provider.send("hardhat_setCode", [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     const token = await ethers.getContractAt(
       "contracts/test/AGIALPHAToken.sol:AGIALPHAToken",
       AGIALPHA
@@ -95,12 +102,26 @@ describe("ArbitratorCommittee", function () {
   }
 
   it("handles commit-reveal voting and finalization", async () => {
-    const { committee, dispute, registry, agent, employer, v1, v2, v3 } =
+    const { owner, committee, dispute, registry, agent, employer, v1, v2, v3 } =
       await setup();
 
-    await committee.setCommitRevealWindows(4n, 4n);
+    await committee.setCommitRevealWindows(30n, 30n);
 
+    await expect(committee.connect(agent).pause()).to.be.revertedWithCustomError(
+      committee,
+      "OwnableUnauthorizedAccount"
+    );
+    await expect(committee.pause())
+      .to.emit(committee, "Paused")
+      .withArgs(owner.address);
     const evidence = ethers.id("evidence");
+    await expect(
+      registry.connect(agent).dispute(1, evidence)
+    ).to.be.revertedWithCustomError(committee, "EnforcedPause");
+    await expect(committee.unpause())
+      .to.emit(committee, "Unpaused")
+      .withArgs(owner.address);
+
     await expect(registry.connect(agent).dispute(1, evidence))
       .to.emit(dispute, "DisputeRaised")
       .withArgs(1, agent.address, evidence);
@@ -133,18 +154,34 @@ describe("ArbitratorCommittee", function () {
       ])
     );
 
+    await committee.pause();
+    await expect(
+      committee.connect(v1).commit(1, c1)
+    ).to.be.revertedWithCustomError(committee, "EnforcedPause");
+    await committee.unpause();
     await committee.connect(v1).commit(1, c1);
     await committee.connect(v2).commit(1, c2);
     await committee.connect(v3).commit(1, c3);
 
-    await time.increase(2n);
+    await time.increase(40n);
 
+    await committee.pause();
+    await expect(
+      committee.connect(v1).reveal(1, true, s1)
+    ).to.be.revertedWithCustomError(committee, "EnforcedPause");
+    await committee.unpause();
     await committee.connect(v1).reveal(1, true, s1);
     await committee.connect(v2).reveal(1, true, s2);
     await committee.connect(v3).reveal(1, false, s3);
 
     await time.increase(10n);
 
+    await committee.pause();
+    await expect(committee.finalize(1)).to.be.revertedWithCustomError(
+      committee,
+      "EnforcedPause"
+    );
+    await committee.unpause();
     await expect(committee.finalize(1))
       .to.emit(dispute, "DisputeResolved")
       .withArgs(1, await committee.getAddress(), true);
