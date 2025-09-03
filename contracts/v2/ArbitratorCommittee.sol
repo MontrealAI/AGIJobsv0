@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
+import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title ArbitratorCommittee
 /// @notice Handles commit-reveal voting by job validators to resolve disputes.
@@ -21,9 +22,18 @@ contract ArbitratorCommittee is Ownable {
         uint256 reveals;
         uint256 employerVotes;
         bool finalized;
+        uint256 commitDeadline;
+        uint256 revealDeadline;
     }
 
     mapping(uint256 => Case) private cases;
+
+    uint256 public commitWindow = 1 days;
+    uint256 public revealWindow = 1 days;
+    uint256 public absenteeSlash;
+
+    event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
+    event AbsenteeSlashUpdated(uint256 amount);
 
     event CaseOpened(uint256 indexed jobId, address[] jurors);
     event VoteCommitted(uint256 indexed jobId, address indexed juror, bytes32 commit);
@@ -47,6 +57,21 @@ contract ArbitratorCommittee is Ownable {
         disputeModule = dm;
     }
 
+    function setCommitRevealWindows(uint256 commitDur, uint256 revealDur)
+        external
+        onlyOwner
+    {
+        require(commitDur > 0 && revealDur > 0, "windows");
+        commitWindow = commitDur;
+        revealWindow = revealDur;
+        emit TimingUpdated(commitDur, revealDur);
+    }
+
+    function setAbsenteeSlash(uint256 amount) external onlyOwner {
+        absenteeSlash = amount;
+        emit AbsenteeSlashUpdated(amount);
+    }
+
     /// @notice Opens a new dispute case and seats jurors using validators
     ///         selected by the ValidationModule via RANDAO.
     /// @dev Only callable by the DisputeModule when a dispute is raised.
@@ -57,6 +82,8 @@ contract ArbitratorCommittee is Ownable {
         require(valMod != address(0), "no val");
         address[] memory jurors = IValidationModule(valMod).validators(jobId);
         c.jurors = jurors;
+        c.commitDeadline = block.timestamp + commitWindow;
+        c.revealDeadline = c.commitDeadline + revealWindow;
         emit CaseOpened(jobId, jurors);
     }
 
@@ -64,6 +91,7 @@ contract ArbitratorCommittee is Ownable {
     function commit(uint256 jobId, bytes32 commitment) external {
         Case storage c = cases[jobId];
         require(c.jurors.length != 0, "no case");
+        require(block.timestamp <= c.commitDeadline, "commit over");
         require(_isJuror(c.jurors, msg.sender), "not juror");
         require(c.commits[msg.sender] == bytes32(0), "committed");
         c.commits[msg.sender] = commitment;
@@ -74,6 +102,8 @@ contract ArbitratorCommittee is Ownable {
     function reveal(uint256 jobId, bool employerWins, uint256 salt) external {
         Case storage c = cases[jobId];
         require(_isJuror(c.jurors, msg.sender), "not juror");
+        require(block.timestamp > c.commitDeadline, "commit phase");
+        require(block.timestamp <= c.revealDeadline, "reveal over");
         bytes32 expected = keccak256(abi.encodePacked(msg.sender, jobId, employerWins, salt));
         require(c.commits[msg.sender] == expected, "bad reveal");
         require(!c.revealed[msg.sender], "revealed");
@@ -90,10 +120,23 @@ contract ArbitratorCommittee is Ownable {
         Case storage c = cases[jobId];
         require(!c.finalized, "finalized");
         require(c.jurors.length != 0, "no case");
-        require(c.reveals == c.jurors.length, "unrevealed");
+        if (c.reveals != c.jurors.length) {
+            require(block.timestamp > c.revealDeadline, "active");
+        }
         c.finalized = true;
-        bool employerWins = c.employerVotes * 2 > c.jurors.length;
+        bool employerWins = c.reveals > 0 && c.employerVotes * 2 > c.reveals;
+        address employer = jobRegistry.jobs(jobId).employer;
         disputeModule.resolve(jobId, employerWins);
+        address smAddr = jobRegistry.stakeManager();
+        if (absenteeSlash > 0 && smAddr != address(0)) {
+            IStakeManager sm = IStakeManager(smAddr);
+            for (uint256 i; i < c.jurors.length; ++i) {
+                address juror = c.jurors[i];
+                if (c.commits[juror] != bytes32(0) && !c.revealed[juror]) {
+                    sm.slash(juror, absenteeSlash, employer);
+                }
+            }
+        }
         emit CaseFinalized(jobId, employerWins);
         delete cases[jobId];
     }
