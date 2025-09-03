@@ -339,6 +339,14 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         finalizeAfterValidation(jobId, success);
     }
 
+    function forceFinalize(uint256 jobId) external override {
+        Job storage job = _jobs[jobId];
+        require(job.status == Status.Submitted, "state");
+        job.success = false;
+        job.status = Status.Finalized;
+        emit JobFinalized(jobId, job.agent);
+    }
+
     function dispute(uint256 jobId, bytes32 evidenceHash) public override {
         Job storage job = _jobs[jobId];
         job.status = Status.Disputed;

@@ -238,6 +238,10 @@ interface IJobRegistry {
         address[] calldata validators
     ) external;
 
+    /// @notice Force finalize a job when validation quorum is not met
+    /// @param jobId Identifier of the job to finalize
+    function forceFinalize(uint256 jobId) external;
+
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
     /// @param evidenceHash Keccak256 hash of off-chain evidence

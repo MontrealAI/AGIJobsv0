@@ -88,6 +88,11 @@ interface IValidationModule {
     /// @notice Alias for finalize using legacy naming.
     function finalizeValidation(uint256 jobId) external returns (bool success);
 
+    /// @notice Force finalize after the reveal deadline plus grace period
+    /// @param jobId Identifier of the job
+    /// @return success True if validators approved the job
+    function forceFinalize(uint256 jobId) external returns (bool success);
+
 
     /// @notice Batch update core validation parameters
     /// @param committeeSize Number of validators selected per job

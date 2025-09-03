@@ -66,6 +66,10 @@ contract ValidationStub is IValidationModule {
         return this.finalize(jobId);
     }
 
+    function forceFinalize(uint256 jobId) external override returns (bool success) {
+        return this.finalize(jobId);
+    }
+
     function validators(uint256) external view override returns (address[] memory vals) {
         vals = validatorList;
     }
