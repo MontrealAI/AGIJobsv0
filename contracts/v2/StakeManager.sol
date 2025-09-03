@@ -54,6 +54,7 @@ error NoUnbond();
 error UnbondLocked();
 error Jailed();
 error PendingPenalty();
+error BurnAddressNotZero();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -215,6 +216,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
         if (_employerSlashPct + _treasurySlashPct == 0) {
@@ -270,15 +272,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
     }
 
-    /// @dev internal helper to burn tokens using IERC20Burnable when no burn
-    ///      address is configured, otherwise transfers to the burn address
+    /// @dev internal helper to burn tokens
     function _burnToken(uint256 amount) internal {
         if (amount == 0) return;
-        if (BURN_ADDRESS == address(0)) {
-            IERC20Burnable(AGIALPHA).burn(amount);
-        } else {
-            token.safeTransfer(BURN_ADDRESS, amount);
-        }
+        if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
+        IERC20Burnable(AGIALPHA).burn(amount);
     }
 
     /// @notice update slashing percentage splits
