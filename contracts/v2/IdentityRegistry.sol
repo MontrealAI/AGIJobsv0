@@ -7,6 +7,7 @@ import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
+import {AttestationRegistry} from "./AttestationRegistry.sol";
 
 error ZeroAddress();
 error UnauthorizedAgent();
@@ -25,6 +26,7 @@ contract IdentityRegistry is Ownable2Step {
     IENS public ens;
     INameWrapper public nameWrapper;
     IReputationEngine public reputationEngine;
+    AttestationRegistry public attestationRegistry;
 
     bytes32 public agentRootNode;
     bytes32 public clubRootNode;
@@ -40,6 +42,7 @@ contract IdentityRegistry is Ownable2Step {
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
     event ReputationEngineUpdated(address indexed reputationEngine);
+    event AttestationRegistryUpdated(address indexed attestationRegistry);
     event AgentRootNodeUpdated(bytes32 indexed agentRootNode);
     event ClubRootNodeUpdated(bytes32 indexed clubRootNode);
     event AgentMerkleRootUpdated(bytes32 indexed agentMerkleRoot);
@@ -105,6 +108,11 @@ contract IdentityRegistry is Ownable2Step {
         }
         reputationEngine = IReputationEngine(engine);
         emit ReputationEngineUpdated(engine);
+    }
+
+    function setAttestationRegistry(address registry) external onlyOwner {
+        attestationRegistry = AttestationRegistry(registry);
+        emit AttestationRegistryUpdated(registry);
     }
 
     function setAgentRootNode(bytes32 root) external onlyOwner {
@@ -213,6 +221,20 @@ contract IdentityRegistry is Ownable2Step {
         if (additionalAgents[claimant]) {
             return true;
         }
+        if (address(attestationRegistry) != address(0)) {
+            bytes32 node = keccak256(
+                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
+            );
+            if (
+                attestationRegistry.isAttested(
+                    node,
+                    AttestationRegistry.Role.Agent,
+                    claimant
+                )
+            ) {
+                return true;
+            }
+        }
         return
             ENSIdentityVerifier.checkOwnership(
                 ens,
@@ -238,6 +260,20 @@ contract IdentityRegistry is Ownable2Step {
         }
         if (additionalValidators[claimant]) {
             return true;
+        }
+        if (address(attestationRegistry) != address(0)) {
+            bytes32 node = keccak256(
+                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
+            );
+            if (
+                attestationRegistry.isAttested(
+                    node,
+                    AttestationRegistry.Role.Validator,
+                    claimant
+                )
+            ) {
+                return true;
+            }
         }
         return
             ENSIdentityVerifier.checkOwnership(
@@ -266,6 +302,21 @@ contract IdentityRegistry is Ownable2Step {
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             return true;
         }
+        if (address(attestationRegistry) != address(0)) {
+            bytes32 node = keccak256(
+                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
+            );
+            if (
+                attestationRegistry.isAttested(
+                    node,
+                    AttestationRegistry.Role.Agent,
+                    claimant
+                )
+            ) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                return true;
+            }
+        }
         return
             ENSIdentityVerifier.verifyOwnership(
                 ens,
@@ -292,6 +343,21 @@ contract IdentityRegistry is Ownable2Step {
         if (additionalValidators[claimant]) {
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             return true;
+        }
+        if (address(attestationRegistry) != address(0)) {
+            bytes32 node = keccak256(
+                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
+            );
+            if (
+                attestationRegistry.isAttested(
+                    node,
+                    AttestationRegistry.Role.Validator,
+                    claimant
+                )
+            ) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                return true;
+            }
         }
         return
             ENSIdentityVerifier.verifyOwnership(
