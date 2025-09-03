@@ -142,7 +142,13 @@ describe("JobRegistry integration", function () {
   it("runs successful job lifecycle", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await expect(registry.connect(employer).createJob(reward, deadline, "uri"))
+    const specHash = ethers.id("spec");
+    await expect(
+      registry
+        .connect(employer)[
+          "createJob(uint256,uint64,bytes32,string)"
+        ](reward, deadline, specHash, "uri")
+    )
       .to.emit(registry, "JobCreated")
       .withArgs(
         1,
@@ -151,8 +157,11 @@ describe("JobRegistry integration", function () {
         reward,
         stake,
         0,
+        specHash,
         "uri"
       );
+    const created = await registry.jobs(1);
+    expect(created.specHash).to.equal(specHash);
     const jobId = 1;
     await expect(registry.connect(agent).applyForJob(jobId, "", []))
       .to.emit(registry, "JobApplied")

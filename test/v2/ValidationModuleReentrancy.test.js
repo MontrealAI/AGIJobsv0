@@ -96,10 +96,7 @@ describe("ValidationModule reentrancy", function () {
     await prepare(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("s"));
     const nonce = await validation.jobNonce(1);
-    const commitHash = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commitHash = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
     await identity.attackCommit(1, commitHash);
     await expect(
       validation.connect(validator).commitValidation(1, commitHash, "", [])
@@ -111,10 +108,7 @@ describe("ValidationModule reentrancy", function () {
     await prepare(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("s"));
     const nonce = await validation.jobNonce(1);
-    const commitHash = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commitHash = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
     await validation
       .connect(validator)
       .commitValidation(1, commitHash, "", []);

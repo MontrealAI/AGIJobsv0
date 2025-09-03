@@ -231,18 +231,9 @@ describe("ValidationModule V2", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("salt3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt3, ethers.ZeroHash]);
     await (
       await validation.connect(v1).commitValidation(1, commit1, "", [])
     ).wait();
@@ -285,18 +276,9 @@ describe("ValidationModule V2", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("salt3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt3, ethers.ZeroHash]);
     await (
       await validation.connect(v1).commitValidation(1, commit1, "", [])
     ).wait();
@@ -331,10 +313,7 @@ describe("ValidationModule V2", function () {
     await select(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const wrongNonce = (await validation.jobNonce(1)) + 1n;
-    const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, wrongNonce, true, salt]
-    );
+    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, wrongNonce, true, salt, ethers.ZeroHash]);
     await (
       await validation.connect(v1).commitValidation(1, commit, "", [])
     ).wait();
@@ -355,10 +334,7 @@ describe("ValidationModule V2", function () {
     await select(1);
     const nonce = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
     await (
       await validation.connect(v1).commitValidation(1, commit, "", [])
     ).wait();
@@ -383,10 +359,7 @@ describe("ValidationModule V2", function () {
     await select(1);
     const nonce1 = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce1, true, salt]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce1, true, salt, ethers.ZeroHash]);
     await (await validation.connect(v1).commitValidation(1, commit1, "", [])).wait();
 
     await expect(
@@ -400,10 +373,7 @@ describe("ValidationModule V2", function () {
     await tx.wait();
     const nonce2 = await validation.jobNonce(1);
     expect(nonce2).to.equal(1n);
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce2, true, salt]
-    );
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce2, true, salt, ethers.ZeroHash]);
     await expect(
       validation.connect(v1).commitValidation(1, commit2, "", [])
     ).to.not.be.reverted;
@@ -424,10 +394,7 @@ describe("ValidationModule V2", function () {
     await select(1);
     const nonce = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
     await expect(
       validation.connect(v1).commitValidation(1, commit, "", [])
     ).to.be.revertedWithCustomError(validation, "NotValidator");
@@ -492,10 +459,7 @@ describe("ValidationModule V2", function () {
     const val = signerMap[selected[0].toLowerCase()];
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const nonce = await validation.jobNonce(1);
-    const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
 
     await expect(
       validation.connect(val).commitValidation(1, commit, "", [])

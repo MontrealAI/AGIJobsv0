@@ -145,6 +145,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         return _jobs[jobId];
     }
 
+    function getSpecHash(uint256) external pure override returns (bytes32) {
+        return bytes32(0);
+    }
+
     function acknowledgeTaxPolicy() external {
         if (address(taxPolicy) != address(0)) {
             taxPolicy.acknowledge();
@@ -217,6 +221,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     function createJob(
         uint256 reward,
         uint64 deadline,
+        bytes32 /*specHash*/,
         string calldata uri
     ) external override returns (uint256 jobId) {
         require(

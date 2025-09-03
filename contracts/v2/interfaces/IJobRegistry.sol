@@ -68,6 +68,7 @@ interface IJobRegistry {
         uint256 reward,
         uint256 stake,
         uint256 fee,
+        bytes32 specHash,
         string uri
     );
     event JobApplied(uint256 indexed jobId, address indexed agent);
@@ -156,6 +157,7 @@ interface IJobRegistry {
     function createJob(
         uint256 reward,
         uint64 deadline,
+        bytes32 specHash,
         string calldata uri
     ) external returns (uint256 jobId);
 
@@ -169,6 +171,8 @@ interface IJobRegistry {
         string calldata subdomain,
         bytes32[] calldata proof
     ) external;
+
+    function getSpecHash(uint256 jobId) external view returns (bytes32);
 
     /// @notice Deposit stake and apply for a job in one call
     /// @param jobId Identifier of the job

@@ -121,10 +121,20 @@ describe("validator participation", function () {
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);
-    const commit1 = ethers.keccak256(ethers.solidityPacked(["uint256","uint256","bool","bytes32"],[1n, nonce, true, salt1]));
+    const commit1 = ethers.keccak256(
+      ethers.solidityPacked(
+        ["uint256","uint256","bool","bytes32","bytes32"],
+        [1n, nonce, true, salt1, ethers.ZeroHash]
+      )
+    );
     await validation.connect(v1).commitValidation(1, commit1);
     const salt2 = ethers.randomBytes(32);
-    const commit2 = ethers.keccak256(ethers.solidityPacked(["uint256","uint256","bool","bytes32"],[1n, nonce, true, salt2]));
+    const commit2 = ethers.keccak256(
+      ethers.solidityPacked(
+        ["uint256","uint256","bool","bytes32","bytes32"],
+        [1n, nonce, true, salt2, ethers.ZeroHash]
+      )
+    );
     await validation.connect(v2).commitValidation(1, commit2);
 
     await time.increase(2);
@@ -157,10 +167,20 @@ describe("validator participation", function () {
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);
-    const commit1 = ethers.keccak256(ethers.solidityPacked(["uint256","uint256","bool","bytes32"],[1n, nonce, false, salt1]));
+    const commit1 = ethers.keccak256(
+      ethers.solidityPacked(
+        ["uint256","uint256","bool","bytes32","bytes32"],
+        [1n, nonce, false, salt1, ethers.ZeroHash]
+      )
+    );
     await validation.connect(v1).commitValidation(1, commit1);
     const salt2 = ethers.randomBytes(32);
-    const commit2 = ethers.keccak256(ethers.solidityPacked(["uint256","uint256","bool","bytes32"],[1n, nonce, false, salt2]));
+    const commit2 = ethers.keccak256(
+      ethers.solidityPacked(
+        ["uint256","uint256","bool","bytes32","bytes32"],
+        [1n, nonce, false, salt2, ethers.ZeroHash]
+      )
+    );
     await validation.connect(v2).commitValidation(1, commit2);
 
     await time.increase(2);
