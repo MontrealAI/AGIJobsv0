@@ -80,6 +80,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public maxValidators;
     uint256 public validatorsPerJob;
 
+    /// @notice Hard limit on the number of validators any single job may use.
+    uint256 public maxValidatorsPerJob = 100;
+
     uint256 public constant DEFAULT_COMMIT_WINDOW = 1 days;
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
     uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
@@ -173,6 +176,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event SelectionReset(uint256 indexed jobId);
     event ValidatorPoolRotationUpdated(uint256 newRotation);
     event RandaoCoordinatorUpdated(address coordinator);
+    event MaxValidatorsPerJobUpdated(uint256 maxValidators);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -323,6 +327,22 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit MaxValidatorPoolSizeUpdated(size);
     }
 
+    /// @notice Update the maximum number of validators allowed per job.
+    /// @param max Maximum validators permitted for any job.
+    function setMaxValidatorsPerJob(uint256 max) external onlyOwner {
+        if (max < minValidators) revert InvalidValidatorBounds();
+        maxValidatorsPerJob = max;
+        if (validatorsPerJob > max) {
+            validatorsPerJob = max;
+            emit ValidatorsPerJobUpdated(max);
+        }
+        if (maxValidators > max) {
+            maxValidators = max;
+            emit ValidatorBoundsUpdated(minValidators, max);
+        }
+        emit MaxValidatorsPerJobUpdated(max);
+    }
+
     /// @notice Configure the validator sampling strategy.
     /// @param strategy Sampling algorithm to employ when selecting validators.
     function setSelectionStrategy(IValidationModule.SelectionStrategy strategy) external onlyOwner {
@@ -384,7 +404,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 commitDur,
         uint256 revealDur
     ) public onlyOwner {
-        if (validatorCount < 3) revert InvalidValidatorBounds();
+        if (validatorCount < 3 || validatorCount > maxValidatorsPerJob)
+            revert InvalidValidatorBounds();
         if (commitDur == 0 || revealDur == 0) revert InvalidWindows();
         validatorsPerJob = validatorCount;
         minValidators = validatorCount;
@@ -459,7 +480,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set minimum and maximum validators per round.
     function setValidatorBounds(uint256 minVals, uint256 maxVals) external override onlyOwner {
-        if (minVals < 3 || maxVals < minVals) revert InvalidValidatorBounds();
+        if (minVals < 3 || maxVals < minVals || maxVals > maxValidatorsPerJob)
+            revert InvalidValidatorBounds();
         minValidators = minVals;
         maxValidators = maxVals;
         if (minVals == maxVals) {
@@ -478,7 +500,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     /// @notice Set number of validators selected per job.
     function setValidatorsPerJob(uint256 count) external override onlyOwner {
-        if (count < 3 || count < minValidators || count > maxValidators) revert InvalidValidatorBounds();
+        if (
+            count < 3 ||
+            count < minValidators ||
+            count > maxValidators ||
+            count > maxValidatorsPerJob
+        ) revert InvalidValidatorBounds();
         validatorsPerJob = count;
         _clampRequiredValidatorApprovals();
         emit ValidatorsPerJobUpdated(count);
@@ -680,7 +707,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             size = validatorsPerJob;
             r.committeeSize = size;
         }
-
+        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         if (sample < size) revert SampleSizeTooSmall();
 
         selected = new address[](size);
@@ -908,6 +935,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 size = validatorsPerJob;
         if (size < minValidators) size = minValidators;
         if (size > maxValidators) size = maxValidators;
+        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         if (size > n) size = n;
         r.committeeSize = size;
 
@@ -1177,11 +1205,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (block.timestamp <= r.revealDeadline + FORCE_FINALIZE_GRACE)
             revert RevealPending();
         uint256 size = r.committeeSize == 0 ? validatorsPerJob : r.committeeSize;
+        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         if (r.revealedCount >= size) {
             return _finalize(jobId);
         }
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        for (uint256 i; i < r.validators.length;) {
+        uint256 vlen = r.validators.length;
+        if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
+        for (uint256 i; i < vlen;) {
             address val = r.validators[i];
             if (!revealed[jobId][val]) {
                 uint256 stake = validatorStakes[jobId][val];
@@ -1221,9 +1252,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 size = r.committeeSize == 0
             ? validatorsPerJob
             : r.committeeSize;
+        if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         bool quorum = r.revealedCount >= size;
         uint256 approvalCount;
-        for (uint256 i; i < r.validators.length;) {
+        uint256 vlen = r.validators.length;
+        if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
+        for (uint256 i; i < vlen;) {
             address v = r.validators[i];
             if (revealed[jobId][v] && votes[jobId][v]) {
                 unchecked { ++approvalCount; }
@@ -1253,7 +1287,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             }
         }
 
-        for (uint256 i; i < r.validators.length;) {
+        for (uint256 i; i < vlen;) {
             address val = r.validators[i];
             uint256 stake = validatorStakes[jobId][val];
             uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
@@ -1288,7 +1322,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 nonce = jobNonce[jobId];
         Round storage r = rounds[jobId];
         address[] storage vals = r.validators;
-        for (uint256 i; i < vals.length;) {
+        uint256 vlen = vals.length;
+        if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
+        for (uint256 i; i < vlen;) {
             address val = vals[i];
             delete commitments[jobId][val][nonce];
             delete revealed[jobId][val];
