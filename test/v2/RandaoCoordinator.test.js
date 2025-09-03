@@ -1,6 +1,6 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
+const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 const DEPOSIT = 1n;
 
@@ -82,15 +82,7 @@ describe("RandaoCoordinator", function () {
 
 describe("ValidationModule fairness", function () {
   it("uses Randao randomness for validator selection", async () => {
-    const [owner, v1, v2] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory(
-      "contracts/test/AGIALPHAToken.sol:AGIALPHAToken"
-    );
-    const token = await Token.deploy();
-    const mint = ethers.parseEther("10");
-    await token.mint(v1.address, mint);
-    await token.mint(v2.address, mint);
-
+    const [owner, v1, v2, v3] = await ethers.getSigners();
     const Tax = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -101,19 +93,10 @@ describe("ValidationModule fairness", function () {
     const job = await Job.deploy(await tax.getAddress());
 
     const Stake = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      "contracts/v2/mocks/ReentrantStakeManager.sol:ReentrantStakeManager"
     );
-    const stake = await Stake.deploy(
-      await token.getAddress(),
-      0,
-      0,
-      0,
-      owner.address,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      owner.address
-    );
-    await stake.setModules(await job.getAddress(), ethers.ZeroAddress);
+    const stake = await Stake.deploy();
+    await stake.setJobRegistry(await job.getAddress());
 
     const Identity = await ethers.getContractFactory(
       "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
@@ -133,24 +116,26 @@ describe("ValidationModule fairness", function () {
       await stake.getAddress(),
       1,
       1,
-      1,
-      2,
+      3,
+      3,
       []
     );
 
     await validation.setIdentityRegistry(await identity.getAddress());
-    await validation.setValidatorPool([v1.address, v2.address]);
+    await validation.setValidatorPool([
+      v1.address,
+      v2.address,
+      v3.address,
+    ]);
     await validation.setRandaoCoordinator(await randao.getAddress());
-    await validation.setValidatorsPerJob(1);
-    await validation.setParameters(1, 1, 1, 50, 50);
+    await validation.setParameters(3, 1, 1, 50, 50);
     await validation.setJobRegistry(await job.getAddress());
     await stake.setValidationModule(await validation.getAddress());
 
     const stakeAmt = ethers.parseEther("1");
-    await token.connect(v1).approve(await stake.getAddress(), stakeAmt);
-    await token.connect(v2).approve(await stake.getAddress(), stakeAmt);
-    await stake.connect(v1).acknowledgeAndDeposit(1, stakeAmt);
-    await stake.connect(v2).acknowledgeAndDeposit(1, stakeAmt);
+    await stake.setStake(v1.address, 1, stakeAmt);
+    await stake.setStake(v2.address, 1, stakeAmt);
+    await stake.setStake(v3.address, 1, stakeAmt);
 
     // First selection -> choose v1
     const tag1 = tagFromNumber(1);
@@ -167,10 +152,11 @@ describe("ValidationModule fairness", function () {
     await randao.reveal(tag1, secret1);
     await time.increase(11);
     await validation.selectValidators(1n, 0);
-    let selected = await validation.validators(1n);
-    expect(selected[0]).to.equal(v1.address);
+    await ethers.provider.send("evm_mine", []);
+    await validation.connect(v1).selectValidators(1n, 0);
+    let selected1 = Array.from(await validation.validators(1n));
 
-    // Second selection -> choose v2
+    // Second selection
     const tag2 = tagFromNumber(2);
     const secret2 = stakeAmt + 1n;
     const commit2 = ethers.keccak256(
@@ -185,7 +171,12 @@ describe("ValidationModule fairness", function () {
     await randao.reveal(tag2, secret2);
     await time.increase(11);
     await validation.selectValidators(2n, 0);
-    selected = await validation.validators(2n);
-    expect(selected[0]).to.equal(v2.address);
+    await ethers.provider.send("evm_mine", []);
+    await validation.connect(v1).selectValidators(2n, 0);
+    let selected2 = Array.from(await validation.validators(2n));
+    expect(new Set(selected1).size).to.equal(3);
+    expect(new Set(selected2).size).to.equal(3);
+    expect(selected1).to.have.members([v1.address, v2.address, v3.address]);
+    expect(selected2).to.have.members([v1.address, v2.address, v3.address]);
   });
 });
