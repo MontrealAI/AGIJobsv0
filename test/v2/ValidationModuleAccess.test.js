@@ -118,10 +118,7 @@ describe("ValidationModule access controls", function () {
 
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const nonce = await validation.jobNonce(1);
-    const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
       await expect(
         validation.connect(signer).commitValidation(1, commit, "", [])
       ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
@@ -156,10 +153,7 @@ describe("ValidationModule access controls", function () {
 
     const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
     const nonce = await validation.jobNonce(1);
-    const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
-    );
+    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
     await reputation.setBlacklist(val, true);
     await expect(
       validation.connect(signer).commitValidation(1, commit, "", [])
@@ -190,18 +184,9 @@ describe("ValidationModule access controls", function () {
     const saltB = ethers.keccak256(ethers.toUtf8Bytes("b"));
     const saltC = ethers.keccak256(ethers.toUtf8Bytes("c"));
     const nonce = await validation.jobNonce(1);
-    const commitA = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, saltA]
-    );
-    const commitB = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, saltB]
-    );
-    const commitC = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, saltC]
-    );
+    const commitA = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, saltA, ethers.ZeroHash]);
+    const commitB = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, saltB, ethers.ZeroHash]);
+    const commitC = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, saltC, ethers.ZeroHash]);
     const signerMap = {
       [v1.address.toLowerCase()]: v1,
       [v2.address.toLowerCase()]: v2,
@@ -260,18 +245,9 @@ describe("ValidationModule access controls", function () {
     const s1 = ethers.keccak256(ethers.toUtf8Bytes("s1"));
     const s2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const s3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
-    const c1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce2, true, s1]
-    );
-    const c2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce2, true, s2]
-    );
-    const c3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce2, true, s3]
-    );
+    const c1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce2, true, s1, ethers.ZeroHash]);
+    const c2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce2, true, s2, ethers.ZeroHash]);
+    const c3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce2, true, s3, ethers.ZeroHash]);
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])

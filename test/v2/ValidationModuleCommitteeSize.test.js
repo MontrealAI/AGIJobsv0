@@ -122,14 +122,8 @@ describe("ValidationModule committee size", function () {
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
     const nonce = await validation.jobNonce(4);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [4n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [4n, nonce, true, salt2]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[4n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[4n, nonce, true, salt2, ethers.ZeroHash]);
 
     await validation
       .connect(signerMap[selected[0].toLowerCase()])

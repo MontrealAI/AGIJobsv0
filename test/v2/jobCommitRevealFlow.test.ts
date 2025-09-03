@@ -194,7 +194,10 @@ describe("Commit-reveal job lifecycle", function () {
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec1");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
@@ -204,8 +207,8 @@ describe("Commit-reveal job lifecycle", function () {
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
     const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt]
+      ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+      [1n, nonce, true, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, "", []);
     await time.increase(2);
@@ -265,7 +268,10 @@ describe("Commit-reveal job lifecycle", function () {
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec2");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, label, []);
     await registry
@@ -275,8 +281,8 @@ describe("Commit-reveal job lifecycle", function () {
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id("salt");
     const commit = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt]
+      ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+      [1n, nonce, false, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, "", []);
     await time.increase(2);

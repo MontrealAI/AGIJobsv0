@@ -223,8 +223,8 @@ describe("Identity verification enforcement", function () {
       const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
       const nonce = await validation.jobNonce(1);
       const commit = ethers.solidityPackedKeccak256(
-        ["uint256", "uint256", "bool", "bytes32"],
-        [1n, nonce, true, salt]
+        ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+        [1n, nonce, true, salt, ethers.ZeroHash]
       );
       await expect(
         validation.connect(signer).commitValidation(1, commit, "", [])

@@ -142,7 +142,12 @@ describe("regression scenarios", function () {
     await registry.connect(agent).submit(1, ethers.id("ipfs://good"), "ipfs://good", "agent", []);
     const nonce = await validation.jobNonce(1);
     const salt = ethers.randomBytes(32);
-    const commit = ethers.keccak256(ethers.solidityPacked(["uint256","uint256","bool","bytes32"],[1n, nonce, false, salt]));
+    const commit = ethers.keccak256(
+      ethers.solidityPacked(
+        ["uint256","uint256","bool","bytes32","bytes32"],
+        [1n, nonce, false, salt, ethers.ZeroHash]
+      )
+    );
     await validation.connect(v1).commitValidation(1, commit);
     await time.increase(2);
     await validation.connect(v1).revealValidation(1, false, salt);

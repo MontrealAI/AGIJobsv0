@@ -97,18 +97,9 @@ describe("ValidationModule finalize flows", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt3, ethers.ZeroHash]);
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
     await validation.connect(v3).commitValidation(1, commit3, "", []);
@@ -130,18 +121,9 @@ describe("ValidationModule finalize flows", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt3, ethers.ZeroHash]);
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
     await validation.connect(v3).commitValidation(1, commit3, "", []);
@@ -158,18 +140,9 @@ describe("ValidationModule finalize flows", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt3, ethers.ZeroHash]);
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
     await validation.connect(v3).commitValidation(1, commit3, "", []);
@@ -200,18 +173,9 @@ describe("ValidationModule finalize flows", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt3, ethers.ZeroHash]);
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
     await validation.connect(v3).commitValidation(1, commit3, "", []);
@@ -288,18 +252,9 @@ describe("ValidationModule finalize flows", function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes("s2"));
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes("s3"));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, true, salt1]
-    );
-    const commit2 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt2]
-    );
-    const commit3 = ethers.solidityPackedKeccak256(
-      ["uint256", "uint256", "bool", "bytes32"],
-      [1n, nonce, false, salt3]
-    );
+    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
+    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt2, ethers.ZeroHash]);
+    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt3, ethers.ZeroHash]);
     await validation.connect(v1).commitValidation(1, commit1, "", []);
     await validation.connect(v2).commitValidation(1, commit2, "", []);
     await validation.connect(v3).commitValidation(1, commit3, "", []);

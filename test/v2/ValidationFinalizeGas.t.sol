@@ -85,7 +85,9 @@ contract ValidationFinalizeGas is Test {
             address val = validators[i];
             bytes32 salt = bytes32(uint256(i + 1));
             uint256 nonce = validation.jobNonce(jobId);
-            bytes32 commitHash = keccak256(abi.encodePacked(jobId, nonce, true, salt));
+            bytes32 commitHash = keccak256(
+                abi.encodePacked(jobId, nonce, true, salt, bytes32(0))
+            );
             vm.prank(val);
             validation.commitValidation(jobId, commitHash);
             vm.warp(block.timestamp + 2);

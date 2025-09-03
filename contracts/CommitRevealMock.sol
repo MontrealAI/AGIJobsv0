@@ -10,8 +10,15 @@ contract CommitRevealMock {
         commits[jobId][msg.sender] = commitHash;
     }
 
-    function reveal(uint256 jobId, bool approve, bytes32 salt) external returns (bool) {
-        bytes32 expected = keccak256(abi.encodePacked(jobId, nonces[jobId], approve, salt));
+    function reveal(
+        uint256 jobId,
+        bool approve,
+        bytes32 salt,
+        bytes32 specHash
+    ) external returns (bool) {
+        bytes32 expected = keccak256(
+            abi.encodePacked(jobId, nonces[jobId], approve, salt, specHash)
+        );
         require(commits[jobId][msg.sender] == expected, "hash mismatch");
         revealed[jobId][msg.sender] = true;
         nonces[jobId]++;

@@ -86,7 +86,16 @@ describe("JobRegistry tax policy integration", function () {
       .withArgs(user.address, 2);
     await expect(registry.connect(user).createJob(1, deadline, "uri"))
       .to.emit(registry, "JobCreated")
-      .withArgs(1, user.address, ethers.ZeroAddress, 1, 0, 0, "uri");
+      .withArgs(
+        1,
+        user.address,
+        ethers.ZeroAddress,
+        1,
+        0,
+        0,
+        ethers.ZeroHash,
+        "uri"
+      );
   });
 
   it("blocks non-owner from setting policy", async () => {
