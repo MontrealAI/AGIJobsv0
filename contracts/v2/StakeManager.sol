@@ -55,6 +55,7 @@ error UnbondLocked();
 error Jailed();
 error PendingPenalty();
 error BurnAddressNotZero();
+error TokenNotBurnable();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -276,7 +277,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function _burnToken(uint256 amount) internal {
         if (amount == 0) return;
         if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
-        IERC20Burnable(AGIALPHA).burn(amount);
+        try IERC20Burnable(AGIALPHA).burn(amount) {
+        } catch {
+            revert TokenNotBurnable();
+        }
     }
 
     /// @notice update slashing percentage splits
