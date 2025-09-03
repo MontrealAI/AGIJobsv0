@@ -109,6 +109,12 @@ contract FeePoolTest {
         require(token.totalSupply() == supplyBefore - burnAmount, "supply");
     }
 
+    function testBurnAddressInvariant() public {
+        setUp();
+        require(feePool.burnPct() > 0, "burnPct");
+        require(BURN_ADDRESS == address(0), "burnAddr");
+    }
+
     function testNonBurnableTokenReverts() public {
         NonBurnableToken impl = new NonBurnableToken();
         vm.etch(AGIALPHA, address(impl).code);
