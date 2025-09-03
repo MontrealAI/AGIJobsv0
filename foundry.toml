@@ -1,4 +1,5 @@
 [profile.default]
+solc_version = "0.8.25"
 src = 'contracts/v2'
 test = 'test/v2'
 libs = ['lib', 'node_modules']
