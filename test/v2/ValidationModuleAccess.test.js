@@ -4,6 +4,7 @@ const { ethers } = require("hardhat");
 describe("ValidationModule access controls", function () {
   let owner, employer, v1, v2, v3;
   let validation, stakeManager, jobRegistry, reputation, identity;
+  const specHash = ethers.ZeroHash;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -66,6 +67,7 @@ describe("ValidationModule access controls", function () {
       stake: 0,
       success: false,
       status: 3,
+      specHash: ethers.ZeroHash,
       uriHash: ethers.ZeroHash,
       resultHash: ethers.ZeroHash,
     };

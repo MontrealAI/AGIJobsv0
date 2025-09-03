@@ -4,6 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 describe("JobRegistry tax policy integration", function () {
   let owner, user, registry, policy;
+  const specHash = ethers.id("spec");
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
@@ -77,16 +78,27 @@ describe("JobRegistry tax policy integration", function () {
     await policy.connect(owner).bumpPolicyVersion();
     const deadline = (await time.latest()) + 1000;
     await expect(
-      registry.connect(user).createJob(1, deadline, "uri")
+      registry.connect(user).createJob(1, deadline, specHash, "uri")
     )
       .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
       .withArgs(user.address);
     await expect(policy.connect(user).acknowledge())
       .to.emit(policy, "PolicyAcknowledged")
       .withArgs(user.address, 2);
-    await expect(registry.connect(user).createJob(1, deadline, "uri"))
+    await expect(
+      registry.connect(user).createJob(1, deadline, specHash, "uri")
+    )
       .to.emit(registry, "JobCreated")
-      .withArgs(1, user.address, ethers.ZeroAddress, 1, 0, 0, "uri");
+      .withArgs(
+        1,
+        user.address,
+        ethers.ZeroAddress,
+        1,
+        0,
+        0,
+        specHash,
+        "uri"
+      );
   });
 
   it("blocks non-owner from setting policy", async () => {

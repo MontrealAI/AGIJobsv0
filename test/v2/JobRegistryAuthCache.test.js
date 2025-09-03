@@ -6,6 +6,7 @@ describe("JobRegistry agent auth cache", function () {
   let owner, employer, agent;
   let registry, verifier, policy;
   let jobId = 0;
+  const specHash = ethers.id("spec");
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
@@ -60,7 +61,7 @@ describe("JobRegistry agent auth cache", function () {
   async function createJob() {
     const deadline = (await time.latest()) + 100;
     jobId++;
-    await registry.connect(employer).createJob(1, deadline, "uri");
+    await registry.connect(employer).createJob(1, deadline, specHash, "uri");
     return jobId;
   }
 
@@ -133,13 +134,13 @@ describe("JobRegistry agent auth cache", function () {
     await registry2.connect(owner).setAgentAuthCacheDuration(1000);
 
     let deadline = (await time.latest()) + 100;
-    await registry2.connect(employer).createJob(1, deadline, "uri");
+    await registry2.connect(employer).createJob(1, deadline, specHash, "uri");
     await registry2.connect(agent).applyForJob(1, "a", []);
 
     await verifier2.connect(owner).setResult(false);
 
     deadline = (await time.latest()) + 100;
-    await registry2.connect(employer).createJob(1, deadline, "uri");
+    await registry2.connect(employer).createJob(1, deadline, specHash, "uri");
     await registry2.connect(agent).applyForJob(2, "a", []);
 
     await verifier2
@@ -150,7 +151,7 @@ describe("JobRegistry agent auth cache", function () {
       .setAgentMerkleRoot(ethers.id("newroot"));
 
     deadline = (await time.latest()) + 100;
-    await registry2.connect(employer).createJob(1, deadline, "uri");
+    await registry2.connect(employer).createJob(1, deadline, specHash, "uri");
     await expect(
       registry2.connect(agent).applyForJob(3, "a", [])
     ).to.be.revertedWithCustomError(registry2, "NotAuthorizedAgent");
