@@ -8,6 +8,7 @@ import {TimelockController} from "@openzeppelin/contracts/governance/TimelockCon
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20Burnable} from "./interfaces/IERC20Burnable.sol";
 import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -18,6 +19,7 @@ error EtherNotAccepted();
 error InvalidTokenDecimals();
 error ZeroAddress();
 error InvalidStakeManagerVersion();
+error BurnAddressNotZero();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -84,6 +86,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
+        if (BURN_ADDRESS != address(0)) {
+            revert BurnAddressNotZero();
+        }
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
@@ -155,7 +160,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
-            token.safeTransfer(BURN_ADDRESS, burnAmount);
+            IERC20Burnable(AGIALPHA).burn(burnAmount);
             emit Burned(burnAmount);
         }
         uint256 distribute = amount - burnAmount;

@@ -155,7 +155,10 @@ describe("FeePool", function () {
     await feePool.connect(owner).setBurnPct(25);
     const feeAmount = 80;
     const jobId = ethers.encodeBytes32String("job2");
-    await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), feeAmount);
+    const supplyBefore = await token.totalSupply();
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, feeAmount);
@@ -171,13 +174,12 @@ describe("FeePool", function () {
 
     const before1 = await token.balanceOf(user1.address);
     const before2 = await token.balanceOf(user2.address);
-    await feePool.connect(owner).distributeFees();
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
     expect((await token.balanceOf(user1.address)) - before1).to.equal(15n);
     expect((await token.balanceOf(user2.address)) - before2).to.equal(45n);
-    const burnAddr = "0x000000000000000000000000000000000000dEaD";
-    expect(await token.balanceOf(burnAddr)).to.equal(20n);
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(20n);
   });
 
   it("emits zero payout for owner without stake", async () => {

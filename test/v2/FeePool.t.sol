@@ -13,10 +13,18 @@ interface Vm {
     function startPrank(address) external;
     function stopPrank() external;
     function etch(address, bytes memory) external;
+    function expectRevert() external;
 }
 
 contract TestToken is ERC20 {
     constructor() ERC20("Test", "TST") {}
+    function decimals() public pure override returns (uint8) { return 18; }
+    function mint(address to, uint256 amount) external { _mint(to, amount); }
+    function burn(uint256 amount) external { _burn(msg.sender, amount); }
+}
+
+contract NonBurnableToken is ERC20 {
+    constructor() ERC20("NoBurn", "NBR") {}
     function decimals() public pure override returns (uint8) { return 18; }
     function mint(address to, uint256 amount) external { _mint(to, amount); }
 }
@@ -52,7 +60,11 @@ contract FeePoolTest {
         feePool.distributeFees();
         uint256 expected = feePool.ACCUMULATOR_SCALE() / 3;
         require(feePool.cumulativePerToken() == expected, "acc");
-        require(token.balanceOf(address(feePool)) == 1 * TOKEN, "bal");
+        uint256 burnAmount = (TOKEN * feePool.burnPct()) / 100;
+        require(
+            token.balanceOf(address(feePool)) == TOKEN - burnAmount,
+            "bal"
+        );
     }
 
     function testContribute() public {
@@ -76,10 +88,39 @@ contract FeePoolTest {
         feePool.claimRewards();
         vm.prank(bob);
         feePool.claimRewards();
-        uint256 aliceExpected = TOKEN;
-        uint256 bobExpected = 2 * TOKEN;
+        uint256 total = 3 * TOKEN;
+        uint256 burnAmount = (total * feePool.burnPct()) / 100;
+        uint256 distribute = total - burnAmount;
+        uint256 aliceExpected = distribute / 3;
+        uint256 bobExpected = (distribute * 2) / 3;
         require(token.balanceOf(alice) == aliceExpected, "alice claim");
         require(token.balanceOf(bob) == bobExpected, "bob claim");
+    }
+
+    function testSupplyDecreasesAfterBurn() public {
+        setUp();
+        token.mint(address(feePool), TOKEN);
+        uint256 supplyBefore = token.totalSupply();
+        vm.prank(address(stakeManager));
+        feePool.depositFee(TOKEN);
+        feePool.distributeFees();
+        uint256 burnAmount = (TOKEN * feePool.burnPct()) / 100;
+        require(token.totalSupply() == supplyBefore - burnAmount, "supply");
+    }
+
+    function testNonBurnableTokenReverts() public {
+        NonBurnableToken impl = new NonBurnableToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        NonBurnableToken nbToken = NonBurnableToken(AGIALPHA);
+        stakeManager = new MockStakeManager();
+        stakeManager.setJobRegistry(jobRegistry);
+        feePool = new FeePool(stakeManager, 0, address(this));
+        stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
+        nbToken.mint(address(feePool), TOKEN);
+        vm.prank(address(stakeManager));
+        feePool.depositFee(TOKEN);
+        vm.expectRevert();
+        feePool.distributeFees();
     }
 
     /// @notice ensures rewards distribute precisely with 18-decimal tokens
@@ -93,11 +134,12 @@ contract FeePoolTest {
         feePool.claimRewards();
         vm.prank(bob);
         feePool.claimRewards();
-        require(token.balanceOf(alice) == 333_333_333_333_333_333, "alice");
-        require(token.balanceOf(bob) == 666_666_666_666_666_666, "bob");
-        // one wei of rounding dust remains in the contract
+        require(token.balanceOf(alice) == 316_666_666_666_666_666, "alice");
+        require(token.balanceOf(bob) == 633_333_333_333_333_333, "bob");
+        // one wei of rounding dust remains in the contract after burning
+        uint256 distribute = TOKEN - ((TOKEN * feePool.burnPct()) / 100);
         require(
-            token.balanceOf(alice) + token.balanceOf(bob) == TOKEN - 1,
+            token.balanceOf(alice) + token.balanceOf(bob) == distribute - 1,
             "sum"
         );
     }
