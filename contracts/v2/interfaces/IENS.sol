@@ -8,4 +8,9 @@ interface IENS {
     /// @param node The ENS node hash.
     /// @return resolverAddr Address of the resolver for `node`.
     function resolver(bytes32 node) external view returns (address resolverAddr);
+
+    /// @notice Get the owner of an ENS node.
+    /// @param node The ENS node hash.
+    /// @return ownerAddr Address of the owner for `node`.
+    function owner(bytes32 node) external view returns (address ownerAddr);
 }
