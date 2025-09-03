@@ -9,5 +9,6 @@ interface IRandaoCoordinator {
     function reveal(bytes32 tag, uint256 secret) external;
 
     /// @notice Retrieve aggregated randomness for a tag after reveal window.
+    /// @dev The returned value mixes the XORed seed with `block.prevrandao`.
     function random(bytes32 tag) external view returns (uint256);
 }
