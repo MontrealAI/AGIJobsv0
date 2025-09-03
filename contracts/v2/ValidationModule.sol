@@ -677,6 +677,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         uint256 rcRand;
         if (address(randaoCoordinator) != address(0)) {
+            // RandaoCoordinator.random already mixes its seed with `block.prevrandao`
             rcRand = randaoCoordinator.random(bytes32(jobId));
         }
 

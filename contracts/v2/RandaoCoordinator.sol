@@ -8,8 +8,9 @@ import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
 /// @notice Simple commit-reveal randomness aggregator with penalties for
 ///         non-revealing participants. Participants commit hashed secrets
 ///         during the commit window and must reveal before the reveal window
-///         expires. Revealed secrets are XORed together to form the final
-///         random value accessible via {random}.
+///         expires. Revealed secrets are XORed together to form a seed which
+///         {random} mixes with `block.prevrandao` so the output changes every
+///         block.
 contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     /// @notice Duration of the commit phase in seconds.
     uint256 public immutable commitWindow;
@@ -83,11 +84,12 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     }
 
     /// @notice Retrieve aggregated randomness for a tag once reveal window passes.
+    /// @dev Mixes the XORed seed with `block.prevrandao` so results differ each block.
     function random(bytes32 tag) external view override returns (uint256) {
         Round storage r = rounds[tag];
         if (r.revealDeadline == 0 || block.timestamp <= r.revealDeadline)
             revert("random not ready");
-        return r.randomness;
+        return uint256(keccak256(abi.encode(r.randomness, block.prevrandao)));
     }
 
     /// @notice Flag a participant's deposit as forfeited after reveal deadline.

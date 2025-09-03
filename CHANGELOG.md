@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## v2
 - Bumped all `contracts/v2` module `version` constants to `2` and updated related checks and documentation.
+- `RandaoCoordinator.random` now mixes the XORed seed with `block.prevrandao` for block-dependent entropy.
 
 ## v1
 - Updated Solidity compiler to version 0.8.21 across contracts, configuration, and docs.

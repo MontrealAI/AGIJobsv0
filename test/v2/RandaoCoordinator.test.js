@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
 const DEPOSIT = 1n;
@@ -38,8 +38,22 @@ describe("RandaoCoordinator", function () {
     await randao.connect(a).reveal(tag, s1);
     await randao.connect(b).reveal(tag, s2);
     await time.increase(11);
-    const r = await randao.random(tag);
-    expect(r).to.equal(s1 ^ s2);
+    const rand1 = "0x" + "01".repeat(32);
+    await network.provider.send("hardhat_setPrevRandao", [rand1]);
+    await network.provider.send("evm_mine");
+    const r1 = await randao.random(tag);
+    const expected1 = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ["uint256", "bytes32"],
+        [s1 ^ s2, rand1]
+      )
+    );
+    expect(r1).to.equal(expected1);
+    const rand2 = "0x" + "02".repeat(32);
+    await network.provider.send("hardhat_setPrevRandao", [rand2]);
+    await network.provider.send("evm_mine");
+    const r2 = await randao.random(tag);
+    expect(r2).to.not.equal(r1);
     const bal = await ethers.provider.getBalance(await randao.getAddress());
     expect(bal).to.equal(0n);
   });
@@ -73,8 +87,19 @@ describe("RandaoCoordinator", function () {
     await randao.connect(a).reveal(tag, s1);
     // b does not reveal
     await time.increase(11);
-    const r = await randao.random(tag);
-    expect(r).to.equal(s1);
+    const rand1 = "0x" + "aa".repeat(32);
+    await network.provider.send("hardhat_setPrevRandao", [rand1]);
+    await network.provider.send("evm_mine");
+    const r1 = await randao.random(tag);
+    const expected1 = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(["uint256", "bytes32"], [s1, rand1])
+    );
+    expect(r1).to.equal(expected1);
+    const rand2 = "0x" + "bb".repeat(32);
+    await network.provider.send("hardhat_setPrevRandao", [rand2]);
+    await network.provider.send("evm_mine");
+    const r2 = await randao.random(tag);
+    expect(r2).to.not.equal(r1);
     const bal = await ethers.provider.getBalance(await randao.getAddress());
     expect(bal).to.equal(DEPOSIT);
   });
