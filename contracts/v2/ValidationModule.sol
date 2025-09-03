@@ -12,6 +12,7 @@ import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
 import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 
 error InvalidJobRegistry();
@@ -68,6 +69,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     IStakeManager public stakeManager;
     IReputationEngine public reputationEngine;
     IIdentityRegistry public identityRegistry;
+    IRandaoCoordinator public randaoCoordinator;
 
     // timing configuration
     uint256 public commitWindow;
@@ -170,6 +172,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
     event ValidatorPoolRotationUpdated(uint256 newRotation);
+    event RandaoCoordinatorUpdated(address coordinator);
     /// @notice Emitted when an additional validator is added or removed.
     /// @param validator Address being updated.
     /// @param allowed True if the validator is whitelisted, false if removed.
@@ -278,6 +281,16 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
         emit IdentityRegistryUpdated(address(registry));
+    }
+
+    /// @notice Set the Randao coordinator used for randomness.
+    /// @param coordinator Address of the RandaoCoordinator contract.
+    function setRandaoCoordinator(IRandaoCoordinator coordinator)
+        external
+        onlyOwner
+    {
+        randaoCoordinator = coordinator;
+        emit RandaoCoordinatorUpdated(address(coordinator));
     }
 
     /// @notice Pause validation operations
@@ -618,9 +631,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             return selected;
         }
 
-        uint256 randao = uint256(block.prevrandao);
-        if (randao == 0) {
-            randao = uint256(
+        uint256 randaoValue = uint256(block.prevrandao);
+        if (randaoValue == 0) {
+            randaoValue = uint256(
                 keccak256(
                     abi.encodePacked(
                         blockhash(block.number - 1),
@@ -634,15 +647,22 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         unchecked {
             jobNonce[jobId] += 1;
         }
+
+        uint256 rcRand;
+        if (address(randaoCoordinator) != address(0)) {
+            rcRand = randaoCoordinator.random(bytes32(jobId));
+        }
+
         uint256 seed = uint256(
             keccak256(
                 abi.encodePacked(
                     jobId,
                     jobNonce[jobId],
                     pendingEntropy[jobId],
-                    randao,
+                    randaoValue,
                     bhash,
-                    address(this)
+                    address(this),
+                    rcRand
                 )
             )
         );
@@ -674,7 +694,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (selectionStrategy == IValidationModule.SelectionStrategy.Rotating) {
             uint256 rotationStart = validatorPoolRotation;
             uint256 offset = uint256(
-                keccak256(abi.encodePacked(randao, bhash))
+                keccak256(abi.encodePacked(randaoValue, bhash))
             ) % n;
             rotationStart = (rotationStart + offset) % n;
             uint256 i;
