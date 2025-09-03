@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 describe("JobRegistry governance finalization", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let token, stakeManager, rep, registry, identity;
+  let token, stakeManager, rep, registry, identity, router;
   let owner, employer, agent, treasury;
   const reward = 100n;
   const stake = 200n;
@@ -12,6 +12,11 @@ describe("JobRegistry governance finalization", function () {
     [owner, employer, agent, treasury] = await ethers.getSigners();
 
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -23,7 +28,8 @@ describe("JobRegistry governance finalization", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
@@ -73,9 +79,7 @@ describe("JobRegistry governance finalization", function () {
     await token.mint(employer.address, reward);
     await token.mint(agent.address, reward + stake);
 
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stake);
+    await token.connect(agent).approve(await router.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
   });
 
@@ -106,9 +110,7 @@ describe("JobRegistry governance finalization", function () {
   }
 
   it("redirects reward and stake when agent blacklisted", async () => {
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry
       .connect(employer)
@@ -135,9 +137,7 @@ describe("JobRegistry governance finalization", function () {
   });
 
   it("redirects reward when employer blacklisted", async () => {
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
     await registry
       .connect(employer)

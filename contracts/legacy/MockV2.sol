@@ -22,6 +22,7 @@ contract MockStakeManager is IStakeManager {
     mapping(Role => uint256) public totalStakes;
     address public disputeModule;
     address public override jobRegistry;
+    IPaymentRouter public override router;
 
     function setJobRegistry(address j) external { jobRegistry = j; }
 
@@ -63,6 +64,7 @@ contract MockStakeManager is IStakeManager {
     function setValidatorRewardPct(uint256) external override {}
     function addAGIType(address, uint256) external override {}
     function removeAGIType(address) external override {}
+
 
     function slash(address user, Role role, uint256 amount, address)
         external

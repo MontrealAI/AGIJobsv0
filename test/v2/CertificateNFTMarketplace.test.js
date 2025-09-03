@@ -4,7 +4,7 @@ const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("CertificateNFT marketplace", function () {
   const price = ethers.parseUnits("1", AGIALPHA_DECIMALS);
-  let owner, seller, buyer, token, stake, nft;
+  let owner, seller, buyer, token, stake, nft, router;
 
   beforeEach(async () => {
     [owner, seller, buyer] = await ethers.getSigners();
@@ -24,6 +24,11 @@ describe("CertificateNFT marketplace", function () {
     await token.mint(seller.address, price);
     await token.mint(owner.address, price);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -34,7 +39,8 @@ describe("CertificateNFT marketplace", function () {
       owner.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stake.setMinStake(1);
 
@@ -70,7 +76,7 @@ describe("CertificateNFT marketplace", function () {
         "InsufficientAllowance"
       );
 
-      await token.connect(buyer).approve(await nft.getAddress(), price);
+      await token.connect(buyer).approve(await router.getAddress(), price);
       await expect(nft.connect(buyer).purchase(1))
         .to.emit(nft, "NFTPurchased")
         .withArgs(1, buyer.address, price);
@@ -123,7 +129,7 @@ describe("CertificateNFT marketplace", function () {
   it("rejects purchase after delisting", async () => {
       await nft.connect(seller).list(1, price);
       await nft.connect(seller).delist(1);
-      await token.connect(buyer).approve(await nft.getAddress(), price);
+      await token.connect(buyer).approve(await router.getAddress(), price);
       await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
         nft,
         "NotListed"
@@ -132,7 +138,7 @@ describe("CertificateNFT marketplace", function () {
 
   it("prevents self purchase", async () => {
       await nft.connect(seller).list(1, price);
-      await token.connect(seller).approve(await nft.getAddress(), price);
+      await token.connect(seller).approve(await router.getAddress(), price);
       await expect(nft.connect(seller).purchase(1)).to.be.revertedWithCustomError(
         nft,
         "SelfPurchase"
@@ -153,7 +159,7 @@ describe("CertificateNFT marketplace", function () {
 
       await nft.connect(owner).unpause();
       await nft.connect(seller).list(1, price);
-      await token.connect(buyer).approve(await nft.getAddress(), price);
+      await token.connect(buyer).approve(await router.getAddress(), price);
 
       await nft.connect(owner).pause();
       await expect(nft.connect(buyer).purchase(1)).to.be.revertedWithCustomError(
@@ -196,7 +202,12 @@ describe("CertificateNFT marketplace", function () {
       const attacker = await Reenter.deploy(await nft.getAddress());
 
       await token.transfer(await attacker.getAddress(), price);
-      await attacker.approveToken(await token.getAddress(), price);
+      const attackerSigner = await ethers.getImpersonatedSigner(
+        await attacker.getAddress()
+      );
+      await token
+        .connect(attackerSigner)
+        .approve(await router.getAddress(), price);
 
       await expect(attacker.buy(1))
         .to.emit(nft, "NFTPurchased")

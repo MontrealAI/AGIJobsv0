@@ -19,6 +19,11 @@ describe("Governance via Timelock", function () {
     const token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
     await token.mint(admin.address, 1000);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    const router = await Router.deploy(admin.address);
+
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -29,7 +34,8 @@ describe("Governance via Timelock", function () {
       admin.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      await timelock.getAddress()
+      await timelock.getAddress(),
+      await router.getAddress()
     );
     await stake.waitForDeployment();
 

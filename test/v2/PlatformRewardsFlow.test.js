@@ -10,7 +10,7 @@ const FEE = 300n * TOKEN; // fee 300 tokens
 describe("Platform reward flow", function () {
   const { AGIALPHA } = require("../../scripts/constants");
   let owner, alice, bob, employer, treasury;
-  let token, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool, taxPolicy;
+  let token, stakeManager, jobRegistry, platformRegistry, jobRouter, feePool, taxPolicy, router;
 
   beforeEach(async () => {
     [owner, alice, bob, employer, treasury] = await ethers.getSigners();
@@ -19,6 +19,11 @@ describe("Platform reward flow", function () {
     await token.mint(alice.address, 1000n * TOKEN);
     await token.mint(bob.address, 1000n * TOKEN);
     await token.mint(employer.address, 1000n * TOKEN);
+
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -30,7 +35,8 @@ describe("Platform reward flow", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -87,6 +93,7 @@ describe("Platform reward flow", function () {
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       treasury.address
     );
@@ -105,8 +112,8 @@ describe("Platform reward flow", function () {
     await taxPolicy.connect(bob).acknowledge();
 
     // stake and register
-    await token.connect(alice).approve(await stakeManager.getAddress(), STAKE_ALICE);
-    await token.connect(bob).approve(await stakeManager.getAddress(), STAKE_BOB);
+    await token.connect(alice).approve(await router.getAddress(), STAKE_ALICE);
+    await token.connect(bob).approve(await router.getAddress(), STAKE_BOB);
     await stakeManager.connect(alice).depositStake(2, STAKE_ALICE);
     await stakeManager.connect(bob).depositStake(2, STAKE_BOB);
     await platformRegistry.connect(alice).register();
@@ -125,7 +132,7 @@ describe("Platform reward flow", function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
     const jobId = ethers.encodeBytes32String("job1");
-    await token.connect(employer).approve(await stakeManager.getAddress(), REWARD + FEE);
+    await token.connect(employer).approve(await router.getAddress(), REWARD + FEE);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, REWARD + FEE);

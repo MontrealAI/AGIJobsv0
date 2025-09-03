@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 describe("StakeManager reentrancy", function () {
   const { AGIALPHA } = require("../../scripts/constants");
   let owner, employer, agent, validator, treasury;
-  let token, stakeManager, jobRegistry;
+  let token, stakeManager, jobRegistry, router;
 
   beforeEach(async () => {
     [owner, employer, agent, validator, treasury] = await ethers.getSigners();
@@ -16,6 +16,11 @@ describe("StakeManager reentrancy", function () {
     token = await ethers.getContractAt("ReentrantERC206", AGIALPHA);
     await token.mint(employer.address, ethers.parseEther("1000"));
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -26,7 +31,8 @@ describe("StakeManager reentrancy", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -49,7 +55,7 @@ describe("StakeManager reentrancy", function () {
     const reward = ethers.parseEther("100");
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+      .approve(await router.getAddress(), reward);
     await jobRegistry.lockReward(jobId, employer.address, reward);
 
     await expect(
@@ -75,7 +81,7 @@ describe("StakeManager reentrancy", function () {
 
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), amount);
+      .approve(await router.getAddress(), amount);
     await jobRegistry.lockReward(jobId, employer.address, amount);
 
     await expect(

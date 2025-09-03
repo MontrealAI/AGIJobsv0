@@ -3,7 +3,7 @@ const { ethers, artifacts, network } = require("hardhat");
 const { AGIALPHA } = require("../../scripts/constants");
 
 describe("StakeManager acknowledgeAndDeposit", function () {
-  let token, stakeManager, owner, user;
+  let token, stakeManager, owner, user, router;
 
   beforeEach(async () => {
     [owner, user] = await ethers.getSigners();
@@ -23,6 +23,11 @@ describe("StakeManager acknowledgeAndDeposit", function () {
     await token.mint(owner.address, 1000);
     await token.mint(user.address, 1000);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -33,7 +38,8 @@ describe("StakeManager acknowledgeAndDeposit", function () {
       owner.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
   });
@@ -55,7 +61,7 @@ describe("StakeManager acknowledgeAndDeposit", function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await router.getAddress(), 100);
 
     await expect(
       stakeManager.connect(user).acknowledgeAndDeposit(0, 100)

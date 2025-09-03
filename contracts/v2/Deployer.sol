@@ -19,6 +19,7 @@ import {IdentityRegistry} from "./IdentityRegistry.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {PlatformIncentives} from "./PlatformIncentives.sol";
 import {FeePool} from "./FeePool.sol";
+import {PaymentRouter} from "./PaymentRouter.sol";
 import {TaxPolicy} from "./TaxPolicy.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IPlatformRegistry} from "./interfaces/IPlatformRegistry.sol";
@@ -269,6 +270,7 @@ contract Deployer is Ownable {
             treasurySlashPct = 100;
         }
         uint96 jobStake = econ.jobStake;
+        PaymentRouter payRouter = new PaymentRouter(governance);
         StakeManager stake = new StakeManager(
             minStake,
             employerSlashPct,
@@ -276,7 +278,8 @@ contract Deployer is Ownable {
             governance,
             address(0),
             address(0),
-            address(this)
+            address(this),
+            payRouter
         );
         address[] memory ackInit = new address[](1);
         ackInit[0] = address(stake);
@@ -320,6 +323,7 @@ contract Deployer is Ownable {
 
         FeePool pool = new FeePool(
             IStakeManager(address(stake)),
+            payRouter,
             burnPct,
             governance
         );

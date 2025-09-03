@@ -5,6 +5,7 @@ import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
 import {IFeePool} from "../interfaces/IFeePool.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPaymentRouter} from "../interfaces/IPaymentRouter.sol";
 
 /// @dev Stake manager mock that attempts to reenter ValidationModule calls.
 contract ReentrantStakeManager is IStakeManager {
@@ -14,6 +15,7 @@ contract ReentrantStakeManager is IStakeManager {
     mapping(Role => uint256) public totalStakes;
     address public override jobRegistry;
     IValidationModule public validation;
+    IPaymentRouter public override router;
 
     bool public attackSlash;
     uint256 public attackJobId;

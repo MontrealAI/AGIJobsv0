@@ -3,13 +3,18 @@ const { ethers } = require("hardhat");
 
 describe("JobRegistry Treasury", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let registry, stakeManager, token;
+  let registry, stakeManager, token, router;
   let owner, treasury;
 
   beforeEach(async function () {
     [owner, treasury] = await ethers.getSigners();
 
     token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
 
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
@@ -21,7 +26,8 @@ describe("JobRegistry Treasury", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
 
     const Registry = await ethers.getContractFactory(

@@ -6,17 +6,14 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20Burnable} from "./interfaces/IERC20Burnable.sol";
-import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
+import {BURN_ADDRESS} from "./Constants.sol";
+import {IPaymentRouter} from "./interfaces/IPaymentRouter.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 error InvalidPercentage();
 error NotStakeManager();
 error ZeroAmount();
 error EtherNotAccepted();
-error InvalidTokenDecimals();
 error ZeroAddress();
 error InvalidStakeManagerVersion();
 error BurnAddressNotZero();
@@ -28,15 +25,14 @@ error BurnAddressNotZero();
 ///      decimals, well within `uint256` range).
 
 contract FeePool is Ownable, Pausable, ReentrancyGuard {
-    using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
     uint256 public constant DEFAULT_BURN_PCT = 5;
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
-    /// @notice ERC20 token used for fees and rewards (immutable $AGIALPHA)
-    IERC20 public immutable token = IERC20(AGIALPHA);
+    /// @notice Payment router handling token transfers
+    IPaymentRouter public router;
 
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
@@ -83,15 +79,16 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// when zero address.
     constructor(
         IStakeManager _stakeManager,
+        IPaymentRouter _router,
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
         if (BURN_ADDRESS != address(0)) {
             revert BurnAddressNotZero();
         }
-        if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
-            revert InvalidTokenDecimals();
-        }
+        router = _router;
+        IERC20(_router.token()).approve(address(_router), type(uint256).max);
+
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         if (pct > 100) revert InvalidPercentage();
 
@@ -109,6 +106,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
         treasury = _treasury == address(0) ? msg.sender : _treasury;
         emit TreasuryUpdated(treasury);
+    }
+
+    event PaymentRouterUpdated(address indexed router);
+
+    function setPaymentRouter(IPaymentRouter _router) external onlyOwner {
+        router = _router;
+        IERC20(_router.token()).approve(address(_router), type(uint256).max);
+        emit PaymentRouterUpdated(address(_router));
     }
 
     modifier onlyStakeManager() {
@@ -137,7 +142,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @param amount token amount with 18 decimals.
     function contribute(uint256 amount) external nonReentrant {
         if (amount == 0) revert ZeroAmount();
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        router.transferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
         emit RewardPoolContribution(msg.sender, amount);
     }
@@ -160,14 +165,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
-            IERC20Burnable(AGIALPHA).burn(burnAmount);
+            router.burn(address(this), burnAmount);
             emit Burned(burnAmount);
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);
         if (total == 0) {
             if (distribute > 0 && treasury != address(0)) {
-                token.safeTransfer(treasury, distribute);
+                router.transfer(treasury, distribute);
             }
             emit FeesDistributed(0);
             return;
@@ -178,7 +183,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
         uint256 dust = distribute - accounted;
         if (dust > 0 && treasury != address(0)) {
-            token.safeTransfer(treasury, dust);
+            router.transfer(treasury, dust);
         }
         emit FeesDistributed(accounted);
     }
@@ -199,7 +204,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 cumulative = (stake * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
         userCheckpoint[msg.sender] = cumulative;
-        token.safeTransfer(msg.sender, owed);
+        router.transfer(msg.sender, owed);
         emit RewardsClaimed(msg.sender, owed);
     }
 
@@ -224,7 +229,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         onlyGovernance
         nonReentrant
     {
-        token.safeTransfer(to, amount);
+        router.transfer(to, amount);
         emit GovernanceWithdrawal(to, amount);
     }
 

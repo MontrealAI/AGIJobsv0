@@ -121,13 +121,9 @@ describe("Job expiration", function () {
     await policy.connect(agent).acknowledge();
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stake);
+    await token.connect(agent).approve(await router.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+    await token.connect(employer).approve(await router.getAddress(), reward);
   });
 
   it("allows anyone to expire job after deadline and refunds employer", async () => {

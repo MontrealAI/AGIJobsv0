@@ -15,6 +15,11 @@ describe("PlatformRegistry", function () {
     await token.mint(platform.address, STAKE);
     await token.mint(owner.address, STAKE);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    const router = await Router.deploy(platform.address);
+
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -25,7 +30,8 @@ describe("PlatformRegistry", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      platform.address
+      platform.address,
+      await router.getAddress()
     );
     await stakeManager.connect(platform).setMinStake(STAKE);
     const MockRegistry = await ethers.getContractFactory(
@@ -35,7 +41,7 @@ describe("PlatformRegistry", function () {
     await stakeManager
       .connect(platform)
       .setJobRegistry(await mockRegistry.getAddress());
-    await token.connect(platform).approve(await stakeManager.getAddress(), STAKE);
+    await token.connect(platform).approve(await router.getAddress(), STAKE);
     await stakeManager.connect(platform).depositStake(2, STAKE); // Role.Platform = 2
 
     const Rep = await ethers.getContractFactory(
@@ -104,7 +110,7 @@ describe("PlatformRegistry", function () {
     await stakeManager.connect(platform).withdrawStake(2, STAKE);
     await token
       .connect(platform)
-      .approve(await stakeManager.getAddress(), STAKE);
+      .approve(await router.getAddress(), STAKE);
     await expect(registry.connect(platform).stakeAndRegister(STAKE))
       .to.emit(registry, "Activated")
       .withArgs(platform.address, STAKE);
@@ -179,7 +185,7 @@ describe("PlatformRegistry", function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await token
       .connect(platform)
-      .approve(await stakeManager.getAddress(), STAKE);
+      .approve(await router.getAddress(), STAKE);
     await expect(
       registry.connect(platform).acknowledgeStakeAndRegister(STAKE)
     )
@@ -192,7 +198,7 @@ describe("PlatformRegistry", function () {
     await stakeManager.connect(platform).withdrawStake(2, STAKE);
     await token
       .connect(platform)
-      .approve(await stakeManager.getAddress(), STAKE);
+      .approve(await router.getAddress(), STAKE);
     const JobRegistry = await ethers.getContractFactory(
       "contracts/v2/JobRegistry.sol:JobRegistry"
     );

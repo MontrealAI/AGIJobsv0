@@ -4,7 +4,7 @@ const { time } = require("@nomicfoundation/hardhat-network-helpers");
 const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
 
 describe("job finalization integration", function () {
-  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
+  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy, router;
   let owner, employer, agent, validator1, validator2;
   const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
   const stakeRequired = ethers.parseUnits("200", AGIALPHA_DECIMALS);
@@ -20,6 +20,11 @@ describe("job finalization integration", function () {
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -30,7 +35,8 @@ describe("job finalization integration", function () {
       owner.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
 
     await stakeManager.connect(owner).setMinStake(1);
@@ -84,6 +90,7 @@ describe("job finalization integration", function () {
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
+      await router.getAddress(),
       0,
       owner.address
     );
@@ -136,11 +143,11 @@ describe("job finalization integration", function () {
   async function setupJob(result) {
     const fee = (reward * BigInt(feePct)) / 100n;
     const vReward = (reward * BigInt(validatorRewardPct)) / 100n;
-    await token.connect(agent).approve(await stakeManager.getAddress(), stakeRequired);
+    await token.connect(agent).approve(await router.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      .approve(await router.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
     await registry.connect(employer).createJob(reward, deadline, "uri");
     const jobId = 1;

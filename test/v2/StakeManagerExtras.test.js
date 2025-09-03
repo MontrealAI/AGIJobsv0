@@ -5,7 +5,7 @@ const { ethers } = require("hardhat");
 
 describe("StakeManager extras", function () {
   const { AGIALPHA } = require("../../scripts/constants");
-  let token, stakeManager, owner, user, treasury;
+  let token, stakeManager, owner, user, treasury, router;
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
@@ -14,6 +14,11 @@ describe("StakeManager extras", function () {
       AGIALPHA
     );
     await token.mint(user.address, ethers.parseEther("1000"));
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    router = await Router.deploy(owner.address);
+
     const StakeManager = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -24,7 +29,8 @@ describe("StakeManager extras", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
   });
@@ -69,7 +75,7 @@ describe("StakeManager extras", function () {
     await setupRegistryAck(user);
     await token
       .connect(user)
-      .approve(await stakeManager.getAddress(), ethers.parseEther("200"));
+      .approve(await router.getAddress(), ethers.parseEther("200"));
     await stakeManager
       .connect(user)
       .depositStake(0, ethers.parseEther("200"));
@@ -85,7 +91,7 @@ describe("StakeManager extras", function () {
     await setupRegistryAck();
     await token
       .connect(user)
-      .approve(await stakeManager.getAddress(), ethers.parseEther("100"));
+      .approve(await router.getAddress(), ethers.parseEther("100"));
     await expect(
       stakeManager
         .connect(user)
@@ -102,7 +108,7 @@ describe("StakeManager extras", function () {
       .setMaxStakePerAddress(ethers.parseEther("150"));
     await token
       .connect(user)
-      .approve(await stakeManager.getAddress(), ethers.parseEther("200"));
+      .approve(await router.getAddress(), ethers.parseEther("200"));
     await stakeManager
       .connect(user)
       .depositStake(0, ethers.parseEther("100"));

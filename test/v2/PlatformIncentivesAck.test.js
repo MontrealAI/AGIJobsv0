@@ -10,6 +10,11 @@ describe("PlatformIncentives acknowledge", function () {
     await token.mint(owner.address, 1000);
     await token.mint(operator.address, 1000);
 
+    const Router = await ethers.getContractFactory(
+      "contracts/v2/PaymentRouter.sol:PaymentRouter"
+    );
+    const router = await Router.deploy(owner.address);
+
     const Stake = await ethers.getContractFactory(
       "contracts/v2/StakeManager.sol:StakeManager"
     );
@@ -20,7 +25,8 @@ describe("PlatformIncentives acknowledge", function () {
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      owner.address
+      owner.address,
+      await router.getAddress()
     );
     await stakeManager.connect(owner).setMinStake(1);
 
@@ -85,9 +91,7 @@ describe("PlatformIncentives acknowledge", function () {
 
     const STAKE = 10n ** 18n;
     await token.mint(operator.address, STAKE);
-    await token
-      .connect(operator)
-      .approve(await stakeManager.getAddress(), STAKE);
+    await token.connect(operator).approve(await router.getAddress(), STAKE);
 
     await incentives.connect(operator).acknowledgeStakeAndActivate(STAKE);
     expect(await policy.hasAcknowledged(operator.address)).to.equal(true);

@@ -3,9 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {AGIALPHA, AGIALPHA_DECIMALS} from "./Constants.sol";
+import {IPaymentRouter} from "./interfaces/IPaymentRouter.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
@@ -16,7 +14,6 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 ///      `ACCUMULATOR_SCALE` adds 12 extra decimals of precision (30 total),
 ///      which fits well within `uint256` limits.
 contract GovernanceReward is Ownable {
-    using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
 
@@ -26,7 +23,7 @@ contract GovernanceReward is Ownable {
     /// @notice default reward percentage when constructor param is zero
     uint256 public constant DEFAULT_REWARD_PCT = 5;
 
-    IERC20 public immutable token = IERC20(AGIALPHA);
+    IPaymentRouter public router;
     IFeePool public feePool;
     IStakeManager public stakeManager;
     IStakeManager.Role public rewardRole;
@@ -56,7 +53,6 @@ contract GovernanceReward is Ownable {
     event StakeManagerUpdated(address indexed stakeManager);
     event RewardRoleUpdated(IStakeManager.Role role);
 
-    error InvalidTokenDecimals();
 
     constructor(
         IFeePool _feePool,
@@ -67,10 +63,9 @@ contract GovernanceReward is Ownable {
     ) Ownable(msg.sender) {
         feePool = _feePool;
         stakeManager = _stakeManager;
+        router = _stakeManager.router();
+        _approveRouter();
         rewardRole = _role;
-        if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
-            revert InvalidTokenDecimals();
-        }
         emit FeePoolUpdated(address(_feePool));
         emit StakeManagerUpdated(address(_stakeManager));
         emit RewardRoleUpdated(_role);
@@ -109,6 +104,8 @@ contract GovernanceReward is Ownable {
     /// @notice update the StakeManager reference
     function setStakeManager(IStakeManager newStakeManager) external onlyOwner {
         stakeManager = newStakeManager;
+        router = newStakeManager.router();
+        _approveRouter();
         emit StakeManagerUpdated(address(newStakeManager));
     }
 
@@ -144,10 +141,11 @@ contract GovernanceReward is Ownable {
         uint256 epoch = currentEpoch;
         uint256 total = totalStake[epoch];
         require(total > 0, "no voters");
-        uint256 poolBalAfter = token.balanceOf(address(feePool));
+        IERC20 t = IERC20(router.token());
+        uint256 poolBalAfter = t.balanceOf(address(feePool));
         uint256 expected = ((poolBalAfter + rewardAmount) * rewardPct) / 100;
         require(rewardAmount == expected, "reward");
-        require(token.balanceOf(address(this)) >= rewardAmount, "funds");
+        require(t.balanceOf(address(this)) >= rewardAmount, "funds");
         rewardPerStake[epoch] = (rewardAmount * ACCUMULATOR_SCALE) / total;
         emit EpochFinalized(epoch, rewardAmount);
         currentEpoch = epoch + 1;
@@ -161,8 +159,12 @@ contract GovernanceReward is Ownable {
         claimed[epoch][msg.sender] = true;
         uint256 stake = stakeSnapshot[epoch][msg.sender];
         uint256 amount = (stake * rewardPerStake[epoch]) / ACCUMULATOR_SCALE;
-        token.safeTransfer(msg.sender, amount);
+        router.transfer(msg.sender, amount);
         emit RewardClaimed(epoch, msg.sender, amount);
+    }
+
+    function _approveRouter() internal {
+        IERC20(router.token()).approve(address(router), type(uint256).max);
     }
 
     /// @notice Confirms the contract and owner are perpetually tax neutral.
