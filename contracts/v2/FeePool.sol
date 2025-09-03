@@ -161,11 +161,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
-            try IERC20Burnable(AGIALPHA).burn(burnAmount) {
-                emit Burned(burnAmount);
-            } catch {
-                revert TokenNotBurnable();
-            }
+            _burnFees(burnAmount);
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);
@@ -185,6 +181,17 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
             token.safeTransfer(treasury, dust);
         }
         emit FeesDistributed(accounted);
+    }
+
+    function _burnFees(uint256 amt) internal {
+        if (BURN_ADDRESS != address(0)) {
+            revert BurnAddressNotZero();
+        }
+        try IERC20Burnable(address(token)).burn(amt) {
+            emit Burned(amt);
+        } catch {
+            revert TokenNotBurnable();
+        }
     }
 
     /**
