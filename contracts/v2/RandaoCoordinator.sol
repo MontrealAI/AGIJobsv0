@@ -19,6 +19,9 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     /// @notice Deposit required with each commit, forfeited if reveal is missed.
     uint256 public immutable deposit;
 
+    /// @notice Address receiving forfeited deposits.
+    address payable public immutable treasury;
+
     struct Round {
         uint256 commitDeadline;
         uint256 revealDeadline;
@@ -36,12 +39,16 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     event Revealed(bytes32 indexed tag, address indexed user, uint256 secret);
     event DepositForfeited(bytes32 indexed tag, address indexed user, uint256 amount);
 
-    constructor(uint256 _commitWindow, uint256 _revealWindow, uint256 _deposit)
-        Ownable(msg.sender)
-    {
+    constructor(
+        uint256 _commitWindow,
+        uint256 _revealWindow,
+        uint256 _deposit,
+        address payable _treasury
+    ) Ownable(msg.sender) {
         commitWindow = _commitWindow;
         revealWindow = _revealWindow;
         deposit = _deposit;
+        treasury = _treasury;
     }
 
     /// @notice Commit a secret hash for a given tag.
@@ -99,12 +106,8 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         uint256 dep = r.deposits[user];
         if (dep == 0) revert("no deposit");
         r.deposits[user] = 0;
+        treasury.transfer(dep);
         emit DepositForfeited(tag, user, dep);
-    }
-
-    /// @notice Withdraw accumulated forfeited deposits.
-    function withdraw(address payable to) external onlyOwner {
-        to.transfer(address(this).balance);
     }
 
     // receive ether from commits
