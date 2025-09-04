@@ -10,11 +10,11 @@ function tagFromNumber(n) {
 
 describe("RandaoCoordinator", function () {
   it("aggregates revealed secrets", async () => {
-    const [a, b] = await ethers.getSigners();
+    const [a, b, t] = await ethers.getSigners();
     const Randao = await ethers.getContractFactory(
       "contracts/v2/RandaoCoordinator.sol:RandaoCoordinator"
     );
-    const randao = await Randao.deploy(10, 10, DEPOSIT);
+    const randao = await Randao.deploy(10, 10, DEPOSIT, t.address);
     const tag = tagFromNumber(1);
     const s1 = 1n;
     const c1 = ethers.keccak256(
@@ -59,11 +59,11 @@ describe("RandaoCoordinator", function () {
   });
 
   it("penalizes missing reveals", async () => {
-    const [a, b] = await ethers.getSigners();
+    const [a, b, t] = await ethers.getSigners();
     const Randao = await ethers.getContractFactory(
       "contracts/v2/RandaoCoordinator.sol:RandaoCoordinator"
     );
-    const randao = await Randao.deploy(10, 10, DEPOSIT);
+    const randao = await Randao.deploy(10, 10, DEPOSIT, t.address);
     const tag = tagFromNumber(2);
     const s1 = 3n;
     const c1 = ethers.keccak256(
@@ -100,14 +100,18 @@ describe("RandaoCoordinator", function () {
     await network.provider.send("evm_mine");
     const r2 = await randao.random(tag);
     expect(r2).to.not.equal(r1);
+    const before = await ethers.provider.getBalance(t.address);
+    await randao.forfeit(tag, b.address);
+    const after = await ethers.provider.getBalance(t.address);
+    expect(after - before).to.equal(DEPOSIT);
     const bal = await ethers.provider.getBalance(await randao.getAddress());
-    expect(bal).to.equal(DEPOSIT);
+    expect(bal).to.equal(0n);
   });
 });
 
 describe("ValidationModule fairness", function () {
   it("uses Randao randomness for validator selection", async () => {
-    const [owner, v1, v2, v3] = await ethers.getSigners();
+    const [owner, v1, v2, v3, t] = await ethers.getSigners();
     const Tax = await ethers.getContractFactory(
       "contracts/v2/TaxPolicy.sol:TaxPolicy"
     );
@@ -131,7 +135,7 @@ describe("ValidationModule fairness", function () {
     const Randao = await ethers.getContractFactory(
       "contracts/v2/RandaoCoordinator.sol:RandaoCoordinator"
     );
-    const randao = await Randao.deploy(10, 10, DEPOSIT);
+    const randao = await Randao.deploy(10, 10, DEPOSIT, t.address);
 
     const Validation = await ethers.getContractFactory(
       "contracts/v2/ValidationModule.sol:ValidationModule"
