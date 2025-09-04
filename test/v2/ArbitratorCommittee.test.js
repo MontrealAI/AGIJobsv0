@@ -126,6 +126,21 @@ describe("ArbitratorCommittee", function () {
       .to.emit(dispute, "DisputeRaised")
       .withArgs(1, agent.address, evidence);
 
+    const fakeCommit = ethers.keccak256(
+      ethers.solidityPacked(["address", "uint256", "bool", "uint256"], [
+        employer.address,
+        1,
+        true,
+        4n,
+      ])
+    );
+    await expect(
+      committee.connect(employer).commit(1, fakeCommit)
+    ).to.be.revertedWith("not juror");
+    await expect(
+      committee.connect(employer).reveal(1, true, 4n)
+    ).to.be.revertedWith("not juror");
+
     const s1 = 1n,
       s2 = 2n,
       s3 = 3n;

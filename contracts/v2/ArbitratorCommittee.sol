@@ -20,6 +20,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
         address[] jurors;
         mapping(address => bytes32) commits;
         mapping(address => bool) revealed;
+        mapping(address => bool) isJuror;
         uint256 reveals;
         uint256 employerVotes;
         bool finalized;
@@ -83,6 +84,9 @@ contract ArbitratorCommittee is Ownable, Pausable {
         require(valMod != address(0), "no val");
         address[] memory jurors = IValidationModule(valMod).validators(jobId);
         c.jurors = jurors;
+        for (uint256 i; i < jurors.length; ++i) {
+            c.isJuror[jurors[i]] = true;
+        }
         c.commitDeadline = block.timestamp + commitWindow;
         c.revealDeadline = c.commitDeadline + revealWindow;
         emit CaseOpened(jobId, jurors);
@@ -93,7 +97,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
         Case storage c = cases[jobId];
         require(c.jurors.length != 0, "no case");
         require(block.timestamp <= c.commitDeadline, "commit over");
-        require(_isJuror(c.jurors, msg.sender), "not juror");
+        require(c.isJuror[msg.sender], "not juror");
         require(c.commits[msg.sender] == bytes32(0), "committed");
         c.commits[msg.sender] = commitment;
         emit VoteCommitted(jobId, msg.sender, commitment);
@@ -102,7 +106,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
     /// @notice Reveal a vote previously committed.
     function reveal(uint256 jobId, bool employerWins, uint256 salt) external whenNotPaused {
         Case storage c = cases[jobId];
-        require(_isJuror(c.jurors, msg.sender), "not juror");
+        require(c.isJuror[msg.sender], "not juror");
         require(block.timestamp > c.commitDeadline, "commit phase");
         require(block.timestamp <= c.revealDeadline, "reveal over");
         bytes32 expected = keccak256(abi.encodePacked(msg.sender, jobId, employerWins, salt));
@@ -129,26 +133,17 @@ contract ArbitratorCommittee is Ownable, Pausable {
         address employer = jobRegistry.jobs(jobId).employer;
         disputeModule.resolve(jobId, employerWins);
         address smAddr = jobRegistry.stakeManager();
-        if (absenteeSlash > 0 && smAddr != address(0)) {
-            IStakeManager sm = IStakeManager(smAddr);
-            for (uint256 i; i < c.jurors.length; ++i) {
-                address juror = c.jurors[i];
-                if (c.commits[juror] != bytes32(0) && !c.revealed[juror]) {
-                    sm.slash(juror, absenteeSlash, employer);
-                }
+        IStakeManager sm = IStakeManager(smAddr);
+        bool doSlash = absenteeSlash > 0 && smAddr != address(0);
+        for (uint256 i; i < c.jurors.length; ++i) {
+            address juror = c.jurors[i];
+            if (doSlash && c.commits[juror] != bytes32(0) && !c.revealed[juror]) {
+                sm.slash(juror, absenteeSlash, employer);
             }
+            delete c.isJuror[juror];
         }
         emit CaseFinalized(jobId, employerWins);
         delete cases[jobId];
-    }
-
-    function _isJuror(address[] storage jurors, address account) internal view returns (bool) {
-        for (uint256 i = 0; i < jurors.length; ++i) {
-            if (jurors[i] == account) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /// @notice Pause dispute resolution activities.
