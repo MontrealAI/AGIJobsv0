@@ -2,6 +2,10 @@
 
 This guide walks a non-technical administrator through deploying the AGI Jobs v2 smart contracts on Ethereum using only a web browser and Etherscan.  It also explains best practices such as true token burning, owner updatability and how to record your deployment in this repository.
 
+### Best Practices in AGI Jobs v2
+- **True token burning**: FeePool and StakeManager call the $AGIALPHA `burn()` function, permanently removing tokens instead of sending them to a dead address.
+- **Owner updatability**: The contract owner can adjust fees, stakes and other parameters via `set...` functions without redeploying.
+
 ## Prerequisites
 - **Ethereum wallet with ETH** for gas (e.g. MetaMask).  The deploying wallet becomes the owner of every module – secure it carefully.
 - **$AGIALPHA token address** – mainnet address: `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`.
