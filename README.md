@@ -19,6 +19,10 @@ npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <a
 
 Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax` to skip deploying `TaxPolicy`.
 
+### Etherscan deployment
+
+For a step-by-step walkthrough of deploying AGI Jobs v2 using only a web browser and Etherscan, see [docs/deployment-production-guide.md](docs/deployment-production-guide.md).
+
 ## Migrating from legacy
 
 The original v0 and v1 contracts are preserved under the `legacy` git tag for reference only and receive no support. New development should target the v2 modules in `contracts/v2`. See [docs/migration-guide.md](docs/migration-guide.md) for help mapping legacy entry points to their v2 equivalents.
