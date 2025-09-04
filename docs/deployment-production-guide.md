@@ -65,9 +65,11 @@ After deployment the contracts must learn each other's addresses.
 1. Deploy `ModuleInstaller`.
 2. For StakeManager, ValidationModule, DisputeModule, CertificateNFT, FeePool, PlatformRegistry, JobRouter, PlatformIncentives and IdentityRegistry (if used) call `transferOwnership(installer)`.
 3. On the installer call `initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`.
+   - This single call wires all module addresses, registers `PlatformIncentives` with `PlatformRegistry` and `JobRouter`, assigns the `FeePool` and optional `TaxPolicy`, and then hands ownership of every module back to your wallet.
+   - Execute `initialize` from the same wallet that deployed `ModuleInstaller`; it is owner-only and can run only once.
    - Use `0x0` for any optional modules you chose not to deploy; the installer will skip them.
 4. If using IdentityRegistry, separately call `JobRegistry.setIdentityRegistry` and `ValidationModule.setIdentityRegistry`.
-5. The installer returns ownership to your wallet automatically; verify via the *Read* tabs and emitted events.
+5. After initialization, verify each module's owner and stored addresses via the *Read* tabs and emitted events.
 
 ### Option B: Manual Wiring
 Invoke the following setters from the owner account:
@@ -85,8 +87,12 @@ Invoke the following setters from the owner account:
 ## Step 3: Post-Deployment Configuration and Best Practices
 - **Verify contracts on Etherscan.**  Publish source for every module so the *Read* and *Write* views are available.
 - **Consider multisig/timelock ownership.**  Transfer ownership to a governance address once configuration is complete.
-- **Ensure true token burning.**  `FeePool` and `StakeManager` call the ERC-20 `burn()` function; a non-zero `burnPct` truly reduces token supply.  Adjust it later with `FeePool.setBurnPct`.
-- **Owner updatability.**  Parameters such as fees, stake requirements, burn percentages, validation windows and allowlists can all be tuned through `set...` functions (`JobRegistry.setFeePct`, `StakeManager.setMinStake...`, `ValidationModule.setCommitWindow`, etc.) without redeploying.
+### True Token Burning
+`FeePool` and `StakeManager` invoke the ERC‑20 `burn()` function so any portion marked for burning is permanently removed from total supply rather than sent to a dead address.  You can update the burn rate at any time with `FeePool.setBurnPct`.
+
+### Owner Updatability
+Almost every operational parameter can be changed by the owner without redeploying.  Adjust fees, stake requirements, burn percentages, validation windows or allowlists through `set...` functions such as `JobRegistry.setFeePct`, `StakeManager.setMinStake...` or `ValidationModule.setCommitWindow`.
+
 - **Security.**  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
 - **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization.
 - **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces.
