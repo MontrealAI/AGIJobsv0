@@ -260,6 +260,7 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id("spec");
     await expect(
       registry.connect(employer).createJob(reward, deadline, specHash, "uri")
     )
