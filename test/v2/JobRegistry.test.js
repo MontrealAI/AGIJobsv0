@@ -190,7 +190,10 @@ describe("JobRegistry integration", function () {
     await registry.connect(owner).setJobParameters(reward, 0);
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, "", []))
       .to.emit(registry, "JobApplied")
       .withArgs(1, newAgent.address);
@@ -223,7 +226,10 @@ describe("JobRegistry integration", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + reward / 10);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);
@@ -244,7 +250,10 @@ describe("JobRegistry integration", function () {
   it("allows employer to cancel before completion", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await expect(registry.connect(employer).cancelJob(jobId))
       .to.emit(registry, "JobCancelled")
@@ -257,7 +266,10 @@ describe("JobRegistry integration", function () {
   it("allows owner to delist unassigned job", async () => {
     await token.connect(employer).approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await expect(registry.connect(owner).delistJob(jobId))
       .to.emit(registry, "JobCancelled")

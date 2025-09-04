@@ -149,7 +149,10 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.setResult(true);
@@ -181,7 +184,10 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     await expect(
       registry.connect(agent).applyForJob(1, "", [])
     ).to.be.revertedWithCustomError(registry, "NotAuthorizedAgent");
@@ -198,7 +204,10 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.setResult(false);
@@ -235,7 +244,10 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     await rep.setBlacklist(agent.address, true);
     await expect(
       registry.connect(agent).applyForJob(1, "", [])
@@ -248,8 +260,9 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id("spec");
     await expect(
-      registry.connect(employer).createJob(reward, deadline, "uri")
+      registry.connect(employer).createJob(reward, deadline, specHash, "uri")
     )
       .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
       .withArgs(employer.address);

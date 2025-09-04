@@ -65,7 +65,10 @@ describe("JobRegistry agent gating", function () {
 
   async function createJob() {
     const deadline = (await time.latest()) + 100;
-    await registry.connect(employer).createJob(1, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(1, deadline, specHash, "uri");
     return 1;
   }
 

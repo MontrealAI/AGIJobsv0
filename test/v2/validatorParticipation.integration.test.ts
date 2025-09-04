@@ -114,7 +114,10 @@ describe("validator participation", function () {
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, "agent", []);
     await registry.connect(agent).submit(1, ethers.id("ipfs://result"), "ipfs://result", "agent", []);
@@ -124,7 +127,7 @@ describe("validator participation", function () {
     const commit1 = ethers.keccak256(
       ethers.solidityPacked(
         ["uint256","uint256","bool","bytes32","bytes32"],
-        [1n, nonce, true, salt1, ethers.ZeroHash]
+        [1n, nonce, true, salt1, specHash]
       )
     );
     await validation.connect(v1).commitValidation(1, commit1);
@@ -132,7 +135,7 @@ describe("validator participation", function () {
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
         ["uint256","uint256","bool","bytes32","bytes32"],
-        [1n, nonce, true, salt2, ethers.ZeroHash]
+        [1n, nonce, true, salt2, specHash]
       )
     );
     await validation.connect(v2).commitValidation(1, commit2);
@@ -160,7 +163,10 @@ describe("validator participation", function () {
     const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, "agent", []);
     await registry.connect(agent).submit(1, ethers.id("ipfs://bad"), "ipfs://bad", "agent", []);
@@ -170,7 +176,7 @@ describe("validator participation", function () {
     const commit1 = ethers.keccak256(
       ethers.solidityPacked(
         ["uint256","uint256","bool","bytes32","bytes32"],
-        [1n, nonce, false, salt1, ethers.ZeroHash]
+        [1n, nonce, false, salt1, specHash]
       )
     );
     await validation.connect(v1).commitValidation(1, commit1);
@@ -178,7 +184,7 @@ describe("validator participation", function () {
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
         ["uint256","uint256","bool","bytes32","bytes32"],
-        [1n, nonce, false, salt2, ethers.ZeroHash]
+        [1n, nonce, false, salt2, specHash]
       )
     );
     await validation.connect(v2).commitValidation(1, commit2);

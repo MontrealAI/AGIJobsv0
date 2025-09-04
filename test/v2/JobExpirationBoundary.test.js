@@ -134,7 +134,10 @@ describe("Job expiration boundary", function () {
     const deadline = (await time.latest()) + 100;
     const grace = 50;
     await registry.connect(owner).setExpirationGracePeriod(grace);
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await time.increase(deadline + grace - 1 - (await time.latest()));
@@ -147,7 +150,10 @@ describe("Job expiration boundary", function () {
     const deadline = (await time.latest()) + 100;
     const grace = 50;
     await registry.connect(owner).setExpirationGracePeriod(grace);
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await time.increase(deadline + grace - (await time.latest()));

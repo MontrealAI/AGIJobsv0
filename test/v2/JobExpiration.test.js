@@ -132,9 +132,10 @@ describe("Job expiration", function () {
 
   it("allows anyone to expire job after deadline and refunds employer", async () => {
     const deadline = (await time.latest()) + 100;
+    const specHash = ethers.id("spec");
     await registry
       .connect(employer)
-      .createJob(reward, deadline, "uri");
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await time.increase(200);
@@ -156,9 +157,10 @@ describe("Job expiration", function () {
 
   it("reverts if job has not yet expired", async () => {
     const deadline = (await time.latest()) + 100;
+    const specHash = ethers.id("spec");
     await registry
       .connect(employer)
-      .createJob(reward, deadline, "uri");
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await expect(
@@ -169,9 +171,10 @@ describe("Job expiration", function () {
   it("respects non-zero expiration grace period", async () => {
     const deadline = (await time.latest()) + 100;
     await registry.connect(owner).setExpirationGracePeriod(50);
+    const specHash = ethers.id("spec");
     await registry
       .connect(employer)
-      .createJob(reward, deadline, "uri");
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await time.increase(120);

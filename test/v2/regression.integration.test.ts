@@ -110,7 +110,10 @@ describe("regression scenarios", function () {
     const reward = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
     await registry.connect(agent).applyForJob(1, "agent", []);
 
     await validation.selectValidators(1, 1);
@@ -137,7 +140,10 @@ describe("regression scenarios", function () {
     const reward = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline1 = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline1, "ipfs://job1");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline1, specHash, "ipfs://job1");
     await registry.connect(agent).applyForJob(1, "agent", []);
     await registry.connect(agent).submit(1, ethers.id("ipfs://good"), "ipfs://good", "agent", []);
     const nonce = await validation.jobNonce(1);
@@ -145,7 +151,7 @@ describe("regression scenarios", function () {
     const commit = ethers.keccak256(
       ethers.solidityPacked(
         ["uint256","uint256","bool","bytes32","bytes32"],
-        [1n, nonce, false, salt, ethers.ZeroHash]
+        [1n, nonce, false, salt, specHash]
       )
     );
     await validation.connect(v1).commitValidation(1, commit);
@@ -155,7 +161,9 @@ describe("regression scenarios", function () {
     await validation.finalize(1);
 
     const deadline2 = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline2, "ipfs://job2");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline2, specHash, "ipfs://job2");
     await registry.connect(agent).applyForJob(2, "agent", []);
     await validation.selectValidators(2, 1);
     await ethers.provider.send("evm_mine", []);
@@ -195,7 +203,10 @@ describe("regression scenarios", function () {
     const reward = ethers.parseUnits("10", AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
     await registry.connect(agent).applyForJob(1, "agent", []);
     await registry
       .connect(agent)
