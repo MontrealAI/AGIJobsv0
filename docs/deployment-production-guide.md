@@ -27,8 +27,9 @@ AGI Jobs v2 is modular.  Each contract manages one aspect of the marketplace:
 Deploy each contract through Etherscan and note its address.  Use `0x000...000` as placeholders for module addresses that are not yet deployed.
 
 1. **StakeManager**
-   - Parameters: `token` (AGIALPHA token), `minStake`, `employerPct`, `treasuryPct`, `treasury`.
-   - Supply `0x0` for module addresses not yet deployed.
+   - Parameters: `token` ($AGIALPHA address), `minStake`, `employerPct`, `treasuryPct`, `treasury`.
+   - Enter `0` for `minStake`, `employerPct` and `treasuryPct` to use defaults that send all slashed funds to the treasury.
+   - Supply `0x0` for any module address placeholders that will be wired later.
 2. **ReputationEngine**
    - Constructor: `stakeManager` address.
 3. **IdentityRegistry** *(optional)*
@@ -36,12 +37,15 @@ Deploy each contract through Etherscan and note its address.  Use `0x000...000` 
    - Use `0x00` for any ENS gates you wish to disable.
 4. **ValidationModule**
    - Parameters: `_jobRegistry` placeholder, `stakeManager`, `commitWindow`, `revealWindow`, `minValidators`, `maxValidators`, `validatorPool` (usually empty array).
+   - Recommended defaults: `commitWindow` = `86400`, `revealWindow` = `86400`, `minValidators` = `1`, `maxValidators` = `3`.
 5. **DisputeModule**
    - Parameters: `_jobRegistry` placeholder, `disputeFee`, `disputeWindow`, `moderator` (or `0x0`).
+   - Set `disputeFee` to `0` for a free dispute process or provide a value in wei (e.g. `1e18` for 1 $AGIALPHA).
 6. **CertificateNFT**
    - Parameters: collection `name` and `symbol` (e.g. "AGI Jobs Certificate", "AGIJOB").
 7. **FeePool**
    - Parameters: `_token`, `_stakeManager`, `_burnPct`, `_treasury`.
+   - `burnPct` is in basis points (`500` = 5%).  Use `0` to disable burning initially.
 8. **PlatformRegistry** *(optional)*
    - Parameters: `stakeManager`, `reputationEngine`, `minStake`.
 9. **JobRouter** *(optional)*
@@ -52,6 +56,7 @@ Deploy each contract through Etherscan and note its address.  Use `0x000...000` 
     - Parameter: policy URI string.
 12. **JobRegistry**
     - Parameters: `validationModule`, `stakeManager`, `reputationEngine`, `disputeModule`, `certificateNFT`, `identityRegistry` (or `0`), `taxPolicy` (or `0`), `feePct`, `jobStake`, `ackModules`, `owner` (if required).
+    - A `feePct` of `500` equals a 5% protocol fee.  `jobStake` is typically `0` unless employers must stake.
 
 ## Step 2: Wire the Modules Together
 After deployment the contracts must learn each other's addresses.
@@ -60,8 +65,9 @@ After deployment the contracts must learn each other's addresses.
 1. Deploy `ModuleInstaller`.
 2. For StakeManager, ValidationModule, DisputeModule, CertificateNFT, FeePool, PlatformRegistry, JobRouter, PlatformIncentives and IdentityRegistry (if used) call `transferOwnership(installer)`.
 3. On the installer call `initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`.
+   - Use `0x0` for any optional modules you chose not to deploy; the installer will skip them.
 4. If using IdentityRegistry, separately call `JobRegistry.setIdentityRegistry` and `ValidationModule.setIdentityRegistry`.
-5. The installer returns ownership to your wallet automatically; verify via the *Read* tabs.
+5. The installer returns ownership to your wallet automatically; verify via the *Read* tabs and emitted events.
 
 ### Option B: Manual Wiring
 Invoke the following setters from the owner account:
@@ -79,8 +85,8 @@ Invoke the following setters from the owner account:
 ## Step 3: Post-Deployment Configuration and Best Practices
 - **Verify contracts on Etherscan.**  Publish source for every module so the *Read* and *Write* views are available.
 - **Consider multisig/timelock ownership.**  Transfer ownership to a governance address once configuration is complete.
-- **Ensure true token burning.**  `FeePool` and `StakeManager` call the ERC-20 `burn()` function; a non-zero `burnPct` truly reduces token supply.
-- **Owner updatability.**  Parameters such as fees, stake requirements, burn percentages, validation windows and allowlists can all be tuned through `set...` functions without redeploying.
+- **Ensure true token burning.**  `FeePool` and `StakeManager` call the ERC-20 `burn()` function; a non-zero `burnPct` truly reduces token supply.  Adjust it later with `FeePool.setBurnPct`.
+- **Owner updatability.**  Parameters such as fees, stake requirements, burn percentages, validation windows and allowlists can all be tuned through `set...` functions (`JobRegistry.setFeePct`, `StakeManager.setMinStake...`, `ValidationModule.setCommitWindow`, etc.) without redeploying.
 - **Security.**  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
 - **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization.
 - **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces.
