@@ -94,7 +94,12 @@ Invoke the following setters from the owner account:
 Almost every operational parameter can be changed by the owner without redeploying.  Adjust fees, stake requirements, burn percentages, validation windows or allowlists through `set...` functions such as `JobRegistry.setFeePct`, `StakeManager.setMinStake...` or `ValidationModule.setCommitWindow`.
 
 - **Security.**  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
-- **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization.
+- **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization:
+   1. **Post a job** – From an employer wallet approve the reward to `StakeManager` and call `JobRegistry.createJob` or `acknowledgeAndCreateJob` with the reward amount and metadata URI.
+   2. **Stake & apply** – An Agent calls `StakeManager.depositStake` (role `0`) and then `JobRegistry.applyForJob` or `stakeAndApply` supplying any ENS subdomain data or empty values if ENS is disabled.
+   3. **Validate** – Validators stake (role `1`) then call `ValidationModule.commitValidation` followed later by `ValidationModule.revealValidation`.
+   4. **Finalize** – After the reveal window anyone may call `ValidationModule.finalize`; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
+   5. **Dispute** – To test disputes, raise one via `JobRegistry.raiseDispute` and resolve it through `DisputeModule.resolve` (or a moderator/committee if configured).
 - **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces.
 - **Record keeping.**  Log all contract addresses and parameter changes.  Update `docs/deployment-addresses.json` with your deployment.
 - **Legal compliance.**  Consult professionals to ensure operations comply with local regulations.
