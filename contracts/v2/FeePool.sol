@@ -11,6 +11,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20Burnable} from "./interfaces/IERC20Burnable.sol";
 import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {PaymentRouter} from "./PaymentRouter.sol";
 
 error InvalidPercentage();
 error NotStakeManager();
@@ -38,6 +39,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice ERC20 token used for fees and rewards (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);
+    PaymentRouter public paymentRouter;
 
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
@@ -87,6 +89,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
+        paymentRouter = new PaymentRouter(address(this), token);
         if (BURN_ADDRESS != address(0)) {
             revert BadBurnAddress();
         }
@@ -138,7 +141,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @param amount token amount with 18 decimals.
     function contribute(uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert ZeroAmount();
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        paymentRouter.token().safeTransferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
         emit RewardPoolContribution(msg.sender, amount);
     }
@@ -167,7 +170,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 total = stakeManager.totalStake(rewardRole);
         if (total == 0) {
             if (distribute > 0 && treasury != address(0)) {
-                token.safeTransfer(treasury, distribute);
+                token.safeTransfer(address(paymentRouter), distribute);
+                paymentRouter.transfer(treasury, distribute);
             }
             emit FeesDistributed(0);
             return;
@@ -178,7 +182,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
         uint256 dust = distribute - accounted;
         if (dust > 0 && treasury != address(0)) {
-            token.safeTransfer(treasury, dust);
+            token.safeTransfer(address(paymentRouter), dust);
+            paymentRouter.transfer(treasury, dust);
         }
         emit FeesDistributed(accounted);
     }
@@ -210,7 +215,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 cumulative = (stake * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
         userCheckpoint[msg.sender] = cumulative;
-        token.safeTransfer(msg.sender, owed);
+        token.safeTransfer(address(paymentRouter), owed);
+        paymentRouter.transfer(msg.sender, owed);
         emit RewardsClaimed(msg.sender, owed);
     }
 
@@ -235,7 +241,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         onlyGovernance
         nonReentrant
     {
-        token.safeTransfer(to, amount);
+        token.safeTransfer(address(paymentRouter), amount);
+        paymentRouter.transfer(to, amount);
         emit GovernanceWithdrawal(to, amount);
     }
 

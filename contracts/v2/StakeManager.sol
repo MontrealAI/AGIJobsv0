@@ -5,6 +5,7 @@ import {Governable} from "./Governable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {PaymentRouter} from "./PaymentRouter.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
@@ -85,6 +86,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice ERC20 token used for staking and payouts (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);
+    PaymentRouter public paymentRouter;
 
     /// @notice percentage of released amount sent to FeePool (0-100)
     uint256 public feePct;
@@ -214,6 +216,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address _disputeModule,
         address _timelock // timelock or multisig controller
     ) Governable(_timelock) {
+        paymentRouter = new PaymentRouter(address(this), token);
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
@@ -276,11 +279,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev internal helper to burn tokens
     function _burnToken(uint256 amount) internal {
         if (amount == 0) return;
-        if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
-        try IERC20Burnable(AGIALPHA).burn(amount) {
-        } catch {
-            revert TokenNotBurnable();
-        }
+        token.safeTransfer(address(paymentRouter), amount);
+        paymentRouter.transfer(BURN_ADDRESS, amount);
     }
 
     /// @notice update slashing percentage splits
@@ -558,7 +558,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         stakes[user][role] = newStake;
         totalStakes[role] += amount;
-        token.safeTransferFrom(user, address(this), amount);
+        paymentRouter.token().safeTransferFrom(user, address(this), amount);
         emit StakeDeposited(user, role, amount);
     }
 
@@ -763,7 +763,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         stakes[user][role] = newStake;
         totalStakes[role] -= amount;
-        token.safeTransfer(user, amount);
+        token.safeTransfer(address(paymentRouter), amount);
+        paymentRouter.transfer(user, amount);
         emit StakeWithdrawn(user, role, amount);
     }
 
@@ -840,7 +841,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         onlyJobRegistry
         whenNotPaused
     {
-        token.safeTransferFrom(from, address(this), amount);
+        paymentRouter.token().safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
         emit StakeEscrowLocked(jobId, from, amount);
     }
@@ -852,7 +853,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param from Address providing the funds; must approve first.
     /// @param amount Token amount with 18 decimals to lock.
     function lock(address from, uint256 amount) external onlyJobRegistry whenNotPaused {
-        token.safeTransferFrom(from, address(this), amount);
+        paymentRouter.token().safeTransferFrom(from, address(this), amount);
         emit StakeEscrowLocked(bytes32(0), from, amount);
     }
 
@@ -881,7 +882,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         if (feeAmount > 0) {
             if (address(feePool) != address(0)) {
-                token.safeTransfer(address(feePool), feeAmount);
+                token.safeTransfer(address(paymentRouter), feeAmount);
+                paymentRouter.transfer(address(feePool), feeAmount);
                 feePool.depositFee(feeAmount);
                 // Fees accumulate in the pool; distribution must be triggered
                 // separately via `FeePool.distributeFees()` (e.g. by an
@@ -897,7 +899,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
         }
         if (payout > 0) {
-            token.safeTransfer(to, payout);
+            token.safeTransfer(address(paymentRouter), payout);
+            paymentRouter.transfer(to, payout);
             emit StakeReleased(jobId, to, payout);
         }
     }
@@ -920,7 +923,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         if (feeAmount > 0) {
             if (address(feePool) != address(0)) {
-                token.safeTransfer(address(feePool), feeAmount);
+                token.safeTransfer(address(paymentRouter), feeAmount);
+                paymentRouter.transfer(address(feePool), feeAmount);
                 feePool.depositFee(feeAmount);
                 // Fees remain pending until `FeePool.distributeFees()` is
                 // invoked separately.
@@ -935,7 +939,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             emit StakeReleased(bytes32(0), BURN_ADDRESS, burnAmount);
         }
         if (payout > 0) {
-            token.safeTransfer(to, payout);
+            token.safeTransfer(address(paymentRouter), payout);
+            paymentRouter.transfer(to, payout);
             emit StakeReleased(bytes32(0), to, payout);
         }
     }
@@ -962,12 +967,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (escrow < total) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - total;
         if (payout > 0) {
-            token.safeTransfer(agent, payout);
+            token.safeTransfer(address(paymentRouter), payout);
+            paymentRouter.transfer(agent, payout);
             emit StakeReleased(jobId, agent, payout);
         }
         if (fee > 0) {
             if (address(_feePool) != address(0)) {
-                token.safeTransfer(address(_feePool), fee);
+                token.safeTransfer(address(paymentRouter), fee);
+                paymentRouter.transfer(address(_feePool), fee);
                 _feePool.depositFee(fee);
                 _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
@@ -1003,14 +1010,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 perValidator = amount / count;
         uint256 remainder = amount - perValidator * count;
         for (uint256 i; i < count;) {
-            token.safeTransfer(vals[i], perValidator);
+            token.safeTransfer(address(paymentRouter), perValidator);
+            paymentRouter.transfer(vals[i], perValidator);
             emit StakeReleased(jobId, vals[i], perValidator);
             unchecked {
                 ++i;
             }
         }
         if (remainder > 0) {
-            token.safeTransfer(vals[0], remainder);
+            token.safeTransfer(address(paymentRouter), remainder);
+            paymentRouter.transfer(vals[0], remainder);
             emit StakeReleased(jobId, vals[0], remainder);
         }
     }
@@ -1029,7 +1038,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         whenNotPaused
         nonReentrant
     {
-        token.safeTransferFrom(payer, address(this), amount);
+        paymentRouter.token().safeTransferFrom(payer, address(this), amount);
         emit DisputeFeeLocked(payer, amount);
     }
 
@@ -1042,7 +1051,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         whenNotPaused
         nonReentrant
     {
-        token.safeTransfer(to, amount);
+        token.safeTransfer(address(paymentRouter), amount);
+        paymentRouter.transfer(to, amount);
         emit DisputeFeePaid(to, amount);
     }
 
@@ -1085,16 +1095,19 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (employerShare > 0) {
             if (recipient == address(0)) revert InvalidRecipient();
             if (recipient == address(feePool) && address(feePool) != address(0)) {
-                token.safeTransfer(address(feePool), employerShare);
+                token.safeTransfer(address(paymentRouter), employerShare);
+                paymentRouter.transfer(address(feePool), employerShare);
                 feePool.depositFee(employerShare);
                 feePool.distributeFees();
             } else {
-                token.safeTransfer(recipient, employerShare);
+                token.safeTransfer(address(paymentRouter), employerShare);
+                paymentRouter.transfer(recipient, employerShare);
             }
         }
         if (treasuryShare > 0) {
             if (treasury == address(0)) revert TreasuryNotSet();
-            token.safeTransfer(treasury, treasuryShare);
+            token.safeTransfer(address(paymentRouter), treasuryShare);
+            paymentRouter.transfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
             _burnToken(burnShare);
