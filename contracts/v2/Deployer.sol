@@ -34,7 +34,9 @@ import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.sol";
-import {TOKEN_SCALE} from "./Constants.sol";
+import {AGIALPHA, TOKEN_SCALE} from "./Constants.sol";
+import {PaymentRouter} from "./PaymentRouter.sol";
+import {IPaymentRouter} from "./interfaces/IPaymentRouter.sol";
 
 /// @title Deployer
 /// @notice One shot helper that deploys and wires the core module set.
@@ -271,7 +273,9 @@ contract Deployer is Ownable {
             treasurySlashPct = 100;
         }
         uint96 jobStake = econ.jobStake;
+        PaymentRouter payRouter = new PaymentRouter(AGIALPHA, governance);
         StakeManager stake = new StakeManager(
+            IPaymentRouter(address(payRouter)),
             minStake,
             employerSlashPct,
             treasurySlashPct,
@@ -327,6 +331,7 @@ contract Deployer is Ownable {
         certificate.setJobRegistry(address(registry));
 
         FeePool pool = new FeePool(
+            IPaymentRouter(address(payRouter)),
             IStakeManager(address(stake)),
             burnPct,
             governance
