@@ -1,6 +1,6 @@
 # AGI Jobs v2 Production Deployment Guide (Non‑Technical)
 
-This guide walks a non‑technical administrator through deploying the AGI Jobs v2 smart contracts to Ethereum using only a browser and Etherscan.  It also highlights best practices in the v2 architecture, including true token burning and flexible owner updatability.
+This guide provides step-by-step instructions for a non-technical user to deploy the AGI Jobs v2 smart contracts to a production (on-chain) environment using Etherscan. It highlights best practices such as true token burning and owner updatability and explains how to update this repository with your deployment information.
 
 ## Prerequisites
 - **Ethereum wallet with ETH** for gas (e.g. MetaMask). The deploying wallet becomes the owner of every module; secure it carefully.
@@ -54,8 +54,9 @@ Call the following setters from the owner account:
 - **Security** – consider using the optional `SystemPause` module for emergency stops and monitor emitted events for every change.
 - **Trial run** – with small amounts, walk through posting a job, staking, validation and finalization to ensure everything is wired correctly.
 
-## Step 4 – Record keeping
-Maintain `docs/deployment-addresses.json` (or your own record) with the addresses of all deployed modules and note any parameter changes made via owner calls.
+## Step 4 – Update repository documentation
+- Add each deployed address to `docs/deployment-addresses.json` and commit the file so future operators can reference it.
+- Note any parameter changes you make via owner calls in your commit message or changelog.
 - If a tax policy is configured, inform every participant to call `JobRegistry.acknowledgeTaxPolicy()` before interacting with the system.
 
 ## Legal compliance
