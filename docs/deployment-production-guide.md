@@ -56,6 +56,10 @@ Call the following setters from the owner account:
 
 ## Step 4 – Record keeping
 Update `docs/deployment-addresses.json` (or your own record) with the addresses of all deployed modules and note any parameter changes made via owner calls.
+- If a tax policy is configured, inform every participant to call `JobRegistry.acknowledgeTaxPolicy()` before interacting with the system.
+
+## Legal compliance
+Consult legal or tax professionals to ensure that operating the platform and collecting any fees complies with the regulations in your jurisdiction.
 
 ---
 By following this guide a non‑technical administrator can deploy the full AGI Jobs v2 stack on Ethereum and retain the ability to fine‑tune economic parameters while relying on genuine token burning for deflationary incentives.
