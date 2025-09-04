@@ -104,7 +104,7 @@ Almost every operational parameter can be changed by the owner without redeployi
    3. **Validate** – Validators stake (role `1`) then call `ValidationModule.commitValidation` followed later by `ValidationModule.revealValidation`.
    4. **Finalize** – After the reveal window anyone may call `ValidationModule.finalize`; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
    5. **Dispute** – To test disputes, raise one via `JobRegistry.raiseDispute` and resolve it through `DisputeModule.resolve` (or a moderator/committee if configured).
-- **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces.
+- **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces or run `npm run verify:wiring` to check automatically.
 - **Record keeping.**  Log all contract addresses and parameter changes.  Update `docs/deployment-addresses.json` with your deployment.
 - **Legal compliance.**  Consult professionals to ensure operations comply with local regulations.
 
