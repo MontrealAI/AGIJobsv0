@@ -14,7 +14,10 @@ import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
-import {TOKEN_SCALE} from "./Constants.sol";
+import {TOKEN_SCALE, AGIALPHA} from "./Constants.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPaymentRouter} from "./interfaces/IPaymentRouter.sol";
+import {PaymentRouter} from "./PaymentRouter.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -48,6 +51,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error IdentityRegistryNotSet();
     error InvalidTaxPolicy();
     error InvalidTreasury();
+    error InvalidPaymentRouter();
     error InvalidAckModule();
     error NotAcknowledger();
     error StakeOverflow();
@@ -113,6 +117,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     IFeePool public feePool;
     IIdentityRegistry public identityRegistry;
     address public treasury;
+    IPaymentRouter public paymentRouter;
 
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
@@ -235,6 +240,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bool fundsRedirected
     );
     event TreasuryUpdated(address treasury);
+    event PaymentRouterUpdated(address router);
 
     constructor(
         IValidationModule _validation,
@@ -303,6 +309,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 ++i;
             }
         }
+        paymentRouter = new PaymentRouter(IERC20(AGIALPHA));
+        emit PaymentRouterUpdated(address(paymentRouter));
     }
 
     // ---------------------------------------------------------------------
@@ -443,6 +451,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (_treasury == address(0)) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    /// @notice update the payment router used for token transfers
+    /// @param router PaymentRouter contract address
+    function setPaymentRouter(address router) external onlyGovernance {
+        if (router == address(0)) revert InvalidPaymentRouter();
+        paymentRouter = IPaymentRouter(router);
+        emit PaymentRouterUpdated(router);
     }
 
     /// @notice update the required agent stake for each job

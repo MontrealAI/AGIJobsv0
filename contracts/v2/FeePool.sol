@@ -11,6 +11,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20Burnable} from "./interfaces/IERC20Burnable.sol";
 import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IPaymentRouter} from "./interfaces/IPaymentRouter.sol";
+import {PaymentRouter} from "./PaymentRouter.sol";
 
 error InvalidPercentage();
 error NotStakeManager();
@@ -36,8 +38,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
-    /// @notice ERC20 token used for fees and rewards (immutable $AGIALPHA)
-    IERC20 public immutable token = IERC20(AGIALPHA);
+    /// @notice ERC20 token used for fees and rewards
+    IERC20 public token;
+
+    /// @notice Payment router handling token transfers
+    IPaymentRouter public paymentRouter;
 
     /// @notice StakeManager tracking stakes
     IStakeManager public stakeManager;
@@ -75,6 +80,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event GovernanceUpdated(address indexed governance);
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
+    event PaymentRouterUpdated(address indexed router);
 
     /// @notice Deploys the FeePool.
     /// @param _stakeManager StakeManager tracking staker balances.
@@ -87,12 +93,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
+        token = IERC20(AGIALPHA);
         if (BURN_ADDRESS != address(0)) {
             revert BadBurnAddress();
         }
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        _setPaymentRouter(address(new PaymentRouter(token)));
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         if (pct > 100) revert InvalidPercentage();
 
@@ -167,7 +175,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 total = stakeManager.totalStake(rewardRole);
         if (total == 0) {
             if (distribute > 0 && treasury != address(0)) {
-                token.safeTransfer(treasury, distribute);
+                paymentRouter.transfer(treasury, distribute);
             }
             emit FeesDistributed(0);
             return;
@@ -178,7 +186,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
         uint256 dust = distribute - accounted;
         if (dust > 0 && treasury != address(0)) {
-            token.safeTransfer(treasury, dust);
+            paymentRouter.transfer(treasury, dust);
         }
         emit FeesDistributed(accounted);
     }
@@ -210,7 +218,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 cumulative = (stake * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
         userCheckpoint[msg.sender] = cumulative;
-        token.safeTransfer(msg.sender, owed);
+        paymentRouter.transfer(msg.sender, owed);
         emit RewardsClaimed(msg.sender, owed);
     }
 
@@ -226,6 +234,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         emit GovernanceUpdated(_governance);
     }
 
+    /// @notice set the payment router used for token transfers
+    /// @param router PaymentRouter contract address
+    function setPaymentRouter(address router) external onlyOwner {
+        _setPaymentRouter(router);
+    }
+
     /// @notice governance-controlled emergency escape hatch to withdraw tokens
     /// @dev Only callable by the configured governance contract. Amount uses 18 decimal units.
     /// @param to recipient address
@@ -235,7 +249,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         onlyGovernance
         nonReentrant
     {
-        token.safeTransfer(to, amount);
+        paymentRouter.transfer(to, amount);
         emit GovernanceWithdrawal(to, amount);
     }
 
@@ -269,6 +283,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     function setTreasury(address _treasury) external onlyOwner {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    function _setPaymentRouter(address router) internal {
+        if (router == address(0)) revert ZeroAddress();
+        paymentRouter = IPaymentRouter(router);
+        token = paymentRouter.token();
+        token.forceApprove(router, type(uint256).max);
+        emit PaymentRouterUpdated(router);
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
