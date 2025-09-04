@@ -148,7 +148,10 @@ describe("end-to-end job lifecycle", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    await registry.connect(employer).createJob(reward, deadline, "uri");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await validation.connect(owner).setResult(true);

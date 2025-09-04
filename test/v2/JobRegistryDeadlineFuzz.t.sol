@@ -36,9 +36,9 @@ contract JobRegistryDeadlineFuzz is Test {
         uint256 reward = 1;
         if (deadline <= block.timestamp) {
             vm.expectRevert(JobRegistry.InvalidDeadline.selector);
-            registry.createJob(reward, deadline, "uri");
+            registry.createJob(reward, deadline, bytes32(uint256(1)), "uri");
         } else {
-            registry.createJob(reward, deadline, "uri");
+            registry.createJob(reward, deadline, bytes32(uint256(1)), "uri");
         }
     }
 }

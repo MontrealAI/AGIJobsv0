@@ -110,9 +110,10 @@ describe("JobRegistry governance finalization", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id("spec");
     await registry
       .connect(employer)
-      .createJob(reward, deadline, "uri");
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await registry
@@ -139,9 +140,10 @@ describe("JobRegistry governance finalization", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id("spec");
     await registry
       .connect(employer)
-      .createJob(reward, deadline, "uri");
+      .createJob(reward, deadline, specHash, "uri");
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, "", []);
     await registry

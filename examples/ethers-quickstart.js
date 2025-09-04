@@ -8,7 +8,7 @@ const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const registryAbi = [
-  "function createJob(uint256 reward, string uri)",
+  "function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)",
   "function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)",
   "function submit(uint256 jobId, bytes32 resultHash, string resultURI)",
   "function raiseDispute(uint256 jobId, bytes32 evidenceHash)"
@@ -31,7 +31,9 @@ const validation = new ethers.Contract(process.env.VALIDATION_MODULE, validation
 // Amounts are converted using the fixed 18‑decimal configuration.
 async function postJob(amount = "1") {
   const reward = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-  await registry.createJob(reward, "ipfs://job");
+  const deadline = Math.floor(Date.now() / 1000) + 3600;
+  const specHash = ethers.id("spec");
+  await registry.createJob(reward, deadline, specHash, "ipfs://job");
 }
 
 async function stake(amount) {

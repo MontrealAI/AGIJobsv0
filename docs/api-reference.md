@@ -111,13 +111,21 @@ Below are common flows in TypeScript (ethers.js) and Python (web3.py).
 ### Post a Job
 ```ts
 // TypeScript
-const registry = new ethers.Contract(JOB_REGISTRY, ['function createJob(uint256,string)'], wallet);
-await registry.createJob(1_000000000000000000, 'ipfs://QmHash');
+const registry = new ethers.Contract(
+  JOB_REGISTRY,
+  ['function createJob(uint256,uint64,bytes32,string)'],
+  wallet
+);
+const deadline = Math.floor(Date.now() / 1000) + 3600;
+const specHash = ethers.id('spec');
+await registry.createJob(1_000000000000000000n, deadline, specHash, 'ipfs://QmHash');
 ```
 ```python
 # Python
-registry = w3.eth.contract(address=JOB_REGISTRY, abi=['function createJob(uint256,string)'])
-tx = registry.functions.createJob(1_000000000000000000, 'ipfs://QmHash').transact({'from': acct})
+registry = w3.eth.contract(address=JOB_REGISTRY, abi=['function createJob(uint256,uint64,bytes32,string)'])
+deadline = int(time.time()) + 3600
+spec_hash = Web3.keccak(text='spec')
+tx = registry.functions.createJob(1_000000000000000000, deadline, spec_hash, 'ipfs://QmHash').transact({'from': acct})
 w3.eth.wait_for_transaction_receipt(tx)
 ```
 

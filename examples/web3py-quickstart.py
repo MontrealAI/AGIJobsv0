@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 from web3 import Web3
 
@@ -14,7 +15,9 @@ validation = w3.eth.contract(address=os.environ["VALIDATION_MODULE"], abi=valida
 
 def post_job():
     reward = Web3.to_wei(1, "ether")  # 1 token in 18‑decimal units
-    tx = registry.functions.createJob(reward, "ipfs://job").build_transaction({
+    deadline = int(time.time()) + 3600
+    spec_hash = Web3.keccak(text="spec")
+    tx = registry.functions.createJob(reward, deadline, spec_hash, "ipfs://job").build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })

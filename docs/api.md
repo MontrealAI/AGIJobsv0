@@ -27,14 +27,21 @@ await stakeManager.depositStake(0, stakeAmount); // agent stake
 ## JobRegistry
 Coordinates job posting and settlement.
 
-- `createJob(reward, uri)` – employer escrows tokens and posts job metadata.
+- `createJob(reward, deadline, specHash, uri)` – employer escrows tokens and posts job metadata.
 - `applyForJob(jobId, label, proof)` – agent applies with ENS label and proof.
 - `submit(jobId, resultHash, resultURI)` – agent submits work for validation.
 - `finalize(jobId)` – release escrowed reward after validation succeeds.
 
 ```javascript
 const registry = await ethers.getContractAt("JobRegistry", registryAddress);
-const tx = await registry.createJob(ethers.parseUnits("10", 18), "ipfs://job.json");
+const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+const specHash = ethers.id("spec");
+const tx = await registry.createJob(
+  ethers.parseUnits("10", 18),
+  deadline,
+  specHash,
+  "ipfs://job.json"
+);
 const receipt = await tx.wait();
 const jobId = receipt.logs[0].args.jobId;
 ```

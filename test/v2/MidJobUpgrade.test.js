@@ -127,7 +127,10 @@ describe("Mid-job module upgrades", function () {
       .connect(employer)
       .approve(await stake.getAddress(), reward + fee);
     const deadline = BigInt((await time.latest()) + 3600);
-    await registry.connect(employer).createJob(reward, deadline, "ipfs://job");
+    const specHash = ethers.id("spec");
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, "ipfs://job");
 
     await registry.connect(agent).applyForJob(1, "agent", []);
     const hash = ethers.id("ipfs://result");
