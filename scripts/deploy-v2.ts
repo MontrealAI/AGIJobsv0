@@ -61,7 +61,6 @@ async function main() {
   );
   await registry.waitForDeployment();
 
-  const committee = deployer; // replace with multisig for production
   const Dispute = await ethers.getContractFactory(
     "contracts/v2/modules/DisputeModule.sol:DisputeModule"
   );
@@ -69,9 +68,18 @@ async function main() {
     await registry.getAddress(),
     0,
     0,
-    committee.address
+    ethers.ZeroAddress
   );
   await dispute.waitForDeployment();
+  const Committee = await ethers.getContractFactory(
+    "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+  );
+  const committee = await Committee.deploy(
+    await registry.getAddress(),
+    await dispute.getAddress()
+  );
+  await committee.waitForDeployment();
+  await dispute.setCommittee(await committee.getAddress());
   await dispute.setStakeManager(await stake.getAddress());
 
   const FeePool = await ethers.getContractFactory(
@@ -137,6 +145,7 @@ async function main() {
     await platformRegistry.getAddress(),
     await feePool.getAddress(),
     await reputation.getAddress(),
+    await committee.getAddress(),
     deployer.address
   );
   await pause.waitForDeployment();
@@ -147,7 +156,8 @@ async function main() {
     await dispute.getAddress(),
     await platformRegistry.getAddress(),
     await feePool.getAddress(),
-    await reputation.getAddress()
+    await reputation.getAddress(),
+    await committee.getAddress()
   );
   await stake.setGovernance(await pause.getAddress());
   await registry.setGovernance(await pause.getAddress());
@@ -156,6 +166,7 @@ async function main() {
   await platformRegistry.transferOwnership(await pause.getAddress());
   await feePool.transferOwnership(await pause.getAddress());
   await reputation.transferOwnership(await pause.getAddress());
+  await committee.transferOwnership(await pause.getAddress());
   await nft.transferOwnership(await pause.getAddress());
   await identity.transferOwnership(await pause.getAddress());
 

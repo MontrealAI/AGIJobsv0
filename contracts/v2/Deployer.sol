@@ -13,6 +13,7 @@ import {ReputationEngine} from "./ReputationEngine.sol";
 import {DisputeModule} from "./modules/DisputeModule.sol";
 import {CertificateNFT} from "./CertificateNFT.sol";
 import {SystemPause} from "./SystemPause.sol";
+import {ArbitratorCommittee} from "./ArbitratorCommittee.sol";
 import {PlatformRegistry, IReputationEngine as PRReputationEngine} from "./PlatformRegistry.sol";
 import {JobRouter} from "./modules/JobRouter.sol";
 import {IdentityRegistry} from "./IdentityRegistry.sol";
@@ -26,6 +27,7 @@ import {IJobRouter} from "./interfaces/IJobRouter.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
@@ -312,8 +314,14 @@ contract Deployer is Ownable {
             IJobRegistry(address(registry)),
             0,
             0,
-            governance
+            address(0)
         );
+
+        ArbitratorCommittee committee = new ArbitratorCommittee(
+            IJobRegistry(address(registry)),
+            IDisputeModule(address(dispute))
+        );
+        dispute.setCommittee(address(committee));
 
         CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
         certificate.setJobRegistry(address(registry));
@@ -399,6 +407,7 @@ contract Deployer is Ownable {
             pRegistry,
             pool,
             reputation,
+            committee,
             governance
         );
         // hand over governance to SystemPause
@@ -409,6 +418,7 @@ contract Deployer is Ownable {
         validation.transferOwnership(address(pause));
         reputation.transferOwnership(address(pause));
         dispute.transferOwnership(address(pause));
+        committee.transferOwnership(address(pause));
         certificate.transferOwnership(governance);
         pRegistry.transferOwnership(address(pause));
         router.transferOwnership(governance);
