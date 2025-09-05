@@ -1,4 +1,5 @@
 import hre from "hardhat";
+import "@nomicfoundation/hardhat-ethers";
 import { readFileSync } from "fs";
 import { join } from "path";
 
