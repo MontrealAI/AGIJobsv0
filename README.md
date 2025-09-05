@@ -21,8 +21,8 @@ Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax
 
 ### Etherscan deployment
 
-For a step-by-step walkthrough of deploying AGI Jobs v2 using only a web browser and Etherscan, see [docs/deployment-production-guide.md](docs/deployment-production-guide.md).
-For a production deployment checklist, consult [docs/deployment-guide-production.md](docs/deployment-guide-production.md).
+- [docs/deployment-production-guide.md](docs/deployment-production-guide.md) – step-by-step walkthrough for deploying AGI Jobs v2 using only a web browser and Etherscan.
+- [docs/deployment-guide-production.md](docs/deployment-guide-production.md) – production deployment checklist.
 
 ## Migrating from legacy
 
