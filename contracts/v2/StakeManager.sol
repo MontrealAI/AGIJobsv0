@@ -104,6 +104,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice JobRegistry contract tracking tax policy acknowledgements
     address public jobRegistry;
 
+    address public pauser;
+
     /// @notice ValidationModule providing validator lists
     IValidationModule public validationModule;
 
@@ -193,6 +195,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event BurnPctUpdated(uint256 pct);
     event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
+
+    modifier onlyGovernanceOrPauser() {
+        require(
+            msg.sender == address(governance) || msg.sender == pauser,
+            "governance or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyGovernance {
+        pauser = _pauser;
+    }
 
     /// @notice Deploys the StakeManager.
     /// @param _minStake Minimum stake required to participate. Defaults to
@@ -359,12 +373,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice Pause staking and escrow operations
-    function pause() external onlyGovernance {
+    function pause() external onlyGovernanceOrPauser {
         _pause();
     }
 
     /// @notice Resume staking and escrow operations
-    function unpause() external onlyGovernance {
+    function unpause() external onlyGovernanceOrPauser {
         _unpause();
     }
 

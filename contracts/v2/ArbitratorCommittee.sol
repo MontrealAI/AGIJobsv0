@@ -15,6 +15,7 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 contract ArbitratorCommittee is Ownable, Pausable {
     IJobRegistry public jobRegistry;
     IDisputeModule public disputeModule;
+    address public pauser;
 
     struct Case {
         address[] jurors;
@@ -41,6 +42,18 @@ contract ArbitratorCommittee is Ownable, Pausable {
     event VoteCommitted(uint256 indexed jobId, address indexed juror, bytes32 commit);
     event VoteRevealed(uint256 indexed jobId, address indexed juror, bool employerWins);
     event CaseFinalized(uint256 indexed jobId, bool employerWins);
+
+    modifier onlyOwnerOrPauser() {
+        require(
+            msg.sender == owner() || msg.sender == pauser,
+            "owner or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyOwner {
+        pauser = _pauser;
+    }
 
     constructor(IJobRegistry _jobRegistry, IDisputeModule _disputeModule)
         Ownable(msg.sender)
@@ -147,12 +160,12 @@ contract ArbitratorCommittee is Ownable, Pausable {
     }
 
     /// @notice Pause dispute resolution activities.
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrPauser {
         _pause();
     }
 
     /// @notice Unpause dispute resolution activities.
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrPauser {
         _unpause();
     }
 }

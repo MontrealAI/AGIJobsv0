@@ -3,8 +3,8 @@ const { ethers, artifacts, network } = require("hardhat");
 const { AGIALPHA } = require("../../scripts/constants");
 
 describe("SystemPause", function () {
-  it("pauses and unpauses all modules", async function () {
-    const [owner] = await ethers.getSigners();
+    it("pauses and unpauses all modules", async function () {
+      const [owner, other] = await ethers.getSigners();
     const Deployer = await ethers.getContractFactory(
       "contracts/v2/Deployer.sol:Deployer"
     );
@@ -97,10 +97,22 @@ describe("SystemPause", function () {
     const committee = Committee.attach(committeeAddr);
     const pause = SystemPause.attach(systemPauseAddr);
 
-    await expect(
-      pause
-        .connect(owner)
-        .setModules(
+      await expect(
+        pause
+          .connect(owner)
+          .setModules(
+            registryAddr,
+            stakeAddr,
+            validationAddr,
+            disputeAddr,
+            platformRegistryAddr,
+            feePoolAddr,
+            reputationAddr,
+            committeeAddr
+          )
+      )
+        .to.emit(pause, "ModulesUpdated")
+        .withArgs(
           registryAddr,
           stakeAddr,
           validationAddr,
@@ -109,28 +121,20 @@ describe("SystemPause", function () {
           feePoolAddr,
           reputationAddr,
           committeeAddr
-        )
-    )
-      .to.emit(pause, "ModulesUpdated")
-      .withArgs(
-        registryAddr,
-        stakeAddr,
-        validationAddr,
-        disputeAddr,
-        platformRegistryAddr,
-        feePoolAddr,
-        reputationAddr,
-        committeeAddr
+        );
+
+      await expect(pause.connect(other).pauseAll()).to.be.revertedWith(
+        "governance only"
       );
 
-    expect(await stake.paused()).to.equal(false);
-    expect(await registry.paused()).to.equal(false);
-    expect(await validation.paused()).to.equal(false);
-    expect(await dispute.paused()).to.equal(false);
-    expect(await platformRegistry.paused()).to.equal(false);
-    expect(await feePool.paused()).to.equal(false);
-    expect(await reputation.paused()).to.equal(false);
-    expect(await committee.paused()).to.equal(false);
+      expect(await stake.paused()).to.equal(false);
+      expect(await registry.paused()).to.equal(false);
+      expect(await validation.paused()).to.equal(false);
+      expect(await dispute.paused()).to.equal(false);
+      expect(await platformRegistry.paused()).to.equal(false);
+      expect(await feePool.paused()).to.equal(false);
+      expect(await reputation.paused()).to.equal(false);
+      expect(await committee.paused()).to.equal(false);
 
     await pause.connect(owner).pauseAll();
 
@@ -142,6 +146,10 @@ describe("SystemPause", function () {
     expect(await feePool.paused()).to.equal(true);
     expect(await reputation.paused()).to.equal(true);
     expect(await committee.paused()).to.equal(true);
+
+    await expect(pause.connect(other).unpauseAll()).to.be.revertedWith(
+      "governance only"
+    );
 
     await pause.connect(owner).unpauseAll();
 
