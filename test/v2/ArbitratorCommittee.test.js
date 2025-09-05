@@ -194,8 +194,16 @@ describe('ArbitratorCommittee', function () {
   });
 
   it('handles deadline expiry and partial reveals', async () => {
-    const { committee, dispute, registry, agent, employer, v1, v2, v3 } =
-      await setup();
+    const {
+      committee,
+      dispute,
+      registry,
+      agent,
+      employer: _employer,
+      v1,
+      v2,
+      v3: _v3,
+    } = await setup();
 
     await committee.setCommitRevealWindows(3n, 2n);
 

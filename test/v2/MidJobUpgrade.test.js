@@ -142,12 +142,12 @@ describe('Mid-job module upgrades', function () {
       agent,
       token,
       stake,
-      reputation,
-      validation,
-      nft,
+      reputation: _reputation,
+      validation: _validation,
+      nft: _nft,
       registry,
-      dispute,
-      feePool,
+      dispute: _dispute,
+      feePool: _feePool,
     } = env;
 
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);

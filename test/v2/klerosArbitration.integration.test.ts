@@ -10,7 +10,7 @@ enum Role {
 }
 
 async function deploySystem() {
-  const [owner, employer, agent, v1, v2, arbitratorSigner] =
+  const [owner, employer, agent, v1, v2, _arbitratorSigner] =
     await ethers.getSigners();
 
   const Token = await ethers.getContractFactory(

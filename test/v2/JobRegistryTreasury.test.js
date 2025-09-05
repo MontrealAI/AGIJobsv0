@@ -3,13 +3,13 @@ const { ethers } = require('hardhat');
 
 describe('JobRegistry Treasury', function () {
   const { AGIALPHA } = require('../../scripts/constants');
-  let registry, stakeManager, token;
+  let registry, stakeManager, _token;
   let owner, treasury;
 
   beforeEach(async function () {
     [owner, treasury] = await ethers.getSigners();
 
-    token = await ethers.getContractAt(
+    _token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );

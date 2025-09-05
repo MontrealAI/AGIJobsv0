@@ -97,7 +97,7 @@ describe('Ownable modules', function () {
     const IdentityRegistry = await ethers.getContractFactory(
       'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
     );
-    const SystemPause = await ethers.getContractFactory(
+    const _SystemPause = await ethers.getContractFactory(
       'contracts/v2/SystemPause.sol:SystemPause'
     );
 

@@ -258,7 +258,7 @@ describe('ValidationModule finalize flows', function () {
   it('force finalize only slashes selected validators', async () => {
     const {
       owner,
-      employer,
+      employer: _employer,
       v1,
       v2,
       v3,

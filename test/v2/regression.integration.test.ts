@@ -212,7 +212,7 @@ describe('regression scenarios', function () {
       agent,
       token,
       stake,
-      validation,
+      validation: _validation,
       registry,
       dispute,
       reputation,
