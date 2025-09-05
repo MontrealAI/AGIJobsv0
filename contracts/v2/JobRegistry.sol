@@ -937,7 +937,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
     }
 
-    function validationComplete(uint256 jobId, bool success) external whenNotPaused {
+    function validationComplete(uint256 jobId, bool success)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         finalizeAfterValidation(jobId, success);
     }
 
