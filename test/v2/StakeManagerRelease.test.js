@@ -112,8 +112,8 @@ describe('StakeManager release', function () {
         await feePool.getAddress(),
         ethers.parseEther('20')
       )
-      .and.to.emit(stakeManager, 'StakeReleased')
-      .withArgs(ethers.ZeroHash, ethers.ZeroAddress, ethers.parseEther('10'))
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(ethers.ZeroHash, ethers.parseEther('10'))
       .and.to.emit(stakeManager, 'StakeReleased')
       .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther('70'));
 
@@ -154,8 +154,8 @@ describe('StakeManager release', function () {
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('20'))
-      .and.to.emit(stakeManager, 'StakeReleased')
-      .withArgs(jobId, ethers.ZeroAddress, ethers.parseEther('10'))
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobId, ethers.parseEther('10'))
       .and.to.emit(stakeManager, 'StakeReleased')
       .withArgs(jobId, user1.address, ethers.parseEther('70'));
 
