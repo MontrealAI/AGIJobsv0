@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   build:
@@ -27,7 +25,7 @@ jobs:
       - name: Run lint
         run: npm run lint
       - name: Check formatting
-        run: npm run format:check
+        run: npm run format -- --check
       - name: Run tests
         run: npm test
       - name: Check module governance
