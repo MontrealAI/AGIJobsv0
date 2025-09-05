@@ -6,7 +6,7 @@ const { ethers } = hre;
 
 describe("IdentityRegistry ENS verification", function () {
   it("verifies ownership via NameWrapper and rejects others", async () => {
-    const [owner, alice, bob] = await ethers.getSigners();
+    const [, alice, bob] = await ethers.getSigners();
 
     const ENS = await ethers.getContractFactory("MockENS");
     const ens = await ENS.deploy();
@@ -47,7 +47,7 @@ describe("IdentityRegistry ENS verification", function () {
   });
 
   it("supports merkle proofs and resolver fallback", async () => {
-    const [owner, validator, agent] = await ethers.getSigners();
+    const [, validator, agent] = await ethers.getSigners();
 
     const ENS = await ethers.getContractFactory("MockENS");
     const ens = await ENS.deploy();
@@ -101,7 +101,7 @@ describe("IdentityRegistry ENS verification", function () {
   });
 
   it("respects allowlists and blacklists", async () => {
-    const [owner, alice] = await ethers.getSigners();
+    const [, alice] = await ethers.getSigners();
 
     const ENS = await ethers.getContractFactory("MockENS");
     const ens = await ENS.deploy();

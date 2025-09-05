@@ -102,7 +102,7 @@ async function deployFullSystem() {
 describe("job lifecycle with dispute and validator failure", function () {
   it("handles validator non-participation and dispute resolution", async () => {
     const env = await deployFullSystem();
-    const { employer, agent, v1, v2, token, stake, validation, registry, dispute, moderator } = env;
+    const { owner, employer, agent, v1, v2, token, stake, validation, registry, dispute } = env;
 
     const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
     for (const signer of [agent, v1, v2]) {

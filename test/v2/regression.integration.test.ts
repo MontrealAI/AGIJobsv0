@@ -174,7 +174,7 @@ describe("regression scenarios", function () {
 
   it("supports validation module replacement", async () => {
     const env = await deploySystem();
-    const { owner, employer, agent, token, stake, validation, registry, dispute, reputation, nft } = env;
+    const { owner, employer, agent, token, stake, registry, dispute, reputation, nft } = env;
 
     const Stub = await ethers.getContractFactory("contracts/v2/mocks/ValidationStub.sol:ValidationStub");
     const stub = await Stub.deploy();
