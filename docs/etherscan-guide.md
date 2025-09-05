@@ -29,16 +29,27 @@ For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-a
 
 ## Calling Contract Methods via Etherscan
 
-1. **Connect to Web3** – open the contract on Etherscan, select the **Write Contract** tab, click **Connect to Web3**, and approve the connection.
-   ![connect-web3](https://via.placeholder.com/650x150?text=Connect+to+Web3)
-2. **depositStake** – on `StakeManager`, enter the role and amount (18‑decimal base units) in `depositStake(role, amount)`.
-   ![deposit-stake](https://via.placeholder.com/650x150?text=depositStake)
+1. **Connect to Web3** – open the contract on Etherscan, select the **Write Contract** tab, click **Connect to Web3**, and approve the connection. The page displays your wallet address once connected.
+2. **depositStake** – on `StakeManager`, enter the role and amount (18‑decimal base units) in `depositStake(role, amount)` and click **Write**.
+
+   ```text
+   depositStake(1, 1000000000000000000)
+   ```
 3. **stakeAndActivate** – visit the `PlatformIncentives` address, connect, enter the stake amount, and press **Write** on `stakeAndActivate(amount)`.
-   ![stake-and-activate](https://via.placeholder.com/650x150?text=stakeAndActivate)
+
+   ```text
+   stakeAndActivate(1000000000000000000)
+   ```
 4. **distributeFees** – on the `FeePool` contract, call `distributeFees()` to allocate pending fees to stakers.
-   ![distribute-fees](https://via.placeholder.com/650x150?text=distributeFees)
+
+   ```text
+   distributeFees()
+   ```
 5. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
-   ![claim-rewards](https://via.placeholder.com/650x150?text=claimRewards)
+
+   ```text
+   claimRewards()
+   ```
 6. **acknowledgeAndDispute** – if contesting a job, approve the `StakeManager` for the `appealFee` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)`.
 
 ### Sample Owner Parameters
@@ -116,14 +127,20 @@ Before performing any on-chain action, employers, agents, and validators must ca
 ### Agents
 1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Check the emitted `TaxAcknowledged` event for the recorded disclaimer.
 2. Open `StakeManager`; in **Read Contract** confirm **isTaxExempt()**, then stake with **depositStake(0, amount)** (role `0` = Agent).
-   ![agent stake](https://via.placeholder.com/650x150?text=depositStake)
+
+   ```text
+   depositStake(0, amount)
+   ```
 3. Use **applyForJob** then **submit(jobId, resultHash, uri)** when work is ready.
 4. After validators reveal votes, call **ValidationModule.finalize(jobId)**; the module records the outcome in `JobRegistry`.
 
 ### Validators
 1. On `JobRegistry`, execute **acknowledgeTaxPolicy** and verify **isTaxExempt()**. Inspect the `TaxAcknowledged` event log for the acknowledgement text.
 2. Stake required AGI via **StakeManager.depositStake(1, amount)** after confirming **StakeManager.isTaxExempt()**.
-   ![validator stake](https://via.placeholder.com/650x150?text=depositStake)
+
+   ```text
+   depositStake(1, amount)
+   ```
 3. During validation, open `ValidationModule`, confirm **isTaxExempt()**, and send hashed votes with **commitValidation(jobId, commitHash)**.
 4. Reveal decisions using **revealValidation(jobId, approve, salt)** before the window closes.
 
@@ -132,7 +149,11 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 
 #### Participants: verify and acknowledge
 1. Open [`JobRegistry` on Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#readContract).
-2. In **Read Contract**, call **taxPolicyDetails** to view the canonical policy URI and acknowledgement text. *(Example screenshot: [taxPolicyDetails](https://via.placeholder.com/650x150?text=taxPolicyDetails))*
+2. In **Read Contract**, call **taxPolicyDetails** to view the canonical policy URI and acknowledgement text.
+
+   ```text
+   taxPolicyDetails() => (version, "ipfs://QmPolicyHash", "Acknowledgement text")
+   ```
 3. Still under **Read Contract**, call **isTaxExempt** and confirm it returns `true`.
 4. Switch to **Write Contract**, connect your wallet, and execute **acknowledgeTaxPolicy**. The transaction log will show `TaxAcknowledged(user, version, acknowledgement)` with the disclaimer you accepted.
 5. Back in **Read Contract**, open the `TaxPolicy` contract and call **hasAcknowledged(address)** to ensure it returns `true`.
