@@ -5,7 +5,7 @@ import { join } from "path";
 async function main() {
   const path = join(__dirname, "..", "docs", "deployment-addresses.json");
   const addresses = JSON.parse(readFileSync(path, "utf8")) as Record<string, string>;
-  const { ethers } = hre as any;
+  const { ethers } = hre;
   const zero = ethers.ZeroAddress.toLowerCase();
 
   type Check = { getter: string; expected: string; };
