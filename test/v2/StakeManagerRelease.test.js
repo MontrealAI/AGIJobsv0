@@ -187,14 +187,14 @@ describe('StakeManager release', function () {
   });
 
   it('restricts fee configuration to owner', async () => {
-    await expect(stakeManager.connect(user1).setFeePct(1)).to.be.revertedWith(
-      'governance only'
-    );
+    await expect(
+      stakeManager.connect(user1).setFeePct(1)
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(
       stakeManager.connect(user1).setFeePool(await feePool.getAddress())
-    ).to.be.revertedWith('governance only');
-    await expect(stakeManager.connect(user1).setBurnPct(1)).to.be.revertedWith(
-      'governance only'
-    );
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
+    await expect(
+      stakeManager.connect(user1).setBurnPct(1)
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
   });
 });

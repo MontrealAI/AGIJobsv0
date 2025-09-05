@@ -54,8 +54,14 @@ describe('Governance via Timelock', function () {
     );
     await registry.waitForDeployment();
 
-    await expect(stake.setMinStake(1)).to.be.revertedWith('governance only');
-    await expect(registry.setFeePct(1)).to.be.revertedWith('governance only');
+    await expect(stake.setMinStake(1)).to.be.revertedWithCustomError(
+      stake,
+      'NotGovernance'
+    );
+    await expect(registry.setFeePct(1)).to.be.revertedWithCustomError(
+      registry,
+      'NotGovernance'
+    );
 
     const stakeCall = stake.interface.encodeFunctionData('setMinStake', [1]);
     await timelock

@@ -398,9 +398,9 @@ describe('StakeManager', function () {
   });
 
   it('restricts min stake updates to owner', async () => {
-    await expect(stakeManager.connect(user).setMinStake(1)).to.be.revertedWith(
-      'governance only'
-    );
+    await expect(
+      stakeManager.connect(user).setMinStake(1)
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setMinStake(2))
       .to.emit(stakeManager, 'MinStakeUpdated')
       .withArgs(2n);
@@ -474,7 +474,7 @@ describe('StakeManager', function () {
   it('restricts slashing percentage updates to owner', async () => {
     await expect(
       stakeManager.connect(user).setSlashingPercentages(60, 40)
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setSlashingPercentages(60, 40))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
       .withArgs(60, 40);
@@ -605,7 +605,7 @@ describe('StakeManager', function () {
   it('restricts treasury updates to owner', async () => {
     await expect(
       stakeManager.connect(user).setTreasury(user.address)
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setTreasury(user.address))
       .to.emit(stakeManager, 'TreasuryUpdated')
       .withArgs(user.address);
@@ -935,9 +935,9 @@ describe('StakeManager', function () {
     await expect(stakeManager.connect(owner).setMinStake(10))
       .to.emit(stakeManager, 'MinStakeUpdated')
       .withArgs(10n);
-    await expect(stakeManager.connect(user).setMinStake(1)).to.be.revertedWith(
-      'governance only'
-    );
+    await expect(
+      stakeManager.connect(user).setMinStake(1)
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setSlashingPercentages(40, 60))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
       .withArgs(40n, 60n);
@@ -1060,7 +1060,7 @@ describe('StakeManager', function () {
 
     await expect(
       stakeManager.connect(user).acknowledgeAndWithdrawFor(user.address, 0, 50)
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
 
     await stakeManager
       .connect(owner)

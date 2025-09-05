@@ -91,7 +91,7 @@ describe('JobRegistry tax policy integration', function () {
   it('blocks non-owner from setting policy', async () => {
     await expect(
       registry.connect(user).setTaxPolicy(await policy.getAddress())
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(registry, 'NotGovernance');
   });
 
   it('blocks non-owner from bumping version', async () => {

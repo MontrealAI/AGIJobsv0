@@ -95,7 +95,7 @@ describe('Governance handover via Timelock', function () {
           ethers.ZeroHash,
           ethers.ZeroHash
         )
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(mock, 'NotGovernance');
 
     // new timelock can call
     await tl2
