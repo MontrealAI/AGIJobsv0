@@ -924,7 +924,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///      FeePool until `FeePool.distributeFees()` is called separately.
     /// @param to Recipient receiving the tokens.
     /// @param amount Base token amount with 18 decimals before AGI bonus.
-    function release(address to, uint256 amount) external onlyJobRegistry whenNotPaused {
+    function release(address to, uint256 amount)
+        external
+        onlyJobRegistry
+        whenNotPaused
+        nonReentrant
+    {
         // apply AGI type payout modifier
         uint256 pct = getAgentPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
