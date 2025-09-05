@@ -107,10 +107,9 @@ describe("ArbitratorCommittee", function () {
 
     await committee.setCommitRevealWindows(30n, 30n);
 
-    await expect(committee.connect(agent).pause()).to.be.revertedWithCustomError(
-      committee,
-      "OwnableUnauthorizedAccount"
-    );
+      await expect(committee.connect(agent).pause()).to.be.revertedWith(
+        "owner or pauser only"
+      );
     await expect(committee.pause())
       .to.emit(committee, "Paused")
       .withArgs(owner.address);

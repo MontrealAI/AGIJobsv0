@@ -53,6 +53,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice timelock or governance contract authorized for withdrawals
     TimelockController public governance;
+    address public pauser;
 
     /// @notice cumulative fee per staked token scaled by ACCUMULATOR_SCALE
     uint256 public cumulativePerToken;
@@ -75,6 +76,18 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event GovernanceUpdated(address indexed governance);
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
+
+    modifier onlyOwnerOrPauser() {
+        require(
+            msg.sender == owner() || msg.sender == pauser,
+            "owner or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyOwner {
+        pauser = _pauser;
+    }
 
     /// @notice Deploys the FeePool.
     /// @param _stakeManager StakeManager tracking staker balances.
@@ -276,11 +289,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         return true;
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrPauser {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrPauser {
         _unpause();
     }
 

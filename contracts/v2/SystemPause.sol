@@ -146,6 +146,7 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool = _feePool;
         reputationEngine = _reputationEngine;
         arbitratorCommittee = _arbitratorCommittee;
+        _setPausers();
         emit ModulesUpdated(
             address(_jobRegistry),
             address(_stakeManager),
@@ -180,6 +181,17 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool.unpause();
         reputationEngine.unpause();
         arbitratorCommittee.unpause();
+    }
+
+    function _setPausers() internal {
+        jobRegistry.setPauser(address(this));
+        stakeManager.setPauser(address(this));
+        validationModule.setPauser(address(this));
+        disputeModule.setPauser(address(this));
+        platformRegistry.setPauser(address(this));
+        feePool.setPauser(address(this));
+        reputationEngine.setPauser(address(this));
+        arbitratorCommittee.setPauser(address(this));
     }
 }
 

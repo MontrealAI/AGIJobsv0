@@ -70,6 +70,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     IReputationEngine public reputationEngine;
     IIdentityRegistry public identityRegistry;
     IRandaoCoordinator public randaoCoordinator;
+    address public pauser;
 
     // timing configuration
     uint256 public commitWindow;
@@ -174,6 +175,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
+
+    modifier onlyOwnerOrPauser() {
+        require(
+            msg.sender == owner() || msg.sender == pauser,
+            "owner or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyOwner {
+        pauser = _pauser;
+    }
     event ValidatorPoolRotationUpdated(uint256 newRotation);
     event RandaoCoordinatorUpdated(address coordinator);
     event MaxValidatorsPerJobUpdated(uint256 maxValidators);
@@ -298,12 +311,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     }
 
     /// @notice Pause validation operations
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrPauser {
         _pause();
     }
 
     /// @notice Resume validation operations
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrPauser {
         _unpause();
     }
 

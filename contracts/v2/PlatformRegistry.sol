@@ -29,6 +29,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     mapping(address => bool) public registered;
     mapping(address => bool) public blacklist;
     mapping(address => bool) public registrars;
+    address public pauser;
 
     event Registered(address indexed operator);
     event Deregistered(address indexed operator);
@@ -39,6 +40,18 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     event Blacklisted(address indexed operator, bool status);
     event RegistrarUpdated(address indexed registrar, bool allowed);
     event Activated(address indexed operator, uint256 amount);
+
+    modifier onlyOwnerOrPauser() {
+        require(
+            msg.sender == owner() || msg.sender == pauser,
+            "owner or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyOwner {
+        pauser = _pauser;
+    }
 
     /// @notice Deploys the PlatformRegistry.
     /// @param _stakeManager StakeManager contract.
@@ -278,11 +291,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         return true;
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrPauser {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrPauser {
         _unpause();
     }
 

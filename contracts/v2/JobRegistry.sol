@@ -113,11 +113,24 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     IFeePool public feePool;
     IIdentityRegistry public identityRegistry;
     address public treasury;
+    address public pauser;
 
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
     /// @dev Each acknowledger must be a valid contract or externally owned account.
     mapping(address => bool) public acknowledgers;
+
+    modifier onlyGovernanceOrPauser() {
+        require(
+            msg.sender == address(governance) || msg.sender == pauser,
+            "governance or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyGovernance {
+        pauser = _pauser;
+    }
 
     // cache successful agent authorizations
     mapping(address => bool) public agentAuthCache;
@@ -497,12 +510,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     /// @notice Pause job lifecycle interactions
-    function pause() external onlyGovernance {
+    function pause() external onlyGovernanceOrPauser {
         _pause();
     }
 
     /// @notice Resume job lifecycle interactions
-    function unpause() external onlyGovernance {
+    function unpause() external onlyGovernanceOrPauser {
         _unpause();
     }
 

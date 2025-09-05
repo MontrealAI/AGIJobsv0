@@ -48,6 +48,7 @@ contract ReputationEngine is Ownable, Pausable {
     uint256 public stakeWeight = TOKEN_SCALE;
     uint256 public reputationWeight = TOKEN_SCALE;
     uint256 public validationRewardPercentage = DEFAULT_VALIDATION_REWARD_PERCENTAGE;
+    address public pauser;
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
     event BlacklistUpdated(address indexed user, bool status);
@@ -57,6 +58,18 @@ contract ReputationEngine is Ownable, Pausable {
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
     event ModulesUpdated(address indexed stakeManager);
     event ValidationRewardPercentageUpdated(uint256 percentage);
+
+    modifier onlyOwnerOrPauser() {
+        require(
+            msg.sender == owner() || msg.sender == pauser,
+            "owner or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyOwner {
+        pauser = _pauser;
+    }
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
         require(address(_stakeManager) != address(0), "invalid stake manager");
         require(_stakeManager.version() == 2, "incompatible version");
@@ -314,11 +327,11 @@ contract ReputationEngine is Ownable, Pausable {
         return true;
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrPauser {
         _pause();
     }
 
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrPauser {
         _unpause();
     }
 

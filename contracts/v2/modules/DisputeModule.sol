@@ -37,6 +37,8 @@ contract DisputeModule is Ownable, Pausable {
     /// @notice Address of the arbitrator committee contract.
     address public committee;
 
+    address public pauser;
+
     struct Dispute {
         address claimant;
         uint256 raisedAt;
@@ -58,6 +60,18 @@ contract DisputeModule is Ownable, Pausable {
         address indexed resolver,
         bool employerWins
     );
+
+    modifier onlyOwnerOrPauser() {
+        require(
+            msg.sender == owner() || msg.sender == pauser,
+            "owner or pauser only"
+        );
+        _;
+    }
+
+    function setPauser(address _pauser) external onlyOwner {
+        pauser = _pauser;
+    }
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);
     event JobRegistryUpdated(IJobRegistry newRegistry);
@@ -158,12 +172,12 @@ contract DisputeModule is Ownable, Pausable {
     }
 
     /// @notice Pause dispute operations.
-    function pause() external onlyOwner {
+    function pause() external onlyOwnerOrPauser {
         _pause();
     }
 
     /// @notice Resume dispute operations.
-    function unpause() external onlyOwner {
+    function unpause() external onlyOwnerOrPauser {
         _unpause();
     }
 
