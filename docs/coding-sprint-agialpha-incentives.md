@@ -60,7 +60,7 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
    - Extend Hardhat tests for revenue distribution, routing priority,
      governance rewards, slashing and blacklist enforcement.
    - Update `README.md`, `docs/incentive-mechanisms-agialpha.md` and
-     `docs/deployment-agialpha.md` to cover Etherscan flows, owner‑only setters
+    `docs/deployment-v2-agialpha.md` to cover Etherscan flows, owner‑only setters
      and base‑unit conversions.
    - Add a concise Etherscan deployment quickstart to the README so non‑technical
      operators can launch the suite with $AGIALPHA and later retune parameters

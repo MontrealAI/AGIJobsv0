@@ -1,6 +1,6 @@
 # Etherscan Interaction Guide
 
-For a narrated deployment walkthrough, see [deployment-agialpha.md](deployment-agialpha.md).
+For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deployment-v2-agialpha.md).
 
 ## Quick Links
 - AGIJobManager v0: [Etherscan](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) | [Blockscout](https://blockscout.com/eth/mainnet/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477/contracts)
