@@ -114,7 +114,7 @@ The $AGIALPHA token address is fixed at deployment. All amounts must be provided
 
 ## Explorer‑Friendly Design
 All public methods use simple data types so employers, agents and validators can interact through Etherscan's **Write** tab.
-Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-agialpha.md](deployment-agialpha.md).
+Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-v2-agialpha.md](deployment-v2-agialpha.md).
 
 ## Governance & Composability
 - Every module inherits `Ownable`; only the contract owner or its designated multisig can adjust parameters.
