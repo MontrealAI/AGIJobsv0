@@ -2,6 +2,8 @@
 
 This guide walks a non-technical administrator through deploying the AGI Jobs v2 smart contracts on Ethereum using only a web browser and Etherscan.  It also explains best practices such as true token burning, owner updatability and how to record your deployment in this repository.
 
+All steps are executed directly from Etherscan's web interface—no command line tools or local scripts are required.
+
 ### Best Practices in AGI Jobs v2
 - **True token burning**: FeePool and StakeManager call the $AGIALPHA `burn()` function, permanently removing tokens instead of sending them to a dead address.
 - **Owner updatability**: The contract owner can adjust fees, stakes and other parameters via `set...` functions without redeploying.
