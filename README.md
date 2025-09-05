@@ -23,6 +23,7 @@ Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax
 
 - [docs/deployment-production-guide.md](docs/deployment-production-guide.md) – step-by-step walkthrough for deploying AGI Jobs v2 using only a web browser and Etherscan.
 - [docs/deployment-guide-production.md](docs/deployment-guide-production.md) – production deployment checklist.
+- [docs/agi-jobs-v2-production-deployment-guide.md](docs/agi-jobs-v2-production-deployment-guide.md) – non‑technical guide highlighting best practices such as true token burning and owner updatability.
 
 ## Migrating from legacy
 

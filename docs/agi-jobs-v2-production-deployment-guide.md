@@ -87,6 +87,17 @@ Verify wiring by reading stored addresses on Etherscan.
 - **True token burning:** whenever a burn percentage is set in `FeePool` or `StakeManager`, tokens are destroyed via `$AGIALPHA.burn`, reducing total supply rather than sending to a dead address.
 - **Owner updatability:** as the contract owner you may adjust parameters (fee percentages, stake limits, burn rate, validation windows, allowlists, etc.) through the various `set...` functions.  Consider transferring ownership to a multisig for additional safety.
 - **Security checks:** test a small job end‑to‑end, monitor emitted events, and keep a pause mechanism (see `docs/system-pause.md`) ready.
+- **Trial run:** walk through posting a job, staking, validation, finalization and a dispute with small amounts or on a testnet to confirm module interactions.
+- **Final verification:** confirm stored addresses in each module's *Read* tab or run `npm run verify:wiring` locally.
+- **Record keeping:** maintain an admin log of parameter changes and update `docs/deployment-addresses.json` whenever addresses change.
+- **Legal compliance:** consult professionals to ensure the platform operates within your jurisdiction's regulations.
+
+### Post‑Deployment Checklist
+
+- [ ] Verify all contracts on Etherscan.
+- [ ] Record and log every deployed address.
+- [ ] Transfer ownership to a secure governance account.
+- [ ] Configure and document the current burn rate.
 
 ## 5. Updating Repository Documentation
 After a successful deployment:
