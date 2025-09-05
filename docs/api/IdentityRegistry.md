@@ -4,6 +4,7 @@ Validates ENS ownership and Merkle proofs for agents and validators.
 Maintains optional metadata URIs describing each agent's capabilities.
 
 ## Functions
+
 - `setENS(address ens)` / `setNameWrapper(address wrapper)` – configure ENS contracts.
 - `setReputationEngine(address engine)` – connect reputation engine.
 - `setAgentRootNode(bytes32 node)` / `setClubRootNode(bytes32 node)` – base ENS nodes for agents and validators.
@@ -17,6 +18,7 @@ Maintains optional metadata URIs describing each agent's capabilities.
 - `verifyValidator(bytes32 label, bytes32[] proof, address account)` – external verification helper.
 
 ## Events
+
 - `ENSUpdated(address ens)` / `NameWrapperUpdated(address nameWrapper)`
 - `ReputationEngineUpdated(address reputationEngine)`
 - `AgentRootNodeUpdated(bytes32 agentRootNode)` / `ClubRootNodeUpdated(bytes32 clubRootNode)`

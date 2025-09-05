@@ -1,4 +1,5 @@
 # AGIJob Manager
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The **v2** release under `contracts/v2` is the only supported version. Deprecated v0 artifacts now live in `contracts/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
@@ -36,54 +37,60 @@ Use the `examples/ethers-quickstart.js` script to interact with the deployed con
 The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
 
 ### Post a job
+
 ```bash
 node -e "require('./examples/ethers-quickstart').postJob()"
 ```
 
 ### Stake tokens
+
 ```bash
 node -e "require('./examples/ethers-quickstart').stake('1')"
 ```
 
 ### Validate a submission
+
 ```bash
 node -e "require('./examples/ethers-quickstart').validate(1, '0xhash', '0xlabel', [], true, '0xsalt')"
 ```
 
 ### Raise a dispute
+
 ```bash
 node -e "require('./examples/ethers-quickstart').dispute(1, 'ipfs://evidence')"
 ```
 
 ## Deployed Addresses
 
-| Module | Address |
-| --- | --- |
+| Module            | Address                                      |
+| ----------------- | -------------------------------------------- |
 | `$AGIALPHA` Token | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
-| StakeManager | `0x0000000000000000000000000000000000000000` |
-| ReputationEngine | `0x0000000000000000000000000000000000000000` |
-| IdentityRegistry | `0x0000000000000000000000000000000000000000` |
-| ValidationModule | `0x0000000000000000000000000000000000000000` |
-| DisputeModule | `0x0000000000000000000000000000000000000000` |
-| CertificateNFT | `0x0000000000000000000000000000000000000000` |
-| JobRegistry | `0x0000000000000000000000000000000000000000` |
+| StakeManager      | `0x0000000000000000000000000000000000000000` |
+| ReputationEngine  | `0x0000000000000000000000000000000000000000` |
+| IdentityRegistry  | `0x0000000000000000000000000000000000000000` |
+| ValidationModule  | `0x0000000000000000000000000000000000000000` |
+| DisputeModule     | `0x0000000000000000000000000000000000000000` |
+| CertificateNFT    | `0x0000000000000000000000000000000000000000` |
+| JobRegistry       | `0x0000000000000000000000000000000000000000` |
+
 ## Step‑by‑Step Deployment with $AGIALPHA
 
 Record each address during deployment. The defaults below assume the 18‑decimal `$AGIALPHA` token; token rotation is considered legacy and is not supported in new deployments.
 
-| Module | Owner‑only setters |
-| --- | --- |
-| [`AGIALPHAToken`](contracts/test/AGIALPHAToken.sol) *(local testing only)* | `mint`, `burn` |
-| [`StakeManager`](contracts/v2/StakeManager.sol) | `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress` |
-| [`JobRegistry`](contracts/v2/JobRegistry.sol) | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot`,<br>`setTreasury`, `setIdentityRegistry` |
-| [`ValidationModule`](contracts/v2/ValidationModule.sol) | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry` |
-| [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol) | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setAgentProfileURI` |
-| [`DisputeModule`](contracts/v2/modules/DisputeModule.sol) | `setDisputeFee`, `setTaxPolicy`, `setFeePool` |
-| [`ReputationEngine`](contracts/v2/ReputationEngine.sol) | `setCaller`, `setWeights`, `blacklist`, `unblacklist` |
-| [`CertificateNFT`](contracts/v2/CertificateNFT.sol) | `setJobRegistry`, `setStakeManager`, `setBaseURI` |
-| [`FeePool`](contracts/v2/FeePool.sol) | `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury` |
+| Module                                                                     | Owner‑only setters                                                                                                                                             |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`AGIALPHAToken`](contracts/test/AGIALPHAToken.sol) _(local testing only)_ | `mint`, `burn`                                                                                                                                                 |
+| [`StakeManager`](contracts/v2/StakeManager.sol)                            | `setMinStake`, `setSlashingPercentages`, `setTreasury`, `setMaxStakePerAddress`                                                                                |
+| [`JobRegistry`](contracts/v2/JobRegistry.sol)                              | `setModules`, `setFeePool`, `setTaxPolicy`, `setAgentRootNode`, `setAgentMerkleRoot`,<br>`setTreasury`, `setIdentityRegistry`                                  |
+| [`ValidationModule`](contracts/v2/ValidationModule.sol)                    | `setJobRegistry`, `setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, `setApprovalThreshold`, `setIdentityRegistry`                                    |
+| [`IdentityRegistry`](contracts/v2/IdentityRegistry.sol)                    | `setENS`, `setNameWrapper`, `setReputationEngine`, `setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`, `setAgentProfileURI` |
+| [`DisputeModule`](contracts/v2/modules/DisputeModule.sol)                  | `setDisputeFee`, `setTaxPolicy`, `setFeePool`                                                                                                                  |
+| [`ReputationEngine`](contracts/v2/ReputationEngine.sol)                    | `setCaller`, `setWeights`, `blacklist`, `unblacklist`                                                                                                          |
+| [`CertificateNFT`](contracts/v2/CertificateNFT.sol)                        | `setJobRegistry`, `setStakeManager`, `setBaseURI`                                                                                                              |
+| [`FeePool`](contracts/v2/FeePool.sol)                                      | `setStakeManager`, `setRewardRole`, `setBurnPct`, `setTreasury`                                                                                                |
 
 ### Etherscan steps
+
 1. **Deploy contracts** – open each verified contract → **Contract → Deploy** and provide the constructor parameters listed above.
 2. **Wire modules** – from each contract’s **Write** tab call:
    - `JobRegistry.setModules(validationModule, stakeManager, reputationEngine, disputeModule, certificateNFT, feePool, new address[](0))`
@@ -100,19 +107,21 @@ Record each address during deployment. The defaults below assume the 18‑decima
    - Post a job: `JobRegistry.createJob(1_000000000000000000, "ipfs://QmHash")`
 
 ### Transfer ownership to a multisig or timelock
+
 After deployment hand control of each module to a governance contract so no
 single key can change parameters:
 
 1. Deploy a multisig wallet or an OpenZeppelin
    `TimelockController`.
 2. From the deployer account hand over control of each module:
+
    - `StakeManager.setGovernance(multisig)`
    - `JobRegistry.setGovernance(multisig)`
    - `transferOwnership(multisig)` on all other modules such as
      `ValidationModule`, `ReputationEngine`, `IdentityRegistry`,
      `CertificateNFT`, `DisputeModule`, `FeePool`, `PlatformRegistry`,
      `JobRouter`, `PlatformIncentives`, `TaxPolicy` and `SystemPause`.
-   To automate this step run:
+     To automate this step run:
 
    ```bash
    npx ts-node --compiler-options '{"module":"commonjs"}' scripts/transfer-ownership.ts --new-owner <address>
@@ -121,6 +130,7 @@ single key can change parameters:
    The script reads `docs/deployment-addresses.json` and issues the
    appropriate `setGovernance` or `transferOwnership` calls for each
    deployed module.
+
 3. To rotate governance later, the current multisig executes
    `setGovernance(newOwner)` or `transferOwnership(newOwner)` as
    appropriate and the new address assumes control after the relevant
@@ -128,11 +138,13 @@ single key can change parameters:
    transactions will revert once ownership has moved.
 
 ### ENS subdomain prerequisites
+
 - Agents must control an ENS subdomain ending in `.agent.agi.eth`.
 - Validators require `.club.agi.eth`.
 - Owners load allowlists with `JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`.
 
 ### Quickstart flow
+
 1. **Obtain Merkle proof** – request your address proof from AGI operators or generate it from the published allowlist.
 2. **Stake** – approve `$AGIALPHA` for the `StakeManager` and call `depositStake(role, amount)` (`role` 0 = agent, 1 = validator`).
 3. **Apply** – submit `applyForJob(jobId, subdomain, proof)` on `JobRegistry` or use `stakeAndApply` to combine staking and applying.
@@ -140,6 +152,7 @@ single key can change parameters:
 5. **Resolve disputes** – anyone can raise a dispute via `acknowledgeAndDispute(jobId, evidence)`; the owner settles it on `DisputeModule.resolve`.
 
 ### Etherscan job lifecycle
+
 1. **Create** – on `JobRegistry` **Write Contract**, call `createJob(reward, uri)` with amounts in 18‑decimal base units.
 2. **Apply** – agents stake through `StakeManager.depositStake(0, amount)` then call `applyForJob(jobId, label, proof)`.
 3. **Validate** – selected validators execute `commitValidation(jobId, hash, label, proof)` followed by `revealValidation(jobId, approve, salt)`.
@@ -147,7 +160,9 @@ single key can change parameters:
 5. **Dispute** – challenges go through `JobRegistry.raiseDispute(jobId, evidence)` which forwards to `DisputeModule` for resolution.
 
 ### Updating parameters without redeployment
+
 The contract owner can retune live systems from block‑explorer **Write** tabs:
+
 - **ENS roots** – `IdentityRegistry.setAgentRootNode` / `setClubRootNode`.
 - **Merkle roots** – `IdentityRegistry.setAgentMerkleRoot` / `setValidatorMerkleRoot`.
 - **Timing & fees** – `ValidationModule.setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, and `DisputeModule.setDisputeFee`.
@@ -171,6 +186,7 @@ Each subsequent constructor accepts addresses from earlier steps, so deploying i
 For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and `PlatformIncentives`, consult the docs under `docs/`.
 
 ## Further reading
+
 - [Architecture overview](docs/architecture-v2.md)
 - [Module and interface reference](docs/v2-module-interface-reference.md)
 - [Etherscan interaction guide](docs/etherscan-guide.md)
@@ -178,4 +194,3 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Production deployment guide](docs/deployment-guide-production.md)
 - [API reference and SDK snippets](docs/api-reference.md)
 - [Agent gateway example](examples/agent-gateway.js)
-

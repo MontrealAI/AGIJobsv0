@@ -1,6 +1,7 @@
 # Architecture
 
 ## Modules
+
 - [JobRegistry](../contracts/v2/JobRegistry.sol) – orchestrates job lifecycle and coordinates with external modules.
 - [StakeManager](../contracts/v2/StakeManager.sol) – holds deposits, pays rewards, and slashes stake.
 - [ReputationEngine](../contracts/v2/ReputationEngine.sol) – tracks reputation scores for participants.
@@ -8,6 +9,7 @@
 - [CertificateNFT](../contracts/v2/CertificateNFT.sol) – mints ERC721 certificates for successful jobs.
 
 ## Module Interactions
+
 ```mermaid
 graph TD
     JobRegistry --> ValidationModule
@@ -17,6 +19,7 @@ graph TD
 ```
 
 ## Job Flow
+
 ```mermaid
 sequenceDiagram
     participant Employer
@@ -33,6 +36,7 @@ sequenceDiagram
 ```
 
 ## Employer-Win Dispute Flow
+
 ```mermaid
 sequenceDiagram
     participant Employer

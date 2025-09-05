@@ -1,17 +1,20 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("PlatformIncentives acknowledge", function () {
-  it("acknowledgeStakeAndActivate records acknowledgement", async () => {
+describe('PlatformIncentives acknowledge', function () {
+  it('acknowledgeStakeAndActivate records acknowledgement', async () => {
     const [owner, operator, treasury] = await ethers.getSigners();
 
-    const { AGIALPHA } = require("../../scripts/constants");
-    const token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const { AGIALPHA } = require('../../scripts/constants');
+    const token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
     await token.mint(owner.address, 1000);
     await token.mint(operator.address, 1000);
 
     const Stake = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     const stakeManager = await Stake.deploy(
       0,
@@ -25,13 +28,13 @@ describe("PlatformIncentives acknowledge", function () {
     await stakeManager.connect(owner).setMinStake(1);
 
     const Rep = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     const reputation = await Rep.deploy(await stakeManager.getAddress());
     await reputation.setStakeManager(await stakeManager.getAddress());
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+      'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
     );
     const platformRegistry = await Registry.deploy(
       await stakeManager.getAddress(),
@@ -40,12 +43,12 @@ describe("PlatformIncentives acknowledge", function () {
     );
 
     const Router = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      'contracts/v2/modules/JobRouter.sol:JobRouter'
     );
     const jobRouter = await Router.deploy(await platformRegistry.getAddress());
 
     const Incentives = await ethers.getContractFactory(
-      "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+      'contracts/v2/PlatformIncentives.sol:PlatformIncentives'
     );
     const incentives = await Incentives.deploy(
       await stakeManager.getAddress(),
@@ -56,7 +59,7 @@ describe("PlatformIncentives acknowledge", function () {
     await jobRouter.setRegistrar(await incentives.getAddress(), true);
 
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
@@ -72,9 +75,9 @@ describe("PlatformIncentives acknowledge", function () {
       owner.address
     );
     const TaxPolicy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
-    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    const policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
     await jobRegistry
       .connect(owner)
@@ -93,4 +96,3 @@ describe("PlatformIncentives acknowledge", function () {
     expect(await policy.hasAcknowledged(operator.address)).to.equal(true);
   });
 });
-

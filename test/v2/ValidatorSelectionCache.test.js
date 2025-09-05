@@ -1,20 +1,20 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe("Validator selection cache", function () {
+describe('Validator selection cache', function () {
   let validation, stake, identity, other;
 
   beforeEach(async () => {
     const [_, o] = await ethers.getSigners();
     other = o;
 
-    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
@@ -22,7 +22,7 @@ describe("Validator selection cache", function () {
     await identity.setAgentRootNode(ethers.ZeroHash);
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       ethers.ZeroAddress,
@@ -40,7 +40,7 @@ describe("Validator selection cache", function () {
     for (let i = 0; i < 3; i++) {
       const addr = ethers.Wallet.createRandom().address;
       validators.push(addr);
-      await stake.setStake(addr, 1, ethers.parseEther("1"));
+      await stake.setStake(addr, 1, ethers.parseEther('1'));
       await identity.addAdditionalValidator(addr);
     }
     await validation.setValidatorPool(validators);
@@ -51,13 +51,13 @@ describe("Validator selection cache", function () {
 
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     return validation.connect(other).selectValidators(jobId, 0);
   }
 
-  it("skips repeat ENS checks and expires cache", async () => {
+  it('skips repeat ENS checks and expires cache', async () => {
     await expect(validation.setValidatorAuthCacheDuration(5))
-      .to.emit(validation, "ValidatorAuthCacheDurationUpdated")
+      .to.emit(validation, 'ValidatorAuthCacheDurationUpdated')
       .withArgs(5);
 
     const tx1 = await select(1);

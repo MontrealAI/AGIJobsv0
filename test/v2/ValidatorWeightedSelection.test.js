@@ -1,19 +1,19 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("Validator selection weighted by stake", function () {
+describe('Validator selection weighted by stake', function () {
   let validation, stake, identity;
   let validators, other;
 
   beforeEach(async () => {
     const [_, o] = await ethers.getSigners();
     other = o;
-    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
@@ -21,7 +21,7 @@ describe("Validator selection weighted by stake", function () {
     await identity.setAgentRootNode(ethers.ZeroHash);
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       ethers.ZeroAddress,
@@ -36,11 +36,11 @@ describe("Validator selection weighted by stake", function () {
     await validation.setIdentityRegistry(await identity.getAddress());
 
     const stakeAmts = [
-      ethers.parseEther("1"),
-      ethers.parseEther("2"),
-      ethers.parseEther("8"),
-      ethers.parseEther("1"),
-      ethers.parseEther("1"),
+      ethers.parseEther('1'),
+      ethers.parseEther('2'),
+      ethers.parseEther('8'),
+      ethers.parseEther('1'),
+      ethers.parseEther('1'),
     ];
     validators = [];
     for (const amt of stakeAmts) {
@@ -56,12 +56,12 @@ describe("Validator selection weighted by stake", function () {
 
   async function select(jobId, entropy) {
     await validation.selectValidators(jobId, entropy);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     await validation.connect(other).selectValidators(jobId, 0);
     return await validation.validators(jobId);
   }
 
-  it("prefers higher staked validators", async () => {
+  it('prefers higher staked validators', async () => {
     const counts = {};
     for (const v of validators) counts[v] = 0;
     const iterations = 150;

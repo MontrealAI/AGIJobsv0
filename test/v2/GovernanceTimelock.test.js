@@ -1,12 +1,12 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("Governance via Timelock", function () {
-  it("allows privileged calls only through the timelock", async function () {
+describe('Governance via Timelock', function () {
+  it('allows privileged calls only through the timelock', async function () {
     const [admin] = await ethers.getSigners();
 
     const Timelock = await ethers.getContractFactory(
-      "contracts/legacy/TimelockControllerHarness.sol:TimelockControllerHarness"
+      'contracts/legacy/TimelockControllerHarness.sol:TimelockControllerHarness'
     );
     const timelock = await Timelock.deploy(admin.address);
     await timelock.waitForDeployment();
@@ -15,12 +15,15 @@ describe("Governance via Timelock", function () {
     await timelock.grantRole(proposerRole, admin.address);
     await timelock.grantRole(executorRole, admin.address);
 
-    const { AGIALPHA } = require("../../scripts/constants");
-    const token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    const { AGIALPHA } = require('../../scripts/constants');
+    const token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
     await token.mint(admin.address, 1000);
 
     const Stake = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     const stake = await Stake.deploy(
       0,
@@ -34,7 +37,7 @@ describe("Governance via Timelock", function () {
     await stake.waitForDeployment();
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -51,10 +54,10 @@ describe("Governance via Timelock", function () {
     );
     await registry.waitForDeployment();
 
-    await expect(stake.setMinStake(1)).to.be.revertedWith("governance only");
-    await expect(registry.setFeePct(1)).to.be.revertedWith("governance only");
+    await expect(stake.setMinStake(1)).to.be.revertedWith('governance only');
+    await expect(registry.setFeePct(1)).to.be.revertedWith('governance only');
 
-    const stakeCall = stake.interface.encodeFunctionData("setMinStake", [1]);
+    const stakeCall = stake.interface.encodeFunctionData('setMinStake', [1]);
     await timelock
       .connect(admin)
       .schedule(
@@ -76,7 +79,7 @@ describe("Governance via Timelock", function () {
       );
     expect(await stake.minStake()).to.equal(1);
 
-    const regCall = registry.interface.encodeFunctionData("setFeePct", [1]);
+    const regCall = registry.interface.encodeFunctionData('setFeePct', [1]);
     await timelock
       .connect(admin)
       .schedule(
@@ -99,4 +102,3 @@ describe("Governance via Timelock", function () {
     expect(await registry.feePct()).to.equal(1);
   });
 });
-

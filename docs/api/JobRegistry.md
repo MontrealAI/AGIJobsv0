@@ -3,6 +3,7 @@
 Coordinates job posting, assignment and dispute resolution.
 
 ## Functions
+
 - `createJob(uint256 reward, string uri)` – employer escrows reward and posts IPFS job metadata.
 - `applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)` – agent applies using ENS label and Merkle proof.
 - `submit(uint256 jobId, bytes32 resultHash, string resultURI)` – agent submits work.
@@ -13,6 +14,7 @@ Coordinates job posting, assignment and dispute resolution.
 - `setAgentRootNode(bytes32 node)` / `setAgentMerkleRoot(bytes32 root)` – load ENS allowlists.
 
 ## Events
+
 - `JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward, string uri)`
 - `JobApplied(uint256 indexed jobId, address indexed agent)`
 - `JobSubmitted(uint256 indexed jobId, bytes32 resultHash)`

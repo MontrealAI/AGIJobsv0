@@ -3,6 +3,7 @@
 This document condenses the production-scale architecture into standalone modules, each with a minimal interface and owner-only governance hooks. It is a companion to `docs/architecture-v2.md` and `docs/deployment-v2-agialpha.md` and focuses on contract boundaries and Solidity structure tips. All modules now expose `version()` returning **2** so other components can verify compatibility during upgrades. The reputation system is implemented by a single contract, `contracts/v2/ReputationEngine.sol`, which replaces the former module variant.
 
 ## Module Graph
+
 ```mermaid
 graph LR
   JobRegistry --> StakeManager
@@ -18,6 +19,7 @@ graph LR
 ```
 
 ## Core Interfaces (Solidity ^0.8.20)
+
 ```solidity
 interface IJobRegistry {
     event JobCreated(
@@ -88,6 +90,7 @@ interface ICertificateNFT {
 ```
 
 ## Solidity Structure Recommendations
+
 - Mark module addresses `immutable` and cache them in local variables.
 - Pack small variables (`uint64`, `uint96`) to minimise storage slots.
 - Prefer `external` + `calldata` for user calls; use custom errors over revert strings.
@@ -96,13 +99,15 @@ interface ICertificateNFT {
 - Emit events for every configuration change so off-chain services can track state.
 
 ## Incentive & Physics Analogy
+
 Stakes form potential energy \(H\); commit–reveal voting injects entropy \(S\). Owner‑tuned parameters act as temperature \(T\). The network evolves toward minimum Gibbs free energy \(G = H - TS\), making honest behaviour the dominant, low‑energy strategy. Slashing raises \(H\) for cheaters, while random validator selection increases \(S\), keeping collusion energetically unfavourable.
 
 ## Owner Control & Token Flexibility
+
 All setters are `onlyOwner`. v2 assumes the 18‑decimal [$AGIALPHA](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) token for all modules with the address fixed at deployment. All amounts are supplied in base units (1 token = 1e18). For example `0.1` token is `100_000000000000000` and `12` tokens are `12_000000000000000000`.
 
 ## Governance Composability
+
 - Modules are immutable once deployed; to upgrade a component the owner deploys a new module and calls `JobRegistry.setModules` with the replacement address.
 - Parameter tweaks emit dedicated events (`ParameterUpdated`, `ModuleUpdated`) so off-chain tooling and multisigs can monitor governance moves.
 - Minimal, single-purpose setters keep Etherscan interactions straightforward for non-technical owners while ensuring clear on-chain audit trails.
-

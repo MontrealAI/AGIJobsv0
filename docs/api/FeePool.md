@@ -3,6 +3,7 @@
 Holds platform fees and distributes rewards.
 
 ## Functions
+
 - `depositFee(uint256 amount)` – StakeManager deposits collected fees.
 - `contribute(uint256 amount)` – anyone can add to the reward pool.
 - `distributeFees()` – move accumulated fees to the reward pool and burn portion.
@@ -14,6 +15,7 @@ Holds platform fees and distributes rewards.
 - `setGovernance(address governance)` – set timelock enabled for withdrawals.
 
 ## Events
+
 - `FeeDeposited(address from, uint256 amount)`
 - `FeesDistributed(uint256 amount)`
 - `FeesBurned(address caller, uint256 amount)`

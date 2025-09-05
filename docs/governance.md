@@ -12,7 +12,7 @@ EOA ownership is not possible.
    deploying `StakeManager`, `JobRegistry` and any other `Governable`
    modules. Example using Hardhat:
    ```javascript
-   const timelock = "0xTimelockAddress";
+   const timelock = '0xTimelockAddress';
    const stake = await StakeManager.deploy(
      token,
      minStake,

@@ -1,19 +1,30 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
 const TOKEN = 10n ** 18n; // 1 token with 18 decimals
 
-describe("Governance reward lifecycle", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
-  let owner, voter1, voter2, voter3, token, stakeManager, feePool, reward, treasury;
+describe('Governance reward lifecycle', function () {
+  const { AGIALPHA } = require('../../scripts/constants');
+  let owner,
+    voter1,
+    voter2,
+    voter3,
+    token,
+    stakeManager,
+    feePool,
+    reward,
+    treasury;
 
   beforeEach(async () => {
     [owner, voter1, voter2, voter3, treasury] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await StakeManager.deploy(
       0,
@@ -28,7 +39,7 @@ describe("Governance reward lifecycle", function () {
     await stakeManager.connect(owner).setMinStake(1);
 
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
@@ -44,20 +55,19 @@ describe("Governance reward lifecycle", function () {
       owner.address
     );
     const TaxPolicy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
-    const taxPolicy = await TaxPolicy.deploy(
-      "ipfs://policy",
-      "ack"
-    );
+    const taxPolicy = await TaxPolicy.deploy('ipfs://policy', 'ack');
     await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
-    await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
     await taxPolicy.connect(voter1).acknowledge();
     await taxPolicy.connect(voter2).acknowledge();
     await taxPolicy.connect(voter3).acknowledge();
 
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
@@ -68,7 +78,7 @@ describe("Governance reward lifecycle", function () {
     await feePool.setGovernance(owner.address);
 
     const Reward = await ethers.getContractFactory(
-      "contracts/v2/GovernanceReward.sol:GovernanceReward"
+      'contracts/v2/GovernanceReward.sol:GovernanceReward'
     );
     reward = await Reward.deploy(
       await feePool.getAddress(),
@@ -102,11 +112,11 @@ describe("Governance reward lifecycle", function () {
     await token.mint(await feePool.getAddress(), 200n * TOKEN);
   });
 
-  it("distributes rewards across epochs and allows claims", async () => {
+  it('distributes rewards across epochs and allows claims', async () => {
     // epoch 0 with two voters
     await reward.recordVoters([voter1.address, voter2.address]);
-    await ethers.provider.send("evm_increaseTime", [1]);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_increaseTime', [1]);
+    await ethers.provider.send('evm_mine', []);
     await feePool
       .connect(owner)
       .governanceWithdraw(await reward.getAddress(), 100n * TOKEN);
@@ -117,13 +127,15 @@ describe("Governance reward lifecycle", function () {
 
     expect(await token.balanceOf(voter1.address)).to.equal(50n * TOKEN);
     expect(await token.balanceOf(voter2.address)).to.equal(50n * TOKEN);
-    await expect(reward.connect(voter1).claim(0)).to.be.revertedWith("claimed");
-    await expect(reward.connect(voter3).claim(0)).to.be.revertedWith("not voter");
+    await expect(reward.connect(voter1).claim(0)).to.be.revertedWith('claimed');
+    await expect(reward.connect(voter3).claim(0)).to.be.revertedWith(
+      'not voter'
+    );
 
     // fund pool with remaining 100 tokens for next epoch already there
     await reward.recordVoters([voter3.address]);
-    await ethers.provider.send("evm_increaseTime", [1]);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_increaseTime', [1]);
+    await ethers.provider.send('evm_mine', []);
     await feePool
       .connect(owner)
       .governanceWithdraw(await reward.getAddress(), 50n * TOKEN);
@@ -133,4 +145,3 @@ describe("Governance reward lifecycle", function () {
     expect(await token.balanceOf(voter3.address)).to.equal(50n * TOKEN);
   });
 });
-

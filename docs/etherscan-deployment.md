@@ -7,11 +7,13 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
 ## Quick Walkthrough
 
 ### v0
+
 1. Open the [AGIJobManager v0](https://etherscan.io/address/0x0178b6bad606aaf908f72135b8ec32fc1d5ba477#code) contract and choose **Contract → Deploy**.
 2. Enter constructor args in 18‑decimal units: token address, base IPFS URL, ENS registry and NameWrapper, plus the namehashes and Merkle roots for `club.agi.eth` and `agent.agi.eth` (`0x00` for open access).
 3. Deploy; the sender becomes owner. Agents need subdomains under `agent.agi.eth` and validators under `club.agi.eth` or matching Merkle proofs.
 
 ### v2
+
 1. Open the `Deployer` contract and under **Write Contract** call `deployDefaults(ids)` (or `deployDefaultsWithoutTaxPolicy`).
 2. Supply namehashes and optional Merkle roots for the required ENS subdomains. Token amounts still use 18‑decimal `$AGIALPHA` units.
 3. After modules deploy, wire them via `JobRegistry.setModules(...)` and register the identity registry with `JobRegistry.setIdentityRegistry` and `ValidationModule.setIdentityRegistry`.
@@ -49,13 +51,13 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
 
 ### Recommended constructor parameters
 
-| Parameter | Recommended value |
-| --- | --- |
-| `token` | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
-| `feePct` | `5` (protocol fee percentage) |
-| `burnPct` | `0` (no burn) |
-| `commitWindow` | `86400` seconds (24h) |
-| `revealWindow` | `86400` seconds (24h) |
+| Parameter      | Recommended value                            |
+| -------------- | -------------------------------------------- |
+| `token`        | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
+| `feePct`       | `5` (protocol fee percentage)                |
+| `burnPct`      | `0` (no burn)                                |
+| `commitWindow` | `86400` seconds (24h)                        |
+| `revealWindow` | `86400` seconds (24h)                        |
 
 ### Deployment order and wiring
 
@@ -101,11 +103,13 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
 ## Owner Action Checklist
 
 ### v0
+
 - [ ] `updateAGITokenAddress(newToken)`
 - [ ] `setRootNodes(clubRootNode, agentRootNode)`
 - [ ] `setMerkleRoots(validatorRoot, agentRoot)`
 
 ### v2
+
 - [ ] `ENSOwnershipVerifier.setRootNodes(clubRootNode, agentRootNode)`
 - [ ] `IdentityRegistry.setMerkleRoots(validatorRoot, agentRoot)`
 - [ ] `JobRegistry.setModules(...)`

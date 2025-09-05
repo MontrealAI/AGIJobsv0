@@ -10,7 +10,9 @@
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",
     "test": "npx hardhat test",
-    "gateway": "node agent-gateway/index.js"
+    "gateway": "node agent-gateway/index.js",
+    "format": "prettier --write \"**/*.{js,ts,md}\"",
+    "format:check": "prettier --check \"**/*.{js,ts,md}\""
   },
   "keywords": [],
   "author": "",
@@ -20,8 +22,10 @@
     "@nomicfoundation/hardhat-toolbox": "6.1.0",
     "@openzeppelin/contracts": "^5.4.0",
     "eslint": "^9.32.0",
+    "eslint-plugin-prettier": "^4.2.5",
     "hardhat": "^2.26.1",
     "hardhat-gas-reporter": "^2.3.0",
+    "prettier": "^2.8.8",
     "solhint": "^6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"

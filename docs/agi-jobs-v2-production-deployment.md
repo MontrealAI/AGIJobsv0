@@ -5,6 +5,7 @@ using Etherscan. It focuses on production practices: verifiable contract
 builds, address recording and safe ownership controls.
 
 ## Prerequisites
+
 - **$AGIALPHA token:** Deployed ERC‑20 with 18 decimals and known address.
 - **Governance account:** Multisig or timelock that will ultimately own the
   modules.
@@ -16,6 +17,7 @@ builds, address recording and safe ownership controls.
   bytecode matches the source used for verification.
 
 ## Module Overview
+
 - `JobRegistry` – central job coordination.
 - `StakeManager` – escrows and burns tokens.
 - `ValidationModule` – commit‑reveal validation.
@@ -28,6 +30,7 @@ builds, address recording and safe ownership controls.
 - `ModuleInstaller` – helper that wires modules and returns ownership.
 
 ## Step-by-Step Deployment via Etherscan
+
 1. Deploy each contract from its **Contract → Deploy** tab. Supply constructor
    parameters in 18‑decimal units.
 2. After each deployment:
@@ -37,6 +40,7 @@ builds, address recording and safe ownership controls.
 3. Prioritise deploying `ModuleInstaller` last if using it for wiring.
 
 ## ModuleInstaller Wiring
+
 1. Transfer ownership of every module to the installer.
 2. From the governance account, call `initialize` with all module addresses.
    Ownership is returned automatically.
@@ -44,15 +48,18 @@ builds, address recording and safe ownership controls.
    addresses. See [module-installer.md](module-installer.md) for details.
 
 ## Manual Wiring Fallback
+
 If the installer is unavailable, wire contracts individually:
+
 1. On `JobRegistry` call `setModules(validation, stake, reputation, dispute,
-   certificate, feePool, new address[](0))`.
+certificate, feePool, new address[](0))`.
 2. Call `setJobRegistry(jobRegistry)` on `StakeManager`, `ValidationModule` and
    `CertificateNFT`.
 3. Authorise `PlatformIncentives` on `PlatformRegistry` and `JobRouter`.
 4. Verify wiring with the provided `scripts/verify-wiring.ts` script.
 
 ## Post-Deployment Configuration
+
 - Transfer ownership of every module to the governance contract.
 - Enable emergency controls such as
   [SystemPause](system-pause.md) if required.
@@ -61,13 +68,16 @@ If the installer is unavailable, wire contracts individually:
 - Save final contract addresses for future upgrades and monitoring.
 
 ## Owner-Controlled Parameters
+
 The system relies on governance-owned setters to adjust economics after launch:
+
 - `StakeManager.setMinStake(uint256)` – updates the minimum stake required for agents and validators.
 - `StakeManager.setFeePct(uint256)` – determines what portion of released funds becomes protocol fees.
 - `StakeManager.setBurnPct(uint256)` – controls how much stake is destroyed when jobs settle.
 - `FeePool.setBurnPct(uint256)` – specifies the percentage of fees forwarded to the token burn mechanism.
 
 ## Recording Deployment Addresses
+
 All deployed contract addresses should be tracked in
 [docs/deployment-addresses.json](deployment-addresses.json). After a contract is
 verified on Etherscan, edit this file and replace the placeholder address with
@@ -83,6 +93,7 @@ Check the updated file into Git so other operators have a canonical record of
 the current addresses.
 
 ## Best Practices
+
 - **Irreversible token burning:** `FeePool.setBurnPct` defines the share of fees
   destroyed. During distribution `_burnFees` invokes `$AGIALPHA.burn`, which
   uses the ERC‑20 `_burn` hook to permanently reduce balances and total supply,

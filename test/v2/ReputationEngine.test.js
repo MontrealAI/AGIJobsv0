@@ -1,23 +1,23 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("ReputationEngine", function () {
+describe('ReputationEngine', function () {
   let engine, owner, caller, user, validator;
 
   beforeEach(async () => {
     [owner, caller, user, validator] = await ethers.getSigners();
-    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const Stake = await ethers.getContractFactory('MockStakeManager');
     const stake = await Stake.deploy();
     const Engine = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     engine = await Engine.deploy(await stake.getAddress());
     await engine.connect(owner).setCaller(caller.address, true);
     await engine.connect(owner).setPremiumThreshold(2);
   });
 
-  it("rewards validators based on agent gain", async () => {
-    const payout = ethers.parseEther("100");
+  it('rewards validators based on agent gain', async () => {
+    const payout = ethers.parseEther('100');
     const duration = 100000;
     const gain = await engine.calculateReputationPoints(payout, duration);
     const tokenScale = 10n ** 18n;
@@ -37,21 +37,21 @@ describe("ReputationEngine", function () {
     expect(await engine.reputationOf(user.address)).to.equal(expectedAgent);
 
     const percentageScale = BigInt(await engine.PERCENTAGE_SCALE());
-    const validatorPercentage = BigInt(await engine.validationRewardPercentage());
+    const validatorPercentage = BigInt(
+      await engine.validationRewardPercentage()
+    );
     const validatorGain = (gain * validatorPercentage) / percentageScale;
     const expectedValidator = enforceGrowth(0n, validatorGain);
-    await engine
-      .connect(caller)
-      .rewardValidator(validator.address, gain);
+    await engine.connect(caller).rewardValidator(validator.address, gain);
     expect(await engine.reputationOf(validator.address)).to.equal(
       expectedValidator
     );
   });
 
-  it("reputation gain scales with payout and duration", async () => {
-    const smallPayout = ethers.parseEther("10");
+  it('reputation gain scales with payout and duration', async () => {
+    const smallPayout = ethers.parseEther('10');
     const smallDuration = 1000;
-    const largePayout = ethers.parseEther("100");
+    const largePayout = ethers.parseEther('100');
     const largeDuration = 100000;
 
     await engine
@@ -66,25 +66,26 @@ describe("ReputationEngine", function () {
     expect(largeRep).to.be.gt(smallRep);
   });
 
-  it("blocks blacklisted users", async () => {
+  it('blocks blacklisted users', async () => {
     await engine.connect(owner).setBlacklist(user.address, true);
-    await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
-      "Blacklisted agent"
-    );
+    await expect(
+      engine.connect(caller).onApply(user.address)
+    ).to.be.revertedWith('Blacklisted agent');
   });
 
-  it("gates applications by threshold", async () => {
-    await expect(engine.connect(caller).onApply(user.address)).to.be.revertedWith(
-      "insufficient reputation"
-    );
+  it('gates applications by threshold', async () => {
+    await expect(
+      engine.connect(caller).onApply(user.address)
+    ).to.be.revertedWith('insufficient reputation');
     await engine.connect(caller).add(user.address, 3);
     expect(await engine.meetsThreshold(user.address)).to.equal(true);
-    await expect(engine.connect(caller).onApply(user.address)).to.not.be.reverted;
+    await expect(engine.connect(caller).onApply(user.address)).to.not.be
+      .reverted;
   });
 
-  it("auto clears blacklist when threshold met", async () => {
+  it('auto clears blacklist when threshold met', async () => {
     await engine.connect(owner).setBlacklist(user.address, true);
-    const payout = ethers.parseEther("100");
+    const payout = ethers.parseEther('100');
     const duration = 100000;
     await engine
       .connect(caller)
@@ -93,14 +94,14 @@ describe("ReputationEngine", function () {
     expect(await engine.meetsThreshold(user.address)).to.equal(true);
   });
 
-  it("rejects unauthorized callers", async () => {
+  it('rejects unauthorized callers', async () => {
     await expect(engine.connect(user).add(user.address, 1)).to.be.revertedWith(
-      "not authorized"
+      'not authorized'
     );
   });
 
-  it("handles large payouts without overflow", async () => {
-    const largePayout = ethers.parseEther("1000000000"); // 1 billion tokens
+  it('handles large payouts without overflow', async () => {
+    const largePayout = ethers.parseEther('1000000000'); // 1 billion tokens
     const largeDuration = 1000000;
 
     // calculateReputationPoints should return a positive value and not overflow

@@ -1,16 +1,28 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("FeePool", function () {
-  let token, stakeManager, jobRegistry, feePool, owner, user1, user2, employer, treasury, registrySigner;
+describe('FeePool', function () {
+  let token,
+    stakeManager,
+    jobRegistry,
+    feePool,
+    owner,
+    user1,
+    user2,
+    employer,
+    treasury,
+    registrySigner;
 
-  const { AGIALPHA } = require("../../scripts/constants");
+  const { AGIALPHA } = require('../../scripts/constants');
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await StakeManager.deploy(
       0,
@@ -24,7 +36,7 @@ describe("FeePool", function () {
     await stakeManager.connect(owner).setMinStake(1);
 
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     jobRegistry = await JobRegistry.deploy(
       ethers.ZeroAddress,
@@ -40,11 +52,13 @@ describe("FeePool", function () {
       owner.address
     );
     const TaxPolicy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
-    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    const policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
-    await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
     await policy.connect(user1).acknowledge();
     await policy.connect(user2).acknowledge();
 
@@ -53,7 +67,7 @@ describe("FeePool", function () {
     await token.mint(employer.address, 1000);
 
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
@@ -63,9 +77,9 @@ describe("FeePool", function () {
     await feePool.setBurnPct(0);
 
     const registryAddr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [
+    await ethers.provider.send('hardhat_setBalance', [
       registryAddr,
-      "0x56BC75E2D63100000",
+      '0x56BC75E2D63100000',
     ]);
     registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
@@ -75,57 +89,18 @@ describe("FeePool", function () {
     await stakeManager.connect(user2).depositStake(2, 300);
   });
 
-  it("allows direct contributions", async () => {
-    await token
-      .connect(user1)
-      .approve(await feePool.getAddress(), 100);
+  it('allows direct contributions', async () => {
+    await token.connect(user1).approve(await feePool.getAddress(), 100);
     await expect(feePool.connect(user1).contribute(100))
-      .to.emit(feePool, "RewardPoolContribution")
+      .to.emit(feePool, 'RewardPoolContribution')
       .withArgs(user1.address, 100);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(100n);
     expect(await feePool.pendingFees()).to.equal(100n);
   });
 
-  it("distributes rewards proportionally", async () => {
+  it('distributes rewards proportionally', async () => {
     const feeAmount = 100;
-    const jobId = ethers.encodeBytes32String("job1");
-    await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
-    await stakeManager
-      .connect(registrySigner)
-      .lockReward(jobId, employer.address, feeAmount);
-    await stakeManager
-      .connect(registrySigner)
-      .finalizeJobFunds(
-        jobId,
-        user1.address,
-        0,
-        feeAmount,
-        await feePool.getAddress()
-      );
-
-    const before1 = await token.balanceOf(user1.address);
-    const before2 = await token.balanceOf(user2.address);
-    await feePool.connect(owner).distributeFees();
-    await feePool.connect(user1).claimRewards();
-    await feePool.connect(user2).claimRewards();
-    expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
-  });
-
-  it("distributes rewards to validators when configured", async () => {
-    // additional validator stakes
-    await token
-      .connect(user1)
-      .approve(await stakeManager.getAddress(), 100);
-    await token
-      .connect(user2)
-      .approve(await stakeManager.getAddress(), 300);
-    await stakeManager.connect(user1).depositStake(1, 100);
-    await stakeManager.connect(user2).depositStake(1, 300);
-    await feePool.connect(owner).setRewardRole(1);
-
-    const feeAmount = 100;
-    const jobId = ethers.encodeBytes32String("jobV");
+    const jobId = ethers.encodeBytes32String('job1');
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), feeAmount);
@@ -151,10 +126,45 @@ describe("FeePool", function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
-  it("burns configured percentage of fees", async () => {
+  it('distributes rewards to validators when configured', async () => {
+    // additional validator stakes
+    await token.connect(user1).approve(await stakeManager.getAddress(), 100);
+    await token.connect(user2).approve(await stakeManager.getAddress(), 300);
+    await stakeManager.connect(user1).depositStake(1, 100);
+    await stakeManager.connect(user2).depositStake(1, 300);
+    await feePool.connect(owner).setRewardRole(1);
+
+    const feeAmount = 100;
+    const jobId = ethers.encodeBytes32String('jobV');
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .finalizeJobFunds(
+        jobId,
+        user1.address,
+        0,
+        feeAmount,
+        await feePool.getAddress()
+      );
+
+    const before1 = await token.balanceOf(user1.address);
+    const before2 = await token.balanceOf(user2.address);
+    await feePool.connect(owner).distributeFees();
+    await feePool.connect(user1).claimRewards();
+    await feePool.connect(user2).claimRewards();
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
+  });
+
+  it('burns configured percentage of fees', async () => {
     await feePool.connect(owner).setBurnPct(25);
     const feeAmount = 80;
-    const jobId = ethers.encodeBytes32String("job2");
+    const jobId = ethers.encodeBytes32String('job2');
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), feeAmount);
@@ -182,10 +192,12 @@ describe("FeePool", function () {
     expect(supplyBefore - supplyAfter).to.equal(20n);
   });
 
-  it("emits zero payout for owner without stake", async () => {
+  it('emits zero payout for owner without stake', async () => {
     const feeAmount = 50;
-    const jobId = ethers.encodeBytes32String("job4");
-    await token.connect(employer).approve(await stakeManager.getAddress(), feeAmount);
+    const jobId = ethers.encodeBytes32String('job4');
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), feeAmount);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, feeAmount);
@@ -201,14 +213,14 @@ describe("FeePool", function () {
     await feePool.connect(owner).distributeFees();
     const before = await token.balanceOf(owner.address);
     await expect(feePool.connect(owner).claimRewards())
-      .to.emit(feePool, "RewardsClaimed")
+      .to.emit(feePool, 'RewardsClaimed')
       .withArgs(owner.address, 0);
     expect(await token.balanceOf(owner.address)).to.equal(before);
   });
 
-  it("owner stakeAndActivate(0) yields zero score, weight and payout", async () => {
+  it('owner stakeAndActivate(0) yields zero score, weight and payout', async () => {
     const Rep = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     const rep = await Rep.connect(owner).deploy(
       await stakeManager.getAddress()
@@ -217,7 +229,7 @@ describe("FeePool", function () {
     await rep.setAuthorizedCaller(owner.address, true);
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+      'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
     );
     const registry = await Registry.connect(owner).deploy(
       await stakeManager.getAddress(),
@@ -226,14 +238,14 @@ describe("FeePool", function () {
     );
 
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      'contracts/v2/modules/JobRouter.sol:JobRouter'
     );
     const jobRouter = await JobRouter.connect(owner).deploy(
       await registry.getAddress()
     );
 
     const Incentives = await ethers.getContractFactory(
-      "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+      'contracts/v2/PlatformIncentives.sol:PlatformIncentives'
     );
     const incentives = await Incentives.connect(owner).deploy(
       await stakeManager.getAddress(),
@@ -245,43 +257,40 @@ describe("FeePool", function () {
     await jobRouter.setRegistrar(await incentives.getAddress(), true);
 
     await expect(incentives.connect(owner).stakeAndActivate(0))
-      .to.emit(registry, "Registered")
+      .to.emit(registry, 'Registered')
       .withArgs(owner.address);
     expect(await registry.getScore(owner.address)).to.equal(0);
     expect(await jobRouter.routingWeight(owner.address)).to.equal(0);
 
     await expect(feePool.connect(owner).claimRewards())
-      .to.emit(feePool, "RewardsClaimed")
+      .to.emit(feePool, 'RewardsClaimed')
       .withArgs(owner.address, 0);
 
     await expect(
       incentives.connect(user1).stakeAndActivate(0)
-    ).to.be.revertedWith("amount");
+    ).to.be.revertedWith('amount');
   });
 
-  it("returns immediately when distributing with zero fees", async () => {
+  it('returns immediately when distributing with zero fees', async () => {
     const cumulative = await feePool.cumulativePerToken();
     await expect(feePool.connect(owner).distributeFees()).to.not.be.reverted;
     expect(await feePool.pendingFees()).to.equal(0);
     expect(await feePool.cumulativePerToken()).to.equal(cumulative);
   });
 
-  it("reverts when setting a zero stake manager", async () => {
+  it('reverts when setting a zero stake manager', async () => {
     await expect(
       feePool.connect(owner).setStakeManager(ethers.ZeroAddress)
-    ).to.be.revertedWithCustomError(feePool, "ZeroAddress");
+    ).to.be.revertedWithCustomError(feePool, 'ZeroAddress');
   });
 
-  it("reverts when stake manager has wrong version", async () => {
+  it('reverts when stake manager has wrong version', async () => {
     const Mock = await ethers.getContractFactory(
-      "contracts/v2/mocks/VersionMock.sol:VersionMock"
+      'contracts/v2/mocks/VersionMock.sol:VersionMock'
     );
     const bad = await Mock.deploy(1);
     await expect(
       feePool.connect(owner).setStakeManager(await bad.getAddress())
-    ).to.be.revertedWithCustomError(
-      feePool,
-      "InvalidStakeManagerVersion"
-    );
+    ).to.be.revertedWithCustomError(feePool, 'InvalidStakeManagerVersion');
   });
 });

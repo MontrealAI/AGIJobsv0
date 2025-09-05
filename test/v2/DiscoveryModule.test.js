@@ -1,25 +1,25 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("DiscoveryModule", function () {
+describe('DiscoveryModule', function () {
   let stakeManager, engine, discovery, owner, p1, p2;
 
   beforeEach(async () => {
     [owner, p1, p2] = await ethers.getSigners();
-    const Stake = await ethers.getContractFactory("MockStakeManager");
+    const Stake = await ethers.getContractFactory('MockStakeManager');
     stakeManager = await Stake.deploy();
 
     const Engine = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     engine = await Engine.deploy(await stakeManager.getAddress());
+    await engine.connect(owner).setAuthorizedCaller(owner.address, true);
     await engine
       .connect(owner)
-      .setAuthorizedCaller(owner.address, true);
-    await engine.connect(owner).setStakeManager(await stakeManager.getAddress());
+      .setStakeManager(await stakeManager.getAddress());
 
     const Discovery = await ethers.getContractFactory(
-      "contracts/v2/modules/DiscoveryModule.sol:DiscoveryModule"
+      'contracts/v2/modules/DiscoveryModule.sol:DiscoveryModule'
     );
     discovery = await Discovery.deploy(
       await stakeManager.getAddress(),
@@ -29,7 +29,7 @@ describe("DiscoveryModule", function () {
     await discovery.connect(owner).setMinStake(1);
   });
 
-  it("orders and paginates platforms by score", async () => {
+  it('orders and paginates platforms by score', async () => {
     await stakeManager.setStake(p1.address, 2, 100);
     await stakeManager.setStake(p2.address, 2, 100);
 
@@ -58,7 +58,7 @@ describe("DiscoveryModule", function () {
     expect(second[0]).to.equal(p1.address);
   });
 
-  it("excludes blacklisted platforms", async () => {
+  it('excludes blacklisted platforms', async () => {
     await stakeManager.setStake(p1.address, 2, 100);
     await discovery.registerPlatform(p1.address);
     await engine.connect(owner).setBlacklist(p1.address, true);
@@ -66,4 +66,3 @@ describe("DiscoveryModule", function () {
     expect(top.length).to.equal(0);
   });
 });
-

@@ -1,27 +1,39 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
-const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
 
-describe("job finalization integration", function () {
-  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy;
+describe('job finalization integration', function () {
+  let token,
+    stakeManager,
+    rep,
+    validation,
+    nft,
+    registry,
+    dispute,
+    feePool,
+    policy;
   let owner, employer, agent, validator1, validator2;
-  const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
-  const stakeRequired = ethers.parseUnits("200", AGIALPHA_DECIMALS);
+  const reward = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
+  const stakeRequired = ethers.parseUnits('200', AGIALPHA_DECIMALS);
   const feePct = 10;
   const validatorRewardPct = 10;
-  const mintAmount = ethers.parseUnits("10000", AGIALPHA_DECIMALS);
+  const mintAmount = ethers.parseUnits('10000', AGIALPHA_DECIMALS);
 
   beforeEach(async () => {
-    [owner, employer, agent, validator1, validator2] = await ethers.getSigners();
+    [owner, employer, agent, validator1, validator2] =
+      await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
     await token.mint(owner.address, mintAmount);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
 
     const Stake = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await Stake.deploy(
       0,
@@ -36,22 +48,22 @@ describe("job finalization integration", function () {
     await stakeManager.connect(owner).setMinStake(1);
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
+      'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
     );
     validation = await Validation.deploy();
 
     const Rep = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     rep = await Rep.deploy(await stakeManager.getAddress());
 
     const NFT = await ethers.getContractFactory(
-      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+      'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy("Cert", "CERT");
+    nft = await NFT.deploy('Cert', 'CERT');
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -68,7 +80,7 @@ describe("job finalization integration", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule'
     );
     dispute = await Dispute.deploy(
       await registry.getAddress(),
@@ -80,7 +92,7 @@ describe("job finalization integration", function () {
     await dispute.connect(owner).setDisputeWindow(0);
 
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
@@ -90,24 +102,24 @@ describe("job finalization integration", function () {
     await feePool.setBurnPct(0);
 
     const Policy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
     policy = await Policy.deploy(
-      "ipfs://policy",
-      "All taxes on participants; contract and owner exempt"
+      'ipfs://policy',
+      'All taxes on participants; contract and owner exempt'
     );
 
-  await registry.setModules(
-    await validation.getAddress(),
-    await stakeManager.getAddress(),
-    await rep.getAddress(),
-    await dispute.getAddress(),
-    await nft.getAddress(),
-    await feePool.getAddress(),
-    []
-  );
-  await validation.setJobRegistry(await registry.getAddress());
-  await registry.setFeePct(feePct);
+    await registry.setModules(
+      await validation.getAddress(),
+      await stakeManager.getAddress(),
+      await rep.getAddress(),
+      await dispute.getAddress(),
+      await nft.getAddress(),
+      await feePool.getAddress(),
+      []
+    );
+    await validation.setJobRegistry(await registry.getAddress());
+    await registry.setFeePct(feePct);
     await registry.setValidatorRewardPct(validatorRewardPct);
     await registry.setTaxPolicy(await policy.getAddress());
     await registry.setJobParameters(0, stakeRequired);
@@ -126,7 +138,7 @@ describe("job finalization integration", function () {
     await policy.connect(employer).acknowledge();
     await policy.connect(agent).acknowledge();
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     const identity = await Identity.deploy();
     await registry.setIdentityRegistry(await identity.getAddress());
@@ -136,32 +148,34 @@ describe("job finalization integration", function () {
   async function setupJob(result) {
     const fee = (reward * BigInt(feePct)) / 100n;
     const vReward = (reward * BigInt(validatorRewardPct)) / 100n;
-    await token.connect(agent).approve(await stakeManager.getAddress(), stakeRequired);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).acknowledgeAndApply(jobId, "", []);
+    await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
     await validation.setResult(result);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id("result"), "result", "", []);
+      .submit(jobId, ethers.id('result'), 'result', '', []);
     return { jobId, fee, vReward };
   }
 
-  it("finalizes successful job", async () => {
+  it('finalizes successful job', async () => {
     const { jobId, fee, vReward } = await setupJob(true);
     const agentBefore = await token.balanceOf(agent.address);
     await expect(validation.finalize(jobId))
-      .to.emit(registry, "JobCompleted")
+      .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true)
-      .and.to.emit(registry, "JobFinalized")
+      .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
@@ -175,38 +189,38 @@ describe("job finalization integration", function () {
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
-  it("finalizes failed job after employer dispute", async () => {
+  it('finalizes failed job after employer dispute', async () => {
     // seed reputation to observe subtraction
     await rep.connect(owner).setAuthorizedCaller(owner.address, true);
     await rep.connect(owner).add(agent.address, 5);
 
     const { jobId, fee } = await setupJob(false);
     await expect(validation.finalize(jobId))
-      .to.emit(registry, "JobCompleted")
+      .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, false);
-    await network.provider.send("hardhat_setBalance", [
+    await network.provider.send('hardhat_setBalance', [
       dispute.target,
-      "0x56BC75E2D63100000",
+      '0x56BC75E2D63100000',
     ]);
     await network.provider.request({
-      method: "hardhat_impersonateAccount",
+      method: 'hardhat_impersonateAccount',
       params: [dispute.target],
     });
     const disputeSigner = await ethers.getSigner(dispute.target);
     const employerBefore = await token.balanceOf(employer.address);
     const agentBefore = await token.balanceOf(agent.address);
-    await expect(
-      registry.connect(disputeSigner).resolveDispute(jobId, true)
-    )
-      .to.emit(registry, "JobFinalized")
+    await expect(registry.connect(disputeSigner).resolveDispute(jobId, true))
+      .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
+      method: 'hardhat_stopImpersonatingAccount',
       params: [dispute.target],
     });
     const employerAfter = await token.balanceOf(employer.address);
     const agentAfter = await token.balanceOf(agent.address);
-    expect(employerAfter - employerBefore).to.equal(reward + fee + stakeRequired);
+    expect(employerAfter - employerBefore).to.equal(
+      reward + fee + stakeRequired
+    );
     expect(agentAfter).to.equal(agentBefore);
     expect(await rep.reputation(agent.address)).to.equal(4);
     expect(await nft.balanceOf(agent.address)).to.equal(0n);
@@ -215,26 +229,24 @@ describe("job finalization integration", function () {
   it("finalizes job in agent's favour after dispute", async () => {
     const { jobId, vReward } = await setupJob(false);
     await expect(validation.finalize(jobId))
-      .to.emit(registry, "JobCompleted")
+      .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, false);
-    await network.provider.send("hardhat_setBalance", [
+    await network.provider.send('hardhat_setBalance', [
       dispute.target,
-      "0x56BC75E2D63100000",
+      '0x56BC75E2D63100000',
     ]);
     await network.provider.request({
-      method: "hardhat_impersonateAccount",
+      method: 'hardhat_impersonateAccount',
       params: [dispute.target],
     });
     const disputeSigner = await ethers.getSigner(dispute.target);
     const agentBefore = await token.balanceOf(agent.address);
     const employerBefore = await token.balanceOf(employer.address);
-    await expect(
-      registry.connect(disputeSigner).resolveDispute(jobId, false)
-    )
-      .to.emit(registry, "JobFinalized")
+    await expect(registry.connect(disputeSigner).resolveDispute(jobId, false))
+      .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
+      method: 'hardhat_stopImpersonatingAccount',
       params: [dispute.target],
     });
     const agentAfter = await token.balanceOf(agent.address);

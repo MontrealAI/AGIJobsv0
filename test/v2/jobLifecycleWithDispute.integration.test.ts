@@ -1,7 +1,7 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { AGIALPHA_DECIMALS } from "../../scripts/constants";
+import { expect } from 'chai';
+import { ethers } from 'hardhat';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { AGIALPHA_DECIMALS } from '../../scripts/constants';
 
 enum Role {
   Agent,
@@ -12,15 +12,19 @@ enum Role {
 async function deployFullSystem() {
   const [owner, employer, agent, v1, v2, moderator] = await ethers.getSigners();
 
-  const Token = await ethers.getContractFactory("contracts/test/AGIALPHAToken.sol:AGIALPHAToken");
+  const Token = await ethers.getContractFactory(
+    'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+  );
   const token = await Token.deploy();
-  const mint = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
+  const mint = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
   await token.mint(employer.address, mint);
   await token.mint(agent.address, mint);
   await token.mint(v1.address, mint);
   await token.mint(v2.address, mint);
 
-  const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
+  const Stake = await ethers.getContractFactory(
+    'contracts/v2/StakeManager.sol:StakeManager'
+  );
   const stake = await Stake.deploy(
     await token.getAddress(),
     0,
@@ -32,14 +36,20 @@ async function deployFullSystem() {
     owner.address
   );
 
-  const Reputation = await ethers.getContractFactory("contracts/v2/ReputationEngine.sol:ReputationEngine");
+  const Reputation = await ethers.getContractFactory(
+    'contracts/v2/ReputationEngine.sol:ReputationEngine'
+  );
   const reputation = await Reputation.deploy(await stake.getAddress());
 
-  const Identity = await ethers.getContractFactory("contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle");
+  const Identity = await ethers.getContractFactory(
+    'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+  );
   const identity = await Identity.deploy();
   await identity.setResult(true);
 
-  const Validation = await ethers.getContractFactory("contracts/v2/ValidationModule.sol:ValidationModule");
+  const Validation = await ethers.getContractFactory(
+    'contracts/v2/ValidationModule.sol:ValidationModule'
+  );
   const validation = await Validation.deploy(
     ethers.ZeroAddress,
     await stake.getAddress(),
@@ -50,10 +60,14 @@ async function deployFullSystem() {
     []
   );
 
-  const NFT = await ethers.getContractFactory("contracts/v2/CertificateNFT.sol:CertificateNFT");
-  const nft = await NFT.deploy("Cert", "CERT");
+  const NFT = await ethers.getContractFactory(
+    'contracts/v2/CertificateNFT.sol:CertificateNFT'
+  );
+  const nft = await NFT.deploy('Cert', 'CERT');
 
-  const Registry = await ethers.getContractFactory("contracts/v2/JobRegistry.sol:JobRegistry");
+  const Registry = await ethers.getContractFactory(
+    'contracts/v2/JobRegistry.sol:JobRegistry'
+  );
   const registry = await Registry.deploy(
     await validation.getAddress(),
     await stake.getAddress(),
@@ -69,7 +83,7 @@ async function deployFullSystem() {
   );
 
   const Dispute = await ethers.getContractFactory(
-    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+    'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
@@ -80,7 +94,10 @@ async function deployFullSystem() {
   await dispute.waitForDeployment();
   await dispute.setStakeManager(await stake.getAddress());
 
-  await stake.setModules(await registry.getAddress(), await dispute.getAddress());
+  await stake.setModules(
+    await registry.getAddress(),
+    await dispute.getAddress()
+  );
   await validation.setJobRegistry(await registry.getAddress());
   await validation.setIdentityRegistry(await identity.getAddress());
   await validation.setValidatorPool([v1.address, v2.address]);
@@ -96,40 +113,65 @@ async function deployFullSystem() {
   );
   await reputation.setCaller(await registry.getAddress(), true);
 
-  return { owner, employer, agent, v1, v2, moderator, token, stake, validation, registry, dispute };
+  return {
+    owner,
+    employer,
+    agent,
+    v1,
+    v2,
+    moderator,
+    token,
+    stake,
+    validation,
+    registry,
+    dispute,
+  };
 }
 
-describe("job lifecycle with dispute and validator failure", function () {
-  it("handles validator non-participation and dispute resolution", async () => {
+describe('job lifecycle with dispute and validator failure', function () {
+  it('handles validator non-participation and dispute resolution', async () => {
     const env = await deployFullSystem();
-    const { employer, agent, v1, v2, token, stake, validation, registry, dispute, moderator } = env;
+    const {
+      employer,
+      agent,
+      v1,
+      v2,
+      token,
+      stake,
+      validation,
+      registry,
+      dispute,
+      moderator,
+    } = env;
 
-    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
+    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
     for (const signer of [agent, v1, v2]) {
-      await token.connect(signer).approve(await stake.getAddress(), stakeAmount);
+      await token
+        .connect(signer)
+        .approve(await stake.getAddress(), stakeAmount);
       const role = signer === agent ? Role.Agent : Role.Validator;
       await stake.connect(signer).depositStake(role, stakeAmount);
     }
     const initialAgentBalance = await token.balanceOf(agent.address);
 
-    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
+    const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "ipfs://job");
+      .createJob(reward, deadline, specHash, 'ipfs://job');
 
-    await registry.connect(agent).applyForJob(1, "agent", []);
+    await registry.connect(agent).applyForJob(1, 'agent', []);
     await registry
       .connect(agent)
-      .submit(1, ethers.id("ipfs://result"), "ipfs://result", "agent", []);
+      .submit(1, ethers.id('ipfs://result'), 'ipfs://result', 'agent', []);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);
     const commit1 = ethers.keccak256(
       ethers.solidityPacked(
-        ["uint256","uint256","bool","bytes32","bytes32"],
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
         [1n, nonce, true, salt1, specHash]
       )
     );
@@ -137,7 +179,7 @@ describe("job lifecycle with dispute and validator failure", function () {
     const salt2 = ethers.randomBytes(32);
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
-        ["uint256","uint256","bool","bytes32","bytes32"],
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
         [1n, nonce, false, salt2, specHash]
       )
     );
@@ -149,18 +191,20 @@ describe("job lifecycle with dispute and validator failure", function () {
     await time.increase(2);
     await validation.finalize(1);
 
-    expect((await stake.stakes(v2.address, Role.Validator))).to.be.lt(stakeAmount);
-    expect(await registry.jobs(1)).to.have.property("state", 5); // Disputed
+    expect(await stake.stakes(v2.address, Role.Validator)).to.be.lt(
+      stakeAmount
+    );
+    expect(await registry.jobs(1)).to.have.property('state', 5); // Disputed
 
-    await registry.connect(agent).dispute(1, ethers.id("evidence"));
+    await registry.connect(agent).dispute(1, ethers.id('evidence'));
     const hash = ethers.solidityPackedKeccak256(
-      ["address", "uint256", "bool"],
+      ['address', 'uint256', 'bool'],
       [await dispute.getAddress(), 1, false]
     );
     const sig = await owner.signMessage(ethers.getBytes(hash));
     await dispute.connect(owner).resolve(1, false, [sig]);
 
-    expect(await registry.jobs(1)).to.have.property("state", 6); // Finalized
+    expect(await registry.jobs(1)).to.have.property('state', 6); // Finalized
     expect(await token.balanceOf(agent.address)).to.be.gt(initialAgentBalance);
   });
 });

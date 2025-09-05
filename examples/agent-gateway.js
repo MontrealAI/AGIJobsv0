@@ -5,9 +5,7 @@
 const { ethers } = require('ethers');
 
 // Canonical $AGIALPHA token uses fixed decimal configuration
-const {
-  decimals: AGIALPHA_DECIMALS
-} = require('../config/agialpha.json');
+const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
@@ -23,7 +21,7 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee)',
-  'function applyForJob(uint256 jobId, string subdomain, bytes proof) external'
+  'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
 ];
 
 const registry = new ethers.Contract(JOB_REGISTRY, REGISTRY_ABI, wallet);

@@ -1,12 +1,12 @@
-const { expect } = require("chai");
-const { ethers, artifacts, network } = require("hardhat");
-const { AGIALPHA } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers, artifacts, network } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
-describe("SystemPause", function () {
-    it("pauses and unpauses all modules", async function () {
-      const [owner, other] = await ethers.getSigners();
+describe('SystemPause', function () {
+  it('pauses and unpauses all modules', async function () {
+    const [owner, other] = await ethers.getSigners();
     const Deployer = await ethers.getContractFactory(
-      "contracts/v2/Deployer.sol:Deployer"
+      'contracts/v2/Deployer.sol:Deployer'
     );
     const deployer = await Deployer.deploy();
     const econ = {
@@ -29,9 +29,9 @@ describe("SystemPause", function () {
       agentMerkleRoot: ethers.ZeroHash,
     };
     const artifact = await artifacts.readArtifact(
-      "contracts/test/MockERC20.sol:MockERC20"
+      'contracts/test/MockERC20.sol:MockERC20'
     );
-    await network.provider.send("hardhat_setCode", [
+    await network.provider.send('hardhat_setCode', [
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
@@ -40,7 +40,7 @@ describe("SystemPause", function () {
     const deployerAddress = await deployer.getAddress();
     const log = receipt.logs.find((l) => l.address === deployerAddress);
     const decoded = deployer.interface.decodeEventLog(
-      "Deployed",
+      'Deployed',
       log.data,
       log.topics
     );
@@ -60,31 +60,31 @@ describe("SystemPause", function () {
       systemPauseAddr,
     ] = decoded;
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const ValidationModule = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     const DisputeModule = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule'
     );
     const ReputationEngine = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     const PlatformRegistry = await ethers.getContractFactory(
-      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+      'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
     );
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     const Committee = await ethers.getContractFactory(
-      "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+      'contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee'
     );
     const SystemPause = await ethers.getContractFactory(
-      "contracts/v2/SystemPause.sol:SystemPause"
+      'contracts/v2/SystemPause.sol:SystemPause'
     );
     const stake = StakeManager.attach(stakeAddr);
     const registry = JobRegistry.attach(registryAddr);
@@ -97,22 +97,10 @@ describe("SystemPause", function () {
     const committee = Committee.attach(committeeAddr);
     const pause = SystemPause.attach(systemPauseAddr);
 
-      await expect(
-        pause
-          .connect(owner)
-          .setModules(
-            registryAddr,
-            stakeAddr,
-            validationAddr,
-            disputeAddr,
-            platformRegistryAddr,
-            feePoolAddr,
-            reputationAddr,
-            committeeAddr
-          )
-      )
-        .to.emit(pause, "ModulesUpdated")
-        .withArgs(
+    await expect(
+      pause
+        .connect(owner)
+        .setModules(
           registryAddr,
           stakeAddr,
           validationAddr,
@@ -121,20 +109,32 @@ describe("SystemPause", function () {
           feePoolAddr,
           reputationAddr,
           committeeAddr
-        );
-
-      await expect(pause.connect(other).pauseAll()).to.be.revertedWith(
-        "governance only"
+        )
+    )
+      .to.emit(pause, 'ModulesUpdated')
+      .withArgs(
+        registryAddr,
+        stakeAddr,
+        validationAddr,
+        disputeAddr,
+        platformRegistryAddr,
+        feePoolAddr,
+        reputationAddr,
+        committeeAddr
       );
 
-      expect(await stake.paused()).to.equal(false);
-      expect(await registry.paused()).to.equal(false);
-      expect(await validation.paused()).to.equal(false);
-      expect(await dispute.paused()).to.equal(false);
-      expect(await platformRegistry.paused()).to.equal(false);
-      expect(await feePool.paused()).to.equal(false);
-      expect(await reputation.paused()).to.equal(false);
-      expect(await committee.paused()).to.equal(false);
+    await expect(pause.connect(other).pauseAll()).to.be.revertedWith(
+      'governance only'
+    );
+
+    expect(await stake.paused()).to.equal(false);
+    expect(await registry.paused()).to.equal(false);
+    expect(await validation.paused()).to.equal(false);
+    expect(await dispute.paused()).to.equal(false);
+    expect(await platformRegistry.paused()).to.equal(false);
+    expect(await feePool.paused()).to.equal(false);
+    expect(await reputation.paused()).to.equal(false);
+    expect(await committee.paused()).to.equal(false);
 
     await pause.connect(owner).pauseAll();
 
@@ -148,7 +148,7 @@ describe("SystemPause", function () {
     expect(await committee.paused()).to.equal(true);
 
     await expect(pause.connect(other).unpauseAll()).to.be.revertedWith(
-      "governance only"
+      'governance only'
     );
 
     await pause.connect(owner).unpauseAll();
@@ -163,4 +163,3 @@ describe("SystemPause", function () {
     expect(await committee.paused()).to.equal(false);
   });
 });
-

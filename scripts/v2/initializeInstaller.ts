@@ -1,18 +1,18 @@
-import { ethers } from "hardhat";
+import { ethers } from 'hardhat';
 
 function parseArgs() {
   const argv = process.argv.slice(2);
   const args: Record<string, string> = {};
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg.startsWith("--")) {
+    if (arg.startsWith('--')) {
       const key = arg.slice(2);
       const next = argv[i + 1];
-      if (next && !next.startsWith("--")) {
+      if (next && !next.startsWith('--')) {
         args[key] = next;
         i++;
       } else {
-        args[key] = "";
+        args[key] = '';
       }
     }
   }
@@ -21,11 +21,11 @@ function parseArgs() {
 
 async function main() {
   const args = parseArgs();
-  if (!args.installer) throw new Error("--installer required");
-  if (!args.governance) throw new Error("--governance required");
+  if (!args.installer) throw new Error('--installer required');
+  if (!args.governance) throw new Error('--governance required');
 
   const installer = await ethers.getContractAt(
-    "contracts/v2/ModuleInstaller.sol:ModuleInstaller",
+    'contracts/v2/ModuleInstaller.sol:ModuleInstaller',
     args.installer
   );
 
@@ -58,7 +58,7 @@ async function main() {
       []
     );
   await tx.wait();
-  console.log("modules initialized and ownership returned to governance");
+  console.log('modules initialized and ownership returned to governance');
 }
 
 main().catch((err) => {

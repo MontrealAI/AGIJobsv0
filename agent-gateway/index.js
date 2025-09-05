@@ -14,7 +14,7 @@ const BOT_WALLET = process.env.BOT_WALLET || '';
 // $AGIALPHA token parameters
 const {
   address: AGIALPHA_ADDRESS,
-  decimals: AGIALPHA_DECIMALS
+  decimals: AGIALPHA_DECIMALS,
 } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
@@ -27,7 +27,10 @@ if (!JOB_REGISTRY_ADDRESS || !ethers.isAddress(JOB_REGISTRY_ADDRESS)) {
 }
 
 if ('VALIDATION_MODULE_ADDRESS' in process.env) {
-  if (!VALIDATION_MODULE_ADDRESS || !ethers.isAddress(VALIDATION_MODULE_ADDRESS)) {
+  if (
+    !VALIDATION_MODULE_ADDRESS ||
+    !ethers.isAddress(VALIDATION_MODULE_ADDRESS)
+  ) {
     console.error(
       'VALIDATION_MODULE_ADDRESS must be set to a valid Ethereum address when using validation features.'
     );
@@ -73,8 +76,8 @@ const JOB_REGISTRY_ABI = [
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
   'function cancelExpiredJob(uint256 jobId) external',
-  "function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)",
-  'function expirationGracePeriod() view returns (uint256)'
+  'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)',
+  'function expirationGracePeriod() view returns (uint256)',
 ];
 
 // Minimal ABI for ValidationModule interactions
@@ -84,12 +87,20 @@ const VALIDATION_MODULE_ABI = [
   'function revealValidation(uint256 jobId, bool approve, bytes32 salt)',
   'function finalize(uint256 jobId) external returns (bool)',
   'function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,bool tallied,uint256 committeeSize)',
-  'event ValidatorsSelected(uint256 indexed jobId, address[] validators)'
+  'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
 ];
 
-const registry = new ethers.Contract(JOB_REGISTRY_ADDRESS, JOB_REGISTRY_ABI, provider);
+const registry = new ethers.Contract(
+  JOB_REGISTRY_ADDRESS,
+  JOB_REGISTRY_ABI,
+  provider
+);
 const validation = VALIDATION_MODULE_ADDRESS
-  ? new ethers.Contract(VALIDATION_MODULE_ADDRESS, VALIDATION_MODULE_ABI, provider)
+  ? new ethers.Contract(
+      VALIDATION_MODULE_ADDRESS,
+      VALIDATION_MODULE_ABI,
+      provider
+    )
   : null;
 
 // In-memory stores
@@ -116,7 +127,10 @@ async function scheduleExpiration(jobId) {
       expireJob(jobId);
     } else {
       if (expiryTimers.has(jobId)) clearTimeout(expiryTimers.get(jobId));
-      expiryTimers.set(jobId, setTimeout(() => expireJob(jobId), delay * 1000));
+      expiryTimers.set(
+        jobId,
+        setTimeout(() => expireJob(jobId), delay * 1000)
+      );
     }
   } catch (err) {
     console.error('scheduleExpiration error', err);
@@ -144,7 +158,10 @@ async function scheduleFinalize(jobId) {
       finalizeJob(jobId);
     } else {
       if (finalizeTimers.has(jobId)) clearTimeout(finalizeTimers.get(jobId));
-      finalizeTimers.set(jobId, setTimeout(() => finalizeJob(jobId), delay * 1000));
+      finalizeTimers.set(
+        jobId,
+        setTimeout(() => finalizeJob(jobId), delay * 1000)
+      );
     }
   } catch (err) {
     console.error('scheduleFinalize error', err);
@@ -174,7 +191,7 @@ registry.on('JobCreated', (jobId, employer, agentAddr, reward, stake, fee) => {
     stakeRaw: stake.toString(),
     stake: ethers.formatUnits(stake, TOKEN_DECIMALS),
     feeRaw: fee.toString(),
-    fee: ethers.formatUnits(fee, TOKEN_DECIMALS)
+    fee: ethers.formatUnits(fee, TOKEN_DECIMALS),
   };
   jobs.set(job.jobId, job);
   broadcast({ type: 'JobCreated', job });
@@ -215,7 +232,13 @@ app.post('/agents', (req, res) => {
 });
 
 app.get('/agents', (req, res) => {
-  res.json(Array.from(agents.entries()).map(([id, a]) => ({ id, url: a.url, wallet: a.wallet })));
+  res.json(
+    Array.from(agents.entries()).map(([id, a]) => ({
+      id,
+      url: a.url,
+      wallet: a.wallet,
+    }))
+  );
 });
 
 // REST endpoint to list jobs
@@ -229,7 +252,9 @@ app.post('/jobs/:id/apply', async (req, res) => {
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
   try {
-    const tx = await registry.connect(wallet).applyForJob(req.params.id, '', '0x');
+    const tx = await registry
+      .connect(wallet)
+      .applyForJob(req.params.id, '', '0x');
     await tx.wait();
     res.json({ tx: tx.hash });
   } catch (err) {
@@ -263,7 +288,9 @@ async function commitHelper(jobId, wallet, approve) {
     ['uint256', 'uint256', 'bool', 'bytes32'],
     [BigInt(jobId), nonce, approve, salt]
   );
-  const tx = await validation.connect(wallet).commitValidation(jobId, commitHash);
+  const tx = await validation
+    .connect(wallet)
+    .commitValidation(jobId, commitHash);
   await tx.wait();
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId);
@@ -382,7 +409,7 @@ function dispatch(job) {
       fetch(info.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(job)
+        body: JSON.stringify(job),
       }).catch((err) => console.error('dispatch error', err));
     }
   });
@@ -391,5 +418,5 @@ function dispatch(job) {
 module.exports = { app, commitHelper, revealHelper };
 Object.defineProperty(module.exports, 'server', {
   enumerable: true,
-  get: () => server
+  get: () => server,
 });

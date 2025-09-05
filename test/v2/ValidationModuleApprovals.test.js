@@ -1,14 +1,14 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("ValidationModule required approvals", function () {
+describe('ValidationModule required approvals', function () {
   let owner;
   let validation;
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       ethers.ZeroAddress,
@@ -22,16 +22,16 @@ describe("ValidationModule required approvals", function () {
     await validation.waitForDeployment();
   });
 
-  it("reverts for invalid counts", async () => {
+  it('reverts for invalid counts', async () => {
     await expect(
       validation.connect(owner).setRequiredValidatorApprovals(0)
-    ).to.be.revertedWithCustomError(validation, "InvalidApprovals");
+    ).to.be.revertedWithCustomError(validation, 'InvalidApprovals');
     await expect(
       validation.connect(owner).setRequiredValidatorApprovals(5)
-    ).to.be.revertedWithCustomError(validation, "InvalidApprovals");
+    ).to.be.revertedWithCustomError(validation, 'InvalidApprovals');
   });
 
-  it("updates and clamps to committee size", async () => {
+  it('updates and clamps to committee size', async () => {
     await validation.connect(owner).setRequiredValidatorApprovals(2);
     expect(await validation.requiredValidatorApprovals()).to.equal(2n);
 
@@ -46,4 +46,3 @@ describe("ValidationModule required approvals", function () {
     expect(await validation.requiredValidatorApprovals()).to.equal(3n);
   });
 });
-

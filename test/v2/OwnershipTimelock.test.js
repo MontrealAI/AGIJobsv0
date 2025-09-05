@@ -1,11 +1,13 @@
-const { expect } = require("chai");
-const { ethers, network, artifacts } = require("hardhat");
-const { AGIALPHA } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers, network, artifacts } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
-describe("Timelock ownership", function () {
-  it("only timelock can call privileged setters after transfer", async function () {
+describe('Timelock ownership', function () {
+  it('only timelock can call privileged setters after transfer', async function () {
     const [owner, proposer] = await ethers.getSigners();
-    const Deployer = await ethers.getContractFactory("contracts/v2/Deployer.sol:Deployer");
+    const Deployer = await ethers.getContractFactory(
+      'contracts/v2/Deployer.sol:Deployer'
+    );
     const deployer = await Deployer.deploy();
     const econ = {
       token: ethers.ZeroAddress,
@@ -27,9 +29,9 @@ describe("Timelock ownership", function () {
       agentMerkleRoot: ethers.ZeroHash,
     };
     const artifact = await artifacts.readArtifact(
-      "contracts/test/MockERC20.sol:MockERC20"
+      'contracts/test/MockERC20.sol:MockERC20'
     );
-    await network.provider.send("hardhat_setCode", [
+    await network.provider.send('hardhat_setCode', [
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
@@ -38,40 +40,51 @@ describe("Timelock ownership", function () {
     const deployerAddress = await deployer.getAddress();
     const log = receipt.logs.find((l) => l.address === deployerAddress);
     const decoded = deployer.interface.decodeEventLog(
-      "Deployed",
+      'Deployed',
       log.data,
       log.topics
     );
-    const [stakeAddr, registryAddr, , , , , , , , , , , systemPauseAddr] = decoded;
+    const [stakeAddr, registryAddr, , , , , , , , , , , systemPauseAddr] =
+      decoded;
 
-    const StakeManager = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
-    const JobRegistry = await ethers.getContractFactory("contracts/v2/JobRegistry.sol:JobRegistry");
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    const JobRegistry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
     const stake = StakeManager.attach(stakeAddr);
     const registry = JobRegistry.attach(registryAddr);
 
-    const Timelock = await ethers.getContractFactory("contracts/legacy/TimelockMock.sol:TimelockMock");
+    const Timelock = await ethers.getContractFactory(
+      'contracts/legacy/TimelockMock.sol:TimelockMock'
+    );
     const timelock = await Timelock.deploy(proposer.address);
 
-    await network.provider.send("hardhat_setBalance", [
+    await network.provider.send('hardhat_setBalance', [
       systemPauseAddr,
-      "0x56BC75E2D63100000",
+      '0x56BC75E2D63100000',
     ]);
     await network.provider.request({
-      method: "hardhat_impersonateAccount",
+      method: 'hardhat_impersonateAccount',
       params: [systemPauseAddr],
     });
     const systemPauseSigner = await ethers.getSigner(systemPauseAddr);
 
-    await stake.connect(systemPauseSigner).setGovernance(await timelock.getAddress());
+    await stake
+      .connect(systemPauseSigner)
+      .setGovernance(await timelock.getAddress());
     await registry
       .connect(systemPauseSigner)
       .setGovernance(await timelock.getAddress());
 
-    await expect(stake.setFeePct(1)).to.be.revertedWith("governance only");
-    await expect(registry.setFeePct(1)).to.be.revertedWith("governance only");
+    await expect(stake.setFeePct(1)).to.be.revertedWith('governance only');
+    await expect(registry.setFeePct(1)).to.be.revertedWith('governance only');
 
-    const stakeData = stake.interface.encodeFunctionData("setFeePct", [1]);
-    const registryData = registry.interface.encodeFunctionData("setFeePct", [1]);
+    const stakeData = stake.interface.encodeFunctionData('setFeePct', [1]);
+    const registryData = registry.interface.encodeFunctionData('setFeePct', [
+      1,
+    ]);
 
     await timelock.connect(proposer).execute(stake.target, stakeData);
     expect(await stake.feePct()).to.equal(1);
@@ -80,7 +93,7 @@ describe("Timelock ownership", function () {
     expect(await registry.feePct()).to.equal(1);
 
     await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
+      method: 'hardhat_stopImpersonatingAccount',
       params: [systemPauseAddr],
     });
   });

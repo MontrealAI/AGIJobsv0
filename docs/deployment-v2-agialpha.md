@@ -9,6 +9,7 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
    ```bash
    npm install
    ```
+
 2. Execute the helper:
 
    ```bash
@@ -16,6 +17,7 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
    ```
 
    Use `--governance` to set the multisig or timelock owner and `--no-tax` to omit `TaxPolicy`.
+
 3. The script deploys `Deployer.sol`, calls `deployDefaults` (or `deployDefaultsWithoutTaxPolicy`), prints module addresses and verifies each contract on Etherscan.
 
    Example output:
@@ -32,6 +34,7 @@ This guide shows how to deploy the modular v2 contracts using the helper script 
 The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% burn, and leaves ENS settings blank. To customise:
 
 - Edit the script to call `deployer.deploy(econ, ids)` instead of `deployDefaults`.
+
   - `econ.token` – ERC‑20 used by `StakeManager` and `FeePool`.
   - `econ.feePct` / `econ.burnPct` – protocol fee and burn percentages (whole numbers, e.g. `5` for 5%).
   - `ids.agentRootNode` / `ids.clubRootNode` – namehashes for `agent.agi.eth` and `club.agi.eth`.
@@ -41,20 +44,21 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
 
   ```ts
   const econ = {
-    token: "0xYourToken",
+    token: '0xYourToken',
     feePct: 5,
     burnPct: 5,
   };
 
   const ids = {
-    agentRootNode: namehash("agent.agi.eth"),
-    clubRootNode: namehash("club.agi.eth"),
+    agentRootNode: namehash('agent.agi.eth'),
+    clubRootNode: namehash('club.agi.eth'),
     agentMerkleRoot: ZeroHash,
     validatorMerkleRoot: ZeroHash,
   };
 
   await deployer.deploy(econ, ids);
   ```
+
 - After deployment the owner can still adjust parameters on‑chain with `JobRegistry.setFeePct` and `FeePool.setBurnPct`.
 
 ## 3. Post-deploy wiring
@@ -82,6 +86,7 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
    validationModule.setJobRegistry(jobRegistry);
    certificateNFT.setJobRegistry(jobRegistry);
    ```
+
 3. Verify `ModulesUpdated` and `JobRegistrySet` events before allowing user funds.
 
 For function parity with the legacy contract, compare calls against [v1-v2-function-map.md](v1-v2-function-map.md).

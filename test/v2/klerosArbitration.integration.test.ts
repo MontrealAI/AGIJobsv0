@@ -1,7 +1,7 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { AGIALPHA_DECIMALS } from "../../scripts/constants";
+import { expect } from 'chai';
+import { ethers } from 'hardhat';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { AGIALPHA_DECIMALS } from '../../scripts/constants';
 
 enum Role {
   Agent,
@@ -14,16 +14,16 @@ async function deploySystem() {
     await ethers.getSigners();
 
   const Token = await ethers.getContractFactory(
-    "contracts/test/AGIALPHAToken.sol:AGIALPHAToken"
+    'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
   );
   const token = await Token.deploy();
-  const mint = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
+  const mint = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
   for (const s of [employer, agent, v1, v2]) {
     await token.mint(s.address, mint);
   }
 
   const Stake = await ethers.getContractFactory(
-    "contracts/v2/StakeManager.sol:StakeManager"
+    'contracts/v2/StakeManager.sol:StakeManager'
   );
   const stake = await Stake.deploy(
     await token.getAddress(),
@@ -37,18 +37,18 @@ async function deploySystem() {
   );
 
   const Reputation = await ethers.getContractFactory(
-    "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    'contracts/v2/ReputationEngine.sol:ReputationEngine'
   );
   const reputation = await Reputation.deploy(await stake.getAddress());
 
   const Identity = await ethers.getContractFactory(
-    "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
+    'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
   );
   const identity = await Identity.deploy();
   await identity.setResult(true);
 
   const Validation = await ethers.getContractFactory(
-    "contracts/v2/ValidationModule.sol:ValidationModule"
+    'contracts/v2/ValidationModule.sol:ValidationModule'
   );
   const validation = await Validation.deploy(
     ethers.ZeroAddress,
@@ -61,12 +61,12 @@ async function deploySystem() {
   );
 
   const NFT = await ethers.getContractFactory(
-    "contracts/v2/CertificateNFT.sol:CertificateNFT"
+    'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy("Cert", "CERT");
+  const nft = await NFT.deploy('Cert', 'CERT');
 
   const Registry = await ethers.getContractFactory(
-    "contracts/v2/JobRegistry.sol:JobRegistry"
+    'contracts/v2/JobRegistry.sol:JobRegistry'
   );
   const registry = await Registry.deploy(
     await validation.getAddress(),
@@ -83,12 +83,12 @@ async function deploySystem() {
   );
 
   const MockArb = await ethers.getContractFactory(
-    "contracts/v2/mocks/MockArbitrator.sol:MockArbitrator"
+    'contracts/v2/mocks/MockArbitrator.sol:MockArbitrator'
   );
   const mockArb = await MockArb.deploy();
 
   const Kleros = await ethers.getContractFactory(
-    "contracts/v2/modules/KlerosDisputeModule.sol:KlerosDisputeModule"
+    'contracts/v2/modules/KlerosDisputeModule.sol:KlerosDisputeModule'
   );
   const kleros = await Kleros.deploy(
     await registry.getAddress(),
@@ -97,7 +97,10 @@ async function deploySystem() {
   );
   await mockArb.setDisputeModule(await kleros.getAddress());
 
-  await stake.setModules(await registry.getAddress(), await kleros.getAddress());
+  await stake.setModules(
+    await registry.getAddress(),
+    await kleros.getAddress()
+  );
   await validation.setJobRegistry(await registry.getAddress());
   await validation.setIdentityRegistry(await identity.getAddress());
   await validation.setValidatorPool([v1.address, v2.address]);
@@ -128,38 +131,49 @@ async function deploySystem() {
   };
 }
 
-describe("Kleros dispute module", function () {
-  it("handles dispute and external arbitration", async () => {
+describe('Kleros dispute module', function () {
+  it('handles dispute and external arbitration', async () => {
     const env = await deploySystem();
-    const { employer, agent, v1, v2, token, stake, validation, registry, mockArb } =
-      env;
+    const {
+      employer,
+      agent,
+      v1,
+      v2,
+      token,
+      stake,
+      validation,
+      registry,
+      mockArb,
+    } = env;
 
-    const stakeAmount = ethers.parseUnits("1", AGIALPHA_DECIMALS);
+    const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);
     for (const signer of [agent, v1, v2]) {
-      await token.connect(signer).approve(await stake.getAddress(), stakeAmount);
+      await token
+        .connect(signer)
+        .approve(await stake.getAddress(), stakeAmount);
       const role = signer === agent ? Role.Agent : Role.Validator;
       await stake.connect(signer).depositStake(role, stakeAmount);
     }
     const initialAgentBalance = await token.balanceOf(agent.address);
 
-    const reward = ethers.parseUnits("100", AGIALPHA_DECIMALS);
+    const reward = ethers.parseUnits('100', AGIALPHA_DECIMALS);
     await token.connect(employer).approve(await stake.getAddress(), reward);
     const deadline = BigInt((await time.latest()) + 3600);
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "ipfs://job");
+      .createJob(reward, deadline, specHash, 'ipfs://job');
 
-    await registry.connect(agent).applyForJob(1, "agent", []);
+    await registry.connect(agent).applyForJob(1, 'agent', []);
     await registry
       .connect(agent)
-      .submit(1, ethers.id("ipfs://result"), "ipfs://result", "agent", []);
+      .submit(1, ethers.id('ipfs://result'), 'ipfs://result', 'agent', []);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);
     const commit1 = ethers.keccak256(
       ethers.solidityPacked(
-        ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
         [1n, nonce, true, salt1, specHash]
       )
     );
@@ -167,7 +181,7 @@ describe("Kleros dispute module", function () {
     const salt2 = ethers.randomBytes(32);
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
-        ["uint256", "uint256", "bool", "bytes32", "bytes32"],
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
         [1n, nonce, false, salt2, specHash]
       )
     );
@@ -179,17 +193,17 @@ describe("Kleros dispute module", function () {
     await time.increase(2);
     await validation.finalize(1);
 
-    expect((await stake.stakes(v2.address, Role.Validator))).to.be.lt(
+    expect(await stake.stakes(v2.address, Role.Validator)).to.be.lt(
       stakeAmount
     );
-    expect(await registry.jobs(1)).to.have.property("state", 5); // Disputed
+    expect(await registry.jobs(1)).to.have.property('state', 5); // Disputed
 
-    await registry.connect(agent).dispute(1, ethers.id("evidence"));
+    await registry.connect(agent).dispute(1, ethers.id('evidence'));
     expect(await mockArb.lastJobId()).to.equal(1n);
 
     await mockArb.deliverResult(1, false); // agent wins
 
-    expect(await registry.jobs(1)).to.have.property("state", 6); // Finalized
+    expect(await registry.jobs(1)).to.have.property('state', 6); // Finalized
     expect(await token.balanceOf(agent.address)).to.be.gt(initialAgentBalance);
   });
 });

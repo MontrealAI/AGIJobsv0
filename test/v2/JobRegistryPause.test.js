@@ -1,18 +1,18 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe("JobRegistry pause", function () {
+describe('JobRegistry pause', function () {
   let owner, employer, agent, registry, identity;
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -27,54 +27,52 @@ describe("JobRegistry pause", function () {
       [],
       owner.address
     );
-    await registry.connect(owner).setIdentityRegistry(await identity.getAddress());
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await identity.getAddress());
     await registry.connect(owner).setJobParameters(0, 0);
   });
 
-  it("pauses job creation and applications", async () => {
+  it('pauses job creation and applications', async () => {
     const deadline = (await time.latest()) + 100;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
 
     await registry.connect(owner).pause();
     await expect(
-      registry.connect(employer).createJob(1, deadline, specHash, "uri")
-    ).to.be.revertedWithCustomError(registry, "EnforcedPause");
+      registry.connect(employer).createJob(1, deadline, specHash, 'uri')
+    ).to.be.revertedWithCustomError(registry, 'EnforcedPause');
 
     await registry.connect(owner).unpause();
-    await registry
-      .connect(employer)
-      .createJob(1, deadline, specHash, "uri");
+    await registry.connect(employer).createJob(1, deadline, specHash, 'uri');
 
     await registry.connect(owner).pause();
     await expect(
-      registry.connect(agent).applyForJob(1, "", [])
-    ).to.be.revertedWithCustomError(registry, "EnforcedPause");
+      registry.connect(agent).applyForJob(1, '', [])
+    ).to.be.revertedWithCustomError(registry, 'EnforcedPause');
 
     await registry.connect(owner).unpause();
-    await expect(registry.connect(agent).applyForJob(1, "", []))
-      .to.emit(registry, "JobApplied")
+    await expect(registry.connect(agent).applyForJob(1, '', []))
+      .to.emit(registry, 'JobApplied')
       .withArgs(1, agent.address);
   });
 
-  it("pauses job expiration", async () => {
+  it('pauses job expiration', async () => {
     const deadline = (await time.latest()) + 100;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
 
-    await registry
-      .connect(employer)
-      .createJob(1, deadline, specHash, "uri");
-    await registry.connect(agent).applyForJob(1, "", []);
+    await registry.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await registry.connect(agent).applyForJob(1, '', []);
 
     await time.increase(200);
 
     await registry.connect(owner).pause();
     await expect(
       registry.connect(owner).cancelExpiredJob(1)
-    ).to.be.revertedWithCustomError(registry, "EnforcedPause");
+    ).to.be.revertedWithCustomError(registry, 'EnforcedPause');
 
     await registry.connect(owner).unpause();
     await expect(registry.connect(owner).cancelExpiredJob(1))
-      .to.emit(registry, "JobExpired")
+      .to.emit(registry, 'JobExpired')
       .withArgs(1, owner.address);
   });
 });

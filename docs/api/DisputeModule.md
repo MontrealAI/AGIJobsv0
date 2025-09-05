@@ -5,6 +5,7 @@ the list of eligible moderators who must reach majority consensus to finalise a
 case.
 
 ## Functions
+
 - `addModerator(address moderator)` – governance enrols a new moderator.
 - `removeModerator(address moderator)` – governance removes a moderator.
 - `setGovernance(address governance)` – hand off control to a new timelock or multisig.
@@ -12,6 +13,7 @@ case.
 - `resolve(uint256 jobId, bool employerWins)` – moderators vote; majority decides.
 
 ## Events
+
 - `DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 indexed evidenceHash, string evidence)`
 - `DisputeResolved(uint256 indexed jobId, bool employerWins)`
 - `ModeratorAdded(address indexed moderator)`
@@ -19,6 +21,7 @@ case.
 - `GovernanceUpdated(address indexed governance)`
 
 ## Quorum
+
 `resolve` requires more than half of `moderatorCount` votes. The default
 deployment boots the governance address as the first moderator, so onboarding
 additional members is the first action for governance.

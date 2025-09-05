@@ -1,8 +1,8 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
-describe("JobRegistry governance finalization", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
+describe('JobRegistry governance finalization', function () {
+  const { AGIALPHA } = require('../../scripts/constants');
   let token, stakeManager, rep, registry, identity;
   let owner, employer, agent, treasury;
   const reward = 100n;
@@ -11,10 +11,13 @@ describe("JobRegistry governance finalization", function () {
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await StakeManager.deploy(
       0,
@@ -29,12 +32,12 @@ describe("JobRegistry governance finalization", function () {
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
 
     const Rep = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     rep = await Rep.deploy(await stakeManager.getAddress());
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -50,14 +53,16 @@ describe("JobRegistry governance finalization", function () {
       owner.address
     );
     await registry.connect(owner).setTreasury(treasury.address);
-    await stakeManager.connect(owner).setJobRegistry(await registry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await registry.getAddress());
     await rep
       .connect(owner)
       .setAuthorizedCaller(await registry.getAddress(), true);
     await rep.connect(owner).setThreshold(0);
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await registry
@@ -73,9 +78,7 @@ describe("JobRegistry governance finalization", function () {
     await token.mint(employer.address, reward);
     await token.mint(agent.address, reward + stake);
 
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stake);
+    await token.connect(agent).approve(await stakeManager.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
   });
 
@@ -83,7 +86,7 @@ describe("JobRegistry governance finalization", function () {
     const coder = ethers.AbiCoder.defaultAbiCoder();
     const base = BigInt(
       ethers.keccak256(
-        coder.encode(["uint256", "uint256"], [BigInt(jobId), 4n])
+        coder.encode(['uint256', 'uint256'], [BigInt(jobId), 4n])
       )
     );
     const slot = base + 3n;
@@ -98,72 +101,72 @@ describe("JobRegistry governance finalization", function () {
       cleared |
       (4n << stateOffset) |
       (BigInt(success ? 1 : 0) << successOffset);
-    await ethers.provider.send("hardhat_setStorageAt", [
+    await ethers.provider.send('hardhat_setStorageAt', [
       await registry.getAddress(),
       ethers.toBeHex(slot),
       ethers.toBeHex(value, 32),
     ]);
   }
 
-  it("redirects reward and stake when agent blacklisted", async () => {
+  it('redirects reward and stake when agent blacklisted', async () => {
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, "", []);
+    await registry.connect(agent).applyForJob(jobId, '', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id("res"), "res", "", []);
+      .submit(jobId, ethers.id('res'), 'res', '', []);
 
     await rep.connect(owner).blacklist(agent.address, true);
     await setJobState(jobId, true);
 
-    await expect(registry.connect(agent).finalize(jobId))
-      .to.be.revertedWithCustomError(registry, "Blacklisted");
+    await expect(
+      registry.connect(agent).finalize(jobId)
+    ).to.be.revertedWithCustomError(registry, 'Blacklisted');
 
     await expect(registry.connect(owner).finalize(jobId))
-      .to.emit(registry, "GovernanceFinalized")
+      .to.emit(registry, 'GovernanceFinalized')
       .withArgs(jobId, owner.address, true)
-      .and.to.emit(registry, "JobFinalized")
+      .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(treasury.address)).to.equal(reward + stake);
   });
 
-  it("redirects reward when employer blacklisted", async () => {
+  it('redirects reward when employer blacklisted', async () => {
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, "", []);
+    await registry.connect(agent).applyForJob(jobId, '', []);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id("res"), "res", "", []);
+      .submit(jobId, ethers.id('res'), 'res', '', []);
 
     await rep.connect(owner).blacklist(employer.address, true);
     await setJobState(jobId, false);
 
     await expect(
       registry.connect(employer).finalize(jobId)
-    ).to.be.revertedWithCustomError(registry, "Blacklisted");
+    ).to.be.revertedWithCustomError(registry, 'Blacklisted');
 
     await expect(registry.connect(owner).finalize(jobId))
-      .to.emit(registry, "GovernanceFinalized")
+      .to.emit(registry, 'GovernanceFinalized')
       .withArgs(jobId, owner.address, true)
-      .and.to.emit(registry, "JobFinalized")
+      .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(treasury.address)).to.equal(reward + stake);
   });
 });
-

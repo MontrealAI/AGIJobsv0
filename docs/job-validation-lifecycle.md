@@ -4,11 +4,11 @@ This guide shows how a validator processes one job from commitment to finalizati
 
 ## Phases and Windows
 
-| Phase    | Validator state | Allowed window | Function |
-|----------|-----------------|----------------|----------|
-| Commit   | Commitment stored | `commitWindow` seconds after selection | `ValidationModule.commitValidation(jobId, commitHash)` |
-| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt)` |
-| Finalize | Job settled       | After `revealWindow` closes | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
+| Phase    | Validator state   | Allowed window                             | Function                                                              |
+| -------- | ----------------- | ------------------------------------------ | --------------------------------------------------------------------- |
+| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash)`                |
+| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt)`             |
+| Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
 
 `commitWindow` and `revealWindow` are owner‑configurable via `ValidationModule.setCommitRevealWindows`.
 
@@ -45,11 +45,11 @@ Validators that miss a window or reveal a vote inconsistent with their commit ri
 
 After each parameter poll, the owner rewards participating voters through the `GovernanceReward` contract.
 
-| Phase | Caller | Description | Function |
-|-------|--------|-------------|----------|
-| Record | Owner | capture addresses that voted this epoch | `GovernanceReward.recordVoters([v1,v2])` |
-| Finalize | Owner | withdraw reward from FeePool and close the epoch | `GovernanceReward.finalizeEpoch(totalReward)` |
-| Claim | Voter | withdraw an equal share for that epoch | `GovernanceReward.claim(epoch)` |
+| Phase    | Caller | Description                                      | Function                                      |
+| -------- | ------ | ------------------------------------------------ | --------------------------------------------- |
+| Record   | Owner  | capture addresses that voted this epoch          | `GovernanceReward.recordVoters([v1,v2])`      |
+| Finalize | Owner  | withdraw reward from FeePool and close the epoch | `GovernanceReward.finalizeEpoch(totalReward)` |
+| Claim    | Voter  | withdraw an equal share for that epoch           | `GovernanceReward.claim(epoch)`               |
 
 `totalReward` uses 18‑decimal base units. `finalizeEpoch` increments `currentEpoch` so subsequent `recordVoters` calls start a new epoch.
 
@@ -77,4 +77,3 @@ cast send $GOV_REWARD "finalizeEpoch(uint256)" 200000000000000000000 --from $TIM
 # voter claims their share
 cast send $GOV_REWARD "claim(uint256)" 0 --from $VOTER1
 ```
-
