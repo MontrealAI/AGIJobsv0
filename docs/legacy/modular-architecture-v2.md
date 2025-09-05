@@ -1,3 +1,5 @@
+> **Archived**: superseded by [architecture-v2.md](../architecture-v2.md).
+
 # Modular AGIJobs v2 Architecture
 
 AGIJobs v2 replaces the monolithic manager with immutable, single‑purpose modules.  Each contract is deployed once, owns its
