@@ -1,6 +1,6 @@
 # Coding Sprint: Tax Neutrality & Participant Responsibilities
 
-This sprint focuses on keeping the AGI Jobs protocol and its deploying corporation perpetually tax‑exempt while routing all tax duties to active participants. Jurisdictional neutrality must hold globally—United States, Canada, European Union, and beyond—because the infrastructure earns no revenue, collects no fees, and never disposes of assets. The plan builds on the v2 architecture and mirrors the rationale in [`docs/tax-obligations.md`](tax-obligations.md).
+This sprint focuses on keeping the AGI Jobs protocol and its deploying corporation perpetually tax‑exempt while routing all tax duties to active participants. Jurisdictional neutrality must hold globally—United States, Canada, European Union, and beyond—because the infrastructure earns no revenue, collects no fees, and never disposes of assets. The plan builds on the v2 architecture and mirrors the rationale in [`tax-obligations.md`](../tax-obligations.md).
 
 ## Objectives
 
