@@ -60,6 +60,13 @@ If the installer is unavailable, wire contracts individually:
   respective setters.
 - Save final contract addresses for future upgrades and monitoring.
 
+## Owner-Controlled Parameters
+The system relies on governance-owned setters to adjust economics after launch:
+- `StakeManager.setMinStake(uint256)` – updates the minimum stake required for agents and validators.
+- `StakeManager.setFeePct(uint256)` – determines what portion of released funds becomes protocol fees.
+- `StakeManager.setBurnPct(uint256)` – controls how much stake is destroyed when jobs settle.
+- `FeePool.setBurnPct(uint256)` – specifies the percentage of fees forwarded to the token burn mechanism.
+
 ## Recording Deployment Addresses
 All deployed contract addresses should be tracked in
 [docs/deployment-addresses.json](deployment-addresses.json). After a contract is
@@ -76,10 +83,12 @@ Check the updated file into Git so other operators have a canonical record of
 the current addresses.
 
 ## Best Practices
-- **True token burning:** Set `burnPct` only if the `FeePool` forwards tokens to
-  the zero address. Verify the burn destination and emitted events.
-- **Owner updatability:** Ensure `transferOwnership` works for each module so
-  governance can rotate keys or migrate to a new controller.
+- **Irreversible token burning:** `FeePool.setBurnPct` defines the share of fees
+  destroyed. During distribution `_burnFees` invokes `$AGIALPHA.burn`, which
+  uses the ERC‑20 `_burn` hook to permanently reduce balances and total supply,
+  emitting `FeesBurned` events.
+- **Owner updatability:** Use the above setters and ensure `transferOwnership`
+  works for each module so governance can rotate keys or migrate controllers.
 - **Verification & records:** Every contract should be verified on Etherscan
   and documented with its address and block number.
 - **Pause readiness:** Keep the system pausable and test `pauseAll`/`unpauseAll`
