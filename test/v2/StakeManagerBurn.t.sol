@@ -12,7 +12,7 @@ contract StakeManagerBurnHarness is StakeManager {
     {}
 
     function exposedBurn(uint256 amt) external {
-        _burnToken(amt);
+        _burnToken(bytes32(0), amt);
     }
 }
 
