@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && npx hardhat compile",
-    "lint": "npx solhint 'contracts/**/*.sol' && npx eslint .",
+    "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts",
     "pretest": "npx tsc scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",
@@ -23,6 +23,8 @@
     "@openzeppelin/contracts": "^5.4.0",
     "eslint": "^9.32.0",
     "eslint-plugin-prettier": "^4.2.5",
+    "@typescript-eslint/eslint-plugin": "^8.13.0",
+    "@typescript-eslint/parser": "^8.13.0",
     "hardhat": "^2.26.1",
     "hardhat-gas-reporter": "^2.3.0",
     "prettier": "^2.8.8",

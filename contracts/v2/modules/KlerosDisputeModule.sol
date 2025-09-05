@@ -15,6 +15,17 @@ contract KlerosDisputeModule is IDisputeModule {
     /// @notice Address with permission to update module settings.
     address public governance;
 
+    /// @dev Caller is not the configured governance address.
+    error NotGovernance();
+    /// @dev Caller is not the associated JobRegistry.
+    error NotJobRegistry();
+    /// @dev Caller is not the configured arbitrator.
+    error NotArbitrator();
+    /// @dev Evidence hash cannot be zero.
+    error ZeroEvidence();
+    /// @dev Function is not supported.
+    error Unsupported();
+
     event GovernanceUpdated(address governance);
     event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 evidenceHash);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
@@ -27,19 +38,19 @@ contract KlerosDisputeModule is IDisputeModule {
 
     /// @dev Restrict functions to governance.
     modifier onlyGovernance() {
-        require(msg.sender == governance, "only governance");
+        if (msg.sender != governance) revert NotGovernance();
         _;
     }
 
     /// @dev Restrict functions to the associated JobRegistry.
     modifier onlyJobRegistry() {
-        require(msg.sender == address(jobRegistry), "only registry");
+        if (msg.sender != address(jobRegistry)) revert NotJobRegistry();
         _;
     }
 
     /// @dev Restrict functions to the external arbitrator.
     modifier onlyArbitrator() {
-        require(msg.sender == arbitrator, "only arbitrator");
+        if (msg.sender != arbitrator) revert NotArbitrator();
         _;
     }
 
@@ -73,7 +84,7 @@ contract KlerosDisputeModule is IDisputeModule {
         address claimant,
         bytes32 evidenceHash
     ) external override onlyJobRegistry {
-        require(evidenceHash != bytes32(0), "evidence");
+        if (evidenceHash == bytes32(0)) revert ZeroEvidence();
         if (arbitrator != address(0)) {
             IArbitrationService(arbitrator).createDispute(jobId, claimant, evidenceHash);
         }
@@ -95,15 +106,15 @@ contract KlerosDisputeModule is IDisputeModule {
     // ---------------------------------------------------------------------
 
     function addModerator(address) external pure {
-        revert("unsupported");
+        revert Unsupported();
     }
 
     function removeModerator(address) external pure {
-        revert("unsupported");
+        revert Unsupported();
     }
 
     function setQuorum(uint256) external pure {
-        revert("unsupported");
+        revert Unsupported();
     }
 
     function getModerators() external pure returns (address[] memory) {
