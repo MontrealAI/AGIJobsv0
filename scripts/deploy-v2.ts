@@ -17,7 +17,10 @@ async function main() {
 
   // Deploy the sole ReputationEngine implementation
   const Reputation = await ethers.getContractFactory("contracts/v2/ReputationEngine.sol:ReputationEngine");
-  const reputation = await Reputation.deploy(await stake.getAddress());
+  const reputation = await Reputation.deploy(
+    await stake.getAddress(),
+    deployer.address
+  );
   await reputation.waitForDeployment();
 
   const ENS = await ethers.getContractFactory("contracts/legacy/MockENS.sol:MockENS");
@@ -98,7 +101,8 @@ async function main() {
   const platformRegistry = await PlatformRegistry.deploy(
     await stake.getAddress(),
     await reputation.getAddress(),
-    0
+    0,
+    deployer.address
   );
   await platformRegistry.waitForDeployment();
 
@@ -163,9 +167,9 @@ async function main() {
   await registry.setGovernance(await pause.getAddress());
   await validation.transferOwnership(await pause.getAddress());
   await dispute.transferOwnership(await pause.getAddress());
-  await platformRegistry.transferOwnership(await pause.getAddress());
+  await platformRegistry.setGovernance(await pause.getAddress());
   await feePool.transferOwnership(await pause.getAddress());
-  await reputation.transferOwnership(await pause.getAddress());
+  await reputation.setGovernance(await pause.getAddress());
   await committee.transferOwnership(await pause.getAddress());
   await nft.transferOwnership(await pause.getAddress());
   await identity.transferOwnership(await pause.getAddress());

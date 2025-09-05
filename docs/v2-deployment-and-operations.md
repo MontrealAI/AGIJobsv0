@@ -76,12 +76,13 @@ The script prints module addresses and verifies source on Etherscan.
 12. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`,
     `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
 13. **Governance setup** – deploy a multisig wallet or timelock controller
-    and pass its address to the `StakeManager` and `JobRegistry` constructors.
-    Transfer ownership of every remaining `Ownable` module
+    and pass its address to the `StakeManager`, `JobRegistry`,
+    `ReputationEngine`, `PlatformRegistry` and other governable
+    constructors. Transfer ownership of any remaining `Ownable` modules
     (for example `IdentityRegistry`, `CertificateNFT`, `ValidationModule`,
-    `DisputeModule`, `FeePool`, `PlatformRegistry` and related helpers)
-    to this governance contract so no single EOA retains control. To rotate
-    governance later, the current authority calls `setGovernance(newGov)`.
+    `DisputeModule`, `FeePool` and related helpers) to this governance
+    contract so no single EOA retains control. To rotate governance later,
+    the current authority calls `setGovernance(newGov)`.
 
 ## Governance Configuration Steps
 After deployment the governance contract can fine‑tune the system without redeploying:

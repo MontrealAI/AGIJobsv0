@@ -42,7 +42,8 @@ describe("PlatformRegistry", function () {
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
     reputationEngine = await Rep.connect(owner).deploy(
-      await stakeManager.getAddress()
+      await stakeManager.getAddress(),
+      owner.address
     );
     await reputationEngine.setStakeManager(await stakeManager.getAddress());
     await reputationEngine.setAuthorizedCaller(owner.address, true);
@@ -53,7 +54,8 @@ describe("PlatformRegistry", function () {
     registry = await Registry.connect(owner).deploy(
       await stakeManager.getAddress(),
       await reputationEngine.getAddress(),
-      STAKE
+      STAKE,
+      owner.address
     );
   });
 
