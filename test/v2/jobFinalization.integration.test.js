@@ -260,4 +260,52 @@ describe('job finalization integration', function () {
     expect(await rep.reputation(agent.address)).to.equal(152n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
+
+  it('allows manual finalize after successful validation', async () => {
+    const { jobId } = await setupJob(true);
+    await expect(validation.sendResult(jobId))
+      .to.emit(registry, 'JobCompleted')
+      .withArgs(jobId, true);
+    const job = await registry.jobs(jobId);
+    expect(job.state).to.equal(4n);
+    await expect(registry.finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, agent.address);
+  });
+
+  it('permits dispute after successful validation before finalization', async () => {
+    const { jobId } = await setupJob(true);
+    await validation.sendResult(jobId);
+    await expect(
+      registry.connect(employer).dispute(jobId, ethers.id('evidence'))
+    ).to.emit(registry, 'JobDisputed');
+    await expect(registry.finalize(jobId)).to.be.revertedWithCustomError(
+      registry,
+      'NotReady'
+    );
+  });
+
+  it('allows manual finalize after failed validation', async () => {
+    const { jobId } = await setupJob(false);
+    await expect(validation.sendResult(jobId))
+      .to.emit(registry, 'JobCompleted')
+      .withArgs(jobId, false);
+    const job = await registry.jobs(jobId);
+    expect(job.state).to.equal(4n);
+    await expect(registry.finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, agent.address);
+  });
+
+  it('permits dispute after failed validation before finalization', async () => {
+    const { jobId } = await setupJob(false);
+    await validation.sendResult(jobId);
+    await expect(
+      registry.connect(agent).dispute(jobId, ethers.id('proof'))
+    ).to.emit(registry, 'JobDisputed');
+    await expect(registry.finalize(jobId)).to.be.revertedWithCustomError(
+      registry,
+      'NotReady'
+    );
+  });
 });

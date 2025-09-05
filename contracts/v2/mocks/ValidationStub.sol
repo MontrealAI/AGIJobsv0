@@ -55,19 +55,30 @@ contract ValidationStub is IValidationModule {
 
     function revealValidation(uint256, bool, bytes32) external override {}
 
-    function finalize(uint256 jobId) external override returns (bool success) {
+    function _sendResult(uint256 jobId) internal returns (bool success) {
         success = result;
         if (jobRegistry != address(0)) {
             IJobRegistry(jobRegistry).onValidationResult(jobId, success, validatorList);
         }
     }
 
+    function finalize(uint256 jobId) public override returns (bool success) {
+        success = _sendResult(jobId);
+        if (jobRegistry != address(0)) {
+            IJobRegistry(jobRegistry).finalize(jobId);
+        }
+    }
+
     function finalizeValidation(uint256 jobId) external override returns (bool success) {
-        return this.finalize(jobId);
+        return finalize(jobId);
     }
 
     function forceFinalize(uint256 jobId) external override returns (bool success) {
-        return this.finalize(jobId);
+        return finalize(jobId);
+    }
+
+    function sendResult(uint256 jobId) external returns (bool success) {
+        return _sendResult(jobId);
     }
 
     function validators(uint256) external view override returns (address[] memory vals) {
