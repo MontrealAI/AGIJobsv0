@@ -1,5 +1,7 @@
 # AGIJobs v2 Module Deployment Summary
 
+For detailed production deployment instructions see [deployment-production-guide.md](deployment-production-guide.md).
+
 This note outlines a minimal sequence for deploying the modular v2 stack
 and wiring contracts together. The `$AGIALPHA` token, ENS roots, Merkle
 roots and all numeric parameters can be updated later by the owner.

@@ -1,5 +1,7 @@
 # Etherscan Deployment Quickstart
 
+For complete production deployment guidance see [deployment-production-guide.md](deployment-production-guide.md).
+
 For screenshots and a deeper explanation see [etherscan-guide.md](etherscan-guide.md). All owner interactions occur through the explorer's **Write Contract** tabs.
 
 All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALPHA = 1_000_000_000_000_000_000 units**). Convert values before entering them on Etherscan.

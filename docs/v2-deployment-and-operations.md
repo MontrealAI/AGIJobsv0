@@ -1,5 +1,7 @@
 # AGIJobs v2 Deployment & Operations Guide
 
+For production deployment steps see [deployment-production-guide.md](deployment-production-guide.md).
+
 ## Architecture Overview
 
 AGIJobs v2 decomposes the platform into small, immutable modules wired
