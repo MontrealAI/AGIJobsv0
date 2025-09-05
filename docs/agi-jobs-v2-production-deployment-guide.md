@@ -2,6 +2,10 @@
 
 This guide walks a non-technical operator through deploying the **AGI Jobs v2** smart-contract suite on Ethereum using only a browser and Etherscan.  It also highlights key best practices such as true token burning and owner updatability.
 
+## Key Best Practices in AGI Jobs v2
+- **True token burning:** Both the `StakeManager` and `FeePool` call the `$AGIALPHA` token's `burn` function whenever a burn percentage is configured. This permanently reduces total supply instead of sending tokens to a dead address.
+- **Owner updatability:** Each module inherits access control so the contract owner can adjust parameters (fees, stake limits, time windows, etc.) without redeploying. For production, transfer ownership to a multisig or timelock once setup is confirmed.
+
 ## 1. Prerequisites
 - **Ethereum wallet** (e.g. MetaMask) with enough ETH for gas; it becomes the owner of all contracts.
 - **$AGIALPHA token address** (canonical mainnet: `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`).
