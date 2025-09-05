@@ -1,4 +1,5 @@
 {
+  "_comment": "Replace zero addresses with production deployments and commit updates after each change.",
   "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
   "jobManagerV0": "0x0178b6bad606aaf908f72135b8ec32fc1d5ba477",
   "stakeManager": "0x0000000000000000000000000000000000000000",

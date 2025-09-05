@@ -68,7 +68,7 @@ Deploy each contract through Etherscan and note its address.  Use `0x000...000` 
 After deployment the contracts must learn each other's addresses.
 
 ### Option A: Automatic Wiring with ModuleInstaller
-1. Deploy `ModuleInstaller`.
+1. Deploy `ModuleInstaller` (see [module-installer.md](module-installer.md) for more details).
 2. For StakeManager, ValidationModule, DisputeModule, CertificateNFT, FeePool, PlatformRegistry, JobRouter, PlatformIncentives and IdentityRegistry (if used) call `transferOwnership(installer)`.
 3. On the installer call `initialize(jobRegistry, stakeManager, validationModule, reputationEngine, disputeModule, certificateNFT, platformIncentives, platformRegistry, jobRouter, feePool, taxPolicy)`.
    - This single call wires all module addresses, registers `PlatformIncentives` with `PlatformRegistry` and `JobRouter`, assigns the `FeePool` and optional `TaxPolicy`, and then hands ownership of every module back to your wallet.
@@ -111,7 +111,7 @@ Source: [`contracts/v2/StakeManager.sol`](../contracts/v2/StakeManager.sol)
 On the **JobRegistry** contract's Etherscan page use *Write Contract* → `setFeePct` to change the protocol fee (basis points).
 Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
 
-- **Security.**  Contracts rely on OpenZeppelin components like `Ownable`, `ReentrancyGuard` and `SafeERC20`.  The modular design lets you replace a faulty module.  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
+- **Security.**  Contracts rely on OpenZeppelin components like `Ownable`, `ReentrancyGuard` and `SafeERC20`.  The modular design lets you replace a faulty module.  Optional [`SystemPause`](system-pause.md) can halt activity in emergencies.  Monitor emitted events to audit changes.
 - **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization:
    1. **Post a job** – From an employer wallet approve the reward to `StakeManager` and call `JobRegistry.createJob` or `acknowledgeAndCreateJob` with the reward amount and metadata URI.
    2. **Stake & apply** – An Agent calls `StakeManager.depositStake` (role `0`) and then `JobRegistry.applyForJob` or `stakeAndApply` supplying any ENS subdomain data or empty values if ENS is disabled.
@@ -119,11 +119,11 @@ Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
    4. **Finalize** – After the reveal window anyone may call `ValidationModule.finalize`; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
    5. **Dispute** – To test disputes, raise one via `JobRegistry.raiseDispute` and resolve it through `DisputeModule.resolve` (or a moderator/committee if configured).
 - **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces or run `npm run verify:wiring` to check automatically.
-- **Record keeping.**  Log all contract addresses and parameter changes, updating `docs/deployment-addresses.json` and noting changes in commit messages or the changelog whenever any parameter or address changes.  Maintain an admin log of post-deployment actions for auditability.
+- **Record keeping.**  Log all contract addresses and parameter changes, updating [`deployment-addresses.json`](deployment-addresses.json) and noting changes in commit messages or the changelog whenever any parameter or address changes.  Maintain an admin log of post-deployment actions for auditability.  For scripted deployments see [`deployment-addresses.md`](deployment-addresses.md).
 - **Legal compliance.**  Consult professionals to ensure operations comply with local regulations.
 
 ## Step 4: Update Repository Documentation
-Add your deployment addresses to `docs/deployment-addresses.json` and commit them.  Whenever any parameter or address changes, update this file and document the change in the changelog or commit message.  If a tax policy is set, instruct users to call `JobRegistry.acknowledgeTaxPolicy()` before interacting.
+Add your deployment addresses to [`deployment-addresses.json`](deployment-addresses.json) and commit them.  Whenever any parameter or address changes, update this file and document the change in the changelog or commit message.  If a tax policy is set, instruct users to call `JobRegistry.acknowledgeTaxPolicy()` before interacting.
 
 By following this guide you can launch the full AGI Jobs v2 platform on Ethereum and maintain control over critical parameters while relying on genuine token burning for deflationary incentives.
 
@@ -134,4 +134,4 @@ By following this guide you can launch the full AGI Jobs v2 platform on Ethereum
 - [ ] Transfer ownership to a secure governance account.
 - [ ] Configure and document the current burn rate.
 
-Update `docs/deployment-addresses.json` and note the change in the changelog or commit message whenever any parameter or address changes.  Maintain an admin log of all post-deployment changes for auditability.
+Update [`deployment-addresses.json`](deployment-addresses.json) and note the change in the changelog or commit message whenever any parameter or address changes.  Maintain an admin log of all post-deployment changes for auditability.
