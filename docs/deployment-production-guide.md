@@ -96,8 +96,20 @@ Invoke the following setters from the owner account:
 ### True Token Burning
 `FeePool` and `StakeManager` invoke the ERC‑20 `burn()` function so any portion marked for burning is permanently removed from total supply rather than sent to a dead address.  You can update the burn rate at any time with `FeePool.setBurnPct`.
 
+#### Adjust burn percentage
+On the **FeePool** contract's Etherscan page use the *Write Contract* tab and call `setBurnPct` with the new basis‑point value (e.g. `500` for 5%).
+Source: [`contracts/v2/FeePool.sol`](../contracts/v2/FeePool.sol)
+
 ### Owner Updatability
 Almost every operational parameter can be changed by the owner without redeploying.  Adjust fees, stake requirements, burn percentages, validation windows or allowlists through `set...` functions such as `JobRegistry.setFeePct`, `StakeManager.setMinStake...` or `ValidationModule.setCommitWindow`.
+
+#### Update minimum stake
+Open the **StakeManager** contract in Etherscan and, under *Write Contract*, invoke `setMinStake` with the desired stake amount in wei.
+Source: [`contracts/v2/StakeManager.sol`](../contracts/v2/StakeManager.sol)
+
+#### Adjust protocol fee
+On the **JobRegistry** contract's Etherscan page use *Write Contract* → `setFeePct` to change the protocol fee (basis points).
+Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
 
 - **Security.**  Contracts rely on OpenZeppelin components like `Ownable`, `ReentrancyGuard` and `SafeERC20`.  The modular design lets you replace a faulty module.  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
 - **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization:
