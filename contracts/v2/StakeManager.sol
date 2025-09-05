@@ -1137,7 +1137,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         Role role,
         uint256 amount,
         address employer
-    ) external onlyJobRegistry whenNotPaused {
+    ) external onlyJobRegistry whenNotPaused nonReentrant {
         _slash(user, role, amount, employer);
     }
 
@@ -1149,6 +1149,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         external
         onlyDisputeModule
         whenNotPaused
+        nonReentrant
     {
         _slash(user, Role.Validator, amount, recipient);
     }
