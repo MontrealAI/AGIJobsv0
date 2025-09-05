@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
+import {Governable} from "./Governable.sol";
 
 interface IReputationEngine {
     function reputation(address user) external view returns (uint256);
@@ -20,7 +20,7 @@ interface IReputationEngine {
 ///         reputation-weighted scores for job routing and discovery.
 /// @dev Holds no tokens and rejects ether to remain tax neutral. All values
 ///      use 18 decimals via the `StakeManager`.
-contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
+contract PlatformRegistry is Governable, ReentrancyGuard, Pausable {
     uint256 public constant DEFAULT_MIN_PLATFORM_STAKE = TOKEN_SCALE;
 
     IStakeManager public stakeManager;
@@ -41,16 +41,19 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     event RegistrarUpdated(address indexed registrar, bool allowed);
     event Activated(address indexed operator, uint256 amount);
 
-    modifier onlyOwnerOrPauser() {
+    modifier onlyGovernanceOrPauser() {
         require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
+            msg.sender == address(governance) || msg.sender == pauser,
+            "governance or pauser only"
         );
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    event PauserUpdated(address indexed pauser);
+
+    function setPauser(address _pauser) external onlyGovernance {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
 
     /// @notice Deploys the PlatformRegistry.
@@ -61,8 +64,9 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     constructor(
         IStakeManager _stakeManager,
         IReputationEngine _reputationEngine,
-        uint256 _minStake
-    ) Ownable(msg.sender) {
+        uint256 _minStake,
+        address _governance
+    ) Governable(_governance) {
         stakeManager = _stakeManager;
         if (address(_stakeManager) != address(0)) {
             emit StakeManagerUpdated(address(_stakeManager));
@@ -260,28 +264,28 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     // ---------------------------------------------------------------
     // Use Etherscan's "Write Contract" tab to invoke these setters.
 
-    function setStakeManager(IStakeManager manager) external onlyOwner {
+    function setStakeManager(IStakeManager manager) external onlyGovernance {
         stakeManager = manager;
         emit StakeManagerUpdated(address(manager));
     }
 
-    function setReputationEngine(IReputationEngine engine) external onlyOwner {
+    function setReputationEngine(IReputationEngine engine) external onlyGovernance {
         reputationEngine = engine;
         emit ReputationEngineUpdated(address(engine));
     }
 
-    function setMinPlatformStake(uint256 stake) external onlyOwner {
+    function setMinPlatformStake(uint256 stake) external onlyGovernance {
         minPlatformStake = stake;
         emit MinPlatformStakeUpdated(stake);
     }
 
-    function setBlacklist(address operator, bool status) external onlyOwner {
+    function setBlacklist(address operator, bool status) external onlyGovernance {
         blacklist[operator] = status;
         emit Blacklisted(operator, status);
     }
 
     /// @notice Authorize or revoke a registrar address.
-    function setRegistrar(address registrar, bool allowed) external onlyOwner {
+    function setRegistrar(address registrar, bool allowed) external onlyGovernance {
         registrars[registrar] = allowed;
         emit RegistrarUpdated(registrar, allowed);
     }
@@ -291,11 +295,11 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         return true;
     }
 
-    function pause() external onlyOwnerOrPauser {
+    function pause() external onlyGovernanceOrPauser {
         _pause();
     }
 
-    function unpause() external onlyOwnerOrPauser {
+    function unpause() external onlyGovernanceOrPauser {
         _unpause();
     }
 

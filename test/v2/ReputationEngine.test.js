@@ -11,7 +11,7 @@ describe("ReputationEngine", function () {
     const Engine = await ethers.getContractFactory(
       "contracts/v2/ReputationEngine.sol:ReputationEngine"
     );
-    engine = await Engine.deploy(await stake.getAddress());
+    engine = await Engine.deploy(await stake.getAddress(), owner.address);
     await engine.connect(owner).setCaller(caller.address, true);
     await engine.connect(owner).setPremiumThreshold(2);
   });

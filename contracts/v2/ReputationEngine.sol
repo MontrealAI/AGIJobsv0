@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
+import {Governable} from "./Governable.sol";
 
 /// @title ReputationEngine
 /// @notice Tracks reputation scores with blacklist enforcement.
 /// Only authorised callers may update scores.
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
-contract ReputationEngine is Ownable, Pausable {
+contract ReputationEngine is Governable, Pausable {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
@@ -59,18 +59,24 @@ contract ReputationEngine is Ownable, Pausable {
     event ModulesUpdated(address indexed stakeManager);
     event ValidationRewardPercentageUpdated(uint256 percentage);
 
-    modifier onlyOwnerOrPauser() {
+    modifier onlyGovernanceOrPauser() {
         require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
+            msg.sender == address(governance) || msg.sender == pauser,
+            "governance or pauser only"
         );
         _;
     }
 
-    function setPauser(address _pauser) external onlyOwner {
+    event PauserUpdated(address indexed pauser);
+
+    function setPauser(address _pauser) external onlyGovernance {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
-    constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
+
+    constructor(IStakeManager _stakeManager, address _governance)
+        Governable(_governance)
+    {
         require(address(_stakeManager) != address(0), "invalid stake manager");
         require(_stakeManager.version() == 2, "incompatible version");
         stakeManager = _stakeManager;
@@ -88,18 +94,18 @@ contract ReputationEngine is Ownable, Pausable {
     // ---------------------------------------------------------------------
 
     /// @notice Authorize or revoke a caller.
-    function setCaller(address caller, bool allowed) public onlyOwner {
+    function setCaller(address caller, bool allowed) public onlyGovernance {
         callers[caller] = allowed;
         emit CallerUpdated(caller, allowed);
     }
 
     /// @notice Backwards compatible alias for {setCaller}.
-    function setAuthorizedCaller(address caller, bool allowed) external onlyOwner {
+    function setAuthorizedCaller(address caller, bool allowed) external onlyGovernance {
         setCaller(caller, allowed);
     }
 
     /// @notice Set the StakeManager used for stake lookups.
-    function setStakeManager(IStakeManager manager) external onlyOwner {
+    function setStakeManager(IStakeManager manager) external onlyGovernance {
         require(address(manager) != address(0), "invalid stake manager");
         require(manager.version() == 2, "incompatible version");
         stakeManager = manager;
@@ -110,38 +116,38 @@ contract ReputationEngine is Ownable, Pausable {
     /// @notice Configure weighting factors for stake and reputation.
     /// @param stakeW Weight applied to stake (scaled by TOKEN_SCALE)
     /// @param repW Weight applied to reputation (scaled by TOKEN_SCALE)
-    function setScoringWeights(uint256 stakeW, uint256 repW) external onlyOwner {
+    function setScoringWeights(uint256 stakeW, uint256 repW) external onlyGovernance {
         stakeWeight = stakeW;
         reputationWeight = repW;
         emit ScoringWeightsUpdated(stakeW, repW);
     }
 
     /// @notice Set percentage of agent gain given to validators.
-    function setValidationRewardPercentage(uint256 percentage) external onlyOwner {
+    function setValidationRewardPercentage(uint256 percentage) external onlyGovernance {
         require(percentage <= PERCENTAGE_SCALE, "invalid percentage");
         validationRewardPercentage = percentage;
         emit ValidationRewardPercentageUpdated(percentage);
     }
 
     /// @notice Set reputation threshold for premium access.
-    function setPremiumThreshold(uint256 newThreshold) public onlyOwner {
+    function setPremiumThreshold(uint256 newThreshold) public onlyGovernance {
         premiumThreshold = newThreshold;
         emit PremiumThresholdUpdated(newThreshold);
     }
 
     /// @notice Backwards compatible threshold setter.
-    function setThreshold(uint256 newThreshold) external onlyOwner {
+    function setThreshold(uint256 newThreshold) external onlyGovernance {
         setPremiumThreshold(newThreshold);
     }
 
     /// @notice Update blacklist status for a user.
-    function setBlacklist(address user, bool status) public onlyOwner {
+    function setBlacklist(address user, bool status) public onlyGovernance {
         blacklisted[user] = status;
         emit BlacklistUpdated(user, status);
     }
 
     /// @notice Backwards compatible blacklist setter.
-    function blacklist(address user, bool status) external onlyOwner {
+    function blacklist(address user, bool status) external onlyGovernance {
         setBlacklist(user, status);
     }
 
@@ -327,11 +333,11 @@ contract ReputationEngine is Ownable, Pausable {
         return true;
     }
 
-    function pause() external onlyOwnerOrPauser {
+    function pause() external onlyGovernanceOrPauser {
         _pause();
     }
 
-    function unpause() external onlyOwnerOrPauser {
+    function unpause() external onlyGovernanceOrPauser {
         _unpause();
     }
 

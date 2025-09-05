@@ -307,7 +307,8 @@ contract Deployer is Ownable {
         );
 
         ReputationEngine reputation = new ReputationEngine(
-            IStakeManager(address(stake))
+            IStakeManager(address(stake)),
+            governance
         );
 
         DisputeModule dispute = new DisputeModule(
@@ -344,7 +345,8 @@ contract Deployer is Ownable {
         PlatformRegistry pRegistry = new PlatformRegistry(
             IStakeManager(address(stake)),
             PRReputationEngine(address(reputation)),
-            0
+            0,
+            governance
         );
 
         JobRouter router = new JobRouter(IPlatformRegistry(address(pRegistry)));
@@ -414,13 +416,13 @@ contract Deployer is Ownable {
         stake.setGovernance(address(pause));
         registry.setGovernance(address(pause));
 
-        // Transfer ownership
+        // Transfer ownership / governance
         validation.transferOwnership(address(pause));
-        reputation.transferOwnership(address(pause));
+        reputation.setGovernance(address(pause));
         dispute.transferOwnership(address(pause));
         committee.transferOwnership(address(pause));
         certificate.transferOwnership(governance);
-        pRegistry.transferOwnership(address(pause));
+        pRegistry.setGovernance(address(pause));
         router.transferOwnership(governance);
         incentives.transferOwnership(governance);
         pool.transferOwnership(address(pause));

@@ -138,6 +138,8 @@ describe("Ownable modules", function () {
     const governable = [
       [StakeManager.attach(stake), (inst, signer) => inst.connect(signer).setFeePct(1)],
       [JobRegistry.attach(registry), (inst, signer) => inst.connect(signer).setFeePct(1)],
+      [ReputationEngine.attach(reputation), (inst, signer) => inst.connect(signer).setScoringWeights(0, 0)],
+      [PlatformRegistry.attach(platformRegistry), (inst, signer) => inst.connect(signer).setMinPlatformStake(0)],
     ];
 
     for (const [inst, call] of governable) {
@@ -156,11 +158,6 @@ describe("Ownable modules", function () {
           inst.connect(signer).setIdentityRegistry(identityRegistryAddr),
       ],
       [
-        ReputationEngine.attach(reputation),
-        systemPauseSigner,
-        (inst, signer) => inst.connect(signer).setScoringWeights(0, 0),
-      ],
-      [
         DisputeModule.attach(dispute),
         systemPauseSigner,
         (inst, signer) => inst.connect(signer).setDisputeFee(0),
@@ -169,11 +166,6 @@ describe("Ownable modules", function () {
         CertificateNFT.attach(certificate),
         owner,
         (inst, signer) => inst.connect(signer).setJobRegistry(other.address),
-      ],
-      [
-        PlatformRegistry.attach(platformRegistry),
-        systemPauseSigner,
-        (inst, signer) => inst.connect(signer).setMinPlatformStake(0),
       ],
       [
         JobRouter.attach(router),
