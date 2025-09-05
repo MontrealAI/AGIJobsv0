@@ -86,7 +86,14 @@ Verify wiring by reading stored addresses on Etherscan.
 - **Record addresses** in `docs/deployment-addresses.json` (update and commit to this repository).
 - **True token burning:** whenever a burn percentage is set in `FeePool` or `StakeManager`, tokens are destroyed via `$AGIALPHA.burn`, reducing total supply rather than sending to a dead address.
 - **Owner updatability:** as the contract owner you may adjust parameters (fee percentages, stake limits, burn rate, validation windows, allowlists, etc.) through the various `set...` functions.  Consider transferring ownership to a multisig for additional safety.
-- **Security checks:** test a small job end‑to‑end, monitor emitted events, and keep a pause mechanism (see `docs/system-pause.md`) ready.
+  - Stake parameters: `StakeManager.setMinStakeAgent`, `setMinStakeEmployer`, `setMinStakeValidator`, `setMaxStakePerAddress`.
+  - Fees and burns: `JobRegistry.setFeePct`, `StakeManager.setFeePct`, `FeePool.setBurnPct`.
+  - Validation timing: `ValidationModule.setCommitWindow`, `ValidationModule.setRevealWindow`.
+  - Identity controls: `IdentityRegistry.setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`.
+  - Participant management: `ReputationEngine.blacklist`, `JobRegistry.addAdditionalAgent`.
+  - Emergency controls: `SystemPause.pause` / `SystemPause.unpause` to stop or resume activity across modules.
+- **Security features:** contracts rely on OpenZeppelin libraries (`Ownable`, `ReentrancyGuard`, `SafeERC20`, etc.) and a modular design so faulty modules can be replaced. A dedicated pause mechanism (`docs/system-pause.md`) lets you halt the system if needed.
+- **Security checks:** test a small job end‑to‑end, monitor emitted events, and keep the pause mechanism ready.
 - **Trial run:** walk through posting a job, staking, validation, finalization and a dispute with small amounts or on a testnet to confirm module interactions.
 - **Final verification:** confirm stored addresses in each module's *Read* tab or run `npm run verify:wiring` locally.
 - **Record keeping:** maintain an admin log of parameter changes and update `docs/deployment-addresses.json` whenever addresses change.
