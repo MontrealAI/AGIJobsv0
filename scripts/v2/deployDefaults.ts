@@ -1,7 +1,7 @@
 import { ethers, run } from 'hardhat';
 import { AGIALPHA_DECIMALS } from '../constants';
 
-async function verify(address: string, args: any[] = []) {
+async function verify(address: string, args: unknown[] = []) {
   try {
     await run('verify:verify', {
       address,

@@ -33,7 +33,7 @@ async function main() {
     string,
     string
   >;
-  const { ethers } = hre as any;
+  const { ethers } = hre;
   const [signer] = await ethers.getSigners();
   const lowerOwner = newOwner.toLowerCase();
 
