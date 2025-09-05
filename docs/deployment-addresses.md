@@ -10,3 +10,10 @@ npx hardhat run scripts/v2/deploy.ts --network <network>
 Deployments are anchored to the `$AGIALPHA` token at
 `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`, exported from
 [`scripts/constants.ts`](../scripts/constants.ts) and cannot be overridden.
+
+## Mainnet
+
+| Contract | Address |
+| --- | --- |
+| `$AGIALPHA` Token | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
+| `AGIJobManager v0` | `0x0178b6bad606aaf908f72135b8ec32fc1d5ba477` |
