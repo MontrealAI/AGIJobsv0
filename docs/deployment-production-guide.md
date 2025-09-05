@@ -119,10 +119,19 @@ Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
    4. **Finalize** – After the reveal window anyone may call `ValidationModule.finalize`; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
    5. **Dispute** – To test disputes, raise one via `JobRegistry.raiseDispute` and resolve it through `DisputeModule.resolve` (or a moderator/committee if configured).
 - **Final verification.**  Confirm each module reports the correct addresses via their `Read` interfaces or run `npm run verify:wiring` to check automatically.
-- **Record keeping.**  Log all contract addresses and parameter changes.  Update `docs/deployment-addresses.json` with your deployment.
+- **Record keeping.**  Log all contract addresses and parameter changes, updating `docs/deployment-addresses.json` and noting changes in commit messages or the changelog whenever any parameter or address changes.  Maintain an admin log of post-deployment actions for auditability.
 - **Legal compliance.**  Consult professionals to ensure operations comply with local regulations.
 
 ## Step 4: Update Repository Documentation
-Add your deployment addresses to `docs/deployment-addresses.json` and commit them.  Include any parameter changes in commit messages or a changelog.  If a tax policy is set, instruct users to call `JobRegistry.acknowledgeTaxPolicy()` before interacting.
+Add your deployment addresses to `docs/deployment-addresses.json` and commit them.  Whenever any parameter or address changes, update this file and document the change in the changelog or commit message.  If a tax policy is set, instruct users to call `JobRegistry.acknowledgeTaxPolicy()` before interacting.
 
 By following this guide you can launch the full AGI Jobs v2 platform on Ethereum and maintain control over critical parameters while relying on genuine token burning for deflationary incentives.
+
+## Post-Deployment Checklist
+
+- [ ] Verify all contracts on Etherscan.
+- [ ] Record and log every deployed address.
+- [ ] Transfer ownership to a secure governance account.
+- [ ] Configure and document the current burn rate.
+
+Update `docs/deployment-addresses.json` and note the change in the changelog or commit message whenever any parameter or address changes.  Maintain an admin log of all post-deployment changes for auditability.
