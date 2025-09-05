@@ -305,11 +305,11 @@ describe('JobRegistry integration', function () {
           ethers.ZeroAddress,
           []
         )
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(registry, 'NotGovernance');
 
     await expect(
       registry.connect(agent).setJobParameters(1, 1)
-    ).to.be.revertedWith('governance only');
+    ).to.be.revertedWithCustomError(registry, 'NotGovernance');
 
     await expect(
       dispute.connect(agent).setDisputeFee(1)

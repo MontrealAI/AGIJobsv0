@@ -123,8 +123,9 @@ describe('SystemPause', function () {
         committeeAddr
       );
 
-    await expect(pause.connect(other).pauseAll()).to.be.revertedWith(
-      'governance only'
+    await expect(pause.connect(other).pauseAll()).to.be.revertedWithCustomError(
+      pause,
+      'NotGovernance'
     );
 
     expect(await stake.paused()).to.equal(false);
@@ -147,9 +148,9 @@ describe('SystemPause', function () {
     expect(await reputation.paused()).to.equal(true);
     expect(await committee.paused()).to.equal(true);
 
-    await expect(pause.connect(other).unpauseAll()).to.be.revertedWith(
-      'governance only'
-    );
+    await expect(
+      pause.connect(other).unpauseAll()
+    ).to.be.revertedWithCustomError(pause, 'NotGovernance');
 
     await pause.connect(owner).unpauseAll();
 

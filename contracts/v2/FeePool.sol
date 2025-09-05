@@ -21,6 +21,10 @@ error ZeroAddress();
 error InvalidStakeManagerVersion();
 error BadBurnAddress();
 error TokenNotBurnable();
+/// @dev Caller is not the governance contract.
+error NotGovernance();
+/// @dev Caller is neither the owner nor the designated pauser.
+error NotOwnerOrPauser();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -78,10 +82,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event RewardPoolContribution(address indexed contributor, uint256 amount);
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) {
+            revert NotOwnerOrPauser();
+        }
         _;
     }
 
@@ -131,7 +134,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     modifier onlyGovernance() {
-        require(msg.sender == address(governance), "governance only");
+        if (msg.sender != address(governance)) revert NotGovernance();
         _;
     }
 
@@ -234,7 +237,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice designate the timelock or governance contract for withdrawals
     /// @param _governance Timelock or governance address
     function setGovernance(address _governance) external onlyOwner {
-        require(_governance != address(0), "governance");
+        if (_governance == address(0)) revert ZeroAddress();
         governance = TimelockController(payable(_governance));
         emit GovernanceUpdated(_governance);
     }

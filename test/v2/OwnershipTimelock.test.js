@@ -78,8 +78,14 @@ describe('Timelock ownership', function () {
       .connect(systemPauseSigner)
       .setGovernance(await timelock.getAddress());
 
-    await expect(stake.setFeePct(1)).to.be.revertedWith('governance only');
-    await expect(registry.setFeePct(1)).to.be.revertedWith('governance only');
+    await expect(stake.setFeePct(1)).to.be.revertedWithCustomError(
+      stake,
+      'NotGovernance'
+    );
+    await expect(registry.setFeePct(1)).to.be.revertedWithCustomError(
+      registry,
+      'NotGovernance'
+    );
 
     const stakeData = stake.interface.encodeFunctionData('setFeePct', [1]);
     const registryData = registry.interface.encodeFunctionData('setFeePct', [

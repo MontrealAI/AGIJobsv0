@@ -14,18 +14,24 @@ abstract contract Governable {
 
     event GovernanceUpdated(address indexed newGovernance);
 
+    /// @dev Thrown when a zero address is supplied where a non-zero address is required.
+    error ZeroAddress();
+
+    /// @dev Thrown when the caller is not the governance contract.
+    error NotGovernance();
+
     constructor(address _governance) {
-        require(_governance != address(0), "governance");
+        if (_governance == address(0)) revert ZeroAddress();
         governance = TimelockController(payable(_governance));
     }
 
     modifier onlyGovernance() {
-        require(msg.sender == address(governance), "governance only");
+        if (msg.sender != address(governance)) revert NotGovernance();
         _;
     }
 
     function setGovernance(address _governance) public onlyGovernance {
-        require(_governance != address(0), "governance");
+        if (_governance == address(0)) revert ZeroAddress();
         governance = TimelockController(payable(_governance));
         emit GovernanceUpdated(_governance);
     }

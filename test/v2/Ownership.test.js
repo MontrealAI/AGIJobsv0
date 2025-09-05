@@ -147,9 +147,15 @@ describe('Ownable modules', function () {
     ];
 
     for (const [inst, call] of governable) {
-      await expect(call(inst, other)).to.be.revertedWith('governance only');
+      await expect(call(inst, other)).to.be.revertedWithCustomError(
+        inst,
+        'NotGovernance'
+      );
       await inst.connect(systemPauseSigner).setGovernance(other.address);
-      await expect(call(inst, owner)).to.be.revertedWith('governance only');
+      await expect(call(inst, owner)).to.be.revertedWithCustomError(
+        inst,
+        'NotGovernance'
+      );
       await call(inst, other);
       await inst.connect(other).setGovernance(systemPauseSignerAddr);
     }
