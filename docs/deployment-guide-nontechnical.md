@@ -92,14 +92,14 @@ Invoke the following setters from the owner account:
 
 ## Step 3: Post-Deployment Configuration and Best Practices
 - **Verify contracts on Etherscan.**  Publish source for every module so the *Read* and *Write* views are available.
-- **Consider multisig/timelock ownership.**  Transfer ownership to a governance address once configuration is complete.
+- **Consider multisig/timelock ownership.**  Transfer ownership to a governance address once configuration is complete.  The repository includes `scripts/transfer-ownership.ts` to batch transfer every module's ownership.
 ### True Token Burning
 `FeePool` and `StakeManager` invoke the ERC‑20 `burn()` function so any portion marked for burning is permanently removed from total supply rather than sent to a dead address.  You can update the burn rate at any time with `FeePool.setBurnPct`.
 
 ### Owner Updatability
 Almost every operational parameter can be changed by the owner without redeploying.  Adjust fees, stake requirements, burn percentages, validation windows or allowlists through `set...` functions such as `JobRegistry.setFeePct`, `StakeManager.setMinStake...` or `ValidationModule.setCommitWindow`.
 
-- **Security.**  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
+- **Security.**  Contracts rely on OpenZeppelin components like `Ownable`, `ReentrancyGuard` and `SafeERC20`.  The modular design lets you replace a faulty module.  Optional `SystemPause` can halt activity in emergencies.  Monitor emitted events to audit changes.
 - **Trial run.**  Use small amounts or a testnet account to walk through posting a job, staking, validation and finalization:
    1. **Post a job** – From an employer wallet approve the reward to `StakeManager` and call `JobRegistry.createJob` or `acknowledgeAndCreateJob` with the reward amount and metadata URI.
    2. **Stake & apply** – An Agent calls `StakeManager.depositStake` (role `0`) and then `JobRegistry.applyForJob` or `stakeAndApply` supplying any ENS subdomain data or empty values if ENS is disabled.
