@@ -67,8 +67,9 @@ describe('PlatformRegistry', function () {
       .to.emit(registry, 'Registered')
       .withArgs(platform.address);
     expect(await registry.registered(platform.address)).to.equal(true);
-    await expect(registry.connect(sybil).register()).to.be.revertedWith(
-      'stake'
+    await expect(registry.connect(sybil).register()).to.be.revertedWithCustomError(
+      registry,
+      'StakeTooLow'
     );
   });
 
@@ -270,7 +271,7 @@ describe('PlatformRegistry', function () {
     await registry.setRegistrar(owner.address, true);
     await expect(
       registry.connect(owner).registerFor(sybil.address)
-    ).to.be.revertedWith('stake');
+    ).to.be.revertedWithCustomError(registry, 'StakeTooLow');
     await expect(registry.connect(owner).registerFor(platform.address))
       .to.emit(registry, 'Registered')
       .withArgs(platform.address);
@@ -291,9 +292,9 @@ describe('PlatformRegistry', function () {
 
   it('enforces owner-managed blacklist', async () => {
     await registry.setBlacklist(platform.address, true);
-    await expect(registry.connect(platform).register()).to.be.revertedWith(
-      'blacklisted'
-    );
+    await expect(
+      registry.connect(platform).register()
+    ).to.be.revertedWithCustomError(registry, 'OperatorBlacklisted');
     expect(await registry.getScore(platform.address)).to.equal(0);
     await registry.setBlacklist(platform.address, false);
     await registry.connect(platform).register();

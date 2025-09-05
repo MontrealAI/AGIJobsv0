@@ -4,6 +4,21 @@ pragma solidity ^0.8.25;
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IDisputeModule} from "../interfaces/IDisputeModule.sol";
 
+/// @dev Thrown when caller is not authorized governance.
+error NotGovernance();
+
+/// @dev Thrown when caller is not the associated JobRegistry.
+error NotJobRegistry();
+
+/// @dev Thrown when caller is not the external arbitrator.
+error NotArbitrator();
+
+/// @dev Thrown when provided evidence hash is empty.
+error EmptyEvidence();
+
+/// @dev Thrown when a legacy interface function is invoked.
+error Unsupported();
+
 /// @title KlerosDisputeModule
 /// @notice Minimal dispute module that forwards disputes to an external
 /// arbitration service such as Kleros. The arbitrator is expected to call back
@@ -27,19 +42,25 @@ contract KlerosDisputeModule is IDisputeModule {
 
     /// @dev Restrict functions to governance.
     modifier onlyGovernance() {
-        require(msg.sender == governance, "only governance");
+        if (msg.sender != governance) {
+            revert NotGovernance();
+        }
         _;
     }
 
     /// @dev Restrict functions to the associated JobRegistry.
     modifier onlyJobRegistry() {
-        require(msg.sender == address(jobRegistry), "only registry");
+        if (msg.sender != address(jobRegistry)) {
+            revert NotJobRegistry();
+        }
         _;
     }
 
     /// @dev Restrict functions to the external arbitrator.
     modifier onlyArbitrator() {
-        require(msg.sender == arbitrator, "only arbitrator");
+        if (msg.sender != arbitrator) {
+            revert NotArbitrator();
+        }
         _;
     }
 
@@ -73,7 +94,9 @@ contract KlerosDisputeModule is IDisputeModule {
         address claimant,
         bytes32 evidenceHash
     ) external override onlyJobRegistry {
-        require(evidenceHash != bytes32(0), "evidence");
+        if (evidenceHash == bytes32(0)) {
+            revert EmptyEvidence();
+        }
         if (arbitrator != address(0)) {
             IArbitrationService(arbitrator).createDispute(jobId, claimant, evidenceHash);
         }
@@ -95,15 +118,15 @@ contract KlerosDisputeModule is IDisputeModule {
     // ---------------------------------------------------------------------
 
     function addModerator(address) external pure {
-        revert("unsupported");
+        revert Unsupported();
     }
 
     function removeModerator(address) external pure {
-        revert("unsupported");
+        revert Unsupported();
     }
 
     function setQuorum(uint256) external pure {
-        revert("unsupported");
+        revert Unsupported();
     }
 
     function getModerators() external pure returns (address[] memory) {
