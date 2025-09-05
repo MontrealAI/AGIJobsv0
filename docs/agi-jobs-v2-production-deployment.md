@@ -60,6 +60,21 @@ If the installer is unavailable, wire contracts individually:
   respective setters.
 - Save final contract addresses for future upgrades and monitoring.
 
+## Recording Deployment Addresses
+All deployed contract addresses should be tracked in
+[docs/deployment-addresses.json](deployment-addresses.json). After a contract is
+verified on Etherscan, edit this file and replace the placeholder address with
+the value from the deployment transaction:
+
+```json
+{
+  "jobRegistry": "0x1234567890abcdef1234567890abcdef12345678"
+}
+```
+
+Check the updated file into Git so other operators have a canonical record of
+the current addresses.
+
 ## Best Practices
 - **True token burning:** Set `burnPct` only if the `FeePool` forwards tokens to
   the zero address. Verify the burn destination and emitted events.
