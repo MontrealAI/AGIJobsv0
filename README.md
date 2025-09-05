@@ -22,6 +22,7 @@ Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax
 ### Etherscan deployment
 
 For a step-by-step walkthrough of deploying AGI Jobs v2 using only a web browser and Etherscan, see [docs/deployment-production-guide.md](docs/deployment-production-guide.md).
+For a production deployment checklist, consult [docs/deployment-guide-production.md](docs/deployment-guide-production.md).
 
 ## Migrating from legacy
 
@@ -173,6 +174,7 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Module and interface reference](docs/v2-module-interface-reference.md)
 - [Etherscan interaction guide](docs/etherscan-guide.md)
 - [Deployment walkthrough with $AGIALPHA](docs/deployment-v2-agialpha.md)
+- [Production deployment guide](docs/deployment-guide-production.md)
 - [API reference and SDK snippets](docs/api-reference.md)
 - [Agent gateway example](examples/agent-gateway.js)
 
