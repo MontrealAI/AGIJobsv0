@@ -37,6 +37,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
 
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
     event AbsenteeSlashUpdated(uint256 amount);
+    event PauserUpdated(address indexed pauser);
 
     event CaseOpened(uint256 indexed jobId, address[] jurors);
     event VoteCommitted(uint256 indexed jobId, address indexed juror, bytes32 commit);
@@ -53,6 +54,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
 
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
 
     constructor(IJobRegistry _jobRegistry, IDisputeModule _disputeModule)

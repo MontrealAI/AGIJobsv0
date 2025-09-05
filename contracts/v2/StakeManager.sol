@@ -195,6 +195,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event BurnPctUpdated(uint256 pct);
     event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
+    event PauserUpdated(address indexed pauser);
 
     modifier onlyGovernanceOrPauser() {
         require(
@@ -206,6 +207,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     function setPauser(address _pauser) external onlyGovernance {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
 
     /// @notice Deploys the StakeManager.

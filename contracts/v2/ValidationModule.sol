@@ -175,6 +175,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheDurationUpdated(uint256 duration);
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
+    event PauserUpdated(address indexed pauser);
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -186,6 +187,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
     event ValidatorPoolRotationUpdated(uint256 newRotation);
     event RandaoCoordinatorUpdated(address coordinator);

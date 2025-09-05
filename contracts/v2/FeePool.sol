@@ -80,6 +80,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event GovernanceUpdated(address indexed governance);
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
+    event PauserUpdated(address indexed pauser);
 
     modifier onlyOwnerOrPauser() {
         if (msg.sender != owner() && msg.sender != pauser) {
@@ -90,6 +91,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
 
     /// @notice Deploys the FeePool.
