@@ -16,6 +16,8 @@ All steps are executed directly from Etherscan's web interface—no command line
 - **ENS details (optional)** – if restricting access via ENS subdomains prepare the namehashes for `agent.agi.eth` and `club.agi.eth`, plus the ENS registry (`0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`) and name wrapper (`0x253553366Da8546fC250F225fe3d25d0C782303b`). Use `0x00` for open access.
 - **Contract source code** – Solidity files live in this repository and must be verified on Etherscan after deployment.
 - **Basic Etherscan familiarity** – you will use the _Write Contract_ tab to deploy and configure modules.
+- **Governance account** – a multisig or timelock that will ultimately own the modules.
+- **Etherscan API key & local build** – run `npm install` and `npx hardhat compile` so bytecode matches when verifying with your API key.
 
 ## Overview of AGI Jobs v2 Architecture
 
@@ -35,7 +37,7 @@ AGI Jobs v2 is modular. Each contract manages one aspect of the marketplace:
 
 ## Step 1: Deploy the Core Contracts in Order
 
-Deploy each contract through Etherscan and note its address. Use `0x000...000` as placeholders for module addresses that are not yet deployed.
+Deploy each contract through Etherscan and note its address. Verify the source code after deployment and record each address (for example in `deployment-addresses.json`). Use `0x000...000` as placeholders for module addresses that are not yet deployed.
 
 1. **StakeManager**
    - Parameters: `token` ($AGIALPHA address), `minStake`, `employerPct`, `treasuryPct`, `treasury`.
