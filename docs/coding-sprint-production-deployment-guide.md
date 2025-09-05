@@ -19,10 +19,11 @@ This sprint delivers a non-technical, step-by-step deployment manual for the AGI
    - Detail the `ModuleInstaller` ownership transfer and `initialize` call.
    - Provide manual setter calls if the installer is unavailable.
 4. **Add Post-Deployment Configuration**
-   - Include guidance on verifying contracts, recording addresses, enabling pause controls and transferring ownership to multisig/timelock if desired.
-   - Emphasise token burning and owner updatability.
+    - Include guidance on verifying contracts, recording addresses, enabling pause controls and transferring ownership to multisig/timelock if desired.
+    - Emphasise token burning and owner updatability.
+    - Outline a simple end-to-end job flow test to confirm modules interact correctly.
 5. **Repository Update Guidance**
-   - Instruct operators to commit the guide and updated `deployment-addresses.json` after deployment.
+    - Instruct operators to commit the guide and updated `deployment-addresses.json` after deployment.
 
 ## Acceptance Criteria
 - `docs/agi-jobs-v2-production-deployment-guide.md` contains the full non-technical deployment workflow and best-practice notes.

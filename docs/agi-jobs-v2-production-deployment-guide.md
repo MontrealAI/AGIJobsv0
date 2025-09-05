@@ -12,20 +12,48 @@ This guide walks a non-technical operator through deploying the **AGI Jobs v2** 
 Keep a text file or spreadsheet open to record every contract address as you deploy.
 
 ## 2. Deploy Modules in Order
-Deploy each contract via **Contract → Deploy** on Etherscan, supplying constructor parameters shown below.  After each deployment, copy the resulting address to your notes.
+Deploy each contract via **Contract → Deploy** on Etherscan, supplying constructor parameters shown below. After each deployment, copy the resulting address to your notes.
 
-1. **StakeManager** – requires `$AGIALPHA` token address, optional minimum stake and slashing percents, and a treasury address.
-2. **ReputationEngine** – constructor needs the StakeManager address.
-3. **IdentityRegistry** *(optional)* – constructor needs ENS registry, name wrapper, ReputationEngine, and ENS root nodes (or `0x00…00` for open access).
-4. **ValidationModule** – pass `0x0` for JobRegistry (wired later), StakeManager address, and timing/validator counts.
-5. **DisputeModule** – pass `0x0` for JobRegistry, optional dispute fee/window, and an initial moderator.
-6. **CertificateNFT** – NFT name and symbol.
-7. **FeePool** – token address, StakeManager address, burn percentage (basis points), and treasury.
-8. **PlatformRegistry** *(optional)* – StakeManager address, ReputationEngine address, and minimum stake.
-9. **JobRouter** *(optional)* – PlatformRegistry address.
-10. **PlatformIncentives** *(optional)* – StakeManager, PlatformRegistry, and JobRouter addresses.
-11. **TaxPolicy** *(optional)* – URI or text for the policy users must acknowledge.
-12. **JobRegistry** – constructor takes ValidationModule, StakeManager, ReputationEngine, DisputeModule, CertificateNFT, IdentityRegistry (`0x0` if unused), TaxPolicy (`0x0` if unused), fee percentage (basis points), job stake, acknowledgement module array (usually `[]`), and owner address (if required).
+1. **StakeManager**
+   - `token`: `$AGIALPHA` token address (or `0x0` to use the baked‑in default).
+   - `minStake`: minimum agent stake; `0` accepts the contract default.
+   - `employerPct` / `treasuryPct`: distribution of slashed stake in basis points; use `0,0` to send 100% to the treasury.
+   - `treasury`: address to receive protocol fees and slashed funds.
+   - Any module addresses requested by the constructor can be `0x0` placeholders for now.
+2. **ReputationEngine** – pass the StakeManager address from step 1.
+3. **IdentityRegistry** *(optional)*
+   - `_ensAddress`: ENS registry (mainnet `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`).
+   - `_nameWrapperAddress`: ENS name wrapper (mainnet `0x253553366Da8546fC250F225fe3d25d0C782303b`).
+   - `_reputationEngine`: ReputationEngine address.
+   - `_agentRootNode` / `_clubRootNode`: namehashes for `agent.agi.eth` and `club.agi.eth` or `0x00..00` for open access.
+4. **ValidationModule**
+   - `_jobRegistry`: `0x0` (set later).
+   - `_stakeManager`: StakeManager address.
+   - `_commitWindow`: seconds for the commit phase, e.g. `86400` (24h) or `0` for default.
+   - `_revealWindow`: seconds for the reveal phase, e.g. `86400` (24h) or `0` for default.
+   - `_minValidators`: usually `1`.
+   - `_maxValidators`: typically `3`.
+   - `_validatorPool`: preset validator addresses or `[]` for open participation.
+5. **DisputeModule**
+   - `_jobRegistry`: `0x0` (set later).
+   - `_disputeFee`: fee in wei of `$AGIALPHA`; `0` for none.
+   - `_disputeWindow`: seconds allowed for disputes; `0` to accept default.
+   - `_moderator`: optional address with authority to resolve disputes (use your own or `0x0`).
+6. **CertificateNFT** – provide NFT collection `name` (e.g. "AGI Jobs Certificate") and `symbol` (e.g. "AGIJOB").
+7. **FeePool**
+   - `_token`: `$AGIALPHA` address or `0x0` for default.
+   - `_stakeManager`: StakeManager address.
+   - `_burnPct`: basis points of each fee to burn (e.g. `500` = 5%, `0` for none).
+   - `_treasury`: destination for remaining fees.
+8. **PlatformRegistry** *(optional)* – parameters: `_stakeManager`, `_reputationEngine`, and `_minStake` (`0` for no minimum).
+9. **JobRouter** *(optional)* – parameter: `_platformRegistry`.
+10. **PlatformIncentives** *(optional)* – parameters: `_stakeManager`, `_platformRegistry`, `_jobRouter`.
+11. **TaxPolicy** *(optional)* – parameter: `uri` or text users must acknowledge.
+12. **JobRegistry** – constructor requires
+    - `_validationModule`, `_stakeManager`, `_reputationEngine`, `_disputeModule`, `_certificateNFT`,
+    - `_identityRegistry` (`0x0` if unused) and `_taxPolicy` (`0x0` if none),
+    - `_feePct` (basis points, e.g. `500` for 5%), `_jobStake` (usually `0`), `_ackModules` (normally `[]`),
+    - optional `_owner` address (defaults to deployer if omitted).
 
 ## 3. Wire Modules Together
 ### Recommended: `ModuleInstaller`
