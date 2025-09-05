@@ -60,6 +60,7 @@ contract DisputeModule is Ownable, Pausable {
         address indexed resolver,
         bool employerWins
     );
+    event PauserUpdated(address indexed pauser);
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -71,6 +72,7 @@ contract DisputeModule is Ownable, Pausable {
 
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
     event DisputeFeeUpdated(uint256 fee);
     event DisputeWindowUpdated(uint256 window);

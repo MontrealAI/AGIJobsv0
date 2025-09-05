@@ -40,6 +40,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     event Blacklisted(address indexed operator, bool status);
     event RegistrarUpdated(address indexed registrar, bool allowed);
     event Activated(address indexed operator, uint256 amount);
+    event PauserUpdated(address indexed pauser);
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -51,6 +52,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
 
     /// @notice Deploys the PlatformRegistry.

@@ -58,6 +58,7 @@ contract ReputationEngine is Ownable, Pausable {
     event ScoringWeightsUpdated(uint256 stakeWeight, uint256 reputationWeight);
     event ModulesUpdated(address indexed stakeManager);
     event ValidationRewardPercentageUpdated(uint256 percentage);
+    event PauserUpdated(address indexed pauser);
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -69,6 +70,7 @@ contract ReputationEngine is Ownable, Pausable {
 
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
         require(address(_stakeManager) != address(0), "invalid stake manager");

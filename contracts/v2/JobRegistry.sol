@@ -130,6 +130,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     function setPauser(address _pauser) external onlyGovernance {
         pauser = _pauser;
+        emit PauserUpdated(_pauser);
     }
 
     // cache successful agent authorizations
@@ -172,6 +173,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event CertificateNFTUpdated(address nft);
     event IdentityRegistryUpdated(address identityRegistry);
     event ValidatorRewardPctUpdated(uint256 pct);
+    event PauserUpdated(address indexed pauser);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
     /// @param version Incrementing version participants must acknowledge.
