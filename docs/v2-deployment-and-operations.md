@@ -68,11 +68,14 @@ The script prints module addresses and verifies source on Etherscan.
    - `CertificateNFT.setJobRegistry(jobRegistry)`
    - `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)`
    - `ValidationModule.setIdentityRegistry(identityRegistry)`
-10. **Verify wiring** – run `npm run verify:wiring` to confirm module getters
+10. **Verify source code** – publish each contract on the block explorer using
+    `npx hardhat verify --network <network> <address> <constructor args>` or the
+    explorer UI so others can audit and interact with it.
+11. **Verify wiring** – run `npm run verify:wiring` to confirm module getters
     match the addresses recorded in `docs/deployment-addresses.json`.
-11. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`,
+12. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`,
     `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
-12. **Governance setup** – deploy a multisig wallet or timelock controller
+13. **Governance setup** – deploy a multisig wallet or timelock controller
     and pass its address to the `StakeManager` and `JobRegistry` constructors.
     Transfer ownership of every remaining `Ownable` module
     (for example `IdentityRegistry`, `CertificateNFT`, `ValidationModule`,
@@ -88,7 +91,8 @@ After deployment the governance contract can fine‑tune the system without rede
    `setClubRootNode` and, if using allowlists, `setAgentMerkleRoot` and
    `setValidatorMerkleRoot`.
 3. **Update parameters** – adjust economic settings through `setFeePct`,
-   `setBurnPct`, `setMinStake`, timing windows and other governance‑only
+   `FeePool.setBurnPct` to tune the portion of fees burned before distribution,
+   `setMinStake`, timing windows and other governance‑only
    setters or the helper script `scripts/updateParams.ts`.
 4. **Publish a tax policy** – call `JobRegistry.setTaxPolicy(taxPolicy)` then
    `DisputeModule.setTaxPolicy(taxPolicy)` and instruct participants to
@@ -152,7 +156,17 @@ then be performed through the "Write" tabs on each module.
 | Buy certificate | `CertificateNFT.purchase(tokenId)` | Buyer approves token first |
 
 ## Owner Administration
-- **Adjust parameters:** examples include `StakeManager.setMinStake(amount)`, `JobRegistry.setFeePct(pct)`, `ValidationModule.setCommitWindow(seconds)`, `ValidationModule.setRevealWindow(seconds)` and `DisputeModule.setDisputeFee(fee)`.
+
+### Adjustable Parameters
+| Module | Function | Description |
+| --- | --- | --- |
+| `JobRegistry` | `setFeePct(pct)` | Percentage of each reward taken as protocol fee |
+| `StakeManager` | `setMinStake(amount)` | Minimum stake required for any role |
+| `ValidationModule` | `setCommitWindow(seconds)` | Commit phase length for validation votes |
+| `ValidationModule` | `setRevealWindow(seconds)` | Reveal phase length for validation votes |
+| `DisputeModule` | `setDisputeFee(fee)` | Fee required to raise a dispute |
+| `FeePool` | `setBurnPct(pct)` | Portion of fees burned before distribution |
+
 - **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
 - **Transfer ownership:** hand governance to a multisig or timelock so no
   single key can change parameters:
@@ -166,9 +180,25 @@ then be performed through the "Write" tabs on each module.
   or `transferOwnership(newOwner)` and waits for the corresponding event
   before using the new address.
 
+### Pause Mechanism
+Deploy the optional [`SystemPause`](system-pause.md) contract and wire
+module addresses with `setModules`. Governance may call `pauseAll()` to
+halt job creation, validation and payouts during emergencies and
+`unpauseAll()` to resume. Individual modules also expose standard
+`pause()` hooks for targeted stops.
+
 ## Token Configuration
 - Default staking/reward token: `$AGIALPHA` at
   `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` (18 decimals).
+
+## Operational Best Practices
+- **Record keeping:** archive deployment transactions, module addresses and
+  verification links so upgrades or audits can reference an accurate history.
+- **End-to-end testing:** run unit tests with `npm test` and exercise a full job
+  flow on a test network before promoting configuration changes to mainnet.
+- **Legal compliance:** consult counsel on tax, securities and data-privacy
+  obligations in relevant jurisdictions and ensure participants acknowledge the
+  posted tax policy.
 
 ## Troubleshooting
 - **Missing subdomain proof** – ensure your ENS label and Merkle proof
