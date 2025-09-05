@@ -91,7 +91,7 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
 
 3. Verify `ModulesUpdated` and `JobRegistrySet` events before allowing user funds.
 
-For function parity with the legacy contract, compare calls against [v1-v2-function-map.md](v1-v2-function-map.md).
+For function parity with the legacy contract, compare calls against [v0-v2-function-map.md](legacy/v0-v2-function-map.md).
 
 Following this sequence results in a ready‑to‑use v2 deployment running on `$AGIALPHA`.
 

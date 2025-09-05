@@ -18,7 +18,6 @@ All legacy AGIJobManager contracts have been moved to the `legacy/` directory. T
 For function‑level differences see:
 
 - [v0 → v2 function map](legacy/v0-v2-function-map.md)
-- [v1 → v2 function map](v1-v2-function-map.md)
 
 ## Job URI Hash Migration
 
