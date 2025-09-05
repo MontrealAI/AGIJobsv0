@@ -25,7 +25,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 - Require tax policy acknowledgement before any state‑changing action.
 - Enforce owner‑set `maxJobReward` and `maxJobDuration` limits.
 - After successful validation call `StakeManager.release` for payouts, `ReputationEngine.onFinalize` for reputation, and `CertificateNFT.mint` for credentials.
-- Mirror v1 event names and cross‑check `docs/v1-v2-function-map.md` to ensure feature parity.
+- Mirror v1 event names and cross‑check `../legacy/v0-v2-function-map.md` to ensure feature parity.
 
 ### 3. ValidationModule
 
@@ -65,7 +65,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 - Update `README.md` with an AGIALPHA deployment guide and Etherscan walkthrough.
 - Add Hardhat tests covering identity checks, job lifecycle, validation, disputes and NFT marketplace.
 - Run `npx solhint 'contracts/**/*.sol'`, `npx eslint .` and `npx hardhat test` until green.
-- Verify coverage against `docs/v1-v2-function-map.md` so every v1 function has a v2 counterpart.
+- Verify coverage against `../legacy/v0-v2-function-map.md` so every v1 function has a v2 counterpart.
 
 ## Definition of Done
 
