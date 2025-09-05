@@ -179,6 +179,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     );
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event TokensBurned(bytes32 indexed jobId, uint256 amount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
@@ -290,10 +291,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @dev internal helper to burn tokens
-    function _burnToken(uint256 amount) internal {
+    function _burnToken(bytes32 jobId, uint256 amount) internal {
         if (amount == 0) return;
         if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
         try IERC20Burnable(AGIALPHA).burn(amount) {
+            emit TokensBurned(jobId, amount);
         } catch {
             revert TokenNotBurnable();
         }
@@ -904,13 +906,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // off-chain keeper).
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
-                _burnToken(feeAmount);
-                emit StakeReleased(jobId, BURN_ADDRESS, feeAmount);
+                _burnToken(jobId, feeAmount);
             }
         }
         if (burnAmount > 0) {
-            _burnToken(burnAmount);
-            emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
+            _burnToken(jobId, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -947,13 +947,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // invoked separately.
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
-                _burnToken(feeAmount);
-                emit StakeReleased(bytes32(0), BURN_ADDRESS, feeAmount);
+                _burnToken(bytes32(0), feeAmount);
             }
         }
         if (burnAmount > 0) {
-            _burnToken(burnAmount);
-            emit StakeReleased(bytes32(0), BURN_ADDRESS, burnAmount);
+            _burnToken(bytes32(0), burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -993,13 +991,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
-                _burnToken(fee);
-                emit StakeReleased(jobId, BURN_ADDRESS, fee);
+                _burnToken(jobId, fee);
             }
         }
         if (burnAmount > 0) {
-            _burnToken(burnAmount);
-            emit StakeReleased(jobId, BURN_ADDRESS, burnAmount);
+            _burnToken(jobId, burnAmount);
         }
     }
 
@@ -1118,7 +1114,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
-            _burnToken(burnShare);
+            _burnToken(bytes32(0), burnShare);
         }
 
         emit StakeSlashed(
