@@ -8,6 +8,7 @@ This abbreviated guide walks an owner through deploying the monolithic
 roots and Merkle roots—remain owner‑configurable after deployment.
 
 ## 1. Deploy the contract
+
 1. Open the verified `AGIJobManager v0` code on Etherscan and choose
    **Contract → Deploy**.
 2. Enter constructor parameters:
@@ -22,6 +23,7 @@ roots and Merkle roots—remain owner‑configurable after deployment.
    retune any parameter via the contract's write methods.
 
 ## 2. Approve tokens and stake
+
 All token amounts use 18‑decimal units (`1 AGIALPHA = 1_000000000000000000`).
 
 1. **Employers** approve the job reward on `$AGIALPHA` then call
@@ -31,6 +33,7 @@ All token amounts use 18‑decimal units (`1 AGIALPHA = 1_000000000000000000`).
 3. **Validators** stake with `stake(amount)` and later validate jobs.
 
 ## 3. Typical job flow
+
 1. **Create job** – employer calls `createJob` after approving tokens.
 2. **Apply** – agent calls `applyForJob` with ENS subdomain and optional
    Merkle proof.

@@ -1,9 +1,11 @@
-import { ethers } from "hardhat";
+import { ethers } from 'hardhat';
 
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const Stake = await ethers.getContractFactory("contracts/v2/StakeManager.sol:StakeManager");
+  const Stake = await ethers.getContractFactory(
+    'contracts/v2/StakeManager.sol:StakeManager'
+  );
   const stake = await Stake.deploy(
     0,
     0,
@@ -16,18 +18,26 @@ async function main() {
   await stake.waitForDeployment();
 
   // Deploy the sole ReputationEngine implementation
-  const Reputation = await ethers.getContractFactory("contracts/v2/ReputationEngine.sol:ReputationEngine");
+  const Reputation = await ethers.getContractFactory(
+    'contracts/v2/ReputationEngine.sol:ReputationEngine'
+  );
   const reputation = await Reputation.deploy(await stake.getAddress());
   await reputation.waitForDeployment();
 
-  const ENS = await ethers.getContractFactory("contracts/legacy/MockENS.sol:MockENS");
+  const ENS = await ethers.getContractFactory(
+    'contracts/legacy/MockENS.sol:MockENS'
+  );
   const ens = await ENS.deploy();
   await ens.waitForDeployment();
-  const Wrapper = await ethers.getContractFactory("contracts/legacy/MockNameWrapper.sol:MockNameWrapper");
+  const Wrapper = await ethers.getContractFactory(
+    'contracts/legacy/MockNameWrapper.sol:MockNameWrapper'
+  );
   const wrapper = await Wrapper.deploy();
   await wrapper.waitForDeployment();
 
-  const Identity = await ethers.getContractFactory("contracts/v2/IdentityRegistry.sol:IdentityRegistry");
+  const Identity = await ethers.getContractFactory(
+    'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
+  );
   const identity = await Identity.deploy(
     await ens.getAddress(),
     await wrapper.getAddress(),
@@ -37,15 +47,21 @@ async function main() {
   );
   await identity.waitForDeployment();
 
-  const Validation = await ethers.getContractFactory("contracts/v2/mocks/ValidationStub.sol:ValidationStub");
+  const Validation = await ethers.getContractFactory(
+    'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
+  );
   const validation = await Validation.deploy();
   await validation.waitForDeployment();
 
-  const NFT = await ethers.getContractFactory("contracts/v2/CertificateNFT.sol:CertificateNFT");
-  const nft = await NFT.deploy("Cert", "CERT");
+  const NFT = await ethers.getContractFactory(
+    'contracts/v2/CertificateNFT.sol:CertificateNFT'
+  );
+  const nft = await NFT.deploy('Cert', 'CERT');
   await nft.waitForDeployment();
 
-  const Registry = await ethers.getContractFactory("contracts/v2/JobRegistry.sol:JobRegistry");
+  const Registry = await ethers.getContractFactory(
+    'contracts/v2/JobRegistry.sol:JobRegistry'
+  );
   const registry = await Registry.deploy(
     await validation.getAddress(),
     await stake.getAddress(),
@@ -62,7 +78,7 @@ async function main() {
   await registry.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
-    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+    'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
@@ -72,7 +88,7 @@ async function main() {
   );
   await dispute.waitForDeployment();
   const Committee = await ethers.getContractFactory(
-    "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+    'contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee'
   );
   const committee = await Committee.deploy(
     await registry.getAddress(),
@@ -83,7 +99,7 @@ async function main() {
   await dispute.setStakeManager(await stake.getAddress());
 
   const FeePool = await ethers.getContractFactory(
-    "contracts/v2/FeePool.sol:FeePool"
+    'contracts/v2/FeePool.sol:FeePool'
   );
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
@@ -93,7 +109,7 @@ async function main() {
   await feePool.waitForDeployment();
 
   const PlatformRegistry = await ethers.getContractFactory(
-    "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+    'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
   );
   const platformRegistry = await PlatformRegistry.deploy(
     await stake.getAddress(),
@@ -102,7 +118,10 @@ async function main() {
   );
   await platformRegistry.waitForDeployment();
 
-  await stake.setModules(await registry.getAddress(), await dispute.getAddress());
+  await stake.setModules(
+    await registry.getAddress(),
+    await dispute.getAddress()
+  );
   await validation.setJobRegistry(await registry.getAddress());
   await nft.setJobRegistry(await registry.getAddress());
   await nft.setStakeManager(await stake.getAddress());
@@ -119,23 +138,23 @@ async function main() {
   await reputation.setCaller(await registry.getAddress(), true);
 
   const ensureContract = async (addr: string, name: string) => {
-    if ((await ethers.provider.getCode(addr)) === "0x") {
+    if ((await ethers.provider.getCode(addr)) === '0x') {
       throw new Error(`${name} must be a deployed contract`);
     }
   };
 
   await Promise.all([
-    ensureContract(await registry.getAddress(), "JobRegistry"),
-    ensureContract(await stake.getAddress(), "StakeManager"),
-    ensureContract(await validation.getAddress(), "ValidationModule"),
-    ensureContract(await dispute.getAddress(), "DisputeModule"),
-    ensureContract(await platformRegistry.getAddress(), "PlatformRegistry"),
-    ensureContract(await feePool.getAddress(), "FeePool"),
-    ensureContract(await reputation.getAddress(), "ReputationEngine"),
+    ensureContract(await registry.getAddress(), 'JobRegistry'),
+    ensureContract(await stake.getAddress(), 'StakeManager'),
+    ensureContract(await validation.getAddress(), 'ValidationModule'),
+    ensureContract(await dispute.getAddress(), 'DisputeModule'),
+    ensureContract(await platformRegistry.getAddress(), 'PlatformRegistry'),
+    ensureContract(await feePool.getAddress(), 'FeePool'),
+    ensureContract(await reputation.getAddress(), 'ReputationEngine'),
   ]);
 
   const SystemPause = await ethers.getContractFactory(
-    "contracts/v2/SystemPause.sol:SystemPause"
+    'contracts/v2/SystemPause.sol:SystemPause'
   );
   const pause = await SystemPause.deploy(
     await registry.getAddress(),
@@ -170,13 +189,13 @@ async function main() {
   await nft.transferOwnership(await pause.getAddress());
   await identity.transferOwnership(await pause.getAddress());
 
-  console.log("StakeManager:", await stake.getAddress());
-  console.log("ReputationEngine:", await reputation.getAddress());
-  console.log("IdentityRegistry:", await identity.getAddress());
-  console.log("JobRegistry:", await registry.getAddress());
-  console.log("DisputeModule:", await dispute.getAddress());
-  console.log("CertificateNFT:", await nft.getAddress());
-  console.log("SystemPause:", await pause.getAddress());
+  console.log('StakeManager:', await stake.getAddress());
+  console.log('ReputationEngine:', await reputation.getAddress());
+  console.log('IdentityRegistry:', await identity.getAddress());
+  console.log('JobRegistry:', await registry.getAddress());
+  console.log('DisputeModule:', await dispute.getAddress());
+  console.log('CertificateNFT:', await nft.getAddress());
+  console.log('SystemPause:', await pause.getAddress());
 }
 
 main().catch((err) => {

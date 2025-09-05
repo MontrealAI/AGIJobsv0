@@ -4,6 +4,7 @@ This sprint finalises revenue sharing, routing and governance incentives for the
 v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymous.
 
 ## Objectives
+
 - Implement smart‑contract revenue sharing for platform operators with no
   off‑chain accounting.
 - Route and discover jobs using stake‑weighted, reputation‑aware algorithms.
@@ -14,6 +15,7 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
   across modules; rotation is treated as a legacy capability.
 
 ## Tasks
+
 1. **FeePool Contract**
    - Collect protocol fees from `JobRegistry` on each finalised job.
    - Track operator stakes from `StakeManager` and stream rewards in proportion
@@ -60,13 +62,14 @@ v2 suite while keeping all flows tax‑neutral, reporting‑free and pseudonymou
    - Extend Hardhat tests for revenue distribution, routing priority,
      governance rewards, slashing and blacklist enforcement.
    - Update `README.md`, `docs/incentive-mechanisms-agialpha.md` and
-    `docs/deployment-v2-agialpha.md` to cover Etherscan flows, owner‑only setters
+     `docs/deployment-v2-agialpha.md` to cover Etherscan flows, owner‑only setters
      and base‑unit conversions.
    - Add a concise Etherscan deployment quickstart to the README so non‑technical
      operators can launch the suite with $AGIALPHA and later retune parameters
      without redeploying contracts.
 
 ## Definition of Done
+
 - All modules deployed immutably and wired through `JobRegistry`.
 - `npm run lint` and `npm test` pass.
 - Documentation explains pseudonymity, tax disclaimers and Etherscan interaction

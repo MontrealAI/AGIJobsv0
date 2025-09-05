@@ -3,6 +3,7 @@
 This sprint migrates every capability from the legacy `AGIJobManager` into the modular v2 suite while enforcing ENS-based identity for agents and validators. It serves as a checklist for developers implementing the upgrade.
 
 ## 1. Identity Enforcement
+
 - **Goal**: Every agent must control a subdomain of `agent.agi.eth`; every validator must control a subdomain of `club.agi.eth`.
 - **Mechanism**:
   1. Accept a Merkle proof of pre-approved addresses. If the proof verifies, accept without further calls.
@@ -16,6 +17,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
   - Provide owner setters for root nodes, Merkle roots, ENS registry and NameWrapper addresses with update events.
 
 ## 2. Module Parity with v0
+
 - **JobRegistry**
   - `createJob`, `applyForJob`, `submit`, `cancelJob`, `dispute`, `finalize`.
   - Enforce `maxJobReward` and `maxJobDuration` caps; require tax policy acknowledgement before participation.
@@ -33,11 +35,13 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
   - Mint completion certificates and support `list`, `purchase`, `delist` marketplace actions.
 
 ## 3. Administrative Controls
+
 - Each module inherits `Ownable`; only the owner can update parameters.
 - No module routes funds to the owner; fees go to `FeePool` or are burned to preserve tax neutrality.
 - Events mirror v0 naming where possible (`JobCreated`, `JobApplied`, `JobSubmitted`, `JobFinalized`, etc.).
 
 ## 4. Testing and Verification
+
 - Write Hardhat and Foundry tests for:
   - Successful job flow from creation to NFT minting.
   - Identity rejection paths for both agents and validators.
@@ -46,6 +50,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
 - Run `npx hardhat test`, `forge test`, `npx solhint 'contracts/**/*.sol'` and `npx eslint .` until all pass.
 
 ## 5. Deployment Notes
+
 - Default token is `$AGIALPHA` (18 decimals) and cannot be swapped in v2.
 - Document Etherscan-based deployment: deploy modules, call `setModules` on `JobRegistry`, then update Merkle roots and root nodes.
 

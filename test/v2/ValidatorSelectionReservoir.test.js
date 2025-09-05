@@ -1,7 +1,7 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("Validator selection reservoir strategy", function () {
+describe('Validator selection reservoir strategy', function () {
   let validation, stake, identity, other;
   let validators;
   const poolSize = 150;
@@ -12,12 +12,12 @@ describe("Validator selection reservoir strategy", function () {
     const [_, o] = await ethers.getSigners();
     other = o;
 
-    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
@@ -25,7 +25,7 @@ describe("Validator selection reservoir strategy", function () {
     await identity.setAgentRootNode(ethers.ZeroHash);
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       ethers.ZeroAddress,
@@ -46,19 +46,19 @@ describe("Validator selection reservoir strategy", function () {
     for (let i = 0; i < poolSize; i++) {
       const addr = ethers.Wallet.createRandom().address;
       validators.push(addr);
-      await stake.setStake(addr, 1, ethers.parseEther("1"));
+      await stake.setStake(addr, 1, ethers.parseEther('1'));
       await identity.addAdditionalValidator(addr);
     }
     await validation.setValidatorPool(validators);
     await validation.setValidatorsPerJob(committeeSize);
   });
 
-  it("selects uniformly when pool exceeds sample size", async () => {
+  it('selects uniformly when pool exceeds sample size', async () => {
     const counts = {};
     const iterations = 30;
     for (let i = 0; i < iterations; i++) {
       await validation.selectValidators(i + 1, i + 12345);
-      await ethers.provider.send("evm_mine", []);
+      await ethers.provider.send('evm_mine', []);
       await validation.connect(other).selectValidators(i + 1, 0);
       const selected = await validation.validators(i + 1);
       for (const v of selected) {
@@ -75,4 +75,3 @@ describe("Validator selection reservoir strategy", function () {
     expect(secondHalf).to.be.closeTo(total / 2, total * 0.3);
   });
 });
-

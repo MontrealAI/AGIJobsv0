@@ -4,7 +4,7 @@
 
 **The Emergence of an AGI-Powered Alpha Agent.**
 
-Rooted in the publicly disclosed 2017 “**Multi-Agent AI DAO**” prior art, the **AGI ALPHA AGENT** utilizes $AGIALPHA tokens purely as utility tokens—no equity, no profit-sharing—to grant users prepaid access to the **AGI ALPHA AGENT**’s capabilities. By structuring **$AGIALPHA** as an advance payment mechanism for leveraging **ALPHA.AGENT.AGI.Eth**’s AI-driven services, holders likely avoid securities classification complexities. By purchasing these tokens, you gain usage credits for future AI services from the **AGI ALPHA AGENT**. Instead of representing ownership or investment rights, these tokens simply secure the right to interact with and benefit from the **AGI ALPHA AGENT**’s intelligence and outputs. This model delivers a straightforward, compliance-friendly approach to accessing cutting-edge AI functionalities, ensuring a seamless, equity-free experience for all participants.
+Rooted in the publicly disclosed 2017 “**Multi-Agent AI DAO**” prior art, the **AGI ALPHA AGENT** utilizes $AGIALPHA tokens purely as utility tokens—no equity, no profit-sharing—to grant users prepaid access to the **AGI ALPHA AGENT**’s capabilities. By structuring **$AGIALPHA** as an advance payment mechanism for leveraging **ALPHA.AGENT.AGI.Eth**’s AI-driven services, holders likely avoid securities classification complexities. By purchasing these tokens, you gain usage credits for future AI services from the **AGI ALPHA AGENT**. Instead of representing ownership or investment rights, these tokens simply secure the right to interact with and benefit from the **AGI ALPHA AGENT\*\*’s intelligence and outputs. This model delivers a straightforward, compliance-friendly approach to accessing cutting-edge AI functionalities, ensuring a seamless, equity-free experience for all participants.
 
 **[ INITIAL TERMS & CONDITIONS ]**
 
@@ -22,9 +22,9 @@ Rooted in the publicly disclosed 2017 “**Multi-Agent AI DAO**” prior art, th
 
 OVERRIDING AUTHORITY: AGI.Eth
 
-$AGIALPHA is an experiment. It is part of an <u>**aspirational research program with an ambitious research agenda**</u>. The **AGI ALPHA AGENT**’s products/services are commodities. Any expectation of profit or return is unjustified. Possession of **$AGIALPHA** does not signify or establish any entitlement, interest, share, equity, bond, or analogous right to obtain future income.
+$AGIALPHA is an experiment. It is part of an <u>**aspirational research program with an ambitious research agenda**</u>. The **AGI ALPHA AGENT**’s products/services are commodities. Any expectation of profit or return is unjustified. Possession of **$AGIALPHA\*\* does not signify or establish any entitlement, interest, share, equity, bond, or analogous right to obtain future income.
 
-MATERIALS PROVIDED IN THIS SYSTEM (WHICH INCLUDE $AGIALPHA) ARE WITHOUT WARRANTY OF ANY KIND AND DO NOT CONSTITUTE ENDORSEMENT AND CAN BE MODIFIED AT ANY TIME. By using $AGIALPHA, you agree to the **$AGIALPHA Terms and Conditions**. Any use of this system, or of any part of this system, or any contained information, beyond its intended purpose is expressly prohibited unless AGI.Eth provides official written permission.
+MATERIALS PROVIDED IN THIS SYSTEM (WHICH INCLUDE $AGIALPHA) ARE WITHOUT WARRANTY OF ANY KIND AND DO NOT CONSTITUTE ENDORSEMENT AND CAN BE MODIFIED AT ANY TIME. By using $AGIALPHA, you agree to the **$AGIALPHA Terms and Conditions\*\*. Any use of this system, or of any part of this system, or any contained information, beyond its intended purpose is expressly prohibited unless AGI.Eth provides official written permission.
 
 **Changes to Terms:** The issuer reserves the right to make changes to the terms and conditions at any time, subject to regulatory compliance. These disclaimers do not preclude further disclaimers at the time of actual usage. Current Terms & Conditions are available at: <https://www.montreal.ai/>.
 

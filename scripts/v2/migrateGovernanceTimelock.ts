@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers } from 'hardhat';
 
 /**
  * Transfers governance of a Governable contract to a new TimelockController.
@@ -14,19 +14,19 @@ async function main() {
   const newTimelock = process.env.NEW_TIMELOCK;
   const governableAddr = process.env.GOVERNABLE;
   if (!oldTimelock || !newTimelock || !governableAddr) {
-    throw new Error("OLD_TIMELOCK, NEW_TIMELOCK and GOVERNABLE must be set");
+    throw new Error('OLD_TIMELOCK, NEW_TIMELOCK and GOVERNABLE must be set');
   }
 
   const timelock = await ethers.getContractAt(
-    "@openzeppelin/contracts/governance/TimelockController.sol:TimelockController",
+    '@openzeppelin/contracts/governance/TimelockController.sol:TimelockController',
     oldTimelock
   );
   const governable = await ethers.getContractAt(
-    "contracts/v2/Governable.sol:Governable",
+    'contracts/v2/Governable.sol:Governable',
     governableAddr
   );
 
-  const callData = governable.interface.encodeFunctionData("setGovernance", [
+  const callData = governable.interface.encodeFunctionData('setGovernance', [
     newTimelock,
   ]);
 
@@ -44,4 +44,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-

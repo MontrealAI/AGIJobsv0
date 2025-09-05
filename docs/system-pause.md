@@ -11,6 +11,7 @@ non-zero address pointing to a deployed contract. The contract reverts with
 `InvalidReputationEngine` if validation fails.
 
 ## Hardhat CLI
+
 ```sh
 npx hardhat console --network <network>
 > const pause = await ethers.getContractAt("SystemPause", "<pause>");
@@ -29,6 +30,7 @@ npx hardhat console --network <network>
 ```
 
 ## Etherscan
+
 1. Open the SystemPause contract on Etherscan with your governance
    account connected.
 2. In **Write Contract**, call `setModules` with the module addresses if

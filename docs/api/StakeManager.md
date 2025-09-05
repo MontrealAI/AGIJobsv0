@@ -3,6 +3,7 @@
 Handles staking, escrow and slashing of the $AGIALPHA token.
 
 ## Functions
+
 - `setMinStake(uint256 minStake)` / `setMaxStakePerAddress(uint256 maxStake)` – configure stake limits.
 - `setTreasury(address treasury)` / `setFeePool(address feePool)` – wire fee destinations.
 - `setJobRegistry(address registry)` / `setDisputeModule(address module)` / `setValidationModule(address module)` – connect modules. Staking reverts until a registry is configured.
@@ -14,6 +15,7 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` – view functions.
 
 ## Events
+
 - `StakeDeposited(address indexed user, Role indexed role, uint256 amount)`
 - `StakeWithdrawn(address indexed user, Role indexed role, uint256 amount)`
 - `StakeSlashed(address indexed user, uint256 amount, address recipient)`

@@ -5,12 +5,14 @@
 This guide walks a non‑technical owner through deploying the monolithic **AGIJobManager v0** contract using the 18‑decimal `$AGIALPHA` token for all escrow, staking, validator rewards, and dispute fees. Every parameter can be updated later by the owner without redeploying the contract.
 
 ## Prerequisites
+
 - `$AGIALPHA` token address.
 - ENS registry and NameWrapper addresses.
 - Namehashes for `agent.agi.eth` and `club.agi.eth` plus optional Merkle roots for allowlists.
 - Base IPFS URI for job result metadata.
 
 ## Deployment Steps
+
 1. Open the compiled `AGIJobManagerv0` in a block explorer and supply constructor fields:
    - `_agiTokenAddress` – `$AGIALPHA` address.
    - `_baseIpfsUrl` – e.g. `ipfs://`.
@@ -24,6 +26,7 @@ This guide walks a non‑technical owner through deploying the monolithic **AGIJ
    - Tune parameters like `setRequiredValidatorApprovals`, `setValidationRewardPercentage`, `setMaxJobPayout`, and blacklist users.
 
 ## Usage Notes
+
 - All token amounts use 18‑decimal units (`1 token = 1_000000000000000000`).
 - Employers post jobs with `createJob` after approving the token.
 - Agents call `applyForJob` with their subdomain and optional Merkle proof.

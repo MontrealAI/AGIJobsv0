@@ -1,19 +1,19 @@
-const { expect } = require("chai");
-const { ethers, artifacts, network } = require("hardhat");
-const { AGIALPHA } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers, artifacts, network } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
-describe("Deployer", function () {
-  it("deploys and wires modules, transferring ownership", async function () {
+describe('Deployer', function () {
+  it('deploys and wires modules, transferring ownership', async function () {
     const [, governance] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
-      "contracts/test/MockERC20.sol:MockERC20"
+      'contracts/test/MockERC20.sol:MockERC20'
     );
-    await network.provider.send("hardhat_setCode", [
+    await network.provider.send('hardhat_setCode', [
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
     const Deployer = await ethers.getContractFactory(
-      "contracts/v2/Deployer.sol:Deployer"
+      'contracts/v2/Deployer.sol:Deployer'
     );
     const deployer = await Deployer.deploy();
 
@@ -42,7 +42,7 @@ describe("Deployer", function () {
     const deployerAddress = await deployer.getAddress();
     const log = receipt.logs.find((l) => l.address === deployerAddress);
     const decoded = deployer.interface.decodeEventLog(
-      "Deployed",
+      'Deployed',
       log.data,
       log.topics
     );
@@ -64,46 +64,46 @@ describe("Deployer", function () {
     ] = decoded;
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const ValidationModule = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     const ReputationEngine = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     const DisputeModule = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule'
     );
     const CertificateNFT = await ethers.getContractFactory(
-      "contracts/v2/CertificateNFT.sol:CertificateNFT"
+      'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
     const PlatformRegistry = await ethers.getContractFactory(
-      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+      'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
     );
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      'contracts/v2/modules/JobRouter.sol:JobRouter'
     );
     const PlatformIncentives = await ethers.getContractFactory(
-      "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+      'contracts/v2/PlatformIncentives.sol:PlatformIncentives'
     );
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     const TaxPolicy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
     const IdentityRegistry = await ethers.getContractFactory(
-      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
+      'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
     );
     const Committee = await ethers.getContractFactory(
-      "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+      'contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee'
     );
     const SystemPause = await ethers.getContractFactory(
-      "contracts/v2/SystemPause.sol:SystemPause"
+      'contracts/v2/SystemPause.sol:SystemPause'
     );
 
     const stakeC = StakeManager.attach(stake);
@@ -159,15 +159,11 @@ describe("Deployer", function () {
     expect(await registryC.certificateNFT()).to.equal(certificate);
     expect(await registryC.feePool()).to.equal(feePool);
     expect(await registryC.taxPolicy()).to.equal(taxPolicy);
-    expect(await registryC.identityRegistry()).to.equal(
-      identityRegistryAddr
-    );
+    expect(await registryC.identityRegistry()).to.equal(identityRegistryAddr);
     expect(await validationC.jobRegistry()).to.equal(registry);
     expect(await validationC.stakeManager()).to.equal(stake);
     expect(await validationC.reputationEngine()).to.equal(reputation);
-    expect(await validationC.identityRegistry()).to.equal(
-      identityRegistryAddr
-    );
+    expect(await validationC.identityRegistry()).to.equal(identityRegistryAddr);
     expect(await reputationC.callers(registry)).to.equal(true);
     expect(await reputationC.callers(validation)).to.equal(true);
     expect(await certificateC.jobRegistry()).to.equal(registry);
@@ -178,17 +174,17 @@ describe("Deployer", function () {
     expect(await routerC.registrars(incentives)).to.equal(true);
   });
 
-  it("can skip tax policy", async function () {
+  it('can skip tax policy', async function () {
     const [, governance] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
-      "contracts/test/MockERC20.sol:MockERC20"
+      'contracts/test/MockERC20.sol:MockERC20'
     );
-    await network.provider.send("hardhat_setCode", [
+    await network.provider.send('hardhat_setCode', [
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
     const Deployer = await ethers.getContractFactory(
-      "contracts/v2/Deployer.sol:Deployer"
+      'contracts/v2/Deployer.sol:Deployer'
     );
     const deployer = await Deployer.deploy();
     const econ = {
@@ -219,18 +215,17 @@ describe("Deployer", function () {
     const deployerAddress2 = await deployer.getAddress();
     const log2 = receipt2.logs.find((l) => l.address === deployerAddress2);
     const decoded = deployer.interface.decodeEventLog(
-      "Deployed",
+      'Deployed',
       log2.data,
       log2.topics
     );
     const registry = decoded[1];
     const taxPolicy = decoded[10];
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const registryC = JobRegistry.attach(registry);
     expect(taxPolicy).to.equal(ethers.ZeroAddress);
     expect(await registryC.taxPolicy()).to.equal(ethers.ZeroAddress);
   });
 });
-

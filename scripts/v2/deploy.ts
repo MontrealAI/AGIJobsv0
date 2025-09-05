@@ -1,7 +1,7 @@
-import { ethers, run } from "hardhat";
-import { writeFileSync } from "fs";
-import { join } from "path";
-import { AGIALPHA, AGIALPHA_DECIMALS } from "../constants";
+import { ethers, run } from 'hardhat';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
+import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 
 // rudimentary CLI flag parser
 function parseArgs() {
@@ -9,10 +9,10 @@ function parseArgs() {
   const args: Record<string, string | boolean> = {};
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg.startsWith("--")) {
+    if (arg.startsWith('--')) {
       const key = arg.slice(2);
       const next = argv[i + 1];
-      if (next && !next.startsWith("--")) {
+      if (next && !next.startsWith('--')) {
         args[key] = next;
         i++;
       } else {
@@ -25,7 +25,7 @@ function parseArgs() {
 
 async function verify(address: string, args: any[] = []) {
   try {
-    await run("verify:verify", {
+    await run('verify:verify', {
       address,
       constructorArguments: args,
     });
@@ -39,11 +39,11 @@ async function main() {
   const args = parseArgs();
 
   const governance =
-    typeof args.governance === "string" ? args.governance : deployer.address;
+    typeof args.governance === 'string' ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
   const token = await ethers.getContractAt(
-    ["function decimals() view returns (uint8)"],
+    ['function decimals() view returns (uint8)'],
     AGIALPHA
   );
   const decimals = Number(await token.decimals());
@@ -56,10 +56,10 @@ async function main() {
   // -------------------------------------------------------------------------
 
   const Stake = await ethers.getContractFactory(
-    "contracts/v2/StakeManager.sol:StakeManager"
+    'contracts/v2/StakeManager.sol:StakeManager'
   );
   const treasury =
-    typeof args.treasury === "string" ? args.treasury : governance;
+    typeof args.treasury === 'string' ? args.treasury : governance;
   const stake = await Stake.deploy(
     0,
     0,
@@ -72,7 +72,7 @@ async function main() {
   await stake.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(
-    "contracts/v2/JobRegistry.sol:JobRegistry"
+    'contracts/v2/JobRegistry.sol:JobRegistry'
   );
   const registry = await Registry.deploy(
     ethers.ZeroAddress,
@@ -90,16 +90,16 @@ async function main() {
   await registry.waitForDeployment();
 
   const TaxPolicy = await ethers.getContractFactory(
-    "contracts/v2/TaxPolicy.sol:TaxPolicy"
+    'contracts/v2/TaxPolicy.sol:TaxPolicy'
   );
   const tax = await TaxPolicy.deploy(
-    "ipfs://policy",
-    "All taxes on participants; contract and owner exempt"
+    'ipfs://policy',
+    'All taxes on participants; contract and owner exempt'
   );
   await tax.waitForDeployment();
 
   const Validation = await ethers.getContractFactory(
-    "contracts/v2/ValidationModule.sol:ValidationModule"
+    'contracts/v2/ValidationModule.sol:ValidationModule'
   );
   const validation = await Validation.deploy(
     await registry.getAddress(),
@@ -114,28 +114,28 @@ async function main() {
 
   // Single ReputationEngine implementation deployed from contracts/v2/ReputationEngine.sol
   const Reputation = await ethers.getContractFactory(
-    "contracts/v2/ReputationEngine.sol:ReputationEngine"
+    'contracts/v2/ReputationEngine.sol:ReputationEngine'
   );
   const reputation = await Reputation.deploy();
   await reputation.waitForDeployment();
 
   const NFT = await ethers.getContractFactory(
-    "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+    'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy("Cert", "CERT");
+  const nft = await NFT.deploy('Cert', 'CERT');
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
-    "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+    'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
   const appealFee = ethers.parseUnits(
-    typeof args.appealFee === "string" ? args.appealFee : "0",
+    typeof args.appealFee === 'string' ? args.appealFee : '0',
     AGIALPHA_DECIMALS
   );
   const disputeWindow =
-    typeof args.disputeWindow === "string" ? Number(args.disputeWindow) : 0;
+    typeof args.disputeWindow === 'string' ? Number(args.disputeWindow) : 0;
   const moderator =
-    typeof args.moderator === "string" ? args.moderator : ethers.ZeroAddress;
+    typeof args.moderator === 'string' ? args.moderator : ethers.ZeroAddress;
   const dispute = await Dispute.deploy(
     await registry.getAddress(),
     appealFee,
@@ -144,7 +144,7 @@ async function main() {
   );
   await dispute.waitForDeployment();
   const Committee = await ethers.getContractFactory(
-    "contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee"
+    'contracts/v2/ArbitratorCommittee.sol:ArbitratorCommittee'
   );
   const committee = await Committee.deploy(
     await registry.getAddress(),
@@ -154,9 +154,9 @@ async function main() {
   await dispute.setCommittee(await committee.getAddress());
 
   const FeePool = await ethers.getContractFactory(
-    "contracts/v2/FeePool.sol:FeePool"
+    'contracts/v2/FeePool.sol:FeePool'
   );
-  const burnPct = typeof args.burnPct === "string" ? parseInt(args.burnPct) : 0;
+  const burnPct = typeof args.burnPct === 'string' ? parseInt(args.burnPct) : 0;
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     burnPct,
@@ -165,10 +165,10 @@ async function main() {
   await feePool.waitForDeployment();
 
   const PlatformRegistry = await ethers.getContractFactory(
-    "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+    'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
   );
   const minPlatformStake = ethers.parseUnits(
-    typeof args.minPlatformStake === "string" ? args.minPlatformStake : "1000",
+    typeof args.minPlatformStake === 'string' ? args.minPlatformStake : '1000',
     AGIALPHA_DECIMALS
   );
   const platformRegistry = await PlatformRegistry.deploy(
@@ -179,15 +179,13 @@ async function main() {
   await platformRegistry.waitForDeployment();
 
   const JobRouter = await ethers.getContractFactory(
-    "contracts/v2/modules/JobRouter.sol:JobRouter"
+    'contracts/v2/modules/JobRouter.sol:JobRouter'
   );
-  const jobRouter = await JobRouter.deploy(
-    await platformRegistry.getAddress()
-  );
+  const jobRouter = await JobRouter.deploy(await platformRegistry.getAddress());
   await jobRouter.waitForDeployment();
 
   const PlatformIncentives = await ethers.getContractFactory(
-    "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+    'contracts/v2/PlatformIncentives.sol:PlatformIncentives'
   );
   const incentives = await PlatformIncentives.deploy(
     await stake.getAddress(),
@@ -197,7 +195,7 @@ async function main() {
   await incentives.waitForDeployment();
 
   const Installer = await ethers.getContractFactory(
-    "contracts/v2/ModuleInstaller.sol:ModuleInstaller"
+    'contracts/v2/ModuleInstaller.sol:ModuleInstaller'
   );
   const installer = await Installer.deploy();
   await installer.waitForDeployment();
@@ -230,38 +228,36 @@ async function main() {
       await tax.getAddress()
     );
 
-  const feePct =
-    typeof args.feePct === "string" ? Number(args.feePct) : 5;
+  const feePct = typeof args.feePct === 'string' ? Number(args.feePct) : 5;
   await registry.connect(governanceSigner).setFeePct(feePct);
 
-  const burnPct =
-    typeof args.burnPct === "string" ? Number(args.burnPct) : 0;
+  const burnPct = typeof args.burnPct === 'string' ? Number(args.burnPct) : 0;
   await feePool.connect(governanceSigner).setBurnPct(burnPct);
 
   const minStake = ethers.parseUnits(
-    typeof args.minStake === "string" ? args.minStake : "0",
+    typeof args.minStake === 'string' ? args.minStake : '0',
     AGIALPHA_DECIMALS
   );
   await stake.connect(governanceSigner).setMinStake(minStake);
 
   const ensureContract = async (addr: string, name: string) => {
-    if ((await ethers.provider.getCode(addr)) === "0x") {
+    if ((await ethers.provider.getCode(addr)) === '0x') {
       throw new Error(`${name} must be a deployed contract`);
     }
   };
 
   await Promise.all([
-    ensureContract(await registry.getAddress(), "JobRegistry"),
-    ensureContract(await stake.getAddress(), "StakeManager"),
-    ensureContract(await validation.getAddress(), "ValidationModule"),
-    ensureContract(await dispute.getAddress(), "DisputeModule"),
-    ensureContract(await platformRegistry.getAddress(), "PlatformRegistry"),
-    ensureContract(await feePool.getAddress(), "FeePool"),
-    ensureContract(await reputation.getAddress(), "ReputationEngine"),
+    ensureContract(await registry.getAddress(), 'JobRegistry'),
+    ensureContract(await stake.getAddress(), 'StakeManager'),
+    ensureContract(await validation.getAddress(), 'ValidationModule'),
+    ensureContract(await dispute.getAddress(), 'DisputeModule'),
+    ensureContract(await platformRegistry.getAddress(), 'PlatformRegistry'),
+    ensureContract(await feePool.getAddress(), 'FeePool'),
+    ensureContract(await reputation.getAddress(), 'ReputationEngine'),
   ]);
 
   const SystemPause = await ethers.getContractFactory(
-    "contracts/v2/SystemPause.sol:SystemPause"
+    'contracts/v2/SystemPause.sol:SystemPause'
   );
   const pause = await SystemPause.deploy(
     await registry.getAddress(),
@@ -287,9 +283,7 @@ async function main() {
       await reputation.getAddress(),
       await committee.getAddress()
     );
-  await stake
-    .connect(governanceSigner)
-    .setGovernance(await pause.getAddress());
+  await stake.connect(governanceSigner).setGovernance(await pause.getAddress());
   await registry
     .connect(governanceSigner)
     .setGovernance(await pause.getAddress());
@@ -310,15 +304,15 @@ async function main() {
     .transferOwnership(await pause.getAddress());
   await committee.transferOwnership(await pause.getAddress());
 
-  console.log("JobRegistry deployed to:", await registry.getAddress());
-  console.log("ValidationModule:", await validation.getAddress());
-  console.log("StakeManager:", await stake.getAddress());
-  console.log("ReputationEngine:", await reputation.getAddress());
-  console.log("SystemPause:", await pause.getAddress());
+  console.log('JobRegistry deployed to:', await registry.getAddress());
+  console.log('ValidationModule:', await validation.getAddress());
+  console.log('StakeManager:', await stake.getAddress());
+  console.log('ReputationEngine:', await reputation.getAddress());
+  console.log('SystemPause:', await pause.getAddress());
   let activeDispute = await dispute.getAddress();
-  if (typeof args.arbitrator === "string") {
+  if (typeof args.arbitrator === 'string') {
     const Kleros = await ethers.getContractFactory(
-      "contracts/v2/modules/KlerosDisputeModule.sol:KlerosDisputeModule"
+      'contracts/v2/modules/KlerosDisputeModule.sol:KlerosDisputeModule'
     );
     const kleros = await Kleros.deploy(
       await registry.getAddress(),
@@ -330,16 +324,16 @@ async function main() {
       .connect(governanceSigner)
       .setDisputeModule(await kleros.getAddress());
     activeDispute = await kleros.getAddress();
-    console.log("KlerosDisputeModule:", activeDispute);
+    console.log('KlerosDisputeModule:', activeDispute);
   } else {
-    console.log("DisputeModule:", activeDispute);
+    console.log('DisputeModule:', activeDispute);
   }
-  console.log("CertificateNFT:", await nft.getAddress());
-  console.log("TaxPolicy:", await tax.getAddress());
-  console.log("FeePool:", await feePool.getAddress());
-  console.log("PlatformRegistry:", await platformRegistry.getAddress());
-  console.log("JobRouter:", await jobRouter.getAddress());
-  console.log("PlatformIncentives:", await incentives.getAddress());
+  console.log('CertificateNFT:', await nft.getAddress());
+  console.log('TaxPolicy:', await tax.getAddress());
+  console.log('FeePool:', await feePool.getAddress());
+  console.log('PlatformRegistry:', await platformRegistry.getAddress());
+  console.log('JobRouter:', await jobRouter.getAddress());
+  console.log('PlatformIncentives:', await incentives.getAddress());
 
   const addresses = {
     token: AGIALPHA,
@@ -358,7 +352,7 @@ async function main() {
   };
 
   writeFileSync(
-    join(__dirname, "..", "..", "docs", "deployment-addresses.json"),
+    join(__dirname, '..', '..', 'docs', 'deployment-addresses.json'),
     JSON.stringify(addresses, null, 2)
   );
 
@@ -397,17 +391,17 @@ async function main() {
     moderator,
     governance,
   ]);
-  if (typeof args.arbitrator === "string") {
+  if (typeof args.arbitrator === 'string') {
     await verify(activeDispute, [
       await registry.getAddress(),
       args.arbitrator,
       governance,
     ]);
   }
-  await verify(await nft.getAddress(), ["Cert", "CERT", governance]);
+  await verify(await nft.getAddress(), ['Cert', 'CERT', governance]);
   await verify(await tax.getAddress(), [
-    "ipfs://policy",
-    "All taxes on participants; contract and owner exempt",
+    'ipfs://policy',
+    'All taxes on participants; contract and owner exempt',
   ]);
   await verify(await feePool.getAddress(), [
     await stake.getAddress(),

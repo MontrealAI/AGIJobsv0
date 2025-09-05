@@ -26,7 +26,7 @@ Deploy each contract **in the order listed below** from the **Write Contract** t
    moderator; the deployer remains owner and can add weighted moderators with
    `addModerator(addr, weight)`.
 7. `CertificateNFT(name, symbol)` – certifies completed work.
-8. `FeePool(token, stakeManager, burnPct, treasury)` – rewards default to platform stakers; use `address(0)` for `token` to fall back to $AGIALPHA` and `burnPct` defaults to `0`.
+8. `FeePool(token, stakeManager, burnPct, treasury)` – rewards default to platform stakers; use `address(0)` for `token` to fall back to $AGIALPHA`and`burnPct`defaults to`0`.
 9. `PlatformRegistry(stakeManager, reputationEngine, minStake)` – `minStake` may be `0`.
 10. `JobRouter(platformRegistry)` – stake‑weighted job routing.
 11. `PlatformIncentives(stakeManager, platformRegistry, jobRouter)` – helper that lets operators stake and register with routing in one call. For simple flows without `JobRouter`, call `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` directly.
@@ -48,12 +48,12 @@ Owners can retune parameters any time: `setMinStake`, `FeePool.setBurnPct`, `Pla
 
 ## 4. One-call helper summary
 
-| Participant | Helper | Purpose |
-| --- | --- | --- |
-| Employer | `JobRegistry.acknowledgeAndCreateJob(reward, uri)` | Accept tax policy and post a job |
-| Agent | `JobRegistry.stakeAndApply(jobId, amount)` | Deposit stake and apply in one call |
-| Platform operator (no routing) | `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` | Stake and register without routing |
-| Platform operator (with routing) | `PlatformIncentives.stakeAndActivate(amount)` | Stake and register for routing and rewards |
+| Participant                      | Helper                                                                               | Purpose                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------ |
+| Employer                         | `JobRegistry.acknowledgeAndCreateJob(reward, uri)`                                   | Accept tax policy and post a job           |
+| Agent                            | `JobRegistry.stakeAndApply(jobId, amount)`                                           | Deposit stake and apply in one call        |
+| Platform operator (no routing)   | `PlatformRegistry.stakeAndRegister(amount)` or `acknowledgeStakeAndRegister(amount)` | Stake and register without routing         |
+| Platform operator (with routing) | `PlatformIncentives.stakeAndActivate(amount)`                                        | Stake and register for routing and rewards |
 
 ## 5. Stake and register a platform
 
@@ -89,4 +89,3 @@ Owners can retune parameters any time: `setMinStake`, `FeePool.setBurnPct`, `Pla
 - Keep backups of deployment scripts and verify source code to improve transparency.
 
 Deployers and operators remain solely responsible for legal compliance. The protocol never issues tax forms or collects personal data.
-

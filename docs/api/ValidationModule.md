@@ -3,6 +3,7 @@
 Manages commit‑reveal voting for submitted jobs.
 
 ## Functions
+
 - `setValidatorPool(address[] newPool)` – owner sets initial validator set.
 - `setJobRegistry(address registry)` / `setStakeManager(address manager)` – wire core modules.
 - `setCommitRevealWindows(uint256 commitDur, uint256 revealDur)` – configure timing.
@@ -17,6 +18,7 @@ Manages commit‑reveal voting for submitted jobs.
 - `resetJobNonce(uint256 jobId)` – clear validator commitments for a job.
 
 ## Events
+
 - `ValidatorsUpdated(address[] validators)`
 - `TimingUpdated(uint256 commitWindow, uint256 revealWindow)`
 - `ValidatorBoundsUpdated(uint256 minValidators, uint256 maxValidators)`

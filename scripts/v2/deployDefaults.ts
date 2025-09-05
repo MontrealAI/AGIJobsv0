@@ -1,9 +1,9 @@
-import { ethers, run } from "hardhat";
-import { AGIALPHA_DECIMALS } from "../constants";
+import { ethers, run } from 'hardhat';
+import { AGIALPHA_DECIMALS } from '../constants';
 
 async function verify(address: string, args: any[] = []) {
   try {
-    await run("verify:verify", {
+    await run('verify:verify', {
       address,
       constructorArguments: args,
     });
@@ -14,20 +14,20 @@ async function verify(address: string, args: any[] = []) {
 
 async function main() {
   const [owner] = await ethers.getSigners();
-  const withTax = !process.argv.includes("--no-tax");
-  const governanceArgIndex = process.argv.indexOf("--governance");
+  const withTax = !process.argv.includes('--no-tax');
+  const governanceArgIndex = process.argv.indexOf('--governance');
   const governance =
     governanceArgIndex !== -1
       ? process.argv[governanceArgIndex + 1]
       : owner.address;
 
   const Deployer = await ethers.getContractFactory(
-    "contracts/v2/Deployer.sol:Deployer"
+    'contracts/v2/Deployer.sol:Deployer'
   );
   const deployer = await Deployer.deploy();
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
-  console.log("Deployer", deployerAddress);
+  console.log('Deployer', deployerAddress);
 
   const ids = {
     ens: ethers.ZeroAddress,
@@ -44,7 +44,7 @@ async function main() {
   const receipt = await tx.wait();
   const log = receipt.logs.find((l) => l.address === deployerAddress)!;
   const decoded = deployer.interface.decodeEventLog(
-    "Deployed",
+    'Deployed',
     log.data,
     log.topics
   );
@@ -67,7 +67,7 @@ async function main() {
 
   await verify(deployerAddress);
   await verify(stakeManager, [
-    ethers.parseUnits("1", AGIALPHA_DECIMALS),
+    ethers.parseUnits('1', AGIALPHA_DECIMALS),
     0,
     100,
     governance,
@@ -98,14 +98,10 @@ async function main() {
   ]);
   await verify(reputationEngine);
   await verify(disputeModule, [jobRegistry, 0, 0, governance]);
-  await verify(certificateNFT, ["Cert", "CERT"]);
+  await verify(certificateNFT, ['Cert', 'CERT']);
   await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
   await verify(jobRouter, [platformRegistry]);
-  await verify(platformIncentives, [
-    stakeManager,
-    platformRegistry,
-    jobRouter,
-  ]);
+  await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
   await verify(feePool, [stakeManager, 2, governance]);
   await verify(identityRegistry, [
     ethers.ZeroAddress,
@@ -126,12 +122,12 @@ async function main() {
   ]);
   if (withTax) {
     await verify(taxPolicy, [
-      "ipfs://policy",
-      "All taxes on participants; contract and owner exempt",
+      'ipfs://policy',
+      'All taxes on participants; contract and owner exempt',
     ]);
   }
 
-  console.log("Deployment complete");
+  console.log('Deployment complete');
 }
 
 main().catch((err) => {

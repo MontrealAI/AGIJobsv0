@@ -1,16 +1,16 @@
-import hre from "hardhat";
-import { readFileSync } from "fs";
-import { join } from "path";
+import hre from 'hardhat';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 function parseArgs() {
   const argv = process.argv.slice(2);
   const args: Record<string, string | boolean> = {};
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg.startsWith("--")) {
+    if (arg.startsWith('--')) {
       const key = arg.slice(2);
       const next = argv[i + 1];
-      if (next && !next.startsWith("--")) {
+      if (next && !next.startsWith('--')) {
         args[key] = next;
         i++;
       } else {
@@ -23,38 +23,41 @@ function parseArgs() {
 
 async function main() {
   const args = parseArgs();
-  const newOwner = args["new-owner"];
-  if (typeof newOwner !== "string") {
-    throw new Error("--new-owner <address> is required");
+  const newOwner = args['new-owner'];
+  if (typeof newOwner !== 'string') {
+    throw new Error('--new-owner <address> is required');
   }
 
-  const path = join(__dirname, "..", "docs", "deployment-addresses.json");
-  const addresses = JSON.parse(readFileSync(path, "utf8")) as Record<string, string>;
+  const path = join(__dirname, '..', 'docs', 'deployment-addresses.json');
+  const addresses = JSON.parse(readFileSync(path, 'utf8')) as Record<
+    string,
+    string
+  >;
   const { ethers } = hre as any;
   const [signer] = await ethers.getSigners();
   const lowerOwner = newOwner.toLowerCase();
 
-  const governable = ["stakeManager", "jobRegistry"];
+  const governable = ['stakeManager', 'jobRegistry'];
   const ownable = [
-    "validationModule",
-    "reputationEngine",
-    "disputeModule",
-    "certificateNFT",
-    "taxPolicy",
-    "feePool",
-    "platformRegistry",
-    "jobRouter",
-    "platformIncentives",
-    "systemPause",
+    'validationModule',
+    'reputationEngine',
+    'disputeModule',
+    'certificateNFT',
+    'taxPolicy',
+    'feePool',
+    'platformRegistry',
+    'jobRouter',
+    'platformIncentives',
+    'systemPause',
   ];
 
   const governableAbi = [
-    "function setGovernance(address)",
-    "function owner() view returns (address)",
+    'function setGovernance(address)',
+    'function owner() view returns (address)',
   ];
   const ownableAbi = [
-    "function transferOwnership(address)",
-    "function owner() view returns (address)",
+    'function transferOwnership(address)',
+    'function owner() view returns (address)',
   ];
 
   for (const name of governable) {
@@ -64,7 +67,7 @@ async function main() {
       continue;
     }
     const code = await ethers.provider.getCode(addr);
-    if (code === "0x") {
+    if (code === '0x') {
       console.log(`Skipping ${name}: not deployed at ${addr}`);
       continue;
     }
@@ -90,7 +93,7 @@ async function main() {
       continue;
     }
     const code = await ethers.provider.getCode(addr);
-    if (code === "0x") {
+    if (code === '0x') {
       console.log(`Skipping ${name}: not deployed at ${addr}`);
       continue;
     }

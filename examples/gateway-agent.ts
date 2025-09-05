@@ -9,7 +9,7 @@ async function main() {
   await fetch(`${GATEWAY}/agents`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ id, wallet })
+    body: JSON.stringify({ id, wallet }),
   });
 
   const ws = new WebSocket(GATEWAY.replace('http', 'ws'));
@@ -26,7 +26,7 @@ async function main() {
       await fetch(`${GATEWAY}/jobs/${msg.job.jobId}/submit`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ address: wallet, result: 'result data' })
+        body: JSON.stringify({ address: wallet, result: 'result data' }),
       });
     }
   });

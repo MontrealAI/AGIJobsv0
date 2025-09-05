@@ -4,6 +4,7 @@
 This is helpful when dependencies are unknown at deploy time.
 
 ## Initialize and return ownership
+
 1. Deploy `ModuleInstaller`. The deployer is the temporary owner.
 2. Transfer ownership to the governance address if the deployer should not
    perform initialization.
@@ -12,6 +13,7 @@ This is helpful when dependencies are unknown at deploy time.
    returned to the installer owner.
 
 ### Hardhat script
+
 The repository includes `scripts/v2/initializeInstaller.ts` which
 transfers ownership and invokes `initialize`:
 

@@ -1,19 +1,30 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
-describe("Job expiration boundary", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
-  let token, stakeManager, rep, validation, nft, registry, dispute, policy, feePool;
+describe('Job expiration boundary', function () {
+  const { AGIALPHA } = require('../../scripts/constants');
+  let token,
+    stakeManager,
+    rep,
+    validation,
+    nft,
+    registry,
+    dispute,
+    policy,
+    feePool;
   let owner, employer, agent, treasury;
   const reward = 100;
   const stake = 200;
 
   beforeEach(async () => {
     [owner, employer, agent, treasury] = await ethers.getSigners();
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await StakeManager.deploy(
       0,
@@ -27,19 +38,19 @@ describe("Job expiration boundary", function () {
     await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setSlashingPercentages(100, 0);
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
+      'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
     );
     validation = await Validation.deploy();
     const Rep = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     rep = await Rep.deploy(await stakeManager.getAddress());
     const NFT = await ethers.getContractFactory(
-      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+      'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy("Cert", "CERT");
+    nft = await NFT.deploy('Cert', 'CERT');
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
@@ -47,7 +58,7 @@ describe("Job expiration boundary", function () {
       treasury.address
     );
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -63,7 +74,7 @@ describe("Job expiration boundary", function () {
       owner.address
     );
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule'
     );
     dispute = await Dispute.deploy(
       await registry.getAddress(),
@@ -92,11 +103,9 @@ describe("Job expiration boundary", function () {
     await stakeManager
       .connect(owner)
       .setValidationModule(await validation.getAddress());
-    await stakeManager
-      .connect(owner)
-      .setFeePool(await feePool.getAddress());
+    await stakeManager.connect(owner).setFeePool(await feePool.getAddress());
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     const identity = await Identity.deploy();
     await registry
@@ -112,57 +121,53 @@ describe("Job expiration boundary", function () {
     await registry.connect(owner).setFeePct(0);
     await registry.connect(owner).setValidatorRewardPct(0);
     const Policy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
-    policy = await Policy.deploy("ipfs://policy", "ack");
+    policy = await Policy.deploy('ipfs://policy', 'ack');
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await policy.connect(owner).acknowledge();
     await policy.connect(employer).acknowledge();
     await policy.connect(agent).acknowledge();
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), stake);
+    await token.connect(agent).approve(await stakeManager.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
   });
 
-  it("cannot be canceled at deadline + grace - 1", async () => {
+  it('cannot be canceled at deadline + grace - 1', async () => {
     const deadline = (await time.latest()) + 100;
     const grace = 50;
     await registry.connect(owner).setExpirationGracePeriod(grace);
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, "", []);
+    await registry.connect(agent).applyForJob(jobId, '', []);
     await time.increase(deadline + grace - 1 - (await time.latest()));
     await expect(
       registry.connect(treasury).cancelExpiredJob(jobId)
-    ).to.be.revertedWithCustomError(registry, "DeadlineNotReached");
+    ).to.be.revertedWithCustomError(registry, 'DeadlineNotReached');
   });
 
-  it("cancels at deadline + grace and updates state and balances", async () => {
+  it('cancels at deadline + grace and updates state and balances', async () => {
     const deadline = (await time.latest()) + 100;
     const grace = 50;
     await registry.connect(owner).setExpirationGracePeriod(grace);
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, "", []);
+    await registry.connect(agent).applyForJob(jobId, '', []);
     await time.increase(deadline + grace - (await time.latest()));
-    await expect(
-      registry.connect(treasury).cancelExpiredJob(jobId)
-    )
-      .to.emit(registry, "JobExpired")
+    await expect(registry.connect(treasury).cancelExpiredJob(jobId))
+      .to.emit(registry, 'JobExpired')
       .withArgs(jobId, treasury.address)
-      .and.to.emit(registry, "JobFinalized")
+      .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(employer.address)).to.equal(1200);
@@ -173,4 +178,3 @@ describe("Job expiration boundary", function () {
     expect(await stakeManager.stakes(agent.address, 0)).to.equal(0);
   });
 });
-

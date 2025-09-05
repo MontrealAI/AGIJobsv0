@@ -1,18 +1,21 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("JobRegistry Treasury", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
+describe('JobRegistry Treasury', function () {
+  const { AGIALPHA } = require('../../scripts/constants');
   let registry, stakeManager, token;
   let owner, treasury;
 
   beforeEach(async function () {
     [owner, treasury] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await StakeManager.deploy(
       0,
@@ -25,7 +28,7 @@ describe("JobRegistry Treasury", function () {
     );
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -42,15 +45,14 @@ describe("JobRegistry Treasury", function () {
     );
   });
 
-  it("rejects zero treasury address", async function () {
+  it('rejects zero treasury address', async function () {
     await expect(
       registry.connect(owner).setTreasury(ethers.ZeroAddress)
-    ).to.be.revertedWithCustomError(registry, "InvalidTreasury");
+    ).to.be.revertedWithCustomError(registry, 'InvalidTreasury');
   });
 
-  it("sets a valid treasury address", async function () {
+  it('sets a valid treasury address', async function () {
     await registry.connect(owner).setTreasury(treasury.address);
     expect(await registry.treasury()).to.equal(treasury.address);
   });
 });
-

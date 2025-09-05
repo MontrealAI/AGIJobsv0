@@ -1,39 +1,49 @@
-const { ethers } = require("ethers");
+const { ethers } = require('ethers');
 
 // Canonical $AGIALPHA token uses 18 decimals
-const { decimals: AGIALPHA_DECIMALS } = require("../config/agialpha.json");
+const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const registryAbi = [
-  "function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)",
-  "function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)",
-  "function submit(uint256 jobId, bytes32 resultHash, string resultURI)",
-  "function raiseDispute(uint256 jobId, bytes32 evidenceHash)"
+  'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)',
+  'function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)',
+  'function submit(uint256 jobId, bytes32 resultHash, string resultURI)',
+  'function raiseDispute(uint256 jobId, bytes32 evidenceHash)',
 ];
-const stakeAbi = [
-  "function depositStake(uint8 role, uint256 amount)"
-];
+const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
 const validationAbi = [
-  "function commitValidation(uint256 jobId, bytes32 hash, bytes32 label, bytes32[] proof)",
-  "function revealValidation(uint256 jobId, bool approve, bytes32 salt)",
-  "function finalize(uint256 jobId)"
+  'function commitValidation(uint256 jobId, bytes32 hash, bytes32 label, bytes32[] proof)',
+  'function revealValidation(uint256 jobId, bool approve, bytes32 salt)',
+  'function finalize(uint256 jobId)',
 ];
 
-const registry = new ethers.Contract(process.env.JOB_REGISTRY, registryAbi, signer);
-const stakeManager = new ethers.Contract(process.env.STAKE_MANAGER, stakeAbi, signer);
-const validation = new ethers.Contract(process.env.VALIDATION_MODULE, validationAbi, signer);
+const registry = new ethers.Contract(
+  process.env.JOB_REGISTRY,
+  registryAbi,
+  signer
+);
+const stakeManager = new ethers.Contract(
+  process.env.STAKE_MANAGER,
+  stakeAbi,
+  signer
+);
+const validation = new ethers.Contract(
+  process.env.VALIDATION_MODULE,
+  validationAbi,
+  signer
+);
 
 // Post a job with a reward denominated in AGIALPHA.
 // The optional `amount` parameter represents whole tokens and defaults to `1`.
 // Amounts are converted using the fixed 18‑decimal configuration.
-async function postJob(amount = "1") {
+async function postJob(amount = '1') {
   const reward = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
   const deadline = Math.floor(Date.now() / 1000) + 3600;
-  const specHash = ethers.id("spec");
-  await registry.createJob(reward, deadline, specHash, "ipfs://job");
+  const specHash = ethers.id('spec');
+  await registry.createJob(reward, deadline, specHash, 'ipfs://job');
 }
 
 async function stake(amount) {

@@ -1,22 +1,34 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
-const { AGIALPHA, AGIALPHA_DECIMALS } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
 
-describe("comprehensive job flows", function () {
-  const reward = ethers.parseUnits("1000", AGIALPHA_DECIMALS);
-  const stakeRequired = ethers.parseUnits("200", AGIALPHA_DECIMALS);
+describe('comprehensive job flows', function () {
+  const reward = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
+  const stakeRequired = ethers.parseUnits('200', AGIALPHA_DECIMALS);
   const feePct = 10;
   const disputeFee = 0n;
 
-  let token, stakeManager, rep, validation, nft, registry, dispute, feePool, policy, identity;
+  let token,
+    stakeManager,
+    rep,
+    validation,
+    nft,
+    registry,
+    dispute,
+    feePool,
+    policy,
+    identity;
   let owner, employer, agent, platform, buyer;
 
   beforeEach(async () => {
     [owner, employer, agent, platform, buyer] = await ethers.getSigners();
 
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
-    const mintAmount = ethers.parseUnits("10000", AGIALPHA_DECIMALS);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
+    const mintAmount = ethers.parseUnits('10000', AGIALPHA_DECIMALS);
     await token.mint(employer.address, mintAmount);
     await token.mint(agent.address, mintAmount);
     await token.mint(platform.address, mintAmount);
@@ -24,7 +36,7 @@ describe("comprehensive job flows", function () {
     await token.mint(owner.address, mintAmount);
 
     const Stake = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await Stake.deploy(
       0,
@@ -39,22 +51,22 @@ describe("comprehensive job flows", function () {
     await stakeManager.connect(owner).setMinStake(1);
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/mocks/ValidationStub.sol:ValidationStub"
+      'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
     );
     validation = await Validation.deploy();
 
     const Rep = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     rep = await Rep.deploy(await stakeManager.getAddress());
 
     const NFT = await ethers.getContractFactory(
-      "contracts/v2/CertificateNFT.sol:CertificateNFT"
+      'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy("Cert", "CERT");
+    nft = await NFT.deploy('Cert', 'CERT');
 
     const Registry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Registry.deploy(
       ethers.ZeroAddress,
@@ -71,7 +83,7 @@ describe("comprehensive job flows", function () {
     );
 
     const Dispute = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule'
     );
     dispute = await Dispute.deploy(
       await registry.getAddress(),
@@ -83,7 +95,7 @@ describe("comprehensive job flows", function () {
     await dispute.setDisputeWindow(0);
 
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
@@ -93,11 +105,11 @@ describe("comprehensive job flows", function () {
     await feePool.setBurnPct(0);
 
     const Policy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
     policy = await Policy.deploy(
-      "ipfs://policy",
-      "All taxes on participants; contract and owner exempt"
+      'ipfs://policy',
+      'All taxes on participants; contract and owner exempt'
     );
 
     await registry.setModules(
@@ -111,7 +123,7 @@ describe("comprehensive job flows", function () {
     );
     await validation.setJobRegistry(await registry.getAddress());
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await registry.setIdentityRegistry(await identity.getAddress());
@@ -138,7 +150,7 @@ describe("comprehensive job flows", function () {
     await policy.connect(buyer).acknowledge();
   });
 
-  it("executes successful job flow with certificate trade", async () => {
+  it('executes successful job flow with certificate trade', async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
     await identity.addAdditionalAgent(agent.address);
     await token
@@ -149,28 +161,28 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, "", []);
+    await registry.connect(agent).applyForJob(jobId, '', []);
     await validation.setResult(true);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id("result"), "result", "", []);
+      .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
-    const price = ethers.parseUnits("10", AGIALPHA_DECIMALS);
+    const price = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await nft.connect(agent).list(jobId, price);
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await nft.connect(buyer).purchase(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(buyer.address);
   });
 
-  it("rejects unverified agent identities", async () => {
+  it('rejects unverified agent identities', async () => {
     const Verifier = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle"
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
     );
     const verifier = await Verifier.deploy();
     await verifier.setResult(false);
@@ -184,16 +196,16 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     await expect(
-      registry.connect(agent).applyForJob(1, "", [])
-    ).to.be.revertedWithCustomError(registry, "NotAuthorizedAgent");
+      registry.connect(agent).applyForJob(1, '', [])
+    ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
   });
 
-  it("resolves disputes with stake slashing", async () => {
+  it('resolves disputes with stake slashing', async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
     await identity.addAdditionalAgent(agent.address);
     await token
@@ -204,36 +216,36 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     const jobId = 1;
-    await registry.connect(agent).applyForJob(jobId, "", []);
+    await registry.connect(agent).applyForJob(jobId, '', []);
     await validation.setResult(false);
     await registry
       .connect(agent)
-      .submit(jobId, ethers.id("bad"), "bad", "", []);
+      .submit(jobId, ethers.id('bad'), 'bad', '', []);
     await validation.finalize(jobId);
     // fund and impersonate dispute module to resolve
-    await network.provider.send("hardhat_setBalance", [
+    await network.provider.send('hardhat_setBalance', [
       await dispute.getAddress(),
-      "0x56BC75E2D63100000",
+      '0x56BC75E2D63100000',
     ]);
     await network.provider.request({
-      method: "hardhat_impersonateAccount",
+      method: 'hardhat_impersonateAccount',
       params: [await dispute.getAddress()],
     });
     const disputeSigner = await ethers.getSigner(await dispute.getAddress());
     await registry.connect(disputeSigner).resolveDispute(jobId, true);
     await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
+      method: 'hardhat_stopImpersonatingAccount',
       params: [await dispute.getAddress()],
     });
     expect(await stakeManager.stakeOf(agent.address, 0)).to.equal(0);
   });
 
-  it("blocks blacklisted agents", async () => {
+  it('blocks blacklisted agents', async () => {
     const fee = (reward * BigInt(feePct)) / 100n;
     await identity.addAdditionalAgent(agent.address);
     await token
@@ -244,28 +256,27 @@ describe("comprehensive job flows", function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward + fee);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, "uri");
+      .createJob(reward, deadline, specHash, 'uri');
     await rep.setBlacklist(agent.address, true);
     await expect(
-      registry.connect(agent).applyForJob(1, "", [])
-    ).to.be.revertedWithCustomError(registry, "BlacklistedAgent");
+      registry.connect(agent).applyForJob(1, '', [])
+    ).to.be.revertedWithCustomError(registry, 'BlacklistedAgent');
   });
 
-  it("enforces fresh tax policy acknowledgements", async () => {
+  it('enforces fresh tax policy acknowledgements', async () => {
     await policy.bumpPolicyVersion();
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), reward);
     const deadline = (await time.latest()) + 1000;
-    const specHash = ethers.id("spec");
+    const specHash = ethers.id('spec');
     await expect(
-      registry.connect(employer).createJob(reward, deadline, specHash, "uri")
+      registry.connect(employer).createJob(reward, deadline, specHash, 'uri')
     )
-      .to.be.revertedWithCustomError(registry, "TaxPolicyNotAcknowledged")
+      .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
       .withArgs(employer.address);
   });
 });
-

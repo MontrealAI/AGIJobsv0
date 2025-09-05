@@ -4,12 +4,12 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 ## Roles
 
-| Role | StakeManager enum | Purpose |
-|------|-------------------|---------|
-| Employer | n/a | Posts jobs and escrows rewards. |
-| Agent | `0` | Completes jobs. |
-| Validator | `1` | Audits and finalises jobs. |
-| Platform Operator | `2` | Hosts an AGI Jobs portal and receives protocol fees. |
+| Role              | StakeManager enum | Purpose                                              |
+| ----------------- | ----------------- | ---------------------------------------------------- |
+| Employer          | n/a               | Posts jobs and escrows rewards.                      |
+| Agent             | `0`               | Completes jobs.                                      |
+| Validator         | `1`               | Audits and finalises jobs.                           |
+| Platform Operator | `2`               | Hosts an AGI Jobs portal and receives protocol fees. |
 
 ## Core Modules
 
@@ -55,4 +55,3 @@ These setters enable economic and architectural adjustments without redeploying 
 ## Compliance Notes
 
 The incentive system is designed to minimise off‑chain reporting by distributing rewards on‑chain, but local laws still apply. Operators should monitor regulatory changes and self‑report earnings as required. The protocol provides no tax forms or KYC facilities and accepts no responsibility for individual compliance.
-

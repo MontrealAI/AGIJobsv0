@@ -1,13 +1,13 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("JobRegistry ether rejection", function () {
+describe('JobRegistry ether rejection', function () {
   let owner, registry;
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     registry = await Factory.deploy(
       ethers.ZeroAddress,
@@ -25,23 +25,23 @@ describe("JobRegistry ether rejection", function () {
     await registry.waitForDeployment();
   });
 
-  it("reverts on direct ether transfer", async () => {
+  it('reverts on direct ether transfer', async () => {
     await expect(
       owner.sendTransaction({ to: await registry.getAddress(), value: 1 })
-    ).to.be.revertedWith("JobRegistry: no ether");
+    ).to.be.revertedWith('JobRegistry: no ether');
   });
 
-  it("reverts on unknown calldata with value", async () => {
+  it('reverts on unknown calldata with value', async () => {
     await expect(
       owner.sendTransaction({
         to: await registry.getAddress(),
-        data: "0x12345678",
+        data: '0x12345678',
         value: 1,
       })
-    ).to.be.revertedWith("JobRegistry: no ether");
+    ).to.be.revertedWith('JobRegistry: no ether');
   });
 
-  it("reports tax exemption", async () => {
+  it('reports tax exemption', async () => {
     expect(await registry.isTaxExempt()).to.equal(true);
   });
 });

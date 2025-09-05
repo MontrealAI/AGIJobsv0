@@ -1,52 +1,52 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
 function namehash(root, label) {
   return ethers.keccak256(
     ethers.solidityPacked(
-      ["bytes32", "bytes32"],
+      ['bytes32', 'bytes32'],
       [root, ethers.keccak256(ethers.toUtf8Bytes(label))]
     )
   );
 }
 
-describe("Validator ENS integration", function () {
+describe('Validator ENS integration', function () {
   let owner, validator, other, v2, v3;
   let ens, resolver, wrapper, identity;
   let stakeManager, jobRegistry, reputation, validation;
-  const root = ethers.id("agi");
+  const root = ethers.id('agi');
 
   beforeEach(async () => {
     [owner, validator, other, v2, v3] = await ethers.getSigners();
 
-    const ENS = await ethers.getContractFactory("MockENS");
+    const ENS = await ethers.getContractFactory('MockENS');
     ens = await ENS.deploy();
     await ens.waitForDeployment();
 
-    const Resolver = await ethers.getContractFactory("MockResolver");
+    const Resolver = await ethers.getContractFactory('MockResolver');
     resolver = await Resolver.deploy();
     await resolver.waitForDeployment();
 
-    const Wrapper = await ethers.getContractFactory("MockNameWrapper");
+    const Wrapper = await ethers.getContractFactory('MockNameWrapper');
     wrapper = await Wrapper.deploy();
     await wrapper.waitForDeployment();
 
     await ens.setResolver(root, await resolver.getAddress());
 
-    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stakeManager = await StakeMock.deploy();
     await stakeManager.waitForDeployment();
 
-    const JobMock = await ethers.getContractFactory("MockJobRegistry");
+    const JobMock = await ethers.getContractFactory('MockJobRegistry');
     jobRegistry = await JobMock.deploy();
     await jobRegistry.waitForDeployment();
 
-    const RepMock = await ethers.getContractFactory("MockReputationEngine");
+    const RepMock = await ethers.getContractFactory('MockReputationEngine');
     reputation = await RepMock.deploy();
     await reputation.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
+      'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
     );
     identity = await Identity.deploy(
       await ens.getAddress(),
@@ -58,7 +58,7 @@ describe("Validator ENS integration", function () {
     await identity.waitForDeployment();
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       await jobRegistry.getAddress(),
@@ -76,9 +76,9 @@ describe("Validator ENS integration", function () {
     // add filler validators
     await identity.addAdditionalValidator(v2.address);
     await identity.addAdditionalValidator(v3.address);
-    await stakeManager.setStake(validator.address, 1, ethers.parseEther("1"));
-    await stakeManager.setStake(v2.address, 1, ethers.parseEther("1"));
-    await stakeManager.setStake(v3.address, 1, ethers.parseEther("1"));
+    await stakeManager.setStake(validator.address, 1, ethers.parseEther('1'));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther('1'));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther('1'));
     await validation.setValidatorPool([
       validator.address,
       v2.address,
@@ -86,7 +86,7 @@ describe("Validator ENS integration", function () {
     ]);
   });
 
-  it("rejects validators without subdomains and emits events on success", async () => {
+  it('rejects validators without subdomains and emits events on success', async () => {
     const job = {
       employer: owner.address,
       agent: ethers.ZeroAddress,
@@ -99,53 +99,51 @@ describe("Validator ENS integration", function () {
     };
     await jobRegistry.setJob(1, job);
     await validation.selectValidators(1, 0);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     await expect(
       validation.connect(v2).selectValidators(1, 0)
-    ).to.be.revertedWithCustomError(validation, "InsufficientValidators");
+    ).to.be.revertedWithCustomError(validation, 'InsufficientValidators');
 
-    await validation.setValidatorSubdomains([validator.address], ["v"]);
+    await validation.setValidatorSubdomains([validator.address], ['v']);
     await wrapper.setOwner(
-      ethers.toBigInt(namehash(root, "v")),
+      ethers.toBigInt(namehash(root, 'v')),
       validator.address
     );
-    await resolver.setAddr(namehash(root, "v"), validator.address);
+    await resolver.setAddr(namehash(root, 'v'), validator.address);
 
     await jobRegistry.setJob(2, job);
     await validation.selectValidators(2, 99999);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     await validation.connect(v2).selectValidators(2, 0);
     await expect(
-      validation
-        .connect(validator)
-        .commitValidation(2, ethers.id("h"), "v", [])
+      validation.connect(validator).commitValidation(2, ethers.id('h'), 'v', [])
     )
-      .to.emit(identity, "OwnershipVerified")
-      .withArgs(validator.address, "v")
-      .and.to.emit(validation, "ValidationCommitted");
+      .to.emit(identity, 'OwnershipVerified')
+      .withArgs(validator.address, 'v')
+      .and.to.emit(validation, 'ValidationCommitted');
   });
 
-  it("rejects invalid Merkle proofs", async () => {
-      const leaf = ethers.solidityPackedKeccak256(
-        ["address"],
-        [validator.address]
-      );
-      await identity.setValidatorMerkleRoot(leaf);
-    const badProof = [ethers.id("bad")];
+  it('rejects invalid Merkle proofs', async () => {
+    const leaf = ethers.solidityPackedKeccak256(
+      ['address'],
+      [validator.address]
+    );
+    await identity.setValidatorMerkleRoot(leaf);
+    const badProof = [ethers.id('bad')];
     await expect(
-      identity.verifyValidator(validator.address, "v", badProof)
-    ).to.not.emit(identity, "OwnershipVerified");
+      identity.verifyValidator(validator.address, 'v', badProof)
+    ).to.not.emit(identity, 'OwnershipVerified');
     expect(
       await identity.verifyValidator.staticCall(
         validator.address,
-        "v",
+        'v',
         badProof
       )
     ).to.equal(false);
   });
 
-  it("removes validator privileges after subdomain transfer and allows override", async () => {
-    const node = namehash(root, "v");
+  it('removes validator privileges after subdomain transfer and allows override', async () => {
+    const node = namehash(root, 'v');
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
     await validation.setValidatorPool([
@@ -153,13 +151,9 @@ describe("Validator ENS integration", function () {
       v2.address,
       v3.address,
     ]);
-    await validation.setValidatorSubdomains([validator.address], ["v"]);
+    await validation.setValidatorSubdomains([validator.address], ['v']);
 
-    await stakeManager.setStake(
-      validator.address,
-      1,
-      ethers.parseEther("1")
-    );
+    await stakeManager.setStake(validator.address, 1, ethers.parseEther('1'));
 
     const job = {
       employer: owner.address,
@@ -173,36 +167,29 @@ describe("Validator ENS integration", function () {
     };
     await jobRegistry.setJob(1, job);
     await validation.selectValidators(1, 11111);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     await validation.connect(v2).selectValidators(1, 0);
 
     // transfer ENS ownership
     await wrapper.setOwner(ethers.toBigInt(node), other.address);
     await expect(
-      validation
-        .connect(validator)
-        .commitValidation(1, ethers.id("h"), "v", [])
-    ).to.be.revertedWithCustomError(validation, "UnauthorizedValidator");
+      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
+    ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
 
     // non-owner cannot override
     await expect(
       identity.connect(other).addAdditionalValidator(validator.address)
-    ).to.be.revertedWithCustomError(
-      identity,
-      "OwnableUnauthorizedAccount"
-    );
+    ).to.be.revertedWithCustomError(identity, 'OwnableUnauthorizedAccount');
 
     // owner override and commit succeeds
     await identity.addAdditionalValidator(validator.address);
     await expect(
-      validation
-        .connect(validator)
-        .commitValidation(1, ethers.id("h"), "v", [])
-    ).to.emit(validation, "ValidationCommitted");
+      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
+    ).to.emit(validation, 'ValidationCommitted');
   });
 
-  it("skips blacklisted validators", async () => {
-    const node = namehash(root, "v");
+  it('skips blacklisted validators', async () => {
+    const node = namehash(root, 'v');
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
     await validation.setValidatorPool([
@@ -210,12 +197,8 @@ describe("Validator ENS integration", function () {
       v2.address,
       v3.address,
     ]);
-    await validation.setValidatorSubdomains([validator.address], ["v"]);
-    await stakeManager.setStake(
-      validator.address,
-      1,
-      ethers.parseEther("1")
-    );
+    await validation.setValidatorSubdomains([validator.address], ['v']);
+    await stakeManager.setStake(validator.address, 1, ethers.parseEther('1'));
     await reputation.setBlacklist(validator.address, true);
     const job = {
       employer: owner.address,
@@ -229,9 +212,9 @@ describe("Validator ENS integration", function () {
     };
     await jobRegistry.setJob(1, job);
     await validation.selectValidators(1, 22222);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     await expect(
       validation.connect(v2).selectValidators(1, 0)
-    ).to.be.revertedWithCustomError(validation, "InsufficientValidators");
+    ).to.be.revertedWithCustomError(validation, 'InsufficientValidators');
   });
 });

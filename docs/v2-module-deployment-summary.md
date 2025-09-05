@@ -5,21 +5,23 @@ and wiring contracts together. The `$AGIALPHA` token, ENS roots, Merkle
 roots and all numeric parameters can be updated later by the owner.
 
 ## 1. Deployment order
+
 1. **StakeManager** – pass the staking token and treasury details.
 2. **ReputationEngine** – constructor accepts the `StakeManager` address.
 3. **IdentityRegistry** – supply ENS registry, NameWrapper, `StakeManager`
    and the initial root nodes or `0x00`.
 4. **ValidationModule** – deploy with placeholder `jobRegistry = 0` and
-the `StakeManager` address.
+   the `StakeManager` address.
 5. **DisputeModule** – deploy with `jobRegistry = 0` and desired fee.
 6. **CertificateNFT** – deploy with name and symbol.
 7. **FeePool** – point at the staking token and `StakeManager`.
 8. **JobRegistry** – no constructor args.
 
 ## 2. Wiring
+
 1. On `JobRegistry` call
    `setModules(stakeManager, validationModule, reputationEngine,
-   disputeModule, certificateNFT, feePool)`.
+disputeModule, certificateNFT, feePool)`.
 2. Call `setJobRegistry(jobRegistry)` on `StakeManager`,
    `ValidationModule`, `DisputeModule` and `CertificateNFT`.
 3. On `ValidationModule` also call `setIdentityRegistry(identityRegistry)`.
@@ -27,6 +29,7 @@ the `StakeManager` address.
    user funds.
 
 ## 3. Post-deploy configuration
+
 1. **Token rotation** – legacy deployments may change the staking token by calling
 2. **ENS & Merkle updates** – adjust namehashes and allowlists through
    `IdentityRegistry.setAgentRootNode`, `setClubRootNode`,

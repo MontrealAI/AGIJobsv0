@@ -5,12 +5,14 @@ All modules operate on-chain in the 18‑decimal `$AGIALPHA` token and are fully
 configurable by the contract owner.
 
 ## Objectives
+
 - Gate platform activation by stake while keeping the owner tax neutral.
 - Weight routing and fee share by on-chain stake and reputation.
 - Keep all parameters owner updateable through `Ownable` setters.
 - Expose simple Etherscan flows so non-technical operators can participate.
 
 ## Tasks
+
 1. **StakeManager integration**
    - Deploy `StakeManager(token, owner, treasury)` and wire to `JobRegistry`.
 2. **PlatformRegistry & JobRouter**
@@ -27,6 +29,7 @@ configurable by the contract owner.
    - Run `npm test` and document gas costs.
 
 ## Definition of Done
+
 - Operators can opt in via one transaction and immediately gain routing priority
   and fee share.
 - The main deployer remains a zero‑stake, zero‑revenue participant.

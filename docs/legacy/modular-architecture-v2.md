@@ -2,12 +2,13 @@
 
 # Modular AGIJobs v2 Architecture
 
-AGIJobs v2 replaces the monolithic manager with immutable, single‑purpose modules.  Each contract is deployed once, owns its
-state, and exposes a minimal interface.  The owner (ideally a multisig) may update parameters or swap module addresses without
+AGIJobs v2 replaces the monolithic manager with immutable, single‑purpose modules. Each contract is deployed once, owns its
+state, and exposes a minimal interface. The owner (ideally a multisig) may update parameters or swap module addresses without
 redeploying the entire suite, delivering governance composability while keeping on‑chain logic simple enough for Etherscan
 interactions.
 
 ## Module Graph
+
 ```mermaid
 graph LR
   JobRegistry --> StakeManager
@@ -24,19 +25,21 @@ graph LR
 
 ## Module Responsibilities & Owner Controls
 
-| Module | Core responsibility | Owner abilities |
-| --- | --- | --- |
-| **JobRegistry** | canonical registry for job metadata and state transitions; routes calls to companion modules | swap module addresses with `setModules`, pause job creation, and adjust global settings |
-| **StakeManager** | holds escrowed rewards and participant stakes; executes payouts and slashing | tune minimum stakes and slashing percentages |
-| **ValidationModule** | selects validators and runs the commit‑reveal finalization | update committee size and timing windows through `setParameters` |
-| **ReputationEngine** | accrues or subtracts reputation; enforces blacklists | alter reputation weights, thresholds and blacklist entries |
-| **DisputeModule** | optional dispute layer for contested jobs | set dispute fees and moderator/jury addresses |
-| **CertificateNFT** | mints ERC‑721 completion certificates | update base URI or registry address |
+| Module               | Core responsibility                                                                          | Owner abilities                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **JobRegistry**      | canonical registry for job metadata and state transitions; routes calls to companion modules | swap module addresses with `setModules`, pause job creation, and adjust global settings |
+| **StakeManager**     | holds escrowed rewards and participant stakes; executes payouts and slashing                 | tune minimum stakes and slashing percentages                                            |
+| **ValidationModule** | selects validators and runs the commit‑reveal finalization                                   | update committee size and timing windows through `setParameters`                        |
+| **ReputationEngine** | accrues or subtracts reputation; enforces blacklists                                         | alter reputation weights, thresholds and blacklist entries                              |
+| **DisputeModule**    | optional dispute layer for contested jobs                                                    | set dispute fees and moderator/jury addresses                                           |
+| **CertificateNFT**   | mints ERC‑721 completion certificates                                                        | update base URI or registry address                                                     |
 
 All modules are deployed as **immutable** contracts. Governance upgrades occur by deploying a new module and pointing `JobRegistry` to the replacement. Every setter is protected by `onlyOwner`, enabling parameter updates without exposing control to external parties.
 
 ## Interfaces
+
 Example Solidity interfaces (Solidity ^0.8.20):
+
 ```solidity
 interface IJobRegistry {
     event JobCreated(
@@ -94,6 +97,7 @@ interface ICertificateNFT {
 ```
 
 ## Solidity Structure Recommendations
+
 - Mark module addresses `immutable` where possible and cache them in local variables during calls.
 - Use `uint64` or `uint128` for counters and timestamps to pack storage slots.
 - Favor `external` and `calldata` for user‑facing functions; use custom errors instead of revert strings.
@@ -102,6 +106,7 @@ interface ICertificateNFT {
 - Emit events for every parameter change to aid off‑chain governance tracking.
 
 ## Incentive & Physics Analogy
+
 Stakes create the system's Hamiltonian \(H\), representing potential energy locked in collateral. Commit‑reveal voting injects
 entropy \(S\) by broadening the distribution of possible validator states. Owner‑tuned parameters act as temperature \(T\), so
 participants evolve toward the configuration that minimises the Gibbs free energy \(G = H - T S\). The Nash equilibrium aligns
@@ -109,16 +114,19 @@ with this ground state: truthful behaviour minimises energy, while cheating rais
 rendering deviation economically unattractive.
 
 ## Token Configuration
-The `StakeManager` stores the ERC‑20 used for rewards, staking and dispute fees.  By default it references
+
+The `StakeManager` stores the ERC‑20 used for rewards, staking and dispute fees. By default it references
 [`$AGIALPHA`](https://etherscan.io/address/0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) (18 decimals). Token rotation via
 The $AGIALPHA token address is fixed at deployment. All amounts must be provided in base units
 (1 token = 1e18 units).
 
 ## Explorer‑Friendly Design
+
 All public methods use simple data types so employers, agents and validators can interact through Etherscan's **Write** tab.
 Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-v2-agialpha.md](deployment-v2-agialpha.md).
 
 ## Governance & Composability
+
 - Every module inherits `Ownable`; only the contract owner or its designated multisig can adjust parameters.
 - `JobRegistry.setModules` lets the owner swap in new `ValidationModule`, `StakeManager`, `ReputationEngine`, `DisputeModule`,
   or `CertificateNFT` addresses without migrating state.
@@ -126,6 +134,7 @@ Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-v2-a
   audit trail.
 
 ## Game‑Theoretic Incentives
+
 - Agent and validator stakes create an energy cost for deviation; expected slashing exceeds any short‑term gain.
 - The commit–reveal scheme, combined with random validator selection, raises the entropy term so collusion is statistically
   disfavoured.
@@ -134,4 +143,3 @@ Deployment and configuration steps for $AGIALPHA appear in [docs/deployment-v2-a
 - Appeals require a token fee via `DisputeModule`, ensuring that only disputes with positive expected value are raised.
 - The equilibrium strategy profile is truthful participation: any unilateral deviation results in lower expected utility, meeting
   Nash equilibrium conditions and keeping the protocol's free energy at a minimum.
-

@@ -1,23 +1,23 @@
-const { ethers } = require("hardhat");
-const { expect } = require("chai");
+const { ethers } = require('hardhat');
+const { expect } = require('chai');
 
-describe("ValidationModule committee size", function () {
+describe('ValidationModule committee size', function () {
   let owner, employer, v1, v2, v3, v4;
   let validation, stakeManager, jobRegistry, identity;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3, v4] = await ethers.getSigners();
 
-    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stakeManager = await StakeMock.deploy();
     await stakeManager.waitForDeployment();
 
-    const JobMock = await ethers.getContractFactory("MockJobRegistry");
+    const JobMock = await ethers.getContractFactory('MockJobRegistry');
     jobRegistry = await JobMock.deploy();
     await jobRegistry.waitForDeployment();
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       await jobRegistry.getAddress(),
@@ -31,7 +31,7 @@ describe("ValidationModule committee size", function () {
     await validation.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
@@ -46,10 +46,10 @@ describe("ValidationModule committee size", function () {
     await identity.addAdditionalValidator(v3.address);
     await identity.addAdditionalValidator(v4.address);
 
-    await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
-    await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
-    await stakeManager.setStake(v3.address, 1, ethers.parseEther("10"));
-    await stakeManager.setStake(v4.address, 1, ethers.parseEther("5"));
+    await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther('50'));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther('10'));
+    await stakeManager.setStake(v4.address, 1, ethers.parseEther('5'));
 
     await validation
       .connect(owner)
@@ -72,22 +72,25 @@ describe("ValidationModule committee size", function () {
   });
 
   async function advance(seconds) {
-    await ethers.provider.send("evm_increaseTime", [seconds]);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_increaseTime', [seconds]);
+    await ethers.provider.send('evm_mine', []);
   }
 
   async function start(jobId, entropy = 0) {
     const addr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [addr, "0x1000000000000000000"]);
-    await ethers.provider.send("hardhat_impersonateAccount", [addr]);
+    await ethers.provider.send('hardhat_setBalance', [
+      addr,
+      '0x1000000000000000000',
+    ]);
+    await ethers.provider.send('hardhat_impersonateAccount', [addr]);
     const registry = await ethers.getSigner(addr);
     await validation.connect(registry).start(jobId, entropy);
-    await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('hardhat_stopImpersonatingAccount', [addr]);
+    await ethers.provider.send('evm_mine', []);
     return validation.connect(v1).selectValidators(jobId, 0);
   }
 
-  it("respects validator count bounds", async () => {
+  it('respects validator count bounds', async () => {
     await validation.connect(owner).setValidatorsPerJob(3);
     await start(1);
     expect((await validation.validators(1)).length).to.equal(3);
@@ -102,13 +105,13 @@ describe("ValidationModule committee size", function () {
 
     await expect(
       validation.connect(owner).setValidatorsPerJob(2)
-    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
+    ).to.be.revertedWithCustomError(validation, 'InvalidValidatorBounds');
     await expect(
       validation.connect(owner).setValidatorsPerJob(10)
-    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
+    ).to.be.revertedWithCustomError(validation, 'InvalidValidatorBounds');
   });
 
-  it("uses stored committee size for quorum", async () => {
+  it('uses stored committee size for quorum', async () => {
     await validation.connect(owner).setValidatorsPerJob(3);
     await start(4);
     const selected = await validation.validators(4);
@@ -119,29 +122,34 @@ describe("ValidationModule committee size", function () {
       [v4.address.toLowerCase()]: v4,
     };
 
-    const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
-    const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
+    const salt1 = ethers.keccak256(ethers.toUtf8Bytes('salt1'));
+    const salt2 = ethers.keccak256(ethers.toUtf8Bytes('salt2'));
     const nonce = await validation.jobNonce(4);
-    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[4n, nonce, true, salt1, ethers.ZeroHash]);
-    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[4n, nonce, true, salt2, ethers.ZeroHash]);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [4n, nonce, true, salt1, ethers.ZeroHash]
+    );
+    const commit2 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [4n, nonce, true, salt2, ethers.ZeroHash]
+    );
 
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .commitValidation(4, commit1, "", []);
+      .commitValidation(4, commit1, '', []);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .commitValidation(4, commit2, "", []);
+      .commitValidation(4, commit2, '', []);
 
     await advance(61);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .revealValidation(4, true, salt1, "", []);
+      .revealValidation(4, true, salt1, '', []);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .revealValidation(4, true, salt2, "", []);
+      .revealValidation(4, true, salt2, '', []);
     await advance(61);
 
     expect(await validation.finalize.staticCall(4)).to.equal(false);
   });
 });
-

@@ -1,27 +1,27 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("ValidationModule V2", function () {
+describe('ValidationModule V2', function () {
   let owner, employer, v1, v2, v3;
   let validation, stakeManager, jobRegistry, reputation, identity;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
 
-    const StakeMock = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stakeManager = await StakeMock.deploy();
     await stakeManager.waitForDeployment();
 
-    const JobMock = await ethers.getContractFactory("MockJobRegistry");
+    const JobMock = await ethers.getContractFactory('MockJobRegistry');
     jobRegistry = await JobMock.deploy();
     await jobRegistry.waitForDeployment();
 
-    const RepMock = await ethers.getContractFactory("MockReputationEngine");
+    const RepMock = await ethers.getContractFactory('MockReputationEngine');
     reputation = await RepMock.deploy();
     await reputation.waitForDeployment();
 
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     validation = await Validation.deploy(
       await jobRegistry.getAddress(),
@@ -38,7 +38,7 @@ describe("ValidationModule V2", function () {
       .setReputationEngine(await reputation.getAddress());
 
     const Identity = await ethers.getContractFactory(
-      "contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock"
+      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
@@ -52,9 +52,9 @@ describe("ValidationModule V2", function () {
     await identity.addAdditionalValidator(v3.address);
 
     // validator stakes and pool
-    await stakeManager.setStake(v1.address, 1, ethers.parseEther("100"));
-    await stakeManager.setStake(v2.address, 1, ethers.parseEther("50"));
-    await stakeManager.setStake(v3.address, 1, ethers.parseEther("10"));
+    await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));
+    await stakeManager.setStake(v2.address, 1, ethers.parseEther('50'));
+    await stakeManager.setStake(v3.address, 1, ethers.parseEther('10'));
 
     await validation
       .connect(owner)
@@ -75,54 +75,57 @@ describe("ValidationModule V2", function () {
   });
 
   async function advance(seconds) {
-    await ethers.provider.send("evm_increaseTime", [seconds]);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_increaseTime', [seconds]);
+    await ethers.provider.send('evm_mine', []);
   }
 
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     return validation.connect(v1).selectValidators(jobId, 0);
   }
 
   async function start(jobId, entropy = 0) {
     const addr = await jobRegistry.getAddress();
-    await ethers.provider.send("hardhat_setBalance", [addr, "0x1000000000000000000"]);
-    await ethers.provider.send("hardhat_impersonateAccount", [addr]);
+    await ethers.provider.send('hardhat_setBalance', [
+      addr,
+      '0x1000000000000000000',
+    ]);
+    await ethers.provider.send('hardhat_impersonateAccount', [addr]);
     const registry = await ethers.getSigner(addr);
     await validation.connect(registry).start(jobId, entropy);
-    await ethers.provider.send("hardhat_stopImpersonatingAccount", [addr]);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('hardhat_stopImpersonatingAccount', [addr]);
+    await ethers.provider.send('evm_mine', []);
     return validation.connect(v1).selectValidators(jobId, 0);
   }
 
-  it("selects validators", async () => {
+  it('selects validators', async () => {
     const tx = await select(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     );
     const selected = event.args[1];
     expect(selected.length).to.equal(3);
   });
 
-  it("starts validation", async () => {
+  it('starts validation', async () => {
     const tx = await start(1, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     );
     expect(event.args[1].length).to.equal(3);
   });
 
-  it("reverts when called by non-registry", async () => {
+  it('reverts when called by non-registry', async () => {
     await expect(validation.start(1, 0)).to.be.revertedWithCustomError(
       validation,
-      "OnlyJobRegistry"
+      'OnlyJobRegistry'
     );
   });
 
-  it("reverts if job not submitted", async () => {
+  it('reverts if job not submitted', async () => {
     const jobStruct = {
       employer: employer.address,
       agent: ethers.ZeroAddress,
@@ -136,14 +139,13 @@ describe("ValidationModule V2", function () {
     await jobRegistry.setJob(2, jobStruct);
     await expect(start(2, 0)).to.be.revertedWithCustomError(
       validation,
-      "JobNotSubmitted"
+      'JobNotSubmitted'
     );
   });
 
-
-  it("reverts when selecting without stake manager configured", async () => {
+  it('reverts when selecting without stake manager configured', async () => {
     const Validation = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     const unconfigured = await Validation.deploy(
       await jobRegistry.getAddress(),
@@ -163,57 +165,58 @@ describe("ValidationModule V2", function () {
       .setValidatorPool([v1.address, v2.address, v3.address]);
 
     await unconfigured.selectValidators(1, 0);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     await expect(
       unconfigured.connect(v1).selectValidators(1, 0)
-    ).to.be.revertedWithCustomError(unconfigured, "StakeManagerNotSet");
+    ).to.be.revertedWithCustomError(unconfigured, 'StakeManagerNotSet');
   });
 
-  it("requires multiple entropy contributors before finalization", async () => {
+  it('requires multiple entropy contributors before finalization', async () => {
     const jobId = 1;
     await validation.connect(v1).selectValidators(jobId, 123);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
 
-    await expect(
-      validation.connect(v1).selectValidators(jobId, 0)
-    ).to.emit(validation, "SelectionReset");
+    await expect(validation.connect(v1).selectValidators(jobId, 0)).to.emit(
+      validation,
+      'SelectionReset'
+    );
 
     let selected = await validation.validators(jobId);
     expect(selected.length).to.equal(0);
 
     await validation.connect(v2).selectValidators(jobId, 456);
-    await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send('evm_mine', []);
     const tx = await validation.connect(v1).selectValidators(jobId, 0);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     );
     expect(event.args[1].length).to.equal(3);
   });
 
-  it("rejects zero stake manager address", async () => {
+  it('rejects zero stake manager address', async () => {
     await expect(
       validation.connect(owner).setStakeManager(ethers.ZeroAddress)
-    ).to.be.revertedWithCustomError(validation, "InvalidStakeManager");
+    ).to.be.revertedWithCustomError(validation, 'InvalidStakeManager');
   });
 
-  it("rejects validators less than three via setParameters", async () => {
+  it('rejects validators less than three via setParameters', async () => {
     await expect(
       validation.connect(owner).setParameters(2, 60, 60)
-    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
+    ).to.be.revertedWithCustomError(validation, 'InvalidValidatorBounds');
   });
 
-  it("rejects validator bounds below three", async () => {
+  it('rejects validator bounds below three', async () => {
     await expect(
       validation.connect(owner).setValidatorBounds(2, 3)
-    ).to.be.revertedWithCustomError(validation, "InvalidValidatorBounds");
+    ).to.be.revertedWithCustomError(validation, 'InvalidValidatorBounds');
   });
 
-  it("selects stake-weighted validators", async () => {
+  it('selects stake-weighted validators', async () => {
     const tx = await select(1);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     );
     const selected = event.args[1];
 
@@ -225,34 +228,37 @@ describe("ValidationModule V2", function () {
     }
   });
 
-  it("does not slash honest validators", async () => {
+  it('does not slash honest validators', async () => {
     await select(1);
-    const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
-    const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
-    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("salt3"));
+    const salt1 = ethers.keccak256(ethers.toUtf8Bytes('salt1'));
+    const salt2 = ethers.keccak256(ethers.toUtf8Bytes('salt2'));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes('salt3'));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
-    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt2, ethers.ZeroHash]);
-    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt3, ethers.ZeroHash]);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt1, ethers.ZeroHash]
+    );
+    const commit2 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt2, ethers.ZeroHash]
+    );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt3, ethers.ZeroHash]
+    );
     await (
-      await validation.connect(v1).commitValidation(1, commit1, "", [])
+      await validation.connect(v1).commitValidation(1, commit1, '', [])
     ).wait();
     await (
-      await validation.connect(v2).commitValidation(1, commit2, "", [])
+      await validation.connect(v2).commitValidation(1, commit2, '', [])
     ).wait();
     await (
-      await validation.connect(v3).commitValidation(1, commit3, "", [])
+      await validation.connect(v3).commitValidation(1, commit3, '', [])
     ).wait();
     await advance(61);
-    await validation
-      .connect(v1)
-      .revealValidation(1, true, salt1, "", []);
-    await validation
-      .connect(v2)
-      .revealValidation(1, true, salt2, "", []);
-    await validation
-      .connect(v3)
-      .revealValidation(1, true, salt3, "", []);
+    await validation.connect(v1).revealValidation(1, true, salt1, '', []);
+    await validation.connect(v2).revealValidation(1, true, salt2, '', []);
+    await validation.connect(v3).revealValidation(1, true, salt3, '', []);
     await advance(61);
     expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
@@ -261,44 +267,47 @@ describe("ValidationModule V2", function () {
       const stake = await stakeManager.stakeOf(addr, 1);
       const expectedStake =
         addr.toLowerCase() === v1.address.toLowerCase()
-          ? ethers.parseEther("100")
+          ? ethers.parseEther('100')
           : addr.toLowerCase() === v2.address.toLowerCase()
-          ? ethers.parseEther("50")
-          : ethers.parseEther("10");
+          ? ethers.parseEther('50')
+          : ethers.parseEther('10');
       expect(stake).to.equal(expectedStake);
       expect(await reputation.reputation(addr)).to.equal(1n);
     }
   });
 
-  it("slashes validator voting against majority", async () => {
+  it('slashes validator voting against majority', async () => {
     await select(1);
-    const salt1 = ethers.keccak256(ethers.toUtf8Bytes("salt1"));
-    const salt2 = ethers.keccak256(ethers.toUtf8Bytes("salt2"));
-    const salt3 = ethers.keccak256(ethers.toUtf8Bytes("salt3"));
+    const salt1 = ethers.keccak256(ethers.toUtf8Bytes('salt1'));
+    const salt2 = ethers.keccak256(ethers.toUtf8Bytes('salt2'));
+    const salt3 = ethers.keccak256(ethers.toUtf8Bytes('salt3'));
     const nonce = await validation.jobNonce(1);
-    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt1, ethers.ZeroHash]);
-    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt2, ethers.ZeroHash]);
-    const commit3 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, false, salt3, ethers.ZeroHash]);
+    const commit1 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt1, ethers.ZeroHash]
+    );
+    const commit2 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt2, ethers.ZeroHash]
+    );
+    const commit3 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, false, salt3, ethers.ZeroHash]
+    );
     await (
-      await validation.connect(v1).commitValidation(1, commit1, "", [])
+      await validation.connect(v1).commitValidation(1, commit1, '', [])
     ).wait();
     await (
-      await validation.connect(v2).commitValidation(1, commit2, "", [])
+      await validation.connect(v2).commitValidation(1, commit2, '', [])
     ).wait();
     await (
-      await validation.connect(v3).commitValidation(1, commit3, "", [])
+      await validation.connect(v3).commitValidation(1, commit3, '', [])
     ).wait();
     await advance(61);
     const stakeBefore = await stakeManager.stakeOf(v3.address, 1);
-    await validation
-      .connect(v1)
-      .revealValidation(1, true, salt1, "", []);
-    await validation
-      .connect(v2)
-      .revealValidation(1, true, salt2, "", []);
-    await validation
-      .connect(v3)
-      .revealValidation(1, false, salt3, "", []);
+    await validation.connect(v1).revealValidation(1, true, salt1, '', []);
+    await validation.connect(v2).revealValidation(1, true, salt2, '', []);
+    await validation.connect(v3).revealValidation(1, false, salt3, '', []);
     await advance(61);
     await validation.finalize(1);
     expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
@@ -309,23 +318,24 @@ describe("ValidationModule V2", function () {
     expect(await reputation.reputation(v3.address)).to.equal(0n);
   });
 
-  it("rejects reveal with incorrect nonce", async () => {
+  it('rejects reveal with incorrect nonce', async () => {
     await select(1);
-    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const wrongNonce = (await validation.jobNonce(1)) + 1n;
-    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, wrongNonce, true, salt, ethers.ZeroHash]);
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, wrongNonce, true, salt, ethers.ZeroHash]
+    );
     await (
-      await validation.connect(v1).commitValidation(1, commit, "", [])
+      await validation.connect(v1).commitValidation(1, commit, '', [])
     ).wait();
     await advance(61);
     await expect(
-      validation
-        .connect(v1)
-        .revealValidation(1, true, salt, "", [])
-    ).to.be.revertedWithCustomError(validation, "InvalidReveal");
+      validation.connect(v1).revealValidation(1, true, salt, '', [])
+    ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
-  it("clears commitments after finalization", async () => {
+  it('clears commitments after finalization', async () => {
     await validation.connect(owner).setValidatorBounds(3, 3);
     await validation
       .connect(owner)
@@ -333,16 +343,17 @@ describe("ValidationModule V2", function () {
 
     await select(1);
     const nonce = await validation.jobNonce(1);
-    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt, ethers.ZeroHash]
+    );
     await (
-      await validation.connect(v1).commitValidation(1, commit, "", [])
+      await validation.connect(v1).commitValidation(1, commit, '', [])
     ).wait();
     expect(await validation.commitments(1, v1.address, nonce)).to.equal(commit);
     await advance(61);
-    await validation
-      .connect(v1)
-      .revealValidation(1, true, salt, "", []);
+    await validation.connect(v1).revealValidation(1, true, salt, '', []);
     await advance(61);
     await validation.finalize(1);
     expect(await validation.commitments(1, v1.address, nonce)).to.equal(
@@ -350,7 +361,7 @@ describe("ValidationModule V2", function () {
     );
   });
 
-  it("clears commitments when job nonce is reset", async () => {
+  it('clears commitments when job nonce is reset', async () => {
     await validation.connect(owner).setValidatorBounds(3, 3);
     await validation
       .connect(owner)
@@ -358,13 +369,18 @@ describe("ValidationModule V2", function () {
 
     await select(1);
     const nonce1 = await validation.jobNonce(1);
-    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit1 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce1, true, salt, ethers.ZeroHash]);
-    await (await validation.connect(v1).commitValidation(1, commit1, "", [])).wait();
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
+    const commit1 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce1, true, salt, ethers.ZeroHash]
+    );
+    await (
+      await validation.connect(v1).commitValidation(1, commit1, '', [])
+    ).wait();
 
     await expect(
-      validation.connect(v1).commitValidation(1, commit1, "", [])
-    ).to.be.revertedWithCustomError(validation, "AlreadyCommitted");
+      validation.connect(v1).commitValidation(1, commit1, '', [])
+    ).to.be.revertedWithCustomError(validation, 'AlreadyCommitted');
 
     await validation.connect(owner).resetJobNonce(1);
     expect(await validation.jobNonce(1)).to.equal(0n);
@@ -373,13 +389,15 @@ describe("ValidationModule V2", function () {
     await tx.wait();
     const nonce2 = await validation.jobNonce(1);
     expect(nonce2).to.equal(1n);
-    const commit2 = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce2, true, salt, ethers.ZeroHash]);
-    await expect(
-      validation.connect(v1).commitValidation(1, commit2, "", [])
-    ).to.not.be.reverted;
+    const commit2 = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce2, true, salt, ethers.ZeroHash]
+    );
+    await expect(validation.connect(v1).commitValidation(1, commit2, '', [])).to
+      .not.be.reverted;
   });
 
-  it("removes validators from lookup on nonce reset", async () => {
+  it('removes validators from lookup on nonce reset', async () => {
     await validation.connect(owner).setValidatorBounds(3, 3);
     await validation
       .connect(owner)
@@ -387,68 +405,71 @@ describe("ValidationModule V2", function () {
     await select(1);
     await validation.connect(owner).resetJobNonce(1);
     await identity.addAdditionalValidator(owner.address);
-    await stakeManager.setStake(owner.address, 1, ethers.parseEther("10"));
+    await stakeManager.setStake(owner.address, 1, ethers.parseEther('10'));
     await validation
       .connect(owner)
       .setValidatorPool([v2.address, v3.address, owner.address]);
     await select(1);
     const nonce = await validation.jobNonce(1);
-    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
-    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt, ethers.ZeroHash]
+    );
     await expect(
-      validation.connect(v1).commitValidation(1, commit, "", [])
-    ).to.be.revertedWithCustomError(validation, "NotValidator");
+      validation.connect(v1).commitValidation(1, commit, '', [])
+    ).to.be.revertedWithCustomError(validation, 'NotValidator');
   });
 
-  it("allows owner to reassign registry and stake manager", async () => {
+  it('allows owner to reassign registry and stake manager', async () => {
     // select validators to create state for job 1
     await select(1);
 
-    const StakeMock2 = await ethers.getContractFactory("MockStakeManager");
+    const StakeMock2 = await ethers.getContractFactory('MockStakeManager');
     const newStake = await StakeMock2.deploy();
     await newStake.waitForDeployment();
-    await newStake.setStake(v1.address, 1, ethers.parseEther("100"));
-    await newStake.setStake(v2.address, 1, ethers.parseEther("50"));
-    await newStake.setStake(v3.address, 1, ethers.parseEther("10"));
+    await newStake.setStake(v1.address, 1, ethers.parseEther('100'));
+    await newStake.setStake(v2.address, 1, ethers.parseEther('50'));
+    await newStake.setStake(v3.address, 1, ethers.parseEther('10'));
 
-    const JobMock2 = await ethers.getContractFactory("MockJobRegistry");
+    const JobMock2 = await ethers.getContractFactory('MockJobRegistry');
     const newJob = await JobMock2.deploy();
     await newJob.waitForDeployment();
 
     await expect(
       validation.connect(employer).setStakeManager(await newStake.getAddress())
-    ).to.be.revertedWithCustomError(validation, "OwnableUnauthorizedAccount");
+    ).to.be.revertedWithCustomError(validation, 'OwnableUnauthorizedAccount');
 
     await expect(
       validation.connect(owner).setStakeManager(await newStake.getAddress())
     )
-      .to.emit(validation, "StakeManagerUpdated")
+      .to.emit(validation, 'StakeManagerUpdated')
       .withArgs(await newStake.getAddress());
 
     await expect(
       validation.connect(owner).setJobRegistry(await newJob.getAddress())
     )
-      .to.emit(validation, "JobRegistryUpdated")
+      .to.emit(validation, 'JobRegistryUpdated')
       .withArgs(await newJob.getAddress());
 
     await expect(
       validation.selectValidators(1, 0)
-    ).to.be.revertedWithCustomError(validation, "ValidatorsAlreadySelected");
+    ).to.be.revertedWithCustomError(validation, 'ValidatorsAlreadySelected');
 
     await validation.connect(owner).resetJobNonce(1);
     await expect(select(1)).to.not.be.reverted;
   });
 
-  it("enforces tax acknowledgement for commit and reveal", async () => {
+  it('enforces tax acknowledgement for commit and reveal', async () => {
     const TaxPolicy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
-    const policy = await TaxPolicy.deploy("ipfs://policy", "ack");
+    const policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
     await jobRegistry.setTaxPolicy(await policy.getAddress());
     const tx = await select(1);
     const receipt = await tx.wait();
     const selected = receipt.logs.find(
-      (l) => l.fragment && l.fragment.name === "ValidatorsSelected"
+      (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     ).args[1];
 
     const signerMap = {
@@ -457,45 +478,46 @@ describe("ValidationModule V2", function () {
       [v3.address.toLowerCase()]: v3,
     };
     const val = signerMap[selected[0].toLowerCase()];
-    const salt = ethers.keccak256(ethers.toUtf8Bytes("salt"));
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const nonce = await validation.jobNonce(1);
-    const commit = ethers.solidityPackedKeccak256(["uint256", "uint256", "bool", "bytes32", "bytes32"],[1n, nonce, true, salt, ethers.ZeroHash]);
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+      [1n, nonce, true, salt, ethers.ZeroHash]
+    );
 
-    await expect(
-      validation.connect(val).commitValidation(1, commit, "", [])
-    )
-      .to.be.revertedWithCustomError(validation, "TaxPolicyNotAcknowledged")
+    await expect(validation.connect(val).commitValidation(1, commit, '', []))
+      .to.be.revertedWithCustomError(validation, 'TaxPolicyNotAcknowledged')
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
     await expect(
-      validation.connect(val).commitValidation(1, commit, "", [])
-    ).to.emit(validation, "ValidationCommitted");
+      validation.connect(val).commitValidation(1, commit, '', [])
+    ).to.emit(validation, 'ValidationCommitted');
 
     await advance(61);
     await policy.bumpPolicyVersion();
     await expect(
-      validation.connect(val).revealValidation(1, true, salt, "", [])
+      validation.connect(val).revealValidation(1, true, salt, '', [])
     )
-      .to.be.revertedWithCustomError(validation, "TaxPolicyNotAcknowledged")
+      .to.be.revertedWithCustomError(validation, 'TaxPolicyNotAcknowledged')
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
     await expect(
-      validation.connect(val).revealValidation(1, true, salt, "", [])
-    ).to.emit(validation, "ValidationRevealed");
+      validation.connect(val).revealValidation(1, true, salt, '', [])
+    ).to.emit(validation, 'ValidationRevealed');
   });
 
-    it("updates additional validators individually", async () => {
-      const [, , , , , extra] = await ethers.getSigners();
-      await expect(identity.addAdditionalValidator(extra.address))
-        .to.emit(identity, "AdditionalValidatorUpdated")
-        .withArgs(extra.address, true);
-      expect(await identity.additionalValidators(extra.address)).to.equal(true);
+  it('updates additional validators individually', async () => {
+    const [, , , , , extra] = await ethers.getSigners();
+    await expect(identity.addAdditionalValidator(extra.address))
+      .to.emit(identity, 'AdditionalValidatorUpdated')
+      .withArgs(extra.address, true);
+    expect(await identity.additionalValidators(extra.address)).to.equal(true);
 
-      await expect(identity.removeAdditionalValidator(extra.address))
-        .to.emit(identity, "AdditionalValidatorUpdated")
-        .withArgs(extra.address, false);
-      expect(await identity.additionalValidators(extra.address)).to.equal(false);
-    });
+    await expect(identity.removeAdditionalValidator(extra.address))
+      .to.emit(identity, 'AdditionalValidatorUpdated')
+      .withArgs(extra.address, false);
+    expect(await identity.additionalValidators(extra.address)).to.equal(false);
+  });
 });

@@ -1,15 +1,18 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("StakeManager slashing configuration", function () {
-  const { AGIALPHA } = require("../../scripts/constants");
+describe('StakeManager slashing configuration', function () {
+  const { AGIALPHA } = require('../../scripts/constants');
   let owner, treasury, token, stakeManager;
 
   beforeEach(async () => {
     [owner, treasury] = await ethers.getSigners();
-    token = await ethers.getContractAt("contracts/test/AGIALPHAToken.sol:AGIALPHAToken", AGIALPHA);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     stakeManager = await StakeManager.deploy(
       0,
@@ -22,9 +25,9 @@ describe("StakeManager slashing configuration", function () {
     );
   });
 
-  it("rejects percentages that do not sum to 100", async () => {
+  it('rejects percentages that do not sum to 100', async () => {
     await expect(
       stakeManager.setSlashingPercentages(60, 30)
-    ).to.be.revertedWithCustomError(stakeManager, "InvalidPercentage");
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 });

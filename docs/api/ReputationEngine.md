@@ -3,6 +3,7 @@
 Tracks reputation scores for agents and validators.
 
 ## Functions
+
 - `setCaller(address caller, bool allowed)` – owner designates authorized modules.
 - `setStakeManager(address manager)` – wire stake manager.
 - `setScoringWeights(uint256 stakeWeight, uint256 reputationWeight)` – configure weighting.
@@ -15,6 +16,7 @@ Tracks reputation scores for agents and validators.
 - `getReputation(address user)` – view current score.
 
 ## Events
+
 - `ReputationUpdated(address user, int256 delta, uint256 newScore)`
 - `BlacklistUpdated(address user, bool status)`
 - `CallerUpdated(address caller, bool allowed)`

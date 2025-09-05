@@ -1,12 +1,12 @@
-const { expect } = require("chai");
-const { ethers, network, artifacts } = require("hardhat");
-const { AGIALPHA } = require("../../scripts/constants");
+const { expect } = require('chai');
+const { ethers, network, artifacts } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
-describe("Ownable modules", function () {
-  it("enforces ownership and transfer across modules", async function () {
+describe('Ownable modules', function () {
+  it('enforces ownership and transfer across modules', async function () {
     const [owner, other] = await ethers.getSigners();
     const Deployer = await ethers.getContractFactory(
-      "contracts/v2/Deployer.sol:Deployer"
+      'contracts/v2/Deployer.sol:Deployer'
     );
     const deployer = await Deployer.deploy();
     const econ = {
@@ -29,9 +29,9 @@ describe("Ownable modules", function () {
       agentMerkleRoot: ethers.ZeroHash,
     };
     const artifact = await artifacts.readArtifact(
-      "contracts/test/MockERC20.sol:MockERC20"
+      'contracts/test/MockERC20.sol:MockERC20'
     );
-    await network.provider.send("hardhat_setCode", [
+    await network.provider.send('hardhat_setCode', [
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
@@ -40,7 +40,7 @@ describe("Ownable modules", function () {
     const deployerAddress = await deployer.getAddress();
     const log = receipt.logs.find((l) => l.address === deployerAddress);
     const decoded = deployer.interface.decodeEventLog(
-      "Deployed",
+      'Deployed',
       log.data,
       log.topics
     );
@@ -62,53 +62,53 @@ describe("Ownable modules", function () {
     ] = decoded;
 
     const StakeManager = await ethers.getContractFactory(
-      "contracts/v2/StakeManager.sol:StakeManager"
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
     const JobRegistry = await ethers.getContractFactory(
-      "contracts/v2/JobRegistry.sol:JobRegistry"
+      'contracts/v2/JobRegistry.sol:JobRegistry'
     );
     const ValidationModule = await ethers.getContractFactory(
-      "contracts/v2/ValidationModule.sol:ValidationModule"
+      'contracts/v2/ValidationModule.sol:ValidationModule'
     );
     const ReputationEngine = await ethers.getContractFactory(
-      "contracts/v2/ReputationEngine.sol:ReputationEngine"
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
     );
     const DisputeModule = await ethers.getContractFactory(
-      "contracts/v2/modules/DisputeModule.sol:DisputeModule"
+      'contracts/v2/modules/DisputeModule.sol:DisputeModule'
     );
     const CertificateNFT = await ethers.getContractFactory(
-      "contracts/v2/CertificateNFT.sol:CertificateNFT"
+      'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
     const PlatformRegistry = await ethers.getContractFactory(
-      "contracts/v2/PlatformRegistry.sol:PlatformRegistry"
+      'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
     );
     const JobRouter = await ethers.getContractFactory(
-      "contracts/v2/modules/JobRouter.sol:JobRouter"
+      'contracts/v2/modules/JobRouter.sol:JobRouter'
     );
     const PlatformIncentives = await ethers.getContractFactory(
-      "contracts/v2/PlatformIncentives.sol:PlatformIncentives"
+      'contracts/v2/PlatformIncentives.sol:PlatformIncentives'
     );
     const FeePool = await ethers.getContractFactory(
-      "contracts/v2/FeePool.sol:FeePool"
+      'contracts/v2/FeePool.sol:FeePool'
     );
     const TaxPolicy = await ethers.getContractFactory(
-      "contracts/v2/TaxPolicy.sol:TaxPolicy"
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
     const IdentityRegistry = await ethers.getContractFactory(
-      "contracts/v2/IdentityRegistry.sol:IdentityRegistry"
+      'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
     );
     const SystemPause = await ethers.getContractFactory(
-      "contracts/v2/SystemPause.sol:SystemPause"
+      'contracts/v2/SystemPause.sol:SystemPause'
     );
 
     const ModCertificateNFT = await ethers.getContractFactory(
-      "contracts/v2/modules/CertificateNFT.sol:CertificateNFT"
+      'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
     const IdentityLib = await ethers.getContractFactory(
-      "contracts/v2/modules/IdentityLib.sol:IdentityLib"
+      'contracts/v2/modules/IdentityLib.sol:IdentityLib'
     );
 
-    const modCert = await ModCertificateNFT.deploy("Cert", "CRT");
+    const modCert = await ModCertificateNFT.deploy('Cert', 'CRT');
     await modCert.waitForDeployment();
     const identity = await IdentityLib.deploy(
       ethers.ZeroAddress,
@@ -125,25 +125,31 @@ describe("Ownable modules", function () {
     await taxPolicyC.connect(owner).acceptOwnership();
 
     const systemPauseSignerAddr = systemPause;
-    await network.provider.send("hardhat_setBalance", [
+    await network.provider.send('hardhat_setBalance', [
       systemPauseSignerAddr,
-      "0x56BC75E2D63100000",
+      '0x56BC75E2D63100000',
     ]);
     await network.provider.request({
-      method: "hardhat_impersonateAccount",
+      method: 'hardhat_impersonateAccount',
       params: [systemPauseSignerAddr],
     });
     const systemPauseSigner = await ethers.getSigner(systemPauseSignerAddr);
 
     const governable = [
-      [StakeManager.attach(stake), (inst, signer) => inst.connect(signer).setFeePct(1)],
-      [JobRegistry.attach(registry), (inst, signer) => inst.connect(signer).setFeePct(1)],
+      [
+        StakeManager.attach(stake),
+        (inst, signer) => inst.connect(signer).setFeePct(1),
+      ],
+      [
+        JobRegistry.attach(registry),
+        (inst, signer) => inst.connect(signer).setFeePct(1),
+      ],
     ];
 
     for (const [inst, call] of governable) {
-      await expect(call(inst, other)).to.be.revertedWith("governance only");
+      await expect(call(inst, other)).to.be.revertedWith('governance only');
       await inst.connect(systemPauseSigner).setGovernance(other.address);
-      await expect(call(inst, owner)).to.be.revertedWith("governance only");
+      await expect(call(inst, owner)).to.be.revertedWith('governance only');
       await call(inst, other);
       await inst.connect(other).setGovernance(systemPauseSignerAddr);
     }
@@ -178,7 +184,8 @@ describe("Ownable modules", function () {
       [
         JobRouter.attach(router),
         owner,
-        (inst, signer) => inst.connect(signer).setRegistrar(ethers.ZeroAddress, false),
+        (inst, signer) =>
+          inst.connect(signer).setRegistrar(ethers.ZeroAddress, false),
       ],
       [
         PlatformIncentives.attach(incentives),
@@ -186,7 +193,11 @@ describe("Ownable modules", function () {
         (inst, signer) =>
           inst
             .connect(signer)
-            .setModules(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress),
+            .setModules(
+              ethers.ZeroAddress,
+              ethers.ZeroAddress,
+              ethers.ZeroAddress
+            ),
       ],
       [
         FeePool.attach(feePool),
@@ -196,7 +207,7 @@ describe("Ownable modules", function () {
       [
         taxPolicyC,
         owner,
-        (inst, signer) => inst.connect(signer).setPolicyURI("ipfs://new"),
+        (inst, signer) => inst.connect(signer).setPolicyURI('ipfs://new'),
         true,
       ],
       [
@@ -214,7 +225,9 @@ describe("Ownable modules", function () {
         identity,
         owner,
         (inst, signer) =>
-          inst.connect(signer).setModules(ethers.ZeroAddress, ethers.ZeroAddress),
+          inst
+            .connect(signer)
+            .setModules(ethers.ZeroAddress, ethers.ZeroAddress),
       ],
     ];
 
@@ -233,7 +246,7 @@ describe("Ownable modules", function () {
     }
 
     await network.provider.request({
-      method: "hardhat_stopImpersonatingAccount",
+      method: 'hardhat_stopImpersonatingAccount',
       params: [systemPauseSignerAddr],
     });
   });
