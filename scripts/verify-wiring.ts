@@ -8,7 +8,7 @@ async function main() {
     string,
     string
   >;
-  const { ethers } = hre as any;
+  const { ethers } = hre;
   const zero = ethers.ZeroAddress.toLowerCase();
 
   type Check = { getter: string; expected: string };

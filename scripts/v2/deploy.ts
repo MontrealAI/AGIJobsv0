@@ -23,7 +23,7 @@ function parseArgs() {
   return args;
 }
 
-async function verify(address: string, args: any[] = []) {
+async function verify(address: string, args: unknown[] = []) {
   try {
     await run('verify:verify', {
       address,

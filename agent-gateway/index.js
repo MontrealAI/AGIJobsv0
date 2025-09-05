@@ -351,7 +351,7 @@ verifyTokenDecimals()
         let msg;
         try {
           msg = JSON.parse(data);
-        } catch (err) {
+        } catch {
           return;
         }
         if (msg.type === 'register') {
