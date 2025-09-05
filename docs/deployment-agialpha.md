@@ -2,7 +2,7 @@
 
 For the primary production deployment workflow see [deployment-production-guide.md](deployment-production-guide.md).
 
-This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 18‑decimal **$AGIALPHA** token. The canonical token is deployed separately on mainnet; this repository includes [`contracts/test/AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) solely for local testing. By default $AGIALPHA handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
+This walkthrough shows a non‑technical owner how to deploy and wire the modular v2 contracts using the 18‑decimal **$AGIALPHA** token. For a deeper explanation of how the modules interact, consult [architecture-v2.md](architecture-v2.md). The canonical token is deployed separately on mainnet; this repository includes [`contracts/test/AGIALPHAToken.sol`](../contracts/test/AGIALPHAToken.sol) solely for local testing. By default $AGIALPHA handles all payments, staking, rewards, and dispute deposits. All steps can be executed from a browser via [Etherscan](https://etherscan.io) or any compatible block explorer. For screenshot‑driven instructions, see [etherscan-guide.md](etherscan-guide.md).
 
 ## 1. Prerequisites
 

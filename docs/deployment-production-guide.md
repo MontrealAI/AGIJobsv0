@@ -2,7 +2,7 @@
 
 This guide walks a non-technical administrator through deploying the AGI Jobs v2 smart contracts on Ethereum using only a web browser and Etherscan. It also explains best practices such as true token burning, owner updatability and how to record your deployment in this repository.
 
-All steps are executed directly from Etherscan's web interface—no command line tools or local scripts are required.
+All steps are executed directly from Etherscan's web interface—no command line tools or local scripts are required. For a deeper explanation of how the modules interact, see [architecture-v2.md](architecture-v2.md). This guide focuses strictly on deployment steps.
 
 ### Best Practices in AGI Jobs v2
 
@@ -18,22 +18,6 @@ All steps are executed directly from Etherscan's web interface—no command line
 - **Basic Etherscan familiarity** – you will use the _Write Contract_ tab to deploy and configure modules.
 - **Governance account** – a multisig or timelock that will ultimately own the modules.
 - **Etherscan API key & local build** – run `npm install` and `npx hardhat compile` so bytecode matches when verifying with your API key.
-
-## Overview of AGI Jobs v2 Architecture
-
-AGI Jobs v2 is modular. Each contract manages one aspect of the marketplace:
-
-- **StakeManager** – staking, escrow of job rewards and slashing.
-- **JobRegistry** – main registry tracking job lifecycle.
-- **ValidationModule** – validator selection and commit–reveal voting.
-- **DisputeModule** – dispute escalation and resolution.
-- **ReputationEngine** – reputation scores and blacklisting.
-- **CertificateNFT** – NFTs certifying completed jobs.
-- **IdentityRegistry** _(optional)_ – ENS subdomain checks and allowlists.
-- **FeePool** – collects protocol fees and optionally burns a portion.
-- **PlatformRegistry & JobRouter** _(optional)_ – manage multiple front-end platforms and route jobs to them.
-- **PlatformIncentives** _(optional)_ – helper that combines staking and registration for platforms.
-- **TaxPolicy** _(optional)_ – on-chain acknowledgment of terms of service or tax policy.
 
 ## Step 1: Deploy the Core Contracts in Order
 
