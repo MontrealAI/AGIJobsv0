@@ -1,15 +1,6 @@
 # AGIJobs v2 Deployment & Operations Guide
 
-For production deployment steps see [deployment-production-guide.md](deployment-production-guide.md).
-
-## Architecture Overview
-
-AGIJobs v2 decomposes the platform into small, immutable modules wired
-through a central `JobRegistry`. Each module owns a single
-responsibility and exposes governance‑only setters so parameters can be
-tuned without redeploying the whole system. `JobRegistry` and
-`StakeManager` accept a multisig or timelock address during construction
-which becomes the governance authority.
+For production deployment steps see [deployment-production-guide.md](deployment-production-guide.md). For a detailed explanation of the system design, consult [architecture-v2.md](architecture-v2.md).
 
 Identity for agents and validators is enforced with the
 `ENSOwnershipVerifier` library. Participants must control an ENS

@@ -2,6 +2,8 @@
 
 AGIJobs v2 replaces the monolithic v1 manager with immutable, single-purpose modules. Each contract is deployed once, owns its state, and interacts through a minimal interface so storage layouts remain isolated. The owner (ideally a multisig) can retune parameters or swap module addresses without redeploying the entire suite, delivering governance composability while keeping on-chain logic simple enough for block-explorer interactions. Every module inherits `Ownable`, ensuring only the contract owner can perform privileged actions. The design emphasises gas efficiency and game-theoretic soundness while remaining approachable for non-technical users.
 
+For a quick visual overview of the system, see the [architecture overview](architecture.md).
+
 ## Trust assumptions
 
 - **Deterministic randomness** - validator selection uses commit-reveal entropy seeded by the owner and on-chain data. When `block.prevrandao` is unavailable, the module mixes recent block hashes and the caller address, removing any need for off-chain randomness providers.

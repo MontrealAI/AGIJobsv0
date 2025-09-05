@@ -1,6 +1,6 @@
 # Etherscan Deployment Quickstart
 
-For complete production deployment guidance see [deployment-production-guide.md](deployment-production-guide.md).
+For complete production deployment guidance see [deployment-production-guide.md](deployment-production-guide.md). For background on contract roles and architecture, review [architecture-v2.md](architecture-v2.md).
 
 For screenshots and a deeper explanation see [etherscan-guide.md](etherscan-guide.md). All owner interactions occur through the explorer's **Write Contract** tabs.
 
