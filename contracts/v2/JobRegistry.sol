@@ -983,6 +983,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function dispute(uint256 jobId, bytes32 evidenceHash)
         public
         whenNotPaused
+        nonReentrant
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
@@ -1045,7 +1046,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     ///      {finalize}.
     /// @param jobId Identifier of the disputed job
     /// @param employerWins True if the employer won the dispute
-    function resolveDispute(uint256 jobId, bool employerWins) external {
+    function resolveDispute(uint256 jobId, bool employerWins)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         if (msg.sender != address(disputeModule)) revert OnlyDisputeModule();
         Job storage job = jobs[jobId];
         if (job.state != State.Disputed) revert NoDispute();
@@ -1053,7 +1058,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = !employerWins;
         job.state = State.Completed;
         emit DisputeResolved(jobId, employerWins);
-        finalize(jobId);
+        _finalize(jobId);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
@@ -1266,6 +1271,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     function cancelJob(uint256 jobId)
         public
+        nonReentrant
         requiresTaxAcknowledgement(
             taxPolicy,
             msg.sender,
