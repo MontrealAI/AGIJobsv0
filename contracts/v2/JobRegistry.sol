@@ -851,6 +851,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             address(disputeModule),
             address(validationModule)
         )
+        nonReentrant
     {
         Job storage job = jobs[jobId];
         if (job.state != State.Applied) revert InvalidJobState();
