@@ -65,7 +65,7 @@ describe('Validator selection rotating strategy', function () {
   });
 
   it('emits rotation update event with expected value', async () => {
-    const [owner] = await ethers.getSigners();
+    const [_owner] = await ethers.getSigners();
     await validation.selectValidators(1, 0);
     await ethers.provider.send('evm_mine', []);
     const tx = await validation.connect(other).selectValidators(1, 0);

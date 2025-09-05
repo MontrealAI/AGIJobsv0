@@ -2,10 +2,10 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('ENSOwnershipVerifier setters', function () {
-  let owner, other, verifier;
+  let _owner, other, verifier;
 
   beforeEach(async () => {
-    [owner, other] = await ethers.getSigners();
+    [_owner, other] = await ethers.getSigners();
     const Verifier = await ethers.getContractFactory(
       'contracts/v2/modules/ENSOwnershipVerifier.sol:ENSOwnershipVerifier'
     );

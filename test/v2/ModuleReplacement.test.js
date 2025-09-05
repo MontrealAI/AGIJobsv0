@@ -142,11 +142,11 @@ describe('Module replacement', function () {
       agent,
       token,
       stake,
-      reputation,
-      validation,
-      nft,
+      reputation: _reputation,
+      validation: _validation,
+      nft: _nft,
       registry,
-      dispute,
+      dispute: _dispute,
     } = env;
 
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);

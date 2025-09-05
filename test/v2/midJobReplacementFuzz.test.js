@@ -134,11 +134,11 @@ describe('Mid-job module replacement fuzz', function () {
         token,
         stake,
         reputation,
-        validation,
-        nft,
+        validation: _validation,
+        nft: _nft,
         registry,
-        dispute,
-        feePool,
+        dispute: _dispute,
+        feePool: _feePool,
       } = env;
 
       const reward = ethers.parseUnits(

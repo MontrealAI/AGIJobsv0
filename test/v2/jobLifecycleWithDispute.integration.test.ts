@@ -141,7 +141,7 @@ describe('job lifecycle with dispute and validator failure', function () {
       validation,
       registry,
       dispute,
-      moderator,
+      moderator: _moderator,
     } = env;
 
     const stakeAmount = ethers.parseUnits('1', AGIALPHA_DECIMALS);

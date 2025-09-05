@@ -3,11 +3,11 @@ const { ethers } = require('hardhat');
 
 describe('StakeManager ether rejection', function () {
   const { AGIALPHA } = require('../../scripts/constants');
-  let owner, token, stakeManager;
+  let owner, _token, stakeManager;
 
   beforeEach(async () => {
     [owner] = await ethers.getSigners();
-    token = await ethers.getContractAt(
+    _token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );

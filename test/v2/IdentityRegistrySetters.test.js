@@ -2,10 +2,10 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('IdentityRegistry setters', function () {
-  let owner;
+  let _owner;
   let identity;
   beforeEach(async () => {
-    [owner] = await ethers.getSigners();
+    [_owner] = await ethers.getSigners();
 
     const Stake = await ethers.getContractFactory(
       'contracts/legacy/MockV2.sol:MockStakeManager'
