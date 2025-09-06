@@ -110,4 +110,43 @@ describe('AttestationRegistry', function () {
       )
     ).to.equal(true);
   });
+
+  it('restricts set functions to owner', async () => {
+    const [owner, other] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory(
+      'contracts/legacy/MockENS.sol:MockENS'
+    );
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/legacy/MockNameWrapper.sol:MockNameWrapper'
+    );
+    const wrapper = await Wrapper.deploy();
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+    );
+    const registry = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress()
+    );
+
+    await expect(
+      registry.connect(other).setENS(other.address)
+    ).to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
+
+    await expect(
+      registry.connect(other).setNameWrapper(other.address)
+    ).to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
+
+    await expect(registry.connect(owner).setENS(await ens.getAddress()))
+      .to.emit(registry, 'ENSUpdated')
+      .withArgs(await ens.getAddress());
+    await expect(
+      registry.connect(owner).setNameWrapper(await wrapper.getAddress())
+    )
+      .to.emit(registry, 'NameWrapperUpdated')
+      .withArgs(await wrapper.getAddress());
+  });
 });

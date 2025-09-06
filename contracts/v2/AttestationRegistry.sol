@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 error UnauthorizedAttestor();
 error ZeroAddress();
@@ -10,7 +11,7 @@ error ZeroAddress();
 /// @title AttestationRegistry
 /// @notice Allows ENS name owners to grant and revoke attestations
 /// for specific roles to other addresses.
-contract AttestationRegistry {
+contract AttestationRegistry is Ownable {
     /// @dev Roles that can be attested for a name.
     enum Role {
         Agent,
@@ -28,7 +29,7 @@ contract AttestationRegistry {
     event Attested(bytes32 indexed node, Role indexed role, address indexed who, address attestor);
     event Revoked(bytes32 indexed node, Role indexed role, address indexed who, address attestor);
 
-    constructor(IENS _ens, INameWrapper _nameWrapper) {
+    constructor(IENS _ens, INameWrapper _nameWrapper) Ownable(msg.sender) {
         ens = _ens;
         if (address(_ens) != address(0)) {
             emit ENSUpdated(address(_ens));
@@ -39,7 +40,7 @@ contract AttestationRegistry {
         }
     }
 
-    function setENS(address ensAddr) external {
+    function setENS(address ensAddr) external onlyOwner {
         if (ensAddr == address(0)) {
             revert ZeroAddress();
         }
@@ -47,7 +48,7 @@ contract AttestationRegistry {
         emit ENSUpdated(ensAddr);
     }
 
-    function setNameWrapper(address wrapper) external {
+    function setNameWrapper(address wrapper) external onlyOwner {
         if (wrapper == address(0)) {
             revert ZeroAddress();
         }
