@@ -204,6 +204,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event ValidatorMerkleRootUpdated(bytes32 root);
     event AgentAuthCacheUpdated(address indexed agent, bool authorized);
     event AgentAuthCacheDurationUpdated(uint256 duration);
+    event AgentAuthCacheVersionBumped(uint256 version);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -392,9 +393,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(registry) == address(0)) revert InvalidIdentityRegistry();
         if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
-        unchecked {
-            agentAuthCacheVersion++;
-        }
+        bumpAgentAuthCacheVersion();
         if (address(validationModule) != address(0)) {
             try validationModule.bumpValidatorAuthCacheVersion() {} catch {}
         }
@@ -417,9 +416,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setAgentRootNode(bytes32 node) external onlyGovernance {
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         identityRegistry.setAgentRootNode(node);
-        unchecked {
-            agentAuthCacheVersion++;
-        }
+        bumpAgentAuthCacheVersion();
         emit AgentRootNodeUpdated(node);
     }
 
@@ -428,10 +425,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setAgentMerkleRoot(bytes32 root) external onlyGovernance {
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         identityRegistry.setAgentMerkleRoot(root);
-        unchecked {
-            agentAuthCacheVersion++;
-        }
+        bumpAgentAuthCacheVersion();
         emit AgentMerkleRootUpdated(root);
+    }
+
+    /// @notice Increment the agent authorization cache version, invalidating all
+    /// existing cached authorizations.
+    function bumpAgentAuthCacheVersion() public onlyGovernance {
+        unchecked {
+            ++agentAuthCacheVersion;
+        }
+        emit AgentAuthCacheVersionBumped(agentAuthCacheVersion);
     }
 
     /// @notice Update the ENS root node used for validator verification.
