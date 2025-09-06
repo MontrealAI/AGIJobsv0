@@ -44,15 +44,17 @@ library ENSIdentityVerifier {
             }
         } catch {}
 
-        address resolverAddr = ens.resolver(subnode);
-        if (resolverAddr != address(0)) {
-            try IResolver(resolverAddr).addr(subnode) returns (
-                address payable resolvedAddress
-            ) {
-                if (resolvedAddress == claimant) {
-                    return true;
-                }
-            } catch {}
+        if (address(ens) != address(0)) {
+            address resolverAddr = ens.resolver(subnode);
+            if (resolverAddr != address(0)) {
+                try IResolver(resolverAddr).addr(subnode) returns (
+                    address payable resolvedAddress
+                ) {
+                    if (resolvedAddress == claimant) {
+                        return true;
+                    }
+                } catch {}
+            }
         }
         return false;
     }
@@ -90,31 +92,38 @@ library ENSIdentityVerifier {
             eventEmitted = true;
         }
 
-        address resolverAddr = ens.resolver(subnode);
-        if (resolverAddr != address(0)) {
-            IResolver resolver = IResolver(resolverAddr);
-            try resolver.addr(subnode) returns (
-                address payable resolvedAddress
-            ) {
-                if (resolvedAddress == claimant) {
-                    emit OwnershipVerified(claimant, subdomain);
-                    return true;
+        if (address(ens) != address(0)) {
+            address resolverAddr = ens.resolver(subnode);
+            if (resolverAddr != address(0)) {
+                IResolver resolver = IResolver(resolverAddr);
+                try resolver.addr(subnode) returns (
+                    address payable resolvedAddress
+                ) {
+                    if (resolvedAddress == claimant) {
+                        emit OwnershipVerified(claimant, subdomain);
+                        return true;
+                    }
+                    if (!eventEmitted) {
+                        emit RecoveryInitiated("Resolver address mismatch.");
+                        eventEmitted = true;
+                    }
+                } catch {
+                    if (!eventEmitted) {
+                        emit RecoveryInitiated(
+                            "Resolver call failed without a specified reason."
+                        );
+                        eventEmitted = true;
+                    }
                 }
+            } else {
                 if (!eventEmitted) {
-                    emit RecoveryInitiated("Resolver address mismatch.");
-                    eventEmitted = true;
-                }
-            } catch {
-                if (!eventEmitted) {
-                    emit RecoveryInitiated(
-                        "Resolver call failed without a specified reason."
-                    );
+                    emit RecoveryInitiated("Resolver address not found for node.");
                     eventEmitted = true;
                 }
             }
         } else {
             if (!eventEmitted) {
-                emit RecoveryInitiated("Resolver address not found for node.");
+                emit RecoveryInitiated("ENS not configured.");
                 eventEmitted = true;
             }
         }

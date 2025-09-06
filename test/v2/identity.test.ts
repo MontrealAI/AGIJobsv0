@@ -145,6 +145,59 @@ describe('IdentityRegistry ENS verification', function () {
     );
   });
 
+  it('authorizes via allowlists and attestations when ENS is unset', async () => {
+    const [owner, agent, validator] = await ethers.getSigners();
+
+    const Wrapper = await ethers.getContractFactory('MockNameWrapper');
+    const wrapper = await Wrapper.deploy();
+
+    const Stake = await ethers.getContractFactory('MockStakeManager');
+    const stake = await Stake.deploy();
+    const Rep = await ethers.getContractFactory(
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
+    );
+    const rep = await Rep.deploy(await stake.getAddress());
+
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
+    );
+    const id = await Identity.deploy(
+      ethers.ZeroAddress,
+      await wrapper.getAddress(),
+      await rep.getAddress(),
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
+
+    // allowlist should succeed without ENS
+    await id.addAdditionalAgent(agent.address);
+    expect(await id.verifyAgent.staticCall(agent.address, '', [])).to.equal(true);
+
+    // attestation should also succeed
+    const Attest = await ethers.getContractFactory(
+      'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+    );
+    const attest = await Attest.deploy(
+      ethers.ZeroAddress,
+      await wrapper.getAddress()
+    );
+    await id.setAttestationRegistry(await attest.getAddress());
+
+    const label = 'val';
+    const node = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [ethers.ZeroHash, ethers.id(label)]
+      )
+    );
+    await wrapper.setOwner(BigInt(node), owner.address);
+    await attest.connect(owner).attest(node, 1, validator.address);
+
+    expect(
+      await id.verifyValidator.staticCall(validator.address, label, [])
+    ).to.equal(true);
+  });
+
   it('allows governance and agents to set capability profiles', async () => {
     const [owner, alice] = await ethers.getSigners();
 
