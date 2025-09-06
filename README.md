@@ -4,7 +4,22 @@
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The **v2** release under `contracts/v2` is the only supported version. Deprecated v0 artifacts now live in `contracts/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
 
+> **ENS identity required:** Before participating, each agent or validator must control an ENS subdomain. Agents use `<name>.agent.agi.eth` and validators use `<name>.club.agi.eth`. Follow the [ENS identity setup guide](docs/ens-identity-setup.md) to register and configure your name.
+
 All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical token is deployed externally; this repository ships [`contracts/test/AGIALPHAToken.sol`](contracts/test/AGIALPHAToken.sol) for local testing only. Token address and decimal configuration live in [`config/agialpha.json`](config/agialpha.json) and feed both Solidity and TypeScript consumers.
+
+## Table of Contents
+
+- [Identity policy](#identity-policy)
+- [AGIALPHA configuration](#agialpha-configuration)
+- [Deploy defaults](#deploy-defaults)
+- [Etherscan deployment](#etherscan-deployment)
+- [Migrating from legacy](#migrating-from-legacy)
+- [Quick Start](#quick-start)
+- [Deployed Addresses](#deployed-addresses)
+- [Step‑by‑Step Deployment with $AGIALPHA](#step-by-step-deployment-with-agialpha)
+- [Agent/Validator Identity – ENS subdomain registration](#agentvalidator-identity--ens-subdomain-registration)
+- [Documentation](#documentation)
 
 ### Identity policy
 
@@ -214,7 +229,7 @@ Each subsequent constructor accepts addresses from earlier steps, so deploying i
 
 For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and `PlatformIncentives`, consult the docs under `docs/`.
 
-## Further reading
+## Documentation
 
 - [Architecture overview](docs/architecture-v2.md)
 - [Module and interface reference](docs/v2-module-interface-reference.md)
