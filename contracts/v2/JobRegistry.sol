@@ -392,6 +392,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(registry) == address(0)) revert InvalidIdentityRegistry();
         if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
+        unchecked {
+            agentAuthCacheVersion++;
+        }
+        if (address(validationModule) != address(0)) {
+            try validationModule.bumpValidatorAuthCacheVersion() {} catch {}
+        }
         emit IdentityRegistryUpdated(address(registry));
         emit ModuleUpdated("IdentityRegistry", address(registry));
     }

@@ -142,4 +142,38 @@ describe('JobRegistry validator auth cache', function () {
       'InsufficientValidators'
     );
   });
+
+  it('invalidates cache on identity registry update', async () => {
+    await createJob(1);
+    await select(1);
+
+    await identity.connect(owner).setResult(false);
+
+    await createJob(2);
+    await select(2);
+
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const identity2 = await Identity.connect(owner).deploy();
+    await identity2.waitForDeployment();
+    await identity2.setClubRootNode(ethers.ZeroHash);
+    await identity2.setAgentRootNode(ethers.ZeroHash);
+
+    await validation
+      .connect(owner)
+      .setIdentityRegistry(await identity2.getAddress());
+    await validation
+      .connect(owner)
+      .transferOwnership(await registry.getAddress());
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await identity2.getAddress());
+
+    await createJob(3);
+    await expect(select(3)).to.be.revertedWithCustomError(
+      validation,
+      'InsufficientValidators'
+    );
+  });
 });

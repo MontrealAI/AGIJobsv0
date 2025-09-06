@@ -9,6 +9,7 @@ describe('JobRegistry agent auth cache', function () {
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
+    jobId = 0;
 
     const Identity = await ethers.getContractFactory(
       'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
@@ -146,6 +147,28 @@ describe('JobRegistry agent auth cache', function () {
     await expect(
       registry2.connect(agent).applyForJob(3, 'a', [])
     ).to.be.revertedWithCustomError(registry2, 'NotAuthorizedAgent');
+  });
+
+  it('invalidates agent cache on identity registry update', async () => {
+    const first = await createJob();
+    await registry.connect(agent).applyForJob(first, 'a', []);
+
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const verifier2 = await Identity.connect(owner).deploy();
+    await verifier2.waitForDeployment();
+    await verifier2.setAgentRootNode(ethers.ZeroHash);
+    await verifier2.setResult(false);
+
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await verifier2.getAddress());
+
+    const second = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(second, 'a', [])
+    ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
   });
 
   it('reverts application after agent root node update without re-verification', async () => {
