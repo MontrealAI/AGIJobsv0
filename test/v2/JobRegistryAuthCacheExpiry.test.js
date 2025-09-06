@@ -88,7 +88,9 @@ describe('JobRegistry auth cache invalidation', function () {
     await registry.connect(agent).applyForJob(first, 'a', []);
 
     await identity.connect(owner).setResult(false);
-    await identity.connect(owner).transferOwnership(await registry.getAddress());
+    await identity
+      .connect(owner)
+      .transferOwnership(await registry.getAddress());
     await registry.connect(owner).setAgentRootNode(ethers.id('newroot'));
 
     const second = await createJob();
