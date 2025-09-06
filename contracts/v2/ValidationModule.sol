@@ -299,7 +299,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (address(registry) == address(0)) revert ZeroIdentityRegistry();
         if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
+        bumpValidatorAuthCacheVersion();
         emit IdentityRegistryUpdated(address(registry));
+    }
+
+    /// @notice Update validator merkle root and invalidate cached authorizations.
+    /// @param root New validator merkle root.
+    function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
+        identityRegistry.setValidatorMerkleRoot(root);
+        bumpValidatorAuthCacheVersion();
     }
 
     /// @notice Set the Randao coordinator used for randomness.
