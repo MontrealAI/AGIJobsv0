@@ -98,4 +98,23 @@ describe('JobRegistry auth cache invalidation', function () {
       registry.connect(agent).applyForJob(second, 'a', [])
     ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
   });
+
+  it('invalidates cache on manual version bump', async () => {
+    await registry.connect(owner).setAgentAuthCacheDuration(1000);
+
+    const first = await createJob();
+    await registry.connect(agent).applyForJob(first, 'a', []);
+
+    await identity.connect(owner).setResult(false);
+
+    const second = await createJob();
+    await registry.connect(agent).applyForJob(second, 'a', []);
+
+    await registry.connect(owner).bumpAgentAuthCacheVersion();
+
+    const third = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(third, 'a', [])
+    ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
+  });
 });
