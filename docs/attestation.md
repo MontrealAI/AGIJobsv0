@@ -1,0 +1,54 @@
+# Attestation Registry
+
+`AttestationRegistry` lets ENS subdomain owners pre-authorize other addresses
+to act as agents or validators. Once attested, addresses skip the expensive ENS
+ownership check performed by `IdentityRegistry` and can participate using the
+delegated wallet.
+
+## Granting and revoking
+
+1. Compute the ENS node for the subdomain:
+
+   ```js
+   const node = ethers.namehash('alice.agent.agi.eth');
+   ```
+
+2. From the ENS name owner's wallet call:
+
+   ```bash
+   npx hardhat console --network <network>
+   > const att = await ethers.getContractAt('AttestationRegistry', process.env.ATTESTATION_REGISTRY);
+   > const node = ethers.namehash('alice.agent.agi.eth');
+   > await att.attest(node, 0, '0xDelegate'); // 0 = Agent, 1 = Validator
+   ```
+
+3. To revoke the authorization:
+
+   ```bash
+   > await att.revoke(node, 0, '0xDelegate');
+   ```
+
+## Verifying before use
+
+Delegated addresses should confirm that an attestation exists before using the
+platform:
+
+```bash
+npx hardhat console --network <network>
+> await att.isAttested(node, 0, '0xDelegate');
+```
+
+If the call returns `true` the address may interact with `JobRegistry` and
+`ValidationModule`.
+
+## Script helpers
+
+`examples/ethers-quickstart.js` exports convenience helpers:
+
+```bash
+node -e "require('./examples/ethers-quickstart').attest('alice.agent.agi.eth', 0, '0xDelegate')"
+node -e "require('./examples/ethers-quickstart').revoke('alice.agent.agi.eth', 0, '0xDelegate')"
+```
+
+Set `ATTESTATION_REGISTRY` in your environment to the deployed contract address
+before running these commands.

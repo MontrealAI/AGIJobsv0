@@ -32,7 +32,7 @@ The original v0 and v1 contracts are preserved under the `legacy` git tag for re
 
 ## Quick Start
 
-Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER` and `VALIDATION_MODULE`.
+Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER`, `VALIDATION_MODULE` and `ATTESTATION_REGISTRY`.
 
 The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
 
@@ -156,6 +156,15 @@ Transactions will revert if the address does not own the supplied
 subdomain. Owner‑controlled allowlists
 (`JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`)
 exist only for emergencies and should not be relied on by normal users.
+
+### Delegate addresses with AttestationRegistry
+
+`AttestationRegistry` lets ENS name owners pre-authorize other addresses for
+agent or validator roles. Authorized addresses skip expensive on-chain ENS lookups
+and can use the platform without holding the ENS name directly. Owners call
+`attest(node, role, address)` to grant access and `revoke(node, role, address)` to
+remove it. See [docs/attestation.md](docs/attestation.md) for a walkthrough and
+CLI examples.
 
 ### Quickstart flow
 
