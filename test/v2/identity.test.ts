@@ -171,7 +171,9 @@ describe('IdentityRegistry ENS verification', function () {
 
     // allowlist should succeed without ENS
     await id.addAdditionalAgent(agent.address);
-    expect(await id.verifyAgent.staticCall(agent.address, '', [])).to.equal(true);
+    expect(await id.verifyAgent.staticCall(agent.address, '', [])).to.equal(
+      true
+    );
 
     // attestation should also succeed
     const Attest = await ethers.getContractFactory(
