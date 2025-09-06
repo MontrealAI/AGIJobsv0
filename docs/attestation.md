@@ -6,11 +6,22 @@ ownership check performed by `IdentityRegistry` and can participate using the
 delegated wallet. For setting up the base ENS records and issuing
 subdomains see [ens-identity-setup.md](ens-identity-setup.md).
 
-Hook the registry into `IdentityRegistry` with
-`setAttestationRegistry(address)` so that consumer modules can consult
-attestations. `JobRegistry` and `ValidationModule` cache successful lookups for
-around 24 hours to save gas, but entries automatically expire or invalidate when
-ENS data changes.
+## Deployment
+
+Deploy the registry and wire it into `IdentityRegistry` so that consumer modules
+can consult attestations:
+
+```bash
+IDENTITY_REGISTRY=<identity> npx hardhat run scripts/v2/deployAttestation.ts --network <network> [ens nameWrapper]
+```
+
+If the ENS registry or NameWrapper addresses are omitted the script uses the
+mainnet defaults. After deployment it automatically calls
+`IdentityRegistry.setAttestationRegistry(address)`.
+
+`JobRegistry` and `ValidationModule` cache successful lookups for around
+24 hours to save gas, but entries automatically expire or invalidate when ENS
+data changes.
 
 ## Granting and revoking
 
