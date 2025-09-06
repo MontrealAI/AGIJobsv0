@@ -30,6 +30,8 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
 
 - Agents need an ENS subdomain ending in `.agent.agi.eth`; validators require `.club.agi.eth`.
 - Membership can be proven off‑chain by calling [`ENSOwnershipVerifier.verifyOwnership`](../contracts/v2/modules/ENSOwnershipVerifier.sol) with your address, subdomain label, and Merkle proof.
+  Project operators can issue subdomains and set resolver records as
+  described in [ens-identity-setup.md](ens-identity-setup.md).
 
 ## Calling Contract Methods via Etherscan
 

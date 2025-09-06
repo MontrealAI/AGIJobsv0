@@ -17,6 +17,34 @@ Agents and validators must prove ownership of specific ENS subdomains before int
 
 Transactions will revert if the calling address does not own the claimed subdomain. Owner‑controlled allowlists and Merkle proofs exist only for emergencies and should not be relied on for normal operation.
 
+## Issuing subdomains
+
+Project operators create subdomains under `agent.agi.eth` or `club.agi.eth` and assign them to participant addresses. Example using the Hardhat console:
+
+```bash
+npx hardhat console --network <network>
+> const wrapper = await ethers.getContractAt('INameWrapper', process.env.NAME_WRAPPER);
+> const resolver = process.env.PUBLIC_RESOLVER; // typically the PublicResolver
+> const parent = ethers.namehash('agent.agi.eth'); // or 'club.agi.eth'
+> const label = ethers.keccak256(ethers.toUtf8Bytes('alice'));
+> await wrapper.setSubnodeRecord(parent, label, '0xAgent', resolver, 0);
+```
+
+After issuing the subdomain, set the resolver `addr` record to the participant’s wallet:
+
+```bash
+> const res = await ethers.getContractAt('IResolver', resolver);
+> const node = ethers.namehash('alice.agent.agi.eth');
+> await res['setAddr(bytes32,address)'](node, '0xAgent');
+```
+
+To confirm ownership on-chain:
+
+```bash
+> const id = await ethers.getContractAt('IdentityRegistry', process.env.IDENTITY_REGISTRY);
+> await id.verifyAgent('0xAgent', 'alice', []); // use verifyValidator for validators
+```
+
 ## Delegating with attestations
 
 An ENS name owner may authorize another address to act on their behalf through the `AttestationRegistry`:

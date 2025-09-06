@@ -3,7 +3,8 @@
 `AttestationRegistry` lets ENS subdomain owners pre-authorize other addresses
 to act as agents or validators. Once attested, addresses skip the expensive ENS
 ownership check performed by `IdentityRegistry` and can participate using the
-delegated wallet.
+delegated wallet. For setting up the base ENS records and issuing
+subdomains see [ens-identity-setup.md](ens-identity-setup.md).
 
 ## Granting and revoking
 
