@@ -116,5 +116,11 @@ contract ValidationStub is IValidationModule {
 
     function setSelectionStrategy(IValidationModule.SelectionStrategy) external override {}
 
+    function setClubRootNode(bytes32) external override {}
+
+    function setValidatorMerkleRoot(bytes32) external override {}
+
+    function bumpValidatorAuthCacheVersion() external override {}
+
 }
 

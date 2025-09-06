@@ -30,6 +30,8 @@ interface IValidationModule {
         uint256 approvalThreshold,
         uint256 slashingPct
     );
+    event ClubRootNodeUpdated(bytes32 node);
+    event ValidatorMerkleRootUpdated(bytes32 root);
 
     /// @notice Select validators for a given job.
     /// @param jobId Identifier of the job.
@@ -144,6 +146,17 @@ interface IValidationModule {
 
     /// @notice Configure the validator sampling strategy.
     function setSelectionStrategy(SelectionStrategy strategy) external;
+
+    /// @notice Update the ENS root node used for validator verification.
+    /// @param node Namehash of the validator parent node (e.g. `club.agi.eth`).
+    function setClubRootNode(bytes32 node) external;
+
+    /// @notice Update the Merkle root for the validator allowlist.
+    /// @param root Merkle root of approved validator addresses.
+    function setValidatorMerkleRoot(bytes32 root) external;
+
+    /// @notice Bump the cached validator authorization version.
+    function bumpValidatorAuthCacheVersion() external;
 
 
     /// @notice Return validators selected for a job
