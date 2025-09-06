@@ -79,12 +79,17 @@ await dispute.resolve(jobId, true); // employer wins
 
 Verifies agent and validator eligibility.
 
-- `isAuthorizedAgent(account, label, proof)` – check if an address can work.
-- `isAuthorizedValidator(account, label, proof)` – check validator eligibility.
+- `setAttestationRegistry(address registry)` – configure optional delegated identity support.
+- `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check if an address controlling `subdomain.agent.agi.eth` can work.
+- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – check validator eligibility for `subdomain.club.agi.eth`.
 
 ```javascript
-const ok = await identity.isAuthorizedAgent(user, labelHash, merkleProof);
+const ok = await identity.isAuthorizedAgent(user, 'alice', merkleProof); // alice.agent.agi.eth
 ```
+
+Successful agent and validator checks are cached inside `JobRegistry` and
+`ValidationModule` for roughly 24 hours to save gas. Owners may adjust these
+durations or invalidate the caches when ENS records change.
 
 ## ReputationEngine
 

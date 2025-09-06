@@ -25,8 +25,9 @@ def post_job():
     w3.eth.send_raw_transaction(signed.rawTransaction)
 
 
-def apply(job_id, label, proof):
-    tx = registry.functions.applyForJob(job_id, label, proof).build_transaction({
+def apply(job_id, subdomain, proof):
+    """Apply for a job using `subdomain` like 'alice' for alice.agent.agi.eth."""
+    tx = registry.functions.applyForJob(job_id, subdomain, proof).build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })
@@ -34,15 +35,16 @@ def apply(job_id, label, proof):
     w3.eth.send_raw_transaction(signed.rawTransaction)
 
 
-def commit_and_reveal(job_id, commit_hash, label, proof, approve, salt):
-    tx = validation.functions.commitValidation(job_id, commit_hash, label, proof).build_transaction({
+def commit_and_reveal(job_id, commit_hash, subdomain, proof, approve, salt):
+    """Validators pass their `.club.agi.eth` label as `subdomain`."""
+    tx = validation.functions.commitValidation(job_id, commit_hash, subdomain, proof).build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })
     signed = account.sign_transaction(tx)
     w3.eth.send_raw_transaction(signed.rawTransaction)
 
-    tx2 = validation.functions.revealValidation(job_id, approve, salt, label, proof).build_transaction({
+    tx2 = validation.functions.revealValidation(job_id, approve, salt, subdomain, proof).build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })

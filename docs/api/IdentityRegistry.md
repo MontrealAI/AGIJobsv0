@@ -2,20 +2,24 @@
 
 Validates ENS ownership and Merkle proofs for agents and validators.
 Maintains optional metadata URIs describing each agent's capabilities.
+When connected to an `AttestationRegistry`, delegated addresses can skip the
+full ENS lookup and successful checks are cached by consumer modules to reduce
+gas usage.
 
 ## Functions
 
 - `setENS(address ens)` / `setNameWrapper(address wrapper)` – configure ENS contracts.
 - `setReputationEngine(address engine)` – connect reputation engine.
+- `setAttestationRegistry(address registry)` – enable off‑chain attestation lookups.
 - `setAgentRootNode(bytes32 node)` / `setClubRootNode(bytes32 node)` – base ENS nodes for agents and validators.
 - `setAgentMerkleRoot(bytes32 root)` / `setValidatorMerkleRoot(bytes32 root)` – load allowlists.
 - `addAdditionalAgent(address agent)` / `addAdditionalValidator(address validator)` – manual overrides.
 - `setAgentProfileURI(address agent, string uri)` – governance-set capability profile for an agent.
 - `updateAgentProfile(string subdomain, bytes32[] proof, string uri)` – agent updates their own profile after proving control of `subdomain`.
-- `isAuthorizedAgent(address account, bytes32 label, bytes32[] proof)` – check agent eligibility.
-- `isAuthorizedValidator(address account, bytes32 label, bytes32[] proof)` – check validator eligibility.
-- `verifyAgent(bytes32 label, bytes32[] proof, address account)` – external verification helper.
-- `verifyValidator(bytes32 label, bytes32[] proof, address account)` – external verification helper.
+- `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check agent eligibility for `subdomain.agent.agi.eth`.
+- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – check validator eligibility for `subdomain.club.agi.eth`.
+- `verifyAgent(address claimant, string subdomain, bytes32[] proof)` – external verification helper.
+- `verifyValidator(address claimant, string subdomain, bytes32[] proof)` – external verification helper.
 
 ## Events
 

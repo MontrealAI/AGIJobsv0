@@ -9,9 +9,9 @@ Coordinates the lifecycle of jobs and mediates between modules.
 ### Key Functions
 
 - `createJob(uint256 reward, string uri)` – Post a new job with a reward and metadata URI.
-- `applyForJob(uint256 jobId, string subdomain, bytes proof)` – Agent applies for an open job.
-- `stakeAndApply(uint256 jobId, string subdomain, bytes proof)` – Combine staking and application in one call.
-- `submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof)` – Submit work for validation.
+- `applyForJob(uint256 jobId, string subdomain, bytes32[] proof)` – Agent applies for an open job using a label under `agent.agi.eth`.
+- `stakeAndApply(uint256 jobId, string subdomain, bytes32[] proof)` – Combine staking and application in one call.
+- `submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)` – Submit work for validation.
 - `finalize(uint256 jobId)` – Release rewards and stakes after validation.
 - `raiseDispute(uint256 jobId, string evidence)` – Escalate a job for moderator resolution.
 - `cancelJob(uint256 jobId)` – Employer cancels an unassigned job.
@@ -43,20 +43,21 @@ StakeManager(stake).depositStake(0, 1_000000000000000000);
 ## ValidationModule
 
 Selects validators and manages commit‑reveal voting on submissions. Both
-`commitValidation` and `revealValidation` now **require** ENS `subdomain` and
-Merkle `proof` parameters. Validators without an ENS identity should pass an
-empty string and empty proof array.
+`commitValidation` and `revealValidation` now **require** an ENS
+`subdomain` (label under `.club.agi.eth`) and Merkle `proof` parameters.
+Validators without an ENS identity should pass an empty string and empty proof
+array.
 
 ### Key Functions
 
-- `commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes proof)` – Commit to a validation decision.
-- `revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes proof)` – Reveal the decision.
+- `commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)` – Commit to a validation decision.
+- `revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)` – Reveal the decision.
 - `finalize(uint256 jobId)` – Conclude validation after the reveal window.
 
 ### Example
 
 ```solidity
-validation.commitValidation(jobId, commitHash, "alice.agent.agi.eth", proof);
+validation.commitValidation(jobId, commitHash, "alice", proof); // alice.club.agi.eth
 ```
 
 ## DisputeModule
@@ -80,9 +81,14 @@ Verifies ENS ownership and Merkle proofs for agent and validator identities.
 
 ### Key Functions
 
-- `verifyAgent(address agent, string subdomain, bytes proof)` – Validate an agent’s identity.
-- `verifyValidator(address validator, string subdomain, bytes proof)` – Validate a validator.
-- `isAuthorizedAgent(address agent)` – Check if an address is allowed to act as an agent.
+- `setAttestationRegistry(address registry)` – connect delegated identity cache.
+- `verifyAgent(address claimant, string subdomain, bytes32[] proof)` – Validate an agent’s identity.
+- `verifyValidator(address claimant, string subdomain, bytes32[] proof)` – Validate a validator.
+- `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – Check if an address may act as an agent.
+- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – Check if an address may validate.
+
+Successful checks are cached by `JobRegistry` and `ValidationModule` for about a
+day; owners can invalidate these caches when ENS data changes.
 
 ## ReputationEngine
 
@@ -174,21 +180,21 @@ w3.eth.wait_for_transaction_receipt(tx)
 const val = new ethers.Contract(
   VALIDATION_MODULE,
   [
-    'function commitValidation(uint256,bytes32,string,bytes)',
-    'function revealValidation(uint256,bool,bytes32,string,bytes)',
+    'function commitValidation(uint256,bytes32,string,bytes32[])',
+    'function revealValidation(uint256,bool,bytes32,string,bytes32[])',
   ],
   wallet
 );
-await val.commitValidation(jobId, commitHash, 'alice.agent.agi.eth', proof);
-await val.revealValidation(jobId, true, salt, 'alice.agent.agi.eth', proof);
+await val.commitValidation(jobId, commitHash, 'alice', proof); // alice.club.agi.eth
+await val.revealValidation(jobId, true, salt, 'alice', proof);
 ```
 
 ```python
 val = w3.eth.contract(address=VALIDATION_MODULE, abi=[
-  'function commitValidation(uint256,bytes32,string,bytes)',
-  'function revealValidation(uint256,bool,bytes32,string,bytes)'])
-val.functions.commitValidation(job_id, commit_hash, 'alice.agent.agi.eth', proof).transact({'from': acct})
-val.functions.revealValidation(job_id, True, salt, 'alice.agent.agi.eth', proof).transact({'from': acct})
+  'function commitValidation(uint256,bytes32,string,bytes32[])',
+  'function revealValidation(uint256,bool,bytes32,string,bytes32[])'])
+val.functions.commitValidation(job_id, commit_hash, 'alice', proof).transact({'from': acct})
+val.functions.revealValidation(job_id, True, salt, 'alice', proof).transact({'from': acct})
 ```
 
 ### Raise a Dispute
