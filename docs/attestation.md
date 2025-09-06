@@ -28,6 +28,17 @@ delegated wallet.
    > await att.revoke(node, 0, '0xDelegate');
    ```
 
+Instead of using the console, operators can run the helper script which
+computes the node, verifies ownership and submits the transaction in one
+command:
+
+```bash
+ATTESTATION_REGISTRY=<address> npx hardhat run scripts/v2/attestEns.ts --network <network> alice agent 0xDelegate
+```
+
+Replace `alice` with the desired subdomain and pass `validator` to attest a
+validator address.
+
 ## Verifying before use
 
 Delegated addresses should confirm that an attestation exists before using the
