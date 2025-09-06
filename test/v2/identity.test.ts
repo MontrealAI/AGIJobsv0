@@ -248,6 +248,45 @@ describe('IdentityRegistry ENS verification', function () {
     expect(await id.agentProfileURI(alice.address)).to.equal('ipfs://cap2');
   });
 
+  it('emits events when allowlisted addresses are used', async () => {
+    const [owner, agent, validator] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory('MockENS');
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory('MockNameWrapper');
+    const wrapper = await Wrapper.deploy();
+
+    const Stake = await ethers.getContractFactory('MockStakeManager');
+    const stake = await Stake.deploy();
+
+    const Rep = await ethers.getContractFactory(
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
+    );
+    const rep = await Rep.deploy(await stake.getAddress());
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
+    );
+    const id = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      await rep.getAddress(),
+      ethers.ZeroHash,
+      ethers.ZeroHash
+    );
+
+    await id.addAdditionalAgent(agent.address);
+    await expect(id.verifyAgent(agent.address, '', []))
+      .to.emit(id, 'AdditionalAgentUsed')
+      .withArgs(agent.address);
+
+    await id.addAdditionalValidator(validator.address);
+    await expect(id.verifyValidator(validator.address, '', []))
+      .to.emit(id, 'AdditionalValidatorUsed')
+      .withArgs(validator.address);
+  });
+
   it('requires new owner to accept ownership', async () => {
     const [owner, other] = await ethers.getSigners();
 

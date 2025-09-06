@@ -49,6 +49,8 @@ contract IdentityRegistry is Ownable2Step {
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
+    event AdditionalAgentUsed(address indexed agent);
+    event AdditionalValidatorUsed(address indexed validator);
     event AgentTypeUpdated(address indexed agent, AgentType agentType);
     /// @notice Emitted when an agent updates their profile metadata.
     event AgentProfileUpdated(address indexed agent, string uri);
@@ -302,6 +304,7 @@ contract IdentityRegistry is Ownable2Step {
             return false;
         }
         if (additionalAgents[claimant]) {
+            emit AdditionalAgentUsed(claimant);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             return true;
         }
@@ -344,6 +347,7 @@ contract IdentityRegistry is Ownable2Step {
             return false;
         }
         if (additionalValidators[claimant]) {
+            emit AdditionalValidatorUsed(claimant);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             return true;
         }

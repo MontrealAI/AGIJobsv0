@@ -17,6 +17,14 @@ Agents and validators must prove ownership of specific ENS subdomains before int
 
 Transactions will revert if the calling address does not own the claimed subdomain. Owner‑controlled allowlists and Merkle proofs exist only for emergencies and should not be relied on for normal operation.
 
+In the event of an ENS outage or other emergency, governance may
+temporarily allowlist addresses using
+`IdentityRegistry.addAdditionalAgent` or `addAdditionalValidator`.
+Such entries must be short‑lived and are tracked by the
+`AdditionalAgentUsed` and `AdditionalValidatorUsed` events. Governance
+should remove the allowlisted address once a proper ENS name is
+registered.
+
 ## Issuing subdomains
 
 Project operators create subdomains under `agent.agi.eth` or `club.agi.eth` and assign them to participant addresses. Example using the Hardhat console:
