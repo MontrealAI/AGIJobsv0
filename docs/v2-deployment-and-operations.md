@@ -214,6 +214,17 @@ halt job creation, validation and payouts during emergencies and
   obligations in relevant jurisdictions and ensure participants acknowledge the
   posted tax policy.
 
+## ENS Identity Monitor
+
+A lightweight script monitors `IdentityRegistry` for `OwnershipVerified` and `RecoveryInitiated` events and logs anomalies.
+Run it with:
+
+```bash
+RPC_URL=https://rpc.example IDENTITY_REGISTRY_ADDRESS=0xRegistry node scripts/monitor/ens-monitor.js
+```
+
+Logs appear on stdout and in `scripts/monitor/ens-monitor.log`. An "Anomaly detected" message indicates frequent `RecoveryInitiated` events.
+
 ## Troubleshooting
 
 - **Missing subdomain proof** – ensure your ENS label and Merkle proof
