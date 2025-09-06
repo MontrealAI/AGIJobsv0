@@ -33,7 +33,8 @@ registry.on('JobCreated', async (jobId, employer, agent, reward) => {
     try {
       const display = ethers.formatUnits(reward, TOKEN_DECIMALS);
       console.log(`Applying for job ${jobId} with reward ${display}`);
-      const tx = await registry.applyForJob(jobId, '', '0x');
+      // Replace 'alice' with your label under agent.agi.eth and supply a proof if required.
+      const tx = await registry.applyForJob(jobId, 'alice', '0x');
       await tx.wait();
       console.log(`Applied in tx ${tx.hash}`);
     } catch (err) {

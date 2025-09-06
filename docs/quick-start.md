@@ -31,7 +31,7 @@ Agents stake and submit an application.
 ```javascript
 // apply.js
 const registry = await ethers.getContractAt('JobRegistry', registryAddress);
-await registry.applyForJob(jobId, labelHash, merkleProof);
+await registry.applyForJob(jobId, 'alice', merkleProof); // alice.agent.agi.eth
 ```
 
 ## 3. Validate the Submission
@@ -46,10 +46,10 @@ const validation = await ethers.getContractAt(
 );
 
 // Commit phase
-await validation.commitValidation(jobId, commitHash, '', []);
+await validation.commitValidation(jobId, commitHash, 'alice', []); // alice.club.agi.eth
 
 // Reveal phase
-await validation.revealValidation(jobId, true, salt, '', []);
+await validation.revealValidation(jobId, true, salt, 'alice', []);
 ```
 
 ## 4. Finalize

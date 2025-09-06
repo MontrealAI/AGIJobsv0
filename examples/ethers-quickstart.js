@@ -9,7 +9,7 @@ const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const registryAbi = [
   'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)',
-  'function applyForJob(uint256 jobId, bytes32 label, bytes32[] proof)',
+  'function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI)',
   'function raiseDispute(uint256 jobId, bytes32 evidenceHash)',
 ];
@@ -62,8 +62,10 @@ async function stake(amount) {
   await stakeManager.depositStake(0, parsed);
 }
 
-async function apply(jobId, label, proof) {
-  await registry.applyForJob(jobId, label, proof);
+// Apply for a job using a `subdomain` label such as "alice" for
+// `alice.agent.agi.eth`. Supply a Merkle `proof` if allowlists are enabled.
+async function apply(jobId, subdomain, proof) {
+  await registry.applyForJob(jobId, subdomain, proof);
 }
 
 async function submit(jobId, uri) {
@@ -71,9 +73,10 @@ async function submit(jobId, uri) {
   await registry.submit(jobId, hash, uri);
 }
 
-async function validate(jobId, hash, label, proof, approve, salt) {
-  await validation.commitValidation(jobId, hash, label, proof);
-  await validation.revealValidation(jobId, approve, salt, label, proof);
+// Validators pass their `subdomain` label under `club.agi.eth` when voting.
+async function validate(jobId, hash, subdomain, proof, approve, salt) {
+  await validation.commitValidation(jobId, hash, subdomain, proof);
+  await validation.revealValidation(jobId, approve, salt, subdomain, proof);
   await validation.finalize(jobId);
 }
 
