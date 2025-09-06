@@ -162,5 +162,7 @@ contract NoValidationModule is IValidationModule, Ownable {
         override
     {}
 
+    function bumpValidatorAuthCacheVersion() external pure override {}
+
 }
 

@@ -112,5 +112,7 @@ contract ValidationStub is IValidationModule {
 
     function setSelectionStrategy(IValidationModule.SelectionStrategy) external override {}
 
+    function bumpValidatorAuthCacheVersion() external override {}
+
 }
 

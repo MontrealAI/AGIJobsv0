@@ -176,7 +176,7 @@ then be performed through the "Write" tabs on each module.
 | `DisputeModule`    | `setDisputeFee(fee)`       | Fee required to raise a dispute                 |
 | `FeePool`          | `setBurnPct(pct)`          | Portion of fees burned before distribution      |
 
-- **Manage allowlists:** on `IdentityRegistry` use `setAgentMerkleRoot(root)`, `setValidatorMerkleRoot(root)`, `addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`; update ENS roots with `setAgentRootNode(node)` and `setClubRootNode(node)`.
+- **Manage allowlists:** use `JobRegistry.setAgentRootNode(node)` / `setAgentMerkleRoot(root)` for agents and `JobRegistry.setValidatorRootNode(node)` / `setValidatorMerkleRoot(root)` for validators. These call the underlying `IdentityRegistry` setters and automatically bump the `ValidationModule` validator auth cache so outdated entries expire. Add individual addresses with `IdentityRegistry.addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`.
 - **Transfer ownership:** hand governance to a multisig or timelock so no
   single key can change parameters:
   - `StakeManager.setGovernance(multisig)`

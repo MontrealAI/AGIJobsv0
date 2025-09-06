@@ -185,5 +185,7 @@ contract OracleValidationModule is IValidationModule, Ownable {
         override
     {}
 
+    function bumpValidatorAuthCacheVersion() external pure override {}
+
 }
 

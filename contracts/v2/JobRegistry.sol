@@ -200,6 +200,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     event AgentRootNodeUpdated(bytes32 node);
     event AgentMerkleRootUpdated(bytes32 root);
+    event ValidatorRootNodeUpdated(bytes32 node);
+    event ValidatorMerkleRootUpdated(bytes32 root);
     event AgentAuthCacheUpdated(address indexed agent, bool authorized);
     event AgentAuthCacheDurationUpdated(uint256 duration);
 
@@ -424,6 +426,26 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             agentAuthCacheVersion++;
         }
         emit AgentMerkleRootUpdated(root);
+    }
+
+    /// @notice Update the ENS root node used for validator verification.
+    /// @param node Namehash of the validator parent node (e.g. `club.agi.eth`).
+    function setValidatorRootNode(bytes32 node) external onlyGovernance {
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        if (address(validationModule) == address(0)) revert InvalidValidationModule();
+        identityRegistry.setClubRootNode(node);
+        validationModule.bumpValidatorAuthCacheVersion();
+        emit ValidatorRootNodeUpdated(node);
+    }
+
+    /// @notice Update the Merkle root for the validator allowlist.
+    /// @param root Merkle root of approved validator addresses.
+    function setValidatorMerkleRoot(bytes32 root) external onlyGovernance {
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        if (address(validationModule) == address(0)) revert InvalidValidationModule();
+        identityRegistry.setValidatorMerkleRoot(root);
+        validationModule.bumpValidatorAuthCacheVersion();
+        emit ValidatorMerkleRootUpdated(root);
     }
 
     /// @notice Refresh or invalidate cached agent authorization entries.

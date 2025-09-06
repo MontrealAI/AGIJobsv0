@@ -141,6 +141,9 @@ interface IValidationModule {
     /// @notice Configure the validator sampling strategy.
     function setSelectionStrategy(SelectionStrategy strategy) external;
 
+    /// @notice Invalidate all cached validator authorizations.
+    function bumpValidatorAuthCacheVersion() external;
+
 
     /// @notice Return validators selected for a job
     /// @param jobId Identifier of the job
