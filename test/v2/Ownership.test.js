@@ -104,20 +104,8 @@ describe('Ownable modules', function () {
     const ModCertificateNFT = await ethers.getContractFactory(
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    const IdentityLib = await ethers.getContractFactory(
-      'contracts/v2/modules/IdentityLib.sol:IdentityLib'
-    );
-
     const modCert = await ModCertificateNFT.deploy('Cert', 'CRT');
     await modCert.waitForDeployment();
-    const identity = await IdentityLib.deploy(
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroHash,
-      ethers.ZeroHash
-    );
-    await identity.waitForDeployment();
 
     const identityRegistry = IdentityRegistry.attach(identityRegistryAddr);
     const taxPolicyC = TaxPolicy.attach(taxPolicy);
@@ -226,14 +214,6 @@ describe('Ownable modules', function () {
         modCert,
         owner,
         (inst, signer) => inst.connect(signer).setJobRegistry(other.address),
-      ],
-      [
-        identity,
-        owner,
-        (inst, signer) =>
-          inst
-            .connect(signer)
-            .setModules(ethers.ZeroAddress, ethers.ZeroAddress),
       ],
     ];
 
