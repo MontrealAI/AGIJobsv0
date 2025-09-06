@@ -919,11 +919,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (job.state != State.Submitted) revert NotSubmitted();
         job.success = success;
-        job.state = success ? State.Completed : State.Disputed;
+        job.state = State.Completed;
         emit JobCompleted(jobId, success);
-        if (success) {
-            _finalize(jobId);
-        }
     }
 
     /// @param jobId Identifier of the job being finalised.
