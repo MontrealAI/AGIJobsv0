@@ -79,12 +79,6 @@ contract OracleValidationModule is IValidationModule, Ownable {
         bytes32[] calldata
     ) external pure override {}
 
-    /// @inheritdoc IValidationModule
-    function commitValidation(uint256, bytes32)
-        external
-        pure
-        override
-    {}
 
     /// @inheritdoc IValidationModule
     function revealValidation(
@@ -95,12 +89,6 @@ contract OracleValidationModule is IValidationModule, Ownable {
         bytes32[] calldata
     ) external pure override {}
 
-    /// @inheritdoc IValidationModule
-    function revealValidation(uint256, bool, bytes32)
-        external
-        pure
-        override
-    {}
 
     /// @inheritdoc IValidationModule
     function finalize(uint256) external pure override returns (bool) {

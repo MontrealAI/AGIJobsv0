@@ -131,8 +131,8 @@ interface IJobRegistry {
 
 interface IValidationModule {
     function selectValidators(uint256 jobId) external returns (address[] memory);
-    function commitValidation(uint256 jobId, bytes32 commitHash) external;
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
+    function commitValidation(uint256 jobId, bytes32 commitHash, string calldata subdomain, bytes32[] calldata proof) external;
+    function revealValidation(uint256 jobId, bool approve, bytes32 salt, string calldata subdomain, bytes32[] calldata proof) external;
     function finalize(uint256 jobId) external returns (bool success);
     function setParameters(
         uint256 validatorStakeRequirement,

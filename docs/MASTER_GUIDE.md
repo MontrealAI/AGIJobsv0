@@ -281,7 +281,7 @@ All amounts are `$AGIALPHA` **wei** (18 decimals). **Always** `approve` the rele
    * `ValidationModule.commitValidation(jobId, commitHash, subdomainLabel, proof[])`
 3. **Reveal** (during reveal window):
 
-   * `ValidationModule.revealValidation(jobId, approveBool, salt)`
+   * `ValidationModule.revealValidation(jobId, approveBool, salt, subdomain, proof)`
 
 ### 8.4 Finalize & Payouts
 
@@ -393,7 +393,7 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
 **ValidationModule**
 
 * `commitValidation(jobId, commitHash, subdomainLabel, proof[])`
-* `revealValidation(jobId, approve, salt)`
+* `revealValidation(jobId, approve, salt, subdomain, proof)`
 * `finalize(jobId)`
 * Setters: `setJobRegistry(addr)`, `setCommitWindow(sec)`, `setRevealWindow(sec)`, `setIdentityRegistry(addr)`
 

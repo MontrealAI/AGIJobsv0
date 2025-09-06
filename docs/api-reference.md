@@ -42,7 +42,10 @@ StakeManager(stake).depositStake(0, 1_000000000000000000);
 
 ## ValidationModule
 
-Selects validators and manages commit‑reveal voting on submissions.
+Selects validators and manages commit‑reveal voting on submissions. Both
+`commitValidation` and `revealValidation` now **require** ENS `subdomain` and
+Merkle `proof` parameters. Validators without an ENS identity should pass an
+empty string and empty proof array.
 
 ### Key Functions
 

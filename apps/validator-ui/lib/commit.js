@@ -14,7 +14,7 @@ function scheduleReveal(contract, jobId, approve, salt, delayMs, specHash) {
     setTimeout(async () => {
       try {
         const tx = contract.revealValidation
-          ? await contract.revealValidation(jobId, approve, salt)
+          ? await contract.revealValidation(jobId, approve, salt, '', [])
           : await contract.reveal(jobId, approve, salt, specHash);
         await tx.wait();
         resolve(tx);

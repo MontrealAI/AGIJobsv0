@@ -83,8 +83,8 @@ const JOB_REGISTRY_ABI = [
 // Minimal ABI for ValidationModule interactions
 const VALIDATION_MODULE_ABI = [
   'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function commitValidation(uint256 jobId, bytes32 commitHash)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt)',
+  'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
+  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
   'function finalize(uint256 jobId) external returns (bool)',
   'function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,bool tallied,uint256 committeeSize)',
   'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
@@ -290,7 +290,7 @@ async function commitHelper(jobId, wallet, approve) {
   );
   const tx = await validation
     .connect(wallet)
-    .commitValidation(jobId, commitHash);
+    .commitValidation(jobId, commitHash, '', []);
   await tx.wait();
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId);
@@ -305,7 +305,7 @@ async function revealHelper(jobId, wallet) {
   if (!data) throw new Error('no commit found');
   const tx = await validation
     .connect(wallet)
-    .revealValidation(jobId, data.approve, data.salt);
+    .revealValidation(jobId, data.approve, data.salt, '', []);
   await tx.wait();
   delete jobCommits[wallet.address.toLowerCase()];
   return { tx: tx.hash };

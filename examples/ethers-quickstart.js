@@ -15,8 +15,8 @@ const registryAbi = [
 ];
 const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
 const validationAbi = [
-  'function commitValidation(uint256 jobId, bytes32 hash, bytes32 label, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt)',
+  'function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)',
+  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
   'function finalize(uint256 jobId)',
 ];
 
@@ -73,7 +73,7 @@ async function submit(jobId, uri) {
 
 async function validate(jobId, hash, label, proof, approve, salt) {
   await validation.commitValidation(jobId, hash, label, proof);
-  await validation.revealValidation(jobId, approve, salt);
+  await validation.revealValidation(jobId, approve, salt, label, proof);
   await validation.finalize(jobId);
 }
 

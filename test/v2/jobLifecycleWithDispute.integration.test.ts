@@ -175,7 +175,7 @@ describe('job lifecycle with dispute and validator failure', function () {
         [1n, nonce, true, salt1, specHash]
       )
     );
-    await validation.connect(v1).commitValidation(1, commit1);
+    await validation.connect(v1).commitValidation(1, commit1, '', []);
     const salt2 = ethers.randomBytes(32);
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
@@ -183,10 +183,10 @@ describe('job lifecycle with dispute and validator failure', function () {
         [1n, nonce, false, salt2, specHash]
       )
     );
-    await validation.connect(v2).commitValidation(1, commit2);
+    await validation.connect(v2).commitValidation(1, commit2, '', []);
 
     await time.increase(2);
-    await validation.connect(v1).revealValidation(1, true, salt1);
+    await validation.connect(v1).revealValidation(1, true, salt1, '', []);
     // v2 fails to reveal
     await time.increase(2);
     await validation.finalize(1);

@@ -43,8 +43,6 @@ contract ValidationStub is IValidationModule {
         bytes32[] calldata
     ) external override {}
 
-    function commitValidation(uint256, bytes32) external override {}
-
     function revealValidation(
         uint256,
         bool,
@@ -52,8 +50,6 @@ contract ValidationStub is IValidationModule {
         string calldata,
         bytes32[] calldata
     ) external override {}
-
-    function revealValidation(uint256, bool, bytes32) external override {}
 
     function finalize(uint256 jobId) external override returns (bool success) {
         success = result;

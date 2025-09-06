@@ -42,7 +42,7 @@ def commit_and_reveal(job_id, commit_hash, label, proof, approve, salt):
     signed = account.sign_transaction(tx)
     w3.eth.send_raw_transaction(signed.rawTransaction)
 
-    tx2 = validation.functions.revealValidation(job_id, approve, salt).build_transaction({
+    tx2 = validation.functions.revealValidation(job_id, approve, salt, label, proof).build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })

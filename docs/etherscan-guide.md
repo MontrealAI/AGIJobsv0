@@ -23,7 +23,7 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | Employer  | `$AGIALPHA.approve(StakeManager, 1_050000000000000000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000000000000000, uri)`                                                                                       | approve `1_050000000000000000` for a 1‑token reward + 5% fee |
 | Agent     | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000000000000000)`                                                                                                                        | stake `1_000000000000000000`                                 |
-| Validator | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `StakeManager.depositStake(1, 1_000000000000000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt)` | stake `1_000000000000000000`                                 |
+| Validator | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `StakeManager.depositStake(1, 1_000000000000000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt, sub, proof)` | stake `1_000000000000000000`                                 |
 | Disputer  | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner)                                        | dispute fee `1_000000000000000000`                           |
 
 ## ENS prerequisites
@@ -158,8 +158,8 @@ Before performing any on-chain action, employers, agents, and validators must ca
    depositStake(1, amount)
    ```
 
-3. During validation, open `ValidationModule`, confirm **isTaxExempt()**, and send hashed votes with **commitValidation(jobId, commitHash)**.
-4. Reveal decisions using **revealValidation(jobId, approve, salt)** before the window closes.
+3. During validation, open `ValidationModule`, confirm **isTaxExempt()**, and send hashed votes with **commitValidation(jobId, commitHash, subdomain, proof)**.
+4. Reveal decisions using **revealValidation(jobId, approve, salt, subdomain, proof)** before the window closes.
 
 ### Tax Policy
 
@@ -213,7 +213,7 @@ The `TaxPolicy` contract is informational only: it never holds funds and imposes
 ### Commit & reveal validation votes
 
 1. During the commit window open `ValidationModule` → **Write** and call **commitValidation(jobId, hash, subdomain, proof)**.
-2. When the reveal window opens, call **revealValidation(jobId, approve, salt)** from the same address.
+2. When the reveal window opens, call **revealValidation(jobId, approve, salt, subdomain, proof)** from the same address.
 
 ### Raise & resolve disputes
 

@@ -72,8 +72,8 @@ export default function Home() {
     }
     const abi = [
       'function jobNonce(uint256 jobId) view returns (uint256)',
-      'function commitValidation(uint256 jobId, bytes32 commitHash)',
-      'function revealValidation(uint256 jobId, bool approve, bytes32 salt)'
+      'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
+      'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)'
     ];
     const contract = new ethers.Contract(validationAddr, abi, signer);
     const nonce: bigint = await contract.jobNonce(jobId);
@@ -84,7 +84,7 @@ export default function Home() {
       undefined,
       specHash
     );
-    const tx = await contract.commitValidation(jobId, commitHash);
+    const tx = await contract.commitValidation(jobId, commitHash, '', []);
     await tx.wait();
     setMessage('Commit submitted, scheduling reveal');
     const delay = Number(process.env.NEXT_PUBLIC_REVEAL_DELAY_MS || '5000');

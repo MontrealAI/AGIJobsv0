@@ -46,10 +46,10 @@ const validation = await ethers.getContractAt(
 );
 
 // Commit phase
-await validation.commitValidation(jobId, commitHash);
+await validation.commitValidation(jobId, commitHash, '', []);
 
 // Reveal phase
-await validation.revealValidation(jobId, true, salt);
+await validation.revealValidation(jobId, true, salt, '', []);
 ```
 
 ## 4. Finalize

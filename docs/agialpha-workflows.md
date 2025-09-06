@@ -16,7 +16,7 @@ This guide summarises Etherscan-based interactions for the $AGIALPHA-powered AGI
 
 1. **Stake** – approve tokens and call `StakeManager.depositStake(1, amount)`.
 2. **Commit** – during the commit window call `ValidationModule.commitValidation(jobId, hash, subdomain, proof)` with your `.club.agi.eth` label.
-3. **Reveal** – when the reveal window opens call `ValidationModule.revealValidation(jobId, approve, salt)`.
+3. **Reveal** – when the reveal window opens call `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)`.
 
 ## 4. Raise a Dispute (Anyone)
 

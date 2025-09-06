@@ -55,12 +55,12 @@ Manages commit‑reveal voting by validators.
 
 - `start(jobId, entropy)` – select validators and open the commit window.
 - `selectValidators(jobId, entropy)` – choose validators for a job.
-- `commitValidation(jobId, commitHash)` / `revealValidation(jobId, approve, salt)` – validator vote flow.
+- `commitValidation(jobId, commitHash, subdomain, proof)` / `revealValidation(jobId, approve, salt, subdomain, proof)` – validator vote flow.
 - `finalize(jobId)` – tallies votes and notifies `JobRegistry`.
 
 ```javascript
-await validation.commitValidation(jobId, commitHash);
-await validation.revealValidation(jobId, true, salt);
+await validation.commitValidation(jobId, commitHash, '', []);
+await validation.revealValidation(jobId, true, salt, '', []);
 ```
 
 ## DisputeModule
