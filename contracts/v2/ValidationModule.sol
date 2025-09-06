@@ -302,6 +302,24 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         emit IdentityRegistryUpdated(address(registry));
     }
 
+    /// @notice Update the ENS root node used for validator verification.
+    /// @param node Namehash of the validator parent node (e.g. `club.agi.eth`).
+    function setClubRootNode(bytes32 node) external onlyOwner {
+        if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
+        identityRegistry.setClubRootNode(node);
+        bumpValidatorAuthCacheVersion();
+        emit ClubRootNodeUpdated(node);
+    }
+
+    /// @notice Update the Merkle root for the validator allowlist.
+    /// @param root Merkle root of approved validator addresses.
+    function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
+        if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
+        identityRegistry.setValidatorMerkleRoot(root);
+        bumpValidatorAuthCacheVersion();
+        emit ValidatorMerkleRootUpdated(root);
+    }
+
     /// @notice Set the Randao coordinator used for randomness.
     /// @param coordinator Address of the RandaoCoordinator contract.
     function setRandaoCoordinator(IRandaoCoordinator coordinator)

@@ -174,5 +174,13 @@ contract NoValidationModule is IValidationModule, Ownable {
         override
     {}
 
+    /// @inheritdoc IValidationModule
+    function setClubRootNode(bytes32) external pure override {}
+
+    /// @inheritdoc IValidationModule
+    function setValidatorMerkleRoot(bytes32) external pure override {}
+
+    /// @inheritdoc IValidationModule
+    function bumpValidatorAuthCacheVersion() external pure override {}
 }
 

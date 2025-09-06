@@ -81,7 +81,7 @@ describe('JobRegistry agent auth cache', function () {
     expect(gas3).to.be.gt(gas2);
   });
 
-  it('invalidates cached authorization on root update', async () => {
+  it('invalidates cached authorization on Merkle root update', async () => {
     const Identity = await ethers.getContractFactory(
       'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
     );
@@ -140,6 +140,75 @@ describe('JobRegistry agent auth cache', function () {
       .connect(owner)
       .transferOwnership(await registry2.getAddress());
     await registry2.connect(owner).setAgentMerkleRoot(ethers.id('newroot'));
+
+    deadline = (await time.latest()) + 100;
+    await registry2.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await expect(
+      registry2.connect(agent).applyForJob(3, 'a', [])
+    ).to.be.revertedWithCustomError(registry2, 'NotAuthorizedAgent');
+  });
+
+  it('invalidates cached authorization on root node update', async () => {
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const verifier2 = await Identity.connect(owner).deploy();
+    await verifier2.waitForDeployment();
+    await verifier2.setAgentRootNode(ethers.ZeroHash);
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const registry2 = await Registry.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    await registry2.waitForDeployment();
+    await verifier2.connect(owner).setResult(true);
+    await registry2
+      .connect(owner)
+      .setIdentityRegistry(await verifier2.getAddress());
+
+    const Policy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const policy2 = await Policy.deploy('uri', 'ack');
+    await registry2.connect(owner).setTaxPolicy(await policy2.getAddress());
+    await policy2.connect(employer).acknowledge();
+    await policy2.connect(agent).acknowledge();
+
+    await registry2.connect(owner).setMaxJobReward(1000);
+    await registry2.connect(owner).setJobDurationLimit(1000);
+    await registry2.connect(owner).setFeePct(0);
+    await registry2.connect(owner).setJobParameters(0, 0);
+    await registry2.connect(owner).setAgentAuthCacheDuration(1000);
+
+    let deadline = (await time.latest()) + 100;
+    const specHash = ethers.id('spec');
+    await registry2.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await registry2.connect(agent).applyForJob(1, 'a', []);
+
+    await verifier2.connect(owner).setResult(false);
+
+    deadline = (await time.latest()) + 100;
+    await registry2.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await registry2.connect(agent).applyForJob(2, 'a', []);
+
+    await verifier2
+      .connect(owner)
+      .transferOwnership(await registry2.getAddress());
+    await registry2
+      .connect(owner)
+      .setAgentRootNode(ethers.id('newroot'));
 
     deadline = (await time.latest()) + 100;
     await registry2.connect(employer).createJob(1, deadline, specHash, 'uri');
