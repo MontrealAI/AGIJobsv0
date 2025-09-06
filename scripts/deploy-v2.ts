@@ -34,18 +34,6 @@ async function main() {
   const reputation = await Reputation.deploy(await stake.getAddress());
   await reputation.waitForDeployment();
 
-  const Identity = await ethers.getContractFactory(
-    'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
-  );
-  const identity = await Identity.deploy(
-    ENS_REGISTRY,
-    NAME_WRAPPER,
-    await reputation.getAddress(),
-    AGENT_ROOT_NODE,
-    CLUB_ROOT_NODE
-  );
-  await identity.waitForDeployment();
-
   const Validation = await ethers.getContractFactory(
     'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
   );
@@ -75,6 +63,18 @@ async function main() {
     deployer.address
   );
   await registry.waitForDeployment();
+
+  const Identity = await ethers.getContractFactory(
+    'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
+  );
+  const identity = await Identity.deploy(
+    ENS_REGISTRY,
+    NAME_WRAPPER,
+    await reputation.getAddress(),
+    AGENT_ROOT_NODE,
+    CLUB_ROOT_NODE
+  );
+  await identity.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
