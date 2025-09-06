@@ -6,8 +6,8 @@ This guide shows how a validator processes one job from commitment to finalizati
 
 | Phase    | Validator state   | Allowed window                             | Function                                                              |
 | -------- | ----------------- | ------------------------------------------ | --------------------------------------------------------------------- |
-| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash)`                |
-| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt)`             |
+| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`                |
+| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)`             |
 | Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
 
 `commitWindow` and `revealWindow` are owner‑configurable via `ValidationModule.setCommitRevealWindows`.
@@ -17,9 +17,9 @@ This guide shows how a validator processes one job from commitment to finalizati
 ```solidity
 bytes32 salt = keccak256(abi.encodePacked(block.timestamp, msg.sender));
 bytes32 commitHash = keccak256(abi.encode(true, salt));
-validationModule.commitValidation(jobId, commitHash);
+validationModule.commitValidation(jobId, commitHash, '', new bytes32[](0));
 // ... wait for the commit window to close
-validationModule.revealValidation(jobId, true, salt);
+validationModule.revealValidation(jobId, true, salt, '', new bytes32[](0));
 // ... wait for the reveal window to close
 validationModule.finalize(jobId);
 jobRegistry.finalize(jobId);
@@ -29,10 +29,10 @@ jobRegistry.finalize(jobId);
 
 ```bash
 # Commit during the commit window
-cast send $VALIDATION_MODULE "commitValidation(uint256,bytes32)" $JOB_ID 0xCOMMIT --from $VALIDATOR
+cast send $VALIDATION_MODULE "commitValidation(uint256,bytes32,string,bytes32[])" $JOB_ID 0xCOMMIT '' [] --from $VALIDATOR
 
 # Reveal after the commit window
-cast send $VALIDATION_MODULE "revealValidation(uint256,bool,bytes32)" $JOB_ID true 0xSALT --from $VALIDATOR
+cast send $VALIDATION_MODULE "revealValidation(uint256,bool,bytes32,string,bytes32[])" $JOB_ID true 0xSALT '' [] --from $VALIDATOR
 
 # Finalize after the reveal window
 cast send $VALIDATION_MODULE "finalize(uint256)" $JOB_ID --from $ANYONE

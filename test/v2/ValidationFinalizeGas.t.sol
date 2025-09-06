@@ -89,10 +89,10 @@ contract ValidationFinalizeGas is Test {
                 abi.encodePacked(jobId, nonce, true, salt, bytes32(0))
             );
             vm.prank(val);
-            validation.commitValidation(jobId, commitHash);
+            validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
             vm.warp(block.timestamp + 2);
             vm.prank(val);
-            validation.revealValidation(jobId, true, salt);
+            validation.revealValidation(jobId, true, salt, "", new bytes32[](0));
         }
     }
 

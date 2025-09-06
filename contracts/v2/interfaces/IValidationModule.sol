@@ -60,8 +60,6 @@ interface IValidationModule {
         bytes32[] calldata proof
     ) external;
 
-    /// @notice Commit a validation hash without ENS parameters (legacy wrapper)
-    function commitValidation(uint256 jobId, bytes32 commitHash) external;
 
     /// @notice Reveal a previously committed validation vote
     /// @param jobId Identifier of the job
@@ -77,8 +75,6 @@ interface IValidationModule {
         bytes32[] calldata proof
     ) external;
 
-    /// @notice Reveal a previously committed validation vote (legacy wrapper)
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt) external;
 
     /// @notice Finalize validation round and slash incorrect validators
     /// @param jobId Identifier of the job

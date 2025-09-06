@@ -132,7 +132,8 @@ then be performed through the "Write" tabs on each module.
 
 1. During commit phase, validators call
    `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`.
-2. During reveal phase, call `revealValidation(jobId, approve, salt)`.
+2. During reveal phase, call
+   `revealValidation(jobId, approve, salt, subdomain, proof)`.
 3. After reveal, anyone may call `finalize(jobId)`.
 
 ### Dispute

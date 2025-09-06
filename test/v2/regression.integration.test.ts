@@ -186,9 +186,9 @@ describe('regression scenarios', function () {
         [1n, nonce, false, salt, specHash]
       )
     );
-    await validation.connect(v1).commitValidation(1, commit);
+    await validation.connect(v1).commitValidation(1, commit, '', []);
     await time.increase(2);
-    await validation.connect(v1).revealValidation(1, false, salt);
+    await validation.connect(v1).revealValidation(1, false, salt, '', []);
     await time.increase(2);
     await validation.finalize(1);
 

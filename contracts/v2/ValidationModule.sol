@@ -1037,25 +1037,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         _commitValidation(jobId, commitHash, subdomain, proof);
     }
 
-    /// @notice Backwards-compatible commit function without ENS parameters.
-    /// @param jobId Identifier of the job.
-    /// @param commitHash Hash of the vote and salt.
-    function commitValidation(uint256 jobId, bytes32 commitHash)
-        public
-        whenNotPaused
-        override
-        nonReentrant
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
-    {
-        bytes32[] memory proof;
-        _commitValidation(jobId, commitHash, "", proof);
-    }
 
     /// @notice Internal reveal logic shared by overloads.
     function _revealValidation(
@@ -1129,26 +1110,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         _revealValidation(jobId, approve, salt, subdomain, proof);
     }
 
-    /// @notice Backwards-compatible reveal function without ENS parameters.
-    /// @param jobId Identifier of the job.
-    /// @param approve True to approve, false to reject.
-    /// @param salt Salt used in the original commitment.
-    function revealValidation(uint256 jobId, bool approve, bytes32 salt)
-        public
-        whenNotPaused
-        override
-        nonReentrant
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
-    {
-        bytes32[] memory proof;
-        _revealValidation(jobId, approve, salt, "", proof);
-    }
 
     /// @notice Backwards-compatible wrapper for commitValidation.
     function commitVote(
