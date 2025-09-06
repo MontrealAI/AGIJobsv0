@@ -137,11 +137,25 @@ single key can change parameters:
    event. Timelock contracts must schedule and execute the call; direct EOA
    transactions will revert once ownership has moved.
 
-### ENS subdomain prerequisites
+### Agent/Validator Identity – ENS subdomain registration
 
-- Agents must control an ENS subdomain ending in `.agent.agi.eth`.
-- Validators require `.club.agi.eth`.
-- Owners load allowlists with `JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`.
+All participants must prove ownership of a subdomain in the AGI ENS
+namespace before interacting with the system:
+
+- **Agents** use `<name>.agent.agi.eth`.
+- **Validators** use `<name>.club.agi.eth`.
+
+To register:
+
+1. Request a subdomain from the AGI operators or the registration dApp.
+2. Set the resolver so the name points to your wallet address (or wrap the
+   name with the ENS NameWrapper).
+3. Confirm the transaction and keep the name assigned to the same address.
+
+Transactions will revert if the address does not own the supplied
+subdomain. Owner‑controlled allowlists
+(`JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`)
+exist only for emergencies and should not be relied on by normal users.
 
 ### Quickstart flow
 
