@@ -91,6 +91,35 @@ describe('ValidationModule validator auth cache', function () {
     expect(gas3).to.be.gt(gas2);
   });
 
+  it('requires re-verification after validator cache expiration', async () => {
+    await validation.connect(owner).setValidatorAuthCacheDuration(5);
+
+    const Toggle = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const toggle = await Toggle.deploy();
+    await toggle.waitForDeployment();
+    await toggle.setResult(true);
+    await toggle.setClubRootNode(ethers.ZeroHash);
+    await toggle.setAgentRootNode(ethers.ZeroHash);
+    await validation
+      .connect(owner)
+      .setIdentityRegistry(await toggle.getAddress());
+
+    await createJob(1);
+    await select(1);
+
+    await toggle.connect(owner).setResult(false);
+
+    await time.increase(6);
+
+    await createJob(2);
+    await expect(select(2)).to.be.revertedWithCustomError(
+      validation,
+      'InsufficientValidators'
+    );
+  });
+
   it('invalidates cached authorization on version bump', async () => {
     await validation.connect(owner).setValidatorAuthCacheDuration(1000);
 
