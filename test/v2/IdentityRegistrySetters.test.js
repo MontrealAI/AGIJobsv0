@@ -103,4 +103,30 @@ describe('IdentityRegistry setters', function () {
       );
     });
   });
+
+  describe('setAttestationRegistry', function () {
+    it('reverts for zero address', async () => {
+      await expect(
+        identity.setAttestationRegistry(ethers.ZeroAddress)
+      ).to.be.revertedWithCustomError(identity, 'ZeroAddress');
+    });
+
+    it('updates and emits event for valid address', async () => {
+      const Registry = await ethers.getContractFactory(
+        'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+      );
+      const newRegistry = await Registry.deploy(
+        ethers.ZeroAddress,
+        ethers.ZeroAddress
+      );
+      await expect(
+        identity.setAttestationRegistry(await newRegistry.getAddress())
+      )
+        .to.emit(identity, 'AttestationRegistryUpdated')
+        .withArgs(await newRegistry.getAddress());
+      expect(await identity.attestationRegistry()).to.equal(
+        await newRegistry.getAddress()
+      );
+    });
+  });
 });
