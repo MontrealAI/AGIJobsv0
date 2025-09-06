@@ -914,18 +914,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     ///      computed result of the commit-reveal process.
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
-    function finalizeAfterValidation(uint256 jobId, bool success)
-        public
-        whenNotPaused
-        nonReentrant
-        requiresTaxAcknowledgement(
-            taxPolicy,
-            msg.sender,
-            owner(),
-            address(disputeModule),
-            address(validationModule)
-        )
-    {
+    function _finalizeAfterValidation(uint256 jobId, bool success) internal {
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         Job storage job = jobs[jobId];
         if (job.state != State.Submitted) revert NotSubmitted();
@@ -937,12 +926,36 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
     }
 
+    /// @param jobId Identifier of the job being finalised.
+    /// @param success True if validators approved the job.
+    function finalizeAfterValidation(uint256 jobId, bool success)
+        external
+        whenNotPaused
+        nonReentrant
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
+        _finalizeAfterValidation(jobId, success);
+    }
+
     function validationComplete(uint256 jobId, bool success)
         external
         whenNotPaused
         nonReentrant
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
     {
-        finalizeAfterValidation(jobId, success);
+        _finalizeAfterValidation(jobId, success);
     }
 
     /// @notice Force finalize a job when validation quorum is not met
@@ -976,9 +989,20 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 jobId,
         bool success,
         address[] calldata validators
-    ) external {
+    )
+        external
+        whenNotPaused
+        nonReentrant
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         validators; // silence unused variable warning
-        finalizeAfterValidation(jobId, success);
+        _finalizeAfterValidation(jobId, success);
     }
 
     /// @notice Agent or employer disputes a job outcome with a hash of off-chain evidence.
