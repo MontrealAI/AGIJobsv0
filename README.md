@@ -176,7 +176,8 @@ subdomain. Owner‑controlled allowlists
 (`JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`)
 exist only for emergencies and should not be relied on by normal users.
 For a detailed walkthrough see
-[docs/ens-identity-setup.md](docs/ens-identity-setup.md).
+[docs/ens-identity-setup.md](docs/ens-identity-setup.md), including operator
+steps for issuing subdomains.
 
 ### Delegate addresses with AttestationRegistry
 

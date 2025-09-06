@@ -1,6 +1,8 @@
 # Single Job Commit–Reveal–Finalize Flow
 
 This guide shows how a validator processes one job from commitment to finalization.
+Validators must own a `*.club.agi.eth` subdomain; see
+[ens-identity-setup.md](ens-identity-setup.md) for issuing and verifying names.
 
 ## Phases and Windows
 

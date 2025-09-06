@@ -7,7 +7,9 @@ Identity for agents and validators is enforced with the
 subdomain—`*.agent.agi.eth` for agents and `*.club.agi.eth` for
 validators—and supply the subdomain label plus Merkle proof when
 interacting. The verifier checks ownership via NameWrapper and the ENS
-resolver, emitting `OwnershipVerified` on success.
+resolver, emitting `OwnershipVerified` on success. Operators can issue
+subdomains and set resolver records as outlined in
+[ens-identity-setup.md](ens-identity-setup.md).
 
 ## Module Responsibilities & Addresses
 

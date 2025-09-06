@@ -77,6 +77,7 @@
    * Parent domain `agi.eth` under your control.
    * Subroots: `agent.agi.eth`, `club.agi.eth` (you will use **namehash** values).
    * ENS Registry & NameWrapper addresses (mainnet).
+   * Subdomain issuance and resolver setup: see [ens-identity-setup.md](ens-identity-setup.md).
 4. **Constructor inputs** ready (see below).
 5. **Plan for governance** (immediate or post‑setup transfer to multisig/timelock).
 
@@ -206,6 +207,8 @@ After deploy, **wire** modules so they know each other.
 
 * **Agents** must own `*.agent.agi.eth`. **Validators** must own `*.club.agi.eth`.
 * **Subdomains**: Will be **purchased separately in `$AGIALPHA` within the `agi.eth` ecosystem** (outside this deployment). The operator does **not** mint them here; the ecosystem handles issuance/sales.
+  See [ens-identity-setup.md](ens-identity-setup.md) for issuing
+  `<name>.agent.agi.eth`/`<name>.club.agi.eth` and configuring resolver records.
 * **IdentityRegistry** (if used) enforces:
 
   * `setAgentRootNode(namehash(agent.agi.eth))`
