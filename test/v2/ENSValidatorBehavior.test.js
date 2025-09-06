@@ -91,12 +91,12 @@ describe('Validator ENS integration', function () {
     await wrapper.setOwner(ethers.toBigInt(node), validator.address);
     await resolver.setAddr(node, validator.address);
 
-    await expect(
-      validation.connect(validator).setMySubdomain('v')
-    )
+    await expect(validation.connect(validator).setMySubdomain('v'))
       .to.emit(validation, 'ValidatorSubdomainUpdated')
       .withArgs(validator.address, 'v');
-    expect(await validation.validatorSubdomains(validator.address)).to.equal('v');
+    expect(await validation.validatorSubdomains(validator.address)).to.equal(
+      'v'
+    );
 
     const job = {
       employer: owner.address,
@@ -115,9 +115,7 @@ describe('Validator ENS integration', function () {
       .reverted;
 
     await expect(
-      validation
-        .connect(validator)
-        .commitValidation(1, ethers.id('h'), 'v', [])
+      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
     )
       .to.emit(identity, 'OwnershipVerified')
       .withArgs(validator.address, 'v')
