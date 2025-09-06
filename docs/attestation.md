@@ -37,7 +37,8 @@ ATTESTATION_REGISTRY=<address> npx hardhat run scripts/v2/attestEns.ts --network
 ```
 
 Replace `alice` with the desired subdomain and pass `validator` to attest a
-validator address.
+validator address. The transaction consumes roughly 55k gas and revoking an
+attestation later costs about 33k gas.
 
 ## Verifying before use
 
@@ -51,6 +52,19 @@ npx hardhat console --network <network>
 
 If the call returns `true` the address may interact with `JobRegistry` and
 `ValidationModule`.
+
+Full CLI example:
+
+```bash
+# Attest a delegate for alice.agent.agi.eth
+ATTESTATION_REGISTRY=<address> npx hardhat run scripts/v2/attestEns.ts --network <network> alice agent 0xDelegate
+
+# Check cached authorization
+npx hardhat console --network <network>
+> const att = await ethers.getContractAt('AttestationRegistry', process.env.ATTESTATION_REGISTRY);
+> const node = ethers.namehash('alice.agent.agi.eth');
+> await att.isAttested(node, 0, '0xDelegate');
+```
 
 ## Script helpers
 

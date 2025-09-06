@@ -76,6 +76,13 @@ async function main() {
   );
   await identity.waitForDeployment();
 
+  const Attestation = await ethers.getContractFactory(
+    'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+  );
+  const attestation = await Attestation.deploy(ENS_REGISTRY, NAME_WRAPPER);
+  await attestation.waitForDeployment();
+  await identity.setAttestationRegistry(await attestation.getAddress());
+
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
@@ -150,6 +157,7 @@ async function main() {
     ensureContract(await platformRegistry.getAddress(), 'PlatformRegistry'),
     ensureContract(await feePool.getAddress(), 'FeePool'),
     ensureContract(await reputation.getAddress(), 'ReputationEngine'),
+    ensureContract(await attestation.getAddress(), 'AttestationRegistry'),
   ]);
 
   const SystemPause = await ethers.getContractFactory(
@@ -187,10 +195,12 @@ async function main() {
   await committee.transferOwnership(await pause.getAddress());
   await nft.transferOwnership(await pause.getAddress());
   await identity.transferOwnership(await pause.getAddress());
+  await attestation.transferOwnership(await pause.getAddress());
 
   console.log('StakeManager:', await stake.getAddress());
   console.log('ReputationEngine:', await reputation.getAddress());
   console.log('IdentityRegistry:', await identity.getAddress());
+  console.log('AttestationRegistry:', await attestation.getAddress());
   console.log('JobRegistry:', await registry.getAddress());
   console.log('DisputeModule:', await dispute.getAddress());
   console.log('CertificateNFT:', await nft.getAddress());
