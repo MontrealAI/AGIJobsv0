@@ -4,6 +4,9 @@ const tsParser = require('@typescript-eslint/parser');
 
 module.exports = [
   {
+    ignores: ['scripts/**/*.js'],
+  },
+  {
     files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 2020,

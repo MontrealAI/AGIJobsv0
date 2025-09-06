@@ -8,7 +8,9 @@ function usage() {
   console.log(
     '  IDENTITY_REGISTRY=<addr> npx hardhat run scripts/v2/deployAttestation.ts --network <network> [ensRegistry nameWrapper]'
   );
-  console.log('  ensRegistry and nameWrapper default to mainnet addresses if omitted');
+  console.log(
+    '  ensRegistry and nameWrapper default to mainnet addresses if omitted'
+  );
 }
 
 async function main() {
@@ -19,7 +21,9 @@ async function main() {
     throw new Error('IDENTITY_REGISTRY env var required');
   }
 
-  const ensAddr = ethers.getAddress(ensArg || process.env.ENS_REGISTRY || MAINNET_ENS);
+  const ensAddr = ethers.getAddress(
+    ensArg || process.env.ENS_REGISTRY || MAINNET_ENS
+  );
   const wrapperAddr = ethers.getAddress(
     wrapperArg || process.env.NAME_WRAPPER || MAINNET_NAME_WRAPPER
   );
