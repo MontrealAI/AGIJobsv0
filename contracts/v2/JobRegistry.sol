@@ -202,6 +202,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event AgentMerkleRootUpdated(bytes32 root);
     event AgentAuthCacheUpdated(address indexed agent, bool authorized);
     event AgentAuthCacheDurationUpdated(uint256 duration);
+    event AgentAuthCacheVersionBumped(uint256 version);
 
     // job parameter template event
     event JobParametersUpdated(
@@ -390,6 +391,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(registry) == address(0)) revert InvalidIdentityRegistry();
         if (registry.version() != 2) revert InvalidIdentityRegistry();
         identityRegistry = registry;
+        bumpAgentAuthCacheVersion();
         emit IdentityRegistryUpdated(address(registry));
         emit ModuleUpdated("IdentityRegistry", address(registry));
     }
@@ -409,6 +411,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setAgentRootNode(bytes32 node) external onlyGovernance {
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         identityRegistry.setAgentRootNode(node);
+        bumpAgentAuthCacheVersion();
         emit AgentRootNodeUpdated(node);
     }
 
@@ -442,6 +445,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setAgentAuthCacheDuration(uint256 duration) external onlyGovernance {
         agentAuthCacheDuration = duration;
         emit AgentAuthCacheDurationUpdated(duration);
+    }
+
+    /// @notice Increment the agent authorization cache version,
+    /// invalidating all existing cache entries.
+    function bumpAgentAuthCacheVersion() public onlyGovernance {
+        unchecked {
+            ++agentAuthCacheVersion;
+        }
+        emit AgentAuthCacheVersionBumped(agentAuthCacheVersion);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
