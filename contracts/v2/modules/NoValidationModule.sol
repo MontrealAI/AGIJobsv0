@@ -145,6 +145,8 @@ contract NoValidationModule is IValidationModule, Ownable {
         string[] calldata
     ) external pure override {}
 
+    function setMySubdomain(string calldata) external pure override {}
+
     /// @inheritdoc IValidationModule
     function validators(uint256)
         external

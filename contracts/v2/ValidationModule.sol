@@ -465,6 +465,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
     }
 
+    /// @notice Map the caller to an ENS subdomain for selection checks.
+    /// @param subdomain ENS label owned by the caller.
+    function setMySubdomain(string calldata subdomain) external {
+        validatorSubdomains[msg.sender] = subdomain;
+        emit ValidatorSubdomainUpdated(msg.sender, subdomain);
+    }
+
     /// @notice Update the commit and reveal windows.
     function setCommitRevealWindows(uint256 commitDur, uint256 revealDur)
         external
