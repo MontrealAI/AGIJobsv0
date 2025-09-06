@@ -30,10 +30,10 @@ async function main() {
   console.log('Deployer', deployerAddress);
 
   const ids = {
-    ens: ethers.ZeroAddress,
-    nameWrapper: ethers.ZeroAddress,
-    clubRootNode: ethers.ZeroHash,
-    agentRootNode: ethers.ZeroHash,
+    ens: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
+    nameWrapper: '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',
+    clubRootNode: ethers.namehash('club.agi.eth'),
+    agentRootNode: ethers.namehash('agent.agi.eth'),
     validatorMerkleRoot: ethers.ZeroHash,
     agentMerkleRoot: ethers.ZeroHash,
   };
