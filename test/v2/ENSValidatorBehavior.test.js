@@ -86,6 +86,42 @@ describe('Validator ENS integration', function () {
     ]);
   });
 
+  it('allows validators to update their own subdomain and use it for selection', async () => {
+    const node = namehash(root, 'v');
+    await wrapper.setOwner(ethers.toBigInt(node), validator.address);
+    await resolver.setAddr(node, validator.address);
+
+    await expect(validation.connect(validator).setMySubdomain('v'))
+      .to.emit(validation, 'ValidatorSubdomainUpdated')
+      .withArgs(validator.address, 'v');
+    expect(await validation.validatorSubdomains(validator.address)).to.equal(
+      'v'
+    );
+
+    const job = {
+      employer: owner.address,
+      agent: ethers.ZeroAddress,
+      reward: 0,
+      stake: 0,
+      success: false,
+      status: 3,
+      uriHash: ethers.ZeroHash,
+      resultHash: ethers.ZeroHash,
+    };
+    await jobRegistry.setJob(1, job);
+    await validation.selectValidators(1, 0);
+    await ethers.provider.send('evm_mine', []);
+    await expect(validation.connect(v2).selectValidators(1, 0)).to.not.be
+      .reverted;
+
+    await expect(
+      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
+    )
+      .to.emit(identity, 'OwnershipVerified')
+      .withArgs(validator.address, 'v')
+      .and.to.emit(validation, 'ValidationCommitted');
+  });
+
   it('rejects validators without subdomains and emits events on success', async () => {
     const job = {
       employer: owner.address,

@@ -139,6 +139,9 @@ interface IValidationModule {
         string[] calldata subdomains
     ) external;
 
+    /// @notice Map the caller to an ENS subdomain for selection.
+    function setMySubdomain(string calldata subdomain) external;
+
     /// @notice Configure the validator sampling strategy.
     function setSelectionStrategy(SelectionStrategy strategy) external;
 

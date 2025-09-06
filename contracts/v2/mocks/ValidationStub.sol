@@ -100,6 +100,8 @@ contract ValidationStub is IValidationModule {
         string[] calldata
     ) external override {}
 
+    function setMySubdomain(string calldata) external override {}
+
     function setParameters(
         uint256,
         uint256,
