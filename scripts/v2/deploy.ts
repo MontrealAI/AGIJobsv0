@@ -5,11 +5,11 @@ import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 
 // Mainnet ENS and NameWrapper configuration
 // ENS registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
-// NameWrapper: 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
+// NameWrapper: 0x253553366Da8546fC250F225fe3d25d0C782303b
 // agent.agi.eth node: 0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d
 // club.agi.eth node: 0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-const NAME_WRAPPER = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
+const NAME_WRAPPER = '0x253553366Da8546fC250F225fe3d25d0C782303b';
 const AGENT_ROOT_NODE = ethers.namehash('agent.agi.eth');
 const CLUB_ROOT_NODE = ethers.namehash('club.agi.eth');
 
@@ -133,13 +133,17 @@ async function main() {
     'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
   );
   const identity = await Identity.deploy(
-    ENS_REGISTRY,
-    NAME_WRAPPER,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
     await reputation.getAddress(),
-    AGENT_ROOT_NODE,
-    CLUB_ROOT_NODE
+    ethers.ZeroHash,
+    ethers.ZeroHash
   );
   await identity.waitForDeployment();
+  await identity.setENS(ENS_REGISTRY);
+  await identity.setNameWrapper(NAME_WRAPPER);
+  await identity.setAgentRootNode(AGENT_ROOT_NODE);
+  await identity.setClubRootNode(CLUB_ROOT_NODE);
 
   const Attestation = await ethers.getContractFactory(
     'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
@@ -435,11 +439,11 @@ async function main() {
   ]);
   await verify(await attestation.getAddress(), [ENS_REGISTRY, NAME_WRAPPER]);
   await verify(await identity.getAddress(), [
-    ENS_REGISTRY,
-    NAME_WRAPPER,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
     await reputation.getAddress(),
-    AGENT_ROOT_NODE,
-    CLUB_ROOT_NODE,
+    ethers.ZeroHash,
+    ethers.ZeroHash,
   ]);
   if (typeof args.arbitrator === 'string') {
     await verify(activeDispute, [
