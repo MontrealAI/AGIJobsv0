@@ -61,5 +61,23 @@ contract AttestationRegistryTest is Test {
         attest.attest(vNode, AttestationRegistry.Role.Validator, validator);
         assertTrue(identity.isAuthorizedValidator(validator, "validator", new bytes32[](0)));
     }
+
+    function testSetENSUnauthorized() public {
+        address caller = address(0xBEEF);
+        vm.expectRevert(
+            abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", caller)
+        );
+        vm.prank(caller);
+        attest.setENS(address(ens));
+    }
+
+    function testSetNameWrapperUnauthorized() public {
+        address caller = address(0xBEEF);
+        vm.expectRevert(
+            abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", caller)
+        );
+        vm.prank(caller);
+        attest.setNameWrapper(address(wrapper));
+    }
 }
 
