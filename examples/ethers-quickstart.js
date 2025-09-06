@@ -20,6 +20,11 @@ const validationAbi = [
   'function finalize(uint256 jobId)',
 ];
 
+const attestAbi = [
+  'function attest(bytes32 node, uint8 role, address who)',
+  'function revoke(bytes32 node, uint8 role, address who)',
+];
+
 const registry = new ethers.Contract(
   process.env.JOB_REGISTRY,
   registryAbi,
@@ -33,6 +38,12 @@ const stakeManager = new ethers.Contract(
 const validation = new ethers.Contract(
   process.env.VALIDATION_MODULE,
   validationAbi,
+  signer
+);
+
+const attestation = new ethers.Contract(
+  process.env.ATTESTATION_REGISTRY,
+  attestAbi,
   signer
 );
 
@@ -71,4 +82,23 @@ async function dispute(jobId, evidence) {
   await registry.raiseDispute(jobId, evidenceHash);
 }
 
-module.exports = { postJob, stake, apply, submit, validate, dispute };
+async function attest(name, role, delegate) {
+  const node = ethers.namehash(name);
+  await attestation.attest(node, role, delegate);
+}
+
+async function revoke(name, role, delegate) {
+  const node = ethers.namehash(name);
+  await attestation.revoke(node, role, delegate);
+}
+
+module.exports = {
+  postJob,
+  stake,
+  apply,
+  submit,
+  validate,
+  dispute,
+  attest,
+  revoke,
+};
