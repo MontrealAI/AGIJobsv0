@@ -141,6 +141,13 @@ async function main() {
   );
   await identity.waitForDeployment();
 
+  const Attestation = await ethers.getContractFactory(
+    'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+  );
+  const attestation = await Attestation.deploy(ENS_REGISTRY, NAME_WRAPPER);
+  await attestation.waitForDeployment();
+  await identity.setAttestationRegistry(await attestation.getAddress());
+
   const NFT = await ethers.getContractFactory(
     'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
   );
@@ -283,6 +290,7 @@ async function main() {
     ensureContract(await platformRegistry.getAddress(), 'PlatformRegistry'),
     ensureContract(await feePool.getAddress(), 'FeePool'),
     ensureContract(await reputation.getAddress(), 'ReputationEngine'),
+    ensureContract(await attestation.getAddress(), 'AttestationRegistry'),
   ]);
 
   const SystemPause = await ethers.getContractFactory(
@@ -332,11 +340,13 @@ async function main() {
     .connect(governanceSigner)
     .transferOwnership(await pause.getAddress());
   await committee.transferOwnership(await pause.getAddress());
+  await attestation.transferOwnership(await pause.getAddress());
 
   console.log('JobRegistry deployed to:', await registry.getAddress());
   console.log('ValidationModule:', await validation.getAddress());
   console.log('StakeManager:', await stake.getAddress());
   console.log('ReputationEngine:', await reputation.getAddress());
+  console.log('AttestationRegistry:', await attestation.getAddress());
   console.log('IdentityRegistry:', await identity.getAddress());
   console.log('SystemPause:', await pause.getAddress());
   let activeDispute = await dispute.getAddress();
@@ -379,6 +389,7 @@ async function main() {
     jobRouter: await jobRouter.getAddress(),
     platformIncentives: await incentives.getAddress(),
     identityRegistry: await identity.getAddress(),
+    attestationRegistry: await attestation.getAddress(),
     systemPause: await pause.getAddress(),
   };
 
@@ -422,6 +433,7 @@ async function main() {
     moderator,
     governance,
   ]);
+  await verify(await attestation.getAddress(), [ENS_REGISTRY, NAME_WRAPPER]);
   await verify(await identity.getAddress(), [
     ENS_REGISTRY,
     NAME_WRAPPER,
