@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import {AttestationRegistry} from "../../contracts/v2/AttestationRegistry.sol";
+import {AttestationRegistry, ZeroAddress} from "../../contracts/v2/AttestationRegistry.sol";
 import {IdentityRegistry} from "../../contracts/v2/IdentityRegistry.sol";
 import {IENS} from "../../contracts/v2/interfaces/IENS.sol";
 import {INameWrapper} from "../../contracts/v2/interfaces/INameWrapper.sol";
@@ -46,6 +46,14 @@ contract AttestationRegistryTest is Test {
         vm.prank(owner);
         attest.revoke(node, AttestationRegistry.Role.Agent, agent);
         assertFalse(attest.isAttested(node, AttestationRegistry.Role.Agent, agent));
+    }
+
+    function testAttestZeroAddressReverts() public {
+        bytes32 node = _node("alice");
+        wrapper.setOwner(uint256(node), owner);
+        vm.expectRevert(ZeroAddress.selector);
+        vm.prank(owner);
+        attest.attest(node, AttestationRegistry.Role.Agent, address(0));
     }
 
     function testIdentityIntegration() public {
