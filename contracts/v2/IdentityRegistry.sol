@@ -111,6 +111,9 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     function setAttestationRegistry(address registry) external onlyOwner {
+        if (registry == address(0)) {
+            revert ZeroAddress();
+        }
         attestationRegistry = AttestationRegistry(registry);
         emit AttestationRegistryUpdated(registry);
     }
