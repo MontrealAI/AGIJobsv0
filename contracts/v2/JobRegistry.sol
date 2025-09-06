@@ -409,6 +409,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setAgentRootNode(bytes32 node) external onlyGovernance {
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
         identityRegistry.setAgentRootNode(node);
+        unchecked {
+            agentAuthCacheVersion++;
+        }
         emit AgentRootNodeUpdated(node);
     }
 
