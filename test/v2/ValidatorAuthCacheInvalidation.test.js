@@ -66,9 +66,7 @@ describe('JobRegistry validator auth cache', function () {
     await validation
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
-    await validation
-      .connect(owner)
-      .setValidatorAuthCacheDuration(1000);
+    await validation.connect(owner).setValidatorAuthCacheDuration(1000);
 
     await stakeManager.setStake(v1.address, 1, ethers.parseEther('100'));
     await stakeManager.setStake(v2.address, 1, ethers.parseEther('50'));
@@ -111,9 +109,7 @@ describe('JobRegistry validator auth cache', function () {
       .connect(owner)
       .transferOwnership(await registry.getAddress());
 
-    await registry
-      .connect(owner)
-      .setValidatorRootNode(ethers.id('newroot'));
+    await registry.connect(owner).setValidatorRootNode(ethers.id('newroot'));
 
     await createJob(3);
     await expect(select(3)).to.be.revertedWithCustomError(
@@ -138,9 +134,7 @@ describe('JobRegistry validator auth cache', function () {
       .connect(owner)
       .transferOwnership(await registry.getAddress());
 
-    await registry
-      .connect(owner)
-      .setValidatorMerkleRoot(ethers.id('newroot'));
+    await registry.connect(owner).setValidatorMerkleRoot(ethers.id('newroot'));
 
     await createJob(3);
     await expect(select(3)).to.be.revertedWithCustomError(
