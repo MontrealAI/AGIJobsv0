@@ -74,6 +74,9 @@ contract AttestationRegistry is Ownable {
 
     /// @notice Attest that `who` holds `role` for `node`.
     function attest(bytes32 node, Role role, address who) external {
+        if (who == address(0)) {
+            revert ZeroAddress();
+        }
         if (_ownerOf(node) != msg.sender) {
             revert UnauthorizedAttestor();
         }

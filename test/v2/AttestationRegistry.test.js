@@ -45,6 +45,41 @@ describe('AttestationRegistry', function () {
     expect(await registry.isAttested(node, 0, agent.address)).to.equal(false);
   });
 
+  it('reverts when attesting to the zero address', async () => {
+    const [owner] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory(
+      'contracts/legacy/MockENS.sol:MockENS'
+    );
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/legacy/MockNameWrapper.sol:MockNameWrapper'
+    );
+    const wrapper = await Wrapper.deploy();
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+    );
+    const registry = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress()
+    );
+
+    const label = 'alice';
+    const node = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [ethers.ZeroHash, ethers.id(label)]
+      )
+    );
+    await wrapper.setOwner(BigInt(node), owner.address);
+
+    await expect(
+      registry.connect(owner).attest(node, 0, ethers.ZeroAddress)
+    ).to.be.revertedWithCustomError(registry, 'ZeroAddress');
+  });
+
   it('integrates with IdentityRegistry', async () => {
     const [owner, agent, validator] = await ethers.getSigners();
 
