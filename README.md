@@ -156,6 +156,8 @@ Transactions will revert if the address does not own the supplied
 subdomain. Owner‑controlled allowlists
 (`JobRegistry.setAgentMerkleRoot` and `ValidationModule.setValidatorMerkleRoot`)
 exist only for emergencies and should not be relied on by normal users.
+For a detailed walkthrough see
+[docs/ens-identity-setup.md](docs/ens-identity-setup.md).
 
 ### Delegate addresses with AttestationRegistry
 
