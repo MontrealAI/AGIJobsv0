@@ -9,6 +9,15 @@ All participation in AGIJobs requires on‑chain proof of ENS subdomain ownershi
 - Owner controlled allowlists and Merkle proofs exist only for emergency governance and migration. Regular participants are expected to use ENS.
 - Attestations may be recorded in `AttestationRegistry` to cache successful checks and reduce gas usage, but they do not bypass the ENS requirement.
 
+## Temporary allowlisting
+
+In rare emergencies governance may temporarily bypass the ENS requirement by
+calling `IdentityRegistry.addAdditionalAgent` or `addAdditionalValidator`. Each
+entry should specify an expiration plan and be removed once the issue is
+resolved. The registry emits `AdditionalAgentUsed` and `AdditionalValidatorUsed`
+whenever these bypasses are exercised, enabling off-chain monitoring of their
+usage.
+
 ## Testing
 
 Run these commands before pushing changes that touch identity or access control logic:
