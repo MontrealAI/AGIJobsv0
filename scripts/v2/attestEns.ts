@@ -61,7 +61,7 @@ async function main() {
     registryAddr
   );
 
-  const ensName = `${subdomain}.${role === 0 ? 'agent' : 'validator'}.agi.eth`;
+  const ensName = `${subdomain}.${role === 0 ? 'agent' : 'club'}.agi.eth`;
   const node = ethers.namehash(ensName);
 
   const [signer] = await ethers.getSigners();
