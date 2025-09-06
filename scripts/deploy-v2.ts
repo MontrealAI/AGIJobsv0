@@ -1,5 +1,15 @@
 import { ethers } from 'hardhat';
 
+// Mainnet ENS registry and NameWrapper addresses
+// ENS registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
+// NameWrapper: 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
+// agent.agi.eth node: 0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d
+// club.agi.eth node: 0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16
+const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
+const NAME_WRAPPER = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
+const AGENT_ROOT_NODE = ethers.namehash('agent.agi.eth');
+const CLUB_ROOT_NODE = ethers.namehash('club.agi.eth');
+
 async function main() {
   const [deployer] = await ethers.getSigners();
 
@@ -24,26 +34,15 @@ async function main() {
   const reputation = await Reputation.deploy(await stake.getAddress());
   await reputation.waitForDeployment();
 
-  const ENS = await ethers.getContractFactory(
-    'contracts/legacy/MockENS.sol:MockENS'
-  );
-  const ens = await ENS.deploy();
-  await ens.waitForDeployment();
-  const Wrapper = await ethers.getContractFactory(
-    'contracts/legacy/MockNameWrapper.sol:MockNameWrapper'
-  );
-  const wrapper = await Wrapper.deploy();
-  await wrapper.waitForDeployment();
-
   const Identity = await ethers.getContractFactory(
     'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
   );
   const identity = await Identity.deploy(
-    await ens.getAddress(),
-    await wrapper.getAddress(),
+    ENS_REGISTRY,
+    NAME_WRAPPER,
     await reputation.getAddress(),
-    ethers.ZeroHash,
-    ethers.ZeroHash
+    AGENT_ROOT_NODE,
+    CLUB_ROOT_NODE
   );
   await identity.waitForDeployment();
 
