@@ -5,10 +5,14 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 describe('JobFunded event', function () {
   it('emits when job is created with reward', async () => {
     const [owner, employer] = await ethers.getSigners();
-    const StakeMock = await ethers.getContractFactory('contracts/legacy/MockV2.sol:MockStakeManager');
+    const StakeMock = await ethers.getContractFactory(
+      'contracts/legacy/MockV2.sol:MockStakeManager'
+    );
     const stakeManager = await StakeMock.deploy();
 
-    const Registry = await ethers.getContractFactory('contracts/v2/JobRegistry.sol:JobRegistry');
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
     const registry = await Registry.deploy(
       ethers.ZeroAddress,
       await stakeManager.getAddress(),
