@@ -14,9 +14,9 @@ All participation in AGIJobs requires on‑chain proof of ENS subdomain ownershi
 In rare emergencies governance may temporarily bypass the ENS requirement by
 calling `IdentityRegistry.addAdditionalAgent` or `addAdditionalValidator`. Each
 entry should specify an expiration plan and be removed once the issue is
-resolved. The registry emits `AdditionalAgentUsed` and `AdditionalValidatorUsed`
-with the subdomain label whenever these bypasses are exercised, enabling
-off-chain monitoring.
+resolved. Both authorization helpers and verification functions emit
+`AdditionalAgentUsed` and `AdditionalValidatorUsed` with the subdomain label
+whenever these bypasses are exercised, enabling off-chain monitoring.
 
 Governance should review these events and regularly clear expired allowlist
 entries. Run `npx ts-node --compiler-options '{"module":"commonjs"}'
