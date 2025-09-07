@@ -218,7 +218,8 @@ describe('StakeManager', function () {
     await stakeManager.connect(user).depositStake(0, 100);
 
     // treasury storage slot accounting for inherited and packed variables
-    const treasurySlot = '0x' + (7).toString(16).padStart(64, '0');
+    // slot incremented after introducing `unbondingPeriod`
+    const treasurySlot = '0x' + (8).toString(16).padStart(64, '0');
     await ethers.provider.send('hardhat_setStorageAt', [
       await stakeManager.getAddress(),
       treasurySlot,
