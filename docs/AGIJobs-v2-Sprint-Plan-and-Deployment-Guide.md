@@ -202,30 +202,23 @@ For a successful on-chain production deployment (using Etherscan only), here is 
 Use the Verified Code: Deploy the exact code from the latest repository release. Verify each contract on Etherscan immediately after deploying (to enable the UI and community inspection).
 Follow the Deployment Order and Wiring Steps: As detailed in the step-by-step guide, deploy in the correct sequence and wire the module addresses properly. Miswiring could break the system, so take advantage of the ModuleInstaller or carefully execute each set... call. Align every address with the documentation to avoid mistakes.
 Ensure Token and ENS Constants are Correct: The $AGIALPHA address should be correctly set in Constants.sol – if the repository is configured for mainnet (which it is), this will be right. The ENS root node hashes for agent.agi.eth and club.agi.eth are provided in IdentityRegistry (use them via configureMainnet() or constructor). These constants make runtime enforcement possible; double-check you use them if identity is required.
-Governance and Control: Deploy or have ready a multisig or timelock to > ✅ **Best Practice:** Transfer ownership of all modules to a multisig or timelock immediately after deployment. to. This contract will become the “admin” of the system. Test the multisig on testnet or with a small call to be sure you know how to operate it (for instance, how to propose and execute a transaction if using a timelock). When transferring ownership of modules, do it methodically and record each transfer. After governance handoff, test changing a minor parameter via the multisig to ensure the permissions work.
+Governance and Control: Deploy or have ready a multisig or timelock to administer the system. ✅ **Best Practice:** transfer ownership of all modules to a multisig or timelock immediately after deployment. Test the multisig on testnet or with a small transaction to ensure you know how to operate it (for example, proposing and executing a timelock transaction). When transferring ownership of modules, do it methodically and record each transfer. After governance handoff, test changing a minor parameter via the multisig to ensure the permissions work.
 Activate Burning and Fees as Needed: Initially, you might set burnPct to 0 or low and feePct to a modest value. Once confident, you can adjust these on the fly: e.g., call FeePool.setBurnPct(5) to enable 5% burning, or JobRegistry.setFeePct(x) to tweak fees. The system’s design allows real-time tuning. Just remember any change is on-chain; consider using timelocks for parameter changes if you want to introduce a delay for community visibility (in the future).
-Validator/Agent Onboarding: Before opening the platform publicly, decide how agents and validators will get their ENS subdomains or proofs. It’s a good idea to run an ENS subdomain registration process in parallel: e.g., have a simple UI or process where users request a name and you (the operator) assign it to them. The in the repo provides a detailed walkthrough for issuing subdomains to users. Follow that to populate your user base with the required identities. This step is crucial for a smooth user experience, otherwise many transactions will revert due to missing ENS ownership.
+Validator/Agent Onboarding: Before opening the platform publicly, decide how agents and validators will get their ENS subdomains or proofs. It’s a good idea to run an ENS subdomain registration process in parallel: e.g., have a simple UI or process where users request a name and you (the operator) assign it to them. The [ENS identity setup guide](ens-identity-setup.md) in the repo provides a detailed walkthrough for issuing subdomains to users. Follow that to populate your user base with the required identities. This step is crucial for a smooth user experience, otherwise many transactions will revert due to missing ENS ownership.
 Trial Run on Testnet/Mainnet with Small Stakes: Do a final dry-run using a small amount of $AGIALPHA (or a test token if you deploy on a testnet first). Go through the entire job lifecycle: post a job, have an agent apply, have validators commit/reveal, finalize, maybe even try a dispute. This will confirm that everything is wired correctly and that events are showing up on Etherscan as expected. It’s much better to catch any issue (however unlikely given tests) with low stakes than after the platform is live with real users.
-Monitoring and Alerts: Once live, set up > 📌 **Tip:** Set up monitoring with Etherscan alerts or The Graph to stay aware of disputes, slashes, or parameter changes.. Because all key actions emit events, you can use services like Etherscan alerts or The Graph to watch for critical events (DisputeRaised, AdditionalAgentUsed, large slashes, etc.). Monitoring helps you respond quickly in case of an issue (like an unexpected slashing event or someone getting erroneously blacklisted).
+Monitoring and Alerts: Once live, set up monitoring with Etherscan alerts or The Graph to stay aware of disputes, slashes, or parameter changes. Because all key actions emit events, these services help you respond quickly if issues arise (such as unexpected slashes or disputes).
 Community Transparency: Given the owner updatability, be transparent with your user community about it. Publish the multisig addresses, who controls them, and what the process is for changes. Consider a timelock for changes to increase trust. Also, encourage users to review the verified code themselves – the more eyes, the better in production.
 By adhering to this guide and the detailed steps provided, you can confidently deploy AGIJobs v2 to mainnet in a way that is robust, traceable, and maintainable. You’ll have enforced genuine on-chain identity, a single unified token economy with $AGIALPHA, comprehensive event logs for every action, and the flexibility to manage the platform responsibly as it grows. This targeted sprint and guide together ensure that AGIJobs is ready for prime time on Ethereum.
 
-README.md
+## References
 
-ens-identity-policy.md
-
-IdentityRegistry.sol
-
-Constants.sol
-
-StakeManager.sol
-
-FeePool.sol
-
-architecture-v2.md
-
-JobRegistry.sol
-
-deployment-production-guide.md
-
-ReputationEngine.sol
+- [README.md](../README.md)
+- [ens-identity-policy.md](ens-identity-policy.md)
+- [IdentityRegistry.sol](../contracts/v2/IdentityRegistry.sol)
+- [Constants.sol](../contracts/v2/Constants.sol)
+- [StakeManager.sol](../contracts/v2/StakeManager.sol)
+- [FeePool.sol](../contracts/v2/FeePool.sol)
+- [architecture-v2.md](architecture-v2.md)
+- [JobRegistry.sol](../contracts/v2/JobRegistry.sol)
+- [deployment-production-guide.md](deployment-production-guide.md)
+- [ReputationEngine.sol](../contracts/v2/ReputationEngine.sol)
