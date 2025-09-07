@@ -13,6 +13,7 @@ All steps are executed directly from Etherscan's web interface—no command line
 
 - **Ethereum wallet with ETH** for gas (e.g. MetaMask). The deploying wallet becomes the owner of every module – secure it carefully.
 - **$AGIALPHA token address** – mainnet address: `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`.
+- **Burnability preflight** – run `npx ts-node --compiler-options '{"module":"commonjs"}' scripts/check-burnable.ts` to ensure the token supports `burn(uint256)`; the script exits with an error if not.
 - **ENS details (optional)** – if restricting access via ENS subdomains prepare the namehashes for `agent.agi.eth` and `club.agi.eth`, plus the ENS registry (`0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`) and name wrapper (`0x253553366Da8546fC250F225fe3d25d0C782303b`). Use `0x00` for open access.
 - **Contract source code** – Solidity files live in this repository and must be verified on Etherscan after deployment.
 - **Basic Etherscan familiarity** – you will use the _Write Contract_ tab to deploy and configure modules.
