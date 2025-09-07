@@ -179,6 +179,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     );
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    /// @notice Emitted when a participant receives a payout in $AGIALPHA.
+    event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
@@ -914,7 +916,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
-            emit StakeReleased(jobId, to, payout);
+            emit RewardPaid(jobId, to, payout);
         }
     }
 
@@ -955,7 +957,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
-            emit StakeReleased(bytes32(0), to, payout);
+            emit RewardPaid(bytes32(0), to, payout);
         }
     }
 
@@ -982,7 +984,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         jobEscrows[jobId] = escrow - total;
         if (payout > 0) {
             token.safeTransfer(agent, payout);
-            emit StakeReleased(jobId, agent, payout);
+            emit RewardPaid(jobId, agent, payout);
         }
         if (fee > 0) {
             if (address(_feePool) != address(0)) {
@@ -1021,14 +1023,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 remainder = amount - perValidator * count;
         for (uint256 i; i < count;) {
             token.safeTransfer(vals[i], perValidator);
-            emit StakeReleased(jobId, vals[i], perValidator);
+            emit RewardPaid(jobId, vals[i], perValidator);
             unchecked {
                 ++i;
             }
         }
         if (remainder > 0) {
             token.safeTransfer(vals[0], remainder);
-            emit StakeReleased(jobId, vals[0], remainder);
+            emit RewardPaid(jobId, vals[0], remainder);
         }
     }
 

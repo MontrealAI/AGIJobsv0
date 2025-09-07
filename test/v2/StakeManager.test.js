@@ -94,7 +94,7 @@ describe('StakeManager', function () {
         .connect(registrySigner)
         .releaseReward(jobId, user.address, 200)
     )
-      .to.emit(stakeManager, 'StakeReleased')
+      .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, user.address, 200);
     expect(await token.balanceOf(user.address)).to.equal(1050n);
 

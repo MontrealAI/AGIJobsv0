@@ -20,6 +20,7 @@ interface IStakeManager {
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
