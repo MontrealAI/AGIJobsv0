@@ -54,6 +54,12 @@ contract IdentityRegistry is Ownable2Step {
     event AgentTypeUpdated(address indexed agent, AgentType agentType);
     /// @notice Emitted when an agent updates their profile metadata.
     event AgentProfileUpdated(address indexed agent, string uri);
+    event MainnetConfigured(
+        address indexed ens,
+        address indexed nameWrapper,
+        bytes32 indexed agentRoot,
+        bytes32 clubRoot
+    );
 
     address public constant MAINNET_ENS =
         0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e;
@@ -145,6 +151,12 @@ contract IdentityRegistry is Ownable2Step {
         setNameWrapper(MAINNET_NAME_WRAPPER);
         setAgentRootNode(MAINNET_AGENT_ROOT_NODE);
         setClubRootNode(MAINNET_CLUB_ROOT_NODE);
+        emit MainnetConfigured(
+            MAINNET_ENS,
+            MAINNET_NAME_WRAPPER,
+            MAINNET_AGENT_ROOT_NODE,
+            MAINNET_CLUB_ROOT_NODE
+        );
     }
 
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
