@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 interface IRandaoCoordinator {
     /// @notice Commit a hash of the sender address, tag and secret.
-    function commit(bytes32 tag, bytes32 commitment) external payable;
+    function commit(bytes32 tag, bytes32 commitment) external;
 
     /// @notice Reveal the secret for a given tag.
     function reveal(bytes32 tag, uint256 secret) external;

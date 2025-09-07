@@ -11,10 +11,25 @@ function tagFromNumber(n) {
 describe('RandaoCoordinator', function () {
   it('aggregates revealed secrets', async () => {
     const [a, b, t] = await ethers.getSigners();
+    const Token = await ethers.getContractFactory(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    const token = await Token.deploy();
+    await token.mint(a.address, DEPOSIT);
+    await token.mint(b.address, DEPOSIT);
+    await token.connect(b).acceptTerms();
     const Randao = await ethers.getContractFactory(
       'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
     );
-    const randao = await Randao.deploy(10, 10, DEPOSIT, t.address);
+    const randao = await Randao.deploy(
+      10,
+      10,
+      DEPOSIT,
+      t.address,
+      await token.getAddress()
+    );
+    await token.connect(a).approve(await randao.getAddress(), DEPOSIT);
+    await token.connect(b).approve(await randao.getAddress(), DEPOSIT);
     const tag = tagFromNumber(1);
     const s1 = 1n;
     const c1 = ethers.keccak256(
@@ -23,7 +38,7 @@ describe('RandaoCoordinator', function () {
         [a.address, tag, s1]
       )
     );
-    await randao.connect(a).commit(tag, c1, { value: DEPOSIT });
+    await randao.connect(a).commit(tag, c1);
     const s2 = 2n;
     const c2 = ethers.keccak256(
       ethers.solidityPacked(
@@ -31,7 +46,7 @@ describe('RandaoCoordinator', function () {
         [b.address, tag, s2]
       )
     );
-    await randao.connect(b).commit(tag, c2, { value: DEPOSIT });
+    await randao.connect(b).commit(tag, c2);
     await time.increase(11);
     await randao.connect(a).reveal(tag, s1);
     await randao.connect(b).reveal(tag, s2);
@@ -52,16 +67,31 @@ describe('RandaoCoordinator', function () {
     await network.provider.send('evm_mine');
     const r2 = await randao.random(tag);
     expect(r2).to.not.equal(r1);
-    const bal = await ethers.provider.getBalance(await randao.getAddress());
+    const bal = await token.balanceOf(await randao.getAddress());
     expect(bal).to.equal(0n);
   });
 
   it('penalizes missing reveals', async () => {
     const [a, b, t] = await ethers.getSigners();
+    const Token = await ethers.getContractFactory(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    const token = await Token.deploy();
+    await token.mint(a.address, DEPOSIT);
+    await token.mint(b.address, DEPOSIT);
+    await token.connect(b).acceptTerms();
     const Randao = await ethers.getContractFactory(
       'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
     );
-    const randao = await Randao.deploy(10, 10, DEPOSIT, t.address);
+    const randao = await Randao.deploy(
+      10,
+      10,
+      DEPOSIT,
+      t.address,
+      await token.getAddress()
+    );
+    await token.connect(a).approve(await randao.getAddress(), DEPOSIT);
+    await token.connect(b).approve(await randao.getAddress(), DEPOSIT);
     const tag = tagFromNumber(2);
     const s1 = 3n;
     const c1 = ethers.keccak256(
@@ -70,7 +100,7 @@ describe('RandaoCoordinator', function () {
         [a.address, tag, s1]
       )
     );
-    await randao.connect(a).commit(tag, c1, { value: DEPOSIT });
+    await randao.connect(a).commit(tag, c1);
     const s2 = 4n;
     const c2 = ethers.keccak256(
       ethers.solidityPacked(
@@ -78,7 +108,7 @@ describe('RandaoCoordinator', function () {
         [b.address, tag, s2]
       )
     );
-    await randao.connect(b).commit(tag, c2, { value: DEPOSIT });
+    await randao.connect(b).commit(tag, c2);
     await time.increase(11);
     await randao.connect(a).reveal(tag, s1);
     // b does not reveal
@@ -99,11 +129,11 @@ describe('RandaoCoordinator', function () {
     await network.provider.send('evm_mine');
     const r2 = await randao.random(tag);
     expect(r2).to.not.equal(r1);
-    const before = await ethers.provider.getBalance(t.address);
+    const before = await token.balanceOf(t.address);
     await randao.forfeit(tag, b.address);
-    const after = await ethers.provider.getBalance(t.address);
+    const after = await token.balanceOf(t.address);
     expect(after - before).to.equal(DEPOSIT);
-    const bal = await ethers.provider.getBalance(await randao.getAddress());
+    const bal = await token.balanceOf(await randao.getAddress());
     expect(bal).to.equal(0n);
   });
 });
@@ -131,10 +161,24 @@ describe('ValidationModule fairness', function () {
     );
     const identity = await Identity.deploy();
 
+    const Token = await ethers.getContractFactory(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    const token = await Token.deploy();
+    await token.mint(owner.address, DEPOSIT * 2n);
     const Randao = await ethers.getContractFactory(
       'contracts/v2/RandaoCoordinator.sol:RandaoCoordinator'
     );
-    const randao = await Randao.deploy(10, 10, DEPOSIT, t.address);
+    const randao = await Randao.deploy(
+      10,
+      10,
+      DEPOSIT,
+      t.address,
+      await token.getAddress()
+    );
+    await token
+      .connect(owner)
+      .approve(await randao.getAddress(), DEPOSIT * 2n);
 
     const Validation = await ethers.getContractFactory(
       'contracts/v2/ValidationModule.sol:ValidationModule'
@@ -170,7 +214,7 @@ describe('ValidationModule fairness', function () {
         [owner.address, tag1, secret1]
       )
     );
-    await randao.commit(tag1, commit1, { value: DEPOSIT });
+    await randao.commit(tag1, commit1);
     await time.increase(11);
     await randao.reveal(tag1, secret1);
     await time.increase(11);
@@ -188,7 +232,7 @@ describe('ValidationModule fairness', function () {
         [owner.address, tag2, secret2]
       )
     );
-    await randao.commit(tag2, commit2, { value: DEPOSIT });
+    await randao.commit(tag2, commit2);
     await time.increase(11);
     await randao.reveal(tag2, secret2);
     await time.increase(11);
@@ -200,5 +244,7 @@ describe('ValidationModule fairness', function () {
     expect(new Set(selected2).size).to.equal(3);
     expect(selected1).to.have.members([v1.address, v2.address, v3.address]);
     expect(selected2).to.have.members([v1.address, v2.address, v3.address]);
+    const bal = await token.balanceOf(await randao.getAddress());
+    expect(bal).to.equal(0n);
   });
 });
