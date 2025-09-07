@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {AGIALPHA} from "../Constants.sol";
@@ -16,6 +17,8 @@ contract RevenueDistributor is Ownable {
 
     IStakeManager public stakeManager;
     address public treasury;
+    /// @notice Token used for revenue distribution (must have 18 decimals).
+    /// @dev The constructor enforces $AGIALPHA's 18-decimal standard.
     IERC20 public immutable token = IERC20(AGIALPHA);
 
     address[] public operators;
@@ -28,6 +31,12 @@ contract RevenueDistributor is Ownable {
     event StakeManagerUpdated(address indexed stakeManager);
 
     constructor(IStakeManager _stakeManager) Ownable(msg.sender) {
+        // $AGIALPHA is assumed to use 18 decimals across the protocol.
+        // Revert if the deployed token diverges to avoid rounding errors.
+        require(
+            IERC20Metadata(address(token)).decimals() == 18,
+            "decimals"
+        );
         stakeManager = _stakeManager;
         emit StakeManagerUpdated(address(_stakeManager));
     }

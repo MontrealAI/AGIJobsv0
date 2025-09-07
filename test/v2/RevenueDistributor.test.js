@@ -82,3 +82,40 @@ describe('RevenueDistributor', function () {
     expect(a3 - b3).to.equal(ethers.parseEther('3'));
   });
 });
+
+describe('RevenueDistributor constructor', function () {
+  it('deploys when $AGIALPHA has 18 decimals', async () => {
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const Stake = await ethers.getContractFactory('MockStakeManager');
+    const stakeManager = await Stake.deploy();
+    const Distributor = await ethers.getContractFactory(
+      'contracts/v2/modules/RevenueDistributor.sol:RevenueDistributor'
+    );
+    await expect(Distributor.deploy(await stakeManager.getAddress())).to.not.be
+      .reverted;
+  });
+
+  it('reverts when $AGIALPHA decimals are not 18', async () => {
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC206Decimals.sol:MockERC206Decimals'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const Stake = await ethers.getContractFactory('MockStakeManager');
+    const stakeManager = await Stake.deploy();
+    const Distributor = await ethers.getContractFactory(
+      'contracts/v2/modules/RevenueDistributor.sol:RevenueDistributor'
+    );
+    await expect(
+      Distributor.deploy(await stakeManager.getAddress())
+    ).to.be.revertedWith('decimals');
+  });
+});
