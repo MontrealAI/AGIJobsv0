@@ -2,11 +2,12 @@ import { ethers } from 'hardhat';
 
 function usage() {
   console.log(
-    'Usage: npx hardhat run scripts/v2/attestEns.ts --network <network> <subdomain> <role> <address>'
+    'Usage: npx hardhat run scripts/v2/attestEns.ts --network <network> <attest|revoke> <subdomain> <role> <address>'
   );
-  console.log('  <subdomain> - label before the role, e.g. "alice"');
-  console.log('  <role>      - "agent" or "validator"');
-  console.log('  <address>   - delegate address to attest');
+  console.log('  <attest|revoke> - action to perform');
+  console.log('  <subdomain>     - label before the role, e.g. "alice"');
+  console.log('  <role>          - "agent" or "validator"');
+  console.log('  <address>       - delegate address');
 }
 
 async function ownerOf(node: string, ensAddr: string, wrapperAddr: string) {
@@ -33,10 +34,14 @@ async function ownerOf(node: string, ensAddr: string, wrapperAddr: string) {
 }
 
 async function main() {
-  const [subdomain, roleInput, delegate] = process.argv.slice(2);
-  if (!subdomain || !roleInput || !delegate) {
+  const [action, subdomain, roleInput, delegate] = process.argv.slice(2);
+  if (!action || !subdomain || !roleInput || !delegate) {
     usage();
     throw new Error('missing arguments');
+  }
+  const verb = action.toLowerCase();
+  if (verb !== 'attest' && verb !== 'revoke') {
+    throw new Error('action must be attest or revoke');
   }
 
   const roleMap: Record<string, number> = {
@@ -72,13 +77,16 @@ async function main() {
     throw new Error(`caller ${signer.address} does not own ${ensName}`);
   }
 
-  const tx = await att.attest(node, role, delegateAddr);
+  const tx =
+    verb === 'revoke'
+      ? await att.revoke(node, role, delegateAddr)
+      : await att.attest(node, role, delegateAddr);
   console.log(`tx: ${tx.hash}`);
   await tx.wait();
   console.log(
-    `attested ${delegate} for ${ensName} as ${
-      role === 0 ? 'Agent' : 'Validator'
-    }`
+    `${
+      verb === 'revoke' ? 'revoked' : 'attested'
+    } ${delegate} for ${ensName} as ${role === 0 ? 'Agent' : 'Validator'}`
   );
 }
 
