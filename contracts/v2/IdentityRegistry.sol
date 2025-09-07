@@ -218,7 +218,7 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof,
         string calldata uri
     ) external {
-        if (!isAuthorizedAgent(msg.sender, subdomain, proof)) {
+        if (!verifyAgent(msg.sender, subdomain, proof)) {
             revert UnauthorizedAgent();
         }
         agentProfileURI[msg.sender] = uri;
@@ -315,7 +315,7 @@ contract IdentityRegistry is Ownable2Step {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external returns (bool) {
+    ) public returns (bool) {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
