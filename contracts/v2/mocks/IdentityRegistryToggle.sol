@@ -93,7 +93,7 @@ contract IdentityRegistryToggle is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool) {
+    ) external view returns (bool) {
         if (additionalAgents[claimant]) {
             return true;
         }
