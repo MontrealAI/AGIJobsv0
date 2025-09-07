@@ -99,7 +99,7 @@ disputeModule: address from step 5.
 certificateNFT: address from step 6.
 identityRegistry: address from step 3 (or 0x0 if you decided not to use ENS enforcement).
 taxPolicy: address from step 11 (or 0x0 if no TaxPolicy).
-feePct: Protocol fee percentage in basis points. For example, 500 represents a 5% fee on each job’s reward. This fee will be taken by StakeManager and sent to FeePool upon job finalization.
+feePct: Protocol fee percentage (0–100). For example, 5 represents a 5% fee on each job’s reward. This fee will be taken by StakeManager and sent to FeePool upon job finalization.
 jobStake: (in wei) any upfront stake an employer must put to create a job (often 0, meaning no stake required from employer aside from the job reward).
 ackModules: an array of addresses for any modules that need to acknowledge job creation (usually an empty array [] – advanced use only).
 owner: (if required) some modules allow specifying an initial owner; if the JobRegistry constructor requires it (depending on implementation), supply the deployer or multisig. Otherwise, ownership will default to deployer.
