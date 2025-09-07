@@ -71,6 +71,7 @@ contract JobEscrow is Ownable, ReentrancyGuard {
     );
     event JobCancelled(uint256 indexed jobId);
     event ResultSubmitted(uint256 indexed jobId, string result);
+    event RewardPaid(uint256 indexed jobId, address indexed operator, uint256 amount);
     event ResultAccepted(uint256 indexed jobId, address caller);
 
     /// @param _routing Routing module used to select operators for new jobs.
@@ -158,6 +159,7 @@ contract JobEscrow is Ownable, ReentrancyGuard {
         }
         job.state = State.Accepted;
         token.safeTransfer(job.operator, job.reward);
+        emit RewardPaid(jobId, job.operator, job.reward);
         emit ResultAccepted(jobId, msg.sender);
     }
 
