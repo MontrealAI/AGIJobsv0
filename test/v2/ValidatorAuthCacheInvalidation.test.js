@@ -176,4 +176,22 @@ describe('JobRegistry validator auth cache', function () {
       'InsufficientValidators'
     );
   });
+
+  it('invalidates cache on manual version bump', async () => {
+    await createJob(1);
+    await select(1);
+
+    await identity.connect(owner).setResult(false);
+
+    await createJob(2);
+    await select(2);
+
+    await validation.connect(owner).bumpValidatorAuthCacheVersion();
+
+    await createJob(3);
+    await expect(select(3)).to.be.revertedWithCustomError(
+      validation,
+      'InsufficientValidators'
+    );
+  });
 });

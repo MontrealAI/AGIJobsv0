@@ -171,6 +171,130 @@ describe('JobRegistry agent auth cache', function () {
     ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
   });
 
+  it('requires re-verification after agent cache expiration', async () => {
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const identity = await Identity.connect(owner).deploy();
+    await identity.waitForDeployment();
+    await identity.setAgentRootNode(ethers.ZeroHash);
+    await identity.setResult(true);
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const reg = await Registry.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    await reg.waitForDeployment();
+    await reg.connect(owner).setIdentityRegistry(await identity.getAddress());
+
+    const Policy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const pol = await Policy.deploy('uri', 'ack');
+    await reg.connect(owner).setTaxPolicy(await pol.getAddress());
+    await pol.connect(employer).acknowledge();
+    await pol.connect(agent).acknowledge();
+
+    await reg.connect(owner).setMaxJobReward(1000);
+    await reg.connect(owner).setJobDurationLimit(1000);
+    await reg.connect(owner).setFeePct(0);
+    await reg.connect(owner).setJobParameters(0, 0);
+    await reg.connect(owner).setAgentAuthCacheDuration(5);
+
+    let deadline = (await time.latest()) + 100;
+    const specHash = ethers.id('spec');
+    await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await reg.connect(agent).applyForJob(1, 'a', []);
+
+    await identity.connect(owner).setResult(false);
+
+    deadline = (await time.latest()) + 100;
+    await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await expect(reg.connect(agent).applyForJob(2, 'a', [])).to.not.be.reverted;
+
+    await time.increase(6);
+
+    deadline = (await time.latest()) + 100;
+    await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await expect(
+      reg.connect(agent).applyForJob(3, 'a', [])
+    ).to.be.revertedWithCustomError(reg, 'NotAuthorizedAgent');
+  });
+
+  it('invalidates cache on manual agent version bump', async () => {
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const identity = await Identity.connect(owner).deploy();
+    await identity.waitForDeployment();
+    await identity.setAgentRootNode(ethers.ZeroHash);
+    await identity.setResult(true);
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const reg = await Registry.deploy(
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    await reg.waitForDeployment();
+    await reg.connect(owner).setIdentityRegistry(await identity.getAddress());
+
+    const Policy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const pol = await Policy.deploy('uri', 'ack');
+    await reg.connect(owner).setTaxPolicy(await pol.getAddress());
+    await pol.connect(employer).acknowledge();
+    await pol.connect(agent).acknowledge();
+
+    await reg.connect(owner).setMaxJobReward(1000);
+    await reg.connect(owner).setJobDurationLimit(1000);
+    await reg.connect(owner).setFeePct(0);
+    await reg.connect(owner).setJobParameters(0, 0);
+    await reg.connect(owner).setAgentAuthCacheDuration(1000);
+
+    let deadline = (await time.latest()) + 100;
+    const specHash = ethers.id('spec');
+    await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await reg.connect(agent).applyForJob(1, 'a', []);
+
+    await identity.connect(owner).setResult(false);
+
+    deadline = (await time.latest()) + 100;
+    await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await reg.connect(agent).applyForJob(2, 'a', []);
+
+    await reg.connect(owner).bumpAgentAuthCacheVersion();
+
+    deadline = (await time.latest()) + 100;
+    await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
+    await expect(
+      reg.connect(agent).applyForJob(3, 'a', [])
+    ).to.be.revertedWithCustomError(reg, 'NotAuthorizedAgent');
+  });
+
   it('reverts application after agent root node update without re-verification', async () => {
     const Identity = await ethers.getContractFactory(
       'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
