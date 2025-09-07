@@ -9,6 +9,9 @@ import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 error UnbondLocked();
 error Jailed();
 error PendingPenalty();
+error InvalidUnbondingPeriod();
+
+event UnbondingPeriodUpdated(uint256 newPeriod);
 
 contract StakeManagerUnbond is Test {
     StakeManager stake;
@@ -38,7 +41,7 @@ contract StakeManagerUnbond is Test {
         vm.expectRevert(UnbondLocked.selector);
         stake.finalizeWithdraw(StakeManager.Role.Validator);
 
-        vm.warp(block.timestamp + stake.UNBONDING_PERIOD());
+        vm.warp(block.timestamp + stake.unbondingPeriod());
         uint256 beforeBal = token.balanceOf(user);
         vm.prank(user);
         stake.finalizeWithdraw(StakeManager.Role.Validator);
@@ -48,7 +51,7 @@ contract StakeManagerUnbond is Test {
     function testJailOnSlash() public {
         _request(5e17);
         stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
-        vm.warp(block.timestamp + stake.UNBONDING_PERIOD());
+        vm.warp(block.timestamp + stake.unbondingPeriod());
         vm.prank(user);
         vm.expectRevert(Jailed.selector);
         stake.finalizeWithdraw(StakeManager.Role.Validator);
@@ -57,7 +60,7 @@ contract StakeManagerUnbond is Test {
     function testPendingPenaltyRace() public {
         _request(5e17);
         stake.lockStake(user, 1e17, 1 days);
-        vm.warp(block.timestamp + stake.UNBONDING_PERIOD());
+        vm.warp(block.timestamp + stake.unbondingPeriod());
         vm.prank(user);
         vm.expectRevert(PendingPenalty.selector);
         stake.finalizeWithdraw(StakeManager.Role.Validator);
@@ -67,5 +70,18 @@ contract StakeManagerUnbond is Test {
         vm.prank(user);
         stake.finalizeWithdraw(StakeManager.Role.Validator);
         assertEq(token.balanceOf(user), balBefore + 5e17);
+    }
+
+    function testSetUnbondingPeriod() public {
+        uint256 newPeriod = 3 days;
+        vm.expectEmit(false, false, false, true);
+        emit UnbondingPeriodUpdated(newPeriod);
+        stake.setUnbondingPeriod(newPeriod);
+        assertEq(stake.unbondingPeriod(), newPeriod);
+    }
+
+    function testSetUnbondingPeriodZeroReverts() public {
+        vm.expectRevert(InvalidUnbondingPeriod.selector);
+        stake.setUnbondingPeriod(0);
     }
 }

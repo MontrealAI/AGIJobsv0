@@ -38,6 +38,7 @@ error InvalidUser();
 error InvalidRole();
 error InvalidAmount();
 error InvalidMinStake();
+error InvalidUnbondingPeriod();
 error InvalidRecipient();
 error TreasuryNotSet();
 error ValidationModuleNotSet();
@@ -81,7 +82,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     uint256 public constant DEFAULT_MIN_STAKE = TOKEN_SCALE;
 
     /// @notice time tokens remain locked after a withdraw request
-    uint256 public constant UNBONDING_PERIOD = 7 days;
+    uint256 public unbondingPeriod = 7 days;
 
     /// @notice ERC20 token used for staking and payouts (immutable $AGIALPHA)
     IERC20 public immutable token = IERC20(AGIALPHA);
@@ -198,6 +199,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event BurnPctUpdated(uint256 pct);
     event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
+    event UnbondingPeriodUpdated(uint256 newPeriod);
     event PauserUpdated(address indexed pauser);
 
     modifier onlyGovernanceOrPauser() {
@@ -420,6 +422,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (feePct + burnPct + pct > 100) revert InvalidPercentage();
         validatorRewardPct = pct;
         emit ValidatorRewardPctUpdated(pct);
+    }
+
+    /// @notice update the unbonding period for withdrawals
+    /// @param newPeriod duration in seconds tokens remain locked after withdrawal request
+    function setUnbondingPeriod(uint256 newPeriod) external onlyGovernance {
+        if (newPeriod == 0) revert InvalidUnbondingPeriod();
+        unbondingPeriod = newPeriod;
+        emit UnbondingPeriodUpdated(newPeriod);
     }
 
     /// @notice set maximum total stake allowed per address (0 disables limit)
@@ -727,7 +737,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         Unbond storage u = unbonds[msg.sender];
         if (u.amt != 0) revert UnbondPending();
         u.amt = amount;
-        u.unlockAt = uint64(block.timestamp + UNBONDING_PERIOD);
+        u.unlockAt = uint64(block.timestamp + unbondingPeriod);
         u.jailed = false;
         emit WithdrawRequested(msg.sender, role, amount, u.unlockAt);
     }
