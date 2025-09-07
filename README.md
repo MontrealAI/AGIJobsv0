@@ -239,5 +239,6 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Etherscan interaction guide](docs/etherscan-guide.md)
 - [Deployment walkthrough with $AGIALPHA](docs/deployment-v2-agialpha.md)
 - [Production deployment guide](docs/deployment-guide-production.md)
+- [AGIJobs v2 sprint plan and deployment guide](docs/AGIJobs-v2-Sprint-Plan-and-Deployment-Guide.md)
 - [API reference and SDK snippets](docs/api-reference.md)
 - [Agent gateway example](examples/agent-gateway.js)
