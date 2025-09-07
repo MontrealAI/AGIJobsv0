@@ -100,7 +100,7 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external view returns (bool) {
+    ) external returns (bool) {
         claimant; // silence unused
         return true;
     }
@@ -109,7 +109,7 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external view returns (bool) {
+    ) external returns (bool) {
         claimant; // silence unused
         return true;
     }

@@ -36,11 +36,11 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     }
 
     // IIdentityRegistry stubs
-    function isAuthorizedAgent(address, string calldata, bytes32[] calldata) external pure returns (bool) {
+    function isAuthorizedAgent(address, string calldata, bytes32[] calldata) external returns (bool) {
         return true;
     }
 
-    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external pure returns (bool) {
+    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external returns (bool) {
         return true;
     }
 

@@ -12,13 +12,13 @@ interface IIdentityRegistry {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function isAuthorizedValidator(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function verifyAgent(
         address claimant,

@@ -93,7 +93,7 @@ contract IdentityRegistryToggle is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external view returns (bool) {
+    ) external returns (bool) {
         if (additionalAgents[claimant]) {
             return true;
         }
@@ -104,7 +104,7 @@ contract IdentityRegistryToggle is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external view returns (bool) {
+    ) external returns (bool) {
         if (additionalValidators[claimant]) {
             return true;
         }

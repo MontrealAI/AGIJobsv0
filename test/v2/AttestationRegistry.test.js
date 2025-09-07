@@ -124,7 +124,7 @@ describe('AttestationRegistry', function () {
     await attest.connect(owner).attest(agentNode, 0, agent.address);
 
     expect(
-      await identity.isAuthorizedAgent(agent.address, agentLabel, [])
+      await identity.isAuthorizedAgent.staticCall(agent.address, agentLabel, [])
     ).to.equal(true);
 
     const validatorLabel = 'validator';
@@ -138,7 +138,7 @@ describe('AttestationRegistry', function () {
     await attest.connect(owner).attest(validatorNode, 1, validator.address);
 
     expect(
-      await identity.isAuthorizedValidator(
+      await identity.isAuthorizedValidator.staticCall(
         validator.address,
         validatorLabel,
         []
