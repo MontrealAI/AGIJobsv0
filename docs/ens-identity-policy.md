@@ -15,8 +15,13 @@ In rare emergencies governance may temporarily bypass the ENS requirement by
 calling `IdentityRegistry.addAdditionalAgent` or `addAdditionalValidator`. Each
 entry should specify an expiration plan and be removed once the issue is
 resolved. The registry emits `AdditionalAgentUsed` and `AdditionalValidatorUsed`
-whenever these bypasses are exercised, enabling off-chain monitoring of their
-usage.
+with the subdomain label whenever these bypasses are exercised, enabling
+off-chain monitoring.
+
+Governance should review these events and regularly clear expired allowlist
+entries. Run `npx ts-node --compiler-options '{"module":"commonjs"}'
+scripts/v2/auditIdentityRegistry.ts --network <network>` to print active
+overrides and pass `--clear` to remove them on-chain after review.
 
 ## Testing
 
