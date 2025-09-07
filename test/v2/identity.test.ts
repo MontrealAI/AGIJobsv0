@@ -242,9 +242,7 @@ describe('IdentityRegistry ENS verification', function () {
 
     // allow alice as additional agent then self-update profile
     await id.addAdditionalAgent(alice.address);
-    await expect(
-      id.connect(alice).updateAgentProfile('sub', [], 'ipfs://cap2')
-    )
+    await expect(id.connect(alice).updateAgentProfile('sub', [], 'ipfs://cap2'))
       .to.emit(id, 'OwnershipVerified')
       .withArgs(alice.address, 'sub')
       .and.to.emit(id, 'AgentProfileUpdated')
