@@ -69,9 +69,7 @@ describe('Validator selection cache', function () {
     const gas2 = (await tx2.wait()).gasUsed;
     expect(gas2).to.be.lt(gas1);
 
-    const duration = Number(
-      await validation.validatorAuthCacheDuration()
-    );
+    const duration = Number(await validation.validatorAuthCacheDuration());
     await time.increase(duration + 1);
 
     const tx3 = await select(3);
@@ -80,9 +78,7 @@ describe('Validator selection cache', function () {
   });
 
   it('invalidates cache on manual validator version bump', async () => {
-    await validation
-      .connect(owner)
-      .setValidatorAuthCacheDuration(1000);
+    await validation.connect(owner).setValidatorAuthCacheDuration(1000);
 
     await select(1);
 
