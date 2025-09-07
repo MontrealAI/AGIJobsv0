@@ -215,6 +215,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     );
 
     // job lifecycle events
+    event JobFunded(
+        uint256 indexed jobId,
+        address indexed employer,
+        uint256 reward,
+        uint256 fee
+    );
     event JobCreated(
         uint256 indexed jobId,
         address indexed employer,
@@ -698,6 +704,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(stakeManager) != address(0) && reward > 0) {
             fee = (reward * feePctSnapshot) / 100;
             stakeManager.lockReward(bytes32(jobId), msg.sender, reward + fee);
+            emit JobFunded(jobId, msg.sender, reward, fee);
         }
         emit JobCreated(
             jobId,
