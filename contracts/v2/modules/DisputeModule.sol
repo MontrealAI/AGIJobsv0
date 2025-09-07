@@ -60,6 +60,11 @@ contract DisputeModule is Ownable, Pausable {
         address indexed resolver,
         bool employerWins
     );
+    event JurorSlashed(
+        address indexed juror,
+        uint256 amount,
+        address indexed employer
+    );
     event PauserUpdated(address indexed pauser);
 
     modifier onlyOwnerOrPauser() {
@@ -266,6 +271,24 @@ contract DisputeModule is Ownable, Pausable {
         }
 
         emit DisputeResolved(jobId, msg.sender, employerWins);
+    }
+
+    /// @notice Slash a validator for absenteeism during dispute resolution.
+    /// @param juror Address of the juror being slashed.
+    /// @param amount Token amount to slash.
+    /// @param employer Employer receiving the slashed share.
+    /// @dev Only callable by the arbitrator committee.
+    function slashValidator(
+        address juror,
+        uint256 amount,
+        address employer
+    ) external whenNotPaused {
+        require(msg.sender == committee, "not committee");
+        IStakeManager sm = _stakeManager();
+        if (address(sm) != address(0) && amount > 0) {
+            sm.slash(juror, amount, employer);
+        }
+        emit JurorSlashed(juror, amount, employer);
     }
 
     function _stakeManager() internal view returns (IStakeManager) {

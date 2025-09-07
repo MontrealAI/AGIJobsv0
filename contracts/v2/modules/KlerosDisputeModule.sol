@@ -101,6 +101,15 @@ contract KlerosDisputeModule is IDisputeModule {
         emit DisputeResolved(jobId, employerWins);
     }
 
+    /// @inheritdoc IDisputeModule
+    function slashValidator(
+        address,
+        uint256,
+        address
+    ) external pure override {
+        revert Unsupported();
+    }
+
     // ---------------------------------------------------------------------
     // Unused legacy interfaces - maintained for compatibility
     // ---------------------------------------------------------------------
