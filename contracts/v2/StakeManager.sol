@@ -57,6 +57,7 @@ error Jailed();
 error PendingPenalty();
 error BurnAddressNotZero();
 error TokenNotBurnable();
+error Unauthorized();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -203,10 +204,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event PauserUpdated(address indexed pauser);
 
     modifier onlyGovernanceOrPauser() {
-        require(
-            msg.sender == address(governance) || msg.sender == pauser,
-            "governance or pauser only"
-        );
+        if (!(msg.sender == address(governance) || msg.sender == pauser))
+            revert Unauthorized();
         _;
     }
 
