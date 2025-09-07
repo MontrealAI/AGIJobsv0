@@ -129,6 +129,16 @@ contract KlerosDisputeModule is IDisputeModule {
     function getModerators() external pure returns (address[] memory) {
         return new address[](0);
     }
+
+    /// @dev Reject direct ETH transfers to keep the module tax neutral.
+    receive() external payable {
+        revert("KlerosDisputeModule: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("KlerosDisputeModule: no ether");
+    }
 }
 
 /// @dev External arbitration interface expected by the module.
