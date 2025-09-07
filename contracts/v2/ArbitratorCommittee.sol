@@ -6,7 +6,6 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
-import {IStakeManager} from "./interfaces/IStakeManager.sol";
 
 /// @title ArbitratorCommittee
 /// @notice Handles commit-reveal voting by job validators to resolve disputes.
@@ -147,13 +146,11 @@ contract ArbitratorCommittee is Ownable, Pausable {
         bool employerWins = c.reveals > 0 && c.employerVotes * 2 > c.reveals;
         address employer = jobRegistry.jobs(jobId).employer;
         disputeModule.resolve(jobId, employerWins);
-        address smAddr = jobRegistry.stakeManager();
-        IStakeManager sm = IStakeManager(smAddr);
-        bool doSlash = absenteeSlash > 0 && smAddr != address(0);
+        bool doSlash = absenteeSlash > 0;
         for (uint256 i; i < c.jurors.length; ++i) {
             address juror = c.jurors[i];
             if (doSlash && c.commits[juror] != bytes32(0) && !c.revealed[juror]) {
-                sm.slash(juror, absenteeSlash, employer);
+                disputeModule.slashValidator(juror, absenteeSlash, employer);
             }
             delete c.isJuror[juror];
         }

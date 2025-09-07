@@ -232,4 +232,63 @@ describe('ArbitratorCommittee', function () {
       .to.emit(dispute, 'DisputeResolved')
       .withArgs(1, await committee.getAddress(), true);
   });
+
+  it('slashes absentee jurors and emits events', async () => {
+    const {
+      committee,
+      dispute,
+      registry,
+      agent,
+      employer,
+      v1,
+      v2,
+      token,
+      stake,
+    } = await setup();
+
+    await committee.setCommitRevealWindows(3n, 2n);
+    await committee.setAbsenteeSlash(FEE);
+
+    for (const juror of [v1, v2]) {
+      await token.mint(juror.address, FEE);
+      await token
+        .connect(juror)
+        .approve(await stake.getAddress(), FEE);
+      await stake.connect(juror).depositStake(1, FEE);
+    }
+
+    const evidence = ethers.id('evidence');
+    await registry.connect(agent).dispute(1, evidence);
+
+    const s1 = 1n,
+      s2 = 2n;
+    const c1 = ethers.keccak256(
+      ethers.solidityPacked(
+        ['address', 'uint256', 'bool', 'uint256'],
+        [v1.address, 1, true, s1]
+      )
+    );
+    const c2 = ethers.keccak256(
+      ethers.solidityPacked(
+        ['address', 'uint256', 'bool', 'uint256'],
+        [v2.address, 1, true, s2]
+      )
+    );
+
+    await committee.connect(v1).commit(1, c1);
+    await committee.connect(v2).commit(1, c2);
+
+    await time.increase(2n);
+
+    await committee.connect(v1).reveal(1, true, s1);
+
+    await time.increase(3n);
+    await time.increase(10n);
+
+    await expect(committee.finalize(1))
+      .to.emit(dispute, 'JurorSlashed')
+      .withArgs(v2.address, FEE, employer.address);
+
+    expect(await stake.stakeOf(v2.address, 1)).to.equal(0n);
+  });
 });

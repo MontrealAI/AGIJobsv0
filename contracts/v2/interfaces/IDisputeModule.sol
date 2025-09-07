@@ -13,5 +13,11 @@ interface IDisputeModule {
     ) external;
 
     function resolve(uint256 jobId, bool employerWins) external;
+
+    function slashValidator(
+        address juror,
+        uint256 amount,
+        address employer
+    ) external;
 }
 
