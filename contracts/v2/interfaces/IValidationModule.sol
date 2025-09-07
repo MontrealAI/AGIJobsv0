@@ -12,8 +12,18 @@ interface IValidationModule {
         Reservoir
     }
     event ValidatorsSelected(uint256 indexed jobId, address[] validators);
-    event ValidationCommitted(uint256 indexed jobId, address indexed validator, bytes32 commitHash);
-    event ValidationRevealed(uint256 indexed jobId, address indexed validator, bool approve);
+    event ValidationCommitted(
+        uint256 indexed jobId,
+        address indexed validator,
+        bytes32 commitHash,
+        string subdomain
+    );
+    event ValidationRevealed(
+        uint256 indexed jobId,
+        address indexed validator,
+        bool approve,
+        string subdomain
+    );
     event ValidationTallied(
         uint256 indexed jobId,
         bool success,

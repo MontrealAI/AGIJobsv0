@@ -119,7 +119,8 @@ describe('Validator ENS integration', function () {
     )
       .to.emit(identity, 'OwnershipVerified')
       .withArgs(validator.address, 'v')
-      .and.to.emit(validation, 'ValidationCommitted');
+      .and.to.emit(validation, 'ValidationCommitted')
+      .withArgs(1, validator.address, ethers.id('h'), 'v');
   });
 
   it('rejects validators without subdomains and emits events on success', async () => {
@@ -156,7 +157,8 @@ describe('Validator ENS integration', function () {
     )
       .to.emit(identity, 'OwnershipVerified')
       .withArgs(validator.address, 'v')
-      .and.to.emit(validation, 'ValidationCommitted');
+      .and.to.emit(validation, 'ValidationCommitted')
+      .withArgs(2, validator.address, ethers.id('h'), 'v');
   });
 
   it('rejects invalid Merkle proofs', async () => {
@@ -221,7 +223,9 @@ describe('Validator ENS integration', function () {
     await identity.addAdditionalValidator(validator.address);
     await expect(
       validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
-    ).to.emit(validation, 'ValidationCommitted');
+    )
+      .to.emit(validation, 'ValidationCommitted')
+      .withArgs(1, validator.address, ethers.id('h'), 'v');
   });
 
   it('skips blacklisted validators', async () => {
