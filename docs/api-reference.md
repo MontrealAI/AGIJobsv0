@@ -85,7 +85,7 @@ Verifies ENS ownership and Merkle proofs for agent and validator identities.
 - `verifyAgent(address claimant, string subdomain, bytes32[] proof)` – Validate an agent’s identity.
 - `verifyValidator(address claimant, string subdomain, bytes32[] proof)` – Validate a validator.
 - `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – Check if an address may act as an agent.
-- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – Check if an address may validate.
+- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – Read-only helper to check if an address may validate; emits no events.
 
 Successful checks are cached by `JobRegistry` and `ValidationModule` for about a
 day; owners can invalidate these caches when ENS data changes.

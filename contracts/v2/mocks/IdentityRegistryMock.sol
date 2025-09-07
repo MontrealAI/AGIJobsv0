@@ -109,7 +109,7 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool) {
+    ) external view returns (bool) {
         claimant; // silence unused
         return true;
     }
