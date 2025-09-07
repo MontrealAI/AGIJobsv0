@@ -2,10 +2,10 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('CertificateNFT stake manager validation', function () {
-  let nft, owner;
+  let nft;
 
   beforeEach(async () => {
-    [owner] = await ethers.getSigners();
+    await ethers.getSigners();
     const NFT = await ethers.getContractFactory(
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
@@ -32,4 +32,3 @@ describe('CertificateNFT stake manager validation', function () {
     ).to.be.revertedWithCustomError(nft, 'InvalidStakeManagerToken');
   });
 });
-
