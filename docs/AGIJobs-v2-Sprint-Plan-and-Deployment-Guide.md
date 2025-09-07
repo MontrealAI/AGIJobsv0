@@ -115,7 +115,10 @@ On JobRegistry: setModules(validationModule, stakeManager, reputationEngine, dis
 On StakeManager: setJobRegistry(jobRegistry) to let the StakeManager know the JobRegistry address. Also call setDisputeModule(disputeModule) so StakeManager trusts the DisputeModule for slashing operations.
 On ValidationModule: setJobRegistry(jobRegistry) to connect it to the registry, and setIdentityRegistry(identityRegistry) if you are using ENS identities.
 On DisputeModule: setJobRegistry(jobRegistry) and setTaxPolicy(taxPolicy) if a TaxPolicy is used.
-On CertificateNFT: setJobRegistry(jobRegistry) and setStakeManager(stakeManager) so it knows who can mint certificates and who can verify staking.
+On CertificateNFT: setJobRegistry(jobRegistry) and setStakeManager(stakeManager)
+— the latter now reverts unless the manager reports version 2 and the
+canonical `$AGIALPHA` token — so it knows who can mint certificates and
+who can verify staking.
 On JobRegistry: if not already done via setModules, also call setIdentityRegistry(identityRegistry) to enforce ENS checks on job applications, and setTaxPolicy(taxPolicy) if applicable.
 If you deployed PlatformRegistry/JobRouter/PlatformIncentives: call PlatformRegistry.setRegistrar(platformIncentives, true) and JobRouter.setRegistrar(platformIncentives, true) to link the incentives module (or follow any specific instructions in their docs).
 After manual wiring, double-check each module’s state via the Read Contract functions or events to ensure addresses have been set correctly. The repository provides a script (npm run verify:wiring) that can also confirm on-chain that each module has the expected references.

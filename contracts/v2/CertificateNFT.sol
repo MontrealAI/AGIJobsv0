@@ -9,6 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {AGIALPHA} from "./Constants.sol";
 
 /// @title CertificateNFT
 /// @notice ERC721 certificate minted upon successful job completion.
@@ -29,6 +30,8 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error NotListed();
     error SelfPurchase();
     error InsufficientAllowance();
+    error InvalidStakeManagerVersion();
+    error InvalidStakeManagerToken();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
@@ -71,6 +74,12 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
 
     function setStakeManager(address manager) external onlyOwner {
         if (manager == address(0)) revert ZeroAddress();
+        if (IStakeManager(manager).version() != version) {
+            revert InvalidStakeManagerVersion();
+        }
+        if (IStakeManager(manager).token() != IERC20(AGIALPHA)) {
+            revert InvalidStakeManagerToken();
+        }
         stakeManager = IStakeManager(manager);
         emit StakeManagerUpdated(manager);
     }
