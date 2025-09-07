@@ -34,6 +34,16 @@ describe('StakeManager pause', function () {
       .approve(await stakeManager.getAddress(), ethers.parseEther('1000'));
   });
 
+  it('restricts pause and unpause to governance or pauser', async () => {
+    await expect(
+      stakeManager.connect(user).pause()
+    ).to.be.revertedWithCustomError(stakeManager, 'Unauthorized');
+
+    await expect(
+      stakeManager.connect(user).unpause()
+    ).to.be.revertedWithCustomError(stakeManager, 'Unauthorized');
+  });
+
   it('pauses deposits and withdrawals', async () => {
     await stakeManager.connect(owner).pause();
     await expect(
