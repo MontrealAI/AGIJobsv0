@@ -6,11 +6,11 @@ Validators must own a `*.club.agi.eth` subdomain; see
 
 ## Phases and Windows
 
-| Phase    | Validator state   | Allowed window                             | Function                                                              |
-| -------- | ----------------- | ------------------------------------------ | --------------------------------------------------------------------- |
-| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`                |
-| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)`             |
-| Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
+| Phase    | Validator state   | Allowed window                             | Function                                                                    |
+| -------- | ----------------- | ------------------------------------------ | --------------------------------------------------------------------------- |
+| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`    |
+| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)` |
+| Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)`       |
 
 `commitWindow` and `revealWindow` are owner‑configurable via `ValidationModule.setCommitRevealWindows`.
 
@@ -26,6 +26,12 @@ validationModule.revealValidation(jobId, true, salt, '', new bytes32[](0));
 validationModule.finalize(jobId);
 jobRegistry.finalize(jobId);
 ```
+
+## Script Example
+
+For a runnable Node.js reference, see
+[examples/commit-reveal.js](../examples/commit-reveal.js) which computes the
+commit hash, calls `commitValidation`, and later invokes `revealValidation`.
 
 ## CLI Example
 
