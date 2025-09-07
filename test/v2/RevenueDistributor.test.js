@@ -97,9 +97,8 @@ describe('RevenueDistributor constructor', function () {
     const Distributor = await ethers.getContractFactory(
       'contracts/v2/modules/RevenueDistributor.sol:RevenueDistributor'
     );
-    await expect(
-      Distributor.deploy(await stakeManager.getAddress())
-    ).to.not.be.reverted;
+    await expect(Distributor.deploy(await stakeManager.getAddress())).to.not.be
+      .reverted;
   });
 
   it('reverts when $AGIALPHA decimals are not 18', async () => {
