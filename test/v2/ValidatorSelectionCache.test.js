@@ -3,23 +3,23 @@ const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('Validator selection cache', function () {
-  let validation, stake, identity, other;
+  let validation, stake, identity, owner, other, validators;
 
   beforeEach(async () => {
-    const [_, o] = await ethers.getSigners();
-    other = o;
+    [owner, other] = await ethers.getSigners();
 
     const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stake = await StakeMock.deploy();
     await stake.waitForDeployment();
 
     const Identity = await ethers.getContractFactory(
-      'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
     );
     identity = await Identity.deploy();
     await identity.waitForDeployment();
-    await identity.setClubRootNode(ethers.ZeroHash);
-    await identity.setAgentRootNode(ethers.ZeroHash);
+    await identity.connect(owner).setClubRootNode(ethers.ZeroHash);
+    await identity.connect(owner).setAgentRootNode(ethers.ZeroHash);
+    await identity.connect(owner).setResult(true);
 
     const Validation = await ethers.getContractFactory(
       'contracts/v2/ValidationModule.sol:ValidationModule'
@@ -34,19 +34,21 @@ describe('Validator selection cache', function () {
       []
     );
     await validation.waitForDeployment();
-    await validation.setIdentityRegistry(await identity.getAddress());
+    await validation
+      .connect(owner)
+      .setIdentityRegistry(await identity.getAddress());
 
-    const validators = [];
+    validators = [];
     for (let i = 0; i < 3; i++) {
       const addr = ethers.Wallet.createRandom().address;
       validators.push(addr);
       await stake.setStake(addr, 1, ethers.parseEther('1'));
-      await identity.addAdditionalValidator(addr);
+      await identity.connect(owner).addAdditionalValidator(addr);
     }
-    await validation.setValidatorPool(validators);
-    await validation.setValidatorsPerJob(3);
+    await validation.connect(owner).setValidatorPool(validators);
+    await validation.connect(owner).setValidatorsPerJob(3);
     // Sample a fixed window for shuffle-based selection.
-    await validation.setValidatorPoolSampleSize(10);
+    await validation.connect(owner).setValidatorPoolSampleSize(10);
   });
 
   async function select(jobId, entropy = 0) {
@@ -56,7 +58,7 @@ describe('Validator selection cache', function () {
   }
 
   it('skips repeat ENS checks and expires cache', async () => {
-    await expect(validation.setValidatorAuthCacheDuration(5))
+    await expect(validation.connect(owner).setValidatorAuthCacheDuration(5))
       .to.emit(validation, 'ValidatorAuthCacheDurationUpdated')
       .withArgs(5);
 
@@ -67,10 +69,35 @@ describe('Validator selection cache', function () {
     const gas2 = (await tx2.wait()).gasUsed;
     expect(gas2).to.be.lt(gas1);
 
-    await time.increase(6);
+    const duration = Number(
+      await validation.validatorAuthCacheDuration()
+    );
+    await time.increase(duration + 1);
 
     const tx3 = await select(3);
     const gas3 = (await tx3.wait()).gasUsed;
     expect(gas3).to.be.gt(gas2);
+  });
+
+  it('invalidates cache on manual validator version bump', async () => {
+    await validation
+      .connect(owner)
+      .setValidatorAuthCacheDuration(1000);
+
+    await select(1);
+
+    await identity.connect(owner).setResult(false);
+    for (const addr of validators) {
+      await identity.connect(owner).removeAdditionalValidator(addr);
+    }
+
+    await select(2);
+
+    await validation.connect(owner).bumpValidatorAuthCacheVersion();
+
+    await expect(select(3)).to.be.revertedWithCustomError(
+      validation,
+      'InsufficientValidators'
+    );
   });
 });
