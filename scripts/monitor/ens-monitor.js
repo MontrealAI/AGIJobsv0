@@ -14,10 +14,14 @@ const provider = new ethers.JsonRpcProvider(RPC_URL);
 const abi = [
   'event OwnershipVerified(address indexed claimant, string subdomain)',
   'event RecoveryInitiated(string reason)',
+  'event AdditionalAgentUsed(address indexed agent, string subdomain)',
+  'event AdditionalValidatorUsed(address indexed validator, string subdomain)',
 ];
 const registry = new ethers.Contract(IDENTITY_REGISTRY_ADDRESS, abi, provider);
 
 const recoveryEvents = [];
+const additionalAgentEvents = [];
+const additionalValidatorEvents = [];
 const LOG_FILE = path.join(__dirname, 'ens-monitor.log');
 
 function log(msg) {
@@ -43,7 +47,41 @@ registry.on('RecoveryInitiated', (reason) => {
   log(`RecoveryInitiated: ${reason}`);
   if (recoveryEvents.length >= 5) {
     log(
-      `Anomaly detected: ${recoveryEvents.length} RecoveryInitiated events in 60s`
+      `ALERT: ${recoveryEvents.length} RecoveryInitiated events in 60s`
+    );
+  }
+});
+
+registry.on('AdditionalAgentUsed', (agent, subdomain) => {
+  const now = Date.now();
+  additionalAgentEvents.push(now);
+  while (
+    additionalAgentEvents.length &&
+    now - additionalAgentEvents[0] > 60 * 60 * 1000
+  ) {
+    additionalAgentEvents.shift();
+  }
+  log(`AdditionalAgentUsed: ${agent} -> ${subdomain}`);
+  if (additionalAgentEvents.length >= 10) {
+    log(
+      `ALERT: ${additionalAgentEvents.length} AdditionalAgentUsed events in 1h`
+    );
+  }
+});
+
+registry.on('AdditionalValidatorUsed', (validator, subdomain) => {
+  const now = Date.now();
+  additionalValidatorEvents.push(now);
+  while (
+    additionalValidatorEvents.length &&
+    now - additionalValidatorEvents[0] > 60 * 60 * 1000
+  ) {
+    additionalValidatorEvents.shift();
+  }
+  log(`AdditionalValidatorUsed: ${validator} -> ${subdomain}`);
+  if (additionalValidatorEvents.length >= 10) {
+    log(
+      `ALERT: ${additionalValidatorEvents.length} AdditionalValidatorUsed events in 1h`
     );
   }
 });
