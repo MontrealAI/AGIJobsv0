@@ -81,12 +81,14 @@ The default run uses the mainnet `$AGIALPHA` address, a 5% protocol fee and 5% b
    );
    ```
 
-2. On `StakeManager`, `ValidationModule` and `CertificateNFT`, call `setJobRegistry(jobRegistry)`.
+2. On `StakeManager`, `ValidationModule` and `CertificateNFT`, call
+   `setJobRegistry(jobRegistry)`. `CertificateNFT` additionally checks that
+   `JobRegistry.version()` equals `2`.
 
    ```solidity
    stakeManager.setJobRegistry(jobRegistry);
    validationModule.setJobRegistry(jobRegistry);
-   certificateNFT.setJobRegistry(jobRegistry);
+   certificateNFT.setJobRegistry(jobRegistry); // requires JobRegistry.version() == 2
    ```
 
 3. Verify `ModulesUpdated` and `JobRegistrySet` events before allowing user funds.
