@@ -2,7 +2,9 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRandaoCoordinator} from "./interfaces/IRandaoCoordinator.sol";
+import {AGIALPHA} from "./Constants.sol";
 
 /// @title RandaoCoordinator
 /// @notice Simple commit-reveal randomness aggregator with penalties for
@@ -20,7 +22,10 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
     uint256 public immutable deposit;
 
     /// @notice Address receiving forfeited deposits.
-    address payable public immutable treasury;
+    address public immutable treasury;
+
+    /// @notice Token used for deposits.
+    IERC20 public immutable token;
 
     struct Round {
         uint256 commitDeadline;
@@ -43,16 +48,18 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         uint256 _commitWindow,
         uint256 _revealWindow,
         uint256 _deposit,
-        address payable _treasury
+        address _treasury
     ) Ownable(msg.sender) {
         commitWindow = _commitWindow;
         revealWindow = _revealWindow;
         deposit = _deposit;
         treasury = _treasury;
+        token = IERC20(AGIALPHA);
     }
 
     /// @notice Commit a secret hash for a given tag.
-    function commit(bytes32 tag, bytes32 commitment) external payable override {
+    /// @dev Requires prior approval for the deposit amount.
+    function commit(bytes32 tag, bytes32 commitment) external override {
         Round storage r = rounds[tag];
         if (r.commitDeadline == 0) {
             r.commitDeadline = block.timestamp + commitWindow;
@@ -60,10 +67,10 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         }
         if (block.timestamp > r.commitDeadline) revert("commit closed");
         if (commitments[tag][msg.sender] != bytes32(0)) revert("already committed");
-        if (msg.value != deposit) revert("bad deposit");
-
+        if (!token.transferFrom(msg.sender, address(this), deposit))
+            revert("transfer failed");
         commitments[tag][msg.sender] = commitment;
-        r.deposits[msg.sender] = msg.value;
+        r.deposits[msg.sender] = deposit;
         r.commits += 1;
         emit Committed(tag, msg.sender, commitment);
     }
@@ -85,7 +92,7 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         uint256 dep = r.deposits[msg.sender];
         if (dep > 0) {
             r.deposits[msg.sender] = 0;
-            payable(msg.sender).transfer(dep);
+            if (!token.transfer(msg.sender, dep)) revert("transfer failed");
         }
         emit Revealed(tag, msg.sender, secret);
     }
@@ -106,10 +113,17 @@ contract RandaoCoordinator is Ownable, IRandaoCoordinator {
         uint256 dep = r.deposits[user];
         if (dep == 0) revert("no deposit");
         r.deposits[user] = 0;
-        treasury.transfer(dep);
+        if (!token.transfer(treasury, dep)) revert("transfer failed");
         emit DepositForfeited(tag, user, dep);
     }
 
-    // receive ether from commits
-    receive() external payable {}
+    /// @dev Reject direct ETH transfers.
+    receive() external payable {
+        revert("RandaoCoordinator: no ether");
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert("RandaoCoordinator: no ether");
+    }
 }
