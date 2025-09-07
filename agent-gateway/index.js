@@ -91,7 +91,7 @@ if (BOT_WALLET) {
 // Minimal ABI for JobRegistry interactions
 const JOB_REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee)',
-  'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI)',
+  'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
   'function cancelExpiredJob(uint256 jobId) external',
@@ -219,12 +219,22 @@ registry.on('JobCreated', (jobId, employer, agentAddr, reward, stake, fee) => {
   scheduleExpiration(job.jobId);
 });
 
-registry.on('JobSubmitted', (jobId, worker, resultHash, resultURI) => {
-  const id = jobId.toString();
-  broadcast({ type: 'JobSubmitted', jobId: id, worker, resultHash, resultURI });
-  scheduleFinalize(id);
-  console.log('JobSubmitted', id);
-});
+registry.on(
+  'JobSubmitted',
+  (jobId, worker, resultHash, resultURI, subdomain) => {
+    const id = jobId.toString();
+    broadcast({
+      type: 'JobSubmitted',
+      jobId: id,
+      worker,
+      resultHash,
+      resultURI,
+      subdomain,
+    });
+    scheduleFinalize(id);
+    console.log('JobSubmitted', id);
+  }
+);
 
 if (validation) {
   validation.on('ValidatorsSelected', (jobId, validators) => {

@@ -71,12 +71,17 @@ interface IJobRegistry {
         bytes32 specHash,
         string uri
     );
-    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event JobApplied(
+        uint256 indexed jobId,
+        address indexed agent,
+        string subdomain
+    );
     event JobSubmitted(
         uint256 indexed jobId,
         address indexed worker,
         bytes32 resultHash,
-        string resultURI
+        string resultURI,
+        string subdomain
     );
     event JobCompleted(uint256 indexed jobId, bool success);
     /// @notice Emitted when a job is finalized
