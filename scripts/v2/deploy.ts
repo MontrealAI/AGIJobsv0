@@ -151,6 +151,10 @@ async function main() {
   const attestation = await Attestation.deploy(ENS_REGISTRY, NAME_WRAPPER);
   await attestation.waitForDeployment();
   await identity.setAttestationRegistry(await attestation.getAddress());
+  await registry
+    .connect(governanceSigner)
+    .setIdentityRegistry(await identity.getAddress());
+  await validation.setIdentityRegistry(await identity.getAddress());
 
   const NFT = await ethers.getContractFactory(
     'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
