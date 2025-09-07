@@ -18,7 +18,7 @@ interface IIdentityRegistry {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external returns (bool);
+    ) external view returns (bool);
 
     function verifyAgent(
         address claimant,

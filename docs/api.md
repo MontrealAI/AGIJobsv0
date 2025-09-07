@@ -81,7 +81,7 @@ Verifies agent and validator eligibility.
 
 - `setAttestationRegistry(address registry)` – configure optional delegated identity support.
 - `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check if an address controlling `subdomain.agent.agi.eth` can work.
-- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – check validator eligibility for `subdomain.club.agi.eth`.
+- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – read-only validator eligibility check for `subdomain.club.agi.eth`; emits no events.
 
 ```javascript
 const ok = await identity.isAuthorizedAgent(user, 'alice', merkleProof); // alice.agent.agi.eth

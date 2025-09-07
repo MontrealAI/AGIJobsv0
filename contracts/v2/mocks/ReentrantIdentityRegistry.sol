@@ -40,7 +40,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         return true;
     }
 
-    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external returns (bool) {
+    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external view returns (bool) {
         return true;
     }
 

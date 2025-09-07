@@ -16,7 +16,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 - Emit `OwnershipVerified` and `RecoveryInitiated` events on success or failed external calls.
 - Store `agentRootNode`, `clubRootNode`, `agentMerkleRoot` and `validatorMerkleRoot`; owner setters (`setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot`, `setValidatorMerkleRoot`) fire `RootNodeUpdated`/`MerkleRootUpdated` events.
 - Provide `addAdditionalAgent`/`addAdditionalValidator` and removal counterparts so the owner can override identity checks.
-- Expose helper `isAuthorizedAgent`/`isAuthorizedValidator` that consults allow‑lists and `ReputationEngine.isBlacklisted` before allowing any action.
+- Expose helper `isAuthorizedAgent`/`isAuthorizedValidator` that consults allow‑lists and `ReputationEngine.isBlacklisted` before allowing any action. These helpers are read-only and emit no events; use `verifyAgent`/`verifyValidator` for event emission when needed.
 
 ### 2. JobRegistry
 
@@ -30,7 +30,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 ### 3. ValidationModule
 
 - Select validator committees and record commits & reveals.
-- Accept votes only from identities passing `isAuthorizedValidator` (allow‑list or ENS ownership and not blacklisted).
+- Accept votes only from identities passing the read-only `isAuthorizedValidator` check (allow‑list or ENS ownership and not blacklisted).
 - Finalise results once quorum or the reveal window ends, tallying approvals vs. disapprovals against owner‑set thresholds.
 - Report outcomes back to `JobRegistry` for payout or dispute routing.
 - Use deterministic on‑chain randomness; avoid Chainlink VRF or subscription services.

@@ -320,7 +320,10 @@ describe('IdentityRegistry ENS verification', function () {
     expect(await id.isAuthorizedAgent(agent.address, '', [])).to.equal(true);
 
     await id.addAdditionalValidator(validator.address);
-    await expect(id.isAuthorizedValidator(validator.address, '', []))
+    expect(
+      await id.isAuthorizedValidator.staticCall(validator.address, '', [])
+    ).to.equal(true);
+    await expect(id.verifyValidator(validator.address, '', []))
       .to.emit(id, 'AdditionalValidatorUsed')
       .withArgs(validator.address, '');
   });
