@@ -1,11 +1,26 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
 describe('RevenueDistributor', function () {
-  let stakeManager, distributor, owner, op1, op2, op3, payer;
+  let stakeManager, distributor, owner, op1, op2, op3, payer, token;
 
   beforeEach(async () => {
     [owner, op1, op2, op3, payer] = await ethers.getSigners();
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
+    await token.mint(payer.address, ethers.parseEther('100'));
+
     const Stake = await ethers.getContractFactory('MockStakeManager');
     stakeManager = await Stake.deploy();
 
@@ -25,15 +40,17 @@ describe('RevenueDistributor', function () {
 
   it('splits fees proportionally to stake', async () => {
     const amount = ethers.parseEther('6');
-    const b1 = await ethers.provider.getBalance(op1.address);
-    const b2 = await ethers.provider.getBalance(op2.address);
-    const b3 = await ethers.provider.getBalance(op3.address);
+    await token.connect(payer).approve(await distributor.getAddress(), amount);
 
-    await distributor.connect(payer).distribute({ value: amount });
+    const b1 = await token.balanceOf(op1.address);
+    const b2 = await token.balanceOf(op2.address);
+    const b3 = await token.balanceOf(op3.address);
 
-    const a1 = await ethers.provider.getBalance(op1.address);
-    const a2 = await ethers.provider.getBalance(op2.address);
-    const a3 = await ethers.provider.getBalance(op3.address);
+    await distributor.connect(payer).distribute(amount);
+
+    const a1 = await token.balanceOf(op1.address);
+    const a2 = await token.balanceOf(op2.address);
+    const a3 = await token.balanceOf(op3.address);
 
     expect(a1 - b1).to.equal(ethers.parseEther('1'));
     expect(a2 - b2).to.equal(ethers.parseEther('2'));
@@ -45,17 +62,19 @@ describe('RevenueDistributor', function () {
     await distributor.connect(owner).register();
 
     const amount = ethers.parseEther('6');
-    const bOwner = await ethers.provider.getBalance(owner.address);
-    const b1 = await ethers.provider.getBalance(op1.address);
-    const b2 = await ethers.provider.getBalance(op2.address);
-    const b3 = await ethers.provider.getBalance(op3.address);
+    await token.connect(payer).approve(await distributor.getAddress(), amount);
 
-    await distributor.connect(payer).distribute({ value: amount });
+    const bOwner = await token.balanceOf(owner.address);
+    const b1 = await token.balanceOf(op1.address);
+    const b2 = await token.balanceOf(op2.address);
+    const b3 = await token.balanceOf(op3.address);
 
-    const aOwner = await ethers.provider.getBalance(owner.address);
-    const a1 = await ethers.provider.getBalance(op1.address);
-    const a2 = await ethers.provider.getBalance(op2.address);
-    const a3 = await ethers.provider.getBalance(op3.address);
+    await distributor.connect(payer).distribute(amount);
+
+    const aOwner = await token.balanceOf(owner.address);
+    const a1 = await token.balanceOf(op1.address);
+    const a2 = await token.balanceOf(op2.address);
+    const a3 = await token.balanceOf(op3.address);
 
     expect(aOwner - bOwner).to.equal(0n);
     expect(a1 - b1).to.equal(ethers.parseEther('1'));
