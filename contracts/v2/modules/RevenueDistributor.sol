@@ -2,16 +2,21 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
+import {AGIALPHA} from "../Constants.sol";
 
 /// @title RevenueDistributor
 /// @notice Splits incoming job fees among active operators based on stake.
 contract RevenueDistributor is Ownable {
+    using SafeERC20 for IERC20;
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
     IStakeManager public stakeManager;
     address public treasury;
+    IERC20 public immutable token = IERC20(AGIALPHA);
 
     address[] public operators;
     mapping(address => bool) public isOperator;
@@ -69,10 +74,11 @@ contract RevenueDistributor is Ownable {
         emit StakeManagerUpdated(address(manager));
     }
 
-    /// @notice Distribute received ETH to active operators by stake.
-    function distribute() external payable {
-        uint256 amount = msg.value;
+    /// @notice Distribute tokens from the caller to active operators by stake.
+    /// @param amount Amount of tokens to distribute.
+    function distribute(uint256 amount) external {
         require(amount > 0, "amount");
+        token.safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 len = operators.length;
         uint256[] memory stakes = new uint256[](len);
@@ -95,13 +101,11 @@ contract RevenueDistributor is Ownable {
             if (stake == 0) continue;
             uint256 share = (amount * stake) / totalStake;
             distributed += share;
-            (bool ok, ) = op.call{value: share}("");
-            require(ok, "transfer");
+            token.safeTransfer(op, share);
         }
         uint256 dust = amount - distributed;
         if (dust > 0 && treasury != address(0)) {
-            (bool ok, ) = treasury.call{value: dust}("");
-            require(ok, "treasury");
+            token.safeTransfer(treasury, dust);
         }
         emit RevenueDistributed(msg.sender, amount);
     }
