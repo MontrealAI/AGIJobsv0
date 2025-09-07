@@ -65,6 +65,8 @@ The script prints module addresses and verifies source on Etherscan.
    - `ValidationModule.setJobRegistry(jobRegistry)`
    - `DisputeModule.setJobRegistry(jobRegistry)`
    - `CertificateNFT.setJobRegistry(jobRegistry)`
+   - `CertificateNFT.setStakeManager(stakeManager)` – reverts unless the manager
+     reports version 2 and uses the canonical `$AGIALPHA` token
    - `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)`
    - `ValidationModule.setIdentityRegistry(identityRegistry)`
 10. **Verify source code** – publish each contract on the block explorer using
