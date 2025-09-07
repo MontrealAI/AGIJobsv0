@@ -490,9 +490,7 @@ describe('ValidationModule V2', function () {
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
-    await expect(
-      validation.connect(val).commitValidation(1, commit, '', [])
-    )
+    await expect(validation.connect(val).commitValidation(1, commit, '', []))
       .to.emit(validation, 'ValidationCommitted')
       .withArgs(1, val.address, commit, '');
 
