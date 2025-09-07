@@ -42,7 +42,7 @@ Deploy each contract through Etherscan and note its address. Verify the source c
    - Parameters: collection `name` and `symbol` (e.g. "AGI Jobs Certificate", "AGIJOB").
 7. **FeePool**
    - Parameters: `_token`, `_stakeManager`, `_burnPct`, `_treasury`.
-   - `burnPct` is in basis points (`500` = 5%). Use `0` to disable burning initially.
+   - `burnPct` is a percentage (`0`–`100`). For a 5% burn enter `5`; use `0` to disable burning initially.
 8. **PlatformRegistry** _(optional)_
    - Parameters: `stakeManager`, `reputationEngine`, `minStake`.
 9. **JobRouter** _(optional)_
@@ -53,7 +53,7 @@ Deploy each contract through Etherscan and note its address. Verify the source c
     - Parameter: policy URI string.
 12. **JobRegistry**
     - Parameters: `validationModule`, `stakeManager`, `reputationEngine`, `disputeModule`, `certificateNFT`, `identityRegistry` (or `0`), `taxPolicy` (or `0`), `feePct`, `jobStake`, `ackModules`, `owner` (if required).
-    - A `feePct` of `500` equals a 5% protocol fee. `jobStake` is typically `0` unless employers must stake.
+    - A `feePct` of `5` equals a 5% protocol fee. `jobStake` is typically `0` unless employers must stake.
 
 ## Step 2: Wire the Modules Together
 
@@ -96,7 +96,7 @@ Invoke the following setters from the owner account:
 
 #### Adjust burn percentage
 
-On the **FeePool** contract's Etherscan page use the _Write Contract_ tab and call `setBurnPct` with the new basis‑point value (e.g. `500` for 5%).
+On the **FeePool** contract's Etherscan page use the _Write Contract_ tab and call `setBurnPct` with the new percentage value (e.g. `5` for 5%).
 Source: [`contracts/v2/FeePool.sol`](../contracts/v2/FeePool.sol)
 
 ### Owner Updatability
@@ -110,7 +110,7 @@ Source: [`contracts/v2/StakeManager.sol`](../contracts/v2/StakeManager.sol)
 
 #### Adjust protocol fee
 
-On the **JobRegistry** contract's Etherscan page use _Write Contract_ → `setFeePct` to change the protocol fee (basis points).
+On the **JobRegistry** contract's Etherscan page use _Write Contract_ → `setFeePct` to change the protocol fee percentage (0–100).
 Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
 
 - **Security.** Contracts rely on OpenZeppelin components like `Ownable`, `ReentrancyGuard` and `SafeERC20`. The modular design lets you replace a faulty module. Optional [`SystemPause`](system-pause.md) can halt activity in emergencies. Monitor emitted events to audit changes.
