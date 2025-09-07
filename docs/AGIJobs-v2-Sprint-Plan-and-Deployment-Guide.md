@@ -1,4 +1,5 @@
 # AGIJobs v2 Sprint Plan and Deployment Guide
+
 ## Table of Contents
 
 - [Codebase Enhancements and Key Requirements](#codebase-enhancements-and-key-requirements)
