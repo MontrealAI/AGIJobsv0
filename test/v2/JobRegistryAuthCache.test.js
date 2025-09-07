@@ -222,9 +222,7 @@ describe('JobRegistry agent auth cache', function () {
 
     deadline = (await time.latest()) + 100;
     await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
-    await expect(
-      reg.connect(agent).applyForJob(2, 'a', [])
-    ).to.not.be.reverted;
+    await expect(reg.connect(agent).applyForJob(2, 'a', [])).to.not.be.reverted;
 
     await time.increase(6);
 
