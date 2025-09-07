@@ -23,6 +23,8 @@ interface IOwnable {
     function transferOwnership(address newOwner) external;
 }
 
+error AlreadyInitialized();
+
 /// @title ModuleInstaller
 /// @notice Optional helper wiring deployed modules in a single transaction.
 /// @dev Core contracts now accept zero addresses in their constructors so
@@ -86,7 +88,7 @@ contract ModuleInstaller is Ownable {
         bytes32 agentMerkleRoot,
         address[] calldata _ackModules
     ) external onlyOwner {
-        require(!initialized, "init");
+        if (initialized) revert AlreadyInitialized();
         initialized = true;
 
         jobRegistry.setModules(
