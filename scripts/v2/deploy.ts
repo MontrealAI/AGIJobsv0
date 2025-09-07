@@ -140,10 +140,7 @@ async function main() {
     ethers.ZeroHash
   );
   await identity.waitForDeployment();
-  await identity.setENS(ENS_REGISTRY);
-  await identity.setNameWrapper(NAME_WRAPPER);
-  await identity.setAgentRootNode(AGENT_ROOT_NODE);
-  await identity.setClubRootNode(CLUB_ROOT_NODE);
+  await identity.configureMainnet();
 
   const Attestation = await ethers.getContractFactory(
     'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
