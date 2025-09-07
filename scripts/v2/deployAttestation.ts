@@ -31,8 +31,16 @@ async function main() {
   const Attestation = await ethers.getContractFactory(
     'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
   );
-  const att = await Attestation.deploy(ensAddr, wrapperAddr);
+
+  // Deploy with zero addresses first, then configure ENS and NameWrapper
+  const att = await Attestation.deploy(
+    ethers.ZeroAddress,
+    ethers.ZeroAddress
+  );
   await att.waitForDeployment();
+
+  await (await att.setENS(ensAddr)).wait();
+  await (await att.setNameWrapper(wrapperAddr)).wait();
 
   const identity = await ethers.getContractAt(
     'contracts/v2/IdentityRegistry.sol:IdentityRegistry',
@@ -41,6 +49,8 @@ async function main() {
   await identity.setAttestationRegistry(await att.getAddress());
 
   console.log('AttestationRegistry:', await att.getAddress());
+  console.log('  ENS:', ensAddr);
+  console.log('  NameWrapper:', wrapperAddr);
   console.log('IdentityRegistry:', identityAddr);
 }
 
