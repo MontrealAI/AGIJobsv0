@@ -87,7 +87,7 @@ interface IJobRegistry {
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
     /// @param worker Agent who performed the job
-    event JobFinalized(uint256 indexed jobId, address worker);
+    event JobFinalized(uint256 indexed jobId, address indexed worker);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event JobCancelled(uint256 indexed jobId);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
