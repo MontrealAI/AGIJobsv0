@@ -49,8 +49,11 @@ describe('JobEscrow', function () {
     ).args.jobId;
 
     await escrow.connect(operator).submitResult(jobId, 'ipfs://result');
-    await escrow.connect(employer).acceptResult(jobId);
-
+    await expect(escrow.connect(employer).acceptResult(jobId))
+      .to.emit(escrow, 'RewardPaid')
+      .withArgs(jobId, operator.address, reward)
+      .and.to.emit(escrow, 'ResultAccepted')
+      .withArgs(jobId, employer.address);
     expect(await token.balanceOf(operator.address)).to.equal(reward);
   });
 
@@ -74,7 +77,11 @@ describe('JobEscrow', function () {
     ).args.jobId;
     await escrow.connect(operator).submitResult(jobId, 'res');
     await time.increase(3 * 24 * 60 * 60 + 1);
-    await escrow.connect(operator).acceptResult(jobId);
+    await expect(escrow.connect(operator).acceptResult(jobId))
+      .to.emit(escrow, 'RewardPaid')
+      .withArgs(jobId, operator.address, reward)
+      .and.to.emit(escrow, 'ResultAccepted')
+      .withArgs(jobId, operator.address);
     expect(await token.balanceOf(operator.address)).to.equal(reward);
   });
 
@@ -131,7 +138,9 @@ describe('JobEscrow', function () {
     await policy.connect(owner).bumpPolicyVersion();
     expect(await policy.hasAcknowledged(employer.address)).to.equal(false);
     await expect(escrow.connect(employer).acknowledgeAndAcceptResult(jobId))
-      .to.emit(escrow, 'ResultAccepted')
+      .to.emit(escrow, 'RewardPaid')
+      .withArgs(jobId, operator.address, reward)
+      .and.to.emit(escrow, 'ResultAccepted')
       .withArgs(jobId, employer.address);
     expect(await token.balanceOf(operator.address)).to.equal(reward);
     expect(await policy.hasAcknowledged(employer.address)).to.equal(true);
