@@ -26,11 +26,12 @@ interface IStakeManager {
     event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
         address indexed user,
-        Role indexed role,
+        Role role,
         address indexed employer,
-        address treasury,
+        address indexed treasury,
         uint256 employerShare,
-        uint256 treasuryShare
+        uint256 treasuryShare,
+        uint256 burnShare
     );
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
