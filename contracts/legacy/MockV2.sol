@@ -261,7 +261,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function applyForJob(
         uint256 jobId,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     ) public override {
         Job storage job = _jobs[jobId];
@@ -271,7 +271,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         }
         job.agent = msg.sender;
         job.status = Status.Applied;
-        emit JobApplied(jobId, msg.sender);
+        emit JobApplied(jobId, msg.sender, subdomain);
     }
 
     function stakeAndApply(
@@ -295,7 +295,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         uint256 jobId,
         bytes32 resultHash,
         string calldata resultURI,
-        string calldata,
+        string calldata subdomain,
         bytes32[] calldata
     ) public override {
         Job storage job = _jobs[jobId];
@@ -304,7 +304,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         require(block.timestamp <= deadlines[jobId], "deadline");
         job.resultHash = resultHash;
         job.status = Status.Submitted;
-        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         if (validationModule != address(0)) {
             IValidationModule(validationModule).start(jobId, 0);
         }

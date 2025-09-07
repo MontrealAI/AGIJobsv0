@@ -225,12 +225,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bytes32 specHash,
         string uri
     );
-    event JobApplied(uint256 indexed jobId, address indexed agent);
+    event JobApplied(
+        uint256 indexed jobId,
+        address indexed agent,
+        string subdomain
+    );
     event JobSubmitted(
         uint256 indexed jobId,
         address indexed worker,
         bytes32 resultHash,
-        string resultURI
+        string resultURI,
+        string subdomain
     );
     event JobCompleted(uint256 indexed jobId, bool success);
     /// @notice Emitted when a job is finalized
@@ -813,7 +818,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.agent = msg.sender;
         job.state = State.Applied;
         job.assignedAt = uint64(block.timestamp);
-        emit JobApplied(jobId, msg.sender);
+        emit JobApplied(jobId, msg.sender, subdomain);
     }
 
     function applyForJob(
@@ -912,7 +917,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         job.resultHash = resultHash;
         job.state = State.Submitted;
-        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         if (address(validationModule) != address(0)) {
             validationModule.start(
                 jobId,
