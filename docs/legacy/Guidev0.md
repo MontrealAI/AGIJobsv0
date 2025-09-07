@@ -637,7 +637,7 @@ Steps to operate as a Validator:
      - **jobId:** the job ID you are validating.
      - **commitHash:** the hash you calculated (a 66-character hex string starting with 0x).
 
-   - Click **Write** and send the transaction. This will record your commitment without revealing your vote. The contract will emit an event like `ValidationCommitted(jobId, validatorAddress)` (possibly with the hash or not). If you miss the commit window, you might be disqualified for this job’s validation.
+   - Click **Write** and send the transaction. This will record your commitment without revealing your vote. The contract will emit an event like `ValidationCommitted(jobId, validatorAddress, commitHash, subdomain)` (possibly with the hash or not). If you miss the commit window, you might be disqualified for this job’s validation.
 
 5. **Reveal Your Vote (Public Phase):** After committing, wait until the commit phase ends (the platform might define that as soon as all commits are in or after a fixed time). Then you must reveal your actual vote:
 
@@ -646,7 +646,7 @@ Steps to operate as a Validator:
    - **approve:** Enter the actual vote you chose (`true` if you think the job was done well, `false` if not). This must match the hidden vote you committed.
    - **salt:** Enter the secret string or hex you used when computing the commit hash (exactly the same salt). If you used a word, you’ll need to convert it to bytes32 format. Etherscan will accept a string in the field if the parameter is `bytes32` or `string` – check how it’s defined. If it’s `bytes32`, you might need to input the hex representation of your salt. For simplicity, use a numeric or short text salt and find its hex. For example, if salt was `"abc123"`, you can use an online converter to hex (`0x616263313233` in hex for "abc123"). Ensure every detail matches what you used to make the hash.
    - Click **Write**, confirm the transaction. This will reveal your vote. The contract will verify that `keccak(salt, vote)` equals the commit hash you submitted earlier for this job. If it matches, your vote is counted. If it doesn’t (or you reveal a different vote or wrong salt), your reveal might be rejected and you could be penalized for cheating.
-   - Once revealed, an event like `ValidationRevealed(jobId, validator, approve)` might fire, showing how you voted.
+   - Once revealed, an event like `ValidationRevealed(jobId, validator, approve, subdomain)` might fire, showing how you voted.
 
 6. **Outcome Determination:** After the reveal phase, the ValidationModule will finalize the votes (if it wasn’t already done automatically). In some implementations, any validator (or the contract itself) might call a function `finalizeValidation(jobId)` or the JobRegistry might have done so when the agent completed the job (as was hinted in code). In our code, `validationModule.finalize(jobId)` was called immediately on job completion, which is unusual – perhaps it selects validators and _predicts_ outcome or sets a placeholder. However, typically, after reveals:
 

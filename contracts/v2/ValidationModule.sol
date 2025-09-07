@@ -1006,7 +1006,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             revert AlreadyCommitted();
 
         commitments[jobId][msg.sender][nonce] = commitHash;
-        emit ValidationCommitted(jobId, msg.sender, commitHash);
+        emit ValidationCommitted(jobId, msg.sender, commitHash, subdomain);
     }
 
     function _policy() internal view returns (ITaxPolicy) {
@@ -1084,7 +1084,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.revealedCount += 1;
         if (approve) r.approvals += stake; else r.rejections += stake;
 
-        emit ValidationRevealed(jobId, msg.sender, approve);
+        emit ValidationRevealed(jobId, msg.sender, approve, subdomain);
     }
 
     /// @notice Reveal a previously committed validation vote.

@@ -260,8 +260,8 @@ To generate proofs:
 | --------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
 | `JobCreated(uint256 jobId, address employer, uint256 reward)`                           | `JobRegistry`      | Employer posted a job and escrowed funds. |
 | `JobApplied(uint256 jobId, address agent)`                                              | `JobRegistry`      | Agent applied for a job.                  |
-| `ValidationCommitted(uint256 jobId, address validator)`                                 | `ValidationModule` | Validator submitted hashed vote.          |
-| `ValidationRevealed(uint256 jobId, address validator, bool approve)`                    | `ValidationModule` | Validator revealed vote.                  |
+| `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)` | `ValidationModule` | Validator submitted hashed vote.          |
+| `ValidationRevealed(uint256 jobId, address validator, bool approve, string subdomain)`        | `ValidationModule` | Validator revealed vote.                  |
 | `DisputeRaised(uint256 jobId, address claimant, bytes32 evidenceHash, string evidence)` | `DisputeModule`    | A job result was contested.               |
 | `DisputeResolved(uint256 jobId, bool employerWins)`                                     | `DisputeModule`    | Moderator issued final ruling.            |
 | `CertificateMinted(address to, uint256 jobId)`                                          | `CertificateNFT`   | NFT minted for a completed job.           |
@@ -272,7 +272,7 @@ To generate proofs:
 | `depositStake(uint8 role, uint256 amount)`                                         | `StakeManager`     | Bond tokens for a role.         |
 | `applyForJob(uint256 jobId, string subdomain, bytes32[] proof)`                    | `JobRegistry`      | Enter candidate pool for a job. |
 | `commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)` | `ValidationModule` | Submit a hidden vote.           |
-| `revealValidation(uint256 jobId, bool approve, bytes32 salt)`                      | `ValidationModule` | Reveal vote.                    |
+| `revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)`                      | `ValidationModule` | Reveal vote.                    |
 | `raiseDispute(uint256 jobId, string reason)`                                       | `JobRegistry`      | Start appeal process.           |
 | `list(uint256 tokenId, uint256 price)`                                             | `CertificateNFT`   | List job certificate for sale.  |
 | `purchase(uint256 tokenId)`                                                        | `CertificateNFT`   | Buy listed certificate.         |

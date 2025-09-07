@@ -490,9 +490,9 @@ describe('ValidationModule V2', function () {
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
-    await expect(
-      validation.connect(val).commitValidation(1, commit, '', [])
-    ).to.emit(validation, 'ValidationCommitted');
+    await expect(validation.connect(val).commitValidation(1, commit, '', []))
+      .to.emit(validation, 'ValidationCommitted')
+      .withArgs(1, val.address, commit, '');
 
     await advance(61);
     await policy.bumpPolicyVersion();
@@ -505,7 +505,9 @@ describe('ValidationModule V2', function () {
     await policy.connect(val).acknowledge();
     await expect(
       validation.connect(val).revealValidation(1, true, salt, '', [])
-    ).to.emit(validation, 'ValidationRevealed');
+    )
+      .to.emit(validation, 'ValidationRevealed')
+      .withArgs(1, val.address, true, '');
   });
 
   it('updates additional validators individually', async () => {
