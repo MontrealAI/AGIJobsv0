@@ -251,9 +251,7 @@ describe('ArbitratorCommittee', function () {
 
     for (const juror of [v1, v2]) {
       await token.mint(juror.address, FEE);
-      await token
-        .connect(juror)
-        .approve(await stake.getAddress(), FEE);
+      await token.connect(juror).approve(await stake.getAddress(), FEE);
       await stake.connect(juror).depositStake(1, FEE);
     }
 
