@@ -19,6 +19,25 @@ if (!JOB_REGISTRY) {
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
+async function checkEnsSubdomain(address) {
+  try {
+    const name = await provider.lookupAddress(address);
+    if (
+      name &&
+      (name.endsWith('.agent.agi.eth') || name.endsWith('.club.agi.eth')) &&
+      name.split('.').length > 3
+    ) {
+      return null;
+    }
+  } catch (err) {
+    // ignore lookup errors
+  }
+  const warning =
+    'No valid *.agent.agi.eth or *.club.agi.eth subdomain detected for this address. See docs/ens-identity-setup.md';
+  console.warn(warning);
+  return warning;
+}
+
 const REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
@@ -26,6 +45,7 @@ const REGISTRY_ABI = [
 
 const registry = new ethers.Contract(JOB_REGISTRY, REGISTRY_ABI, wallet);
 
+checkEnsSubdomain(wallet.address);
 console.log('Listening for jobs...');
 registry.on('JobCreated', async (jobId, employer, agent, reward) => {
   // Only apply if job is unassigned
@@ -34,6 +54,7 @@ registry.on('JobCreated', async (jobId, employer, agent, reward) => {
       const display = ethers.formatUnits(reward, TOKEN_DECIMALS);
       console.log(`Applying for job ${jobId} with reward ${display}`);
       // Replace 'alice' with your label under agent.agi.eth and supply a proof if required.
+      await checkEnsSubdomain(wallet.address);
       const tx = await registry.applyForJob(jobId, 'alice', '0x');
       await tx.wait();
       console.log(`Applied in tx ${tx.hash}`);

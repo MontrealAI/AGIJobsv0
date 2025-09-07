@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
+import { verifyEnsSubdomain } from '../lib/ens';
 
 export default function AttestPage() {
   const [name, setName] = useState('');
@@ -15,6 +16,9 @@ export default function AttestPage() {
       }
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
+      const addr = await signer.getAddress();
+      const warning = await verifyEnsSubdomain(provider, addr);
+      if (warning) alert(warning);
       const registryAddr = process.env.NEXT_PUBLIC_ATTESTATION_ADDRESS;
       if (!registryAddr) {
         alert('attestation registry not configured');

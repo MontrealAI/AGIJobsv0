@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import { generateCommit, scheduleReveal } from '../lib/commit';
+import { verifyEnsSubdomain } from '../lib/ens';
 import agiConfig from '../../../config/agialpha.json';
 
 interface Job {
@@ -65,6 +66,9 @@ export default function Home() {
     }
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
+    const addr = await signer.getAddress();
+    const warning = await verifyEnsSubdomain(provider, addr);
+    if (warning) alert(warning);
     const validationAddr = process.env.NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS;
     if (!validationAddr) {
       alert('validation module not configured');
