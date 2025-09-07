@@ -170,9 +170,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event WithdrawRequested(address indexed user, Role indexed role, uint256 amount, uint64 unlockAt);
     event StakeSlashed(
         address indexed user,
-        Role indexed role,
+        Role role,
         address indexed employer,
-        address treasury,
+        address indexed treasury,
         uint256 employerShare,
         uint256 treasuryShare,
         uint256 burnShare
