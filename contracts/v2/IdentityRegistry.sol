@@ -55,6 +55,15 @@ contract IdentityRegistry is Ownable2Step {
     /// @notice Emitted when an agent updates their profile metadata.
     event AgentProfileUpdated(address indexed agent, string uri);
 
+    address public constant MAINNET_ENS =
+        0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e;
+    address public constant MAINNET_NAME_WRAPPER =
+        0x253553366Da8546fC250F225fe3d25d0C782303b;
+    bytes32 public constant MAINNET_AGENT_ROOT_NODE =
+        0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d;
+    bytes32 public constant MAINNET_CLUB_ROOT_NODE =
+        0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16;
+
     constructor(
         IENS _ens,
         INameWrapper _nameWrapper,
@@ -88,7 +97,7 @@ contract IdentityRegistry is Ownable2Step {
     // Owner configuration
     // ---------------------------------------------------------------------
 
-    function setENS(address ensAddr) external onlyOwner {
+    function setENS(address ensAddr) public onlyOwner {
         if (ensAddr == address(0)) {
             revert ZeroAddress();
         }
@@ -96,7 +105,7 @@ contract IdentityRegistry is Ownable2Step {
         emit ENSUpdated(ensAddr);
     }
 
-    function setNameWrapper(address wrapper) external onlyOwner {
+    function setNameWrapper(address wrapper) public onlyOwner {
         if (wrapper == address(0)) {
             revert ZeroAddress();
         }
@@ -120,14 +129,22 @@ contract IdentityRegistry is Ownable2Step {
         emit AttestationRegistryUpdated(registry);
     }
 
-    function setAgentRootNode(bytes32 root) external onlyOwner {
+    function setAgentRootNode(bytes32 root) public onlyOwner {
         agentRootNode = root;
         emit AgentRootNodeUpdated(root);
     }
 
-    function setClubRootNode(bytes32 root) external onlyOwner {
+    function setClubRootNode(bytes32 root) public onlyOwner {
         clubRootNode = root;
         emit ClubRootNodeUpdated(root);
+    }
+
+    /// @notice Configure the registry with canonical mainnet ENS settings.
+    function configureMainnet() external onlyOwner {
+        setENS(MAINNET_ENS);
+        setNameWrapper(MAINNET_NAME_WRAPPER);
+        setAgentRootNode(MAINNET_AGENT_ROOT_NODE);
+        setClubRootNode(MAINNET_CLUB_ROOT_NODE);
     }
 
     function setAgentMerkleRoot(bytes32 root) external onlyOwner {
