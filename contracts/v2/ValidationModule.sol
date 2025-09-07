@@ -1205,6 +1205,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
                 if (slashAmount > 0) {
                     stakeManager.slash(
+                        bytes32(jobId),
                         val,
                         IStakeManager.Role.Validator,
                         slashAmount,
@@ -1280,6 +1281,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             if (!revealed[jobId][val] || votes[jobId][val] != success) {
                 if (slashAmount > 0) {
                     stakeManager.slash(
+                        bytes32(jobId),
                         val,
                         IStakeManager.Role.Validator,
                         slashAmount,

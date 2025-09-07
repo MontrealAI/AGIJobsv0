@@ -25,10 +25,11 @@ interface IStakeManager {
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
+        bytes32 indexed jobId,
         address indexed user,
         Role role,
         address indexed employer,
-        address indexed treasury,
+        address treasury,
         uint256 employerShare,
         uint256 treasuryShare,
         uint256 burnShare
@@ -131,13 +132,24 @@ interface IStakeManager {
     /// @param role participant role of the slashed stake
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
-    function slash(address user, Role role, uint256 amount, address employer) external;
+    function slash(
+        bytes32 jobId,
+        address user,
+        Role role,
+        uint256 amount,
+        address employer
+    ) external;
 
     /// @notice slash validator stake during dispute resolution
     /// @param user address whose stake will be reduced
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
-    function slash(address user, uint256 amount, address recipient) external;
+    function slash(
+        bytes32 jobId,
+        address user,
+        uint256 amount,
+        address recipient
+    ) external;
 
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
