@@ -17,6 +17,7 @@
   - ENS **Registry**: `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`. :contentReference[oaicite:3]{index=3}  
   - ENS **NameWrapper** (widely used address): `0x253553366Da8546fC250F225fe3d25d0C782303b`. :contentReference[oaicite:4]{index=4}  
 - **$AGIALPHA address corroboration (external):** token address matches third‑party explorers. :contentReference[oaicite:5]{index=5}
+- **Burnability preflight:** run `npx ts-node --compiler-options '{"module":"commonjs"}' scripts/check-burnable.ts` to ensure the configured token exposes `burn(uint256)` before mainnet deployment; the script exits with an error if the call reverts or returns no data.
 
 > **Trust model:** Centralized owner control is acceptable here (multisig/timelock recommended). The repo exposes owner‑only setters across modules and documents them for Etherscan use. :contentReference[oaicite:6]{index=6}
 
