@@ -84,9 +84,9 @@ async function main() {
   console.log(`tx: ${tx.hash}`);
   await tx.wait();
   console.log(
-    `${verb === 'revoke' ? 'revoked' : 'attested'} ${delegate} for ${ensName} as ${
-      role === 0 ? 'Agent' : 'Validator'
-    }`
+    `${
+      verb === 'revoke' ? 'revoked' : 'attested'
+    } ${delegate} for ${ensName} as ${role === 0 ? 'Agent' : 'Validator'}`
   );
 }
 

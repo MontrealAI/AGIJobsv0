@@ -33,10 +33,7 @@ async function main() {
   );
 
   // Deploy with zero addresses first, then configure ENS and NameWrapper
-  const att = await Attestation.deploy(
-    ethers.ZeroAddress,
-    ethers.ZeroAddress
-  );
+  const att = await Attestation.deploy(ethers.ZeroAddress, ethers.ZeroAddress);
   await att.waitForDeployment();
 
   await (await att.setENS(ensAddr)).wait();
