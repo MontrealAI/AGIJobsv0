@@ -41,6 +41,25 @@ if ('VALIDATION_MODULE_ADDRESS' in process.env) {
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
+async function checkEnsSubdomain(address) {
+  try {
+    const name = await provider.lookupAddress(address);
+    if (
+      name &&
+      (name.endsWith('.agent.agi.eth') || name.endsWith('.club.agi.eth')) &&
+      name.split('.').length > 3
+    ) {
+      return null;
+    }
+  } catch (err) {
+    // ignore lookup errors and fall through to warning
+  }
+  const warning =
+    'No valid *.agent.agi.eth or *.club.agi.eth subdomain detected for this address. See docs/ens-identity-setup.md';
+  console.warn(warning);
+  return warning;
+}
+
 // verify on-chain token decimals against config to prevent misformatted broadcasts
 async function verifyTokenDecimals() {
   try {
@@ -252,11 +271,12 @@ app.post('/jobs/:id/apply', async (req, res) => {
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
   try {
+    const warning = await checkEnsSubdomain(wallet.address);
     const tx = await registry
       .connect(wallet)
       .applyForJob(req.params.id, '', '0x');
     await tx.wait();
-    res.json({ tx: tx.hash });
+    res.json(warning ? { tx: tx.hash, warning } : { tx: tx.hash });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -268,12 +288,13 @@ app.post('/jobs/:id/submit', async (req, res) => {
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
   try {
+    const warning = await checkEnsSubdomain(wallet.address);
     const hash = ethers.id(result || '');
     const tx = await registry
       .connect(wallet)
       .submit(req.params.id, hash, result || '', '', '0x');
     await tx.wait();
-    res.json({ tx: tx.hash });
+    res.json(warning ? { tx: tx.hash, warning } : { tx: tx.hash });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -282,6 +303,7 @@ app.post('/jobs/:id/submit', async (req, res) => {
 // Helpers for commit/reveal workflow
 async function commitHelper(jobId, wallet, approve) {
   if (!validation) throw new Error('validation module not configured');
+  const warning = await checkEnsSubdomain(wallet.address);
   const nonce = await validation.jobNonce(jobId);
   const salt = ethers.hexlify(ethers.randomBytes(32));
   const commitHash = ethers.solidityPackedKeccak256(
@@ -295,7 +317,7 @@ async function commitHelper(jobId, wallet, approve) {
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId);
   jobCommits[wallet.address.toLowerCase()] = { approve, salt };
-  return { tx: tx.hash, salt };
+  return warning ? { tx: tx.hash, salt, warning } : { tx: tx.hash, salt };
 }
 
 async function revealHelper(jobId, wallet) {
@@ -303,12 +325,13 @@ async function revealHelper(jobId, wallet) {
   const jobCommits = commits.get(jobId) || {};
   const data = jobCommits[wallet.address.toLowerCase()];
   if (!data) throw new Error('no commit found');
+  const warning = await checkEnsSubdomain(wallet.address);
   const tx = await validation
     .connect(wallet)
     .revealValidation(jobId, data.approve, data.salt, '', []);
   await tx.wait();
   delete jobCommits[wallet.address.toLowerCase()];
-  return { tx: tx.hash };
+  return warning ? { tx: tx.hash, warning } : { tx: tx.hash };
 }
 
 // Commit validation decision
