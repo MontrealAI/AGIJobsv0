@@ -577,7 +577,7 @@ event JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward
 event JobApplied(uint256 indexed jobId, address indexed agent, string agentLabel);
 event JobSubmitted(uint256 indexed jobId, address indexed agent, bytes32 resultHash);
 event JobCompleted(uint256 indexed jobId, bool success);
-event JobFinalized(uint256 indexed jobId, address agent, uint256 netPaid, uint256 fee);
+event JobFinalized(uint256 indexed jobId, address indexed agent, uint256 netPaid, uint256 fee);
 event JobDisputed(uint256 indexed jobId, address indexed by, uint256 fee);
 event DisputeResolved(uint256 indexed jobId, bool employerWins);
 

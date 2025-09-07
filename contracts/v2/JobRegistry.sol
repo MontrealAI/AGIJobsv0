@@ -247,7 +247,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
     /// @param worker Agent who performed the job
-    event JobFinalized(uint256 indexed jobId, address worker);
+    event JobFinalized(uint256 indexed jobId, address indexed worker);
     event JobCancelled(uint256 indexed jobId);
     /// @notice Emitted when an assigned job is cancelled after missing its deadline
     /// @param jobId Identifier of the expired job
