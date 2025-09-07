@@ -117,4 +117,53 @@ describe('JobRegistry auth cache invalidation', function () {
       registry.connect(agent).applyForJob(third, 'a', [])
     ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
   });
+
+  it('invalidates cache on agent merkle root update', async () => {
+    await registry.connect(owner).setAgentAuthCacheDuration(1000);
+
+    const first = await createJob();
+    await registry.connect(agent).applyForJob(first, 'a', []);
+
+    await identity.connect(owner).setResult(false);
+
+    const second = await createJob();
+    await registry.connect(agent).applyForJob(second, 'a', []);
+
+    await identity
+      .connect(owner)
+      .transferOwnership(await registry.getAddress());
+    await registry.connect(owner).setAgentMerkleRoot(ethers.id('newroot'));
+
+    const third = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(third, 'a', [])
+    ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
+  });
+
+  it('invalidates cache on identity registry update', async () => {
+    await registry.connect(owner).setAgentAuthCacheDuration(1000);
+
+    const first = await createJob();
+    await registry.connect(agent).applyForJob(first, 'a', []);
+
+    await identity.connect(owner).setResult(false);
+
+    const second = await createJob();
+    await registry.connect(agent).applyForJob(second, 'a', []);
+
+    const Identity = await ethers.getContractFactory(
+      'contracts/v2/mocks/IdentityRegistryToggle.sol:IdentityRegistryToggle'
+    );
+    const identity2 = await Identity.deploy();
+    await identity2.waitForDeployment();
+    await identity2.setAgentRootNode(ethers.ZeroHash);
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await identity2.getAddress());
+
+    const third = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(third, 'a', [])
+    ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
+  });
 });
