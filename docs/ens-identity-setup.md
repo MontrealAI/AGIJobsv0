@@ -38,12 +38,25 @@ npx hardhat console --network <network>
 > await wrapper.setSubnodeRecord(parent, label, '0xAgent', resolver, 0);
 ```
 
-After issuing the subdomain, set the resolver `addr` record to the participant’s wallet:
+### Setting resolver records
+
+Once the subdomain token is minted, the owner must update the resolver so the name resolves to their wallet address. This can be done in the ENS Manager or directly from the command line.
+
+**ENS Manager UI**
+
+1. Visit <https://app.ens.domains> and search for the new subdomain.
+2. Open the **Records** tab and locate the **Address** section.
+3. Enter your wallet address and press **Save**.
+4. Confirm the transaction in your wallet. After it is mined, the name resolves to your address.
+
+**CLI example**
 
 ```bash
+npx hardhat console --network <network>
 > const res = await ethers.getContractAt('IResolver', resolver);
 > const node = ethers.namehash('alice.agent.agi.eth');
 > await res['setAddr(bytes32,address)'](node, '0xAgent');
+> await res['addr(bytes32)'](node); // verify
 ```
 
 To confirm ownership on-chain:
