@@ -74,7 +74,8 @@ describe('JobRegistry agent auth cache', function () {
     const gas2 = (await tx2.wait()).gasUsed;
     expect(gas2).to.be.lt(gas1);
 
-    await time.increase(6);
+    const duration = Number(await registry.agentAuthCacheDuration());
+    await time.increase(duration + 1);
 
     const third = await createJob();
     const tx3 = await registry.connect(agent).applyForJob(third, 'a', []);
@@ -224,7 +225,8 @@ describe('JobRegistry agent auth cache', function () {
     await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
     await expect(reg.connect(agent).applyForJob(2, 'a', [])).to.not.be.reverted;
 
-    await time.increase(6);
+    const duration = Number(await reg.agentAuthCacheDuration());
+    await time.increase(duration + 1);
 
     deadline = (await time.latest()) + 100;
     await reg.connect(employer).createJob(1, deadline, specHash, 'uri');
