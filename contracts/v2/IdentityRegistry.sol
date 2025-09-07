@@ -233,7 +233,7 @@ contract IdentityRegistry is Ownable2Step {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) public returns (bool) {
+    ) public view returns (bool) {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
@@ -241,7 +241,6 @@ contract IdentityRegistry is Ownable2Step {
             return false;
         }
         if (additionalAgents[claimant]) {
-            emit AdditionalAgentUsed(claimant, subdomain);
             return true;
         }
         if (address(attestationRegistry) != address(0)) {

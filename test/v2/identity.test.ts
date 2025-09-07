@@ -289,7 +289,7 @@ describe('IdentityRegistry ENS verification', function () {
       .withArgs(validator.address, '');
   });
 
-  it('emits events from authorization helpers when allowlists apply', async () => {
+  it('authorization helpers handle allowlists', async () => {
     const [owner, agent, validator] = await ethers.getSigners();
 
     const ENS = await ethers.getContractFactory('MockENS');
@@ -317,9 +317,7 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
-    await expect(id.isAuthorizedAgent(agent.address, '', []))
-      .to.emit(id, 'AdditionalAgentUsed')
-      .withArgs(agent.address, '');
+    expect(await id.isAuthorizedAgent(agent.address, '', [])).to.equal(true);
 
     await id.addAdditionalValidator(validator.address);
     await expect(id.isAuthorizedValidator(validator.address, '', []))
