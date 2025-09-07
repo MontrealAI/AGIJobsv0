@@ -12,7 +12,10 @@ describe('OracleValidationModule ether rejection', function () {
     const Module = await ethers.getContractFactory(
       'contracts/v2/modules/OracleValidationModule.sol:OracleValidationModule'
     );
-    module = await Module.deploy(await registry.getAddress(), ethers.ZeroAddress);
+    module = await Module.deploy(
+      await registry.getAddress(),
+      ethers.ZeroAddress
+    );
     await module.waitForDeployment();
   });
 
@@ -32,4 +35,3 @@ describe('OracleValidationModule ether rejection', function () {
     ).to.be.revertedWith('OracleValidationModule: no ether');
   });
 });
-

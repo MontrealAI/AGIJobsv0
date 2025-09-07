@@ -36,4 +36,3 @@ describe('KlerosDisputeModule ether rejection', function () {
     ).to.be.revertedWith('KlerosDisputeModule: no ether');
   });
 });
-

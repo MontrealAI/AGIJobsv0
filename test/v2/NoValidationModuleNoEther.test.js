@@ -32,4 +32,3 @@ describe('NoValidationModule ether rejection', function () {
     ).to.be.revertedWith('NoValidationModule: no ether');
   });
 });
-
