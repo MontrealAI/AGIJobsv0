@@ -29,4 +29,6 @@ gas usage.
 - `AgentMerkleRootUpdated(bytes32 agentMerkleRoot)` / `ValidatorMerkleRootUpdated(bytes32 validatorMerkleRoot)`
 - `AdditionalAgentUpdated(address agent, bool allowed)`
 - `AdditionalValidatorUpdated(address validator, bool allowed)`
+- `AdditionalAgentUsed(address agent, string subdomain)` /
+  `AdditionalValidatorUsed(address validator, string subdomain)`
 - `AgentProfileUpdated(address agent, string uri)` – emitted whenever an agent profile is set or changed. Off-chain services can listen for this event and fetch the referenced URI (e.g., from IPFS) to match jobs with agents based on declared capabilities.

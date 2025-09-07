@@ -21,9 +21,9 @@ In the event of an ENS outage or other emergency, governance may
 temporarily allowlist addresses using
 `IdentityRegistry.addAdditionalAgent` or `addAdditionalValidator`.
 Such entries must be short‑lived and are tracked by the
-`AdditionalAgentUsed` and `AdditionalValidatorUsed` events. Governance
-should remove the allowlisted address once a proper ENS name is
-registered.
+`AdditionalAgentUsed` and `AdditionalValidatorUsed` events which include
+the claimed subdomain. Governance should remove the allowlisted address
+once a proper ENS name is registered.
 
 ## Issuing subdomains
 

@@ -279,12 +279,12 @@ describe('IdentityRegistry ENS verification', function () {
     await id.addAdditionalAgent(agent.address);
     await expect(id.verifyAgent(agent.address, '', []))
       .to.emit(id, 'AdditionalAgentUsed')
-      .withArgs(agent.address);
+      .withArgs(agent.address, '');
 
     await id.addAdditionalValidator(validator.address);
     await expect(id.verifyValidator(validator.address, '', []))
       .to.emit(id, 'AdditionalValidatorUsed')
-      .withArgs(validator.address);
+      .withArgs(validator.address, '');
   });
 
   it('requires new owner to accept ownership', async () => {
