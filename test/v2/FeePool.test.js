@@ -380,9 +380,9 @@ describe('FeePool with no stakers', function () {
 
     expect(await feePool.pendingFees()).to.equal(0);
     expect(await token.balanceOf(owner.address)).to.equal(0n);
-    expect(
-      (await token.balanceOf(treasury.address)) - treasuryBefore
-    ).to.equal(100n);
+    expect((await token.balanceOf(treasury.address)) - treasuryBefore).to.equal(
+      100n
+    );
     expect(await token.totalSupply()).to.equal(supplyBefore);
   });
 });
