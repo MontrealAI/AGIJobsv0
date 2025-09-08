@@ -2,6 +2,14 @@
 
 This document consolidates the final sprint plan with the operational deployment guide and reflects the production-ready configuration for AGIJobs v2.
 
+## Summary
+
+- Enforces ENS subdomain identities on-chain for agents and validators.
+- Locks the economy to the 18‑decimal `$AGIALPHA` token.
+- Emits detailed events for every stake, payment, slash, and dispute.
+- Supports flexible slashing, true token burning, and fee recycling.
+- Ships step‑by‑step deployment and end‑user walkthroughs tailored for Etherscan.
+
 ## Table of Contents
 
 - [Codebase Enhancements and Key Requirements](#codebase-enhancements-and-key-requirements)
@@ -48,7 +56,13 @@ The codebase and documentation are being polished for a smooth operator and buye
 ## Step-by-Step Deployment Guide (Ethereum Mainnet via Etherscan)
 
 This section provides a user-friendly, step-by-step guide to deploy the AGIJobs v2 smart contracts on Ethereum mainnet using only a web browser and Etherscan. It assumes the latest codebase is used (contracts in contracts/v2) and that $AGIALPHA is the designated token. The guide is tailored for platform operators or administrators setting up AGIJobs, and it highlights best practices like proper module wiring, governance handoff, and ENS integration. No coding or local CLI is required beyond contract verification.
-Prerequisites: Ensure you have an Ethereum wallet (with sufficient ETH for gas) and the mainnet $AGIALPHA token address (0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA) on hand. If you plan to enforce ENS identities, have the namehashes for agent.agi.eth and club.agi.eth ready (or use 0x00...00 as placeholder to allow open access). It’s also recommended to prepare a multisig or timelock address that will serve as the governance owner after deployment.
+
+#### Prerequisites
+
+- Ethereum wallet with enough ETH for gas
+- Mainnet `$AGIALPHA` token address `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`
+- Namehashes for `agent.agi.eth` and `club.agi.eth` if enforcing ENS
+- Multisig or timelock address to assume governance after deployment
 
 ### 1. Deploy Each Module Contract
 
