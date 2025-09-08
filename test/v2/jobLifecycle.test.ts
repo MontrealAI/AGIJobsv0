@@ -179,6 +179,7 @@ describe('Job lifecycle', function () {
       .submit(1, hash, 'ipfs://result', subdomain, []);
     await validation.setResult(true);
     await validation.finalize(1);
+    await registry.connect(employer).finalize(1);
 
     expect(await token.balanceOf(agent.address)).to.equal(
       ethers.parseUnits('1099', AGIALPHA_DECIMALS)
@@ -247,6 +248,7 @@ describe('Job lifecycle', function () {
     );
     const sig = await moderator.signMessage(ethers.getBytes(hash));
     await dispute.connect(moderator).resolve(1, true, [sig]); // employer wins
+    await registry.connect(employer).finalize(1);
 
     expect(await reputation.isBlacklisted(agent.address)).to.equal(true);
 

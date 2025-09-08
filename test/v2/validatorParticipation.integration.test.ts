@@ -178,6 +178,7 @@ describe('validator participation', function () {
     await validation.connect(v2).revealValidation(1, true, salt2, '', []);
     await time.increase(2);
     await validation.finalize(1);
+    await registry.connect(employer).finalize(1);
 
     expect(await registry.jobs(1)).to.have.property('state', 6);
   });
@@ -247,6 +248,7 @@ describe('validator participation', function () {
 
     await registry.connect(agent).dispute(1, ethers.id('evidence'));
     await dispute.connect(moderator).resolve(1, false);
+    await registry.connect(employer).finalize(1);
 
     expect(await registry.jobs(1)).to.have.property('state', 6);
   });

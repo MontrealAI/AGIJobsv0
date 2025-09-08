@@ -172,6 +172,7 @@ describe('comprehensive job flows', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    await registry.connect(employer).finalize(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
     const price = ethers.parseUnits('10', AGIALPHA_DECIMALS);
     await nft.connect(agent).list(jobId, price);
@@ -238,6 +239,7 @@ describe('comprehensive job flows', function () {
     });
     const disputeSigner = await ethers.getSigner(await dispute.getAddress());
     await registry.connect(disputeSigner).resolveDispute(jobId, true);
+    await registry.connect(employer).finalize(jobId);
     await network.provider.request({
       method: 'hardhat_stopImpersonatingAccount',
       params: [await dispute.getAddress()],

@@ -203,6 +203,7 @@ describe('job lifecycle with dispute and validator failure', function () {
     );
     const sig = await owner.signMessage(ethers.getBytes(hash));
     await dispute.connect(owner).resolve(1, false, [sig]);
+    await registry.connect(employer).finalize(1);
 
     expect(await registry.jobs(1)).to.have.property('state', 6); // Finalized
     expect(await token.balanceOf(agent.address)).to.be.gt(initialAgentBalance);

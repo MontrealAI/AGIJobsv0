@@ -174,8 +174,9 @@ describe('job finalization integration', function () {
     const agentBefore = await token.balanceOf(agent.address);
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
-      .withArgs(jobId, true)
-      .and.to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, true);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
@@ -210,6 +211,9 @@ describe('job finalization integration', function () {
     const employerBefore = await token.balanceOf(employer.address);
     const agentBefore = await token.balanceOf(agent.address);
     await expect(registry.connect(disputeSigner).resolveDispute(jobId, true))
+      .to.emit(registry, 'DisputeResolved')
+      .withArgs(jobId, true);
+    await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     await network.provider.request({
@@ -243,6 +247,9 @@ describe('job finalization integration', function () {
     const agentBefore = await token.balanceOf(agent.address);
     const employerBefore = await token.balanceOf(employer.address);
     await expect(registry.connect(disputeSigner).resolveDispute(jobId, false))
+      .to.emit(registry, 'DisputeResolved')
+      .withArgs(jobId, false);
+    await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     await network.provider.request({

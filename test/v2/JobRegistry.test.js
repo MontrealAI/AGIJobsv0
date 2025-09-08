@@ -188,8 +188,9 @@ describe('JobRegistry integration', function () {
       .withArgs(jobId, agent.address, resultHash, 'result', '');
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
-      .withArgs(jobId, true)
-      .and.to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, true);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
@@ -248,6 +249,7 @@ describe('JobRegistry integration', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    await registry.connect(employer).finalize(jobId);
 
     // platform operator should be able to claim fee
     const before = await token.balanceOf(owner.address);
@@ -255,6 +257,58 @@ describe('JobRegistry integration', function () {
     await feePool.connect(owner).claimRewards();
     const after = await token.balanceOf(owner.address);
     expect(after - before).to.equal(BigInt(reward / 10));
+  });
+
+  it('rejects non-employer finalization after validation', async () => {
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, 'uri');
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, '', []);
+    await validation.connect(owner).setResult(true);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('res'), 'res', '', []);
+    await validation.finalize(jobId);
+    await expect(
+      registry.connect(agent).finalize(jobId)
+    ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, agent.address);
+  });
+
+  it('rejects non-employer finalization after dispute resolution', async () => {
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, 'uri');
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, '', []);
+    await validation.connect(owner).setResult(false);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('res'), 'res', '', []);
+    await validation.finalize(jobId);
+    await registry.connect(agent).dispute(jobId, ethers.id('evidence'));
+    await dispute.connect(owner).setCommittee(owner.address);
+    await dispute.connect(owner).setDisputeWindow(0);
+    await dispute.connect(owner).resolve(jobId, false);
+    await expect(
+      registry.connect(agent).finalize(jobId)
+    ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, agent.address);
   });
 
   it('allows employer to cancel before completion', async () => {
