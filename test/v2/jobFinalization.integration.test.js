@@ -273,8 +273,9 @@ describe('job finalization integration', function () {
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);
-    await expect(registry.connect(agent).finalize(jobId))
-      .to.be.revertedWithCustomError(registry, 'OnlyEmployer');
+    await expect(
+      registry.connect(agent).finalize(jobId)
+    ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
   });
 
   it('emits burn and reward events on employer finalization', async () => {
