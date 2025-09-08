@@ -53,7 +53,7 @@ Once the subdomain token is minted, the owner must update the resolver so the na
 
 ```bash
 npx hardhat console --network <network>
-> const res = await ethers.getContractAt('IResolver', resolver);
+> const res = await ethers.getContractAt('IAddrResolver', resolver);
 > const node = ethers.namehash('alice.agent.agi.eth');
 > await res['setAddr(bytes32,address)'](node, '0xAgent');
 > await res['addr(bytes32)'](node); // verify

@@ -4,11 +4,7 @@ pragma solidity ^0.8.25;
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {IENS} from "../interfaces/IENS.sol";
 import {INameWrapper} from "../interfaces/INameWrapper.sol";
-
-/// @dev Minimal resolver interface for address resolution.
-interface IResolver {
-    function addr(bytes32 node) external view returns (address payable);
-}
+import {IAddrResolver} from "../interfaces/IAddrResolver.sol";
 
 /// @title Ownership verification helpers
 /// @notice Library computing ENS ownership through Merkle proofs and on-chain checks.
@@ -63,8 +59,8 @@ library VerifyOwnership {
         }
         address resolverAddr = ens.resolver(subnode);
         if (resolverAddr != address(0)) {
-            IResolver resolver = IResolver(resolverAddr);
-            try resolver.addr(subnode) returns (address payable resolved) {
+            IAddrResolver resolver = IAddrResolver(resolverAddr);
+            try resolver.addr(subnode) returns (address resolved) {
                 if (resolved == claimant) {
                     return (true, reason);
                 }
