@@ -24,13 +24,29 @@ interface IIdentityRegistry {
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle);
+    )
+        external
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        );
 
     function verifyValidator(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle);
+    )
+        external
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        );
 
     // owner configuration
     function setENS(address ensAddr) external;

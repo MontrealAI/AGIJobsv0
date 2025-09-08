@@ -117,9 +117,16 @@ contract IdentityRegistryToggle is Ownable {
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         node = bytes32(0);
+        label = "";
         if (additionalAgents[claimant]) {
             ok = true;
         } else {
@@ -133,9 +140,16 @@ contract IdentityRegistryToggle is Ownable {
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         node = bytes32(0);
+        label = "";
         if (additionalValidators[claimant]) {
             ok = true;
         } else {

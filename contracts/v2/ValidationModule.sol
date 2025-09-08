@@ -176,6 +176,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
     event PauserUpdated(address indexed pauser);
+    event ValidatorIdentityVerified(
+        uint256 indexed jobId,
+        address indexed validator,
+        bytes32 node,
+        string label,
+        bool viaWrapper,
+        bool viaMerkle
+    );
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -780,7 +788,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
                     bytes32[] memory proof;
-                    (authorized, , , ) = identityRegistry.verifyValidator(
+                    (authorized, , , , ) = identityRegistry.verifyValidator(
                         candidate,
                         subdomain,
                         proof
@@ -843,7 +851,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
                     bytes32[] memory proof;
-                    (authorized, , , ) = identityRegistry.verifyValidator(
+                    (authorized, , , , ) = identityRegistry.verifyValidator(
                         candidate,
                         subdomain,
                         proof
@@ -990,12 +998,22 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
         if (!_isValidator(jobId, msg.sender)) revert NotValidator();
-        (bool authorized, , , ) = identityRegistry.verifyValidator(
-            msg.sender,
-            subdomain,
-            proof
-        );
+        (
+            bool authorized,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        ) = identityRegistry.verifyValidator(msg.sender, subdomain, proof);
         if (!authorized) revert UnauthorizedValidator();
+        emit ValidatorIdentityVerified(
+            jobId,
+            msg.sender,
+            node,
+            label,
+            viaWrapper,
+            viaMerkle
+        );
         validatorAuthCache[msg.sender] = true;
         validatorAuthVersion[msg.sender] = validatorAuthCacheVersion;
         validatorAuthExpiry[msg.sender] =
@@ -1055,12 +1073,22 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 revert BlacklistedValidator();
         }
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
-        (bool authorized, , , ) = identityRegistry.verifyValidator(
-            msg.sender,
-            subdomain,
-            proof
-        );
+        (
+            bool authorized,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        ) = identityRegistry.verifyValidator(msg.sender, subdomain, proof);
         if (!authorized) revert UnauthorizedValidator();
+        emit ValidatorIdentityVerified(
+            jobId,
+            msg.sender,
+            node,
+            label,
+            viaWrapper,
+            viaMerkle
+        );
         validatorAuthCache[msg.sender] = true;
         validatorAuthVersion[msg.sender] = validatorAuthCacheVersion;
         validatorAuthExpiry[msg.sender] =

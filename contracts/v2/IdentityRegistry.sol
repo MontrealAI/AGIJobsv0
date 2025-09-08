@@ -237,7 +237,7 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof,
         string calldata uri
     ) external {
-        (bool ok, , , ) = this.verifyAgent(msg.sender, subdomain, proof);
+        (bool ok, , , , ) = this.verifyAgent(msg.sender, subdomain, proof);
         if (!ok) {
             revert UnauthorizedAgent();
         }
@@ -336,16 +336,23 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
         ) {
-            return (false, bytes32(0), false, false);
+            return (false, bytes32(0), "", false, false);
         }
         node =
             keccak256(abi.encodePacked(agentRootNode, keccak256(bytes(subdomain))));
+        label = subdomain;
         if (additionalAgents[claimant]) {
             emit AdditionalAgentUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
@@ -380,16 +387,23 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
         ) {
-            return (false, bytes32(0), false, false);
+            return (false, bytes32(0), "", false, false);
         }
         node =
             keccak256(abi.encodePacked(clubRootNode, keccak256(bytes(subdomain))));
+        label = subdomain;
         if (additionalValidators[claimant]) {
             emit AdditionalValidatorUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);

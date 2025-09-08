@@ -51,9 +51,16 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     )
         external
         pure
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         node = bytes32(0);
+        label = "";
         ok = true;
     }
 
@@ -61,8 +68,18 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         address,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+    )
+        external
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
+    {
         node = bytes32(0);
+        label = "";
         if (attack == Attack.Commit) {
             attack = Attack.None;
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
