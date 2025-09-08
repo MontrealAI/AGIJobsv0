@@ -21,6 +21,7 @@ error ZeroAddress();
 error InvalidStakeManagerVersion();
 error BadBurnAddress();
 error TokenNotBurnable();
+error InvalidTreasury();
 /// @dev Caller is not the governance contract.
 error NotGovernance();
 /// @dev Caller is neither the owner nor the designated pauser.
@@ -98,8 +99,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @param _stakeManager StakeManager tracking staker balances.
     /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
     /// DEFAULT_BURN_PCT when set to zero.
-    /// @param _treasury Address receiving rounding dust. Defaults to deployer
-    /// when zero address.
+    /// @param _treasury Address receiving rounding dust. Must be explicitly
+    /// provided and may be the zero address to burn residual fees.
     constructor(
         IStakeManager _stakeManager,
         uint256 _burnPct,
@@ -126,8 +127,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         burnPct = pct;
         emit BurnPctUpdated(pct);
 
-        treasury = _treasury == address(0) ? msg.sender : _treasury;
-        emit TreasuryUpdated(treasury);
+        if (_treasury == msg.sender) {
+            revert InvalidTreasury();
+        }
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     modifier onlyStakeManager() {
@@ -172,31 +176,39 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     function _distributeFees() internal {
         uint256 amount = pendingFees;
-        if (amount == 0) {
-            return;
-        }
+        if (amount == 0) return;
         pendingFees = 0;
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
             _burnFees(msg.sender, burnAmount);
         }
-        uint256 distribute = amount - burnAmount;
+        amount -= burnAmount;
+
         uint256 total = stakeManager.totalStake(rewardRole);
+        bool sendToTreasury = treasury != address(0) && treasury != owner();
         if (total == 0) {
-            if (distribute > 0 && treasury != address(0)) {
-                token.safeTransfer(treasury, distribute);
+            if (amount > 0) {
+                if (sendToTreasury) {
+                    token.safeTransfer(treasury, amount);
+                } else {
+                    _burnFees(msg.sender, amount);
+                }
             }
             emit FeesDistributed(0);
             return;
         }
 
-        uint256 perToken = (distribute * ACCUMULATOR_SCALE) / total;
+        uint256 perToken = (amount * ACCUMULATOR_SCALE) / total;
         cumulativePerToken += perToken;
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
-        uint256 dust = distribute - accounted;
-        if (dust > 0 && treasury != address(0)) {
-            token.safeTransfer(treasury, dust);
+        uint256 dust = amount - accounted;
+        if (dust > 0) {
+            if (sendToTreasury) {
+                token.safeTransfer(treasury, dust);
+            } else {
+                _burnFees(msg.sender, dust);
+            }
         }
         emit FeesDistributed(accounted);
     }
