@@ -55,7 +55,9 @@
        * Return `(ok, node, viaWrapper, viaMerkle)`.
      * Emit structured events:
 
-       * `event ENSVerified(address indexed user, bytes32 indexed node, string label, bool isAgent, bool viaWrapper, bool viaMerkle);`
+       * `event ENSVerified(address indexed user, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
+       * `event AgentIdentityVerified(address indexed agent, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
+       * `event ValidatorIdentityVerified(address indexed validator, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
        * `event ENSBypassAdded(address indexed user, bool agent);` / `…Removed`
        * `event ENSRootsUpdated(bytes32 agentRootNode, bytes32 clubRootNode);`
    * **Mainnet convenience:** `function configureMainnet() external onlyOwner` preloads **ENS registry** + **NameWrapper** well‑known addresses for mainnet. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
@@ -218,7 +220,9 @@ contract IdentityRegistry is Ownable {
     mapping(address => bool) public additionalAgents;
     mapping(address => bool) public additionalValidators;
 
-    event ENSVerified(address indexed user, bytes32 indexed node, string label, bool isAgent, bool viaWrapper, bool viaMerkle);
+    event ENSVerified(address indexed user, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);
+    event AgentIdentityVerified(address indexed agent, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);
+    event ValidatorIdentityVerified(address indexed validator, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);
     event ENSRootsUpdated(bytes32 agentRootNode, bytes32 clubRootNode);
     event ENSAddressesUpdated(address ens, address nameWrapper);
     event ENSBypassAdded(address indexed user, bool agent);
@@ -297,14 +301,14 @@ contract IdentityRegistry is Ownable {
 ```solidity
 // JobRegistry.sol (excerpt)
 IdentityRegistry public identity;
-event AgentIdentityVerified(uint256 indexed jobId, address indexed agent, bytes32 node, string label);
+event AgentIdentityVerified(address indexed agent, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);
 
 function setIdentityRegistry(address a) external onlyOwner { identity = IdentityRegistry(a); }
 
 function applyForJob(uint256 jobId, string calldata agentLabel, bytes32[] calldata proof) external {
-    (bool ok, bytes32 node,,) = identity.verifyAgent(msg.sender, agentLabel, proof);
+    (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) = identity.verifyAgent(msg.sender, agentLabel, proof);
     require(ok, "AGI: agent ENS check failed");
-    emit AgentIdentityVerified(jobId, msg.sender, node, agentLabel);
+    emit AgentIdentityVerified(msg.sender, node, agentLabel, viaWrapper, viaMerkle);
     // ... rest of assignment logic
 }
 ```
@@ -312,14 +316,14 @@ function applyForJob(uint256 jobId, string calldata agentLabel, bytes32[] callda
 ```solidity
 // ValidationModule.sol (excerpt)
 IdentityRegistry public identity;
-event ValidatorIdentityVerified(uint256 indexed jobId, address indexed validator, bytes32 node, string label);
+event ValidatorIdentityVerified(address indexed validator, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);
 
 function setIdentityRegistry(address a) external onlyOwner { identity = IdentityRegistry(a); }
 
 function commitValidation(uint256 jobId, bytes32 commitHash, string calldata validatorLabel, bytes32[] calldata proof) external {
-    (bool ok, bytes32 node,,) = identity.verifyValidator(msg.sender, validatorLabel, proof);
+    (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) = identity.verifyValidator(msg.sender, validatorLabel, proof);
     require(ok, "AGI: validator ENS check failed");
-    emit ValidatorIdentityVerified(jobId, msg.sender, node, validatorLabel);
+    emit ValidatorIdentityVerified(msg.sender, node, validatorLabel, viaWrapper, viaMerkle);
     // ... normal commit handling
 }
 ```
@@ -365,7 +369,17 @@ function commitValidation(uint256 jobId, bytes32 commitHash, string calldata val
 
 ### Step 5 — Sanity checks (using Etherscan)
 
-* Read **IdentityRegistry** roots; try `verifyAgent/verifyValidator` with a known ENS label.
+* Read **IdentityRegistry** roots; call `verifyAgent` or `verifyValidator` with a known ENS label. The call returns `(ok, node, viaWrapper, viaMerkle)` and emits `ENSVerified`.
+
+  ```
+  verifyAgent("0xAgent", "alice", [])
+  // 0: bool true
+  // 1: bytes32 0x2641541d3a011e8650c9d362d903c5e4149353eb4cb34761875be4b7455d3aca
+  // 2: bool false   // viaWrapper
+  // 3: bool false   // viaMerkle
+  ```
+
+  Job-level flows re‑emit `AgentIdentityVerified` or `ValidatorIdentityVerified` with the same tuple fields.
 * Dry‑run with tiny `$AGIALPHA`:
 
   * Approve + deposit stake; create job; agent applies; validator commits/reveals; finalize; inspect **events** (`StakeDeposited`, `JobFunded`, `RewardPaid`, `FeesBurned`).

@@ -33,6 +33,7 @@ Deploy each contract through Etherscan and note its address. Verify the source c
 3. **IdentityRegistry** _(optional)_
    - Parameters: `_ensAddress`, `_nameWrapperAddress`, `_reputationEngine`, `_agentRootNode`, `_clubRootNode`.
    - Use `0x00` for any ENS gates you wish to disable.
+   - `verifyAgent`/`verifyValidator` return `(ok, node, viaWrapper, viaMerkle)` and emit `ENSVerified`; modules that call them re-emit `AgentIdentityVerified` or `ValidatorIdentityVerified`.
 4. **ValidationModule**
    - Parameters: `_jobRegistry` placeholder, `stakeManager`, `commitWindow`, `revealWindow`, `minValidators`, `maxValidators`, `validatorPool` (usually empty array).
    - Recommended defaults: `commitWindow` = `86400`, `revealWindow` = `86400`, `minValidators` = `1`, `maxValidators` = `3`.
@@ -90,6 +91,18 @@ Invoke the following setters from the owner account:
 
 - **Verify contracts on Etherscan.** Publish source for every module so the _Read_ and _Write_ views are available.
 - **Consider multisig/timelock ownership.** Transfer ownership to a governance address once configuration is complete. The repository includes `scripts/transfer-ownership.ts` to batch transfer every module's ownership.
+
+- **Identity sanity check.** On the IdentityRegistry page use the _Read Contract_ tab and call `verifyAgent` or `verifyValidator`. Etherscan shows four return values `(ok, node, viaWrapper, viaMerkle)` and emits `ENSVerified`.
+
+  ```
+  verifyAgent("0xAgent", "alice", [])
+  // 0: bool true
+  // 1: bytes32 0x2641541d3a011e8650c9d362d903c5e4149353eb4cb34761875be4b7455d3aca
+  // 2: bool false   // viaWrapper
+  // 3: bool false   // viaMerkle
+  ```
+
+  When jobs call these helpers the platform also emits `AgentIdentityVerified` or `ValidatorIdentityVerified`.
 
 ### True Token Burning
 
