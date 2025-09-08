@@ -8,6 +8,7 @@ import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
 import {ENSIdentityVerifier} from "./ENSIdentityVerifier.sol";
 import {AttestationRegistry} from "./AttestationRegistry.sol";
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 error ZeroAddress();
 error UnauthorizedAgent();
@@ -54,6 +55,13 @@ contract IdentityRegistry is Ownable2Step {
     event AgentTypeUpdated(address indexed agent, AgentType agentType);
     /// @notice Emitted when an agent updates their profile metadata.
     event AgentProfileUpdated(address indexed agent, string uri);
+    event ENSVerified(
+        address indexed user,
+        bytes32 indexed node,
+        bytes32 indexed label,
+        bool merkle,
+        bool nameWrapper
+    );
     event MainnetConfigured(
         address indexed ens,
         address indexed nameWrapper,
@@ -332,15 +340,15 @@ contract IdentityRegistry is Ownable2Step {
         ) {
             return false;
         }
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 node = keccak256(abi.encodePacked(agentRootNode, labelHash));
         if (additionalAgents[claimant]) {
             emit AdditionalAgentUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            emit ENSVerified(claimant, node, labelHash, false, false);
             return true;
         }
         if (address(attestationRegistry) != address(0)) {
-            bytes32 node = keccak256(
-                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
-            );
             if (
                 attestationRegistry.isAttested(
                     node,
@@ -349,10 +357,11 @@ contract IdentityRegistry is Ownable2Step {
                 )
             ) {
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                emit ENSVerified(claimant, node, labelHash, false, false);
                 return true;
             }
         }
-        return
+        bool ok =
             ENSIdentityVerifier.verifyOwnership(
                 ens,
                 nameWrapper,
@@ -362,6 +371,24 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain,
                 proof
             );
+        if (ok) {
+            bool merkle;
+            bool wrapper;
+            bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
+            if (MerkleProof.verifyCalldata(proof, agentMerkleRoot, leaf)) {
+                merkle = true;
+            } else {
+                try nameWrapper.ownerOf(uint256(node)) returns (
+                    address actualOwner
+                ) {
+                    if (actualOwner == claimant) {
+                        wrapper = true;
+                    }
+                } catch {}
+            }
+            emit ENSVerified(claimant, node, labelHash, merkle, wrapper);
+        }
+        return ok;
     }
 
     function verifyValidator(
@@ -375,15 +402,15 @@ contract IdentityRegistry is Ownable2Step {
         ) {
             return false;
         }
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 node = keccak256(abi.encodePacked(clubRootNode, labelHash));
         if (additionalValidators[claimant]) {
             emit AdditionalValidatorUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            emit ENSVerified(claimant, node, labelHash, false, false);
             return true;
         }
         if (address(attestationRegistry) != address(0)) {
-            bytes32 node = keccak256(
-                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
-            );
             if (
                 attestationRegistry.isAttested(
                     node,
@@ -392,10 +419,11 @@ contract IdentityRegistry is Ownable2Step {
                 )
             ) {
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                emit ENSVerified(claimant, node, labelHash, false, false);
                 return true;
             }
         }
-        return
+        bool ok =
             ENSIdentityVerifier.verifyOwnership(
                 ens,
                 nameWrapper,
@@ -405,6 +433,24 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain,
                 proof
             );
+        if (ok) {
+            bool merkle;
+            bool wrapper;
+            bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
+            if (MerkleProof.verifyCalldata(proof, validatorMerkleRoot, leaf)) {
+                merkle = true;
+            } else {
+                try nameWrapper.ownerOf(uint256(node)) returns (
+                    address actualOwner
+                ) {
+                    if (actualOwner == claimant) {
+                        wrapper = true;
+                    }
+                } catch {}
+            }
+            emit ENSVerified(claimant, node, labelHash, merkle, wrapper);
+        }
+        return ok;
     }
 }
 

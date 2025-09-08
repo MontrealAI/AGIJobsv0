@@ -53,9 +53,20 @@ describe('IdentityRegistry ENS verification', function () {
     expect(
       await id.verifyAgent.staticCall(alice.address, subdomain, [])
     ).to.equal(true);
+    await expect(id.verifyAgent(alice.address, subdomain, []))
+      .to.emit(id, 'ENSVerified')
+      .withArgs(
+        alice.address,
+        subnode,
+        ethers.id(subdomain),
+        false,
+        true
+      );
     expect(
       await id.verifyAgent.staticCall(bob.address, subdomain, [])
     ).to.equal(false);
+    await expect(id.verifyAgent(bob.address, subdomain, []))
+      .to.not.emit(id, 'ENSVerified');
   });
 
   it('supports merkle proofs and resolver fallback', async () => {
@@ -91,12 +102,21 @@ describe('IdentityRegistry ENS verification', function () {
     // validator verified by merkle proof
     const vLeaf = leaf(validator.address, '');
     await id.setValidatorMerkleRoot(vLeaf);
+    const emptyLabelHash = ethers.id('');
+    const valNode = ethers.keccak256(
+      ethers.solidityPacked(['bytes32', 'bytes32'], [ethers.ZeroHash, emptyLabelHash])
+    );
     expect(
       await id.verifyValidator.staticCall(validator.address, '', [])
     ).to.equal(true);
+    await expect(id.verifyValidator(validator.address, '', []))
+      .to.emit(id, 'ENSVerified')
+      .withArgs(validator.address, valNode, emptyLabelHash, true, false);
     expect(
       await id.verifyValidator.staticCall(validator.address, 'bad', [])
     ).to.equal(false);
+    await expect(id.verifyValidator(validator.address, 'bad', []))
+      .to.not.emit(id, 'ENSVerified');
 
     // agent verified via resolver fallback
     const label = 'agent';
@@ -111,6 +131,9 @@ describe('IdentityRegistry ENS verification', function () {
     expect(await id.verifyAgent.staticCall(agent.address, label, [])).to.equal(
       true
     );
+    await expect(id.verifyAgent(agent.address, label, []))
+      .to.emit(id, 'ENSVerified')
+      .withArgs(agent.address, node, ethers.id(label), false, false);
   });
 
   it('respects allowlists and blacklists', async () => {
@@ -145,13 +168,22 @@ describe('IdentityRegistry ENS verification', function () {
     expect(await id.verifyAgent.staticCall(alice.address, '', [])).to.equal(
       false
     );
+    await expect(id.verifyAgent(alice.address, '', []))
+      .to.not.emit(id, 'ENSVerified');
     await rep.blacklist(alice.address, false);
 
     // additional allowlist bypasses ENS requirements
     await id.addAdditionalAgent(alice.address);
+    const emptyLabel = ethers.id('');
+    const emptyNode = ethers.keccak256(
+      ethers.solidityPacked(['bytes32', 'bytes32'], [ethers.ZeroHash, emptyLabel])
+    );
     expect(await id.verifyAgent.staticCall(alice.address, '', [])).to.equal(
       true
     );
+    await expect(id.verifyAgent(alice.address, '', []))
+      .to.emit(id, 'ENSVerified')
+      .withArgs(alice.address, emptyNode, emptyLabel, false, false);
   });
 
   it('authorizes via allowlists and attestations when ENS is unset', async () => {
@@ -180,9 +212,16 @@ describe('IdentityRegistry ENS verification', function () {
 
     // allowlist should succeed without ENS
     await id.addAdditionalAgent(agent.address);
+    const emptyLabel = ethers.id('');
+    const emptyNode = ethers.keccak256(
+      ethers.solidityPacked(['bytes32', 'bytes32'], [ethers.ZeroHash, emptyLabel])
+    );
     expect(await id.verifyAgent.staticCall(agent.address, '', [])).to.equal(
       true
     );
+    await expect(id.verifyAgent(agent.address, '', []))
+      .to.emit(id, 'ENSVerified')
+      .withArgs(agent.address, emptyNode, emptyLabel, false, false);
 
     // attestation should also succeed
     const Attest = await ethers.getContractFactory(
@@ -207,6 +246,9 @@ describe('IdentityRegistry ENS verification', function () {
     expect(
       await id.verifyValidator.staticCall(validator.address, label, [])
     ).to.equal(true);
+    await expect(id.verifyValidator(validator.address, label, []))
+      .to.emit(id, 'ENSVerified')
+      .withArgs(validator.address, node, ethers.id(label), false, false);
   });
 
   it('allows governance and agents to set capability profiles', async () => {
@@ -251,8 +293,14 @@ describe('IdentityRegistry ENS verification', function () {
 
     // allow alice as additional agent then self-update profile
     await id.addAdditionalAgent(alice.address);
+    const profileLabel = ethers.id('sub');
+    const profileNode = ethers.keccak256(
+      ethers.solidityPacked(['bytes32', 'bytes32'], [ethers.ZeroHash, profileLabel])
+    );
     await expect(id.connect(alice).updateAgentProfile('sub', [], 'ipfs://cap2'))
-      .to.emit(id, 'OwnershipVerified')
+      .to.emit(id, 'ENSVerified')
+      .withArgs(alice.address, profileNode, profileLabel, false, false)
+      .and.to.emit(id, 'OwnershipVerified')
       .withArgs(alice.address, 'sub')
       .and.to.emit(id, 'AgentProfileUpdated')
       .withArgs(alice.address, 'ipfs://cap2');
@@ -288,14 +336,22 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
+    const emptyLabel = ethers.id('');
+    const emptyNode = ethers.keccak256(
+      ethers.solidityPacked(['bytes32', 'bytes32'], [ethers.ZeroHash, emptyLabel])
+    );
     await expect(id.verifyAgent(agent.address, '', []))
       .to.emit(id, 'AdditionalAgentUsed')
-      .withArgs(agent.address, '');
+      .withArgs(agent.address, '')
+      .and.to.emit(id, 'ENSVerified')
+      .withArgs(agent.address, emptyNode, emptyLabel, false, false);
 
     await id.addAdditionalValidator(validator.address);
     await expect(id.verifyValidator(validator.address, '', []))
       .to.emit(id, 'AdditionalValidatorUsed')
-      .withArgs(validator.address, '');
+      .withArgs(validator.address, '')
+      .and.to.emit(id, 'ENSVerified')
+      .withArgs(validator.address, emptyNode, emptyLabel, false, false);
   });
 
   it('authorization helpers handle allowlists', async () => {
@@ -334,7 +390,20 @@ describe('IdentityRegistry ENS verification', function () {
     ).to.equal(true);
     await expect(id.verifyValidator(validator.address, '', []))
       .to.emit(id, 'AdditionalValidatorUsed')
-      .withArgs(validator.address, '');
+      .withArgs(validator.address, '')
+      .and.to.emit(id, 'ENSVerified')
+      .withArgs(
+        validator.address,
+        ethers.keccak256(
+          ethers.solidityPacked(
+            ['bytes32', 'bytes32'],
+            [ethers.ZeroHash, ethers.id('')]
+          )
+        ),
+        ethers.id(''),
+        false,
+        false
+      );
   });
 
   it('requires new owner to accept ownership', async () => {
