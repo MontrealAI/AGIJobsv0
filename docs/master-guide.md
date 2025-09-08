@@ -61,7 +61,7 @@
 * **DisputeModule** — escalate/resolve when outcomes are challenged.
 * **ReputationEngine** — reputation updates, optional blacklist.
 * **CertificateNFT** — NFT certificate upon successful completion.
-* **FeePool** — collects fees; can burn `%` of fees and forward remainder to treasury.
+* **FeePool** — collects fees; burns a configured percentage and distributes the remainder to stakers, burning any undistributed amount when no stakers exist.
 * **IdentityRegistry** *(optional)* — ENS/merkle allowlists for Agents/Validators.
 * **PlatformRegistry / JobRouter / PlatformIncentives** *(optional)* — multi‑platform routing & incentives.
 * **TaxPolicy** *(optional)* — require user acknowledgment of terms/tax policy.
