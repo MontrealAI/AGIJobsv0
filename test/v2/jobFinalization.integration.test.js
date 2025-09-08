@@ -171,17 +171,25 @@ describe('job finalization integration', function () {
 
   it('finalizes successful job', async () => {
     const { jobId, fee, vReward } = await setupJob(true);
+    await stakeManager.connect(owner).setBurnPct(10);
     const agentBefore = await token.balanceOf(agent.address);
+    const supplyBefore = await token.totalSupply();
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
-      .withArgs(jobId, true)
-      .and.to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, true);
+    expect(await token.totalSupply()).to.equal(supplyBefore);
+    expect(await token.balanceOf(agent.address)).to.equal(agentBefore);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
     const v1Bal = await token.balanceOf(validator1.address);
     const v2Bal = await token.balanceOf(validator2.address);
-    expect(agentAfter - agentBefore).to.equal(reward - vReward);
+    const rewardAfterValidator = reward - vReward;
+    const burn = (rewardAfterValidator * 10n) / 100n;
+    expect(agentAfter - agentBefore).to.equal(rewardAfterValidator - burn);
+    expect(await token.totalSupply()).to.equal(supplyBefore - burn);
     expect(employerAfter).to.equal(mintAmount - reward - fee);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
@@ -209,7 +217,8 @@ describe('job finalization integration', function () {
     const disputeSigner = await ethers.getSigner(dispute.target);
     const employerBefore = await token.balanceOf(employer.address);
     const agentBefore = await token.balanceOf(agent.address);
-    await expect(registry.connect(disputeSigner).resolveDispute(jobId, true))
+    await registry.connect(disputeSigner).resolveDispute(jobId, true);
+    await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     await network.provider.request({
@@ -242,7 +251,8 @@ describe('job finalization integration', function () {
     const disputeSigner = await ethers.getSigner(dispute.target);
     const agentBefore = await token.balanceOf(agent.address);
     const employerBefore = await token.balanceOf(employer.address);
-    await expect(registry.connect(disputeSigner).resolveDispute(jobId, false))
+    await registry.connect(disputeSigner).resolveDispute(jobId, false);
+    await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
     await network.provider.request({
