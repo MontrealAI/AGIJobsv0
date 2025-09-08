@@ -6,6 +6,7 @@ import {IFeePool} from "../interfaces/IFeePool.sol";
 interface IStakeManager {
     function finalizeJobFunds(
         bytes32 jobId,
+        address employer,
         address agent,
         uint256 reward,
         uint256 fee,
@@ -30,6 +31,7 @@ contract ReentrantJobRegistry {
     AttackType public attackType;
     bytes32 public jobId;
     address public agent;
+    address public employer;
     uint256 public reward;
     uint256 public amount;
 
@@ -49,10 +51,11 @@ contract ReentrantJobRegistry {
     function attackFinalize(bytes32 _jobId, address _agent, uint256 _reward) external {
         jobId = _jobId;
         agent = _agent;
+        employer = msg.sender;
         reward = _reward;
         attackType = AttackType.Finalize;
         token.setAttack(true);
-        stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)));
+        stakeManager.finalizeJobFunds(jobId, employer, agent, reward, 0, IFeePool(address(0)));
         attackType = AttackType.None;
     }
 
@@ -68,7 +71,7 @@ contract ReentrantJobRegistry {
     // called by the token during transfer to attempt reentrancy
     function reenter() external {
         if (attackType == AttackType.Finalize) {
-            stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)));
+            stakeManager.finalizeJobFunds(jobId, employer, agent, reward, 0, IFeePool(address(0)));
         } else if (attackType == AttackType.Validator) {
             stakeManager.distributeValidatorRewards(jobId, amount);
         }
