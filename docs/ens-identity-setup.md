@@ -13,7 +13,7 @@ Agents and validators must prove ownership of specific ENS subdomains before int
 2. **Point the name to your address** by either:
    - Setting the resolver `addr` record, or
    - Wrapping the name with the ENS NameWrapper so the subdomain NFT is held by your wallet.
-3. **Verify ownership** off-chain using an ENS lookup or on-chain by calling `IdentityRegistry.verifyAgent` or `verifyValidator`.
+3. **Verify ownership** off-chain using an ENS lookup or on-chain by calling `IdentityRegistry.verifyAgent` or `verifyValidator`. Each call returns `(ok, node, viaWrapper, viaMerkle)` and emits `ENSVerified`; successful job or validation actions re‑emit `AgentIdentityVerified` or `ValidatorIdentityVerified`.
 
 Transactions will revert if the calling address does not own the claimed subdomain. Owner‑controlled allowlists and Merkle proofs exist only for emergencies and should not be relied on for normal operation.
 
@@ -63,7 +63,28 @@ To confirm ownership on-chain:
 
 ```bash
 > const id = await ethers.getContractAt('IdentityRegistry', process.env.IDENTITY_REGISTRY);
-> await id.verifyAgent('0xAgent', 'alice', []); // use verifyValidator for validators
+> const [ok, node, viaWrapper, viaMerkle] = await id.verifyAgent('0xAgent', 'alice', []); // use verifyValidator for validators
+> // Etherscan lists: 0: ok, 1: node, 2: viaWrapper, 3: viaMerkle
+```
+
+Example Etherscan call:
+
+```
+verifyAgent("0xAgent", "alice", [])
+0: bool true
+1: bytes32 0x2641541d3a011e8650c9d362d903c5e4149353eb4cb34761875be4b7455d3aca
+2: bool false   // viaWrapper
+3: bool false   // viaMerkle
+```
+
+Similarly for a validator:
+
+```
+verifyValidator("0xValidator", "alice", [])
+0: bool true
+1: bytes32 0xc8c2499427432d9c12ca7e3507602b8f6992a6cee02be12755678f99b17d7e76
+2: bool false   // viaWrapper
+3: bool false   // viaMerkle
 ```
 
 ## Delegating with attestations
