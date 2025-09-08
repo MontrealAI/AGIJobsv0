@@ -188,8 +188,9 @@ describe('JobRegistry integration', function () {
       .withArgs(jobId, agent.address, resultHash, 'result', '');
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
-      .withArgs(jobId, true)
-      .and.to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, true);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
@@ -248,6 +249,7 @@ describe('JobRegistry integration', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    await registry.connect(employer).finalize(jobId);
 
     // platform operator should be able to claim fee
     const before = await token.balanceOf(owner.address);

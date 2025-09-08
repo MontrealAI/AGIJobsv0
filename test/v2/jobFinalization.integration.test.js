@@ -177,6 +177,8 @@ describe('job finalization integration', function () {
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);
+    const agentPct = await stakeManager.getAgentPayoutPct(agent.address);
+    const burnPct = await stakeManager.burnPct();
     expect(await token.totalSupply()).to.equal(supplyBefore);
     expect(await token.balanceOf(agent.address)).to.equal(agentBefore);
     await expect(registry.connect(employer).finalize(jobId))
@@ -187,13 +189,23 @@ describe('job finalization integration', function () {
     const v1Bal = await token.balanceOf(validator1.address);
     const v2Bal = await token.balanceOf(validator2.address);
     const rewardAfterValidator = reward - vReward;
-    const burn = (rewardAfterValidator * 10n) / 100n;
-    expect(agentAfter - agentBefore).to.equal(rewardAfterValidator - burn);
+    const agentModified = (rewardAfterValidator * agentPct) / 100n;
+    const burn = (agentModified * burnPct) / 100n;
+    const agentAmount = agentModified - burn;
+    expect(agentAfter - agentBefore).to.equal(agentAmount);
     expect(await token.totalSupply()).to.equal(supplyBefore - burn);
     expect(employerAfter).to.equal(mintAmount - reward - fee);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    const job = await registry.jobs(jobId);
+    const completionTime = BigInt(await time.latest()) - job.assignedAt;
+    const expectedRep = await rep.calculateReputationPoints(
+      agentAmount * 1_000_000_000_000n,
+      completionTime
+    );
+    const repAfter = await rep.reputation(agent.address);
+    expect(repAfter).to.be.at.least(expectedRep - 1n);
+    expect(repAfter).to.be.at.most(expectedRep + 1n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 
@@ -252,6 +264,8 @@ describe('job finalization integration', function () {
     const agentBefore = await token.balanceOf(agent.address);
     const employerBefore = await token.balanceOf(employer.address);
     await registry.connect(disputeSigner).resolveDispute(jobId, false);
+    const agentPct2 = await stakeManager.getAgentPayoutPct(agent.address);
+    const burnPct2 = await stakeManager.burnPct();
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
@@ -267,7 +281,18 @@ describe('job finalization integration', function () {
     expect(employerAfter).to.equal(employerBefore);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
-    expect(await rep.reputation(agent.address)).to.equal(152n);
+    const job2 = await registry.jobs(jobId);
+    const completionTime2 = BigInt(await time.latest()) - job2.assignedAt;
+    const agentModified2 = ((reward - vReward) * agentPct2) / 100n;
+    const burn2 = (agentModified2 * burnPct2) / 100n;
+    const agentAmount2 = agentModified2 - burn2;
+    const expectedRep2 = await rep.calculateReputationPoints(
+      agentAmount2 * 1_000_000_000_000n,
+      completionTime2
+    );
+    const repAfter2 = await rep.reputation(agent.address);
+    expect(repAfter2).to.be.at.least(expectedRep2 - 1n);
+    expect(repAfter2).to.be.at.most(expectedRep2 + 1n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
 });

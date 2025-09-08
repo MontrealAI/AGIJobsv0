@@ -182,7 +182,7 @@ describe('Mid-job module replacement fuzz', function () {
       await newValidation.setResult(result);
       await newValidation.finalize(1);
       const job = await registry.jobs(1);
-      expect([5, 6]).to.include(Number(job.state));
+      expect([4, 5]).to.include(Number(job.state));
       expect(job.success).to.equal(result);
     }
   });
