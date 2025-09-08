@@ -148,8 +148,9 @@ describe('JobRegistry governance finalization', function () {
       registry.connect(agent).finalize(jobId)
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
 
-    await expect(registry.connect(owner).finalize(jobId))
-      .to.be.revertedWithCustomError(stakeManager, 'UnauthorizedEmployer');
+    await expect(
+      registry.connect(owner).finalize(jobId)
+    ).to.be.revertedWithCustomError(stakeManager, 'UnauthorizedEmployer');
   });
 
   it('redirects reward when employer blacklisted', async () => {
@@ -174,7 +175,8 @@ describe('JobRegistry governance finalization', function () {
       registry.connect(employer).finalize(jobId)
     ).to.be.revertedWithCustomError(registry, 'Blacklisted');
 
-    await expect(registry.connect(owner).finalize(jobId))
-      .to.be.revertedWithCustomError(stakeManager, 'UnauthorizedEmployer');
+    await expect(
+      registry.connect(owner).finalize(jobId)
+    ).to.be.revertedWithCustomError(stakeManager, 'UnauthorizedEmployer');
   });
 });
