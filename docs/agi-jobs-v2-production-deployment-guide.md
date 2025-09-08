@@ -62,6 +62,7 @@ This section provides a user-friendly, step-by-step guide to deploy the AGIJobs 
 - Ethereum wallet with enough ETH for gas
 - Mainnet `$AGIALPHA` token address `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`
 - Verify on Etherscan that `$AGIALPHA` exposes `burn(uint256)`; the contracts rely on this function
+- Optionally run `npx ts-node --compiler-options '{"module":"commonjs"}' scripts/check-burnable.ts` to programmatically confirm the token exposes a burn function
 - Namehashes for `agent.agi.eth` and `club.agi.eth` if enforcing ENS
 - Multisig or timelock address to assume governance after deployment
 
