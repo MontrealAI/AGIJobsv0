@@ -7,12 +7,12 @@
 
 ## A. What we verified (high level)
 
-* **Repo status:** README states v2 under `contracts/v2` is the supported release; identity policy requires agents to use `<label>.agent.agi.eth` and validators `<label>.club.agi.eth`. Etherscan‑centric deployment/wiring steps and owner‑only setters are documented. The `$AGIALPHA` mainnet address appears in the Deployed Addresses section. ([GitHub][1])
-* **Legacy on‑chain reference:** The verified **AGIJobManager** (0x0178…a477) declares `ENS`, `Resolver`, and `NameWrapper` interfaces and an internal `_verifyOwnership` used to enforce that validators hold a **club.agi.eth** subdomain (with additional allowances and parameters visible in the outline). This is the behavior you asked to mirror in v2. ([Ethereum (ETH) Blockchain Explorer][2])
-* **ENS infra on mainnet:**
+- **Repo status:** README states v2 under `contracts/v2` is the supported release; identity policy requires agents to use `<label>.agent.agi.eth` and validators `<label>.club.agi.eth`. Etherscan‑centric deployment/wiring steps and owner‑only setters are documented. The `$AGIALPHA` mainnet address appears in the Deployed Addresses section. ([GitHub][1])
+- **Legacy on‑chain reference:** The verified **AGIJobManager** (0x0178…a477) declares `ENS`, `Resolver`, and `NameWrapper` interfaces and an internal `_verifyOwnership` used to enforce that validators hold a **club.agi.eth** subdomain (with additional allowances and parameters visible in the outline). This is the behavior you asked to mirror in v2. ([Ethereum (ETH) Blockchain Explorer][2])
+- **ENS infra on mainnet:**
 
-  * **ENS Registry:** `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`. ([Ethereum (ETH) Blockchain Explorer][4])
-  * **NameWrapper:** `0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401`. ([docs.ens.domains][3])
+  - **ENS Registry:** `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`. ([Ethereum (ETH) Blockchain Explorer][4])
+  - **NameWrapper:** `0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401`. ([docs.ens.domains][3])
 
 > **Conclusion:** v2 already signals ENS identity enforcement and Etherscan wiring. This sprint **locks it in at runtime** (no soft checks), **hard‑codes $AGIALPHA**, **ports validator/agent ENS checks** (with **Merkle allowlist bypass** and **NameWrapper fallback**) across all relevant entry points, and makes eventing comprehensive.
 
@@ -28,60 +28,68 @@
 
 1. **Interfaces** (new):
 
-   * `interfaces/IENS.sol` (`resolver(bytes32)`, `owner(bytes32)`)
-   * `interfaces/IAddrResolver.sol` (`addr(bytes32)`)
-   * `interfaces/INameWrapper.sol` (`ownerOf(uint256)`)
-     (Use external interfaces, no inheritance.) *(Refers to ENS Registry/Resolver/NameWrapper contracts)*. ([docs.ens.domains][5])
+   - `interfaces/IENS.sol` (`resolver(bytes32)`, `owner(bytes32)`)
+   - `interfaces/IAddrResolver.sol` (`addr(bytes32)`)
+   - `interfaces/INameWrapper.sol` (`ownerOf(uint256)`)
+     (Use external interfaces, no inheritance.) _(Refers to ENS Registry/Resolver/NameWrapper contracts)_. ([docs.ens.domains][5])
+
 2. **IdentityRegistry.sol** (augment or add if missing):
 
-   * **Storage:**
+   - **Storage:**
 
-     * `ENS public ens; INameWrapper public nameWrapper;`
-     * `bytes32 public agentRootNode; bytes32 public clubRootNode;` (namehashes of `agent.agi.eth` and `club.agi.eth`)
-     * `bytes32 public agentMerkleRoot; bytes32 public validatorMerkleRoot;`
-     * `mapping(address => bool) public additionalAgents; mapping(address => bool) public additionalValidators;`
-   * **Admin setters:** `setENS(address)`, `setNameWrapper(address)`, `setAgentRootNode(bytes32)`, `setClubRootNode(bytes32)`, `setAgentMerkleRoot(bytes32)`, `setValidatorMerkleRoot(bytes32)`, `addAdditionalAgent(address)`, `addAdditionalValidator(address)`, and removals (all `onlyOwner`).
-   * **Core runtime checks** (reusable):
+     - `ENS public ens; INameWrapper public nameWrapper;`
+     - `bytes32 public agentRootNode; bytes32 public clubRootNode;` (namehashes of `agent.agi.eth` and `club.agi.eth`)
+     - `bytes32 public agentMerkleRoot; bytes32 public validatorMerkleRoot;`
+     - `mapping(address => bool) public additionalAgents; mapping(address => bool) public additionalValidators;`
 
-     * `function verifyAgent(address who, string memory label, bytes32[] memory proof) external view returns (bool, bytes32 node, bool viaWrapper, bool viaMerkle)`
-     * `function verifyValidator(address who, string memory label, bytes32[] memory proof) external view returns (bool, bytes32 node, bool viaWrapper, bool viaMerkle)`
-     * Internal `_verifyOwnership(address who, bytes32 parent, string memory label)`
+   - **Admin setters:** `setENS(address)`, `setNameWrapper(address)`, `setAgentRootNode(bytes32)`, `setClubRootNode(bytes32)`, `setAgentMerkleRoot(bytes32)`, `setValidatorMerkleRoot(bytes32)`, `addAdditionalAgent(address)`, `addAdditionalValidator(address)`, and removals (all `onlyOwner`).
+   - **Core runtime checks** (reusable):
 
-       * Compute `node = keccak256(abi.encodePacked(parent, keccak256(bytes(label))))` (**forward namehash step**).
-       * Try **Merkle bypass** (if `root!=0`, verify `leaf = keccak256(abi.encode(who, keccak256(bytes(label))))`).
-       * Else, try **resolver forward resolution**: `ens.resolver(node)` → `addr(node)` equals `who`.
-       * Else, check **registry owner**: `ens.owner(node)==who`.
-       * Else, check **NameWrapper**: `nameWrapper.ownerOf(uint256(node))==who`.
-       * Return `(ok, node, viaWrapper, viaMerkle)`.
-     * Emit structured events:
+     - `function verifyAgent(address who, string memory label, bytes32[] memory proof) external view returns (bool, bytes32 node, bool viaWrapper, bool viaMerkle)`
+     - `function verifyValidator(address who, string memory label, bytes32[] memory proof) external view returns (bool, bytes32 node, bool viaWrapper, bool viaMerkle)`
+     - Internal `_verifyOwnership(address who, bytes32 parent, string memory label)`
 
-       * `event ENSVerified(address indexed user, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
-       * `event AgentIdentityVerified(address indexed agent, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
-       * `event ValidatorIdentityVerified(address indexed validator, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
-       * `event ENSBypassAdded(address indexed user, bool agent);` / `…Removed`
-       * `event ENSRootsUpdated(bytes32 agentRootNode, bytes32 clubRootNode);`
-   * **Mainnet convenience:** `function configureMainnet() external onlyOwner` preloads **ENS registry** + **NameWrapper** well‑known addresses for mainnet. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
+       - Compute `node = keccak256(abi.encodePacked(parent, keccak256(bytes(label))))` (**forward namehash step**).
+       - Try **Merkle bypass** (if `root!=0`, verify `leaf = keccak256(abi.encode(who, keccak256(bytes(label))))`).
+       - Else, try **resolver forward resolution**: `ens.resolver(node)` → `addr(node)` equals `who`.
+       - Else, check **registry owner**: `ens.owner(node)==who`.
+       - Else, check **NameWrapper**: `nameWrapper.ownerOf(uint256(node))==who`.
+       - Return `(ok, node, viaWrapper, viaMerkle)`.
+
+     - Emit structured events:
+
+       - `event ENSVerified(address indexed user, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
+       - `event AgentIdentityVerified(address indexed agent, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
+       - `event ValidatorIdentityVerified(address indexed validator, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle);`
+       - `event ENSBypassAdded(address indexed user, bool agent);` / `…Removed`
+       - `event ENSRootsUpdated(bytes32 agentRootNode, bytes32 clubRootNode);`
+
+   - **Mainnet convenience:** `function configureMainnet() external onlyOwner` preloads **ENS registry** + **NameWrapper** well‑known addresses for mainnet. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
+
 3. **JobRegistry.sol (apply path):**
 
-   * Add `IdentityRegistry public identity;` + `setIdentityRegistry(address)` (`onlyOwner`).
-   * In **agent apply** entry point (`applyForJob(...)` or equivalent), **require** `identity.verifyAgent(msg.sender, agentLabel, proof)` success; bubble the ENS event or re‑emit a local event `AgentIdentityVerified`.
+   - Add `IdentityRegistry public identity;` + `setIdentityRegistry(address)` (`onlyOwner`).
+   - In **agent apply** entry point (`applyForJob(...)` or equivalent), **require** `identity.verifyAgent(msg.sender, agentLabel, proof)` success; bubble the ENS event or re‑emit a local event `AgentIdentityVerified`.
+
 4. **ValidationModule.sol (commit/reveal path):**
 
-   * Keep `IdentityRegistry public identity; setIdentityRegistry(address)` (`onlyOwner`).
-   * In **commit** and/or **reveal** (or immediately before vote is recorded), **require** `identity.verifyValidator(msg.sender, validatorLabel, proof)` success; re‑emit a local event `ValidatorIdentityVerified`.
+   - Keep `IdentityRegistry public identity; setIdentityRegistry(address)` (`onlyOwner`).
+   - In **commit** and/or **reveal** (or immediately before vote is recorded), **require** `identity.verifyValidator(msg.sender, validatorLabel, proof)` success; re‑emit a local event `ValidatorIdentityVerified`.
+
 5. **DisputeModule/other role‑gated calls:** If any other flows require agent/validator identity, call into `IdentityRegistry` the same way.
 
 **Tests (`test/v2/ens/*.t.sol` or TS):**
 
-* Case matrix:
+- Case matrix:
 
-  * Valid resolver `addr(node)` match;
-  * Valid **NameWrapper** owner;
-  * Valid **registry owner** fallback;
-  * Valid **Merkle allowlist** bypass;
-  * **Additional** allowlisted address;
-  * Negative cases for each path.
-* Gas snapshots for added checks during apply/commit.
+  - Valid resolver `addr(node)` match;
+  - Valid **NameWrapper** owner;
+  - Valid **registry owner** fallback;
+  - Valid **Merkle allowlist** bypass;
+  - **Additional** allowlisted address;
+  - Negative cases for each path.
+
+- Gas snapshots for added checks during apply/commit.
 
 ---
 
@@ -101,24 +109,26 @@
        uint8   constant AGIALPHA_DECIMALS = 18;
    }
    ```
+
 2. **StakeManager.sol / JobRegistry.sol / FeePool.sol / DisputeModule.sol:**
 
-   * Replace any configurable `IERC20 public token` with `IERC20 private constant AGI = IERC20(Constants.AGIALPHA);`.
-   * Remove token rotation setters if present (e.g., `setToken(...)`), or gate them behind a **permanent fuse**: once `lockToken()` is called by owner, token address becomes immutable, and **unit tests** ensure it is called in deployment.
-   * All amounts expressed in **18‑decimals**.
+   - Replace any configurable `IERC20 public token` with `IERC20 private constant AGI = IERC20(Constants.AGIALPHA);`.
+   - Remove token rotation setters if present (e.g., `setToken(...)`), or gate them behind a **permanent fuse**: once `lockToken()` is called by owner, token address becomes immutable, and **unit tests** ensure it is called in deployment.
+   - All amounts expressed in **18‑decimals**.
+
 3. **Burning guarantees:** introduce `IBurnable` interface and **require** success of `burn(amount)` for fee burns/slashing burns. If `$AGIALPHA` were not burnable, functions that would burn **must revert** (documented in NatSpec).
 4. **Events for flows** (index by actors/jobId):
 
-   * `event StakeDeposited(address indexed user, uint8 indexed role, uint256 amount);`
-   * `event StakeWithdrawn(address indexed user, uint8 indexed role, uint256 amount);`
-   * `event StakeSlashed(address indexed user, uint256 amount, uint256 toEmployer, uint256 toTreasury, uint256 burned);`
-   * `event JobFunded(uint256 indexed jobId, address indexed employer, uint256 amount);`
-   * `event RewardPaid(uint256 indexed jobId, address indexed agent, uint256 amount);`
-   * `event FeeAccrued(uint256 indexed jobId, uint256 amount);`
-   * `event FeesBurned(uint256 amount);`
-   * `event FeesDistributed(uint256 amount);`
-   * `event DisputeFeePaid(uint256 indexed jobId, address indexed payer, uint256 amount);`
-   * All use **primitive types** for clean Etherscan rendering.
+   - `event StakeDeposited(address indexed user, uint8 indexed role, uint256 amount);`
+   - `event StakeWithdrawn(address indexed user, uint8 indexed role, uint256 amount);`
+   - `event StakeSlashed(address indexed user, uint256 amount, uint256 toEmployer, uint256 toTreasury, uint256 burned);`
+   - `event JobFunded(uint256 indexed jobId, address indexed employer, uint256 amount);`
+   - `event RewardPaid(uint256 indexed jobId, address indexed agent, uint256 amount);`
+   - `event FeeAccrued(uint256 indexed jobId, uint256 amount);`
+   - `event FeesBurned(uint256 amount);`
+   - `event FeesDistributed(uint256 amount);`
+   - `event DisputeFeePaid(uint256 indexed jobId, address indexed payer, uint256 amount);`
+   - All use **primitive types** for clean Etherscan rendering.
 
 **Tests:** positive/negative for token address mutation, burn behavior, and event emission coverage on common paths.
 
@@ -130,13 +140,14 @@
 
 **Deliverables**
 
-* **StakeManager**:
+- **StakeManager**:
 
-  * Params: `minStake`, `maxStakePerAddress` (optional), `employerPct`, `treasuryPct` (sum ≤ 100%), `treasury`.
-  * Invariants: cannot withdraw while assigned or during unbonding; slashing splits: `toEmployer`, `toTreasury`, `burnRemainder` (call token `burn`).
-  * Owner setters emit `ParametersUpdated(...)`.
-* **ValidationModule**: commit/reveal windows, `minValidators`, `maxValidators`, `approvalThreshold` documented and evented (`ValidationCommitted`, `ValidationRevealed`, `ValidationTallied`).
-* **DisputeModule**: `disputeFee`, `disputeWindow`, `resolve(...)` yields slashing + redistribution; event `DisputeResolved`.
+  - Params: `minStake`, `maxStakePerAddress` (optional), `employerPct`, `treasuryPct` (sum ≤ 100%), `treasury`.
+  - Invariants: cannot withdraw while assigned or during unbonding; slashing splits: `toEmployer`, `toTreasury`, `burnRemainder` (call token `burn`).
+  - Owner setters emit `ParametersUpdated(...)`.
+
+- **ValidationModule**: commit/reveal windows, `minValidators`, `maxValidators`, `approvalThreshold` documented and evented (`ValidationCommitted`, `ValidationRevealed`, `ValidationTallied`).
+- **DisputeModule**: `disputeFee`, `disputeWindow`, `resolve(...)` yields slashing + redistribution; event `DisputeResolved`.
 
 **Tests:** full job lifecycle including approval, rejection, dispute‑flip, slashing distribution, event logs.
 
@@ -148,12 +159,13 @@
 
 **Deliverables**
 
-* **`docs/` updates**:
+- **`docs/` updates**:
 
-  * `AGIJobs-v2-Mainnet-Guide.md` (this file)
-  * `deployment-production-guide.md` (operator) and `user-etherscan-guide.md` (non‑technical) consolidated and cross‑linked.
-  * Tables for module wiring, constructor params, and owner‑only setters mirror README. ([GitHub][1])
-* **NatSpec** across public functions/events for Etherscan tooltips.
+  - `AGIJobs-v2-Mainnet-Guide.md` (this file)
+  - `deployment-production-guide.md` (operator) and `user-etherscan-guide.md` (non‑technical) consolidated and cross‑linked.
+  - Tables for module wiring, constructor params, and owner‑only setters mirror README. ([GitHub][1])
+
+- **NatSpec** across public functions/events for Etherscan tooltips.
 
 ---
 
@@ -167,15 +179,15 @@ The README highlights identity enforcement, lists `IdentityRegistry` setters (`s
 
 **Changes if any gaps exist**
 
-* Ensure **all** role‑gated entry points in **JobRegistry** and **ValidationModule** perform `identity.verifyAgent/verifyValidator` and revert otherwise.
-* Ensure ENS **mainnet addresses** are configured (`configureMainnet()`), or allow custom set via owner. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
-* Add/keep **Merkle bypass** + **Additional** allowlists for emergency only, with events.
+- Ensure **all** role‑gated entry points in **JobRegistry** and **ValidationModule** perform `identity.verifyAgent/verifyValidator` and revert otherwise.
+- Ensure ENS **mainnet addresses** are configured (`configureMainnet()`), or allow custom set via owner. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
+- Add/keep **Merkle bypass** + **Additional** allowlists for emergency only, with events.
 
 ---
 
 ## D. Code drops (patch‑style excerpts)
 
-> **Note:** The following snippets are *original* implementations (not verbatim copies) that reproduce the behavior outlined by the verified legacy contract: ENS forward lookup, registry owner, NameWrapper fallback, and Merkle bypass. They are designed for clean Etherscan UX and v2 module boundaries.
+> **Note:** The following snippets are _original_ implementations (not verbatim copies) that reproduce the behavior outlined by the verified legacy contract: ENS forward lookup, registry owner, NameWrapper fallback, and Merkle bypass. They are designed for clean Etherscan UX and v2 module boundaries.
 
 ### D1. Interfaces
 
@@ -349,27 +361,27 @@ function commitValidation(uint256 jobId, bytes32 commitHash, string calldata val
 
 ### Step 2 — Wire modules (Write tab calls)
 
-* On **JobRegistry**: `setModules(validation, stake, reputation, dispute, certificate, feePool, [])`; `setIdentityRegistry(identity)`; `setFeePool(feePool)`; `setTaxPolicy(taxPolicy?)`. ([GitHub][1])
-* On **StakeManager**: `setJobRegistry(jobRegistry)`; `setDisputeModule(dispute)` (if present). ([GitHub][1])
-* On **ValidationModule**: `setJobRegistry(jobRegistry)`; `setIdentityRegistry(identity)`. ([GitHub][1])
-* On **DisputeModule**: `setJobRegistry(jobRegistry)`; `setFeePool(feePool)`; `setTaxPolicy(taxPolicy?)`. ([GitHub][1])
-* On **CertificateNFT**: `setJobRegistry(jobRegistry)`; `setStakeManager(stakeManager)`. ([GitHub][1])
+- On **JobRegistry**: `setModules(validation, stake, reputation, dispute, certificate, feePool, [])`; `setIdentityRegistry(identity)`; `setFeePool(feePool)`; `setTaxPolicy(taxPolicy?)`. ([GitHub][1])
+- On **StakeManager**: `setJobRegistry(jobRegistry)`; `setDisputeModule(dispute)` (if present). ([GitHub][1])
+- On **ValidationModule**: `setJobRegistry(jobRegistry)`; `setIdentityRegistry(identity)`. ([GitHub][1])
+- On **DisputeModule**: `setJobRegistry(jobRegistry)`; `setFeePool(feePool)`; `setTaxPolicy(taxPolicy?)`. ([GitHub][1])
+- On **CertificateNFT**: `setJobRegistry(jobRegistry)`; `setStakeManager(stakeManager)`. ([GitHub][1])
 
 ### Step 3 — ENS identity configuration
 
-* On **IdentityRegistry**: either `configureMainnet()` or call `setENS` + `setNameWrapper` with mainnet addresses, then `setAgentRootNode(namehash(agent.agi.eth))` and `setClubRootNode(namehash(club.agi.eth))`. You may set Merkle roots for emergency allowlist. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
+- On **IdentityRegistry**: either `configureMainnet()` or call `setENS` + `setNameWrapper` with mainnet addresses, then `setAgentRootNode(namehash(agent.agi.eth))` and `setClubRootNode(namehash(club.agi.eth))`. You may set Merkle roots for emergency allowlist. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
 
 > **Tip:** The node for `<label>.agent.agi.eth` is `keccak256(abi.encodePacked(namehash("agent.agi.eth"), keccak256(bytes(label))))`. Same for `club.agi.eth`.
 
 ### Step 4 — Governance handoff
 
-* Transfer ownership/admin to a **multisig/timelock**:
+- Transfer ownership/admin to a **multisig/timelock**:
 
-  * `StakeManager.setGovernance(gov)`; `JobRegistry.setGovernance(gov)`; for the rest, `transferOwnership(gov)`. The README lists recommended owner‑only setters per module; handoff ensures no single key can flip parameters. ([GitHub][1])
+  - `StakeManager.setGovernance(gov)`; `JobRegistry.setGovernance(gov)`; for the rest, `transferOwnership(gov)`. The README lists recommended owner‑only setters per module; handoff ensures no single key can flip parameters. ([GitHub][1])
 
 ### Step 5 — Sanity checks (using Etherscan)
 
-* Read **IdentityRegistry** roots; call `verifyAgent` or `verifyValidator` with a known ENS label. The call returns `(ok, node, viaWrapper, viaMerkle)` and emits `ENSVerified`.
+- Read **IdentityRegistry** roots; call `verifyAgent` or `verifyValidator` with a known ENS label. The call returns `(ok, node, viaWrapper, viaMerkle)` and emits `ENSVerified`.
 
   ```
   verifyAgent("0xAgent", "alice", [])
@@ -380,9 +392,10 @@ function commitValidation(uint256 jobId, bytes32 commitHash, string calldata val
   ```
 
   Job-level flows re‑emit `AgentIdentityVerified` or `ValidatorIdentityVerified` with the same tuple fields.
-* Dry‑run with tiny `$AGIALPHA`:
 
-  * Approve + deposit stake; create job; agent applies; validator commits/reveals; finalize; inspect **events** (`StakeDeposited`, `JobFunded`, `RewardPaid`, `FeesBurned`).
+- Dry‑run with tiny `$AGIALPHA`:
+
+  - Approve + deposit stake; create job; agent applies; validator commits/reveals; finalize; inspect **events** (`StakeDeposited`, `JobFunded`, `RewardPaid`, `FeesBurned`).
 
 ---
 
@@ -404,38 +417,40 @@ function commitValidation(uint256 jobId, bytes32 commitHash, string calldata val
 1. **Wallet & tokens:** Connect a wallet (e.g., MetaMask) on **Ethereum mainnet** and get `$AGIALPHA`.
 2. **ENS identity (if required):**
 
-   * **Agents:** obtain a subdomain under **`agent.agi.eth`** pointing to your wallet.
-   * **Validators:** obtain a subdomain under **`club.agi.eth`**.
-   * If unsure, ask the operator to assign a subdomain to you or temporarily allowlist your address. (Transactions **will revert** without valid identity once enforcement is on.)
-3. **Stake tokens:** On the **StakeManager** contract page → *Write Contract*:
+   - **Agents:** obtain a subdomain under **`agent.agi.eth`** pointing to your wallet.
+   - **Validators:** obtain a subdomain under **`club.agi.eth`**.
+   - If unsure, ask the operator to assign a subdomain to you or temporarily allowlist your address. (Transactions **will revert** without valid identity once enforcement is on.)
 
-   * First go to the **$AGIALPHA token** page → `approve(StakeManager, amount)`.
-   * Then back to **StakeManager** → `depositStake(role, amount)` (role: Agent=0, Validator=1).
+3. **Stake tokens:** On the **StakeManager** contract page → _Write Contract_:
+
+   - First go to the **$AGIALPHA token** page → `approve(StakeManager, amount)`.
+   - Then back to **StakeManager** → `depositStake(role, amount)` (role: Agent=0, Validator=1).
+
 4. **Create a job (for buyers):** On **JobRegistry** → `createJob(reward, "ipfs://...")`, after approving the StakeManager to pull the reward.
 5. **Apply to a job (agents):** On **JobRegistry** → `applyForJob(jobId, "yourLabel", [])`. If your ENS is set correctly, it succeeds (you’ll see an event).
 6. **Validate (validators):** On **ValidationModule** → `commitValidation(...)` then `revealValidation(...)` during their respective windows.
-7. **Finalize and payouts:** After reveal, call `finalize(jobId)` to pay the agent, credit validator rewards, send protocol fees to the FeePool, and **burn** the configured portion of fees.
+7. **Finalize and payouts:** After reveal, the employer calls `finalize(jobId)` to pay the agent, credit validator rewards, send protocol fees to the FeePool, and **burn** the configured portion of fees.
 8. **Dispute (optional):** Use **raiseDispute** if something looks wrong; the operator (or committee) will resolve it on‑chain.
 
-*(ENS Registry + NameWrapper details are standardized across apps; this is why Etherscan‑only operation is viable.)* ([docs.ens.domains][5])
+_(ENS Registry + NameWrapper details are standardized across apps; this is why Etherscan‑only operation is viable.)_ ([docs.ens.domains][5])
 
 ---
 
 ## H. Production‑readiness notes
 
-* **True burns:** All fee/stake burns call the token’s `burn()` and revert if unavailable; this ensures supply reduction is **verifiable** on the token contract (Etherscan total supply).
-* **Owner updatability:** Parameters (`minStake`, windows, fee bps, slashing splits) are owner‑gated; use **multisig/timelock** as owner.
-* **Etherscan UX:** All parameters/events use primitive types; NatSpec is included; no custom ABI structs at write time.
-* **Monitoring:** Because events are structured and indexed, Etherscan/analytics can filter by jobId, user, and flow.
+- **True burns:** All fee/stake burns call the token’s `burn()` and revert if unavailable; this ensures supply reduction is **verifiable** on the token contract (Etherscan total supply).
+- **Owner updatability:** Parameters (`minStake`, windows, fee bps, slashing splits) are owner‑gated; use **multisig/timelock** as owner.
+- **Etherscan UX:** All parameters/events use primitive types; NatSpec is included; no custom ABI structs at write time.
+- **Monitoring:** Because events are structured and indexed, Etherscan/analytics can filter by jobId, user, and flow.
 
 ---
 
 ## I. Documentation & style (repository)
 
-* **Self‑contained** Markdown (no external images required); **consistent headings**; event/param tables; verb‑first imperative for operator steps.
-* README **Deployed Addresses** and **owner‑only setters** kept in a single source of truth (and linked from guides). ([GitHub][1])
-* **NatSpec** coverage for every public function/event; short revert messages.
-* **Linting/formatting:** `solhint`, Prettier Solidity, import order, SPDX headers; CI enforces formatting.
+- **Self‑contained** Markdown (no external images required); **consistent headings**; event/param tables; verb‑first imperative for operator steps.
+- README **Deployed Addresses** and **owner‑only setters** kept in a single source of truth (and linked from guides). ([GitHub][1])
+- **NatSpec** coverage for every public function/event; short revert messages.
+- **Linting/formatting:** `solhint`, Prettier Solidity, import order, SPDX headers; CI enforces formatting.
 
 ---
 
@@ -443,42 +458,42 @@ function commitValidation(uint256 jobId, bytes32 commitHash, string calldata val
 
 **Pre‑flight**
 
-* [ ] Governance address prepared (multisig/timelock).
-* [ ] ENS nodes decided; IdentityRegistry `configureMainnet()`. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
-* [ ] `$AGIALPHA` hardcoded; no token rotation in production. ([GitHub][1])
+- [ ] Governance address prepared (multisig/timelock).
+- [ ] ENS nodes decided; IdentityRegistry `configureMainnet()`. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
+- [ ] `$AGIALPHA` hardcoded; no token rotation in production. ([GitHub][1])
 
 **Post‑deploy**
 
-* [ ] All modules verified on Etherscan. ([Ethereum (ETH) Blockchain Explorer][6])
-* [ ] `JobRegistry` ↔ modules wired; IdentityRegistry set. ([GitHub][1])
-* [ ] Test a full small‑value job: apply → validate → finalize → inspect `FeesBurned`/`RewardPaid` events.
+- [ ] All modules verified on Etherscan. ([Ethereum (ETH) Blockchain Explorer][6])
+- [ ] `JobRegistry` ↔ modules wired; IdentityRegistry set. ([GitHub][1])
+- [ ] Test a full small‑value job: apply → validate → finalize → inspect `FeesBurned`/`RewardPaid` events.
 
 ---
 
 ## K. Appendix — Notes on ENS implementation details
 
-* **Why multiple checks?** Users can set a resolver `addr(node)` to their wallet **or** hold the **wrapped name** (NameWrapper ERC‑1155). A robust on‑chain check tries **resolver**, then **registry owner**, then **NameWrapper**. This matches the behavior implied by the legacy contract’s source layout. ([Ethereum (ETH) Blockchain Explorer][2])
-* **Mainnet addresses** used in `configureMainnet()` are from official docs: ENS Registry and NameWrapper. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
+- **Why multiple checks?** Users can set a resolver `addr(node)` to their wallet **or** hold the **wrapped name** (NameWrapper ERC‑1155). A robust on‑chain check tries **resolver**, then **registry owner**, then **NameWrapper**. This matches the behavior implied by the legacy contract’s source layout. ([Ethereum (ETH) Blockchain Explorer][2])
+- **Mainnet addresses** used in `configureMainnet()` are from official docs: ENS Registry and NameWrapper. ([Ethereum (ETH) Blockchain Explorer][4], [docs.ens.domains][3])
 
 ---
 
 ### L. What changed vs. today (delta summary)
 
-* Runtime identity enforcement is applied at **agent apply** and **validator commit/reveal** (and any other role-gated flows) via a centralized `IdentityRegistry`.
-* `$AGIALPHA` is **single, immutable** token across all modules.
-* Fee/stake **burns** are required to call `burn()`.
-* Events cover **all** $AGIALPHA movements and lifecycle transitions for Etherscan searchability.
-* Etherscan operator + non‑technical user guides consolidated and clarified (browser‑only).
+- Runtime identity enforcement is applied at **agent apply** and **validator commit/reveal** (and any other role-gated flows) via a centralized `IdentityRegistry`.
+- `$AGIALPHA` is **single, immutable** token across all modules.
+- Fee/stake **burns** are required to call `burn()`.
+- Events cover **all** $AGIALPHA movements and lifecycle transitions for Etherscan searchability.
+- Etherscan operator + non‑technical user guides consolidated and clarified (browser‑only).
 
 ---
 
 ## M. References
 
-* **Repo (v2 only, ENS policy, wiring, owner‑only setters, $AGIALPHA address):** AGIJobsv0 README. ([GitHub][1])
-* **Legacy on‑chain contract (outline shows ENS/Resolver/NameWrapper + `_verifyOwnership`):** AGIJobManager @ `0x0178…a477`. ([Ethereum (ETH) Blockchain Explorer][2])
-* **ENS Mainnet Registry address:** docs/Etherscan. ([Ethereum (ETH) Blockchain Explorer][4])
-* **ENS NameWrapper mainnet address:** ENS docs. ([docs.ens.domains][3])
-* **ENS Registry/Resolver concepts:** ENS docs (Registry/Resolution/Resolvers). ([docs.ens.domains][5])
+- **Repo (v2 only, ENS policy, wiring, owner‑only setters, $AGIALPHA address):** AGIJobsv0 README. ([GitHub][1])
+- **Legacy on‑chain contract (outline shows ENS/Resolver/NameWrapper + `_verifyOwnership`):** AGIJobManager @ `0x0178…a477`. ([Ethereum (ETH) Blockchain Explorer][2])
+- **ENS Mainnet Registry address:** docs/Etherscan. ([Ethereum (ETH) Blockchain Explorer][4])
+- **ENS NameWrapper mainnet address:** ENS docs. ([docs.ens.domains][3])
+- **ENS Registry/Resolver concepts:** ENS docs (Registry/Resolution/Resolvers). ([docs.ens.domains][5])
 
 ---
 
@@ -486,29 +501,29 @@ function commitValidation(uint256 jobId, bytes32 commitHash, string calldata val
 
 1. **ENS enforcement**
 
-   * [ ] Add interfaces `IENS`, `IAddrResolver`, `INameWrapper`.
-   * [ ] Implement `IdentityRegistry` with `_verify` as above; events; admin setters; `configureMainnet()`.
-   * [ ] Wire **JobRegistry.applyForJob** and **ValidationModule.commit/reveal** to `IdentityRegistry`.
-   * [ ] Tests: resolver/registry/wrapper/merkle/additional/negative; gas snapshots.
+   - [ ] Add interfaces `IENS`, `IAddrResolver`, `INameWrapper`.
+   - [ ] Implement `IdentityRegistry` with `_verify` as above; events; admin setters; `configureMainnet()`.
+   - [ ] Wire **JobRegistry.applyForJob** and **ValidationModule.commit/reveal** to `IdentityRegistry`.
+   - [ ] Tests: resolver/registry/wrapper/merkle/additional/negative; gas snapshots.
 
 2. **$AGIALPHA‑only**
 
-   * [ ] Add `Constants.sol` with mainnet address + decimals.
-   * [ ] Refactor modules to use `Constants.AGIALPHA`; remove/lock token setters; tests.
-   * [ ] Enforce `burn()` availability; revert otherwise; tests.
+   - [ ] Add `Constants.sol` with mainnet address + decimals.
+   - [ ] Refactor modules to use `Constants.AGIALPHA`; remove/lock token setters; tests.
+   - [ ] Enforce `burn()` availability; revert otherwise; tests.
 
 3. **Events & UX**
 
-   * [ ] Emit events listed in Milestone 2; review NatSpec for all public APIs; add Etherscan‑friendly parameter names.
+   - [ ] Emit events listed in Milestone 2; review NatSpec for all public APIs; add Etherscan‑friendly parameter names.
 
 4. **Staking/Slashing**
 
-   * [ ] Finalize parameters and invariants; add `StakeSlashed`, `FeesBurned`, `DisputeResolved`; tests for distributions and edge cases.
+   - [ ] Finalize parameters and invariants; add `StakeSlashed`, `FeesBurned`, `DisputeResolved`; tests for distributions and edge cases.
 
 5. **Docs & verification**
 
-   * [ ] Update `docs/*` with Etherscan sequences; README tables in sync.
-   * [ ] Verify all contracts on Etherscan and record addresses in a `docs/deployment-addresses.md`.
+   - [ ] Update `docs/*` with Etherscan sequences; README tables in sync.
+   - [ ] Verify all contracts on Etherscan and record addresses in a `docs/deployment-addresses.md`.
 
 ---
 

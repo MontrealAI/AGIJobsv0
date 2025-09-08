@@ -6,11 +6,11 @@ Validators must own a `*.club.agi.eth` subdomain; see
 
 ## Phases and Windows
 
-| Phase    | Validator state   | Allowed window                             | Function                                                                    |
-| -------- | ----------------- | ------------------------------------------ | --------------------------------------------------------------------------- |
-| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`    |
-| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)` |
-| Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)`       |
+| Phase    | Validator state   | Allowed window                             | Function                                                                             |
+| -------- | ----------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`             |
+| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)`          |
+| Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then employer calls `JobRegistry.finalize(jobId)` |
 
 `commitWindow` and `revealWindow` are owner‑configurable via `ValidationModule.setCommitRevealWindows`.
 
@@ -24,7 +24,7 @@ validationModule.commitValidation(jobId, commitHash, '', new bytes32[](0));
 validationModule.revealValidation(jobId, true, salt, '', new bytes32[](0));
 // ... wait for the reveal window to close
 validationModule.finalize(jobId);
-jobRegistry.finalize(jobId);
+jobRegistry.finalize(jobId); // employer only
 ```
 
 ## Script Example

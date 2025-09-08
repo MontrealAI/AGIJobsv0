@@ -1151,6 +1151,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         )
         nonReentrant
     {
+        _finalizeByEmployer(jobId);
+    }
+
+    function _finalizeByEmployer(uint256 jobId) internal {
+        Job storage job = jobs[jobId];
+        if (msg.sender != job.employer && msg.sender != address(governance)) {
+            revert OnlyEmployer();
+        }
         _finalize(jobId);
     }
 
