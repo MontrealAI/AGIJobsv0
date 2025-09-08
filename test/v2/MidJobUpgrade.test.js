@@ -192,6 +192,7 @@ describe('Mid-job module upgrades', function () {
 
     await newValidation.setResult(true);
     await newValidation.finalize(1);
+    await registry.connect(employer).finalize(1);
 
     const after = await registry.jobs(1);
     expect(after.employer).to.equal(before.employer);

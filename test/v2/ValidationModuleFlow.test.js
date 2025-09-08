@@ -93,7 +93,8 @@ async function advance(seconds) {
 
 describe('ValidationModule finalize flows', function () {
   it('records majority approval as success', async () => {
-    const { v1, v2, v3, validation, jobRegistry, select } = await setup();
+    const { v1, v2, v3, validation, jobRegistry, select, employer } =
+      await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes('s1'));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes('s2'));
@@ -197,8 +198,16 @@ describe('ValidationModule finalize flows', function () {
   });
 
   it('slashes validators that do not all reveal', async () => {
-    const { v1, v2, v3, validation, stakeManager, jobRegistry, select } =
-      await setup();
+    const {
+      v1,
+      v2,
+      v3,
+      validation,
+      stakeManager,
+      jobRegistry,
+      select,
+      employer,
+    } = await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes('s1'));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes('s2'));
@@ -237,8 +246,16 @@ describe('ValidationModule finalize flows', function () {
   });
 
   it('allows force finalize after deadline and slashes no-shows', async () => {
-    const { v1, v2, v3, validation, stakeManager, jobRegistry, select } =
-      await setup();
+    const {
+      v1,
+      v2,
+      v3,
+      validation,
+      stakeManager,
+      jobRegistry,
+      select,
+      employer,
+    } = await setup();
     await select(1);
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
