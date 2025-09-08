@@ -12,6 +12,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 - [Identity policy](#identity-policy)
 - [AGIALPHA configuration](#agialpha-configuration)
+- [Fee handling and treasury](#fee-handling-and-treasury)
 - [Deploy defaults](#deploy-defaults)
 - [Etherscan deployment](#etherscan-deployment)
 - [Migrating from legacy](#migrating-from-legacy)
@@ -30,6 +31,10 @@ Agents and validators must own ENS subdomains under `agent.agi.eth` and `club.ag
 ### AGIALPHA configuration
 
 Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol` with the canonical token address, decimals, scaling factor and burn address. Any change to `config/agialpha.json` must be followed by `npm run compile` or the constants check in CI will fail.
+
+### Fee handling and treasury
+
+`JobRegistry` routes protocol fees to `FeePool`, which burns a configurable percentage (`burnPct`) and escrows the remainder for platform stakers. Slashed stakes are split between employers and a governance treasury set via `StakeManager.setTreasury`. `FeePool.setTreasury` forwards any undistributed fees to that treasury. The platform never retains fees or burned tokens; it only routes funds per these settings.
 
 ### Deploy defaults
 

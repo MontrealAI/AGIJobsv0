@@ -19,12 +19,12 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
 
 ## Role Function Quick Reference
 
-| Role      | Required function calls                                                                                                                                                                                                                   | Example amounts (18 decimals)                                |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Employer  | `$AGIALPHA.approve(StakeManager, 1_050000000000000000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000000000000000, uri)`                                                                                       | approve `1_050000000000000000` for a 1‑token reward + 5% fee |
-| Agent     | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000000000000000)`                                                                                                                        | stake `1_000000000000000000`                                 |
+| Role      | Required function calls                                                                                                                                                                                                                               | Example amounts (18 decimals)                                |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Employer  | `$AGIALPHA.approve(StakeManager, 1_050000000000000000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000000000000000, uri)` → `JobRegistry.acknowledgeAndFinalize(jobId)`                                                     | approve `1_050000000000000000` for a 1‑token reward + 5% fee |
+| Agent     | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000000000000000)`                                                                                                                                    | stake `1_000000000000000000`                                 |
 | Validator | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `StakeManager.depositStake(1, 1_000000000000000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt, sub, proof)` | stake `1_000000000000000000`                                 |
-| Disputer  | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner)                                        | dispute fee `1_000000000000000000`                           |
+| Disputer  | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner)                                                    | dispute fee `1_000000000000000000`                           |
 
 ## ENS prerequisites
 
@@ -48,19 +48,25 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
    stakeAndActivate(1000000000000000000)
    ```
 
-4. **distributeFees** – on the `FeePool` contract, call `distributeFees()` to allocate pending fees to stakers.
+4. **acknowledgeAndFinalize** – employers call `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet to settle a validated job and burn the fee portion.
+
+   ```text
+   acknowledgeAndFinalize(1)
+   ```
+
+5. **distributeFees** – on the `FeePool` contract, call `distributeFees()` to allocate pending fees to stakers.
 
    ```text
    distributeFees()
    ```
 
-5. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
+6. **claimRewards** – still in `FeePool`, execute `claimRewards()` to withdraw accrued rewards.
 
    ```text
    claimRewards()
    ```
 
-6. **acknowledgeAndDispute** – if contesting a job, approve the `StakeManager` for the `appealFee` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)`.
+7. **acknowledgeAndDispute** – if contesting a job, approve the `StakeManager` for the `appealFee` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)`.
 
 ### Sample Owner Parameters
 
@@ -138,6 +144,7 @@ Before performing any on-chain action, employers, agents, and validators must ca
 3. In **Read Contract**, confirm **isTaxExempt()** returns `true`.
 4. Call **createJob** with job parameters and escrowed token amount.
 5. Monitor **JobCreated** events to confirm posting.
+6. After validation and any disputes, finalize by calling **acknowledgeAndFinalize(jobId)** from the employer wallet; this releases payments and burns the fee share.
 
 ### Agents
 
@@ -149,7 +156,7 @@ Before performing any on-chain action, employers, agents, and validators must ca
    ```
 
 3. Use **applyForJob** then **submit(jobId, resultHash, uri)** when work is ready.
-4. After validators reveal votes, call **ValidationModule.finalize(jobId)**; the module records the outcome in `JobRegistry`.
+4. After validators reveal votes, wait for the employer to call **JobRegistry.acknowledgeAndFinalize(jobId)** to settle the job.
 
 ### Validators
 
@@ -245,11 +252,12 @@ ValidationModule.setIdentityRegistry(identityRegistry)
 
 Linking enables ENS subdomain checks and membership proofs through a shared registry. Once connected, configure the ENS name and its Merkle root within the registry to reflect permitted subdomains and the current member set.
 
-| Function                                                                                                                                         | Parameters                                                  | Typical Use Case                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ---------------------------------------------------------- |
-| `createJob(string details, uint256 reward)`                                                                                                      | `details` – off-chain URI, `reward` – escrowed token amount | Employer posts a new job and locks payment.                |
-| `acknowledgeTaxPolicy()`                                                                                                                         | none                                                        | Participant confirms tax disclaimer before interacting.    |
-| `setModules(address validation, address stake, address reputation, address dispute, address certificate, address feePool, address[] ackModules)` | module addresses and ack modules                            | Owner wires modules and sets acknowledgement requirements. |
+| Function                                                                                                                                         | Parameters                                                  | Typical Use Case                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ----------------------------------------------------------- |
+| `createJob(string details, uint256 reward)`                                                                                                      | `details` – off-chain URI, `reward` – escrowed token amount | Employer posts a new job and locks payment.                 |
+| `acknowledgeTaxPolicy()`                                                                                                                         | none                                                        | Participant confirms tax disclaimer before interacting.     |
+| `acknowledgeAndFinalize(uint256 jobId)`                                                                                                          | `jobId` – job reference                                     | Employer finalizes a validated job and burns the fee share. |
+| `setModules(address validation, address stake, address reputation, address dispute, address certificate, address feePool, address[] ackModules)` | module addresses and ack modules                            | Owner wires modules and sets acknowledgement requirements.  |
 
 ### StakeManager
 
@@ -264,7 +272,6 @@ Linking enables ENS subdomain checks and membership proofs through a shared regi
 | --------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------- |
 | `commit(uint256 jobId, bytes32 hash)`               | `jobId` – job reference, `hash` – vote commitment | Validator submits a hashed vote during commit window.   |
 | `reveal(uint256 jobId, bool verdict, bytes32 salt)` | jobId, approval verdict, salt                     | Validator reveals vote before the reveal window closes. |
-| `finalize(uint256 jobId)`                           | jobId                                             | Anyone settles a validated job after reveals.           |
 
 ### DisputeModule
 
@@ -288,7 +295,7 @@ Linking enables ENS subdomain checks and membership proofs through a shared regi
 
 ## Operational Warnings
 
-- Gas costs rise with complex calls and network congestion; budget extra ETH for `finalize` or `setModules`.
+- Gas costs rise with complex calls and network congestion; budget extra ETH for `acknowledgeAndFinalize` or `setModules`.
 - Commit and reveal phases have strict windows; missing a window can forfeit rewards or trigger slashing.
 - Raising a dispute requires an `appealFee` bond in the `DisputeModule`; losing an appeal may forfeit this bond.
 

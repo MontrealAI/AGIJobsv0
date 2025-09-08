@@ -113,6 +113,10 @@ Invoke the following setters from the owner account:
 On the **FeePool** contract's Etherscan page use the _Write Contract_ tab and call `setBurnPct` with the new percentage value (e.g. `5` for 5%).
 Source: [`contracts/v2/FeePool.sol`](../contracts/v2/FeePool.sol)
 
+### Fee Handling & Treasury
+
+`JobRegistry` forwards protocol fees to `FeePool`. The pool burns the configured `burnPct` and holds the remainder for platform stakers. `StakeManager.setTreasury` and `FeePool.setTreasury` route any slashed stakes or undistributed fees to a governance-controlled treasury. The platform never keeps fees or burned tokens.
+
 ### Owner Updatability
 
 Almost every operational parameter can be changed by the owner without redeploying. Adjust fees, stake requirements, burn percentages, validation windows or allowlists through `set...` functions such as `JobRegistry.setFeePct`, `StakeManager.setMinStake...` or `ValidationModule.setCommitWindow`.
@@ -132,7 +136,7 @@ Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
   1.  **Post a job** – From an employer wallet approve the reward to `StakeManager` and call `JobRegistry.createJob` or `acknowledgeAndCreateJob` with the reward amount and metadata URI.
   2.  **Stake & apply** – An Agent calls `StakeManager.depositStake` (role `0`) and then `JobRegistry.applyForJob` or `stakeAndApply` supplying any ENS subdomain data or empty values if ENS is disabled.
   3.  **Validate** – Validators stake (role `1`) then call `ValidationModule.commitValidation` followed later by `ValidationModule.revealValidation`.
-  4.  **Finalize** – After the reveal window anyone may call `ValidationModule.finalize`; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
+  4.  **Finalize** – The employer calls `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
   5.  **Dispute** – To test disputes, raise one via `JobRegistry.raiseDispute` and resolve it through `DisputeModule.resolve` (or a moderator/committee if configured).
 - **Final verification.** Confirm each module reports the correct addresses via their `Read` interfaces or run `npm run verify:wiring` to check automatically.
 - **Record keeping.** Log all contract addresses and parameter changes, updating [`deployment-addresses.json`](deployment-addresses.json) and noting changes in commit messages or the changelog whenever any parameter or address changes. Maintain an admin log of post-deployment actions for auditability. For scripted deployments see [`deployment-addresses.md`](deployment-addresses.md).
