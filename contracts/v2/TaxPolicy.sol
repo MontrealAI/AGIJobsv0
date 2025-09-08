@@ -26,6 +26,12 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @notice Tracks which policy version each address has acknowledged.
     mapping(address => uint256) private _acknowledgedVersion;
 
+    /// @notice Addresses allowed to acknowledge the policy for others.
+    mapping(address => bool) private _acknowledgers;
+
+    /// @notice Thrown when an unauthorized address attempts to acknowledge for another user.
+    error NotAcknowledger();
+
     /// @notice Emitted when the tax policy URI is updated.
     event TaxPolicyURIUpdated(string uri);
 
@@ -39,6 +45,11 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @param user Address of the acknowledging participant.
     /// @param version Policy version that was acknowledged.
     event PolicyAcknowledged(address indexed user, uint256 version);
+
+    /// @notice Emitted when an acknowledger permission changes.
+    /// @param acknowledger Address being granted or revoked the role.
+    /// @param allowed True if the address is allowed to acknowledge for others.
+    event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
 
     constructor(string memory uri, string memory ack) Ownable(msg.sender) {
         _policyURI = uri;
@@ -83,6 +94,16 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
         emit PolicyVersionUpdated(_version);
     }
 
+    /// @notice Allow or revoke an acknowledger address.
+    /// @dev When `allowed` is true, `acknowledger` must be a non-zero address representing a valid contract or EOA.
+    /// @param acknowledger Address granted permission to acknowledge for users.
+    /// @param allowed True to allow the address, false to revoke.
+    function setAcknowledger(address acknowledger, bool allowed) external onlyOwner {
+        if (allowed) require(acknowledger != address(0));
+        _acknowledgers[acknowledger] = allowed;
+        emit AcknowledgerUpdated(acknowledger, allowed);
+    }
+
     /// @notice Record that the caller acknowledges the current tax policy.
     /// @dev Records `msg.sender`, so intermediary contracts acknowledge on their
     ///      own behalf. Contracts cannot spoof another user's acknowledgement;
@@ -107,6 +128,7 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
         override
         returns (string memory disclaimer)
     {
+        if (msg.sender != user && !_acknowledgers[msg.sender]) revert NotAcknowledger();
         _acknowledgedVersion[user] = _version;
         emit PolicyAcknowledged(user, _version);
         return _acknowledgement;
