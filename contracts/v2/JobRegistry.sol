@@ -958,8 +958,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     /// @notice Record job outcome after validation.
     /// @dev Only the ValidationModule may call this entry point with the
-    ///      computed result of the commit-reveal process. The employer or
-    ///      governance must call {finalize} separately to settle funds.
+    ///      computed result of the commit-reveal process. This function only
+    ///      updates the job state and emits the completion event; the employer
+    ///      or governance must call {finalize} separately to settle funds.
     /// @param jobId Identifier of the job being validated.
     /// @param success True if validators approved the job.
     function _finalizeAfterValidation(uint256 jobId, bool success) internal {
@@ -1003,8 +1004,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _finalizeAfterValidation(jobId, success);
     }
 
-    /// @notice Record a job outcome when validation quorum is not met.
-    /// @param jobId Identifier of the job
+    /// @notice Record a failed job outcome when validation quorum is not met.
+    /// @dev This function only updates the job state; the employer or
+    ///      governance must later call {finalize} to settle funds and
+    ///      reputation changes.
+    /// @param jobId Identifier of the job being recorded.
     function forceFinalize(uint256 jobId)
         external
         whenNotPaused
@@ -1111,9 +1115,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     /// @notice Resolve a dispute relayed by the dispute module.
-    /// @dev After resolution the job moves to the completed state and must be
-    ///      finalised separately by the employer or governance via
-    ///      {finalize}.
+    /// @dev After resolution this function only records the result, moving the
+    ///      job to the completed state. The employer or governance must call
+    ///      {finalize} separately to settle funds and reputation.
     /// @param jobId Identifier of the disputed job
     /// @param employerWins True if the employer won the dispute
     function resolveDispute(uint256 jobId, bool employerWins)
