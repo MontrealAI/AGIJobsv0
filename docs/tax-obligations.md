@@ -59,8 +59,8 @@ function createJob(uint256 reward, string memory uri)
 ## Platform Owner and Contract
 
 - Collect no fees and never take custody of tokens.
-- Any fee remainder is burned or sent to a community-controlled address;
-  the owner cannot receive leftover tokens.
+- Any fee remainder is burned or forwarded to a community-controlled or
+  dedicated burn address; the owner cannot receive leftover tokens.
 - Do not mint, burn, or transfer tokens for themselves.
 - Never finalize jobs or receive burned tokens; burns only destroy employer deposits.
 - Provide infrastructure without consideration, so no sales/VAT/GST applies.

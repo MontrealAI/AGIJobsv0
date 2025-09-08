@@ -19,7 +19,6 @@ error EtherNotAccepted();
 error InvalidTokenDecimals();
 error ZeroAddress();
 error InvalidStakeManagerVersion();
-error BadBurnAddress();
 error TokenNotBurnable();
 error InvalidTreasury();
 /// @dev Caller is not the governance contract.
@@ -106,9 +105,6 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 _burnPct,
         address _treasury
     ) Ownable(msg.sender) {
-        if (BURN_ADDRESS != address(0)) {
-            revert BadBurnAddress();
-        }
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
@@ -218,13 +214,15 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     }
 
     function _burnFees(address caller, uint256 amt) internal {
-        if (BURN_ADDRESS != address(0)) {
-            revert BadBurnAddress();
-        }
-        try IERC20Burnable(address(token)).burn(amt) {
+        if (BURN_ADDRESS == address(0)) {
+            try IERC20Burnable(address(token)).burn(amt) {
+                emit FeesBurned(caller, amt);
+            } catch {
+                revert TokenNotBurnable();
+            }
+        } else {
+            token.safeTransfer(BURN_ADDRESS, amt);
             emit FeesBurned(caller, amt);
-        } catch {
-            revert TokenNotBurnable();
         }
     }
 

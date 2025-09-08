@@ -55,7 +55,6 @@ error NoUnbond();
 error UnbondLocked();
 error Jailed();
 error PendingPenalty();
-error BurnAddressNotZero();
 error TokenNotBurnable();
 error Unauthorized();
 
@@ -239,7 +238,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
-        if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
         if (_employerSlashPct + _treasurySlashPct == 0) {
@@ -298,11 +296,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev internal helper to burn tokens
     function _burnToken(bytes32 jobId, uint256 amount) internal {
         if (amount == 0) return;
-        if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
-        try IERC20Burnable(AGIALPHA).burn(amount) {
+        if (BURN_ADDRESS == address(0)) {
+            try IERC20Burnable(address(token)).burn(amount) {
+                emit TokensBurned(jobId, amount);
+            } catch {
+                revert TokenNotBurnable();
+            }
+        } else {
+            token.safeTransfer(BURN_ADDRESS, amount);
             emit TokensBurned(jobId, amount);
-        } catch {
-            revert TokenNotBurnable();
         }
     }
 
