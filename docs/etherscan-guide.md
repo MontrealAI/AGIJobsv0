@@ -21,7 +21,7 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
 
 | Role      | Required function calls                                                                                                                                                                                                                               | Example amounts (18 decimals)                                |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Employer  | `$AGIALPHA.approve(StakeManager, 1_050000000000000000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000000000000000, uri)` → `JobRegistry.acknowledgeAndFinalize(jobId)`                                                     | approve `1_050000000000000000` for a 1‑token reward + 5% fee |
+| Employer  | `$AGIALPHA.approve(StakeManager, 1_050000000000000000)` → `JobRegistry.acknowledgeTaxPolicy()` → `JobRegistry.createJob(1_000000000000000000, uri)` → `JobRegistry.acknowledgeAndFinalize(jobId) (employer wallet only)`                                                     | approve `1_050000000000000000` for a 1‑token reward + 5% fee |
 | Agent     | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.stakeAndApply(jobId, 1_000000000000000000)`                                                                                                                                    | stake `1_000000000000000000`                                 |
 | Validator | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `StakeManager.depositStake(1, 1_000000000000000000)` → `ValidationModule.commitValidation(jobId, hash, sub, proof)` → `ValidationModule.revealValidation(jobId, approve, salt, sub, proof)` | stake `1_000000000000000000`                                 |
 | Disputer  | `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` → `JobRegistry.acknowledgeAndDispute(jobId, evidence)` → `DisputeModule.resolve(jobId, uphold, signatures)` (majority moderators or owner)                                                    | dispute fee `1_000000000000000000`                           |
@@ -48,7 +48,7 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
    stakeAndActivate(1000000000000000000)
    ```
 
-4. **acknowledgeAndFinalize** – employers call `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet to settle a validated job and burn the fee portion.
+4. **acknowledgeAndFinalize** – employers must call `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet to settle a validated job and burn the fee portion; the platform never finalizes jobs or collects burned tokens.
 
    ```text
    acknowledgeAndFinalize(1)

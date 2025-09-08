@@ -2,7 +2,7 @@
 
 ## Employer Finalization
 
-After validation succeeds and the reveal and dispute windows close, the employer must finalize the job from their own wallet by calling `acknowledgeAndFinalize(jobId)` on `JobRegistry`. This confirms the tax disclaimer and burns the fee portion of the employer's escrow. The platform never finalizes jobs or collects burned tokens.
+After validation succeeds and the reveal and dispute windows close, only the employer can finalize the job from their own wallet by calling `acknowledgeAndFinalize(jobId)` on `JobRegistry`. This confirms the tax disclaimer and burns the fee portion of the employer's escrow. The platform never initiates finalization nor collects burned tokens.
 
 ## Expiration Handling
 
