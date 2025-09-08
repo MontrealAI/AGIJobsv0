@@ -11,7 +11,7 @@ contract MockENS {
 
 contract MockResolver {
     mapping(bytes32 => address) public addrs;
-    function addr(bytes32 node) external view returns (address payable) { return payable(addrs[node]); }
+    function addr(bytes32 node) external view returns (address) { return addrs[node]; }
     function setAddr(bytes32 node, address a) external { addrs[node] = a; }
 }
 

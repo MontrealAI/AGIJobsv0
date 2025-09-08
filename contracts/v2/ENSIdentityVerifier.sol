@@ -4,15 +4,7 @@ pragma solidity ^0.8.25;
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
-
-/// @title Resolver interface
-/// @notice Minimal interface to query addresses from ENS records.
-interface IResolver {
-    /// @notice Get the address associated with an ENS node.
-    /// @param node The ENS node hash.
-    /// @return resolvedAddress The resolved payable address for `node`.
-    function addr(bytes32 node) external view returns (address payable resolvedAddress);
-}
+import {IAddrResolver} from "./interfaces/IAddrResolver.sol";
 
 /// @title ENSIdentityVerifier
 /// @notice Library providing ENS ownership verification via Merkle proofs,
@@ -46,8 +38,8 @@ library ENSIdentityVerifier {
         if (address(ens) != address(0)) {
             address resolverAddr = ens.resolver(subnode);
             if (resolverAddr != address(0)) {
-                try IResolver(resolverAddr).addr(subnode) returns (
-                    address payable resolvedAddress
+                try IAddrResolver(resolverAddr).addr(subnode) returns (
+                    address resolvedAddress
                 ) {
                     if (resolvedAddress == claimant) {
                         return true;
@@ -93,9 +85,9 @@ library ENSIdentityVerifier {
         if (address(ens) != address(0)) {
             address resolverAddr = ens.resolver(subnode);
             if (resolverAddr != address(0)) {
-                IResolver resolver = IResolver(resolverAddr);
+                IAddrResolver resolver = IAddrResolver(resolverAddr);
                 try resolver.addr(subnode) returns (
-                    address payable resolvedAddress
+                    address resolvedAddress
                 ) {
                     if (resolvedAddress == claimant) {
                         emit OwnershipVerified(claimant, subdomain);

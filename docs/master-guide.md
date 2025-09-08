@@ -836,7 +836,7 @@ function _burnToken(uint256 amount) internal {
 
 ```solidity
 function _ownsEns(bytes32 node, address user) internal view returns (bool) {
-    address res = IResolver(IENS(ENS_REGISTRY).resolver(node)).addr(node);
+    address res = IAddrResolver(IENS(ENS_REGISTRY).resolver(node)).addr(node);
     if (res == user) return true;
     try INameWrapper(NAME_WRAPPER).ownerOf(uint256(node)) returns (address o) { return o == user; } catch {}
     return false;
