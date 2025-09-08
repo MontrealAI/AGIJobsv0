@@ -266,6 +266,53 @@ describe('JobRegistry integration', function () {
     expect(after - before).to.equal(BigInt(reward / 10));
   });
 
+  it('reverts when a non-employer calls finalize', async () => {
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, 'uri');
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, '', []);
+    await validation.connect(owner).setResult(true);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('res'), 'res', '', []);
+    await validation.finalize(jobId);
+    await policy.connect(treasury).acknowledge();
+    await expect(
+      registry.connect(treasury).finalize(jobId)
+    ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
+  });
+
+  it('emits burn and reward events on employer finalization', async () => {
+    await stakeManager.connect(owner).setBurnPct(10);
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, 'uri');
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, '', []);
+    await validation.connect(owner).setResult(true);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('result'), 'result', '', []);
+    await validation.finalize(jobId);
+    const jobKey = ethers.toBeHex(jobId, 32);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(stakeManager, 'RewardPaid')
+      .withArgs(jobKey, agent.address, 90n)
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobKey, 10n);
+  });
+
   it('rejects non-employer finalization after validation', async () => {
     await token
       .connect(employer)
