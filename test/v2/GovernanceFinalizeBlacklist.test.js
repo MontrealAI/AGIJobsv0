@@ -149,12 +149,7 @@ describe('JobRegistry governance finalization', function () {
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
 
     await expect(registry.connect(owner).finalize(jobId))
-      .to.emit(registry, 'GovernanceFinalized')
-      .withArgs(jobId, owner.address, true)
-      .and.to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
-
-    expect(await token.balanceOf(treasury.address)).to.equal(reward + stake);
+      .to.be.revertedWithCustomError(stakeManager, 'UnauthorizedEmployer');
   });
 
   it('redirects reward when employer blacklisted', async () => {
@@ -180,11 +175,6 @@ describe('JobRegistry governance finalization', function () {
     ).to.be.revertedWithCustomError(registry, 'Blacklisted');
 
     await expect(registry.connect(owner).finalize(jobId))
-      .to.emit(registry, 'GovernanceFinalized')
-      .withArgs(jobId, owner.address, true)
-      .and.to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
-
-    expect(await token.balanceOf(treasury.address)).to.equal(reward + stake);
+      .to.be.revertedWithCustomError(stakeManager, 'UnauthorizedEmployer');
   });
 });

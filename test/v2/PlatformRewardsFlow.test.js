@@ -154,7 +154,8 @@ describe('Platform reward flow', function () {
         alice.address,
         REWARD,
         FEE,
-        await feePool.getAddress()
+        await feePool.getAddress(),
+        registrySigner.address
       );
     expect(await token.balanceOf(alice.address)).to.equal(
       aliceBeforeReward + REWARD

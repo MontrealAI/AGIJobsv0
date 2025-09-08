@@ -1203,7 +1203,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     payee,
                     rewardAfterValidator,
                     fee,
-                    pool
+                    pool,
+                    msg.sender
                 );
 
                 if (validatorReward > 0) {
