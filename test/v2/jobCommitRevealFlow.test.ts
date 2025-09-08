@@ -3,6 +3,15 @@ import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA_DECIMALS } from '../../scripts/constants';
 
+function leaf(addr: string, label: string) {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['address', 'bytes32'],
+      [addr, ethers.id(label)]
+    )
+  );
+}
+
 enum Role {
   Agent,
   Validator,
@@ -181,10 +190,7 @@ describe('Commit-reveal job lifecycle', function () {
     );
     await wrapper.setOwner(BigInt(node), agent.address);
 
-    const vLeaf = ethers.solidityPackedKeccak256(
-      ['address'],
-      [validator.address]
-    );
+    const vLeaf = leaf(validator.address, '');
     await identity.setValidatorMerkleRoot(vLeaf);
 
     await token.connect(agent).approve(await stake.getAddress(), stakeAmt);
@@ -258,10 +264,7 @@ describe('Commit-reveal job lifecycle', function () {
       )
     );
     await wrapper.setOwner(BigInt(node), agent.address);
-    const vLeaf = ethers.solidityPackedKeccak256(
-      ['address'],
-      [validator.address]
-    );
+    const vLeaf = leaf(validator.address, '');
     await identity.setValidatorMerkleRoot(vLeaf);
 
     await token.connect(agent).approve(await stake.getAddress(), stakeAmt);
