@@ -293,4 +293,44 @@ describe('job finalization integration', function () {
       .and.to.emit(stakeManager, 'TokensBurned')
       .withArgs(jobKey, burnAmount);
   });
+
+  it('keeps modules tax exempt with zero balances after finalization', async () => {
+    // eliminate fees and validator rewards so modules hold no residual funds
+    await registry.setFeePct(0);
+    await registry.setValidatorRewardPct(0);
+
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), stakeRequired);
+    await stakeManager.connect(agent).depositStake(0, stakeRequired);
+
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, 'uri');
+
+    const jobId = 1;
+    await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
+    await validation.setResult(true);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('result'), 'result', '', []);
+
+    await validation.finalize(jobId);
+    await registry.connect(employer).finalize(jobId);
+
+    expect(await registry.isTaxExempt()).to.equal(true);
+    expect(await stakeManager.isTaxExempt()).to.equal(true);
+    expect(await feePool.isTaxExempt()).to.equal(true);
+
+    expect(await token.balanceOf(await registry.getAddress())).to.equal(0);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(0);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(
+      stakeRequired
+    );
+  });
 });
