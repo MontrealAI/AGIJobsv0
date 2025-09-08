@@ -39,6 +39,8 @@ function createJob(uint256 reward, string memory uri)
 ## Employers
 
 - Provide the token escrow that funds jobs.
+- Only the employer can finalize jobs by calling `acknowledgeAndFinalize(jobId)` from their own wallet.
+- This finalization burns a portion of the employer's deposit; the protocol never initiates or benefits from burns.
 - When a job finalizes, a portion of the employer's deposit is burned.
 - Burning is a disposal of property, so employers record any capital gain or loss on the burned amount based on cost basis versus fair market value at burn.
 - Token payments to agents may be deductible business expenses where applicable.
@@ -58,6 +60,7 @@ function createJob(uint256 reward, string memory uri)
 
 - Collect no fees and never take custody of tokens.
 - Do not mint, burn, or transfer tokens for themselves.
+- Never finalize jobs or receive burned tokens; burns only destroy employer deposits.
 - Provide infrastructure without consideration, so no sales/VAT/GST applies.
 - Therefore incur zero direct, indirect, or theoretical tax liability worldwide.
 - May update the `TaxPolicy` URI and acknowledgement (individually or atomically) but remain tax‑exempt regardless of jurisdiction.
