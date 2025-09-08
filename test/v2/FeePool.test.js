@@ -1,5 +1,50 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, network, artifacts } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
+
+let snapshotId;
+beforeEach(async () => {
+  snapshotId = await network.provider.send('evm_snapshot');
+});
+afterEach(async () => {
+  await network.provider.send('evm_revert', [snapshotId]);
+});
+
+describe('FeePool constructor', function () {
+  it('deploys with burnable token', async () => {
+    const [owner, , , , treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const FeePool = await ethers.getContractFactory(
+      'contracts/v2/FeePool.sol:FeePool'
+    );
+    await expect(
+      FeePool.deploy(ethers.ZeroAddress, 0, treasury.address)
+    ).not.to.be.reverted;
+  });
+
+  it('reverts when token is not burnable', async () => {
+    const [owner, , , , treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20NoBurn.sol:MockERC20NoBurn'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const FeePool = await ethers.getContractFactory(
+      'contracts/v2/FeePool.sol:FeePool'
+    );
+    await expect(
+      FeePool.deploy(ethers.ZeroAddress, 0, treasury.address)
+    ).to.be.revertedWithCustomError(FeePool, 'TokenNotBurnable');
+  });
+});
 
 describe('FeePool', function () {
   let token,
@@ -13,11 +58,17 @@ describe('FeePool', function () {
     treasury,
     registrySigner;
 
-  const { AGIALPHA } = require('../../scripts/constants');
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      'contracts/test/MockERC20.sol:MockERC20',
       AGIALPHA
     );
 

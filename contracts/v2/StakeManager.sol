@@ -238,6 +238,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             revert InvalidTokenDecimals();
         }
         if (BURN_ADDRESS != address(0)) revert BurnAddressNotZero();
+        try IERC20Burnable(AGIALPHA).burn(0) {
+        } catch {
+            revert TokenNotBurnable();
+        }
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
         if (_employerSlashPct + _treasurySlashPct == 0) {

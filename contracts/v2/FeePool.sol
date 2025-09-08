@@ -111,6 +111,10 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
+        try IERC20Burnable(AGIALPHA).burn(0) {
+        } catch {
+            revert TokenNotBurnable();
+        }
         uint256 pct = _burnPct == 0 ? DEFAULT_BURN_PCT : _burnPct;
         if (pct > 100) revert InvalidPercentage();
 

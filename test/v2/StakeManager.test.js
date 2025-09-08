@@ -1,15 +1,82 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, network, artifacts } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
+
+let snapshotId;
+beforeEach(async () => {
+  snapshotId = await network.provider.send('evm_snapshot');
+});
+afterEach(async () => {
+  await network.provider.send('evm_revert', [snapshotId]);
+});
+
+describe('StakeManager constructor', function () {
+  it('deploys with burnable token', async () => {
+    const [owner, , , treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    await expect(
+      StakeManager.deploy(
+        0,
+        50,
+        50,
+        treasury.address,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        owner.address
+      )
+    ).not.to.be.reverted;
+  });
+
+  it('reverts when token is not burnable', async () => {
+    const [owner, , , treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20NoBurn.sol:MockERC20NoBurn'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    await expect(
+      StakeManager.deploy(
+        0,
+        50,
+        50,
+        treasury.address,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        owner.address
+      )
+    ).to.be.revertedWithCustomError(StakeManager, 'TokenNotBurnable');
+  });
+});
 
 describe('StakeManager', function () {
-  const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
   let token, stakeManager, owner, user, employer, treasury;
 
   beforeEach(async () => {
     [owner, user, employer, treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      'contracts/test/MockERC20.sol:MockERC20',
       AGIALPHA
     );
     await token.mint(owner.address, 1000);
