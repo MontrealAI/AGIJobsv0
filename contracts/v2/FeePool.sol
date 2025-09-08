@@ -127,10 +127,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         burnPct = pct;
         emit BurnPctUpdated(pct);
 
-        if (_treasury == msg.sender) {
-            revert InvalidTreasury();
+        if (_treasury == address(0)) {
+            treasury = address(0);
+        } else {
+            if (_treasury == msg.sender) {
+                revert InvalidTreasury();
+            }
+            treasury = _treasury;
         }
-        treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
 
@@ -186,10 +190,10 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         amount -= burnAmount;
 
         uint256 total = stakeManager.totalStake(rewardRole);
-        bool sendToTreasury = treasury != address(0) && treasury != owner();
+        bool nonPlatformTreasury = treasury != address(0) && treasury != owner();
         if (total == 0) {
             if (amount > 0) {
-                if (sendToTreasury) {
+                if (nonPlatformTreasury) {
                     token.safeTransfer(treasury, amount);
                 } else {
                     _burnFees(msg.sender, amount);
@@ -204,7 +208,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
         uint256 dust = amount - accounted;
         if (dust > 0) {
-            if (sendToTreasury) {
+            if (nonPlatformTreasury) {
                 token.safeTransfer(treasury, dust);
             } else {
                 _burnFees(msg.sender, dust);
