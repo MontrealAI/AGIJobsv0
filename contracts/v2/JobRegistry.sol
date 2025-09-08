@@ -956,10 +956,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         submit(jobId, resultHash, resultURI, subdomain, proof);
     }
 
-    /// @notice Finalize job outcome after validation.
+    /// @notice Record job outcome after validation.
     /// @dev Only the ValidationModule may call this entry point with the
-    ///      computed result of the commit-reveal process.
-    /// @param jobId Identifier of the job being finalised.
+    ///      computed result of the commit-reveal process. The employer or
+    ///      governance must call {finalize} separately to settle funds.
+    /// @param jobId Identifier of the job being validated.
     /// @param success True if validators approved the job.
     function _finalizeAfterValidation(uint256 jobId, bool success) internal {
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
@@ -968,9 +969,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = success;
         job.state = success ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, success);
-        if (success) {
-            _finalize(jobId);
-        }
     }
 
     /// @param jobId Identifier of the job being finalised.
@@ -1005,7 +1003,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _finalizeAfterValidation(jobId, success);
     }
 
-    /// @notice Force finalize a job when validation quorum is not met
+    /// @notice Record a job outcome when validation quorum is not met.
     /// @param jobId Identifier of the job
     function forceFinalize(uint256 jobId)
         external
@@ -1025,7 +1023,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = false;
         job.state = State.Completed;
         emit JobCompleted(jobId, false);
-        _finalize(jobId);
     }
 
     /// @notice Receive validation outcome from the ValidationModule
@@ -1114,10 +1111,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     /// @notice Resolve a dispute relayed by the dispute module.
-    /// @dev When the employer wins the dispute the job is immediately
-    ///      finalised – escrowed funds are returned to the employer and the
-    ///      agent's stake is slashed. If the agent wins, the job moves back to
-    ///      the completed state so it can be finalised normally via
+    /// @dev After resolution the job moves to the completed state and must be
+    ///      finalised separately by the employer or governance via
     ///      {finalize}.
     /// @param jobId Identifier of the disputed job
     /// @param employerWins True if the employer won the dispute
@@ -1133,7 +1128,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = !employerWins;
         job.state = State.Completed;
         emit DisputeResolved(jobId, employerWins);
-        _finalize(jobId);
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.

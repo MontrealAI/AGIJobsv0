@@ -93,7 +93,8 @@ async function advance(seconds) {
 
 describe('ValidationModule finalize flows', function () {
   it('records majority approval as success', async () => {
-    const { v1, v2, v3, validation, jobRegistry, select } = await setup();
+    const { v1, v2, v3, validation, jobRegistry, select, employer } =
+      await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes('s1'));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes('s2'));
@@ -120,6 +121,7 @@ describe('ValidationModule finalize flows', function () {
     await validation.connect(v3).revealValidation(1, false, salt3, '', []);
     await advance(61);
     await validation.finalize(1);
+    await jobRegistry.connect(employer).finalize(1);
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(6); // Finalized
     expect(job.success).to.equal(true);
@@ -196,8 +198,16 @@ describe('ValidationModule finalize flows', function () {
   });
 
   it('slashes validators that do not all reveal', async () => {
-    const { v1, v2, v3, validation, stakeManager, jobRegistry, select } =
-      await setup();
+    const {
+      v1,
+      v2,
+      v3,
+      validation,
+      stakeManager,
+      jobRegistry,
+      select,
+      employer,
+    } = await setup();
     await select(1);
     const salt1 = ethers.keccak256(ethers.toUtf8Bytes('s1'));
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes('s2'));
@@ -236,12 +246,21 @@ describe('ValidationModule finalize flows', function () {
   });
 
   it('allows force finalize after deadline and slashes no-shows', async () => {
-    const { v1, v2, v3, validation, stakeManager, jobRegistry, select } =
-      await setup();
+    const {
+      v1,
+      v2,
+      v3,
+      validation,
+      stakeManager,
+      jobRegistry,
+      select,
+      employer,
+    } = await setup();
     await select(1);
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
     await validation.forceFinalize(1);
+    await jobRegistry.connect(employer).finalize(1);
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(6); // Finalized
     expect(await stakeManager.stakeOf(v1.address, 1)).to.equal(
@@ -281,6 +300,7 @@ describe('ValidationModule finalize flows', function () {
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
     await validation.forceFinalize(1);
+    await jobRegistry.connect(employer).finalize(1);
     const isV4Selected = chosen.includes(v4.address);
     const afterV4 = await stakeManager.stakeOf(v4.address, 1);
     if (isV4Selected) {

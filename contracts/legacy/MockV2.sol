@@ -325,9 +325,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         require(job.status == Status.Submitted, "state");
         job.success = success;
         job.status = success ? Status.Completed : Status.Disputed;
-        if (success) {
-            finalize(jobId);
-        } else {
+        if (!success) {
             emit JobDisputed(jobId, msg.sender);
         }
     }
@@ -348,8 +346,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         Job storage job = _jobs[jobId];
         require(job.status == Status.Submitted, "state");
         job.success = false;
-        job.status = Status.Finalized;
-        emit JobFinalized(jobId, job.agent);
+        job.status = Status.Completed;
     }
 
     function dispute(uint256 jobId, bytes32 evidenceHash) public override {
@@ -378,25 +375,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         Job storage job = _jobs[jobId];
         require(job.status == Status.Disputed, "state");
         job.success = !employerWins;
-        job.status = Status.Finalized;
-        if (address(_stakeManager) != address(0) && job.reward > 0) {
-            if (employerWins) {
-                _stakeManager.release(job.employer, job.reward);
-                if (address(reputationEngine) != address(0)) {
-                    reputationEngine.subtract(job.agent, 1);
-                }
-            } else {
-                _stakeManager.release(job.agent, job.reward);
-                if (address(reputationEngine) != address(0)) {
-                    reputationEngine.add(job.agent, 1);
-                }
-                if (address(certificateNFT) != address(0)) {
-                    certificateNFT.mint(job.agent, jobId, job.uriHash);
-                }
-            }
-        }
+        job.status = Status.Completed;
         emit DisputeResolved(jobId, employerWins);
-        emit JobFinalized(jobId, job.agent);
     }
 
     function finalize(uint256 jobId) public override {
@@ -404,12 +384,20 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         require(job.status == Status.Completed, "state");
         job.status = Status.Finalized;
         if (address(_stakeManager) != address(0) && job.reward > 0) {
-            _stakeManager.release(job.agent, job.reward);
+            address recipient = job.success ? job.agent : job.employer;
+            _stakeManager.release(recipient, job.reward);
+            if (!job.success) {
+                _stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, recipient);
+            }
         }
         if (address(reputationEngine) != address(0)) {
-            reputationEngine.add(job.agent, 1);
+            if (job.success) {
+                reputationEngine.add(job.agent, 1);
+            } else {
+                reputationEngine.subtract(job.agent, 1);
+            }
         }
-        if (address(certificateNFT) != address(0)) {
+        if (job.success && address(certificateNFT) != address(0)) {
             certificateNFT.mint(job.agent, jobId, job.uriHash);
         }
         emit JobFinalized(jobId, job.agent);

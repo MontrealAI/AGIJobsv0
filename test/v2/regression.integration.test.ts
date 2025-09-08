@@ -191,6 +191,7 @@ describe('regression scenarios', function () {
     await validation.connect(v1).revealValidation(1, false, salt, '', []);
     await time.increase(2);
     await validation.finalize(1);
+    await registry.connect(employer).finalize(1);
 
     const deadline2 = BigInt((await time.latest()) + 3600);
     await registry
