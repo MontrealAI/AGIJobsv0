@@ -102,6 +102,16 @@ contract FeePoolTest {
         require(token.balanceOf(bob) == bobExpected, "bob claim");
     }
 
+    function testOwnerReceivesNoRewards() public {
+        setUp();
+        token.mint(address(feePool), 1 * TOKEN);
+        vm.prank(address(stakeManager));
+        feePool.depositFee(1 * TOKEN);
+        feePool.distributeFees();
+        feePool.claimRewards();
+        require(token.balanceOf(address(this)) == 0, "owner claim");
+    }
+
     function testSupplyDecreasesAfterBurn() public {
         setUp();
         token.mint(address(feePool), TOKEN);
