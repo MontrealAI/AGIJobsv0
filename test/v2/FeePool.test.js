@@ -329,3 +329,60 @@ describe('FeePool', function () {
     ).to.be.revertedWithCustomError(feePool, 'InvalidStakeManagerVersion');
   });
 });
+
+describe('FeePool with no stakers', function () {
+  let token, stakeManager, feePool, owner, contributor, treasury;
+  const { AGIALPHA } = require('../../scripts/constants');
+
+  beforeEach(async () => {
+    [owner, contributor, , , treasury] = await ethers.getSigners();
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
+
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    stakeManager = await StakeManager.deploy(
+      0,
+      100,
+      0,
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      owner.address
+    );
+    await stakeManager.connect(owner).setMinStake(1);
+
+    const FeePool = await ethers.getContractFactory(
+      'contracts/v2/FeePool.sol:FeePool'
+    );
+    feePool = await FeePool.deploy(
+      await stakeManager.getAddress(),
+      0,
+      treasury.address
+    );
+    await feePool.setBurnPct(0);
+  });
+
+  it('burns or forwards fees when no stakers', async () => {
+    await token.mint(contributor.address, 100);
+    await token.connect(contributor).approve(await feePool.getAddress(), 100);
+    await feePool.connect(contributor).contribute(100);
+
+    expect(await feePool.pendingFees()).to.equal(100n);
+
+    const treasuryBefore = await token.balanceOf(treasury.address);
+    const supplyBefore = await token.totalSupply();
+
+    await feePool.connect(owner).distributeFees();
+
+    expect(await feePool.pendingFees()).to.equal(0);
+    expect(await token.balanceOf(owner.address)).to.equal(0n);
+    expect(
+      (await token.balanceOf(treasury.address)) - treasuryBefore
+    ).to.equal(100n);
+    expect(await token.totalSupply()).to.equal(supplyBefore);
+  });
+});
