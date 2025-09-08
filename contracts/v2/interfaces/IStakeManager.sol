@@ -102,7 +102,8 @@ interface IStakeManager {
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool feePool
+        IFeePool feePool,
+        bool byGovernance
     ) external;
 
     /// @notice distribute validator rewards equally among selected validators

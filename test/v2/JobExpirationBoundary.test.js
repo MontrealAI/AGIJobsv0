@@ -149,7 +149,7 @@ describe('Job expiration boundary', function () {
     await registry.connect(agent).applyForJob(jobId, '', []);
     await time.increase(deadline + grace - 1 - (await time.latest()));
     await expect(
-      registry.connect(treasury).cancelExpiredJob(jobId)
+      registry.connect(employer).cancelExpiredJob(jobId)
     ).to.be.revertedWithCustomError(registry, 'DeadlineNotReached');
   });
 
@@ -164,9 +164,9 @@ describe('Job expiration boundary', function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, '', []);
     await time.increase(deadline + grace - (await time.latest()));
-    await expect(registry.connect(treasury).cancelExpiredJob(jobId))
+    await expect(registry.connect(employer).cancelExpiredJob(jobId))
       .to.emit(registry, 'JobExpired')
-      .withArgs(jobId, treasury.address)
+      .withArgs(jobId, employer.address)
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 

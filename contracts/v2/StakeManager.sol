@@ -983,15 +983,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param reward base amount paid to the agent with 18 decimals before AGI bonus
     /// @param fee amount forwarded to the fee pool with 18 decimals
     /// @param _feePool fee pool contract receiving protocol fees
+    /// @param byGovernance true when governance is forcing finalization
     function finalizeJobFunds(
         bytes32 jobId,
         address employer,
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool _feePool
+        IFeePool _feePool,
+        bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        if (employer != tx.origin) revert Unauthorized();
+        if (!byGovernance && employer != tx.origin) revert Unauthorized();
         emit JobFundsFinalized(jobId, employer);
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;

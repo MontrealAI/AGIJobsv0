@@ -6,4 +6,4 @@ After validation succeeds and the reveal and dispute windows close, only the emp
 
 ## Expiration Handling
 
-When an assigned job misses its deadline without submission, anyone may call `cancelExpiredJob` to finalize the job. The caller does not need to be the employer, agent, or a tax policy acknowledger—**any address can trigger expiration handling** once the deadline has passed.
+When an assigned job misses its deadline without submission, only the employer or governance may call `cancelExpiredJob` to finalize the job. This keeps the burn under the employer's control while still allowing governance to handle edge cases such as blacklisted participants.

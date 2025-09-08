@@ -1204,11 +1204,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 }
                 stakeManager.finalizeJobFunds(
                     jobKey,
-                    tx.origin,
+                    job.employer,
                     payee,
                     rewardAfterValidator,
                     fee,
-                    pool
+                    pool,
+                    isGov
                 );
 
                 if (validatorReward > 0) {
@@ -1377,7 +1378,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     /// @notice Cancel an assigned job that failed to submit before its deadline.
-    /// Any address may trigger this after the deadline has passed.
+    /// @dev Only the employer or governance may trigger this after the deadline.
     /// @param jobId Identifier of the job to cancel.
     function cancelExpiredJob(uint256 jobId)
         public
@@ -1386,6 +1387,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         nonReentrant
     {
         Job storage job = jobs[jobId];
+        if (msg.sender != job.employer && msg.sender != address(governance)) {
+            revert OnlyEmployer();
+        }
         job.success = false;
         job.state = State.Completed;
         _finalize(jobId);

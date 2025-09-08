@@ -137,7 +137,7 @@ describe('Job expiration', function () {
       .approve(await stakeManager.getAddress(), reward);
   });
 
-  it('allows anyone to expire job after deadline and refunds employer', async () => {
+  it('only employer can expire job after deadline and refunds employer', async () => {
     const deadline = (await time.latest()) + 100;
     const specHash = ethers.id('spec');
     await registry
@@ -146,9 +146,12 @@ describe('Job expiration', function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, '', []);
     await time.increase(200);
-    await expect(registry.connect(treasury).cancelExpiredJob(jobId))
+    await expect(
+      registry.connect(treasury).cancelExpiredJob(jobId)
+    ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
+    await expect(registry.connect(employer).cancelExpiredJob(jobId))
       .to.emit(registry, 'JobExpired')
-      .withArgs(jobId, treasury.address)
+      .withArgs(jobId, employer.address)
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
@@ -169,7 +172,7 @@ describe('Job expiration', function () {
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, '', []);
     await expect(
-      registry.connect(treasury).cancelExpiredJob(jobId)
+      registry.connect(employer).cancelExpiredJob(jobId)
     ).to.be.revertedWithCustomError(registry, 'DeadlineNotReached');
   });
 
@@ -184,12 +187,12 @@ describe('Job expiration', function () {
     await registry.connect(agent).applyForJob(jobId, '', []);
     await time.increase(120);
     await expect(
-      registry.connect(treasury).cancelExpiredJob(jobId)
+      registry.connect(employer).cancelExpiredJob(jobId)
     ).to.be.revertedWithCustomError(registry, 'DeadlineNotReached');
     await time.increase(60);
-    await expect(registry.connect(treasury).cancelExpiredJob(jobId))
+    await expect(registry.connect(employer).cancelExpiredJob(jobId))
       .to.emit(registry, 'JobExpired')
-      .withArgs(jobId, treasury.address)
+      .withArgs(jobId, employer.address)
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
   });

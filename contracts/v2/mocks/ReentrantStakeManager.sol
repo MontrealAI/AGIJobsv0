@@ -43,7 +43,7 @@ contract ReentrantStakeManager is IStakeManager {
     function releaseReward(bytes32, address, uint256) external override {}
     function releaseStake(address, uint256) external override {}
     function release(address, uint256) external override {}
-    function finalizeJobFunds(bytes32, address, address, uint256, uint256, IFeePool) external override {}
+    function finalizeJobFunds(bytes32, address, address, uint256, uint256, IFeePool, bool) external override {}
     function distributeValidatorRewards(bytes32, uint256) external override {}
     function setDisputeModule(address) external override {}
     function setModules(address, address) external override {}
