@@ -21,6 +21,7 @@ error ZeroAddress();
 error InvalidStakeManagerVersion();
 error BadBurnAddress();
 error TokenNotBurnable();
+error InvalidTreasury();
 /// @dev Caller is not the governance contract.
 error NotGovernance();
 /// @dev Caller is neither the owner nor the designated pauser.
@@ -98,8 +99,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @param _stakeManager StakeManager tracking staker balances.
     /// @param _burnPct Percentage of each fee to burn (0-100). Defaults to
     /// DEFAULT_BURN_PCT when set to zero.
-    /// @param _treasury Address receiving rounding dust. Defaults to deployer
-    /// when zero address.
+    /// @param _treasury Address receiving rounding dust. Must be explicitly
+    /// provided and may be the zero address to burn residual fees.
     constructor(
         IStakeManager _stakeManager,
         uint256 _burnPct,
@@ -126,8 +127,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         burnPct = pct;
         emit BurnPctUpdated(pct);
 
-        treasury = _treasury == address(0) ? msg.sender : _treasury;
-        emit TreasuryUpdated(treasury);
+        if (_treasury == msg.sender) {
+            revert InvalidTreasury();
+        }
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     modifier onlyStakeManager() {
@@ -183,9 +187,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         }
         uint256 distribute = amount - burnAmount;
         uint256 total = stakeManager.totalStake(rewardRole);
+        bool hasTreasury = treasury != address(0) && treasury != owner();
         if (total == 0) {
-            if (distribute > 0 && treasury != address(0)) {
-                token.safeTransfer(treasury, distribute);
+            if (distribute > 0) {
+                if (hasTreasury) {
+                    token.safeTransfer(treasury, distribute);
+                } else {
+                    _burnFees(msg.sender, distribute);
+                }
             }
             emit FeesDistributed(0);
             return;
@@ -195,8 +204,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         cumulativePerToken += perToken;
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
         uint256 dust = distribute - accounted;
-        if (dust > 0 && treasury != address(0)) {
-            token.safeTransfer(treasury, dust);
+        if (dust > 0) {
+            if (hasTreasury) {
+                token.safeTransfer(treasury, dust);
+            } else {
+                _burnFees(msg.sender, dust);
+            }
         }
         emit FeesDistributed(accounted);
     }

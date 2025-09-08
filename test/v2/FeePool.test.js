@@ -218,6 +218,37 @@ describe('FeePool', function () {
     expect(await token.balanceOf(owner.address)).to.equal(before);
   });
 
+  it('burns fees when no stakers are present', async () => {
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    const emptyStakeManager = await StakeManager.deploy(
+      0,
+      100,
+      0,
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      owner.address
+    );
+    const FeePool = await ethers.getContractFactory(
+      'contracts/v2/FeePool.sol:FeePool'
+    );
+    const burnPool = await FeePool.deploy(
+      await emptyStakeManager.getAddress(),
+      0,
+      ethers.ZeroAddress
+    );
+    await token.connect(user1).approve(await burnPool.getAddress(), 100);
+    await burnPool.connect(user1).contribute(100);
+    const supplyBefore = await token.totalSupply();
+    const ownerBalBefore = await token.balanceOf(owner.address);
+    await burnPool.connect(owner).distributeFees();
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(100n);
+    expect(await token.balanceOf(owner.address)).to.equal(ownerBalBefore);
+  });
+
   it('owner stakeAndActivate(0) yields zero score, weight and payout', async () => {
     const Rep = await ethers.getContractFactory(
       'contracts/v2/ReputationEngine.sol:ReputationEngine'

@@ -48,7 +48,7 @@ contract FeePoolTest {
         token = TestToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(stakeManager, 0, address(this));
+        feePool = new FeePool(stakeManager, 0, address(0));
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
         stakeManager.setStake(bob, IStakeManager.Role.Platform, 2 * TOKEN);
     }
@@ -62,8 +62,12 @@ contract FeePoolTest {
         uint256 expected = feePool.ACCUMULATOR_SCALE() / 3;
         require(feePool.cumulativePerToken() == expected, "acc");
         uint256 burnAmount = (TOKEN * feePool.burnPct()) / 100;
+        uint256 distribute = TOKEN - burnAmount;
+        uint256 total = stakeManager.totalStake(IStakeManager.Role.Platform);
+        uint256 perToken = (distribute * feePool.ACCUMULATOR_SCALE()) / total;
+        uint256 accounted = (perToken * total) / feePool.ACCUMULATOR_SCALE();
         require(
-            token.balanceOf(address(feePool)) == TOKEN - burnAmount,
+            token.balanceOf(address(feePool)) == accounted,
             "bal"
         );
     }
@@ -121,7 +125,7 @@ contract FeePoolTest {
         NonBurnableToken nbToken = NonBurnableToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(stakeManager, 0, address(this));
+        feePool = new FeePool(stakeManager, 0, address(0));
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
         nbToken.mint(address(feePool), TOKEN);
         vm.prank(address(stakeManager));
@@ -143,12 +147,12 @@ contract FeePoolTest {
         feePool.claimRewards();
         require(token.balanceOf(alice) == 316_666_666_666_666_666, "alice");
         require(token.balanceOf(bob) == 633_333_333_333_333_333, "bob");
-        // one wei of rounding dust remains in the contract after burning
         uint256 distribute = TOKEN - ((TOKEN * feePool.burnPct()) / 100);
         require(
-            token.balanceOf(alice) + token.balanceOf(bob) == distribute - 1,
+            token.balanceOf(alice) + token.balanceOf(bob) == distribute,
             "sum"
         );
+        require(token.balanceOf(address(feePool)) == 0, "dust");
     }
 
     function testDepositFeePausedReverts() public {
@@ -169,6 +173,32 @@ contract FeePoolTest {
         vm.expectRevert();
         feePool.contribute(TOKEN);
         vm.stopPrank();
+    }
+
+    function testConstructorTreasuryCannotBeOwner() public {
+        TestToken impl = new TestToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = TestToken(AGIALPHA);
+        stakeManager = new MockStakeManager();
+        vm.expectRevert(InvalidTreasury.selector);
+        new FeePool(stakeManager, 0, address(this));
+    }
+
+    function testNoStakersBurnsFees() public {
+        TestToken impl = new TestToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = TestToken(AGIALPHA);
+        stakeManager = new MockStakeManager();
+        stakeManager.setJobRegistry(jobRegistry);
+        feePool = new FeePool(stakeManager, 0, address(0));
+        token.mint(address(feePool), TOKEN);
+        uint256 supplyBefore = token.totalSupply();
+        vm.prank(address(stakeManager));
+        feePool.depositFee(TOKEN);
+        feePool.distributeFees();
+        uint256 supplyAfter = token.totalSupply();
+        require(supplyBefore - supplyAfter == TOKEN, "burn all");
+        require(token.balanceOf(address(this)) == 0, "owner bal");
     }
 
     function testDistributeFeesPausedReverts() public {
