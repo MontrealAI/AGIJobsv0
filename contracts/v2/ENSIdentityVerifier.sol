@@ -22,16 +22,20 @@ library ENSIdentityVerifier {
         address claimant,
         string memory subdomain,
         bytes32[] calldata proof
-    ) internal view returns (bool) {
+    )
+        internal
+        view
+        returns (bool ok, bytes32 subnode, bool viaWrapper, bool viaMerkle)
+    {
         bytes32 labelHash = keccak256(bytes(subdomain));
+        subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
         if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
-            return true;
+            return (true, subnode, false, true);
         }
-        bytes32 subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
             if (actualOwner == claimant) {
-                return true;
+                return (true, subnode, true, false);
             }
         } catch {}
 
@@ -42,12 +46,12 @@ library ENSIdentityVerifier {
                     address resolvedAddress
                 ) {
                     if (resolvedAddress == claimant) {
-                        return true;
+                        return (true, subnode, false, false);
                     }
                 } catch {}
             }
         }
-        return false;
+        return (false, subnode, false, false);
     }
 
     function verifyOwnership(
@@ -58,19 +62,22 @@ library ENSIdentityVerifier {
         address claimant,
         string memory subdomain,
         bytes32[] calldata proof
-    ) internal returns (bool) {
+    )
+        internal
+        returns (bool ok, bytes32 subnode, bool viaWrapper, bool viaMerkle)
+    {
         bytes32 labelHash = keccak256(bytes(subdomain));
+        subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
         if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
             emit OwnershipVerified(claimant, subdomain);
-            return true;
+            return (true, subnode, false, true);
         }
-        bytes32 subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         bool eventEmitted;
         try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
             if (actualOwner == claimant) {
                 emit OwnershipVerified(claimant, subdomain);
-                return true;
+                return (true, subnode, true, false);
             }
         } catch Error(string memory reason) {
             emit RecoveryInitiated(reason);
@@ -91,7 +98,7 @@ library ENSIdentityVerifier {
                 ) {
                     if (resolvedAddress == claimant) {
                         emit OwnershipVerified(claimant, subdomain);
-                        return true;
+                        return (true, subnode, false, false);
                     }
                     if (!eventEmitted) {
                         emit RecoveryInitiated("Resolver address mismatch.");
@@ -121,7 +128,7 @@ library ENSIdentityVerifier {
         if (!eventEmitted) {
             emit RecoveryInitiated("Ownership verification failed.");
         }
-        return false;
+        return (false, subnode, false, false);
     }
 }
 

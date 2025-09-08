@@ -44,11 +44,25 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         return true;
     }
 
-    function verifyAgent(address, string calldata, bytes32[] calldata) external pure returns (bool) {
-        return true;
+    function verifyAgent(
+        address,
+        string calldata,
+        bytes32[] calldata
+    )
+        external
+        pure
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
+        node = bytes32(0);
+        ok = true;
     }
 
-    function verifyValidator(address, string calldata, bytes32[] calldata) external returns (bool) {
+    function verifyValidator(
+        address,
+        string calldata,
+        bytes32[] calldata
+    ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
+        node = bytes32(0);
         if (attack == Attack.Commit) {
             attack = Attack.None;
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
@@ -56,7 +70,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
             attack = Attack.None;
             validation.revealValidation(jobId, approve, salt, "", new bytes32[](0));
         }
-        return true;
+        ok = true;
     }
 
     // profile metadata - no-ops

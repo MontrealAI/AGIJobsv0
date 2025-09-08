@@ -51,6 +51,13 @@ contract IdentityRegistry is Ownable2Step {
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
     event AdditionalAgentUsed(address indexed agent, string subdomain);
     event AdditionalValidatorUsed(address indexed validator, string subdomain);
+    event ENSVerified(
+        address indexed user,
+        bytes32 indexed node,
+        string label,
+        bool viaWrapper,
+        bool viaMerkle
+    );
     event AgentTypeUpdated(address indexed agent, AgentType agentType);
     /// @notice Emitted when an agent updates their profile metadata.
     event AgentProfileUpdated(address indexed agent, string uri);
@@ -230,7 +237,8 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof,
         string calldata uri
     ) external {
-        if (!verifyAgent(msg.sender, subdomain, proof)) {
+        (bool ok, , , ) = this.verifyAgent(msg.sender, subdomain, proof);
+        if (!ok) {
             revert UnauthorizedAgent();
         }
         agentProfileURI[msg.sender] = uri;
@@ -269,7 +277,7 @@ contract IdentityRegistry is Ownable2Step {
                 return true;
             }
         }
-        return
+        (bool ok, , , ) =
             ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
@@ -279,6 +287,7 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain,
                 proof
             );
+        return ok;
     }
 
     function isAuthorizedValidator(
@@ -309,7 +318,7 @@ contract IdentityRegistry is Ownable2Step {
                 return true;
             }
         }
-        return
+        (bool ok, , , ) =
             ENSIdentityVerifier.checkOwnership(
                 ens,
                 nameWrapper,
@@ -319,92 +328,94 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain,
                 proof
             );
+        return ok;
     }
-
     function verifyAgent(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) public returns (bool) {
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
         ) {
-            return false;
+            return (false, bytes32(0), false, false);
         }
+        node =
+            keccak256(abi.encodePacked(agentRootNode, keccak256(bytes(subdomain))));
         if (additionalAgents[claimant]) {
             emit AdditionalAgentUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-            return true;
+            ok = true;
+        } else if (address(attestationRegistry) != address(0) && attestationRegistry.isAttested(
+                node,
+                AttestationRegistry.Role.Agent,
+                claimant
+            )) {
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            ok = true;
+        } else {
+            (ok, node, viaWrapper, viaMerkle) =
+                ENSIdentityVerifier.verifyOwnership(
+                    ens,
+                    nameWrapper,
+                    agentRootNode,
+                    agentMerkleRoot,
+                    claimant,
+                    subdomain,
+                    proof
+                );
         }
-        if (address(attestationRegistry) != address(0)) {
-            bytes32 node = keccak256(
-                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
-            );
-            if (
-                attestationRegistry.isAttested(
-                    node,
-                    AttestationRegistry.Role.Agent,
-                    claimant
-                )
-            ) {
-                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-                return true;
-            }
+        if (ok) {
+            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
         }
-        return
-            ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                agentRootNode,
-                agentMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
     }
 
     function verifyValidator(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
-    ) external returns (bool) {
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
         if (
             address(reputationEngine) != address(0) &&
             reputationEngine.isBlacklisted(claimant)
         ) {
-            return false;
+            return (false, bytes32(0), false, false);
         }
+        node =
+            keccak256(abi.encodePacked(clubRootNode, keccak256(bytes(subdomain))));
         if (additionalValidators[claimant]) {
             emit AdditionalValidatorUsed(claimant, subdomain);
             emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-            return true;
+            ok = true;
+        } else if (address(attestationRegistry) != address(0) && attestationRegistry.isAttested(
+                node,
+                AttestationRegistry.Role.Validator,
+                claimant
+            )) {
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            ok = true;
+        } else {
+            (ok, node, viaWrapper, viaMerkle) =
+                ENSIdentityVerifier.verifyOwnership(
+                    ens,
+                    nameWrapper,
+                    clubRootNode,
+                    validatorMerkleRoot,
+                    claimant,
+                    subdomain,
+                    proof
+                );
         }
-        if (address(attestationRegistry) != address(0)) {
-            bytes32 node = keccak256(
-                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
-            );
-            if (
-                attestationRegistry.isAttested(
-                    node,
-                    AttestationRegistry.Role.Validator,
-                    claimant
-                )
-            ) {
-                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
-                return true;
-            }
+        if (ok) {
+            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
         }
-        return
-            ENSIdentityVerifier.verifyOwnership(
-                ens,
-                nameWrapper,
-                clubRootNode,
-                validatorMerkleRoot,
-                claimant,
-                subdomain,
-                proof
-            );
     }
 }
 

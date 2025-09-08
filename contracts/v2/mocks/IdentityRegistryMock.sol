@@ -118,18 +118,26 @@ contract IdentityRegistryMock is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool) {
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
         claimant; // silence unused
-        return true;
+        node = bytes32(0);
+        ok = true;
     }
 
     function verifyValidator(
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool) {
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
         claimant; // silence unused
-        return true;
+        node = bytes32(0);
+        ok = true;
     }
 }
 
