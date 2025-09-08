@@ -115,7 +115,7 @@ Source: [`contracts/v2/FeePool.sol`](../contracts/v2/FeePool.sol)
 
 ### Fee Handling & Treasury
 
-`JobRegistry` forwards protocol fees to `FeePool`. The pool burns the configured `burnPct` and holds the remainder for platform stakers. `StakeManager.setTreasury` and `FeePool.setTreasury` route any slashed stakes or undistributed fees to a governance-controlled treasury. The platform never keeps fees or burned tokens.
+`JobRegistry` forwards protocol fees to `FeePool`. When an employer finalizes a job, the pool burns the configured `burnPct` and holds the remainder for platform stakers. `StakeManager.setTreasury`, `JobRegistry.setTreasury`, and `FeePool.setTreasury` route slashed stakes, blacklisted payouts, or undistributed fees to a governance-controlled treasury. The platform never keeps fees or burned tokens.
 
 ### Owner Updatability
 

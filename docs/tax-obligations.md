@@ -4,6 +4,7 @@
 
 - Employers, agents, and validators shoulder all tax liability.
 - The smart contracts and deploying corporation remain tax‑exempt everywhere, confirmed by `isTaxExempt()`.
+- Only employers can finalize jobs and trigger token burns; the platform never initiates nor receives burned tokens.
 - Verify the policy on Etherscan: read `taxPolicyDetails`, acknowledge via `acknowledgeTaxPolicy` (which emits `TaxAcknowledged(user, version, acknowledgement)`), and check `isTaxExempt`.
 - The owner edits the policy text or URI with `setPolicyURI`/`setAcknowledgement`, tracks changes via `policyVersion`, and bumps `policyVersion` using `bumpPolicyVersion`.
 - Retrieve per-user acceptance with `acknowledgedVersion(address)`.
@@ -40,8 +41,7 @@ function createJob(uint256 reward, string memory uri)
 
 - Provide the token escrow that funds jobs.
 - Only the employer can finalize jobs by calling `acknowledgeAndFinalize(jobId)` from their own wallet.
-- This finalization burns a portion of the employer's deposit; the protocol never initiates or benefits from burns.
-- When a job finalizes, a portion of the employer's deposit is burned.
+- That finalization burns a portion of the employer's deposit; the protocol never initiates or benefits from burns.
 - Burning is a disposal of property, so employers record any capital gain or loss on the burned amount based on cost basis versus fair market value at burn.
 - Token payments to agents may be deductible business expenses where applicable.
 
