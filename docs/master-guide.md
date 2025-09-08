@@ -804,7 +804,7 @@ library Constants {
 
     // mainnet ENS
     address constant ENS_REGISTRY = 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e;
-    address constant NAME_WRAPPER = 0x253553366Da8546fC250F225fe3d25d0C782303b;
+    address constant NAME_WRAPPER = 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401;
     bytes32 constant AGENT_ROOT = 0x0; // namehash("agent.agi.eth")
     bytes32 constant CLUB_ROOT  = 0x0; // namehash("club.agi.eth")
 }

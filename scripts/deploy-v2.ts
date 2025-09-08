@@ -2,9 +2,9 @@ import { ethers } from 'hardhat';
 
 // Mainnet ENS registry and NameWrapper addresses
 // ENS registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
-// NameWrapper: 0x253553366Da8546fC250F225fe3d25d0C782303b
+// NameWrapper: 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-const NAME_WRAPPER = '0x253553366Da8546fC250F225fe3d25d0C782303b';
+const NAME_WRAPPER = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
 
 async function main() {
   const [deployer] = await ethers.getSigners();

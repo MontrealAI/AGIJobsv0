@@ -11,7 +11,7 @@ This guide walks a non-technical operator through deploying the **AGI Jobs v2** 
 
 - **Ethereum wallet** (e.g. MetaMask) with enough ETH for gas; it becomes the owner of all contracts.
 - **$AGIALPHA token address** (canonical mainnet: `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`).
-- **ENS details** if restricting access (namehashes for `agent.agi.eth` and `club.agi.eth`, ENS registry `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`, and name wrapper `0x253553366Da8546fC250F225fe3d25d0C782303b`).
+- **ENS details** if restricting access (namehashes for `agent.agi.eth` and `club.agi.eth`, ENS registry `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`, and name wrapper `0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401`).
 - **Contract sources** from this repository for verification.
 - **Basic familiarity with the “Contract → Deploy” and “Write Contract” tabs** on Etherscan.
 
@@ -30,7 +30,7 @@ Deploy each contract via **Contract → Deploy** on Etherscan, supplying constru
 2. **ReputationEngine** – pass the StakeManager address from step 1.
 3. **IdentityRegistry** _(optional)_
    - `_ensAddress`: ENS registry (mainnet `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`).
-   - `_nameWrapperAddress`: ENS name wrapper (mainnet `0x253553366Da8546fC250F225fe3d25d0C782303b`).
+   - `_nameWrapperAddress`: ENS name wrapper (mainnet `0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401`).
    - `_reputationEngine`: ReputationEngine address.
    - `_agentRootNode` / `_clubRootNode`: namehashes for `agent.agi.eth` and `club.agi.eth` or `0x00..00` for open access.
 4. **ValidationModule**
