@@ -222,7 +222,7 @@ describe('FeePool', function () {
     expect(await token.balanceOf(owner.address)).to.equal(before);
   });
 
-  it('burns fees when no stakers are present', async () => {
+  it('burns pending fees when no stakers are present', async () => {
     const StakeManager = await ethers.getContractFactory(
       'contracts/v2/StakeManager.sol:StakeManager'
     );
@@ -245,9 +245,11 @@ describe('FeePool', function () {
     );
     await token.connect(user1).approve(await burnPool.getAddress(), 100);
     await burnPool.connect(user1).contribute(100);
+    expect(await burnPool.pendingFees()).to.equal(100n);
     const supplyBefore = await token.totalSupply();
     const ownerBalBefore = await token.balanceOf(owner.address);
     await burnPool.connect(owner).distributeFees();
+    expect(await burnPool.pendingFees()).to.equal(0n);
     const supplyAfter = await token.totalSupply();
     expect(supplyBefore - supplyAfter).to.equal(100n);
     expect(await token.balanceOf(owner.address)).to.equal(ownerBalBefore);
@@ -366,7 +368,7 @@ describe('FeePool with no stakers', function () {
     await feePool.setBurnPct(0);
   });
 
-  it('burns or forwards fees when no stakers', async () => {
+  it('forwards fees to the neutral address when no stakers', async () => {
     await token.mint(contributor.address, 100);
     await token.connect(contributor).approve(await feePool.getAddress(), 100);
     await feePool.connect(contributor).contribute(100);
@@ -375,11 +377,12 @@ describe('FeePool with no stakers', function () {
 
     const treasuryBefore = await token.balanceOf(treasury.address);
     const supplyBefore = await token.totalSupply();
+    const ownerBalBefore = await token.balanceOf(owner.address);
 
     await feePool.connect(owner).distributeFees();
 
     expect(await feePool.pendingFees()).to.equal(0);
-    expect(await token.balanceOf(owner.address)).to.equal(0n);
+    expect(await token.balanceOf(owner.address)).to.equal(ownerBalBefore);
     expect((await token.balanceOf(treasury.address)) - treasuryBefore).to.equal(
       100n
     );
