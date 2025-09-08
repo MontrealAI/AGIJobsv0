@@ -1,6 +1,15 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
+function leaf(addr, label) {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['address', 'bytes32'],
+      [addr, ethers.id(label)]
+    )
+  );
+}
+
 describe('ENSOwnershipVerifier setters', function () {
   let owner, other, verifier;
 
@@ -144,14 +153,8 @@ describe('ENSOwnershipVerifier verification', function () {
       await verifier.verifyValidator.staticCall(validator.address, '', [])
     ).to.equal(false);
 
-    const agentLeaf = ethers.solidityPackedKeccak256(
-      ['address'],
-      [agent.address]
-    );
-    const validatorLeaf = ethers.solidityPackedKeccak256(
-      ['address'],
-      [validator.address]
-    );
+    const agentLeaf = leaf(agent.address, '');
+    const validatorLeaf = leaf(validator.address, '');
     await verifier.setAgentMerkleRoot(agentLeaf);
     await verifier.setValidatorMerkleRoot(validatorLeaf);
 
@@ -197,11 +200,19 @@ describe('ENSOwnershipVerifier verification', function () {
   });
 
   it('rejects invalid merkle proof', async () => {
-    const leaf = ethers.solidityPackedKeccak256(['address'], [agent.address]);
-    await verifier.setAgentMerkleRoot(leaf);
+    const agentRoot = leaf(agent.address, 'a');
+    await verifier.setAgentMerkleRoot(agentRoot);
     const badProof = [ethers.id('bad')];
     expect(
       await verifier.verifyAgent.staticCall(agent.address, 'a', badProof)
+    ).to.equal(false);
+  });
+
+  it('rejects mismatched subdomain proof', async () => {
+    const agentRoot = leaf(agent.address, 'a');
+    await verifier.setAgentMerkleRoot(agentRoot);
+    expect(
+      await verifier.verifyAgent.staticCall(agent.address, 'b', [])
     ).to.equal(false);
   });
 

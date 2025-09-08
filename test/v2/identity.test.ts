@@ -4,6 +4,15 @@ const { ethers } = hre;
 
 // Tests for ENS ownership verification through IdentityRegistry
 
+function leaf(addr: string, label: string) {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['address', 'bytes32'],
+      [addr, ethers.id(label)]
+    )
+  );
+}
+
 describe('IdentityRegistry ENS verification', function () {
   it('verifies ownership via NameWrapper and rejects others', async () => {
     const [owner, alice, bob] = await ethers.getSigners();
@@ -80,14 +89,14 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     // validator verified by merkle proof
-    const leaf = ethers.solidityPackedKeccak256(
-      ['address'],
-      [validator.address]
-    );
-    await id.setValidatorMerkleRoot(leaf);
+    const vLeaf = leaf(validator.address, '');
+    await id.setValidatorMerkleRoot(vLeaf);
     expect(
       await id.verifyValidator.staticCall(validator.address, '', [])
     ).to.equal(true);
+    expect(
+      await id.verifyValidator.staticCall(validator.address, 'bad', [])
+    ).to.equal(false);
 
     // agent verified via resolver fallback
     const label = 'agent';

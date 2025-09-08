@@ -31,13 +31,12 @@ library ENSIdentityVerifier {
         string memory subdomain,
         bytes32[] calldata proof
     ) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(claimant));
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
         if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
             return true;
         }
-        bytes32 subnode = keccak256(
-            abi.encodePacked(rootNode, keccak256(bytes(subdomain)))
-        );
+        bytes32 subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
             if (actualOwner == claimant) {
                 return true;
@@ -68,14 +67,13 @@ library ENSIdentityVerifier {
         string memory subdomain,
         bytes32[] calldata proof
     ) internal returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(claimant));
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
         if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
             emit OwnershipVerified(claimant, subdomain);
             return true;
         }
-        bytes32 subnode = keccak256(
-            abi.encodePacked(rootNode, keccak256(bytes(subdomain)))
-        );
+        bytes32 subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         bool eventEmitted;
         try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
             if (actualOwner == claimant) {

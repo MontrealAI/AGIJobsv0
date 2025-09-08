@@ -38,7 +38,8 @@ library VerifyOwnership {
         IENS ens,
         INameWrapper nameWrapper
     ) internal view returns (bool success, string memory reason) {
-        bytes32 leaf = keccak256(abi.encodePacked(claimant));
+        bytes32 labelHash = keccak256(bytes(subdomain));
+        bytes32 leaf = keccak256(abi.encode(claimant, labelHash));
         bytes32 merkleRoot;
         if (rootNode == clubRootNode) {
             merkleRoot = validatorMerkleRoot;
@@ -50,9 +51,7 @@ library VerifyOwnership {
         if (MerkleProof.verifyCalldata(proof, merkleRoot, leaf)) {
             return (true, reason);
         }
-        bytes32 subnode = keccak256(
-            abi.encodePacked(rootNode, keccak256(bytes(subdomain)))
-        );
+        bytes32 subnode = keccak256(abi.encodePacked(rootNode, labelHash));
         try nameWrapper.ownerOf(uint256(subnode)) returns (address actualOwner) {
             if (actualOwner == claimant) {
                 return (true, reason);

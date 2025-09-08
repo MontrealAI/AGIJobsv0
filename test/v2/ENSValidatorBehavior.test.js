@@ -10,6 +10,15 @@ function namehash(root, label) {
   );
 }
 
+function leaf(addr, label) {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['address', 'bytes32'],
+      [addr, ethers.id(label)]
+    )
+  );
+}
+
 describe('Validator ENS integration', function () {
   let owner, validator, other, v2, v3;
   let ens, resolver, wrapper, identity;
@@ -162,11 +171,8 @@ describe('Validator ENS integration', function () {
   });
 
   it('rejects invalid Merkle proofs', async () => {
-    const leaf = ethers.solidityPackedKeccak256(
-      ['address'],
-      [validator.address]
-    );
-    await identity.setValidatorMerkleRoot(leaf);
+    const vLeaf = leaf(validator.address, 'v');
+    await identity.setValidatorMerkleRoot(vLeaf);
     const badProof = [ethers.id('bad')];
     await expect(
       identity.verifyValidator(validator.address, 'v', badProof)
