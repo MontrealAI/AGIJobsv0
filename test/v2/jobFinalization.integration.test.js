@@ -329,8 +329,8 @@ describe('job finalization integration', function () {
 
     expect(await token.balanceOf(await registry.getAddress())).to.equal(0);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(0);
-    expect(
-      await token.balanceOf(await stakeManager.getAddress())
-    ).to.equal(stakeRequired);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(
+      stakeRequired
+    );
   });
 });
