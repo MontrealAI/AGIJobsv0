@@ -267,4 +267,29 @@ describe('job finalization integration', function () {
     expect(await rep.reputation(agent.address)).to.equal(152n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
+
+  it('rejects non-employer finalization after validation', async () => {
+    const { jobId } = await setupJob(true);
+    await expect(validation.finalize(jobId))
+      .to.emit(registry, 'JobCompleted')
+      .withArgs(jobId, true);
+    await expect(registry.connect(agent).finalize(jobId))
+      .to.be.revertedWithCustomError(registry, 'OnlyEmployer');
+  });
+
+  it('emits burn and reward events on employer finalization', async () => {
+    await stakeManager.connect(owner).setBurnPct(10);
+    const { jobId } = await setupJob(true);
+    await validation.finalize(jobId);
+    const jobKey = ethers.toBeHex(jobId, 32);
+    const validatorReward = (reward * BigInt(validatorRewardPct)) / 100n;
+    const rewardAfterValidator = reward - validatorReward;
+    const burnAmount = (rewardAfterValidator * 10n) / 100n;
+    const agentReward = rewardAfterValidator - burnAmount;
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(stakeManager, 'RewardPaid')
+      .withArgs(jobKey, agent.address, agentReward)
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobKey, burnAmount);
+  });
 });
