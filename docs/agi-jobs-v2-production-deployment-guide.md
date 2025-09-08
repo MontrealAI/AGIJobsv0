@@ -70,7 +70,7 @@ This section provides a user-friendly, step-by-step guide to deploy the AGIJobs 
 
 Using Etherscan’s **Write Contract → Deploy** feature, deploy the core contracts one by one in the following order, providing the required constructor parameters for each. After each deployment, note the contract address. (If a constructor parameter asks for an address of a module that isn’t deployed yet, use Ethereum’s zero address `0x0000000000000000000000000000000000000000` as a temporary placeholder. You will wire the correct addresses in a later step.)
 StakeManager – Parameters:
-token: $AGIALPHA token address (0xA61a3B3...a1fA). Double-check this address; StakeManager treats it as immutable and the system cannot switch tokens without redeployment.
+token: $AGIALPHA token address (0xA61a3B3...a1fA). Double-check this address; StakeManager treats it as immutable and the system cannot switch tokens without redeployment. The constructor also verifies that the token reports **18 decimals**—deployment will revert if the token uses a different precision.
 minStake: minimum stake amount (wei). You can enter 0 to accept the default (which the contract internally sets to 1 $AGIALPHA).
 employerPct & treasuryPct: the percentage of slashed stake that goes back to the job’s employer and to the treasury, respectively. For initial deployment, you may set both to 0 to use the default (which sends 100% to treasury if both are 0). Ensure that if you do set them non-zero, they sum to 100.
 treasury: the address that will receive slashed funds intended for the platform (often your treasury or the deployer; if unsure, you can set this to your own address or the multisig and change later via setTreasury).
@@ -135,6 +135,7 @@ On CertificateNFT: setJobRegistry(jobRegistry) and setStakeManager(stakeManager)
 — the latter now reverts unless the manager reports version 2 and the
 canonical `$AGIALPHA` token — so it knows who can mint certificates and
 who can verify staking.
+On FeePool: setJobRegistry(jobRegistry) so only the registry can deposit fees and trigger distributions.
 On JobRegistry: if not already done via setModules, also call setIdentityRegistry(identityRegistry) to enforce ENS checks on job applications, and setTaxPolicy(taxPolicy) if applicable.
 If you deployed PlatformRegistry/JobRouter/PlatformIncentives: call PlatformRegistry.setRegistrar(platformIncentives, true) and JobRouter.setRegistrar(platformIncentives, true) to link the incentives module (or follow any specific instructions in their docs).
 After manual wiring, double-check each module’s state via the Read Contract functions or events to ensure addresses have been set correctly. The repository provides a script (npm run verify:wiring) that can also confirm on-chain that each module has the expected references.
