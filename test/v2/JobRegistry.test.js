@@ -216,7 +216,12 @@ describe('JobRegistry integration', function () {
     const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, 'uri');
+      ['createJob(uint256,uint64,bytes32,string)'](
+        reward,
+        deadline,
+        specHash,
+        'uri'
+      );
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, '', []))
       .to.emit(registry, 'JobApplied')
       .withArgs(1, newAgent.address, '');
@@ -248,7 +253,12 @@ describe('JobRegistry integration', function () {
     const specHash = ethers.id('spec');
     await registry
       .connect(employer)
-      .createJob(reward, deadline, specHash, 'uri');
+      ['createJob(uint256,uint64,bytes32,string)'](
+        reward,
+        deadline,
+        specHash,
+        'uri'
+      );
     const jobId = 1;
     await registry.connect(agent).applyForJob(jobId, '', []);
     await validation.connect(owner).setResult(true);
@@ -470,6 +480,40 @@ describe('JobRegistry integration', function () {
     await expect(
       registry.connect(owner).setValidatorRewardPct(70)
     ).to.be.revertedWithCustomError(registry, 'InvalidPercentage');
+  });
+
+  it('keeps modules tax exempt with zero balances after finalization', async () => {
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry
+      .connect(employer)
+      ['createJob(uint256,uint64,bytes32,string)'](
+        reward,
+        deadline,
+        specHash,
+        'uri'
+      );
+    const jobId = 1;
+    await registry.connect(agent).applyForJob(jobId, '', []);
+    await validation.connect(owner).setResult(true);
+    await registry
+      .connect(agent)
+      .submit(jobId, ethers.id('result'), 'result', '', []);
+    await validation.finalize(jobId);
+    await registry.connect(employer).finalize(jobId);
+
+    expect(await registry.isTaxExempt()).to.equal(true);
+    expect(await stakeManager.isTaxExempt()).to.equal(true);
+    expect(await feePool.isTaxExempt()).to.equal(true);
+
+    expect(await token.balanceOf(await registry.getAddress())).to.equal(0n);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(0n);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(
+      stake
+    );
   });
 
   it('emits events when setting modules', async () => {

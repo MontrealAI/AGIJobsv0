@@ -255,6 +255,41 @@ describe('FeePool', function () {
     expect(await token.balanceOf(owner.address)).to.equal(ownerBalBefore);
   });
 
+  it('keeps modules tax exempt with zero balances after fee distribution', async () => {
+    const staked = await token.balanceOf(await stakeManager.getAddress());
+    const feeAmount = 100;
+    const jobId = ethers.encodeBytes32String('jobT');
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .finalizeJobFunds(
+        jobId,
+        registrySigner.address,
+        user1.address,
+        0,
+        feeAmount,
+        await feePool.getAddress()
+      );
+    await feePool.connect(owner).distributeFees();
+    await feePool.connect(user1).claimRewards();
+    await feePool.connect(user2).claimRewards();
+
+    expect(await jobRegistry.isTaxExempt()).to.equal(true);
+    expect(await stakeManager.isTaxExempt()).to.equal(true);
+    expect(await feePool.isTaxExempt()).to.equal(true);
+
+    expect(await token.balanceOf(await jobRegistry.getAddress())).to.equal(0n);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(0n);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(
+      staked
+    );
+  });
+
   it('owner stakeAndActivate(0) yields zero score, weight and payout', async () => {
     const Rep = await ethers.getContractFactory(
       'contracts/v2/ReputationEngine.sol:ReputationEngine'
