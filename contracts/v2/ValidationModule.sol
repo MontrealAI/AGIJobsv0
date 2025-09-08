@@ -780,7 +780,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
                     bytes32[] memory proof;
-                    authorized = identityRegistry.verifyValidator(
+                    (authorized, , , ) = identityRegistry.verifyValidator(
                         candidate,
                         subdomain,
                         proof
@@ -843,7 +843,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 if (!authorized) {
                     string memory subdomain = validatorSubdomains[candidate];
                     bytes32[] memory proof;
-                    authorized = identityRegistry.verifyValidator(
+                    (authorized, , , ) = identityRegistry.verifyValidator(
                         candidate,
                         subdomain,
                         proof
@@ -990,7 +990,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
         if (!_isValidator(jobId, msg.sender)) revert NotValidator();
-        bool authorized = identityRegistry.verifyValidator(
+        (bool authorized, , , ) = identityRegistry.verifyValidator(
             msg.sender,
             subdomain,
             proof
@@ -1055,7 +1055,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                 revert BlacklistedValidator();
         }
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
-        bool authorized = identityRegistry.verifyValidator(
+        (bool authorized, , , ) = identityRegistry.verifyValidator(
             msg.sender,
             subdomain,
             proof

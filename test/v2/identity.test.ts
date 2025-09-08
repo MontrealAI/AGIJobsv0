@@ -51,10 +51,10 @@ describe('IdentityRegistry ENS verification', function () {
     await wrapper.setOwner(BigInt(subnode), alice.address);
 
     expect(
-      await id.verifyAgent.staticCall(alice.address, subdomain, [])
+      (await id.verifyAgent.staticCall(alice.address, subdomain, []))[0]
     ).to.equal(true);
     expect(
-      await id.verifyAgent.staticCall(bob.address, subdomain, [])
+      (await id.verifyAgent.staticCall(bob.address, subdomain, []))[0]
     ).to.equal(false);
   });
 
@@ -92,10 +92,10 @@ describe('IdentityRegistry ENS verification', function () {
     const vLeaf = leaf(validator.address, '');
     await id.setValidatorMerkleRoot(vLeaf);
     expect(
-      await id.verifyValidator.staticCall(validator.address, '', [])
+      (await id.verifyValidator.staticCall(validator.address, '', []))[0]
     ).to.equal(true);
     expect(
-      await id.verifyValidator.staticCall(validator.address, 'bad', [])
+      (await id.verifyValidator.staticCall(validator.address, 'bad', []))[0]
     ).to.equal(false);
 
     // agent verified via resolver fallback
@@ -108,9 +108,9 @@ describe('IdentityRegistry ENS verification', function () {
     );
     await ens.setResolver(node, await resolver.getAddress());
     await resolver.setAddr(node, agent.address);
-    expect(await id.verifyAgent.staticCall(agent.address, label, [])).to.equal(
-      true
-    );
+    expect(
+      (await id.verifyAgent.staticCall(agent.address, label, []))[0]
+    ).to.equal(true);
   });
 
   it('respects allowlists and blacklists', async () => {
@@ -142,16 +142,16 @@ describe('IdentityRegistry ENS verification', function () {
 
     // blacklist blocks verification even if allowlisted
     await rep.blacklist(alice.address, true);
-    expect(await id.verifyAgent.staticCall(alice.address, '', [])).to.equal(
-      false
-    );
+    expect(
+      (await id.verifyAgent.staticCall(alice.address, '', []))[0]
+    ).to.equal(false);
     await rep.blacklist(alice.address, false);
 
     // additional allowlist bypasses ENS requirements
     await id.addAdditionalAgent(alice.address);
-    expect(await id.verifyAgent.staticCall(alice.address, '', [])).to.equal(
-      true
-    );
+    expect(
+      (await id.verifyAgent.staticCall(alice.address, '', []))[0]
+    ).to.equal(true);
   });
 
   it('authorizes via allowlists and attestations when ENS is unset', async () => {
@@ -180,9 +180,9 @@ describe('IdentityRegistry ENS verification', function () {
 
     // allowlist should succeed without ENS
     await id.addAdditionalAgent(agent.address);
-    expect(await id.verifyAgent.staticCall(agent.address, '', [])).to.equal(
-      true
-    );
+    expect(
+      (await id.verifyAgent.staticCall(agent.address, '', []))[0]
+    ).to.equal(true);
 
     // attestation should also succeed
     const Attest = await ethers.getContractFactory(
@@ -205,7 +205,7 @@ describe('IdentityRegistry ENS verification', function () {
     await attest.connect(owner).attest(node, 1, validator.address);
 
     expect(
-      await id.verifyValidator.staticCall(validator.address, label, [])
+      (await id.verifyValidator.staticCall(validator.address, label, []))[0]
     ).to.equal(true);
   });
 

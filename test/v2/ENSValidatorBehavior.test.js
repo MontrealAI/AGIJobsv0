@@ -178,11 +178,13 @@ describe('Validator ENS integration', function () {
       identity.verifyValidator(validator.address, 'v', badProof)
     ).to.not.emit(identity, 'OwnershipVerified');
     expect(
-      await identity.verifyValidator.staticCall(
-        validator.address,
-        'v',
-        badProof
-      )
+      (
+        await identity.verifyValidator.staticCall(
+          validator.address,
+          'v',
+          badProof
+        )
+      )[0]
     ).to.equal(false);
   });
 

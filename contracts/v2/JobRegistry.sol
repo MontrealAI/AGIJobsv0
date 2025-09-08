@@ -792,7 +792,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             agentAuthExpiry[msg.sender] > block.timestamp &&
             agentAuthVersion[msg.sender] == agentAuthCacheVersion;
         if (!authorized) {
-            authorized = identityRegistry.verifyAgent(
+            (authorized, , , ) = identityRegistry.verifyAgent(
                 msg.sender,
                 subdomain,
                 proof
@@ -909,7 +909,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        bool authorized = identityRegistry.verifyAgent(
+        (bool authorized, , , ) = identityRegistry.verifyAgent(
             msg.sender,
             subdomain,
             proof

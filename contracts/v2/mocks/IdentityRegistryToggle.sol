@@ -115,22 +115,32 @@ contract IdentityRegistryToggle is Ownable {
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool) {
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
+        node = bytes32(0);
         if (additionalAgents[claimant]) {
-            return true;
+            ok = true;
+        } else {
+            ok = result;
         }
-        return result;
     }
 
     function verifyValidator(
         address claimant,
         string calldata,
         bytes32[] calldata
-    ) external returns (bool) {
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
+        node = bytes32(0);
         if (additionalValidators[claimant]) {
-            return true;
+            ok = true;
+        } else {
+            ok = result;
         }
-        return result;
     }
 }
 
