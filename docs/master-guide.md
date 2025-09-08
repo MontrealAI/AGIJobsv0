@@ -289,6 +289,7 @@ All amounts are `$AGIALPHA` **wei** (18 decimals). **Always** `approve` the rele
 ### 8.4 Finalize & Payouts
 
 * After reveal window, **anyone** calls: `ValidationModule.finalize(jobId)`
+* The employer then calls `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet to release funds and burn the fee share.
 * Effects (happy path):
 
   * Agent gets reward minus protocol fee/validator share.

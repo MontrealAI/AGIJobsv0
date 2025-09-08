@@ -138,7 +138,8 @@ then be performed through the "Write" tabs on each module.
    `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`.
 2. During reveal phase, call
    `revealValidation(jobId, approve, salt, subdomain, proof)`.
-3. After reveal, anyone may call `finalize(jobId)`.
+3. After reveal, anyone may call `ValidationModule.finalize(jobId)` to record the outcome.
+4. The employer then settles the job by calling `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet, which releases funds and burns the fee share.
 
 ### Dispute
 

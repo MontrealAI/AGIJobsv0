@@ -33,7 +33,8 @@ Coordinates job posting and settlement.
 - `createJob(reward, deadline, specHash, uri)` – employer escrows tokens and posts job metadata.
 - `applyForJob(jobId, label, proof)` – agent applies with ENS label and proof.
 - `submit(jobId, resultHash, resultURI)` – agent submits work for validation.
-- `finalize(jobId)` – release escrowed reward after validation succeeds.
+- `finalize(jobId)` – employer‑only call that releases escrowed rewards and burns the fee share after validation.
+- `acknowledgeAndFinalize(jobId)` – employer convenience wrapper that accepts the latest tax policy and finalizes in one transaction.
 
 ```javascript
 const registry = await ethers.getContractAt('JobRegistry', registryAddress);
