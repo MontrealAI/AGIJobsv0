@@ -57,6 +57,7 @@ error Jailed();
 error PendingPenalty();
 error BurnAddressNotZero();
 error TokenNotBurnable();
+error UnauthorizedEmployer();
 error Unauthorized();
 
 /// @title StakeManager
@@ -184,6 +185,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Emitted when a participant receives a payout in $AGIALPHA.
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
+    /// @notice Emitted when an employer-triggered finalization burns funds.
+    event JobFundsFinalized(bytes32 indexed jobId, address indexed employer, uint256 burnAmount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
@@ -917,10 +920,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // off-chain keeper).
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
+                // Absent fee pool, employer-approved fees are burned
                 _burnToken(jobId, feeAmount);
             }
         }
         if (burnAmount > 0) {
+            // Burn portion of employer-funded reward per protocol config
             _burnToken(jobId, burnAmount);
         }
         if (payout > 0) {
@@ -958,10 +963,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // invoked separately.
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
+                // Without a fee pool configured, fees are burned instead
                 _burnToken(bytes32(0), feeAmount);
             }
         }
         if (burnAmount > 0) {
+            // Burn from employer deposits only after their explicit release
             _burnToken(bytes32(0), burnAmount);
         }
         if (payout > 0) {
@@ -976,13 +983,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param reward base amount paid to the agent with 18 decimals before AGI bonus
     /// @param fee amount forwarded to the fee pool with 18 decimals
     /// @param _feePool fee pool contract receiving protocol fees
+    /// @param employer address originating the finalization request
     function finalizeJobFunds(
         bytes32 jobId,
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool _feePool
+        IFeePool _feePool,
+        address employer
     ) external onlyJobRegistry whenNotPaused nonReentrant {
+        if (employer != tx.origin) revert UnauthorizedEmployer();
+
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -999,15 +1010,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (address(_feePool) != address(0)) {
                 token.safeTransfer(address(_feePool), fee);
                 _feePool.depositFee(fee);
-                _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
+                // FeePool absent; burn employer-funded fee portion
                 _burnToken(jobId, fee);
             }
         }
         if (burnAmount > 0) {
+            // Burn of employer deposit confirmed by employer finalization
             _burnToken(jobId, burnAmount);
         }
+
+        emit JobFundsFinalized(jobId, employer, burnAmount);
     }
 
     /// @notice Distribute validator rewards evenly using the ValidationModule
@@ -1125,6 +1139,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
+            // Burned tokens here originate from slashed participant stake
             _burnToken(bytes32(0), burnShare);
         }
 

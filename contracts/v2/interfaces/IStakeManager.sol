@@ -22,6 +22,8 @@ interface IStakeManager {
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
+    /// @notice Emitted when an employer finalizes job funds.
+    event JobFundsFinalized(bytes32 indexed jobId, address indexed employer, uint256 burnAmount);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
@@ -98,7 +100,8 @@ interface IStakeManager {
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool feePool
+        IFeePool feePool,
+        address employer
     ) external;
 
     /// @notice distribute validator rewards equally among selected validators

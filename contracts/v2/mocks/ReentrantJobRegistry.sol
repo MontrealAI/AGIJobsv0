@@ -9,7 +9,8 @@ interface IStakeManager {
         address agent,
         uint256 reward,
         uint256 fee,
-        IFeePool feePool
+        IFeePool feePool,
+        address employer
     ) external;
 
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
@@ -52,7 +53,7 @@ contract ReentrantJobRegistry {
         reward = _reward;
         attackType = AttackType.Finalize;
         token.setAttack(true);
-        stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)));
+        stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)), tx.origin);
         attackType = AttackType.None;
     }
 
@@ -68,7 +69,7 @@ contract ReentrantJobRegistry {
     // called by the token during transfer to attempt reentrancy
     function reenter() external {
         if (attackType == AttackType.Finalize) {
-            stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)));
+            stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)), tx.origin);
         } else if (attackType == AttackType.Validator) {
             stakeManager.distributeValidatorRewards(jobId, amount);
         }
