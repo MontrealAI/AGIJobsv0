@@ -176,36 +176,35 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     function _distributeFees() internal {
         uint256 amount = pendingFees;
-        if (amount == 0) {
-            return;
-        }
+        if (amount == 0) return;
         pendingFees = 0;
 
         uint256 burnAmount = (amount * burnPct) / 100;
         if (burnAmount > 0) {
             _burnFees(msg.sender, burnAmount);
         }
-        uint256 distribute = amount - burnAmount;
+        amount -= burnAmount;
+
         uint256 total = stakeManager.totalStake(rewardRole);
-        bool hasTreasury = treasury != address(0) && treasury != owner();
+        bool sendToTreasury = treasury != address(0) && treasury != owner();
         if (total == 0) {
-            if (distribute > 0) {
-                if (hasTreasury) {
-                    token.safeTransfer(treasury, distribute);
+            if (amount > 0) {
+                if (sendToTreasury) {
+                    token.safeTransfer(treasury, amount);
                 } else {
-                    _burnFees(msg.sender, distribute);
+                    _burnFees(msg.sender, amount);
                 }
             }
             emit FeesDistributed(0);
             return;
         }
 
-        uint256 perToken = (distribute * ACCUMULATOR_SCALE) / total;
+        uint256 perToken = (amount * ACCUMULATOR_SCALE) / total;
         cumulativePerToken += perToken;
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
-        uint256 dust = distribute - accounted;
+        uint256 dust = amount - accounted;
         if (dust > 0) {
-            if (hasTreasury) {
+            if (sendToTreasury) {
                 token.safeTransfer(treasury, dust);
             } else {
                 _burnFees(msg.sender, dust);

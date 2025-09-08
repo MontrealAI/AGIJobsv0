@@ -85,7 +85,7 @@ async function deploySystem() {
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     0,
-    owner.address
+    ethers.ZeroAddress
   );
 
   await stake.setModules(

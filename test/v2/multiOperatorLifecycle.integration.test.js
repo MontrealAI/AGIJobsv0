@@ -98,7 +98,7 @@ describe('multi-operator job lifecycle', function () {
     feePool = await FeePoolF.deploy(
       await stakeManager.getAddress(),
       0,
-      owner.address
+      ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
 
