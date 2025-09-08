@@ -85,10 +85,19 @@ describe('JobRegistry governance finalization', function () {
     await registry.connect(owner).setValidatorRewardPct(0);
 
     await token.mint(employer.address, reward);
-    await token.mint(agent.address, reward + stake);
+    await token.mint(agent.address, stake);
 
     await token.connect(agent).approve(await stakeManager.getAddress(), stake);
     await stakeManager.connect(agent).depositStake(0, stake);
+  });
+
+  afterEach(async () => {
+    for (const acct of [employer, agent, treasury]) {
+      const bal = await token.balanceOf(acct.address);
+      if (bal > 0n) {
+        await token.connect(acct).burn(bal);
+      }
+    }
   });
 
   async function setJobState(jobId, success) {
