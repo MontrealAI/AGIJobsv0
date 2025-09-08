@@ -129,4 +129,12 @@ describe('IdentityRegistry setters', function () {
       );
     });
   });
+
+  describe('configureMainnet', function () {
+    it('sets the NameWrapper to the mainnet address', async () => {
+      const mainnetWrapper = await identity.MAINNET_NAME_WRAPPER();
+      await identity.configureMainnet();
+      expect(await identity.nameWrapper()).to.equal(mainnetWrapper);
+    });
+  });
 });

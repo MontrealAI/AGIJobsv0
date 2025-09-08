@@ -80,7 +80,7 @@ Purpose: StakeManager holds and manages all staked tokens and job escrow funds, 
 ReputationEngine – Parameter: stakeManager address. Provide the address from step 1. This module tracks reputation scores and blacklist status of agents/validators. (No other parameters are needed; it uses sensible internal defaults for reputation calculations.)
 IdentityRegistry (optional, for ENS enforcement) – Parameters:
 \_ensAddress: ENS registry address (use 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e on mainnet, or 0x0 to disable ENS checks).
-\_nameWrapperAddress: ENS NameWrapper address (mainnet: 0x253553366Da8546fC250F225fe3d25d0C782303b, or 0x0 if not using wrapped names).
+\_nameWrapperAddress: ENS NameWrapper address (mainnet: 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401, or 0x0 if not using wrapped names).
 \_reputationEngine: the ReputationEngine address from step 2 (or 0x0 if you want to deploy IdentityRegistry first and wire reputation later).
 \_agentRootNode and \_clubRootNode: the namehash of agi.eth subdomains for agents and validators. On mainnet, use the provided constants for agent.agi.eth and club.agi.eth (you can find these or use the configureMainnet() function later). If you do not want to enforce ENS at launch, use 0x000...00 for these root nodes to allow anyone to participate (or set up a Merkle allowlist instead).
 Purpose: This module verifies on-chain that a given address owns an ENS subdomain (and checks the ReputationEngine for blacklist). It’s optional – if omitted, you’ll rely on off-chain identity checks or emergency allowlists.

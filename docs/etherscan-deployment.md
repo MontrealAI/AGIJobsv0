@@ -31,7 +31,7 @@ All token amounts use the 18 decimal base units of $AGIALPHA (e.g., **1 AGIALP
      Remember that 18‑decimal base units are required (e.g. `10.5` tokens = `10_500000000000000000`).
    - `_baseIpfsUrl` – common prefix for job metadata such as `ipfs://`.
    - `_ensAddress` – [ENS Registry](https://etherscan.io/address/0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e).
-   - `_nameWrapperAddress` – [ENS NameWrapper](https://etherscan.io/address/0x253553366Da8546fC250F225fe3d25d0C782303b).
+   - `_nameWrapperAddress` – [ENS NameWrapper](https://etherscan.io/address/0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401).
    - `_clubRootNode` and `_agentRootNode` – namehashes for `club.agi.eth` and `agent.agi.eth`; use
      `0x00` if no ENS gating is desired.
    - `_validatorMerkleRoot` and `_agentMerkleRoot` – allowlist roots or `0x00` for open access.

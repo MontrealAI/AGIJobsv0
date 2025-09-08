@@ -5,11 +5,11 @@ import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 
 // Mainnet ENS and NameWrapper configuration
 // ENS registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
-// NameWrapper: 0x253553366Da8546fC250F225fe3d25d0C782303b
+// NameWrapper: 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
 // agent.agi.eth node: 0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d
 // club.agi.eth node: 0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16
 const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-const NAME_WRAPPER = '0x253553366Da8546fC250F225fe3d25d0C782303b';
+const NAME_WRAPPER = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
 const AGENT_ROOT_NODE = ethers.namehash('agent.agi.eth');
 const CLUB_ROOT_NODE = ethers.namehash('club.agi.eth');
 

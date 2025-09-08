@@ -64,7 +64,7 @@ contract IdentityRegistry is Ownable2Step {
     address public constant MAINNET_ENS =
         0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e;
     address public constant MAINNET_NAME_WRAPPER =
-        0x253553366Da8546fC250F225fe3d25d0C782303b;
+        0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401;
     bytes32 public constant MAINNET_AGENT_ROOT_NODE =
         0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d;
     bytes32 public constant MAINNET_CLUB_ROOT_NODE =
