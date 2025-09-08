@@ -31,7 +31,7 @@ contract StakeManagerFuzz is Test {
         vm.assume(slash <= deposit);
         _deposit(address(1), deposit, StakeManager.Role.Validator);
         vm.prank(address(this));
-        stake.slash(address(1), StakeManager.Role.Validator, slash, address(this));
+        stake.slash(bytes32(0), address(1), StakeManager.Role.Validator, slash, address(this));
         assertEq(stake.stakeOf(address(1), StakeManager.Role.Validator), deposit - slash);
     }
 

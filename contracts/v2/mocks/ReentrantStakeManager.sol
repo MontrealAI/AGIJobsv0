@@ -82,7 +82,13 @@ contract ReentrantStakeManager is IStakeManager {
         return IERC20(address(0));
     }
 
-    function slash(address user, Role role, uint256 amount, address) external override {
+    function slash(
+        bytes32,
+        address user,
+        Role role,
+        uint256 amount,
+        address
+    ) external override {
         if (attackSlash) {
             attackSlash = false;
             (bool ok, bytes memory err) = address(validation).call(
@@ -100,7 +106,12 @@ contract ReentrantStakeManager is IStakeManager {
         totalStakes[role] -= amount;
     }
 
-    function slash(address user, uint256 amount, address) external override {
+    function slash(
+        bytes32,
+        address user,
+        uint256 amount,
+        address
+    ) external override {
         if (attackSlash) {
             attackSlash = false;
             (bool ok, bytes memory err) = address(validation).call(

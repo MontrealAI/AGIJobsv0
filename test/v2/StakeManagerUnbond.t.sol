@@ -50,7 +50,7 @@ contract StakeManagerUnbond is Test {
 
     function testJailOnSlash() public {
         _request(5e17);
-        stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
+        stake.slash(bytes32(0), user, StakeManager.Role.Validator, 1e17, address(this));
         vm.warp(block.timestamp + stake.unbondingPeriod());
         vm.prank(user);
         vm.expectRevert(Jailed.selector);

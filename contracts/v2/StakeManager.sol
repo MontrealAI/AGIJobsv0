@@ -171,10 +171,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
     event WithdrawRequested(address indexed user, Role indexed role, uint256 amount, uint64 unlockAt);
     event StakeSlashed(
+        bytes32 indexed jobId,
         address indexed user,
         Role role,
         address indexed employer,
-        address indexed treasury,
+        address treasury,
         uint256 employerShare,
         uint256 treasuryShare,
         uint256 burnShare
@@ -1083,7 +1084,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address user,
         Role role,
         uint256 amount,
-        address recipient
+        address recipient,
+        bytes32 jobId
     ) internal {
         if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
@@ -1125,10 +1127,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
-            _burnToken(bytes32(0), burnShare);
+            _burnToken(jobId, burnShare);
         }
 
         emit StakeSlashed(
+            jobId,
             user,
             role,
             recipient,
@@ -1145,25 +1148,26 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
     function slash(
+        bytes32 jobId,
         address user,
         Role role,
         uint256 amount,
         address employer
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        _slash(user, role, amount, employer);
+        _slash(user, role, amount, employer, jobId);
     }
 
     /// @notice slash a validator's stake during dispute resolution
     /// @param user address whose stake will be reduced
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
-    function slash(address user, uint256 amount, address recipient)
-        external
-        onlyDisputeModule
-        whenNotPaused
-        nonReentrant
-    {
-        _slash(user, Role.Validator, amount, recipient);
+    function slash(
+        bytes32 jobId,
+        address user,
+        uint256 amount,
+        address recipient
+    ) external onlyDisputeModule whenNotPaused nonReentrant {
+        _slash(user, Role.Validator, amount, recipient, jobId);
     }
 
     /// @notice Return the total stake deposited by a user for a role

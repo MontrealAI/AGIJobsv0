@@ -1221,6 +1221,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (job.stake > 0) {
                     if (isGov && treasury != address(0) && agentBlacklisted) {
                         stakeManager.slash(
+                            jobKey,
                             job.agent,
                             IStakeManager.Role.Agent,
                             uint256(job.stake),
@@ -1287,6 +1288,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 }
                 if (job.stake > 0) {
                     stakeManager.slash(
+                        jobKey,
                         job.agent,
                         IStakeManager.Role.Agent,
                         uint256(job.stake),

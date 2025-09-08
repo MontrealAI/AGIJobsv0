@@ -101,7 +101,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          jobId,
           user.address,
           0,
           100,
@@ -109,7 +110,7 @@ describe('StakeManager', function () {
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0);
+      .withArgs(jobId, user.address, 0, employer.address, treasury.address, 50, 50, 0);
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
@@ -118,7 +119,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          jobId,
           user.address,
           0,
           10,
@@ -160,7 +162,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(user)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          ethers.ZeroHash,
           user.address,
           0,
           10,
@@ -178,7 +181,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          ethers.ZeroHash,
           user.address,
           0,
           200,
@@ -237,7 +241,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          ethers.ZeroHash,
           user.address,
           0,
           100,
@@ -287,7 +292,8 @@ describe('StakeManager', function () {
       expect(await stakeManager.stakes(user.address, role)).to.equal(100n);
       await stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          ethers.ZeroHash,
           user.address,
           role,
           50,
@@ -341,7 +347,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          ethers.ZeroHash,
           user.address,
           3,
           1,
@@ -508,7 +515,8 @@ describe('StakeManager', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(bytes32,address,uint8,uint256,address)'](
+        ethers.ZeroHash,
         owner.address,
         0,
         100,
@@ -557,7 +565,8 @@ describe('StakeManager', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(bytes32,address,uint8,uint256,address)'](
+        ethers.ZeroHash,
         owner.address,
         0,
         40,
@@ -589,7 +598,8 @@ describe('StakeManager', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(bytes32,address,uint8,uint256,address)'](
+        ethers.ZeroHash,
         owner.address,
         0,
         101,
@@ -770,7 +780,8 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(bytes32,address,uint8,uint256,address)'](
+          ethers.ZeroHash,
           user.address,
           0,
           100,
@@ -778,7 +789,16 @@ describe('StakeManager', function () {
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0)
+      .withArgs(
+        ethers.ZeroHash,
+        user.address,
+        0,
+        employer.address,
+        treasury.address,
+        50,
+        50,
+        0
+      )
       .and.to.emit(stakeManager, 'StakeUnlocked')
       .withArgs(user.address, 100);
 
@@ -856,7 +876,8 @@ describe('StakeManager', function () {
 
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(bytes32,address,uint8,uint256,address)'](
+        ethers.ZeroHash,
         user.address,
         0,
         100,
@@ -913,7 +934,8 @@ describe('StakeManager', function () {
 
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(bytes32,address,uint8,uint256,address)'](
+        ethers.ZeroHash,
         user.address,
         0,
         amount,
