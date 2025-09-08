@@ -12,7 +12,8 @@ Coordinates the lifecycle of jobs and mediates between modules.
 - `applyForJob(uint256 jobId, string subdomain, bytes32[] proof)` – Agent applies for an open job using a label under `agent.agi.eth`.
 - `stakeAndApply(uint256 jobId, string subdomain, bytes32[] proof)` – Combine staking and application in one call.
 - `submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)` – Submit work for validation.
-- `finalize(uint256 jobId)` – Release rewards and stakes after validation.
+- `finalize(uint256 jobId)` – Employer or governance only; releases rewards and burns the employer's fee share.
+- `acknowledgeAndFinalize(uint256 jobId)` – Employer helper that accepts the tax policy then finalizes in one transaction.
 - `raiseDispute(uint256 jobId, string evidence)` – Escalate a job for moderator resolution.
 - `cancelJob(uint256 jobId)` – Employer cancels an unassigned job.
 
