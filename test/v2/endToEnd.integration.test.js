@@ -174,6 +174,7 @@ describe('end-to-end job lifecycle', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    await registry.connect(employer).finalize(jobId);
 
     // fee distributed to stakers
     expect(await feePool.pendingFees()).to.equal(0);

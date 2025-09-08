@@ -968,9 +968,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = success;
         job.state = success ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, success);
-        if (success) {
-            _finalize(jobId);
-        }
+        // finalization must now be triggered separately by the employer or
+        // governance via the {finalize} entrypoint
     }
 
     /// @param jobId Identifier of the job being finalised.
@@ -1025,7 +1024,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = false;
         job.state = State.Completed;
         emit JobCompleted(jobId, false);
-        _finalize(jobId);
+        // employer or governance must finalize in a separate transaction
     }
 
     /// @notice Receive validation outcome from the ValidationModule
@@ -1133,7 +1132,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.success = !employerWins;
         job.state = State.Completed;
         emit DisputeResolved(jobId, employerWins);
-        _finalize(jobId);
+        // _finalize is deferred until employer or governance calls {finalize}
     }
 
     /// @notice Finalize a job and trigger payouts and reputation changes.
