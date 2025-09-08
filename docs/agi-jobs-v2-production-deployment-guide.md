@@ -1,5 +1,7 @@
 # AGIJobs v2 Sprint Plan and Deployment Guide
 
+This document consolidates the final sprint plan with the operational deployment guide and reflects the production-ready configuration for AGIJobs v2.
+
 ## Table of Contents
 
 - [Codebase Enhancements and Key Requirements](#codebase-enhancements-and-key-requirements)
