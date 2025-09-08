@@ -12,7 +12,7 @@ describe('JobRegistry integration', function () {
     dispute,
     policy,
     identity;
-  const { AGIALPHA } = require('../../scripts/constants');
+  const { address: AGIALPHA } = require('../../config/agialpha.json');
   let owner, employer, agent, treasury;
   let feePool;
 
@@ -345,7 +345,9 @@ describe('JobRegistry integration', function () {
         data: registry.interface.encodeFunctionData('forceFinalize', [jobId]),
       },
     ]);
-    await ethers.provider.send('hardhat_stopImpersonatingAccount', [validationAddr]);
+    await ethers.provider.send('hardhat_stopImpersonatingAccount', [
+      validationAddr,
+    ]);
     await expect(
       registry.connect(agent).finalize(jobId)
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
