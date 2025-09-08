@@ -1204,6 +1204,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 }
                 stakeManager.finalizeJobFunds(
                     jobKey,
+                    tx.origin,
                     payee,
                     rewardAfterValidator,
                     fee,

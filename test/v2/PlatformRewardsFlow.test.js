@@ -151,6 +151,7 @@ describe('Platform reward flow', function () {
       .connect(registrySigner)
       .finalizeJobFunds(
         jobId,
+        registrySigner.address,
         alice.address,
         REWARD,
         FEE,

@@ -184,6 +184,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Emitted when a participant receives a payout in $AGIALPHA.
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
+    /// @notice Emitted when an employer finalizes job funds.
+    event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
@@ -917,10 +919,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // off-chain keeper).
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
+                // Fee burning only occurs when employer-approved releases happen.
                 _burnToken(jobId, feeAmount);
             }
         }
         if (burnAmount > 0) {
+            // Burn portion of employer funds during release.
             _burnToken(jobId, burnAmount);
         }
         if (payout > 0) {
@@ -958,10 +962,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // invoked separately.
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
+                // Fee burning only occurs on employer-approved releases.
                 _burnToken(bytes32(0), feeAmount);
             }
         }
         if (burnAmount > 0) {
+            // Burn portion of employer funds as requested.
             _burnToken(bytes32(0), burnAmount);
         }
         if (payout > 0) {
@@ -972,17 +978,21 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice finalize a job by paying the agent and forwarding protocol fees
     /// @param jobId unique job identifier
+    /// @param employer address of the employer triggering finalization
     /// @param agent recipient of the job reward
     /// @param reward base amount paid to the agent with 18 decimals before AGI bonus
     /// @param fee amount forwarded to the fee pool with 18 decimals
     /// @param _feePool fee pool contract receiving protocol fees
     function finalizeJobFunds(
         bytes32 jobId,
+        address employer,
         address agent,
         uint256 reward,
         uint256 fee,
         IFeePool _feePool
     ) external onlyJobRegistry whenNotPaused nonReentrant {
+        if (employer != tx.origin) revert Unauthorized();
+        emit JobFundsFinalized(jobId, employer);
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -1002,10 +1012,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
+                // Burn occurs only because the employer initiated finalization.
                 _burnToken(jobId, fee);
             }
         }
         if (burnAmount > 0) {
+            // Burn the employer's portion as part of finalization.
             _burnToken(jobId, burnAmount);
         }
     }
@@ -1125,6 +1137,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token.safeTransfer(treasury, treasuryShare);
         }
         if (burnShare > 0) {
+            // Burned stake originates from the slashed participant, not employer funds.
             _burnToken(bytes32(0), burnShare);
         }
 

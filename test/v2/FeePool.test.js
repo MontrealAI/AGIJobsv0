@@ -111,6 +111,7 @@ describe('FeePool', function () {
       .connect(registrySigner)
       .finalizeJobFunds(
         jobId,
+        registrySigner.address,
         user1.address,
         0,
         feeAmount,
@@ -146,6 +147,7 @@ describe('FeePool', function () {
       .connect(registrySigner)
       .finalizeJobFunds(
         jobId,
+        registrySigner.address,
         user1.address,
         0,
         feeAmount,
@@ -176,6 +178,7 @@ describe('FeePool', function () {
       .connect(registrySigner)
       .finalizeJobFunds(
         jobId,
+        registrySigner.address,
         user1.address,
         0,
         feeAmount,
@@ -205,6 +208,7 @@ describe('FeePool', function () {
       .connect(registrySigner)
       .finalizeJobFunds(
         jobId,
+        registrySigner.address,
         user1.address,
         0,
         feeAmount,

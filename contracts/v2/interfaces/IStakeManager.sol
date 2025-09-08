@@ -22,6 +22,9 @@ interface IStakeManager {
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
+    /// @notice Emitted when an employer finalizes a job's funds.
+    /// @dev Signals that any subsequent burn events stem from employer action.
+    event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
@@ -95,6 +98,7 @@ interface IStakeManager {
     /// @notice finalize job funds by paying agent and forwarding fees
     function finalizeJobFunds(
         bytes32 jobId,
+        address employer,
         address agent,
         uint256 reward,
         uint256 fee,
