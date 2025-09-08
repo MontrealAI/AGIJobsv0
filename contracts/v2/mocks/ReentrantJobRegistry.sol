@@ -53,7 +53,7 @@ contract ReentrantJobRegistry {
         reward = _reward;
         attackType = AttackType.Finalize;
         token.setAttack(true);
-        stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)), msg.sender);
+        stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)), tx.origin);
         attackType = AttackType.None;
     }
 
@@ -69,7 +69,7 @@ contract ReentrantJobRegistry {
     // called by the token during transfer to attempt reentrancy
     function reenter() external {
         if (attackType == AttackType.Finalize) {
-            stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)), msg.sender);
+            stakeManager.finalizeJobFunds(jobId, agent, reward, 0, IFeePool(address(0)), tx.origin);
         } else if (attackType == AttackType.Validator) {
             stakeManager.distributeValidatorRewards(jobId, amount);
         }

@@ -992,8 +992,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         address employer
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        address jobEmployer = IJobRegistry(msg.sender).jobs(uint256(jobId)).employer;
-        if (employer != tx.origin && employer != jobEmployer) revert UnauthorizedEmployer();
+        if (employer != tx.origin) revert UnauthorizedEmployer();
 
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
@@ -1011,7 +1010,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             if (address(_feePool) != address(0)) {
                 token.safeTransfer(address(_feePool), fee);
                 _feePool.depositFee(fee);
-                _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
                 // FeePool absent; burn employer-funded fee portion
