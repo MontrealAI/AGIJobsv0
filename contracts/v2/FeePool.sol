@@ -186,18 +186,14 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         amount -= burnAmount;
 
         uint256 total = stakeManager.totalStake(rewardRole);
-        bool nonPlatformTreasury = treasury != address(0) && treasury != owner();
         if (total == 0) {
             if (amount > 0) {
-                if (nonPlatformTreasury) {
-                    token.safeTransfer(treasury, amount);
-                } else {
-                    _burnFees(msg.sender, amount);
-                }
+                _burnFees(msg.sender, amount);
             }
             emit FeesDistributed(0);
             return;
         }
+        bool nonPlatformTreasury = treasury != address(0) && treasury != owner();
 
         uint256 perToken = (amount * ACCUMULATOR_SCALE) / total;
         cumulativePerToken += perToken;

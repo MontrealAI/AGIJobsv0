@@ -428,7 +428,7 @@ describe('FeePool with no stakers', function () {
     await feePool.setBurnPct(0);
   });
 
-  it('forwards fees to the neutral address when no stakers', async () => {
+  it('burns fees when no stakers even with treasury set', async () => {
     await token.mint(contributor.address, 100);
     await token.connect(contributor).approve(await feePool.getAddress(), 100);
     await feePool.connect(contributor).contribute(100);
@@ -437,16 +437,12 @@ describe('FeePool with no stakers', function () {
 
     const treasuryBefore = await token.balanceOf(treasury.address);
     const supplyBefore = await token.totalSupply();
-    const ownerBalBefore = await token.balanceOf(owner.address);
 
     await feePool.connect(owner).distributeFees();
 
     expect(await feePool.pendingFees()).to.equal(0);
-    expect(await token.balanceOf(owner.address)).to.equal(ownerBalBefore);
-    expect((await token.balanceOf(treasury.address)) - treasuryBefore).to.equal(
-      100n
-    );
-    expect(await token.totalSupply()).to.equal(supplyBefore);
+    expect(await token.balanceOf(treasury.address)).to.equal(treasuryBefore);
+    expect(await token.totalSupply()).to.equal(supplyBefore - 100n);
   });
 
   it('burns fees when no stakers and no treasury', async () => {
