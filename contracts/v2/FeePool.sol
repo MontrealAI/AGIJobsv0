@@ -301,6 +301,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// @notice update treasury address for rounding dust
     /// @param _treasury address receiving dust after distribution
     function setTreasury(address _treasury) external onlyOwner {
+        if (_treasury == owner()) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }

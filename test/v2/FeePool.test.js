@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
 
 describe('FeePool', function () {
   let token,
@@ -16,6 +16,13 @@ describe('FeePool', function () {
   const { AGIALPHA } = require('../../scripts/constants');
   beforeEach(async () => {
     [owner, user1, user2, employer, treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
@@ -365,6 +372,12 @@ describe('FeePool', function () {
       feePool.connect(owner).setStakeManager(await bad.getAddress())
     ).to.be.revertedWithCustomError(feePool, 'InvalidStakeManagerVersion');
   });
+
+  it('rejects treasury set to owner', async () => {
+    await expect(
+      feePool.connect(owner).setTreasury(owner.address)
+    ).to.be.revertedWithCustomError(feePool, 'InvalidTreasury');
+  });
 });
 
 describe('FeePool with no stakers', function () {
@@ -373,6 +386,13 @@ describe('FeePool with no stakers', function () {
 
   beforeEach(async () => {
     [owner, contributor, , , treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
@@ -422,5 +442,26 @@ describe('FeePool with no stakers', function () {
       100n
     );
     expect(await token.totalSupply()).to.equal(supplyBefore);
+  });
+
+  it('burns fees when no stakers and no treasury', async () => {
+    const BurnFeePool = await ethers.getContractFactory(
+      'contracts/v2/FeePool.sol:FeePool'
+    );
+    const burnPool = await BurnFeePool.deploy(
+      await stakeManager.getAddress(),
+      0,
+      ethers.ZeroAddress
+    );
+    await burnPool.setBurnPct(0);
+    await token.mint(contributor.address, 100);
+    await token.connect(contributor).approve(await burnPool.getAddress(), 100);
+    await burnPool.connect(contributor).contribute(100);
+
+    const supplyBefore = await token.totalSupply();
+
+    await burnPool.connect(owner).distributeFees();
+
+    expect(await token.totalSupply()).to.equal(supplyBefore - 100n);
   });
 });
