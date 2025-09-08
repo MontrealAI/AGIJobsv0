@@ -54,13 +54,13 @@ await validation.revealValidation(jobId, true, salt, 'alice', []);
 
 ## 4. Finalize
 
-After validation succeeds, finalize the job to release payment and mint a
-certificate.
+After validation succeeds, the employer must finalize the job to release
+payment and mint a certificate.
 
 ```javascript
 // finalize.js
 const registry = await ethers.getContractAt('JobRegistry', registryAddress);
-await registry.finalize(jobId);
+await registry.connect(employer).finalize(jobId);
 ```
 
 ## FAQ

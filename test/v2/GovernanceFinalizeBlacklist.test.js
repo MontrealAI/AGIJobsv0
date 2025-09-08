@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 describe('JobRegistry governance finalization', function () {
   const { AGIALPHA } = require('../../scripts/constants');
@@ -9,7 +9,16 @@ describe('JobRegistry governance finalization', function () {
   const stake = 200n;
 
   beforeEach(async () => {
+    await network.provider.send('hardhat_reset');
     [owner, employer, agent, treasury] = await ethers.getSigners();
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
 
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
@@ -128,7 +137,7 @@ describe('JobRegistry governance finalization', function () {
 
     await expect(
       registry.connect(agent).finalize(jobId)
-    ).to.be.revertedWithCustomError(registry, 'Blacklisted');
+    ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
 
     await expect(registry.connect(owner).finalize(jobId))
       .to.emit(registry, 'GovernanceFinalized')
