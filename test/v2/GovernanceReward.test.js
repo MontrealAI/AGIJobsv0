@@ -28,6 +28,9 @@ describe('GovernanceReward', function () {
       owner.address
     );
 
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setMinStake(1);
 
     const JobRegistry = await ethers.getContractFactory(

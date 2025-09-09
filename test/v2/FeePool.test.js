@@ -35,7 +35,7 @@ describe('FeePool', function () {
       0,
       100,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address
@@ -242,7 +242,7 @@ describe('FeePool', function () {
       0,
       100,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address

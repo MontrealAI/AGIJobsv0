@@ -102,6 +102,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice address receiving the treasury share of slashed stake
     address public treasury;
 
+    /// @notice Allowlisted treasury addresses permitted to receive slashed funds
+    mapping(address => bool) public treasuryAllowlist;
+
     /// @notice JobRegistry contract tracking tax policy acknowledgements
     address public jobRegistry;
 
@@ -192,6 +195,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
+    event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event JobRegistryUpdated(address indexed registry);
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
@@ -222,8 +226,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// (0-100).
     /// @param _treasurySlashPct Percentage of slashed amount sent to treasury
     /// (0-100).
-    /// @param _treasury Address receiving treasury share of slashed stake.
-    /// Defaults to deployer when zero address.
+    /// @param _treasury Address receiving treasury share of slashed stake. Use zero
+    /// address to burn the treasury portion.
     /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
     /// @param _disputeModule Dispute module authorized to manage dispute fees.
     constructor(
@@ -252,8 +256,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
 
-        treasury = _treasury == address(0) ? msg.sender : _treasury;
-        emit TreasuryUpdated(treasury);
+        if (_treasury != address(0) && _treasury == owner()) {
+            revert InvalidTreasury();
+        }
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
         if (_jobRegistry != address(0)) {
             jobRegistry = _jobRegistry;
         }
@@ -329,13 +336,26 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update treasury recipient address
-    /// @dev Treasury must be a non-zero address distinct from the contract owner
+    /// @dev Treasury must be zero (burn) or an allowlisted address distinct from the owner
     /// @param _treasury address receiving treasury slash share
     function setTreasury(address _treasury) external onlyGovernance {
-        if (_treasury == address(0)) revert InvalidTreasury();
         if (_treasury == owner()) revert InvalidTreasury();
+        if (_treasury != address(0) && !treasuryAllowlist[_treasury]) {
+            revert InvalidTreasury();
+        }
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    /// @notice Allow or disallow a treasury address
+    /// @param _treasury Treasury candidate
+    /// @param allowed True to allow, false to revoke
+    function setTreasuryAllowlist(address _treasury, bool allowed)
+        external
+        onlyGovernance
+    {
+        treasuryAllowlist[_treasury] = allowed;
+        emit TreasuryAllowlistUpdated(_treasury, allowed);
     }
 
     /// @notice set the JobRegistry used for tax acknowledgement tracking
@@ -1114,6 +1134,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
         if (employerSlashPct + treasurySlashPct > 100) revert InvalidPercentage();
+        if (treasury != address(0) && !treasuryAllowlist[treasury])
+            revert InvalidTreasury();
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;

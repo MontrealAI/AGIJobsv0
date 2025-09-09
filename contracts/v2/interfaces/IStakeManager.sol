@@ -44,6 +44,7 @@ interface IStakeManager {
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
+    event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
@@ -158,6 +159,7 @@ interface IStakeManager {
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setTreasury(address _treasury) external;
+    function setTreasuryAllowlist(address _treasury, bool allowed) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
     function setMaxAGITypes(uint256 newMax) external;
     function addAGIType(address nft, uint256 payoutPct) external;

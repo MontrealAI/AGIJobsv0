@@ -21,7 +21,7 @@ describe('JobRegistry Treasury', function () {
       0,
       100,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address

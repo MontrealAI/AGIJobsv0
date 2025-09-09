@@ -22,7 +22,7 @@ describe('StakeManager pause', function () {
       0,
       100,
       0,
-      owner.address,
+      ethers.ZeroAddress,
       await mockReg.getAddress(),
       ethers.ZeroAddress,
       owner.address
