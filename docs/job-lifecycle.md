@@ -2,7 +2,7 @@
 
 ## Employer Finalization
 
-After validation succeeds and the reveal and dispute windows close, only the employer can finalize the job from their own wallet. Before calling `acknowledgeAndFinalize(jobId)` on `JobRegistry`, the employer must burn the required fee share from their wallet—either by invoking the token's `burn` function directly or by approving the `StakeManager` to `burnFrom` their address. This confirms the tax disclaimer and ensures the platform never initiates finalization nor collects burned tokens.
+After validation succeeds and the reveal and dispute windows close, only the employer can finalize the job from their own wallet. Calling `acknowledgeAndFinalize(jobId)` emits a `BurnRequired` event from the `StakeManager` indicating how many tokens must be burned. The employer burns that amount (via the token's `burn` or `burnFrom` functions) and then calls `confirmBurn(jobId, amount)` to release the escrowed reward and fees. This explicit two-step process keeps burn responsibility with the employer and the platform never handles the burned tokens.
 
 ## Expiration Handling
 

@@ -192,6 +192,9 @@ interface IJobRegistry {
         uint256 blockNumber
     ) external;
 
+    /// @notice Confirm an external burn and release job funds
+    function confirmBurn(uint256 jobId, uint256 amount) external;
+
     function hasBurnReceipt(uint256 jobId, bytes32 burnTxHash)
         external
         view
