@@ -116,12 +116,23 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         return jobs[jobId].specHash;
     }
 
+    /// @notice Records evidence of a token burn by the employer.
+    /// @dev Employers must acknowledge the active tax policy before calling.
     function submitBurnReceipt(
         uint256 jobId,
         bytes32 burnTxHash,
         uint256 amount,
         uint256 blockNumber
-    ) external {
+    )
+        external
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         Job storage job = jobs[jobId];
         if (job.employer != msg.sender) revert OnlyEmployer();
         burnReceipts[jobId][burnTxHash] = BurnReceipt({
@@ -140,7 +151,18 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         return burnReceipts[jobId][burnTxHash].exists;
     }
 
-    function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash) external {
+    /// @notice Confirms previously submitted burn evidence.
+    /// @dev Employers must acknowledge the active tax policy before calling.
+    function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash)
+        external
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
         Job storage job = jobs[jobId];
         if (job.employer != msg.sender) revert OnlyEmployer();
         if (!burnReceipts[jobId][burnTxHash].exists) revert BurnReceiptMissing();

@@ -127,4 +127,37 @@ describe('JobRegistry tax policy integration', function () {
       false
     );
   });
+
+  it('rejects burn receipt submission without tax acknowledgement', async () => {
+    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setMaxJobReward(10);
+    await registry.connect(owner).setJobDurationLimit(86400);
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy.connect(user).acknowledge();
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry.connect(user).createJob(1, deadline, specHash, 'uri');
+    await policy.connect(owner).bumpPolicyVersion();
+    const burnTxHash = ethers.ZeroHash;
+    await expect(registry.connect(user).submitBurnReceipt(1, burnTxHash, 0, 0))
+      .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
+      .withArgs(user.address);
+  });
+
+  it('rejects burn confirmation without tax acknowledgement', async () => {
+    await registry.connect(owner).setJobParameters(0, 0);
+    await registry.connect(owner).setMaxJobReward(10);
+    await registry.connect(owner).setJobDurationLimit(86400);
+    await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy.connect(user).acknowledge();
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('spec');
+    await registry.connect(user).createJob(1, deadline, specHash, 'uri');
+    const burnTxHash = ethers.ZeroHash;
+    await registry.connect(user).submitBurnReceipt(1, burnTxHash, 0, 0);
+    await policy.connect(owner).bumpPolicyVersion();
+    await expect(registry.connect(user).confirmEmployerBurn(1, burnTxHash))
+      .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
+      .withArgs(user.address);
+  });
 });
