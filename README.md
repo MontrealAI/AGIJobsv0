@@ -36,6 +36,10 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 `JobRegistry` routes protocol fees to `FeePool`, which burns a configurable percentage (`burnPct`) when an employer finalizes a job and escrows the remainder for platform stakers. By default the `treasury` is unset (`address(0)`), so any rounding dust is burned. Governance may later call `StakeManager.setTreasury`, `JobRegistry.setTreasury`, or `FeePool.setTreasury` to direct funds to a community-controlled treasury. These setters reject the owner address and, for `FeePool`, require the target to be pre-approved via `setTreasuryAllowlist`. The platform only routes funds and never initiates or profits from burns.
 
+### Tax acknowledgement requirement
+
+Any `external` or `public` function in `contracts/v2` that performs token transfers must either include the `requiresTaxAcknowledgement` modifier or call the internal `_acknowledge` helper. The CI pipeline runs `npm run lint:tax` to enforce this rule.
+
 ### Deploy defaults
 
 Spin up the full stack with a single helper script:
