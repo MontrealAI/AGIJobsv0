@@ -243,16 +243,21 @@ describe('StakeManager', function () {
     ]);
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
 
-    await expect(
-      stakeManager
-        .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
-          user.address,
-          0,
-          100,
-          employer.address
-        )
-    ).to.be.revertedWithCustomError(stakeManager, 'TreasuryNotSet');
+    const supplyBefore = await token.totalSupply();
+    const employerBefore = await token.balanceOf(employer.address);
+    await stakeManager
+      .connect(registrySigner)
+      ['slash(address,uint8,uint256,address)'](
+        user.address,
+        0,
+        100,
+        employer.address
+      );
+    const supplyAfter = await token.totalSupply();
+    const employerAfter = await token.balanceOf(employer.address);
+    expect(supplyBefore - supplyAfter).to.equal(50n);
+    expect(employerAfter - employerBefore).to.equal(50n);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(0n);
   });
 
   it('supports staking and slashing for all roles', async () => {
@@ -504,10 +509,12 @@ describe('StakeManager', function () {
     expect(await stakeManager.treasurySlashPct()).to.equal(40);
   });
 
-  it('reverts when percentages do not sum to 100', async () => {
-    await expect(
-      stakeManager.connect(owner).setSlashingPercentages(60, 20)
-    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
+  it('allows slashing percentages that sum under 100', async () => {
+    await expect(stakeManager.connect(owner).setSlashingPercentages(60, 20))
+      .to.emit(stakeManager, 'SlashingPercentagesUpdated')
+      .withArgs(60, 20);
+    expect(await stakeManager.employerSlashPct()).to.equal(60);
+    expect(await stakeManager.treasurySlashPct()).to.equal(20);
   });
 
   it('slashes full amount when percentages sum to 100', async () => {
@@ -547,10 +554,37 @@ describe('StakeManager', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 
-  it('reverts when slashing percentages sum under 100', async () => {
-    await expect(
-      stakeManager.connect(owner).setSlashingPercentages(40, 50)
-    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
+  it('burns remainder when slashing percentages sum under 100', async () => {
+    await stakeManager.connect(owner).setSlashingPercentages(40, 50);
+    const MockRegistry = await ethers.getContractFactory(
+      'contracts/legacy/MockV2.sol:MockJobRegistry'
+    );
+    const mockRegistry = await MockRegistry.deploy();
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await mockRegistry.getAddress());
+    await token.connect(owner).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(owner).depositStake(0, 100);
+    const registryAddr = await mockRegistry.getAddress();
+    await ethers.provider.send('hardhat_setBalance', [
+      registryAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+    const supplyBefore = await token.totalSupply();
+    await stakeManager
+      .connect(registrySigner)
+      ['slash(address,uint8,uint256,address)'](
+        owner.address,
+        0,
+        100,
+        employer.address
+      );
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(10n);
+    expect(await token.balanceOf(employer.address)).to.equal(1040n);
+    expect(await token.balanceOf(treasury.address)).to.equal(50n);
+    expect(await token.balanceOf(await stakeManager.getAddress())).to.equal(0n);
   });
 
   it('reverts when individual slashing percentage exceeds 100', async () => {
