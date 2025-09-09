@@ -56,6 +56,9 @@ describe('IdentityRegistry ENS verification', function () {
     expect(
       (await id.verifyAgent.staticCall(bob.address, subdomain, []))[0]
     ).to.equal(false);
+    await expect(id.verifyAgent(bob.address, subdomain, []))
+      .to.emit(id, 'IdentityVerificationFailed')
+      .withArgs(bob.address, 0, subdomain);
   });
 
   it('supports merkle proofs and resolver fallback', async () => {

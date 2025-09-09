@@ -64,6 +64,12 @@ contract IdentityRegistry is Ownable2Step {
         bool viaWrapper,
         bool viaMerkle
     );
+    /// @notice Emitted when a verification attempt fails.
+    event IdentityVerificationFailed(
+        address indexed user,
+        AttestationRegistry.Role indexed role,
+        string subdomain
+    );
     event AgentTypeUpdated(address indexed agent, AgentType agentType);
     /// @notice Emitted when an agent updates their profile metadata.
     event AgentProfileUpdated(address indexed agent, string uri);
@@ -406,6 +412,12 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain
             );
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+        } else {
+            emit IdentityVerificationFailed(
+                claimant,
+                AttestationRegistry.Role.Agent,
+                subdomain
+            );
         }
     }
 
@@ -456,6 +468,12 @@ contract IdentityRegistry is Ownable2Step {
                 subdomain
             );
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+        } else {
+            emit IdentityVerificationFailed(
+                claimant,
+                AttestationRegistry.Role.Validator,
+                subdomain
+            );
         }
     }
 
