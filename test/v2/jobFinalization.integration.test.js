@@ -188,6 +188,11 @@ describe('job finalization integration', function () {
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);
+    const burnTxHash = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash, fee, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
@@ -226,6 +231,11 @@ describe('job finalization integration', function () {
     await expect(registry.connect(disputeSigner).resolveDispute(jobId, true))
       .to.emit(registry, 'DisputeResolved')
       .withArgs(jobId, true);
+    const burnTxHash2 = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash2, fee, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash2);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
@@ -262,6 +272,11 @@ describe('job finalization integration', function () {
     await expect(registry.connect(disputeSigner).resolveDispute(jobId, false))
       .to.emit(registry, 'DisputeResolved')
       .withArgs(jobId, false);
+    const burnTxHash3 = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash3, 0, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash3);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
@@ -300,11 +315,18 @@ describe('job finalization integration', function () {
     const rewardAfterValidator = reward - validatorReward;
     const burnAmount = (rewardAfterValidator * 10n) / 100n;
     const agentReward = rewardAfterValidator - burnAmount;
+    const burnTxHash4 = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash4, burnAmount, 0);
+    await expect(
+      registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash4)
+    )
+      .to.emit(registry, 'BurnConfirmed')
+      .withArgs(jobId, burnTxHash4);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(stakeManager, 'RewardPaid')
-      .withArgs(jobKey, agent.address, agentReward)
-      .and.to.emit(stakeManager, 'TokensBurned')
-      .withArgs(jobKey, burnAmount);
+      .withArgs(jobKey, agent.address, agentReward);
   });
 
   it('keeps modules tax exempt with zero balances after finalization', async () => {

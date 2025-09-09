@@ -16,7 +16,7 @@ gas usage.
 - `addAdditionalAgent(address agent)` / `addAdditionalValidator(address validator)` – manual overrides.
 - `setAgentProfileURI(address agent, string uri)` – governance-set capability profile for an agent.
 - `updateAgentProfile(string subdomain, bytes32[] proof, string uri)` – agent updates their own profile after proving control of `subdomain`.
- - `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check agent eligibility for `subdomain.agent.agi.eth`.
+- `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check agent eligibility for `subdomain.agent.agi.eth`.
 - `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – read-only check for validator eligibility for `subdomain.club.agi.eth`; does not emit events.
 - `verifyAgent(address claimant, string subdomain, bytes32[] proof)` – external verification helper.
 - `verifyValidator(address claimant, string subdomain, bytes32[] proof)` – external verification helper.

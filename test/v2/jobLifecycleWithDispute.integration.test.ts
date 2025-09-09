@@ -168,6 +168,7 @@ describe('job lifecycle with dispute and validator failure', function () {
       .submit(1, ethers.id('ipfs://result'), 'ipfs://result', 'agent', []);
     const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
     await registry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
+    await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);

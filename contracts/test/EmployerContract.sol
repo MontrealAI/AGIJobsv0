@@ -27,4 +27,29 @@ contract EmployerContract {
     function finalizeJob(address registry, uint256 jobId) external {
         IJobRegistry(registry).finalize(jobId);
     }
+
+    /// @notice Submit a burn receipt to the JobRegistry.
+    function submitBurnReceipt(
+        address registry,
+        uint256 jobId,
+        bytes32 burnTxHash,
+        uint256 amount,
+        uint256 blockNumber
+    ) external {
+        IJobRegistry(registry).submitBurnReceipt(
+            jobId,
+            burnTxHash,
+            amount,
+            blockNumber
+        );
+    }
+
+    /// @notice Confirm a previously submitted burn receipt.
+    function confirmBurn(
+        address registry,
+        uint256 jobId,
+        bytes32 burnTxHash
+    ) external {
+        IJobRegistry(registry).confirmEmployerBurn(jobId, burnTxHash);
+    }
 }

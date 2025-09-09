@@ -173,6 +173,11 @@ describe('comprehensive job flows', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    const burnTxHash = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash, fee, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await registry.connect(employer).finalize(jobId);
     expect(await nft.ownerOf(jobId)).to.equal(agent.address);
     const price = ethers.parseUnits('10', AGIALPHA_DECIMALS);
@@ -240,6 +245,11 @@ describe('comprehensive job flows', function () {
     });
     const disputeSigner = await ethers.getSigner(await dispute.getAddress());
     await registry.connect(disputeSigner).resolveDispute(jobId, true);
+    const burnTxHash2 = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash2, fee, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash2);
     await registry.connect(employer).finalize(jobId);
     await network.provider.request({
       method: 'hardhat_stopImpersonatingAccount',

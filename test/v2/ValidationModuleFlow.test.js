@@ -138,6 +138,7 @@ describe('ValidationModule finalize flows', function () {
       .revealValidation(1, false, burnTxHash, salt3, '', []);
     await advance(61);
     await validation.finalize(1);
+    await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(6); // Finalized
@@ -282,11 +283,13 @@ describe('ValidationModule finalize flows', function () {
       jobRegistry,
       select,
       employer,
+      burnTxHash,
     } = await setup();
     await select(1);
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
     await validation.forceFinalize(1);
+    await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(6); // Finalized
@@ -313,6 +316,7 @@ describe('ValidationModule finalize flows', function () {
       jobRegistry,
       identity,
       select,
+      burnTxHash,
     } = await setup();
     const signers = await ethers.getSigners();
     const v4 = signers[5];
@@ -327,6 +331,7 @@ describe('ValidationModule finalize flows', function () {
     await advance(61); // end commit
     await advance(61 + 3600 + 1); // end reveal + grace
     await validation.forceFinalize(1);
+    await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
     const isV4Selected = chosen.includes(v4.address);
     const afterV4 = await stakeManager.stakeOf(v4.address, 1);
