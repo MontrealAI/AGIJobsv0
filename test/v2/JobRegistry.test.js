@@ -30,7 +30,7 @@ describe('JobRegistry integration', function () {
       artifact.deployedBytecode,
     ]);
     token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      'contracts/test/MockERC20.sol:MockERC20',
       AGIALPHA
     );
     const StakeManager = await ethers.getContractFactory(
@@ -162,7 +162,7 @@ describe('JobRegistry integration', function () {
       .connect(employer)
       .approve(
         await stakeManager.getAddress(),
-        reward + (reward * 10n) / 100n
+        BigInt(reward) + (BigInt(reward) * 10n) / 100n
       );
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.id('spec');
@@ -308,9 +308,10 @@ describe('JobRegistry integration', function () {
 
   it('emits burn and reward events on employer finalization', async () => {
     await stakeManager.connect(owner).setBurnPct(10);
+    const burn = (BigInt(reward) * 10n) / 100n;
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+      .approve(await stakeManager.getAddress(), BigInt(reward) + burn);
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.id('spec');
     await registry
@@ -328,7 +329,7 @@ describe('JobRegistry integration', function () {
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobKey, agent.address, 90n)
       .and.to.emit(stakeManager, 'TokensBurned')
-      .withArgs(jobKey, 10n);
+      .withArgs(jobKey, burn);
   });
 
   it('rejects non-employer finalization after validation', async () => {

@@ -19,4 +19,9 @@ contract MockERC20 is ERC20 {
     function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
+
+    function burnFrom(address from, uint256 amount) external {
+        _spendAllowance(from, msg.sender, amount);
+        _burn(from, amount);
+    }
 }
