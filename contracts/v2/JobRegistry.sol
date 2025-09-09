@@ -1442,6 +1442,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         public
         onlyAfterDeadline(jobId)
         whenNotPaused
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
         nonReentrant
     {
         Job storage job = jobs[jobId];

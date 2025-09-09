@@ -94,7 +94,9 @@ const JOB_REGISTRY_ABI = [
   'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
+  'function acknowledgeTaxPolicy() external returns (string)',
   'function cancelExpiredJob(uint256 jobId) external',
+  'function taxPolicy() view returns (address)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)',
   'function expirationGracePeriod() view returns (uint256)',
 ];
@@ -159,7 +161,12 @@ async function scheduleExpiration(jobId) {
 async function expireJob(jobId) {
   if (!automationWallet) return;
   try {
-    const tx = await registry.connect(automationWallet).cancelExpiredJob(jobId);
+    const signer = registry.connect(automationWallet);
+    const policy = await registry.taxPolicy();
+    if (policy !== ethers.ZeroAddress) {
+      await signer.acknowledgeTaxPolicy();
+    }
+    const tx = await signer.cancelExpiredJob(jobId);
     await tx.wait();
     console.log('cancelExpired', jobId.toString(), tx.hash);
   } catch (err) {
