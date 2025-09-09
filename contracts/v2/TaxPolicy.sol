@@ -40,6 +40,9 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @notice Emitted whenever the policy version changes.
     event PolicyVersionUpdated(uint256 version);
 
+    /// @notice Emitted when the version is bumped without modifying text or URI.
+    event PolicyVersionBumped(uint256 version);
+
     /// @notice Emitted when a user acknowledges the tax policy.
     /// @param user Address of the acknowledging participant.
     /// @param version Policy version that was acknowledged.
@@ -194,6 +197,7 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     function bumpPolicyVersion() external override onlyOwner {
         _version += 1;
         emit PolicyVersionUpdated(_version);
+        emit PolicyVersionBumped(_version);
     }
 
     /// @notice Confirms the contract and its owner are perpetually tax‑exempt.
