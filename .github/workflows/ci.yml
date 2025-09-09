@@ -24,6 +24,8 @@ jobs:
         run: npm run verify:wiring
       - name: Run lint
         run: npm run lint
+      - name: Enforce tax acknowledgement
+        run: npm run lint:tax
       - name: Check formatting
         run: npm run format -- --check
       - name: Run tests

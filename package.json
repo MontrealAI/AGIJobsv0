@@ -6,6 +6,7 @@
   "scripts": {
     "compile": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && npx hardhat compile",
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts",
+    "lint:tax": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/check-tax-ack.ts",
     "pretest": "npx tsc scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",
