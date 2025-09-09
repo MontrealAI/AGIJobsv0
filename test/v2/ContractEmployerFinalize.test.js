@@ -6,14 +6,14 @@ const { AGIALPHA } = require('../../scripts/constants');
 
 describe('Job finalization with contract employer', function () {
   let token, stakeManager, registry, employerContract;
-  let owner, employerEOA, agent, treasury, identity;
+  let owner, agent, treasury, identity;
   const reward = 100n;
   const stake = 200n;
   const feePct = 5n; // default fee percentage
 
   beforeEach(async () => {
     await network.provider.send('hardhat_reset');
-    [owner, employerEOA, agent, treasury] = await ethers.getSigners();
+    [owner, , agent, treasury] = await ethers.getSigners();
 
     const artifact = await artifacts.readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
@@ -132,10 +132,7 @@ describe('Job finalization with contract employer', function () {
       .submit(jobId, ethers.id('res'), 'res', '', []);
 
     await setJobState(jobId, true);
-    await employerContract.finalizeJob(
-      await registry.getAddress(),
-      jobId
-    );
+    await employerContract.finalizeJob(await registry.getAddress(), jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(reward);
   });
