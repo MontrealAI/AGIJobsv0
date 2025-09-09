@@ -50,6 +50,7 @@ error CommitPhaseClosed();
 error CommitMissing();
 error AlreadyRevealed();
 error InvalidReveal();
+error InvalidBurnReceipt();
 error AlreadyTallied();
 error RevealPending();
 error UnauthorizedCaller();
@@ -1042,6 +1043,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function _revealValidation(
         uint256 jobId,
         bool approve,
+        bytes32 burnTxHash,
         bytes32 salt,
         string memory subdomain,
         bytes32[] memory proof
@@ -1069,10 +1071,19 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         if (commitHash == bytes32(0)) revert CommitMissing();
         if (revealed[jobId][msg.sender]) revert AlreadyRevealed();
+        if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
+            revert InvalidBurnReceipt();
         bytes32 specHash = jobRegistry.getSpecHash(jobId);
         if (
             keccak256(
-                abi.encodePacked(jobId, nonce, approve, salt, specHash)
+                abi.encodePacked(
+                    jobId,
+                    nonce,
+                    approve,
+                    burnTxHash,
+                    salt,
+                    specHash
+                )
             ) != commitHash
         ) revert InvalidReveal();
 
@@ -1084,13 +1095,14 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.revealedCount += 1;
         if (approve) r.approvals += stake; else r.rejections += stake;
 
-        emit ValidationRevealed(jobId, msg.sender, approve, subdomain);
+        emit ValidationRevealed(jobId, msg.sender, approve, burnTxHash, subdomain);
     }
 
     /// @notice Reveal a previously committed validation vote.
     function revealValidation(
         uint256 jobId,
         bool approve,
+        bytes32 burnTxHash,
         bytes32 salt,
         string calldata subdomain,
         bytes32[] calldata proof
@@ -1107,7 +1119,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address(0)
         )
     {
-        _revealValidation(jobId, approve, salt, subdomain, proof);
+        _revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof);
     }
 
 
@@ -1136,6 +1148,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function revealVote(
         uint256 jobId,
         bool approve,
+        bytes32 burnTxHash,
         bytes32 salt,
         string calldata subdomain,
         bytes32[] calldata proof
@@ -1151,7 +1164,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address(0)
         )
     {
-        revealValidation(jobId, approve, salt, subdomain, proof);
+        revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof);
     }
 
     /// @notice Tally revealed votes, apply slashing/rewards, and push result to JobRegistry.

@@ -100,8 +100,40 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
 
+    struct BurnReceipt {
+        uint256 amount;
+        uint256 blockNumber;
+        bool exists;
+    }
+
+    mapping(uint256 => mapping(bytes32 => BurnReceipt)) private burnReceipts;
+
     function getSpecHash(uint256 jobId) external view returns (bytes32) {
         return jobs[jobId].specHash;
+    }
+
+    function submitBurnReceipt(
+        uint256 jobId,
+        bytes32 burnTxHash,
+        uint256 amount,
+        uint256 blockNumber
+    ) external {
+        Job storage job = jobs[jobId];
+        if (job.employer != msg.sender) revert OnlyEmployer();
+        burnReceipts[jobId][burnTxHash] = BurnReceipt({
+            amount: amount,
+            blockNumber: blockNumber,
+            exists: true
+        });
+        emit BurnReceiptSubmitted(jobId, burnTxHash, amount, blockNumber);
+    }
+
+    function hasBurnReceipt(uint256 jobId, bytes32 burnTxHash)
+        external
+        view
+        returns (bool)
+    {
+        return burnReceipts[jobId][burnTxHash].exists;
     }
 
     IValidationModule public validationModule;
@@ -249,6 +281,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param worker Agent who performed the job
     event JobFinalized(uint256 indexed jobId, address indexed worker);
     event JobCancelled(uint256 indexed jobId);
+    event BurnReceiptSubmitted(
+        uint256 indexed jobId,
+        bytes32 indexed burnTxHash,
+        uint256 amount,
+        uint256 blockNumber
+    );
     /// @notice Emitted when an assigned job is cancelled after missing its deadline
     /// @param jobId Identifier of the expired job
     /// @param caller Address that triggered the expiration

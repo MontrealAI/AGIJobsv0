@@ -91,6 +91,12 @@ interface IJobRegistry {
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event JobCancelled(uint256 indexed jobId);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    event BurnReceiptSubmitted(
+        uint256 indexed jobId,
+        bytes32 indexed burnTxHash,
+        uint256 amount,
+        uint256 blockNumber
+    );
 
     // owner wiring of modules
 
@@ -178,6 +184,18 @@ interface IJobRegistry {
     ) external;
 
     function getSpecHash(uint256 jobId) external view returns (bytes32);
+
+    function submitBurnReceipt(
+        uint256 jobId,
+        bytes32 burnTxHash,
+        uint256 amount,
+        uint256 blockNumber
+    ) external;
+
+    function hasBurnReceipt(uint256 jobId, bytes32 burnTxHash)
+        external
+        view
+        returns (bool);
 
     /// @notice Deposit stake and apply for a job in one call
     /// @param jobId Identifier of the job

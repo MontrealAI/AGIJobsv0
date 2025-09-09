@@ -19,6 +19,8 @@ contract ValidationFinalizeGas is Test {
     AGIALPHAToken token;
     MockJobRegistry jobRegistry;
 
+    bytes32 constant burnTxHash = keccak256("burn");
+
     address employer = address(0xE);
     address agent = address(0xA);
     address[3] validators;
@@ -74,6 +76,9 @@ contract ValidationFinalizeGas is Test {
         job.status = IJobRegistry.Status.Submitted;
         jobRegistry.setJob(jobId, job);
 
+        vm.prank(employer);
+        jobRegistry.submitBurnReceipt(jobId, burnTxHash, 0, block.number);
+
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
         vm.roll(block.number + 2);
@@ -86,13 +91,13 @@ contract ValidationFinalizeGas is Test {
             bytes32 salt = bytes32(uint256(i + 1));
             uint256 nonce = validation.jobNonce(jobId);
             bytes32 commitHash = keccak256(
-                abi.encodePacked(jobId, nonce, true, salt, bytes32(0))
+                abi.encodePacked(jobId, nonce, true, burnTxHash, salt, bytes32(0))
             );
             vm.prank(val);
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
             vm.warp(block.timestamp + 2);
             vm.prank(val);
-            validation.revealValidation(jobId, true, salt, "", new bytes32[](0));
+            validation.revealValidation(jobId, true, burnTxHash, salt, "", new bytes32[](0));
         }
     }
 

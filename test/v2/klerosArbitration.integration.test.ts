@@ -168,27 +168,31 @@ describe('Kleros dispute module', function () {
     await registry
       .connect(agent)
       .submit(1, ethers.id('ipfs://result'), 'ipfs://result', 'agent', []);
+    const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
+    await registry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
 
     const nonce = await validation.jobNonce(1);
     const salt1 = ethers.randomBytes(32);
     const commit1 = ethers.keccak256(
       ethers.solidityPacked(
-        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-        [1n, nonce, true, salt1, specHash]
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, true, burnTxHash, salt1, specHash]
       )
     );
     await validation.connect(v1).commitValidation(1, commit1, '', []);
     const salt2 = ethers.randomBytes(32);
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
-        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-        [1n, nonce, false, salt2, specHash]
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, false, burnTxHash, salt2, specHash]
       )
     );
     await validation.connect(v2).commitValidation(1, commit2, '', []);
 
     await time.increase(2);
-    await validation.connect(v1).revealValidation(1, true, salt1, '', []);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, burnTxHash, salt1, '', []);
     // v2 fails to reveal
     await time.increase(2);
     await validation.finalize(1);
