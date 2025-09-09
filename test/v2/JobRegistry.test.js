@@ -191,14 +191,18 @@ describe('JobRegistry integration', function () {
     expect(created.specHash).to.equal(specHash);
     const jobId = 1;
     await expect(registry.connect(agent).applyForJob(jobId, '', []))
-      .to.emit(registry, 'JobApplied')
+      .to.emit(registry, 'AgentIdentityVerified')
+      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .and.to.emit(registry, 'JobApplied')
       .withArgs(jobId, agent.address, '');
     await validation.connect(owner).setResult(true);
     const resultHash = ethers.id('result');
     await expect(
       registry.connect(agent).submit(jobId, resultHash, 'result', '', [])
     )
-      .to.emit(registry, 'JobSubmitted')
+      .to.emit(registry, 'AgentIdentityVerified')
+      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .and.to.emit(registry, 'JobSubmitted')
       .withArgs(jobId, agent.address, resultHash, 'result', '');
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
@@ -230,7 +234,9 @@ describe('JobRegistry integration', function () {
         'uri'
       );
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, '', []))
-      .to.emit(registry, 'JobApplied')
+      .to.emit(registry, 'AgentIdentityVerified')
+      .withArgs(newAgent.address, ethers.ZeroHash, '', false, false)
+      .and.to.emit(registry, 'JobApplied')
       .withArgs(1, newAgent.address, '');
     expect(await policy.hasAcknowledged(newAgent.address)).to.equal(true);
   });

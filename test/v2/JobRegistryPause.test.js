@@ -52,7 +52,9 @@ describe('JobRegistry pause', function () {
 
     await registry.connect(owner).unpause();
     await expect(registry.connect(agent).applyForJob(1, '', []))
-      .to.emit(registry, 'JobApplied')
+      .to.emit(registry, 'AgentIdentityVerified')
+      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .and.to.emit(registry, 'JobApplied')
       .withArgs(1, agent.address, '');
   });
 
