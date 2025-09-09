@@ -91,7 +91,7 @@ contract IdentityRegistryToggle is Ownable {
 
     function isAuthorizedAgent(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external view returns (bool) {
         if (additionalAgents[claimant]) {
@@ -102,7 +102,7 @@ contract IdentityRegistryToggle is Ownable {
 
     function isAuthorizedValidator(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external view returns (bool) {
         if (additionalValidators[claimant]) {
@@ -113,7 +113,7 @@ contract IdentityRegistryToggle is Ownable {
 
     function verifyAgent(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     )
         external
@@ -129,7 +129,7 @@ contract IdentityRegistryToggle is Ownable {
 
     function verifyValidator(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     )
         external

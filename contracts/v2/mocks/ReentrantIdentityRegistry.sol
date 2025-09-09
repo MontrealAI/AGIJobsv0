@@ -43,17 +43,17 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     }
 
     // IIdentityRegistry stubs
-    function isAuthorizedAgent(address, string calldata, bytes32[] calldata) external view returns (bool) {
+    function isAuthorizedAgent(address, bytes32, bytes32[] calldata) external view returns (bool) {
         return true;
     }
 
-    function isAuthorizedValidator(address, string calldata, bytes32[] calldata) external view returns (bool) {
+    function isAuthorizedValidator(address, bytes32, bytes32[] calldata) external view returns (bool) {
         return true;
     }
 
     function verifyAgent(
         address,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     )
         external
@@ -66,16 +66,16 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
 
     function verifyValidator(
         address,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle) {
         node = bytes32(0);
         if (attack == Attack.Commit) {
             attack = Attack.None;
-            validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
+            validation.commitValidation(jobId, commitHash, bytes32(0), new bytes32[](0));
         } else if (attack == Attack.Reveal) {
             attack = Attack.None;
-            validation.revealValidation(jobId, approve, burnTxHash, salt, "", new bytes32[](0));
+            validation.revealValidation(jobId, approve, burnTxHash, salt, bytes32(0), new bytes32[](0));
         }
         ok = true;
     }
@@ -84,7 +84,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     function setAgentProfileURI(address, string calldata) external {}
 
     function updateAgentProfile(
-        string calldata,
+        bytes32,
         bytes32[] calldata,
         string calldata
     ) external {}

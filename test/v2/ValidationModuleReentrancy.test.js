@@ -113,7 +113,9 @@ describe('ValidationModule reentrancy', function () {
     );
     await identity.attackCommit(1, commitHash);
     await expect(
-      validation.connect(validator).commitValidation(1, commitHash, '', [])
+      validation
+        .connect(validator)
+        .commitValidation(1, commitHash, ethers.id(''), [])
     ).to.be.revertedWithCustomError(validation, 'ReentrancyGuardReentrantCall');
   });
 
@@ -127,13 +129,15 @@ describe('ValidationModule reentrancy', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
-    await validation.connect(validator).commitValidation(1, commitHash, '', []);
+    await validation
+      .connect(validator)
+      .commitValidation(1, commitHash, ethers.id(''), []);
     await advance(61);
     await identity.attackReveal(1, true, burnTxHash, salt);
     await expect(
       validation
         .connect(validator)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+        .revealValidation(1, true, burnTxHash, salt, ethers.id(''), [])
     ).to.be.revertedWithCustomError(validation, 'ReentrancyGuardReentrantCall');
   });
 

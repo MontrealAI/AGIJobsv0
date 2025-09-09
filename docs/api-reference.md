@@ -45,20 +45,20 @@ StakeManager(stake).depositStake(0, 1_000000000000000000);
 
 Selects validators and manages commit‑reveal voting on submissions. Both
 `commitValidation` and `revealValidation` now **require** an ENS
-`subdomain` (label under `.club.agi.eth`) and Merkle `proof` parameters.
-Validators without an ENS identity should pass an empty string and empty proof
+`labelhash` (keccak256 of the label under `.club.agi.eth`) and Merkle `proof` parameters.
+Validators without an ENS identity should pass `ethers.id('')` and an empty proof
 array.
 
 ### Key Functions
 
-- `commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)` – Commit to a validation decision.
-- `revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)` – Reveal the decision.
+- `commitValidation(uint256 jobId, bytes32 commitHash, bytes32 labelhash, bytes32[] proof)` – Commit to a validation decision.
+- `revealValidation(uint256 jobId, bool approve, bytes32 salt, bytes32 labelhash, bytes32[] proof)` – Reveal the decision.
 - `finalize(uint256 jobId)` – Conclude validation after the reveal window.
 
 ### Example
 
 ```solidity
-validation.commitValidation(jobId, commitHash, "alice", proof); // alice.club.agi.eth
+validation.commitValidation(jobId, commitHash, keccak256(bytes("alice")), proof); // alice.club.agi.eth
 ```
 
 ## DisputeModule

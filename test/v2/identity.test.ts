@@ -51,10 +51,14 @@ describe('IdentityRegistry ENS verification', function () {
     await wrapper.setOwner(BigInt(subnode), alice.address);
 
     expect(
-      (await id.verifyAgent.staticCall(alice.address, subdomain, []))[0]
+      (
+        await id.verifyAgent.staticCall(alice.address, ethers.id(subdomain), [])
+      )[0]
     ).to.equal(true);
     expect(
-      (await id.verifyAgent.staticCall(bob.address, subdomain, []))[0]
+      (
+        await id.verifyAgent.staticCall(bob.address, ethers.id(subdomain), [])
+      )[0]
     ).to.equal(false);
   });
 
@@ -92,10 +96,22 @@ describe('IdentityRegistry ENS verification', function () {
     const vLeaf = leaf(validator.address, '');
     await id.setValidatorMerkleRoot(vLeaf);
     expect(
-      (await id.verifyValidator.staticCall(validator.address, '', []))[0]
+      (
+        await id.verifyValidator.staticCall(
+          validator.address,
+          ethers.id(''),
+          []
+        )
+      )[0]
     ).to.equal(true);
     expect(
-      (await id.verifyValidator.staticCall(validator.address, 'bad', []))[0]
+      (
+        await id.verifyValidator.staticCall(
+          validator.address,
+          ethers.id('bad'),
+          []
+        )
+      )[0]
     ).to.equal(false);
 
     // agent verified via resolver fallback
@@ -109,7 +125,7 @@ describe('IdentityRegistry ENS verification', function () {
     await ens.setResolver(node, await resolver.getAddress());
     await resolver.setAddr(node, agent.address);
     expect(
-      (await id.verifyAgent.staticCall(agent.address, label, []))[0]
+      (await id.verifyAgent.staticCall(agent.address, ethers.id(label), []))[0]
     ).to.equal(true);
   });
 
@@ -143,14 +159,14 @@ describe('IdentityRegistry ENS verification', function () {
     // blacklist blocks verification even if allowlisted
     await rep.blacklist(alice.address, true);
     expect(
-      (await id.verifyAgent.staticCall(alice.address, '', []))[0]
+      (await id.verifyAgent.staticCall(alice.address, ethers.id(''), []))[0]
     ).to.equal(false);
     await rep.blacklist(alice.address, false);
 
     // additional allowlist bypasses ENS requirements
     await id.addAdditionalAgent(alice.address);
     expect(
-      (await id.verifyAgent.staticCall(alice.address, '', []))[0]
+      (await id.verifyAgent.staticCall(alice.address, ethers.id(''), []))[0]
     ).to.equal(true);
   });
 
@@ -181,7 +197,7 @@ describe('IdentityRegistry ENS verification', function () {
     // allowlist should succeed without ENS
     await id.addAdditionalAgent(agent.address);
     expect(
-      (await id.verifyAgent.staticCall(agent.address, '', []))[0]
+      (await id.verifyAgent.staticCall(agent.address, ethers.id(''), []))[0]
     ).to.equal(true);
 
     // attestation should also succeed
@@ -205,7 +221,13 @@ describe('IdentityRegistry ENS verification', function () {
     await attest.connect(owner).attest(node, 1, validator.address);
 
     expect(
-      (await id.verifyValidator.staticCall(validator.address, label, []))[0]
+      (
+        await id.verifyValidator.staticCall(
+          validator.address,
+          ethers.id(label),
+          []
+        )
+      )[0]
     ).to.equal(true);
   });
 
@@ -246,14 +268,16 @@ describe('IdentityRegistry ENS verification', function () {
 
     // alice cannot update profile until authorized
     await expect(
-      id.connect(alice).updateAgentProfile('sub', [], 'ipfs://cap2')
+      id.connect(alice).updateAgentProfile(ethers.id('sub'), [], 'ipfs://cap2')
     ).to.be.revertedWithCustomError(id, 'UnauthorizedAgent');
 
     // allow alice as additional agent then self-update profile
     await id.addAdditionalAgent(alice.address);
-    await expect(id.connect(alice).updateAgentProfile('sub', [], 'ipfs://cap2'))
+    await expect(
+      id.connect(alice).updateAgentProfile(ethers.id('sub'), [], 'ipfs://cap2')
+    )
       .to.emit(id, 'OwnershipVerified')
-      .withArgs(alice.address, 'sub')
+      .withArgs(alice.address, ethers.id('sub'))
       .and.to.emit(id, 'AgentProfileUpdated')
       .withArgs(alice.address, 'ipfs://cap2');
     expect(await id.agentProfileURI(alice.address)).to.equal('ipfs://cap2');
@@ -288,14 +312,14 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
-    await expect(id.verifyAgent(agent.address, '', []))
+    await expect(id.verifyAgent(agent.address, ethers.id(''), []))
       .to.emit(id, 'AdditionalAgentUsed')
-      .withArgs(agent.address, '');
+      .withArgs(agent.address, ethers.id(''));
 
     await id.addAdditionalValidator(validator.address);
-    await expect(id.verifyValidator(validator.address, '', []))
+    await expect(id.verifyValidator(validator.address, ethers.id(''), []))
       .to.emit(id, 'AdditionalValidatorUsed')
-      .withArgs(validator.address, '');
+      .withArgs(validator.address, ethers.id(''));
   });
 
   it('authorization helpers handle allowlists', async () => {
@@ -326,7 +350,9 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
-    expect(await id.isAuthorizedAgent(agent.address, '', [])).to.equal(true);
+    expect(
+      await id.isAuthorizedAgent(agent.address, ethers.id(''), [])
+    ).to.equal(true);
 
     await id.addAdditionalValidator(validator.address);
     expect(

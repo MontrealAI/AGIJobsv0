@@ -250,24 +250,30 @@ describe('ValidationModule V2', function () {
       [1n, nonce, true, burnTxHash, salt3, ethers.ZeroHash]
     );
     await (
-      await validation.connect(v1).commitValidation(1, commit1, '', [])
+      await validation
+        .connect(v1)
+        .commitValidation(1, commit1, ethers.id(''), [])
     ).wait();
     await (
-      await validation.connect(v2).commitValidation(1, commit2, '', [])
+      await validation
+        .connect(v2)
+        .commitValidation(1, commit2, ethers.id(''), [])
     ).wait();
     await (
-      await validation.connect(v3).commitValidation(1, commit3, '', [])
+      await validation
+        .connect(v3)
+        .commitValidation(1, commit3, ethers.id(''), [])
     ).wait();
     await advance(61);
     await validation
       .connect(v1)
-      .revealValidation(1, true, burnTxHash, salt1, '', []);
+      .revealValidation(1, true, burnTxHash, salt1, ethers.id(''), []);
     await validation
       .connect(v2)
-      .revealValidation(1, true, burnTxHash, salt2, '', []);
+      .revealValidation(1, true, burnTxHash, salt2, ethers.id(''), []);
     await validation
       .connect(v3)
-      .revealValidation(1, true, burnTxHash, salt3, '', []);
+      .revealValidation(1, true, burnTxHash, salt3, ethers.id(''), []);
     await advance(61);
     expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
@@ -304,25 +310,31 @@ describe('ValidationModule V2', function () {
       [1n, nonce, false, burnTxHash, salt3, ethers.ZeroHash]
     );
     await (
-      await validation.connect(v1).commitValidation(1, commit1, '', [])
+      await validation
+        .connect(v1)
+        .commitValidation(1, commit1, ethers.id(''), [])
     ).wait();
     await (
-      await validation.connect(v2).commitValidation(1, commit2, '', [])
+      await validation
+        .connect(v2)
+        .commitValidation(1, commit2, ethers.id(''), [])
     ).wait();
     await (
-      await validation.connect(v3).commitValidation(1, commit3, '', [])
+      await validation
+        .connect(v3)
+        .commitValidation(1, commit3, ethers.id(''), [])
     ).wait();
     await advance(61);
     const stakeBefore = await stakeManager.stakeOf(v3.address, 1);
     await validation
       .connect(v1)
-      .revealValidation(1, true, burnTxHash, salt1, '', []);
+      .revealValidation(1, true, burnTxHash, salt1, ethers.id(''), []);
     await validation
       .connect(v2)
-      .revealValidation(1, true, burnTxHash, salt2, '', []);
+      .revealValidation(1, true, burnTxHash, salt2, ethers.id(''), []);
     await validation
       .connect(v3)
-      .revealValidation(1, false, burnTxHash, salt3, '', []);
+      .revealValidation(1, false, burnTxHash, salt3, ethers.id(''), []);
     await advance(61);
     await validation.finalize(1);
     expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
@@ -342,11 +354,15 @@ describe('ValidationModule V2', function () {
       [1n, wrongNonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await (
-      await validation.connect(v1).commitValidation(1, commit, '', [])
+      await validation
+        .connect(v1)
+        .commitValidation(1, commit, ethers.id(''), [])
     ).wait();
     await advance(61);
     await expect(
-      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, '', [])
+      validation
+        .connect(v1)
+        .revealValidation(1, true, burnTxHash, salt, ethers.id(''), [])
     ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
@@ -364,13 +380,15 @@ describe('ValidationModule V2', function () {
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await (
-      await validation.connect(v1).commitValidation(1, commit, '', [])
+      await validation
+        .connect(v1)
+        .commitValidation(1, commit, ethers.id(''), [])
     ).wait();
     expect(await validation.commitments(1, v1.address, nonce)).to.equal(commit);
     await advance(61);
     await validation
       .connect(v1)
-      .revealValidation(1, true, burnTxHash, salt, '', []);
+      .revealValidation(1, true, burnTxHash, salt, ethers.id(''), []);
     await advance(61);
     await validation.finalize(1);
     expect(await validation.commitments(1, v1.address, nonce)).to.equal(
@@ -392,11 +410,13 @@ describe('ValidationModule V2', function () {
       [1n, nonce1, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await (
-      await validation.connect(v1).commitValidation(1, commit1, '', [])
+      await validation
+        .connect(v1)
+        .commitValidation(1, commit1, ethers.id(''), [])
     ).wait();
 
     await expect(
-      validation.connect(v1).commitValidation(1, commit1, '', [])
+      validation.connect(v1).commitValidation(1, commit1, ethers.id(''), [])
     ).to.be.revertedWithCustomError(validation, 'AlreadyCommitted');
 
     await validation.connect(owner).resetJobNonce(1);
@@ -410,8 +430,9 @@ describe('ValidationModule V2', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce2, true, burnTxHash, salt, ethers.ZeroHash]
     );
-    await expect(validation.connect(v1).commitValidation(1, commit2, '', [])).to
-      .not.be.reverted;
+    await expect(
+      validation.connect(v1).commitValidation(1, commit2, ethers.id(''), [])
+    ).to.not.be.reverted;
   });
 
   it('removes validators from lookup on nonce reset', async () => {
@@ -434,7 +455,7 @@ describe('ValidationModule V2', function () {
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await expect(
-      validation.connect(v1).commitValidation(1, commit, '', [])
+      validation.connect(v1).commitValidation(1, commit, ethers.id(''), [])
     ).to.be.revertedWithCustomError(validation, 'NotValidator');
   });
 
@@ -502,21 +523,25 @@ describe('ValidationModule V2', function () {
       [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
 
-    await expect(validation.connect(val).commitValidation(1, commit, '', []))
+    await expect(
+      validation.connect(val).commitValidation(1, commit, ethers.id(''), [])
+    )
       .to.be.revertedWithCustomError(validation, 'TaxPolicyNotAcknowledged')
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
-    await expect(validation.connect(val).commitValidation(1, commit, '', []))
+    await expect(
+      validation.connect(val).commitValidation(1, commit, ethers.id(''), [])
+    )
       .to.emit(validation, 'ValidationCommitted')
-      .withArgs(1, val.address, commit, '');
+      .withArgs(1, val.address, commit, ethers.id(''));
 
     await advance(61);
     await policy.bumpPolicyVersion();
     await expect(
       validation
         .connect(val)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+        .revealValidation(1, true, burnTxHash, salt, ethers.id(''), [])
     )
       .to.be.revertedWithCustomError(validation, 'TaxPolicyNotAcknowledged')
       .withArgs(val.address);
@@ -525,7 +550,7 @@ describe('ValidationModule V2', function () {
     await expect(
       validation
         .connect(val)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+        .revealValidation(1, true, burnTxHash, salt, ethers.id(''), [])
     )
       .to.emit(validation, 'ValidationRevealed')
       .withArgs(1, val.address, true, burnTxHash, '');

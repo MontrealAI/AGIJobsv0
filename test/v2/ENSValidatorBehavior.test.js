@@ -124,12 +124,14 @@ describe('Validator ENS integration', function () {
       .reverted;
 
     await expect(
-      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
+      validation
+        .connect(validator)
+        .commitValidation(1, ethers.id('h'), ethers.id('v'), [])
     )
       .to.emit(identity, 'OwnershipVerified')
-      .withArgs(validator.address, 'v')
+      .withArgs(validator.address, ethers.id('v'))
       .and.to.emit(validation, 'ValidationCommitted')
-      .withArgs(1, validator.address, ethers.id('h'), 'v');
+      .withArgs(1, validator.address, ethers.id('h'), ethers.id('v'));
   });
 
   it('rejects validators without subdomains and emits events on success', async () => {
@@ -162,12 +164,14 @@ describe('Validator ENS integration', function () {
     await ethers.provider.send('evm_mine', []);
     await validation.connect(v2).selectValidators(2, 0);
     await expect(
-      validation.connect(validator).commitValidation(2, ethers.id('h'), 'v', [])
+      validation
+        .connect(validator)
+        .commitValidation(2, ethers.id('h'), ethers.id('v'), [])
     )
       .to.emit(identity, 'OwnershipVerified')
-      .withArgs(validator.address, 'v')
+      .withArgs(validator.address, ethers.id('v'))
       .and.to.emit(validation, 'ValidationCommitted')
-      .withArgs(2, validator.address, ethers.id('h'), 'v');
+      .withArgs(2, validator.address, ethers.id('h'), ethers.id('v'));
   });
 
   it('rejects invalid Merkle proofs', async () => {
@@ -219,7 +223,9 @@ describe('Validator ENS integration', function () {
     // transfer ENS ownership
     await wrapper.setOwner(ethers.toBigInt(node), other.address);
     await expect(
-      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
+      validation
+        .connect(validator)
+        .commitValidation(1, ethers.id('h'), ethers.id('v'), [])
     ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
 
     // non-owner cannot override
@@ -230,7 +236,9 @@ describe('Validator ENS integration', function () {
     // owner override and commit succeeds
     await identity.addAdditionalValidator(validator.address);
     await expect(
-      validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
+      validation
+        .connect(validator)
+        .commitValidation(1, ethers.id('h'), ethers.id('v'), [])
     )
       .to.emit(validation, 'ValidationCommitted')
       .withArgs(1, validator.address, ethers.id('h'), 'v');

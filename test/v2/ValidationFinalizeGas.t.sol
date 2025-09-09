@@ -94,7 +94,12 @@ contract ValidationFinalizeGas is Test {
                 abi.encodePacked(jobId, nonce, true, burnTxHash, salt, bytes32(0))
             );
             vm.prank(val);
-            validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
+            validation.commitValidation(
+                jobId,
+                commitHash,
+                bytes32(0),
+                new bytes32[](0)
+            );
             vm.warp(block.timestamp + 2);
             vm.prank(val);
             validation.revealValidation(jobId, true, burnTxHash, salt, "", new bytes32[](0));

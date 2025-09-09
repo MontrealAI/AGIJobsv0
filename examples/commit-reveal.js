@@ -30,11 +30,13 @@ async function commit(jobId, approve, subdomain, proof) {
   );
   console.log('Commit hash', hash);
   console.log('Salt', ethers.hexlify(salt), 'save for reveal');
-  await validation.commitValidation(jobId, hash, subdomain, proof);
+  const labelhash = ethers.id(subdomain);
+  await validation.commitValidation(jobId, hash, labelhash, proof);
 }
 
 async function reveal(jobId, approve, salt, subdomain, proof) {
-  await validation.revealValidation(jobId, approve, salt, subdomain, proof);
+  const labelhash = ethers.id(subdomain);
+  await validation.revealValidation(jobId, approve, salt, labelhash, proof);
 }
 
 async function main() {

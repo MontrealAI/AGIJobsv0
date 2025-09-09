@@ -291,7 +291,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         }
         job.agent = msg.sender;
         job.status = Status.Applied;
-        emit JobApplied(jobId, msg.sender, subdomain);
+        emit JobApplied(jobId, msg.sender, keccak256(bytes(subdomain)), subdomain);
     }
 
     function stakeAndApply(
@@ -324,7 +324,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         require(block.timestamp <= deadlines[jobId], "deadline");
         job.resultHash = resultHash;
         job.status = Status.Submitted;
-        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, keccak256(bytes(subdomain)), subdomain);
         if (validationModule != address(0)) {
             IValidationModule(validationModule).start(jobId, 0);
         }

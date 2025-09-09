@@ -56,7 +56,7 @@ Manages commit‑reveal voting by validators.
 
 - `start(jobId, entropy)` – select validators and open the commit window.
 - `selectValidators(jobId, entropy)` – choose validators for a job.
-- `commitValidation(jobId, commitHash, subdomain, proof)` / `revealValidation(jobId, approve, salt, subdomain, proof)` – validator vote flow.
+- `commitValidation(jobId, commitHash, labelhash, proof)` / `revealValidation(jobId, approve, salt, labelhash, proof)` – validator vote flow.
 - `finalize(jobId)` – tallies votes and notifies `JobRegistry`.
 
 ```javascript
@@ -81,8 +81,8 @@ await dispute.resolve(jobId, true); // employer wins
 Verifies agent and validator eligibility.
 
 - `setAttestationRegistry(address registry)` – configure optional delegated identity support.
-- `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check if an address controlling `subdomain.agent.agi.eth` can work.
-- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – read-only validator eligibility check for `subdomain.club.agi.eth`; emits no events.
+- `isAuthorizedAgent(address claimant, bytes32 labelhash, bytes32[] proof)` – check if an address controlling a label under `agent.agi.eth` can work.
+- `isAuthorizedValidator(address claimant, bytes32 labelhash, bytes32[] proof)` – read-only validator eligibility check for `labelhash` under `club.agi.eth`; emits no events.
 
 ```javascript
 const ok = await identity.isAuthorizedAgent(user, 'alice', merkleProof); // alice.agent.agi.eth
