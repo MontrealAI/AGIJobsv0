@@ -194,7 +194,8 @@ async function main() {
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     burnPct,
-    treasury
+    treasury,
+    await tax.getAddress()
   );
   await feePool.waitForDeployment();
 

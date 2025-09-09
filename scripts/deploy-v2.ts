@@ -101,13 +101,23 @@ async function main() {
   await dispute.setCommittee(await committee.getAddress());
   await dispute.setStakeManager(await stake.getAddress());
 
+  const TaxPolicy = await ethers.getContractFactory(
+    'contracts/v2/TaxPolicy.sol:TaxPolicy'
+  );
+  const tax = await TaxPolicy.deploy(
+    'ipfs://policy',
+    'All taxes on participants; contract and owner exempt'
+  );
+  await tax.waitForDeployment();
+
   const FeePool = await ethers.getContractFactory(
     'contracts/v2/FeePool.sol:FeePool'
   );
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     0,
-    deployer.address
+    deployer.address,
+    await tax.getAddress()
   );
   await feePool.waitForDeployment();
 

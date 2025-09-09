@@ -94,6 +94,7 @@ async function deploySystem() {
   const feePool = await FeePool.deploy(
     await stake.getAddress(),
     0,
+    ethers.ZeroAddress,
     ethers.ZeroAddress
   );
   await feePool.waitForDeployment();

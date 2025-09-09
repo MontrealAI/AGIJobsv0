@@ -6,6 +6,7 @@ import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/legacy/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AGIALPHA} from "contracts/v2/Constants.sol";
+import {ITaxPolicy} from "contracts/v2/interfaces/ITaxPolicy.sol";
 
 // minimal cheatcode interface
 interface Vm {
@@ -48,7 +49,7 @@ contract FeePoolTest {
         token = TestToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(stakeManager, 0, address(0));
+        feePool = new FeePool(stakeManager, 0, address(0), ITaxPolicy(address(0)));
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
         stakeManager.setStake(bob, IStakeManager.Role.Platform, 2 * TOKEN);
     }
@@ -135,7 +136,7 @@ contract FeePoolTest {
         NonBurnableToken nbToken = NonBurnableToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(stakeManager, 0, address(0));
+        feePool = new FeePool(stakeManager, 0, address(0), ITaxPolicy(address(0)));
         stakeManager.setStake(alice, IStakeManager.Role.Platform, 1 * TOKEN);
         nbToken.mint(address(feePool), TOKEN);
         vm.prank(address(stakeManager));
@@ -191,7 +192,7 @@ contract FeePoolTest {
         token = TestToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         vm.expectRevert(InvalidTreasury.selector);
-        new FeePool(stakeManager, 0, address(this));
+        new FeePool(stakeManager, 0, address(this), ITaxPolicy(address(0)));
     }
 
     function testNoStakersBurnsFees() public {
@@ -200,7 +201,7 @@ contract FeePoolTest {
         token = TestToken(AGIALPHA);
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistry);
-        feePool = new FeePool(stakeManager, 0, address(0));
+        feePool = new FeePool(stakeManager, 0, address(0), ITaxPolicy(address(0)));
         token.mint(address(feePool), TOKEN);
         uint256 supplyBefore = token.totalSupply();
         vm.prank(address(stakeManager));

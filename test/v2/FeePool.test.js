@@ -79,7 +79,8 @@ describe('FeePool', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
 
@@ -252,6 +253,7 @@ describe('FeePool', function () {
     const burnPool = await FeePool.deploy(
       await emptyStakeManager.getAddress(),
       0,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await token.connect(user1).approve(await burnPool.getAddress(), 100);
@@ -423,7 +425,8 @@ describe('FeePool with no stakers', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
   });
@@ -452,6 +455,7 @@ describe('FeePool with no stakers', function () {
     const burnPool = await BurnFeePool.deploy(
       await stakeManager.getAddress(),
       0,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await burnPool.setBurnPct(0);
