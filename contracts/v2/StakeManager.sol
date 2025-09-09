@@ -521,11 +521,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         types = agiTypes;
     }
 
-    /// @notice Determine the payout percentage for an agent based on AGI type NFTs
+    /// @notice Determine the highest payout percentage for an agent based on AGI type NFTs
     /// @dev Iterates through registered AGI types and selects the highest payout
     ///      percentage from NFTs held by the agent. Reverts from malicious NFT
     ///      contracts are ignored.
-    function getAgentPayoutPct(address agent) public view returns (uint256) {
+    function getHighestPayoutPct(address agent) public view returns (uint256) {
         uint256 highest = 100;
         uint256 length = agiTypes.length;
         for (uint256 i; i < length;) {
@@ -937,7 +937,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address to,
         uint256 amount
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        uint256 pct = getAgentPayoutPct(to);
+        uint256 pct = getHighestPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
         uint256 feeAmount = (modified * feePct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -982,7 +982,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         // apply AGI type payout modifier
-        uint256 pct = getAgentPayoutPct(to);
+        uint256 pct = getHighestPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
 
         // apply protocol fees and burn on the modified amount
@@ -1028,7 +1028,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
         emit JobFundsFinalized(jobId, employer);
-        uint256 pct = getAgentPayoutPct(agent);
+        uint256 pct = getHighestPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
