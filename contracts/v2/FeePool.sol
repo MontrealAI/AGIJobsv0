@@ -24,6 +24,7 @@ error InvalidStakeManagerVersion();
 error TokenNotBurnable();
 error InvalidTreasury();
 error InvalidTaxPolicy();
+error InvalidRecipient();
 error PolicyNotTaxExempt();
 /// @dev Caller is not the governance contract.
 error NotGovernance();
@@ -304,14 +305,26 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     /// @notice governance-controlled emergency escape hatch to withdraw tokens
-    /// @dev Only callable by the configured governance contract. Amount uses 18 decimal units.
+    /// @notice Withdraw fees under governance control to burn or fund the community treasury.
+    /// @dev Caller must acknowledge the current tax policy. `to` must be either
+    /// the BURN_ADDRESS or `treasury` and may not be the zero address or the
+    /// contract owner.
     /// @param to recipient address
     /// @param amount token amount with 18 decimals
     function governanceWithdraw(address to, uint256 amount)
         external
         onlyGovernance
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
         nonReentrant
     {
+        if (to == address(0) || to == owner()) revert InvalidRecipient();
+        if (to != BURN_ADDRESS && to != treasury) revert InvalidRecipient();
         token.safeTransfer(to, amount);
         emit GovernanceWithdrawal(to, amount);
     }
