@@ -55,7 +55,7 @@ describe('Job expiration boundary', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     const Registry = await ethers.getContractFactory(

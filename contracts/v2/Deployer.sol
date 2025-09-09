@@ -337,7 +337,7 @@ contract Deployer is Ownable {
         FeePool pool = new FeePool(
             IStakeManager(address(stake)),
             burnPct,
-            governance,
+            address(0),
             ITaxPolicy(address(policy))
         );
 
