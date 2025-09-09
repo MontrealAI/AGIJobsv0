@@ -71,6 +71,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error CannotCancel();
     error OnlyEmployer();
     error BurnAllowanceInsufficient();
+    error PendingBurn();
 
     enum State {
         None,
@@ -1243,18 +1244,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     fundsRedirected = true;
                 }
 
-                uint256 pct = stakeManager.getAgentPayoutPct(payee);
-                uint256 modified = (rewardAfterValidator * pct) / 100;
-                uint256 burnAmount = (modified * stakeManager.burnPct()) / 100;
-                uint256 totalBurn = burnAmount;
-                if (address(pool) == address(0) && fee > 0) {
-                    totalBurn += fee;
-                }
-                if (totalBurn > 0) {
-                    IERC20 t = stakeManager.token();
-                    if (t.allowance(job.employer, address(stakeManager)) < totalBurn) {
-                        revert BurnAllowanceInsufficient();
-                    }
+                if (stakeManager.pendingBurn(jobKey, job.employer) > 0) {
+                    revert PendingBurn();
                 }
 
                 address employerParam = isGov ? job.employer : msg.sender;
@@ -1343,6 +1334,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     recipient = treasury;
                     fundsRedirected = true;
                 }
+                if (stakeManager.pendingBurn(jobKey, job.employer) > 0) {
+                    revert PendingBurn();
+                }
                 if (job.reward > 0) {
                     stakeManager.releaseReward(
                         jobKey,
@@ -1400,6 +1394,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             revert CannotCancel();
         job.state = State.Cancelled;
         if (address(stakeManager) != address(0) && job.reward > 0) {
+            if (stakeManager.pendingBurn(bytes32(jobId), job.employer) > 0) {
+                revert PendingBurn();
+            }
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
             stakeManager.releaseReward(
                 bytes32(jobId),

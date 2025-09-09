@@ -328,6 +328,12 @@ describe('JobRegistry integration', function () {
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobKey, agent.address, 90n)
+      .and.to.emit(stakeManager, 'BurnRecorded')
+      .withArgs(jobKey, employer.address, burn);
+
+    await expect(stakeManager.connect(employer).submitBurnProof(jobKey))
+      .to.emit(stakeManager, 'BurnProofSubmitted')
+      .withArgs(jobKey, employer.address, burn)
       .and.to.emit(stakeManager, 'TokensBurned')
       .withArgs(jobKey, burn);
   });

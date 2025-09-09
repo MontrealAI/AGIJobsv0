@@ -120,8 +120,8 @@ describe('StakeManager release', function () {
         await feePool.getAddress(),
         ethers.parseEther('20')
       )
-      .and.to.emit(stakeManager, 'TokensBurned')
-      .withArgs(ethers.ZeroHash, ethers.parseEther('10'))
+      .and.to.emit(stakeManager, 'BurnRecorded')
+      .withArgs(ethers.ZeroHash, user2.address, ethers.parseEther('10'))
       .and.to.emit(stakeManager, 'RewardPaid')
       .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther('70'));
 
@@ -129,10 +129,19 @@ describe('StakeManager release', function () {
       ethers.parseEther('70')
     );
     const supplyAfter = await token.totalSupply();
-    expect(supplyBefore - supplyAfter).to.equal(ethers.parseEther('10'));
+    expect(supplyBefore - supplyAfter).to.equal(0n);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       ethers.parseEther('20')
     );
+
+    await expect(stakeManager.connect(user2).submitBurnProof(ethers.ZeroHash))
+      .to.emit(stakeManager, 'BurnProofSubmitted')
+      .withArgs(ethers.ZeroHash, user2.address, ethers.parseEther('10'))
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(ethers.ZeroHash, ethers.parseEther('10'));
+
+    const supplyFinal = await token.totalSupply();
+    expect(supplyBefore - supplyFinal).to.equal(ethers.parseEther('10'));
 
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
@@ -167,8 +176,8 @@ describe('StakeManager release', function () {
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('20'))
-      .and.to.emit(stakeManager, 'TokensBurned')
-      .withArgs(jobId, ethers.parseEther('10'))
+      .and.to.emit(stakeManager, 'BurnRecorded')
+      .withArgs(jobId, user2.address, ethers.parseEther('10'))
       .and.to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, user1.address, ethers.parseEther('70'));
 
@@ -176,10 +185,19 @@ describe('StakeManager release', function () {
       ethers.parseEther('70')
     );
     const supplyAfter = await token.totalSupply();
-    expect(supplyBefore - supplyAfter).to.equal(ethers.parseEther('10'));
+    expect(supplyBefore - supplyAfter).to.equal(0n);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       ethers.parseEther('20')
     );
+
+    await expect(stakeManager.connect(user2).submitBurnProof(jobId))
+      .to.emit(stakeManager, 'BurnProofSubmitted')
+      .withArgs(jobId, user2.address, ethers.parseEther('10'))
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobId, ethers.parseEther('10'));
+
+    const supplyFinal = await token.totalSupply();
+    expect(supplyBefore - supplyFinal).to.equal(ethers.parseEther('10'));
 
     await feePool.connect(user1).claimRewards();
     await feePool.connect(user2).claimRewards();
