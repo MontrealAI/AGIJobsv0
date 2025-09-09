@@ -734,9 +734,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice request withdrawal of staked tokens subject to unbonding period
+    /// @dev Enforces the current tax policy via `requiresTaxAcknowledgement`.
     /// @param role participant role of the stake
     /// @param amount token amount with 18 decimals to withdraw
-    function requestWithdraw(Role role, uint256 amount) external whenNotPaused {
+    function requestWithdraw(Role role, uint256 amount)
+        external
+        whenNotPaused
+        requiresTaxAcknowledgement(
+            _policy(),
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+    {
         if (role > Role.Platform) revert InvalidRole();
         if (amount == 0) revert InvalidAmount();
         uint256 staked = stakes[msg.sender][role];
@@ -763,6 +774,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice finalize a previously requested withdrawal after unbonding period
+    /// @dev Enforces the current tax policy via `requiresTaxAcknowledgement`.
     /// @param role participant role of the stake being withdrawn
     function finalizeWithdraw(Role role)
         external
