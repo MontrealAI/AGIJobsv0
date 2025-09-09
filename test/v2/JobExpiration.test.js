@@ -129,6 +129,7 @@ describe('Job expiration', function () {
     await policy.connect(owner).acknowledge();
     await policy.connect(employer).acknowledge();
     await policy.connect(agent).acknowledge();
+    await policy.connect(treasury).acknowledge();
     await token.mint(employer.address, 1000);
     await token.mint(agent.address, 1000);
     await token.connect(agent).approve(await stakeManager.getAddress(), stake);

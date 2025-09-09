@@ -11,7 +11,7 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `VALIDATION_MODULE_ADDRESS` (optional)
 - `WALLET_KEYS` comma separated private keys managed by the gateway
 - `PORT` (default `3000`)
-- `BOT_WALLET` address of a managed wallet used for automated finalize/cancel actions (optional)
+- `BOT_WALLET` address of a managed wallet used for automated finalize/cancel actions (optional). If a tax policy is active, this wallet must first call `JobRegistry.acknowledgeTaxPolicy()`.
 
 Copy `.env.example` to `.env` and adjust values for your network:
 
@@ -33,7 +33,8 @@ The gateway listens for `JobSubmitted` and validation start events. When the
 reveal window closes it calls `ValidationModule.finalize`, and if a job misses
 its deadline it invokes `JobRegistry.cancelExpiredJob`. These automated
 transactions use the wallet specified by `BOT_WALLET` or the first wallet in
-`WALLET_KEYS` if none is provided.
+`WALLET_KEYS` if none is provided. If a tax policy is configured, that wallet
+must acknowledge it before these calls will succeed.
 
 The gateway also exposes helpers for committing and revealing validation
 results through REST endpoints. Final payout still requires the employer to
