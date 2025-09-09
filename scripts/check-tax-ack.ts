@@ -3,7 +3,8 @@ import glob from 'glob';
 
 const files = glob.sync('contracts/v2/**/*.sol');
 
-const transferRegex = /\.(?:transfer|transferFrom|safeTransfer|safeTransferFrom)\s*\(/;
+const transferRegex =
+  /\.(?:transfer|transferFrom|safeTransfer|safeTransferFrom)\s*\(/;
 const modifierRegex = /requiresTaxAcknowledgement\b/;
 const ackCallRegex = /_acknowledge\s*\(/;
 
@@ -29,7 +30,8 @@ files.forEach((file) => {
   ) {
     return;
   }
-  const funcRegex = /function\s+([A-Za-z0-9_]+)\s*\([^)]*\)\s*[^\{;]*\b(public|external)\b[^\{;]*\{/g;
+  const funcRegex =
+    /function\s+([A-Za-z0-9_]+)\s*\([^)]*\)\s*[^\{;]*\b(public|external)\b[^\{;]*\{/g;
   let match: RegExpExecArray | null;
   while ((match = funcRegex.exec(src)) !== null) {
     const name = match[1];
@@ -42,7 +44,9 @@ files.forEach((file) => {
     if (transferRegex.test(body) && body.includes('msg.sender')) {
       if (!modifierRegex.test(header) && !ackCallRegex.test(body)) {
         const line = src.slice(0, headerStart).split('\n').length;
-        console.error(`${file}:${line} function ${name} missing tax acknowledgement`);
+        console.error(
+          `${file}:${line} function ${name} missing tax acknowledgement`,
+        );
         failed = true;
       }
     }
