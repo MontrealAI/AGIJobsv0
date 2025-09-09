@@ -215,16 +215,20 @@ describe('Commit-reveal job lifecycle', function () {
     await registry
       .connect(agent)
       .submit(1, ethers.id('ipfs://result'), 'ipfs://result', label, []);
+    const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
+    await registry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
 
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id('salt');
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, specHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, '', []);
     await time.increase(2);
-    await validation.connect(validator).revealValidation(1, true, salt, '', []);
+    await validation
+      .connect(validator)
+      .revealValidation(1, true, burnTxHash, salt, '', []);
     await time.increase(2);
     await validation.finalize(1);
     await registry.connect(employer).finalize(1);
@@ -290,18 +294,20 @@ describe('Commit-reveal job lifecycle', function () {
     await registry
       .connect(agent)
       .submit(1, ethers.id('ipfs://bad'), 'ipfs://bad', label, []);
+    const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
+    await registry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
 
     const nonce = await validation.jobNonce(1);
     const salt = ethers.id('salt');
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, false, salt, specHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, false, burnTxHash, salt, specHash]
     );
     await validation.connect(validator).commitValidation(1, commit, '', []);
     await time.increase(2);
     await validation
       .connect(validator)
-      .revealValidation(1, false, salt, '', []);
+      .revealValidation(1, false, burnTxHash, salt, '', []);
     await time.increase(2);
     await validation.finalize(1);
 

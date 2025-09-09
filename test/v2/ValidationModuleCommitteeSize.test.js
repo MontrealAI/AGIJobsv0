@@ -4,6 +4,7 @@ const { expect } = require('chai');
 describe('ValidationModule committee size', function () {
   let owner, employer, v1, v2, v3, v4;
   let validation, stakeManager, jobRegistry, identity;
+  let burnTxHash;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3, v4] = await ethers.getSigners();
@@ -69,6 +70,12 @@ describe('ValidationModule committee size', function () {
     await jobRegistry.setJob(2, jobStruct);
     await jobRegistry.setJob(3, jobStruct);
     await jobRegistry.setJob(4, jobStruct);
+    burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
+    for (let i = 1; i <= 4; i++) {
+      await jobRegistry
+        .connect(employer)
+        .submitBurnReceipt(i, burnTxHash, 0, 0);
+    }
   });
 
   async function advance(seconds) {
@@ -126,12 +133,12 @@ describe('ValidationModule committee size', function () {
     const salt2 = ethers.keccak256(ethers.toUtf8Bytes('salt2'));
     const nonce = await validation.jobNonce(4);
     const commit1 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [4n, nonce, true, salt1, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [4n, nonce, true, burnTxHash, salt1, ethers.ZeroHash]
     );
     const commit2 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [4n, nonce, true, salt2, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [4n, nonce, true, burnTxHash, salt2, ethers.ZeroHash]
     );
 
     await validation
@@ -144,10 +151,10 @@ describe('ValidationModule committee size', function () {
     await advance(61);
     await validation
       .connect(signerMap[selected[0].toLowerCase()])
-      .revealValidation(4, true, salt1, '', []);
+      .revealValidation(4, true, burnTxHash, salt1, '', []);
     await validation
       .connect(signerMap[selected[1].toLowerCase()])
-      .revealValidation(4, true, salt2, '', []);
+      .revealValidation(4, true, burnTxHash, salt2, '', []);
     await advance(61);
 
     expect(await validation.finalize.staticCall(4)).to.equal(false);

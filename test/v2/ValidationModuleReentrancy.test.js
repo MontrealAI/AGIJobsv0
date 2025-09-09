@@ -71,6 +71,8 @@ async function setup() {
     resultHash: ethers.ZeroHash,
   };
   await jobRegistry.setJob(1, jobStruct);
+  const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
+  await jobRegistry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
 
   async function prepare(jobId, entropy = 0) {
     const addr = await jobRegistry.getAddress();
@@ -94,18 +96,20 @@ async function setup() {
     stakeManager,
     identity,
     prepare,
+    burnTxHash,
   };
 }
 
 describe('ValidationModule reentrancy', function () {
   it('guards commit against reentrancy', async () => {
-    const { validator, validation, identity, prepare } = await setup();
+    const { validator, validation, identity, prepare, burnTxHash } =
+      await setup();
     await prepare(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes('s'));
     const nonce = await validation.jobNonce(1);
     const commitHash = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await identity.attackCommit(1, commitHash);
     await expect(
@@ -114,19 +118,22 @@ describe('ValidationModule reentrancy', function () {
   });
 
   it('guards reveal against reentrancy', async () => {
-    const { validator, validation, identity, prepare } = await setup();
+    const { validator, validation, identity, prepare, burnTxHash } =
+      await setup();
     await prepare(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes('s'));
     const nonce = await validation.jobNonce(1);
     const commitHash = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await validation.connect(validator).commitValidation(1, commitHash, '', []);
     await advance(61);
-    await identity.attackReveal(1, true, salt);
+    await identity.attackReveal(1, true, burnTxHash, salt);
     await expect(
-      validation.connect(validator).revealValidation(1, true, salt, '', [])
+      validation
+        .connect(validator)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'ReentrancyGuardReentrantCall');
   });
 

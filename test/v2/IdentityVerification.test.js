@@ -211,9 +211,10 @@ describe('Identity verification enforcement', function () {
       await identity.removeAdditionalValidator(val);
       const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
       const nonce = await validation.jobNonce(1);
+      const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
       const commit = ethers.solidityPackedKeccak256(
-        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-        [1n, nonce, true, salt, ethers.ZeroHash]
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+        [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
       );
       await expect(
         validation.connect(signer).commitValidation(1, commit, '', [])
@@ -226,7 +227,9 @@ describe('Identity verification enforcement', function () {
       await advance(61);
       await identity.removeAdditionalValidator(val);
       await expect(
-        validation.connect(signer).revealValidation(1, true, salt, '', [])
+        validation
+          .connect(signer)
+          .revealValidation(1, true, burnTxHash, salt, '', [])
       ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
     });
   });

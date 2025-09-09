@@ -4,6 +4,7 @@ const { ethers } = require('hardhat');
 describe('ValidationModule access controls', function () {
   let owner, employer, v1, v2, v3;
   let validation, stakeManager, jobRegistry, reputation, identity;
+  let burnTxHash;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
@@ -70,6 +71,8 @@ describe('ValidationModule access controls', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, jobStruct);
+    burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
+    await jobRegistry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
   });
 
   async function advance(seconds) {
@@ -119,8 +122,8 @@ describe('ValidationModule access controls', function () {
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const nonce = await validation.jobNonce(1);
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await expect(
       validation.connect(signer).commitValidation(1, commit, '', [])
@@ -136,7 +139,9 @@ describe('ValidationModule access controls', function () {
     await identity.removeAdditionalValidator(val);
     await toggle.setResult(false);
     await expect(
-      validation.connect(signer).revealValidation(1, true, salt, '', [])
+      validation
+        .connect(signer)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
   });
 
@@ -157,8 +162,8 @@ describe('ValidationModule access controls', function () {
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const nonce = await validation.jobNonce(1);
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await reputation.setBlacklist(val, true);
     await expect(
@@ -172,7 +177,9 @@ describe('ValidationModule access controls', function () {
     await advance(61);
     await reputation.setBlacklist(val, true);
     await expect(
-      validation.connect(signer).revealValidation(1, true, salt, '', [])
+      validation
+        .connect(signer)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'BlacklistedValidator');
   });
 
@@ -191,16 +198,16 @@ describe('ValidationModule access controls', function () {
     const saltC = ethers.keccak256(ethers.toUtf8Bytes('c'));
     const nonce = await validation.jobNonce(1);
     const commitA = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, false, saltA, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, false, burnTxHash, saltA, ethers.ZeroHash]
     );
     const commitB = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, false, saltB, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, false, burnTxHash, saltB, ethers.ZeroHash]
     );
     const commitC = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, false, saltC, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, false, burnTxHash, saltC, ethers.ZeroHash]
     );
     const signerMap = {
       [v1.address.toLowerCase()]: v1,
@@ -226,17 +233,17 @@ describe('ValidationModule access controls', function () {
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])
-        .revealValidation(1, false, saltA, '', [])
+        .revealValidation(1, false, burnTxHash, saltA, '', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vB.toLowerCase()])
-        .revealValidation(1, false, saltB, '', [])
+        .revealValidation(1, false, burnTxHash, saltB, '', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vC.toLowerCase()])
-        .revealValidation(1, false, saltC, '', [])
+        .revealValidation(1, false, burnTxHash, saltC, '', [])
     ).wait();
     await advance(61);
     await validation.finalize(1);
@@ -261,16 +268,16 @@ describe('ValidationModule access controls', function () {
     const s2 = ethers.keccak256(ethers.toUtf8Bytes('s2'));
     const s3 = ethers.keccak256(ethers.toUtf8Bytes('s3'));
     const c1 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce2, true, s1, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce2, true, burnTxHash, s1, ethers.ZeroHash]
     );
     const c2 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce2, true, s2, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce2, true, burnTxHash, s2, ethers.ZeroHash]
     );
     const c3 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce2, true, s3, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce2, true, burnTxHash, s3, ethers.ZeroHash]
     );
     await (
       await validation
@@ -291,17 +298,17 @@ describe('ValidationModule access controls', function () {
     await (
       await validation
         .connect(signerMap[vA.toLowerCase()])
-        .revealValidation(1, true, s1, '', [])
+        .revealValidation(1, true, burnTxHash, s1, '', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vB.toLowerCase()])
-        .revealValidation(1, true, s2, '', [])
+        .revealValidation(1, true, burnTxHash, s2, '', [])
     ).wait();
     await (
       await validation
         .connect(signerMap[vC.toLowerCase()])
-        .revealValidation(1, true, s3, '', [])
+        .revealValidation(1, true, burnTxHash, s3, '', [])
     ).wait();
     await advance(61);
     await validation.finalize(1);
