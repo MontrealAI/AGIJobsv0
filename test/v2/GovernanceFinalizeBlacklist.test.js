@@ -152,7 +152,7 @@ describe('JobRegistry governance finalization', function () {
       .to.emit(registry, 'GovernanceFinalized')
       .withArgs(jobId, owner.address, true)
       .and.to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 0n, 0n);
 
     expect(await token.balanceOf(treasury.address)).to.equal(reward + stake);
   });
@@ -183,7 +183,7 @@ describe('JobRegistry governance finalization', function () {
       .to.emit(registry, 'GovernanceFinalized')
       .withArgs(jobId, owner.address, true)
       .and.to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 0n, 0n);
 
     expect(await token.balanceOf(treasury.address)).to.equal(reward + stake);
   });

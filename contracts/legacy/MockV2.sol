@@ -422,7 +422,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         if (job.success && address(certificateNFT) != address(0)) {
             certificateNFT.mint(job.agent, jobId, job.uriHash);
         }
-        emit JobFinalized(jobId, job.agent);
+        uint256 rewardPaid = job.success ? job.reward : 0;
+        emit JobFinalized(jobId, job.agent, rewardPaid, 0);
     }
 
     function acknowledgeAndFinalize(uint256 jobId) external override {
