@@ -2,12 +2,12 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('StakeManager AGIType bonuses', function () {
-  let owner, employer, agent, registrySigner;
+  let owner, employer, agent, val1, val2, val3, registrySigner;
   let token, stakeManager, jobRegistry;
   let nft1, nft2, malicious;
 
   beforeEach(async () => {
-    [owner, employer, agent] = await ethers.getSigners();
+    [owner, employer, agent, val1, val2, val3] = await ethers.getSigners();
 
     const { AGIALPHA } = require('../../scripts/constants');
     token = await ethers.getContractAt(
@@ -135,6 +135,34 @@ describe('StakeManager AGIType bonuses', function () {
         .connect(registrySigner)
         .releaseReward(jobId, employer.address, agent.address, 100)
     ).to.be.revertedWithCustomError(stakeManager, 'InsufficientEscrow');
+  });
+
+  it('weights validator rewards by NFT boost', async () => {
+    await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
+    await nft1.mint(val1.address);
+
+    const Validation = await ethers.getContractFactory(
+      'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
+    );
+    const validation = await Validation.deploy();
+    await validation.setValidators([val1.address, val2.address, val3.address]);
+    await stakeManager
+      .connect(owner)
+      .setValidationModule(await validation.getAddress());
+
+    const jobId = ethers.encodeBytes32String('valJob');
+    await token.connect(employer).approve(await stakeManager.getAddress(), 350);
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, 350);
+
+    await stakeManager
+      .connect(registrySigner)
+      .distributeValidatorRewards(jobId, 350);
+
+    expect(await token.balanceOf(val1.address)).to.equal(150n);
+    expect(await token.balanceOf(val2.address)).to.equal(100n);
+    expect(await token.balanceOf(val3.address)).to.equal(100n);
   });
 
   it('reverts when setting max below current AGI types', async () => {
