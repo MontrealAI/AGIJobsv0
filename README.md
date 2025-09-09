@@ -51,6 +51,9 @@ Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax
 - [docs/deployment-production-guide.md](docs/deployment-production-guide.md) – step-by-step walkthrough for deploying AGI Jobs v2 using only a web browser and Etherscan.
 - [docs/deployment-guide-production.md](docs/deployment-guide-production.md) – production deployment checklist.
 - [docs/agi-jobs-v2-production-deployment-guide.md](docs/agi-jobs-v2-production-deployment-guide.md) – non‑technical guide highlighting best practices such as true token burning and owner updatability.
+- [docs/burn-receipts.md](docs/burn-receipts.md) – employer-side token burn process and validator verification.
+- [docs/expired-unclaimed-handling.md](docs/expired-unclaimed-handling.md) – guidance for expired stakes and unclaimed fees.
+- [docs/release-checklist.md](docs/release-checklist.md) – steps to compile, test and prepare an Etherscan call plan.
 
 ## Migrating from legacy
 
