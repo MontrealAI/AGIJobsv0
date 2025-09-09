@@ -243,6 +243,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         string resultURI,
         string subdomain
     );
+    event AgentIdentityVerified(
+        uint256 indexed jobId,
+        address indexed agent,
+        bytes32 node,
+        string label,
+        bool viaWrapper,
+        bool viaMerkle
+    );
     event JobCompleted(uint256 indexed jobId, bool success);
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
@@ -792,16 +800,25 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             agentAuthExpiry[msg.sender] > block.timestamp &&
             agentAuthVersion[msg.sender] == agentAuthCacheVersion;
         if (!authorized) {
-            (authorized, , , ) = identityRegistry.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
+            bytes32 node;
+            string memory label;
+            bool viaWrapper;
+            bool viaMerkle;
+            (authorized, node, label, viaWrapper, viaMerkle) =
+                identityRegistry.verifyAgent(msg.sender, subdomain, proof);
             if (authorized) {
                 agentAuthCache[msg.sender] = true;
                 agentAuthExpiry[msg.sender] =
                     block.timestamp + agentAuthCacheDuration;
                 agentAuthVersion[msg.sender] = agentAuthCacheVersion;
+                emit AgentIdentityVerified(
+                    jobId,
+                    msg.sender,
+                    node,
+                    label,
+                    viaWrapper,
+                    viaMerkle
+                );
             }
         }
         if (!authorized) revert NotAuthorizedAgent();
@@ -909,12 +926,22 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        (bool authorized, , , ) = identityRegistry.verifyAgent(
-            msg.sender,
-            subdomain,
-            proof
-        );
+        (
+            bool authorized,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        ) = identityRegistry.verifyAgent(msg.sender, subdomain, proof);
         if (!authorized) revert NotAuthorizedAgent();
+        emit AgentIdentityVerified(
+            jobId,
+            msg.sender,
+            node,
+            label,
+            viaWrapper,
+            viaMerkle
+        );
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender

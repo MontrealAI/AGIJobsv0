@@ -100,6 +100,23 @@ describe('Identity verification enforcement', function () {
         registry.connect(agent).submit(jobId, ethers.id('res'), 'res', 'a', [])
       ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
     });
+
+    it('emits AgentIdentityVerified on successful apply', async () => {
+      await identity.addAdditionalAgent(agent.address);
+      const jobId = await createJob();
+      const subdomain = 'a';
+      const node = ethers.keccak256(
+        ethers.solidityPacked(
+          ['bytes32', 'bytes32'],
+          [ethers.id('agi'), ethers.id(subdomain)]
+        )
+      );
+      await expect(
+        registry.connect(agent).applyForJob(jobId, subdomain, [])
+      )
+        .to.emit(registry, 'AgentIdentityVerified')
+        .withArgs(jobId, agent.address, node, subdomain, false, false);
+    });
   });
 
   describe('ValidationModule', function () {
@@ -228,6 +245,39 @@ describe('Identity verification enforcement', function () {
       await expect(
         validation.connect(signer).revealValidation(1, true, salt, '', [])
       ).to.be.revertedWithCustomError(validation, 'UnauthorizedValidator');
+    });
+
+    it('emits ValidatorIdentityVerified on commit', async () => {
+      const tx = await select(1);
+      const receipt = await tx.wait();
+      const selected = receipt.logs.find(
+        (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
+      ).args[1];
+      const val = selected[0];
+      const signerMap = {
+        [v1.address.toLowerCase()]: v1,
+        [v2.address.toLowerCase()]: v2,
+        [v3.address.toLowerCase()]: v3,
+      };
+      const signer = signerMap[val.toLowerCase()];
+      const subdomain = 'a';
+      const nonce = await validation.jobNonce(1);
+      const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
+      const commit = ethers.solidityPackedKeccak256(
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+        [1n, nonce, true, salt, ethers.ZeroHash]
+      );
+      const node = ethers.keccak256(
+        ethers.solidityPacked(
+          ['bytes32', 'bytes32'],
+          [ethers.id('club'), ethers.id(subdomain)]
+        )
+      );
+      await expect(
+        validation.connect(signer).commitValidation(1, commit, subdomain, [])
+      )
+        .to.emit(validation, 'ValidatorIdentityVerified')
+        .withArgs(1, val, node, subdomain, false, false);
     });
   });
 });

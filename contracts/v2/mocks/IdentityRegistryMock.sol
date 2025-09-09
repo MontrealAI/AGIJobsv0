@@ -120,10 +120,17 @@ contract IdentityRegistryMock is Ownable {
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         claimant; // silence unused
         node = bytes32(0);
+        label = "";
         ok = true;
     }
 
@@ -133,10 +140,17 @@ contract IdentityRegistryMock is Ownable {
         bytes32[] calldata
     )
         external
-        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+        returns (
+            bool ok,
+            bytes32 node,
+            string memory label,
+            bool viaWrapper,
+            bool viaMerkle
+        )
     {
         claimant; // silence unused
         node = bytes32(0);
+        label = "";
         ok = true;
     }
 }
