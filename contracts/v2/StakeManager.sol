@@ -56,6 +56,7 @@ error UnbondLocked();
 error Jailed();
 error PendingPenalty();
 error TokenNotBurnable();
+error BurnAllowanceInsufficient();
 error Unauthorized();
 
 /// @title StakeManager
@@ -929,6 +930,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (escrow < total) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - total;
 
+        uint256 totalBurn = burnAmount;
+        if (address(feePool) == address(0)) {
+            totalBurn += feeAmount;
+        }
+        if (totalBurn > 0 && token.allowance(employer, address(this)) < totalBurn) {
+            revert BurnAllowanceInsufficient();
+        }
+
         if (feeAmount > 0) {
             if (address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), feeAmount);
@@ -973,6 +982,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 feeAmount = (modified * feePct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - feeAmount - burnAmount;
+
+        uint256 totalBurn = burnAmount;
+        if (address(feePool) == address(0)) {
+            totalBurn += feeAmount;
+        }
+        if (totalBurn > 0 && token.allowance(employer, address(this)) < totalBurn) {
+            revert BurnAllowanceInsufficient();
+        }
 
         if (feeAmount > 0) {
             if (address(feePool) != address(0)) {
