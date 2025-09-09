@@ -32,3 +32,6 @@ gas usage.
 - `AdditionalAgentUsed(address agent, string subdomain)` /
   `AdditionalValidatorUsed(address validator, string subdomain)`
 - `AgentProfileUpdated(address agent, string uri)` – emitted whenever an agent profile is set or changed. Off-chain services can listen for this event and fetch the referenced URI (e.g., from IPFS) to match jobs with agents based on declared capabilities.
+- `IdentityVerified(address user, Role role, bytes32 node, string subdomain)` – emitted when verification succeeds.
+- `ENSVerified(address user, bytes32 node, string label, bool viaWrapper, bool viaMerkle)` – low-level trace of the ENS ownership path.
+- `IdentityVerificationFailed(address user, Role role, string subdomain)` – emitted when verification fails.
