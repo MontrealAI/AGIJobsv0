@@ -287,7 +287,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (
             _employerSlashPct > 100 || _treasurySlashPct > 100
         ) revert InvalidPercentage();
-        if (_employerSlashPct + _treasurySlashPct != 100) revert InvalidPercentage();
+        if (_employerSlashPct + _treasurySlashPct > 100) revert InvalidPercentage();
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
         emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
@@ -1113,11 +1113,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
-        if (employerSlashPct + treasurySlashPct != 100) revert InvalidPercentage();
+        if (employerSlashPct + treasurySlashPct > 100) revert InvalidPercentage();
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
-        uint256 burnShare = amount - employerShare - treasuryShare;
+        uint256 burnShare =
+            (amount * (100 - employerSlashPct - treasurySlashPct)) / 100;
+        uint256 distributed = employerShare + treasuryShare + burnShare;
+        if (distributed < amount) {
+            burnShare += amount - distributed;
+        }
 
         stakes[user][role] = staked - amount;
         totalStakes[role] -= amount;
@@ -1146,8 +1151,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
         if (treasuryShare > 0) {
-            if (treasury == address(0)) revert TreasuryNotSet();
-            token.safeTransfer(treasury, treasuryShare);
+            if (treasury != address(0)) {
+                token.safeTransfer(treasury, treasuryShare);
+            } else {
+                burnShare += treasuryShare;
+                treasuryShare = 0;
+            }
         }
         if (burnShare > 0) {
             // Burned stake originates from the slashed participant, not employer funds.
