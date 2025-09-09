@@ -599,4 +599,19 @@ describe('JobRegistry integration', function () {
       .withArgs(treasury.address, false);
     expect(await identity.additionalAgents(treasury.address)).to.equal(false);
   });
+
+  it('updates defaults via setJobParameters', async () => {
+    const newMaxReward = 5000;
+    const newStake = 300;
+    const duration = await registry.maxJobDuration();
+
+    await expect(
+      registry.connect(owner).setJobParameters(newMaxReward, newStake)
+    )
+      .to.emit(registry, 'JobParametersUpdated')
+      .withArgs(0, newStake, newMaxReward, duration);
+
+    expect(await registry.jobStake()).to.equal(newStake);
+    expect(await registry.maxJobReward()).to.equal(newMaxReward);
+  });
 });

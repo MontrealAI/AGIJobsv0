@@ -143,9 +143,9 @@ interface IJobRegistry {
     function validationModule() external view returns (address);
 
     /// @notice Owner configuration of job limits
-    /// @param reward Reward paid upon successful job completion
+    /// @param maxReward Maximum allowed reward for a job
     /// @param stake Stake required from the agent to accept a job
-    function setJobParameters(uint256 reward, uint256 stake) external;
+    function setJobParameters(uint256 maxReward, uint256 stake) external;
 
     /// @notice set the required agent stake for each job
     function setJobStake(uint96 stake) external;
