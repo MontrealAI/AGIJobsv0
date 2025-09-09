@@ -59,11 +59,15 @@ describe('JobRegistry burn receipt validation', function () {
     );
     identity = await Identity.deploy();
 
-    await registry.connect(owner).setIdentityRegistry(await identity.getAddress());
+    await registry
+      .connect(owner)
+      .setIdentityRegistry(await identity.getAddress());
     await registry.connect(owner).setJobParameters(1000, 0);
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setValidatorRewardPct(0);
-    await stakeManager.connect(owner).setJobRegistry(await registry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await registry.getAddress());
     await stakeManager
       .connect(owner)
       .setValidationModule(await validation.getAddress());
@@ -114,4 +118,3 @@ describe('JobRegistry burn receipt validation', function () {
     ).to.be.revertedWithCustomError(registry, 'BurnAmountTooLow');
   });
 });
-
