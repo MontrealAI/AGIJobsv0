@@ -22,7 +22,7 @@ describe('GovernanceReward', function () {
       0,
       100,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address
@@ -66,7 +66,7 @@ describe('GovernanceReward', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
@@ -82,6 +82,7 @@ describe('GovernanceReward', function () {
       1,
       50
     );
+    await feePool.setTreasuryAllowlist(await reward.getAddress(), true);
     await feePool.setTreasury(await reward.getAddress());
 
     await token.mint(voter1.address, 100n * TOKEN);

@@ -45,10 +45,15 @@ describe('JobRegistry Treasury', function () {
     );
   });
 
-  it('rejects zero treasury address', async function () {
+  it('rejects owner treasury address', async function () {
     await expect(
-      registry.connect(owner).setTreasury(ethers.ZeroAddress)
+      registry.connect(owner).setTreasury(owner.address)
     ).to.be.revertedWithCustomError(registry, 'InvalidTreasury');
+  });
+
+  it('allows zero treasury address', async function () {
+    await registry.connect(owner).setTreasury(ethers.ZeroAddress);
+    expect(await registry.treasury()).to.equal(ethers.ZeroAddress);
   });
 
   it('sets a valid treasury address', async function () {

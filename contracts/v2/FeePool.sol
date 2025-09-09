@@ -59,6 +59,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
 
     /// @notice address receiving rounding dust after distribution
     address public treasury;
+    /// @notice Allowlisted treasury addresses permitted to receive dust
+    mapping(address => bool) public treasuryAllowlist;
 
     /// @notice timelock or governance contract authorized for withdrawals
     TimelockController public governance;
@@ -85,6 +87,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     event RewardRoleUpdated(IStakeManager.Role role);
     event BurnPctUpdated(uint256 pct);
     event TreasuryUpdated(address indexed treasury);
+    event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event GovernanceUpdated(address indexed governance);
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
@@ -135,10 +138,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         burnPct = pct;
         emit BurnPctUpdated(pct);
 
-        if (_treasury == address(0)) {
-            treasury = address(0);
-        } else {
-            if (_treasury == msg.sender) {
+        if (_treasury != address(0)) {
+            if (_treasury == msg.sender || !treasuryAllowlist[_treasury]) {
                 revert InvalidTreasury();
             }
             treasury = _treasury;
@@ -233,17 +234,17 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
             emit FeesDistributed(0);
             return;
         }
-        bool nonPlatformTreasury = treasury != address(0) && treasury != owner();
+        bool burnDust = treasury == address(0) || treasury == owner();
 
         uint256 perToken = (amount * ACCUMULATOR_SCALE) / total;
         cumulativePerToken += perToken;
         uint256 accounted = (perToken * total) / ACCUMULATOR_SCALE;
         uint256 dust = amount - accounted;
         if (dust > 0) {
-            if (nonPlatformTreasury) {
-                token.safeTransfer(treasury, dust);
-            } else {
+            if (burnDust) {
                 _burnFees(msg.sender, dust);
+            } else {
+                token.safeTransfer(treasury, dust);
             }
         }
         emit FeesDistributed(accounted);
@@ -358,8 +359,19 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @param _treasury address receiving dust after distribution
     function setTreasury(address _treasury) external onlyOwner {
         if (_treasury == owner()) revert InvalidTreasury();
+        if (_treasury != address(0) && !treasuryAllowlist[_treasury]) {
+            revert InvalidTreasury();
+        }
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    /// @notice Allow or disallow a treasury address
+    /// @param _treasury Treasury candidate
+    /// @param allowed True to allow, false to revoke
+    function setTreasuryAllowlist(address _treasury, bool allowed) external onlyOwner {
+        treasuryAllowlist[_treasury] = allowed;
+        emit TreasuryAllowlistUpdated(_treasury, allowed);
     }
 
     /// @notice update the tax policy contract
