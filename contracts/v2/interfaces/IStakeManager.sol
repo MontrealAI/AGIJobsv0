@@ -157,6 +157,7 @@ interface IStakeManager {
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
+    function setCommunityTreasury(address _community) external;
     function setTreasury(address _treasury) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
     function setMaxAGITypes(uint256 newMax) external;

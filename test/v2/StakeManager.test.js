@@ -624,14 +624,22 @@ describe('StakeManager', function () {
     expect(employerAfter - employerBefore).to.equal(60n);
   });
 
-  it('restricts treasury updates to owner', async () => {
+  it('rejects owner treasury address and allows burns', async () => {
     await expect(
       stakeManager.connect(user).setTreasury(user.address)
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
+    await expect(
+      stakeManager.connect(owner).setTreasury(owner.address)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
     await expect(stakeManager.connect(owner).setTreasury(user.address))
       .to.emit(stakeManager, 'TreasuryUpdated')
       .withArgs(user.address);
-    expect(await stakeManager.treasury()).to.equal(user.address);
+    await expect(
+      stakeManager.connect(owner).setTreasury(ethers.ZeroAddress)
+    )
+      .to.emit(stakeManager, 'TreasuryUpdated')
+      .withArgs(ethers.ZeroAddress);
+    expect(await stakeManager.treasury()).to.equal(ethers.ZeroAddress);
   });
 
   it('enforces stake locks and unlocks after expiry', async () => {
