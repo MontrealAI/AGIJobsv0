@@ -15,7 +15,6 @@ import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -70,7 +69,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error NotReady();
     error CannotCancel();
     error OnlyEmployer();
-    error BurnAllowanceInsufficient();
 
     enum State {
         None,
@@ -1243,20 +1241,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     fundsRedirected = true;
                 }
 
-                uint256 pct = stakeManager.getAgentPayoutPct(payee);
-                uint256 modified = (rewardAfterValidator * pct) / 100;
-                uint256 burnAmount = (modified * stakeManager.burnPct()) / 100;
-                uint256 totalBurn = burnAmount;
-                if (address(pool) == address(0) && fee > 0) {
-                    totalBurn += fee;
-                }
-                if (totalBurn > 0) {
-                    IERC20 t = stakeManager.token();
-                    if (t.allowance(job.employer, address(stakeManager)) < totalBurn) {
-                        revert BurnAllowanceInsufficient();
-                    }
-                }
-
                 address employerParam = isGov ? job.employer : msg.sender;
                 stakeManager.finalizeJobFunds(
                     jobKey,
@@ -1375,6 +1359,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function acknowledgeAndFinalize(uint256 jobId) external {
         _acknowledge(msg.sender);
         finalize(jobId);
+    }
+
+    /// @notice Confirm an external burn and release escrowed rewards.
+    /// @param jobId Identifier of the job being settled.
+    /// @param amount Amount of tokens burned by the employer.
+    function confirmBurn(uint256 jobId, uint256 amount) external {
+        Job storage job = jobs[jobId];
+        if (job.employer != msg.sender) revert OnlyEmployer();
+        stakeManager.confirmBurn(bytes32(jobId), amount);
     }
 
     /// @notice Acknowledge the tax policy and cancel a job in one call.

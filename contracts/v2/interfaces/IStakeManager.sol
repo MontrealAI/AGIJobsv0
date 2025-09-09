@@ -21,6 +21,7 @@ interface IStakeManager {
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event BurnRequired(bytes32 indexed jobId, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
     /// @notice Emitted when an employer finalizes a job's funds.
     /// @dev Signals that any subsequent burn events stem from employer action.
@@ -114,6 +115,9 @@ interface IStakeManager {
         IFeePool feePool,
         bool byGovernance
     ) external;
+
+    /// @notice release pending payouts after the employer confirms a burn
+    function confirmBurn(bytes32 jobId, uint256 amount) external;
 
     /// @notice distribute validator rewards equally among selected validators
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
