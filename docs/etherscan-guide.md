@@ -48,7 +48,7 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
    stakeAndActivate(1000000000000000000)
    ```
 
-4. **burn & acknowledgeAndFinalize** – from the employer wallet, first burn the required fee share of `$AGIALPHA` (or approve the `StakeManager` to `burnFrom` your address) and then call `JobRegistry.acknowledgeAndFinalize(jobId)` to settle a validated job. The platform never finalizes jobs or collects burned tokens.
+4. **burn, confirm & acknowledgeAndFinalize** – from the employer wallet, burn the required fee share of `$AGIALPHA`, submit the receipt, call `JobRegistry.confirmEmployerBurn(jobId, txHash)`, and then call `JobRegistry.acknowledgeAndFinalize(jobId)` to settle a validated job. The platform never finalizes jobs or collects burned tokens.
 
    ```text
    acknowledgeAndFinalize(1)

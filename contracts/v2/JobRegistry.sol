@@ -70,7 +70,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error NotReady();
     error CannotCancel();
     error OnlyEmployer();
-    error BurnAllowanceInsufficient();
+    error BurnReceiptMissing();
+    error BurnNotConfirmed();
 
     enum State {
         None,
@@ -91,6 +92,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint32 feePct;
         State state;
         bool success;
+        bool burnConfirmed;
         uint8 agentTypes;
         uint64 deadline;
         uint64 assignedAt;
@@ -136,6 +138,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         returns (bool)
     {
         return burnReceipts[jobId][burnTxHash].exists;
+    }
+
+    function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash) external {
+        Job storage job = jobs[jobId];
+        if (job.employer != msg.sender) revert OnlyEmployer();
+        if (!burnReceipts[jobId][burnTxHash].exists) revert BurnReceiptMissing();
+        job.burnConfirmed = true;
+        emit BurnConfirmed(jobId, burnTxHash);
     }
 
     IValidationModule public validationModule;
@@ -289,6 +299,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 amount,
         uint256 blockNumber
     );
+    event BurnConfirmed(uint256 indexed jobId, bytes32 indexed burnTxHash);
     /// @notice Emitted when an assigned job is cancelled after missing its deadline
     /// @param jobId Identifier of the expired job
     /// @param caller Address that triggered the expiration
@@ -733,6 +744,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             feePct: feePctSnapshot,
             state: State.Created,
             success: false,
+            burnConfirmed: false,
             agentTypes: agentTypes,
             deadline: deadline,
             assignedAt: 0,
@@ -1204,6 +1216,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (job.state != State.Completed) revert NotReady();
         bool isGov = msg.sender == address(governance);
+        if (!isGov) {
+            uint256 burnRate = address(stakeManager) != address(0)
+                ? stakeManager.burnPct()
+                : 0;
+            if (job.feePct > 0 || burnRate > 0) {
+                if (!job.burnConfirmed) revert BurnNotConfirmed();
+            }
+        }
         bool agentBlacklisted;
         bool employerBlacklisted;
         if (address(reputationEngine) != address(0)) {
@@ -1241,20 +1261,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (isGov && treasury != address(0) && agentBlacklisted) {
                     payee = treasury;
                     fundsRedirected = true;
-                }
-
-                uint256 pct = stakeManager.getAgentPayoutPct(payee);
-                uint256 modified = (rewardAfterValidator * pct) / 100;
-                uint256 burnAmount = (modified * stakeManager.burnPct()) / 100;
-                uint256 totalBurn = burnAmount;
-                if (address(pool) == address(0) && fee > 0) {
-                    totalBurn += fee;
-                }
-                if (totalBurn > 0) {
-                    IERC20 t = stakeManager.token();
-                    if (t.allowance(job.employer, address(stakeManager)) < totalBurn) {
-                        revert BurnAllowanceInsufficient();
-                    }
                 }
 
                 address employerParam = isGov ? job.employer : msg.sender;

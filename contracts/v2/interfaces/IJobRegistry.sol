@@ -43,6 +43,9 @@ interface IJobRegistry {
     /// @dev Reverts when a job is in an unexpected status
     error InvalidStatus(Status expected, Status actual);
 
+    error BurnReceiptMissing();
+    error BurnNotConfirmed();
+
     // module configuration
     event ModuleUpdated(string module, address newAddress);
     event ValidationModuleUpdated(address module);
@@ -97,6 +100,7 @@ interface IJobRegistry {
         uint256 amount,
         uint256 blockNumber
     );
+    event BurnConfirmed(uint256 indexed jobId, bytes32 indexed burnTxHash);
 
     // owner wiring of modules
 
@@ -196,6 +200,8 @@ interface IJobRegistry {
         external
         view
         returns (bool);
+
+    function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash) external;
 
     /// @notice Deposit stake and apply for a job in one call
     /// @param jobId Identifier of the job
