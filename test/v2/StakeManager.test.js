@@ -634,6 +634,12 @@ describe('StakeManager', function () {
     expect(await stakeManager.treasury()).to.equal(user.address);
   });
 
+  it('rejects owner address as treasury', async () => {
+    await expect(
+      stakeManager.connect(owner).setTreasury(owner.address)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
+  });
+
   it('enforces stake locks and unlocks after expiry', async () => {
     const JobRegistry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'

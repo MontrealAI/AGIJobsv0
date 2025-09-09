@@ -173,7 +173,7 @@ interface IStakeManager {
         uint256 employerSlashPct,
         uint256 treasurySlashPct
     ) external;
-    function setTreasury(address treasury) external;
+    function setTreasury(address treasury) external; // treasury cannot be zero or owner
 }
 
 interface ICertificateNFT {
