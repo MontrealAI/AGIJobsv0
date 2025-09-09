@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable2Step} from "./utils/Ownable2Step.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
 
 /// @title TaxPolicy
@@ -51,7 +50,7 @@ contract TaxPolicy is Ownable2Step, ITaxPolicy {
     /// @param allowed True if the address is allowed to acknowledge for others.
     event AcknowledgerUpdated(address indexed acknowledger, bool allowed);
 
-    constructor(string memory uri, string memory ack) Ownable(msg.sender) {
+    constructor(string memory uri, string memory ack) Ownable2Step(msg.sender) {
         _policyURI = uri;
         _acknowledgement = ack;
         _version = 1;
