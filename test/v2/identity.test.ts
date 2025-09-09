@@ -52,20 +52,12 @@ describe('IdentityRegistry ENS verification', function () {
 
     expect(
       (
-        await id.verifyAgent.staticCall(
-          alice.address,
-          ethers.id(subdomain),
-          []
-        )
+        await id.verifyAgent.staticCall(alice.address, ethers.id(subdomain), [])
       )[0]
     ).to.equal(true);
     expect(
       (
-        await id.verifyAgent.staticCall(
-          bob.address,
-          ethers.id(subdomain),
-          []
-        )
+        await id.verifyAgent.staticCall(bob.address, ethers.id(subdomain), [])
       )[0]
     ).to.equal(false);
   });
@@ -133,13 +125,7 @@ describe('IdentityRegistry ENS verification', function () {
     await ens.setResolver(node, await resolver.getAddress());
     await resolver.setAddr(node, agent.address);
     expect(
-      (
-        await id.verifyAgent.staticCall(
-          agent.address,
-          ethers.id(label),
-          []
-        )
-      )[0]
+      (await id.verifyAgent.staticCall(agent.address, ethers.id(label), []))[0]
     ).to.equal(true);
   });
 
@@ -173,26 +159,14 @@ describe('IdentityRegistry ENS verification', function () {
     // blacklist blocks verification even if allowlisted
     await rep.blacklist(alice.address, true);
     expect(
-      (
-        await id.verifyAgent.staticCall(
-          alice.address,
-          ethers.id(''),
-          []
-        )
-      )[0]
+      (await id.verifyAgent.staticCall(alice.address, ethers.id(''), []))[0]
     ).to.equal(false);
     await rep.blacklist(alice.address, false);
 
     // additional allowlist bypasses ENS requirements
     await id.addAdditionalAgent(alice.address);
     expect(
-      (
-        await id.verifyAgent.staticCall(
-          alice.address,
-          ethers.id(''),
-          []
-        )
-      )[0]
+      (await id.verifyAgent.staticCall(alice.address, ethers.id(''), []))[0]
     ).to.equal(true);
   });
 
@@ -223,13 +197,7 @@ describe('IdentityRegistry ENS verification', function () {
     // allowlist should succeed without ENS
     await id.addAdditionalAgent(agent.address);
     expect(
-      (
-        await id.verifyAgent.staticCall(
-          agent.address,
-          ethers.id(''),
-          []
-        )
-      )[0]
+      (await id.verifyAgent.staticCall(agent.address, ethers.id(''), []))[0]
     ).to.equal(true);
 
     // attestation should also succeed

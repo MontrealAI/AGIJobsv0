@@ -224,7 +224,9 @@ describe('Commit-reveal job lifecycle', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt, specHash]
     );
-    await validation.connect(validator).commitValidation(1, commit, ethers.id(''), []);
+    await validation
+      .connect(validator)
+      .commitValidation(1, commit, ethers.id(''), []);
     await time.increase(2);
     await validation
       .connect(validator)
@@ -303,7 +305,9 @@ describe('Commit-reveal job lifecycle', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, false, burnTxHash, salt, specHash]
     );
-    await validation.connect(validator).commitValidation(1, commit, ethers.id(''), []);
+    await validation
+      .connect(validator)
+      .commitValidation(1, commit, ethers.id(''), []);
     await time.increase(2);
     await validation
       .connect(validator)

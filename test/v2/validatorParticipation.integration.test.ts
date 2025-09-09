@@ -165,7 +165,9 @@ describe('validator participation', function () {
         [1n, nonce, true, burnTxHash, salt1, specHash]
       )
     );
-    await validation.connect(v1).commitValidation(1, commit1, ethers.id(''), []);
+    await validation
+      .connect(v1)
+      .commitValidation(1, commit1, ethers.id(''), []);
     const salt2 = ethers.randomBytes(32);
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
@@ -173,7 +175,9 @@ describe('validator participation', function () {
         [1n, nonce, true, burnTxHash, salt2, specHash]
       )
     );
-    await validation.connect(v2).commitValidation(1, commit2, ethers.id(''), []);
+    await validation
+      .connect(v2)
+      .commitValidation(1, commit2, ethers.id(''), []);
 
     await time.increase(2);
     await validation
@@ -236,7 +240,9 @@ describe('validator participation', function () {
         [1n, nonce, false, burnTxHash, salt1, specHash]
       )
     );
-    await validation.connect(v1).commitValidation(1, commit1, ethers.id(''), []);
+    await validation
+      .connect(v1)
+      .commitValidation(1, commit1, ethers.id(''), []);
     const salt2 = ethers.randomBytes(32);
     const commit2 = ethers.keccak256(
       ethers.solidityPacked(
@@ -244,7 +250,9 @@ describe('validator participation', function () {
         [1n, nonce, false, burnTxHash, salt2, specHash]
       )
     );
-    await validation.connect(v2).commitValidation(1, commit2, ethers.id(''), []);
+    await validation
+      .connect(v2)
+      .commitValidation(1, commit2, ethers.id(''), []);
 
     await time.increase(2);
     await validation

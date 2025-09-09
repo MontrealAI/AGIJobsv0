@@ -196,14 +196,7 @@ describe('JobRegistry integration', function () {
       registry.connect(agent).submit(jobId, resultHash, 'result', '', [])
     )
       .to.emit(registry, 'JobSubmitted')
-      .withArgs(
-        jobId,
-        agent.address,
-        resultHash,
-        'result',
-        ethers.id(''),
-        ''
-      );
+      .withArgs(jobId, agent.address, resultHash, 'result', ethers.id(''), '');
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);

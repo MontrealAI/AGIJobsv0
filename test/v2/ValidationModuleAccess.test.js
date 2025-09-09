@@ -133,7 +133,9 @@ describe('ValidationModule access controls', function () {
     await identity.addAdditionalValidator(val);
     await toggle.setResult(true);
     await (
-      await validation.connect(signer).commitValidation(1, commit, ethers.id(''), [])
+      await validation
+        .connect(signer)
+        .commitValidation(1, commit, ethers.id(''), [])
     ).wait();
     await advance(61);
     await identity.removeAdditionalValidator(val);
@@ -172,7 +174,9 @@ describe('ValidationModule access controls', function () {
 
     await reputation.setBlacklist(val, false);
     await (
-      await validation.connect(signer).commitValidation(1, commit, ethers.id(''), [])
+      await validation
+        .connect(signer)
+        .commitValidation(1, commit, ethers.id(''), [])
     ).wait();
     await advance(61);
     await reputation.setBlacklist(val, true);
