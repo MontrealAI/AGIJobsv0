@@ -288,13 +288,23 @@ describe('IdentityRegistry ENS verification', function () {
     );
 
     await id.addAdditionalAgent(agent.address);
+    const emptyNode = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [ethers.ZeroHash, ethers.id('')]
+      )
+    );
     await expect(id.verifyAgent(agent.address, '', []))
-      .to.emit(id, 'AdditionalAgentUsed')
+      .to.emit(id, 'IdentityVerified')
+      .withArgs(agent.address, 0, emptyNode, '')
+      .and.to.emit(id, 'AdditionalAgentUsed')
       .withArgs(agent.address, '');
 
     await id.addAdditionalValidator(validator.address);
     await expect(id.verifyValidator(validator.address, '', []))
-      .to.emit(id, 'AdditionalValidatorUsed')
+      .to.emit(id, 'IdentityVerified')
+      .withArgs(validator.address, 1, emptyNode, '')
+      .and.to.emit(id, 'AdditionalValidatorUsed')
       .withArgs(validator.address, '');
   });
 

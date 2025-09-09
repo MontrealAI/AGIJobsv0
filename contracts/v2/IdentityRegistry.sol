@@ -51,6 +51,12 @@ contract IdentityRegistry is Ownable2Step {
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
     event AdditionalAgentUsed(address indexed agent, string subdomain);
     event AdditionalValidatorUsed(address indexed validator, string subdomain);
+    event IdentityVerified(
+        address indexed user,
+        AttestationRegistry.Role indexed role,
+        bytes32 indexed node,
+        string subdomain
+    );
     event ENSVerified(
         address indexed user,
         bytes32 indexed node,
@@ -393,6 +399,12 @@ contract IdentityRegistry is Ownable2Step {
             ) {
                 emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             }
+            emit IdentityVerified(
+                claimant,
+                AttestationRegistry.Role.Agent,
+                node,
+                subdomain
+            );
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
         }
     }
@@ -437,6 +449,12 @@ contract IdentityRegistry is Ownable2Step {
                 );
         }
         if (ok) {
+            emit IdentityVerified(
+                claimant,
+                AttestationRegistry.Role.Validator,
+                node,
+                subdomain
+            );
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
         }
     }
