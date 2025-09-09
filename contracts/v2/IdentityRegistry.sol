@@ -236,7 +236,7 @@ contract IdentityRegistry is Ownable2Step {
         bytes32[] calldata proof,
         string calldata uri
     ) external {
-        (bool ok, , , ) = this.verifyAgent(msg.sender, subdomain, proof);
+        (bool ok, , , ) = _verifyAgent(msg.sender, subdomain, proof);
         if (!ok) {
             revert UnauthorizedAgent();
         }
@@ -329,12 +329,13 @@ contract IdentityRegistry is Ownable2Step {
             );
         return ok;
     }
-    function verifyAgent(
+
+    function _verifyAgent(
         address claimant,
         string calldata subdomain,
         bytes32[] calldata proof
     )
-        external
+        internal
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         if (
@@ -346,15 +347,12 @@ contract IdentityRegistry is Ownable2Step {
         node =
             keccak256(abi.encodePacked(agentRootNode, keccak256(bytes(subdomain))));
         if (additionalAgents[claimant]) {
-            emit AdditionalAgentUsed(claimant, subdomain);
-            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             ok = true;
         } else if (address(attestationRegistry) != address(0) && attestationRegistry.isAttested(
                 node,
                 AttestationRegistry.Role.Agent,
                 claimant
             )) {
-            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
             ok = true;
         } else {
             (ok, node, viaWrapper, viaMerkle) =
@@ -368,7 +366,32 @@ contract IdentityRegistry is Ownable2Step {
                     proof
                 );
         }
+    }
+
+    function verifyAgent(
+        address claimant,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    )
+        external
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
+    {
+        (ok, node, viaWrapper, viaMerkle) =
+            _verifyAgent(claimant, subdomain, proof);
         if (ok) {
+            if (additionalAgents[claimant]) {
+                emit AdditionalAgentUsed(claimant, subdomain);
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            } else if (
+                address(attestationRegistry) != address(0) &&
+                attestationRegistry.isAttested(
+                    node,
+                    AttestationRegistry.Role.Agent,
+                    claimant
+                )
+            ) {
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            }
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
         }
     }
