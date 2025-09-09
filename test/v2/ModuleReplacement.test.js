@@ -196,7 +196,7 @@ describe('Module replacement', function () {
     await newValidation.setResult(true);
     await newValidation.finalize(1);
     const burnTxHash = ethers.ZeroHash;
-    await registry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
+    await registry.connect(employer).submitBurnReceipt(1, burnTxHash, fee, 0);
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 

@@ -275,7 +275,10 @@ describe('JobRegistry integration', function () {
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
     const burnTxHash = ethers.ZeroHash;
-    await registry.connect(employer).submitBurnReceipt(jobId, burnTxHash, 0, 0);
+    const burnAmt = (BigInt(reward) * 10n) / 100n;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash, burnAmt, 0);
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await registry.connect(employer).finalize(jobId);
 
