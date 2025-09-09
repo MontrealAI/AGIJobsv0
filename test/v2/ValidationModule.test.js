@@ -4,9 +4,11 @@ const { ethers } = require('hardhat');
 describe('ValidationModule V2', function () {
   let owner, employer, v1, v2, v3;
   let validation, stakeManager, jobRegistry, reputation, identity;
+  let burnTxHash;
 
   beforeEach(async () => {
     [owner, employer, v1, v2, v3] = await ethers.getSigners();
+    burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
 
     const StakeMock = await ethers.getContractFactory('MockStakeManager');
     stakeManager = await StakeMock.deploy();
@@ -72,6 +74,9 @@ describe('ValidationModule V2', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, jobStruct);
+    await jobRegistry
+      .connect(employer)
+      .submitBurnReceipt(1, burnTxHash, 0, 0);
   });
 
   async function advance(seconds) {
@@ -235,16 +240,16 @@ describe('ValidationModule V2', function () {
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes('salt3'));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt1, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt1, ethers.ZeroHash]
     );
     const commit2 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt2, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt2, ethers.ZeroHash]
     );
     const commit3 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt3, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt3, ethers.ZeroHash]
     );
     await (
       await validation.connect(v1).commitValidation(1, commit1, '', [])
@@ -256,9 +261,15 @@ describe('ValidationModule V2', function () {
       await validation.connect(v3).commitValidation(1, commit3, '', [])
     ).wait();
     await advance(61);
-    await validation.connect(v1).revealValidation(1, true, salt1, '', []);
-    await validation.connect(v2).revealValidation(1, true, salt2, '', []);
-    await validation.connect(v3).revealValidation(1, true, salt3, '', []);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, burnTxHash, salt1, '', []);
+    await validation
+      .connect(v2)
+      .revealValidation(1, true, burnTxHash, salt2, '', []);
+    await validation
+      .connect(v3)
+      .revealValidation(1, true, burnTxHash, salt3, '', []);
     await advance(61);
     expect(await validation.finalize.staticCall(1)).to.equal(true);
     await validation.finalize(1);
@@ -283,16 +294,16 @@ describe('ValidationModule V2', function () {
     const salt3 = ethers.keccak256(ethers.toUtf8Bytes('salt3'));
     const nonce = await validation.jobNonce(1);
     const commit1 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt1, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt1, ethers.ZeroHash]
     );
     const commit2 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt2, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt2, ethers.ZeroHash]
     );
     const commit3 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, false, salt3, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, false, burnTxHash, salt3, ethers.ZeroHash]
     );
     await (
       await validation.connect(v1).commitValidation(1, commit1, '', [])
@@ -305,9 +316,15 @@ describe('ValidationModule V2', function () {
     ).wait();
     await advance(61);
     const stakeBefore = await stakeManager.stakeOf(v3.address, 1);
-    await validation.connect(v1).revealValidation(1, true, salt1, '', []);
-    await validation.connect(v2).revealValidation(1, true, salt2, '', []);
-    await validation.connect(v3).revealValidation(1, false, salt3, '', []);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, burnTxHash, salt1, '', []);
+    await validation
+      .connect(v2)
+      .revealValidation(1, true, burnTxHash, salt2, '', []);
+    await validation
+      .connect(v3)
+      .revealValidation(1, false, burnTxHash, salt3, '', []);
     await advance(61);
     await validation.finalize(1);
     expect(await stakeManager.stakeOf(v3.address, 1)).to.equal(
@@ -323,15 +340,17 @@ describe('ValidationModule V2', function () {
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const wrongNonce = (await validation.jobNonce(1)) + 1n;
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, wrongNonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, wrongNonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await (
       await validation.connect(v1).commitValidation(1, commit, '', [])
     ).wait();
     await advance(61);
     await expect(
-      validation.connect(v1).revealValidation(1, true, salt, '', [])
+      validation
+        .connect(v1)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
@@ -345,15 +364,17 @@ describe('ValidationModule V2', function () {
     const nonce = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await (
       await validation.connect(v1).commitValidation(1, commit, '', [])
     ).wait();
     expect(await validation.commitments(1, v1.address, nonce)).to.equal(commit);
     await advance(61);
-    await validation.connect(v1).revealValidation(1, true, salt, '', []);
+    await validation
+      .connect(v1)
+      .revealValidation(1, true, burnTxHash, salt, '', []);
     await advance(61);
     await validation.finalize(1);
     expect(await validation.commitments(1, v1.address, nonce)).to.equal(
@@ -371,8 +392,8 @@ describe('ValidationModule V2', function () {
     const nonce1 = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const commit1 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce1, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce1, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await (
       await validation.connect(v1).commitValidation(1, commit1, '', [])
@@ -390,8 +411,8 @@ describe('ValidationModule V2', function () {
     const nonce2 = await validation.jobNonce(1);
     expect(nonce2).to.equal(1n);
     const commit2 = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce2, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce2, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await expect(validation.connect(v1).commitValidation(1, commit2, '', [])).to
       .not.be.reverted;
@@ -413,8 +434,8 @@ describe('ValidationModule V2', function () {
     const nonce = await validation.jobNonce(1);
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
     await expect(
       validation.connect(v1).commitValidation(1, commit, '', [])
@@ -481,8 +502,8 @@ describe('ValidationModule V2', function () {
     const salt = ethers.keccak256(ethers.toUtf8Bytes('salt'));
     const nonce = await validation.jobNonce(1);
     const commit = ethers.solidityPackedKeccak256(
-      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
-      [1n, nonce, true, salt, ethers.ZeroHash]
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
     );
 
     await expect(validation.connect(val).commitValidation(1, commit, '', []))
@@ -497,17 +518,21 @@ describe('ValidationModule V2', function () {
     await advance(61);
     await policy.bumpPolicyVersion();
     await expect(
-      validation.connect(val).revealValidation(1, true, salt, '', [])
+      validation
+        .connect(val)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
     )
       .to.be.revertedWithCustomError(validation, 'TaxPolicyNotAcknowledged')
       .withArgs(val.address);
 
     await policy.connect(val).acknowledge();
     await expect(
-      validation.connect(val).revealValidation(1, true, salt, '', [])
+      validation
+        .connect(val)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
     )
       .to.emit(validation, 'ValidationRevealed')
-      .withArgs(1, val.address, true, '');
+      .withArgs(1, val.address, true, burnTxHash, '');
   });
 
   it('updates additional validators individually', async () => {

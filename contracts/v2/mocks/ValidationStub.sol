@@ -47,6 +47,7 @@ contract ValidationStub is IValidationModule {
         uint256,
         bool,
         bytes32,
+        bytes32,
         string calldata,
         bytes32[] calldata
     ) external override {}

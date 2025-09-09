@@ -129,6 +129,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public validatorRewardPct;
     uint256 public nextJobId;
     mapping(uint256 => uint256) public deadlines;
+    mapping(uint256 => mapping(bytes32 => bool)) public burnReceiptMap;
 
     event JobCreated(
         uint256 indexed jobId,
@@ -147,6 +148,25 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function getSpecHash(uint256) external pure override returns (bytes32) {
         return bytes32(0);
+    }
+
+    function submitBurnReceipt(
+        uint256 jobId,
+        bytes32 burnTxHash,
+        uint256,
+        uint256
+    ) external override {
+        burnReceiptMap[jobId][burnTxHash] = true;
+        emit BurnReceiptSubmitted(jobId, burnTxHash, 0, 0);
+    }
+
+    function hasBurnReceipt(uint256 jobId, bytes32 burnTxHash)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return burnReceiptMap[jobId][burnTxHash];
     }
 
     function acknowledgeTaxPolicy() external {

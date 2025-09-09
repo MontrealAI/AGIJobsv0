@@ -14,6 +14,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
     bytes32 public commitHash;
     bool public approve;
     bytes32 public salt;
+    bytes32 public burnTxHash;
 
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
@@ -28,10 +29,16 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
         commitHash = _commitHash;
     }
 
-    function attackReveal(uint256 _jobId, bool _approve, bytes32 _salt) external {
+    function attackReveal(
+        uint256 _jobId,
+        bool _approve,
+        bytes32 _burnTxHash,
+        bytes32 _salt
+    ) external {
         attack = Attack.Reveal;
         jobId = _jobId;
         approve = _approve;
+        burnTxHash = _burnTxHash;
         salt = _salt;
     }
 
@@ -68,7 +75,7 @@ contract ReentrantIdentityRegistry is IIdentityRegistry {
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
         } else if (attack == Attack.Reveal) {
             attack = Attack.None;
-            validation.revealValidation(jobId, approve, salt, "", new bytes32[](0));
+            validation.revealValidation(jobId, approve, burnTxHash, salt, "", new bytes32[](0));
         }
         ok = true;
     }

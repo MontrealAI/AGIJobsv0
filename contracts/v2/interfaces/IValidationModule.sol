@@ -22,6 +22,7 @@ interface IValidationModule {
         uint256 indexed jobId,
         address indexed validator,
         bool approve,
+        bytes32 burnTxHash,
         string subdomain
     );
     event ValidationTallied(
@@ -80,6 +81,7 @@ interface IValidationModule {
     function revealValidation(
         uint256 jobId,
         bool approve,
+        bytes32 burnTxHash,
         bytes32 salt,
         string calldata subdomain,
         bytes32[] calldata proof
