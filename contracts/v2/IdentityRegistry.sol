@@ -11,6 +11,7 @@ import {AttestationRegistry} from "./AttestationRegistry.sol";
 error ZeroAddress();
 error UnauthorizedAgent();
 error EtherNotAccepted();
+error IncompatibleReputationEngine();
 
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
@@ -104,8 +105,11 @@ contract IdentityRegistry is Ownable2Step {
         if (address(_nameWrapper) != address(0)) {
             emit NameWrapperUpdated(address(_nameWrapper));
         }
-        reputationEngine = _reputationEngine;
         if (address(_reputationEngine) != address(0)) {
+            if (_reputationEngine.version() != 2) {
+                revert IncompatibleReputationEngine();
+            }
+            reputationEngine = _reputationEngine;
             emit ReputationEngineUpdated(address(_reputationEngine));
         }
         agentRootNode = _agentRootNode;
@@ -141,6 +145,9 @@ contract IdentityRegistry is Ownable2Step {
     function setReputationEngine(address engine) external onlyOwner {
         if (engine == address(0)) {
             revert ZeroAddress();
+        }
+        if (IReputationEngine(engine).version() != 2) {
+            revert IncompatibleReputationEngine();
         }
         reputationEngine = IReputationEngine(engine);
         emit ReputationEngineUpdated(engine);
