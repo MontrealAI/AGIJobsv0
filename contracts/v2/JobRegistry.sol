@@ -1257,9 +1257,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     }
                 }
 
+                address employerParam = isGov ? job.employer : msg.sender;
                 stakeManager.finalizeJobFunds(
                     jobKey,
-                    job.employer,
+                    employerParam,
                     payee,
                     rewardAfterValidator,
                     fee,

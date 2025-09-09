@@ -1013,7 +1013,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        if (!byGovernance && employer != tx.origin) revert Unauthorized();
         emit JobFundsFinalized(jobId, employer);
         uint256 pct = getAgentPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
