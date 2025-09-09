@@ -139,9 +139,7 @@ describe('JobRegistry tax policy integration', function () {
     await registry.connect(user).createJob(1, deadline, specHash, 'uri');
     await policy.connect(owner).bumpPolicyVersion();
     const burnTxHash = ethers.ZeroHash;
-    await expect(
-      registry.connect(user).submitBurnReceipt(1, burnTxHash, 0, 0)
-    )
+    await expect(registry.connect(user).submitBurnReceipt(1, burnTxHash, 0, 0))
       .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
       .withArgs(user.address);
   });
@@ -158,9 +156,7 @@ describe('JobRegistry tax policy integration', function () {
     const burnTxHash = ethers.ZeroHash;
     await registry.connect(user).submitBurnReceipt(1, burnTxHash, 0, 0);
     await policy.connect(owner).bumpPolicyVersion();
-    await expect(
-      registry.connect(user).confirmEmployerBurn(1, burnTxHash)
-    )
+    await expect(registry.connect(user).confirmEmployerBurn(1, burnTxHash))
       .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
       .withArgs(user.address);
   });
