@@ -68,6 +68,24 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
 
 7. **acknowledgeAndDispute** – if contesting a job, approve the `StakeManager` for the `appealFee` and call `JobRegistry.acknowledgeAndDispute(jobId, evidence)`.
 
+## Employer Burn Flow via Etherscan
+
+Employers must burn their own tokens before a job can be finalized. The entire
+sequence happens from the employer's wallet using Etherscan:
+
+1. **Burn tokens** – open the `$AGIALPHA` token contract, connect to Web3 and
+   call `burn(amount)` for the fee + burn share. After the transaction
+   confirms, record the transaction hash and the block number from the
+   Etherscan receipt page.
+2. **Submit burn receipt** – return to `JobRegistry` and call
+   `submitBurnReceipt(jobId, burnTxHash, amount, blockNumber)` using the values
+   from step 1.
+3. **Confirm burn** – still on `JobRegistry`, call
+   `confirmEmployerBurn(jobId, burnTxHash)`.
+4. **Finalize** – call `acknowledgeAndFinalize(jobId)` to release payment and
+   burn the platform fee. If a burn receipt or confirmation is missing the
+   transaction reverts, ensuring only employers can complete this flow.
+
 ### Sample Owner Parameters
 
 When using the **Write Contract** tab as the owner, populate fields with explicit values.
