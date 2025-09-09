@@ -508,10 +508,10 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
 - **$AGIALPHA‑only (L):** `immutable TOKEN = IERC20(AGIALPHA);` guards on all transfers.
 - **Role minimums (M):** `minStake[Role]` (Agent/Validator/Platform); `setMinStake`; `MinStakeUpdated`.
 - **Locking & withdrawals (M):** lock on assignment (`lockStake(user,role,amount,jobId)`), unlock on finalize/abort; `requestWithdraw` → `executeWithdraw` after `cooldown`.
-- **Slashing (H):** `_slash(user, role, amount, jobId)`  
-  → `{employerPct, treasuryPct}` (sum 100)  
-  → **burn remainder via `TOKEN.burn()`**  
-  → `StakeSlashed(user, role, amount, employerShare, treasuryShare, burnShare, jobId)`.
+  - **Slashing (H):** `_slash(user, role, amount, jobId)`
+    → `{employerPct, treasuryPct}` (sum 100)
+    → **burn remainder via `TOKEN.burn()`**
+    → `StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare, burnShare)`.
 - **Fee remittance (M):** `finalizeJobFunds(jobId, employer, agent, reward, fee, pool, byGovernance)` → net to agent, validator rewards, fee to `FeePool`.
 - **Guards (L):** `nonReentrant` + `whenNotPaused` on state mutators.
 
@@ -595,7 +595,7 @@ event StakeWithdrawalRequested(address indexed user, uint8 indexed role, uint256
 event StakeWithdrawn(address indexed user, uint8 indexed role, uint256 amount);
 event StakeTimeLocked(address indexed user, uint8 indexed role, uint256 amount, uint256 indexed jobId);
 event StakeUnlocked(address indexed user, uint8 indexed role, uint256 amount, uint256 indexed jobId);
-event StakeSlashed(address indexed user, uint8 indexed role, uint256 amount, uint256 employerShare, uint256 treasuryShare, uint256 burnShare, uint256 indexed jobId);
+event StakeSlashed(address indexed user, uint8 indexed role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 burnShare);
 
 event JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward, string uri);
 event JobApplied(uint256 indexed jobId, address indexed agent, string agentLabel);

@@ -70,7 +70,7 @@
 
 - Normalize names & indexed fields across:
   - **Jobs:** `JobCreated(id, employer, reward)`, `JobApplied(id, agent)`, `JobSubmitted(id, agent)`, `JobFinalized(id, success)`.
-  - **Stakes:** `StakeDeposited(user, role, amount)`, `StakeWithdrawn(user, role, amount)`, `StakeSlashed(user, role, amount, toEmployer, toTreasury, burned)`.
+   - **Stakes:** `StakeDeposited(user, role, amount)`, `StakeWithdrawn(user, role, amount)`, `StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare, burnShare)`.
   - **Fees:** `FeeAccrued(jobId, amount)`, `FeesBurned(amount)`, `FeesDistributed(total, perToken)`.
   - **Identity:** `IdentityVerified(user, node, role)`; `AllowlistUsed(user, role, reason)`.
 - Add NatSpec on all events so Etherscan shows helpful tooltips. Acceptance: Events appear consistently, with `indexed` on addresses and IDs; ABI verified. :contentReference[oaicite:13]{index=13}

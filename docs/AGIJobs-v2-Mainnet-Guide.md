@@ -119,12 +119,12 @@
 3. **Burning guarantees:** introduce `IBurnable` interface and **require** success of `burn(amount)` for fee burns/slashing burns. If `$AGIALPHA` were not burnable, functions that would burn **must revert** (documented in NatSpec).
 4. **Events for flows** (index by actors/jobId):
 
-   - `event StakeDeposited(address indexed user, uint8 indexed role, uint256 amount);`
-   - `event StakeWithdrawn(address indexed user, uint8 indexed role, uint256 amount);`
-   - `event StakeSlashed(address indexed user, uint256 amount, uint256 toEmployer, uint256 toTreasury, uint256 burned);`
-   - `event JobFunded(uint256 indexed jobId, address indexed employer, uint256 amount);`
-   - `event RewardPaid(uint256 indexed jobId, address indexed agent, uint256 amount);`
-   - `event FeeAccrued(uint256 indexed jobId, uint256 amount);`
+    - `event StakeDeposited(address indexed user, uint8 indexed role, uint256 amount);`
+    - `event StakeWithdrawn(address indexed user, uint8 indexed role, uint256 amount);`
+    - `event StakeSlashed(address indexed user, uint8 indexed role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 burnShare);`
+    - `event JobFunded(uint256 indexed jobId, address indexed employer, uint256 amount);`
+    - `event RewardPaid(uint256 indexed jobId, address indexed agent, uint256 amount);`
+    - `event FeeAccrued(uint256 indexed jobId, uint256 amount);`
    - `event FeesBurned(uint256 amount);`
    - `event FeesDistributed(uint256 amount);`
    - `event DisputeFeePaid(uint256 indexed jobId, address indexed payer, uint256 amount);`
