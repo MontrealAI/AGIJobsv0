@@ -10,6 +10,7 @@ import {AttestationRegistry} from "./AttestationRegistry.sol";
 
 error ZeroAddress();
 error UnauthorizedAgent();
+error EtherNotAccepted();
 
 /// @title IdentityRegistry
 /// @notice Verifies ENS subdomain ownership and tracks manual allowlists
@@ -438,6 +439,26 @@ contract IdentityRegistry is Ownable2Step {
         if (ok) {
             emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
         }
+    }
+
+    /// @notice Confirms the contract and its owner can never incur tax liability.
+    /// @return Always true, signalling perpetual tax exemption.
+    function isTaxExempt() external pure returns (bool) {
+        return true;
+    }
+
+    // ---------------------------------------------------------------
+    // Ether rejection
+    // ---------------------------------------------------------------
+
+    /// @dev Reject direct ETH transfers to keep the contract tax neutral.
+    receive() external payable {
+        revert EtherNotAccepted();
+    }
+
+    /// @dev Reject calls with unexpected calldata or funds.
+    fallback() external payable {
+        revert EtherNotAccepted();
     }
 }
 
