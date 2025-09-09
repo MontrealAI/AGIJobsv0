@@ -208,7 +208,9 @@ describe('JobRegistry integration', function () {
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);
     await expect(registry.connect(employer).finalize(jobId))
-      .to.emit(registry, 'JobFinalized')
+      .to.emit(registry, 'JobPayout')
+      .withArgs(jobId, agent.address, reward, 0)
+      .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);

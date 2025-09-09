@@ -87,6 +87,17 @@ interface IJobRegistry {
         string subdomain
     );
     event JobCompleted(uint256 indexed jobId, bool success);
+    /// @notice Emitted when job funds are disbursed
+    /// @param jobId Identifier of the job
+    /// @param worker Agent who performed the job
+    /// @param netPaid Amount paid to the agent after burn
+    /// @param fee Protocol fee amount
+    event JobPayout(
+        uint256 indexed jobId,
+        address indexed worker,
+        uint256 netPaid,
+        uint256 fee
+    );
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
     /// @param worker Agent who performed the job

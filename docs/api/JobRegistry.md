@@ -21,6 +21,7 @@ Coordinates job posting, assignment and dispute resolution.
 - `JobApplied(uint256 indexed jobId, address indexed agent, string subdomain)`
 - `JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)`
 - `JobCompleted(uint256 indexed jobId, bool success)`
+- `JobPayout(uint256 indexed jobId, address indexed worker, uint256 netPaid, uint256 fee)`
 - `JobFinalized(uint256 indexed jobId, address indexed worker)`
 - `JobCancelled(uint256 indexed jobId)`
 - `JobExpired(uint256 indexed jobId, address caller)`
