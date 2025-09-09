@@ -326,10 +326,19 @@ contract Deployer is Ownable {
         CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
         certificate.setJobRegistry(address(registry));
 
+        TaxPolicy policy;
+        if (withTaxPolicy) {
+            policy = new TaxPolicy(
+                "ipfs://policy",
+                "All taxes on participants; contract and owner exempt"
+            );
+        }
+
         FeePool pool = new FeePool(
             IStakeManager(address(stake)),
             burnPct,
-            governance
+            governance,
+            ITaxPolicy(address(policy))
         );
 
         IdentityRegistry identity = new IdentityRegistry(
@@ -354,14 +363,6 @@ contract Deployer is Ownable {
             IPlatformRegistryFull(address(pRegistry)),
             IJobRouter(address(router))
         );
-
-        TaxPolicy policy;
-        if (withTaxPolicy) {
-            policy = new TaxPolicy(
-                "ipfs://policy",
-                "All taxes on participants; contract and owner exempt"
-            );
-        }
 
         // Wire modules
         address[] memory acks = new address[](0);

@@ -72,7 +72,8 @@ describe('Governance reward lifecycle', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
     await feePool.setGovernance(owner.address);

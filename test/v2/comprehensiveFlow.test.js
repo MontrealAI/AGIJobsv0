@@ -100,6 +100,7 @@ describe('comprehensive job flows', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);

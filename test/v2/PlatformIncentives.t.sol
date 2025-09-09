@@ -17,6 +17,7 @@ import {FeePool} from "../../contracts/v2/FeePool.sol";
 import {PlatformIncentives} from "../../contracts/v2/PlatformIncentives.sol";
 import {MockJobRegistry} from "../../contracts/legacy/MockV2.sol";
 import {IStakeManager} from "../../contracts/v2/interfaces/IStakeManager.sol";
+import {ITaxPolicy} from "../../contracts/v2/interfaces/ITaxPolicy.sol";
 
 contract PlatformIncentivesTest is Test {
     AGIALPHAToken token;
@@ -42,7 +43,12 @@ contract PlatformIncentivesTest is Test {
             1e18
         );
         jobRouter = new JobRouter(IPlatformRegistry(address(platformRegistry)));
-        feePool = new FeePool(IStakeManager(address(stakeManager)), 0, address(this));
+        feePool = new FeePool(
+            IStakeManager(address(stakeManager)),
+            0,
+            address(this),
+            ITaxPolicy(address(0))
+        );
         incentives = new PlatformIncentives(
             IStakeManager(address(stakeManager)),
             IPlatformRegistryFull(address(platformRegistry)),

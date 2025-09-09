@@ -9,6 +9,7 @@ import "contracts/v2/interfaces/IPlatformRegistry.sol";
 import "contracts/legacy/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {AGIALPHA} from "contracts/v2/Constants.sol";
+import {ITaxPolicy} from "contracts/v2/interfaces/ITaxPolicy.sol";
 
 interface Vm {
     function prank(address) external;
@@ -78,7 +79,7 @@ contract IntegrationTest {
         stakeManager = new MockStakeManager();
         stakeManager.setJobRegistry(jobRegistryAddr);
         registry = new MockPlatformRegistry();
-        feePool = new FeePool(stakeManager, 0, address(this));
+        feePool = new FeePool(stakeManager, 0, address(this), ITaxPolicy(address(0)));
         router = new JobRouter(registry);
     }
 

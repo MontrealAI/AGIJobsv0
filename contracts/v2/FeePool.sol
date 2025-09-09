@@ -11,6 +11,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20Burnable} from "./interfaces/IERC20Burnable.sol";
 import {AGIALPHA, AGIALPHA_DECIMALS, BURN_ADDRESS} from "./Constants.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
+import {TaxAcknowledgement} from "./libraries/TaxAcknowledgement.sol";
 
 error InvalidPercentage();
 error NotStakeManager();
@@ -21,6 +23,8 @@ error ZeroAddress();
 error InvalidStakeManagerVersion();
 error TokenNotBurnable();
 error InvalidTreasury();
+error InvalidTaxPolicy();
+error PolicyNotTaxExempt();
 /// @dev Caller is not the governance contract.
 error NotGovernance();
 /// @dev Caller is neither the owner nor the designated pauser.
@@ -32,7 +36,7 @@ error NotOwnerOrPauser();
 ///      to avoid precision loss when dividing fees by total stake (30 total
 ///      decimals, well within `uint256` range).
 
-contract FeePool is Ownable, Pausable, ReentrancyGuard {
+contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
@@ -59,6 +63,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     TimelockController public governance;
     address public pauser;
 
+    /// @notice tax policy governing user interactions
+    ITaxPolicy public taxPolicy;
+
     /// @notice cumulative fee per staked token scaled by ACCUMULATOR_SCALE
     uint256 public cumulativePerToken;
 
@@ -81,6 +88,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event PauserUpdated(address indexed pauser);
+    event TaxPolicyUpdated(address indexed policy);
 
     modifier onlyOwnerOrPauser() {
         if (msg.sender != owner() && msg.sender != pauser) {
@@ -100,10 +108,13 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     /// DEFAULT_BURN_PCT when set to zero.
     /// @param _treasury Address receiving rounding dust. Must be explicitly
     /// provided and may be the zero address to burn residual fees.
+    /// @param _taxPolicy Address of the TaxPolicy contract governing
+    ///        contributions and withdrawals.
     constructor(
         IStakeManager _stakeManager,
         uint256 _burnPct,
-        address _treasury
+        address _treasury,
+        ITaxPolicy _taxPolicy
     ) Ownable(msg.sender) {
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
@@ -132,6 +143,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
             treasury = _treasury;
         }
         emit TreasuryUpdated(_treasury);
+
+        if (address(_taxPolicy) != address(0)) {
+            if (!_taxPolicy.isTaxExempt()) revert PolicyNotTaxExempt();
+            taxPolicy = _taxPolicy;
+            emit TaxPolicyUpdated(address(_taxPolicy));
+        }
     }
 
     modifier onlyStakeManager() {
@@ -158,7 +175,18 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Contribute tokens directly to the reward pool.
     /// @param amount token amount with 18 decimals.
-    function contribute(uint256 amount) external whenNotPaused nonReentrant {
+    function contribute(uint256 amount)
+        external
+        whenNotPaused
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+        nonReentrant
+    {
         if (amount == 0) revert ZeroAmount();
         token.safeTransferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
@@ -170,7 +198,18 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
     ///      pending or when no stake is present; in the latter case funds are
     ///      burned/forwarded to the treasury so non-technical callers never see
     ///      a revert.
-    function distributeFees() public whenNotPaused nonReentrant {
+    function distributeFees()
+        public
+        whenNotPaused
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+        nonReentrant
+    {
         _distributeFees();
     }
 
@@ -227,7 +266,17 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
      * @dev Invokes the idempotent `distributeFees` so stakers can settle and
      *      claim in a single Etherscan transaction. Rewards use 18‑decimal units.
      */
-    function claimRewards() external nonReentrant {
+    function claimRewards()
+        external
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(0),
+            address(0)
+        )
+        nonReentrant
+    {
         _distributeFees();
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
         // Deployer may claim but receives no rewards without stake.
@@ -298,6 +347,15 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard {
         if (_treasury == owner()) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    /// @notice update the tax policy contract
+    /// @param _policy address of the TaxPolicy contract
+    function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
+        if (address(_policy) == address(0)) revert InvalidTaxPolicy();
+        if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
+        taxPolicy = _policy;
+        emit TaxPolicyUpdated(address(_policy));
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.

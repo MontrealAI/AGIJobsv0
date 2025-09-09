@@ -55,7 +55,8 @@ describe('Job expiration', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address
+      treasury.address,
+      ethers.ZeroAddress
     );
     const Registry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'
