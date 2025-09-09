@@ -76,7 +76,9 @@ describe('JobRegistry tax policy integration', function () {
     expect(await policy.acknowledgedVersion(user.address)).to.equal(0);
     await policy.connect(user).acknowledge();
     expect(await policy.acknowledgedVersion(user.address)).to.equal(1);
-    await policy.connect(owner).bumpPolicyVersion();
+    await expect(policy.connect(owner).bumpPolicyVersion())
+      .to.emit(policy, 'PolicyVersionBumped')
+      .withArgs(2);
     expect(await policy.acknowledgedVersion(user.address)).to.equal(1);
     await policy.connect(user).acknowledge();
     expect(await policy.acknowledgedVersion(user.address)).to.equal(2);
@@ -88,7 +90,9 @@ describe('JobRegistry tax policy integration', function () {
     await registry.connect(owner).setJobDurationLimit(86400);
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     await policy.connect(user).acknowledge();
-    await policy.connect(owner).bumpPolicyVersion();
+    await expect(policy.connect(owner).bumpPolicyVersion())
+      .to.emit(policy, 'PolicyVersionBumped')
+      .withArgs(2);
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.id('spec');
     await expect(registry.connect(user).createJob(1, deadline, specHash, 'uri'))
