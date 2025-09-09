@@ -76,6 +76,11 @@ describe('StakeManager AGIType bonuses', function () {
     await token.mint(employer.address, 1000);
   });
 
+  it('returns 100 when agent holds no approved NFTs', async () => {
+    await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
+    expect(await stakeManager.getHighestPayoutPct(agent.address)).to.equal(100n);
+  });
+
   it('applies highest AGIType bonus', async () => {
     await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
     await stakeManager.connect(owner).addAGIType(await nft2.getAddress(), 175);
