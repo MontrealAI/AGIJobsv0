@@ -102,8 +102,8 @@ const JOB_REGISTRY_ABI = [
 // Minimal ABI for ValidationModule interactions
 const VALIDATION_MODULE_ABI = [
   'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
+  'function commitValidation(uint256 jobId, bytes32 commitHash, bytes32 labelhash, bytes32[] proof)',
+  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, bytes32 labelhash, bytes32[] proof)',
   'function finalize(uint256 jobId) external returns (bool)',
   'function rounds(uint256 jobId) view returns (address[] validators,address[] participants,uint256 commitDeadline,uint256 revealDeadline,uint256 approvals,uint256 rejections,bool tallied,uint256 committeeSize)',
   'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
@@ -322,7 +322,7 @@ async function commitHelper(jobId, wallet, approve) {
   );
   const tx = await validation
     .connect(wallet)
-    .commitValidation(jobId, commitHash, '', []);
+    .commitValidation(jobId, commitHash, ethers.id(''), []);
   await tx.wait();
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId);
@@ -338,7 +338,7 @@ async function revealHelper(jobId, wallet) {
   const warning = await checkEnsSubdomain(wallet.address);
   const tx = await validation
     .connect(wallet)
-    .revealValidation(jobId, data.approve, data.salt, '', []);
+    .revealValidation(jobId, data.approve, data.salt, ethers.id(''), []);
   await tx.wait();
   delete jobCommits[wallet.address.toLowerCase()];
   return warning ? { tx: tx.hash, warning } : { tx: tx.hash };

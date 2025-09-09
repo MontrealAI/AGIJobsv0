@@ -266,6 +266,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event JobApplied(
         uint256 indexed jobId,
         address indexed agent,
+        bytes32 indexed labelhash,
         string subdomain
     );
     event JobSubmitted(
@@ -273,6 +274,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         address indexed worker,
         bytes32 resultHash,
         string resultURI,
+        bytes32 indexed labelhash,
         string subdomain
     );
     event JobCompleted(uint256 indexed jobId, bool success);
@@ -829,10 +831,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             agentAuthCache[msg.sender] &&
             agentAuthExpiry[msg.sender] > block.timestamp &&
             agentAuthVersion[msg.sender] == agentAuthCacheVersion;
+        bytes32 labelhash = keccak256(bytes(subdomain));
         if (!authorized) {
             (authorized, , , ) = identityRegistry.verifyAgent(
                 msg.sender,
-                subdomain,
+                labelhash,
                 proof
             );
             if (authorized) {
@@ -863,7 +866,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.agent = msg.sender;
         job.state = State.Applied;
         job.assignedAt = uint64(block.timestamp);
-        emit JobApplied(jobId, msg.sender, subdomain);
+        emit JobApplied(jobId, msg.sender, labelhash, subdomain);
     }
 
     function applyForJob(
@@ -947,9 +950,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        bytes32 labelhash = keccak256(bytes(subdomain));
         (bool authorized, , , ) = identityRegistry.verifyAgent(
             msg.sender,
-            subdomain,
+            labelhash,
             proof
         );
         if (!authorized) revert NotAuthorizedAgent();
@@ -962,7 +966,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         job.resultHash = resultHash;
         job.state = State.Submitted;
-        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
+        emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, labelhash, subdomain);
         if (address(validationModule) != address(0)) {
             validationModule.start(
                 jobId,

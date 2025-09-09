@@ -114,7 +114,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public validatorPoolRotation;
 
     // optional override for validators without ENS identity
-    mapping(address => string) public validatorSubdomains;
+    mapping(address => bytes32) public validatorSubdomains;
 
     // cache successful validator authorizations
     mapping(address => bool) public validatorAuthCache;
@@ -449,28 +449,28 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         deadline = rounds[jobId].revealDeadline;
     }
 
-    /// @notice Map validators to their ENS subdomains for selection-time checks.
+    /// @notice Map validators to their ENS labelhashes for selection-time checks.
     /// @param accounts Validator addresses to configure.
-    /// @param subdomains ENS labels owned by each validator.
+    /// @param labelhashes ENS labelhashes owned by each validator.
     function setValidatorSubdomains(
         address[] calldata accounts,
-        string[] calldata subdomains
+        bytes32[] calldata labelhashes
     ) external onlyOwner {
-        if (accounts.length != subdomains.length) revert InvalidArrayLength();
+        if (accounts.length != labelhashes.length) revert InvalidArrayLength();
         for (uint256 i; i < accounts.length;) {
-            validatorSubdomains[accounts[i]] = subdomains[i];
-            emit ValidatorSubdomainUpdated(accounts[i], subdomains[i]);
+            validatorSubdomains[accounts[i]] = labelhashes[i];
+            emit ValidatorSubdomainUpdated(accounts[i], labelhashes[i]);
             unchecked {
                 ++i;
             }
         }
     }
 
-    /// @notice Map the caller to an ENS subdomain for selection checks.
-    /// @param subdomain ENS label owned by the caller.
-    function setMySubdomain(string calldata subdomain) external {
-        validatorSubdomains[msg.sender] = subdomain;
-        emit ValidatorSubdomainUpdated(msg.sender, subdomain);
+    /// @notice Map the caller to an ENS labelhash for selection checks.
+    /// @param labelhash ENS labelhash owned by the caller.
+    function setMySubdomain(bytes32 labelhash) external {
+        validatorSubdomains[msg.sender] = labelhash;
+        emit ValidatorSubdomainUpdated(msg.sender, labelhash);
     }
 
     /// @notice Update the commit and reveal windows.
@@ -779,11 +779,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     validatorAuthCacheVersion &&
                     validatorAuthExpiry[candidate] > block.timestamp;
                 if (!authorized) {
-                    string memory subdomain = validatorSubdomains[candidate];
+                    bytes32 labelhash = validatorSubdomains[candidate];
                     bytes32[] memory proof;
                     (authorized, , , ) = identityRegistry.verifyValidator(
                         candidate,
-                        subdomain,
+                        labelhash,
                         proof
                     );
                     if (authorized) {
@@ -842,11 +842,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     validatorAuthCacheVersion &&
                     validatorAuthExpiry[candidate] > block.timestamp;
                 if (!authorized) {
-                    string memory subdomain = validatorSubdomains[candidate];
+                    bytes32 labelhash = validatorSubdomains[candidate];
                     bytes32[] memory proof;
                     (authorized, , , ) = identityRegistry.verifyValidator(
                         candidate,
-                        subdomain,
+                        labelhash,
                         proof
                     );
                     if (authorized) {
@@ -977,7 +977,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function _commitValidation(
         uint256 jobId,
         bytes32 commitHash,
-        string memory subdomain,
+        bytes32 labelhash,
         bytes32[] memory proof
     ) internal whenNotPaused {
         Round storage r = rounds[jobId];
@@ -993,7 +993,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (!_isValidator(jobId, msg.sender)) revert NotValidator();
         (bool authorized, , , ) = identityRegistry.verifyValidator(
             msg.sender,
-            subdomain,
+            labelhash,
             proof
         );
         if (!authorized) revert UnauthorizedValidator();
@@ -1007,7 +1007,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             revert AlreadyCommitted();
 
         commitments[jobId][msg.sender][nonce] = commitHash;
-        emit ValidationCommitted(jobId, msg.sender, commitHash, subdomain);
+        emit ValidationCommitted(jobId, msg.sender, commitHash, labelhash);
     }
 
     function _policy() internal view returns (ITaxPolicy) {
@@ -1020,7 +1020,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function commitValidation(
         uint256 jobId,
         bytes32 commitHash,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         public
@@ -1035,7 +1035,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address(0)
         )
     {
-        _commitValidation(jobId, commitHash, subdomain, proof);
+        _commitValidation(jobId, commitHash, labelhash, proof);
     }
 
 
@@ -1045,7 +1045,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bool approve,
         bytes32 burnTxHash,
         bytes32 salt,
-        string memory subdomain,
+        bytes32 labelhash,
         bytes32[] memory proof
     ) internal whenNotPaused {
         Round storage r = rounds[jobId];
@@ -1059,7 +1059,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (address(identityRegistry) == address(0)) revert ZeroIdentityRegistry();
         (bool authorized, , , ) = identityRegistry.verifyValidator(
             msg.sender,
-            subdomain,
+            labelhash,
             proof
         );
         if (!authorized) revert UnauthorizedValidator();
@@ -1095,7 +1095,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.revealedCount += 1;
         if (approve) r.approvals += stake; else r.rejections += stake;
 
-        emit ValidationRevealed(jobId, msg.sender, approve, burnTxHash, subdomain);
+        emit ValidationRevealed(jobId, msg.sender, approve, burnTxHash, labelhash);
     }
 
     /// @notice Reveal a previously committed validation vote.
@@ -1104,7 +1104,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bool approve,
         bytes32 burnTxHash,
         bytes32 salt,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         public
@@ -1119,7 +1119,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address(0)
         )
     {
-        _revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof);
+        _revealValidation(jobId, approve, burnTxHash, salt, labelhash, proof);
     }
 
 
@@ -1127,7 +1127,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function commitVote(
         uint256 jobId,
         bytes32 commitHash,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         external
@@ -1141,7 +1141,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address(0)
         )
     {
-        commitValidation(jobId, commitHash, subdomain, proof);
+        commitValidation(jobId, commitHash, labelhash, proof);
     }
 
     /// @notice Backwards-compatible wrapper for revealValidation.
@@ -1150,7 +1150,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bool approve,
         bytes32 burnTxHash,
         bytes32 salt,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         external
@@ -1164,7 +1164,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address(0)
         )
     {
-        revealValidation(jobId, approve, burnTxHash, salt, subdomain, proof);
+        revealValidation(jobId, approve, burnTxHash, salt, labelhash, proof);
     }
 
     /// @notice Tally revealed votes, apply slashing/rewards, and push result to JobRegistry.

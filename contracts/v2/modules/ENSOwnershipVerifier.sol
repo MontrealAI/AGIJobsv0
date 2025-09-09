@@ -20,7 +20,7 @@ contract ENSOwnershipVerifier is Ownable {
     bytes32 public validatorMerkleRoot;
     bytes32 public agentMerkleRoot;
 
-    event OwnershipVerified(address indexed claimant, string subdomain);
+    event OwnershipVerified(address indexed claimant, bytes32 indexed labelhash);
     event RecoveryInitiated(string reason);
     event ENSUpdated(address indexed ens);
     event NameWrapperUpdated(address indexed nameWrapper);
@@ -153,7 +153,8 @@ contract ENSOwnershipVerifier is Ownable {
             nameWrapper
         );
         if (ok) {
-            emit OwnershipVerified(claimant, subdomain);
+            bytes32 labelhash = keccak256(bytes(subdomain));
+            emit OwnershipVerified(claimant, labelhash);
             return true;
         }
         if (bytes(reason).length != 0) {

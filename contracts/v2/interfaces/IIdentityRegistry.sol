@@ -10,25 +10,25 @@ interface IIdentityRegistry {
     }
     function isAuthorizedAgent(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) external view returns (bool);
 
     function isAuthorizedValidator(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) external view returns (bool);
 
     function verifyAgent(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle);
 
     function verifyValidator(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) external returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle);
 
@@ -57,7 +57,7 @@ interface IIdentityRegistry {
     // profile metadata
     function setAgentProfileURI(address agent, string calldata uri) external;
     function updateAgentProfile(
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof,
         string calldata uri
     ) external;

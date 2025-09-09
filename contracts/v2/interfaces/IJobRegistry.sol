@@ -74,6 +74,7 @@ interface IJobRegistry {
     event JobApplied(
         uint256 indexed jobId,
         address indexed agent,
+        bytes32 indexed labelhash,
         string subdomain
     );
     event JobSubmitted(
@@ -81,6 +82,7 @@ interface IJobRegistry {
         address indexed worker,
         bytes32 resultHash,
         string resultURI,
+        bytes32 indexed labelhash,
         string subdomain
     );
     event JobCompleted(uint256 indexed jobId, bool success);

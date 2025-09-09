@@ -224,11 +224,11 @@ describe('Commit-reveal job lifecycle', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, true, burnTxHash, salt, specHash]
     );
-    await validation.connect(validator).commitValidation(1, commit, '', []);
+    await validation.connect(validator).commitValidation(1, commit, ethers.id(''), []);
     await time.increase(2);
     await validation
       .connect(validator)
-      .revealValidation(1, true, burnTxHash, salt, '', []);
+      .revealValidation(1, true, burnTxHash, salt, ethers.id(''), []);
     await time.increase(2);
     await validation.finalize(1);
     await registry.connect(employer).finalize(1);
@@ -303,11 +303,11 @@ describe('Commit-reveal job lifecycle', function () {
       ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
       [1n, nonce, false, burnTxHash, salt, specHash]
     );
-    await validation.connect(validator).commitValidation(1, commit, '', []);
+    await validation.connect(validator).commitValidation(1, commit, ethers.id(''), []);
     await time.increase(2);
     await validation
       .connect(validator)
-      .revealValidation(1, false, burnTxHash, salt, '', []);
+      .revealValidation(1, false, burnTxHash, salt, ethers.id(''), []);
     await time.increase(2);
     await validation.finalize(1);
 

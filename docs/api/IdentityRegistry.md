@@ -15,11 +15,11 @@ gas usage.
 - `setAgentMerkleRoot(bytes32 root)` / `setValidatorMerkleRoot(bytes32 root)` – load allowlists.
 - `addAdditionalAgent(address agent)` / `addAdditionalValidator(address validator)` – manual overrides.
 - `setAgentProfileURI(address agent, string uri)` – governance-set capability profile for an agent.
-- `updateAgentProfile(string subdomain, bytes32[] proof, string uri)` – agent updates their own profile after proving control of `subdomain`.
- - `isAuthorizedAgent(address claimant, string subdomain, bytes32[] proof)` – check agent eligibility for `subdomain.agent.agi.eth`.
-- `isAuthorizedValidator(address claimant, string subdomain, bytes32[] proof)` – read-only check for validator eligibility for `subdomain.club.agi.eth`; does not emit events.
-- `verifyAgent(address claimant, string subdomain, bytes32[] proof)` – external verification helper.
-- `verifyValidator(address claimant, string subdomain, bytes32[] proof)` – external verification helper.
+- `updateAgentProfile(bytes32 labelhash, bytes32[] proof, string uri)` – agent updates their own profile after proving control of the label.
+ - `isAuthorizedAgent(address claimant, bytes32 labelhash, bytes32[] proof)` – check agent eligibility for `labelhash`.
+- `isAuthorizedValidator(address claimant, bytes32 labelhash, bytes32[] proof)` – read-only check for validator eligibility; does not emit events.
+- `verifyAgent(address claimant, bytes32 labelhash, bytes32[] proof)` – external verification helper.
+- `verifyValidator(address claimant, bytes32 labelhash, bytes32[] proof)` – external verification helper.
 
 ## Events
 
@@ -29,6 +29,6 @@ gas usage.
 - `AgentMerkleRootUpdated(bytes32 agentMerkleRoot)` / `ValidatorMerkleRootUpdated(bytes32 validatorMerkleRoot)`
 - `AdditionalAgentUpdated(address agent, bool allowed)`
 - `AdditionalValidatorUpdated(address validator, bool allowed)`
-- `AdditionalAgentUsed(address agent, string subdomain)` /
-  `AdditionalValidatorUsed(address validator, string subdomain)`
+- `AdditionalAgentUsed(address agent, bytes32 labelhash)` /
+  `AdditionalValidatorUsed(address validator, bytes32 labelhash)`
 - `AgentProfileUpdated(address agent, string uri)` – emitted whenever an agent profile is set or changed. Off-chain services can listen for this event and fetch the referenced URI (e.g., from IPFS) to match jobs with agents based on declared capabilities.

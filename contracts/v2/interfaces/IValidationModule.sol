@@ -16,14 +16,14 @@ interface IValidationModule {
         uint256 indexed jobId,
         address indexed validator,
         bytes32 commitHash,
-        string subdomain
+        bytes32 indexed labelhash
     );
     event ValidationRevealed(
         uint256 indexed jobId,
         address indexed validator,
         bool approve,
         bytes32 burnTxHash,
-        string subdomain
+        bytes32 indexed labelhash
     );
     event ValidationTallied(
         uint256 indexed jobId,
@@ -32,7 +32,7 @@ interface IValidationModule {
         uint256 rejections
     );
     event ValidationResult(uint256 indexed jobId, bool success);
-    event ValidatorSubdomainUpdated(address indexed validator, string subdomain);
+    event ValidatorSubdomainUpdated(address indexed validator, bytes32 indexed labelhash);
     event SelectionStrategyUpdated(SelectionStrategy strategy);
     event ParametersUpdated(
         uint256 committeeSize,
@@ -62,12 +62,12 @@ interface IValidationModule {
     /// @notice Commit a validation hash for a job
     /// @param jobId Identifier of the job being voted on
     /// @param commitHash Hash of the vote and salt
-    /// @param subdomain ENS subdomain label used for ownership verification
+    /// @param labelhash ENS labelhash used for ownership verification
     /// @param proof Merkle proof validating the subdomain
     function commitValidation(
         uint256 jobId,
         bytes32 commitHash,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) external;
 
@@ -76,14 +76,14 @@ interface IValidationModule {
     /// @param jobId Identifier of the job
     /// @param approve True to approve, false to reject
     /// @param salt Salt used in the original commitment
-    /// @param subdomain ENS subdomain label used for ownership verification
+    /// @param labelhash ENS labelhash used for ownership verification
     /// @param proof Merkle proof validating the subdomain
     function revealValidation(
         uint256 jobId,
         bool approve,
         bytes32 burnTxHash,
         bytes32 salt,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) external;
 
@@ -141,14 +141,14 @@ interface IValidationModule {
     /// @notice Update percentage of stake slashed for incorrect validator votes
     function setValidatorSlashingPct(uint256 pct) external;
 
-    /// @notice Map validators to ENS subdomains for selection
+    /// @notice Map validators to ENS labelhashes for selection
     function setValidatorSubdomains(
         address[] calldata accounts,
-        string[] calldata subdomains
+        bytes32[] calldata labelhashes
     ) external;
 
-    /// @notice Map the caller to an ENS subdomain for selection.
-    function setMySubdomain(string calldata subdomain) external;
+    /// @notice Map the caller to an ENS labelhash for selection.
+    function setMySubdomain(bytes32 labelhash) external;
 
     /// @notice Configure the validator sampling strategy.
     function setSelectionStrategy(SelectionStrategy strategy) external;

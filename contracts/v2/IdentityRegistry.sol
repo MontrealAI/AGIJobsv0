@@ -48,12 +48,12 @@ contract IdentityRegistry is Ownable2Step {
     event ValidatorMerkleRootUpdated(bytes32 indexed validatorMerkleRoot);
     event AdditionalAgentUpdated(address indexed agent, bool allowed);
     event AdditionalValidatorUpdated(address indexed validator, bool allowed);
-    event AdditionalAgentUsed(address indexed agent, string subdomain);
-    event AdditionalValidatorUsed(address indexed validator, string subdomain);
+    event AdditionalAgentUsed(address indexed agent, bytes32 indexed labelhash);
+    event AdditionalValidatorUsed(address indexed validator, bytes32 indexed labelhash);
     event ENSVerified(
         address indexed user,
         bytes32 indexed node,
-        string label,
+        bytes32 indexed labelhash,
         bool viaWrapper,
         bool viaMerkle
     );
@@ -228,15 +228,15 @@ contract IdentityRegistry is Ownable2Step {
     }
 
     /// @notice Allows an agent to update their own profile after proving identity.
-    /// @param subdomain ENS subdomain owned by the agent.
+    /// @param labelhash ENS labelhash owned by the agent.
     /// @param proof Merkle/ENS proof demonstrating control of the subdomain.
     /// @param uri Metadata URI describing the agent's capabilities.
     function updateAgentProfile(
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof,
         string calldata uri
     ) external {
-        (bool ok, , , ) = _verifyAgent(msg.sender, subdomain, proof);
+        (bool ok, , , ) = _verifyAgent(msg.sender, labelhash, proof);
         if (!ok) {
             revert UnauthorizedAgent();
         }
@@ -250,7 +250,7 @@ contract IdentityRegistry is Ownable2Step {
 
     function isAuthorizedAgent(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) public view returns (bool) {
         if (
@@ -264,7 +264,7 @@ contract IdentityRegistry is Ownable2Step {
         }
         if (address(attestationRegistry) != address(0)) {
             bytes32 node = keccak256(
-                abi.encodePacked(agentRootNode, keccak256(bytes(subdomain)))
+                abi.encodePacked(agentRootNode, labelhash)
             );
             if (
                 attestationRegistry.isAttested(
@@ -283,7 +283,7 @@ contract IdentityRegistry is Ownable2Step {
                 agentRootNode,
                 agentMerkleRoot,
                 claimant,
-                subdomain,
+                labelhash,
                 proof
             );
         return ok;
@@ -291,7 +291,7 @@ contract IdentityRegistry is Ownable2Step {
 
     function isAuthorizedValidator(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     ) public view returns (bool) {
         if (
@@ -305,7 +305,7 @@ contract IdentityRegistry is Ownable2Step {
         }
         if (address(attestationRegistry) != address(0)) {
             bytes32 node = keccak256(
-                abi.encodePacked(clubRootNode, keccak256(bytes(subdomain)))
+                abi.encodePacked(clubRootNode, labelhash)
             );
             if (
                 attestationRegistry.isAttested(
@@ -324,7 +324,7 @@ contract IdentityRegistry is Ownable2Step {
                 clubRootNode,
                 validatorMerkleRoot,
                 claimant,
-                subdomain,
+                labelhash,
                 proof
             );
         return ok;
@@ -332,7 +332,7 @@ contract IdentityRegistry is Ownable2Step {
 
     function _verifyAgent(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         internal
@@ -344,8 +344,7 @@ contract IdentityRegistry is Ownable2Step {
         ) {
             return (false, bytes32(0), false, false);
         }
-        node =
-            keccak256(abi.encodePacked(agentRootNode, keccak256(bytes(subdomain))));
+        node = keccak256(abi.encodePacked(agentRootNode, labelhash));
         if (additionalAgents[claimant]) {
             ok = true;
         } else if (address(attestationRegistry) != address(0) && attestationRegistry.isAttested(
@@ -362,7 +361,7 @@ contract IdentityRegistry is Ownable2Step {
                     agentRootNode,
                     agentMerkleRoot,
                     claimant,
-                    subdomain,
+                    labelhash,
                     proof
                 );
         }
@@ -370,18 +369,18 @@ contract IdentityRegistry is Ownable2Step {
 
     function verifyAgent(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         external
         returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         (ok, node, viaWrapper, viaMerkle) =
-            _verifyAgent(claimant, subdomain, proof);
+            _verifyAgent(claimant, labelhash, proof);
         if (ok) {
             if (additionalAgents[claimant]) {
-                emit AdditionalAgentUsed(claimant, subdomain);
-                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                emit AdditionalAgentUsed(claimant, labelhash);
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, labelhash);
             } else if (
                 address(attestationRegistry) != address(0) &&
                 attestationRegistry.isAttested(
@@ -390,15 +389,15 @@ contract IdentityRegistry is Ownable2Step {
                     claimant
                 )
             ) {
-                emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+                emit ENSIdentityVerifier.OwnershipVerified(claimant, labelhash);
             }
-            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+            emit ENSVerified(claimant, node, labelhash, viaWrapper, viaMerkle);
         }
     }
 
     function verifyValidator(
         address claimant,
-        string calldata subdomain,
+        bytes32 labelhash,
         bytes32[] calldata proof
     )
         external
@@ -410,18 +409,17 @@ contract IdentityRegistry is Ownable2Step {
         ) {
             return (false, bytes32(0), false, false);
         }
-        node =
-            keccak256(abi.encodePacked(clubRootNode, keccak256(bytes(subdomain))));
+        node = keccak256(abi.encodePacked(clubRootNode, labelhash));
         if (additionalValidators[claimant]) {
-            emit AdditionalValidatorUsed(claimant, subdomain);
-            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            emit AdditionalValidatorUsed(claimant, labelhash);
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, labelhash);
             ok = true;
         } else if (address(attestationRegistry) != address(0) && attestationRegistry.isAttested(
                 node,
                 AttestationRegistry.Role.Validator,
                 claimant
             )) {
-            emit ENSIdentityVerifier.OwnershipVerified(claimant, subdomain);
+            emit ENSIdentityVerifier.OwnershipVerified(claimant, labelhash);
             ok = true;
         } else {
             (ok, node, viaWrapper, viaMerkle) =
@@ -431,12 +429,12 @@ contract IdentityRegistry is Ownable2Step {
                     clubRootNode,
                     validatorMerkleRoot,
                     claimant,
-                    subdomain,
+                    labelhash,
                     proof
                 );
         }
         if (ok) {
-            emit ENSVerified(claimant, node, subdomain, viaWrapper, viaMerkle);
+            emit ENSVerified(claimant, node, labelhash, viaWrapper, viaMerkle);
         }
     }
 }

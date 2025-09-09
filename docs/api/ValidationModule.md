@@ -12,9 +12,9 @@ Manages commit‑reveal voting for submitted jobs.
 - `setSelectionStrategy(SelectionStrategy strategy)` – choose between a rotating window or reservoir sampling. Governance can adjust this to balance gas cost and fairness.
 - `start(uint256 jobId, uint256 entropy)` – select validators and open the commit window.
 - `selectValidators(uint256 jobId, uint256 entropy)` – pick validators using on-chain randomness; mixes `block.prevrandao` or, if unavailable, recent block hashes with `msg.sender` so no off-chain randomness provider is required.
-- `commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)` – commit to a vote (ENS parameters required).
-- `revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)` – reveal vote (ENS parameters required).
-  For both, `subdomain` is the validator's label under `club.agi.eth`.
+- `commitValidation(uint256 jobId, bytes32 commitHash, bytes32 labelhash, bytes32[] proof)` – commit to a vote (ENS parameters required).
+- `revealValidation(uint256 jobId, bool approve, bytes32 salt, bytes32 labelhash, bytes32[] proof)` – reveal vote (ENS parameters required).
+  For both, `labelhash` is `keccak256(bytes(label))` under `club.agi.eth`.
 - `finalize(uint256 jobId)` – tally reveals and trigger payout.
 - `resetJobNonce(uint256 jobId)` – clear validator commitments for a job.
 
@@ -31,7 +31,7 @@ Manages commit‑reveal voting for submitted jobs.
 - `JobRegistryUpdated(address registry)` / `StakeManagerUpdated(address manager)` / `IdentityRegistryUpdated(address registry)`
 - `JobNonceReset(uint256 jobId)`
 - `SelectionStrategyUpdated(SelectionStrategy strategy)`
-- `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)`
-- `ValidationRevealed(uint256 jobId, address validator, bool approve, string subdomain)`
+- `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, bytes32 labelhash)`
+- `ValidationRevealed(uint256 jobId, address validator, bool approve, bytes32 labelhash)`
 - `ValidationTallied(uint256 jobId, bool success, uint256 approvals, uint256 rejections)`
 - `ValidationResult(uint256 jobId, bool success)`

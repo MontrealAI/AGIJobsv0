@@ -61,13 +61,25 @@ contract AttestationRegistryTest is Test {
         wrapper.setOwner(uint256(aNode), owner);
         vm.prank(owner);
         attest.attest(aNode, AttestationRegistry.Role.Agent, agent);
-        assertTrue(identity.isAuthorizedAgent(agent, "agent", new bytes32[](0)));
+        assertTrue(
+            identity.isAuthorizedAgent(
+                agent,
+                keccak256(bytes("agent")),
+                new bytes32[](0)
+            )
+        );
 
         bytes32 vNode = _node("validator");
         wrapper.setOwner(uint256(vNode), owner);
         vm.prank(owner);
         attest.attest(vNode, AttestationRegistry.Role.Validator, validator);
-        assertTrue(identity.isAuthorizedValidator(validator, "validator", new bytes32[](0)));
+        assertTrue(
+            identity.isAuthorizedValidator(
+                validator,
+                keccak256(bytes("validator")),
+                new bytes32[](0)
+            )
+        );
     }
 
     function testSetENSUnauthorized() public {

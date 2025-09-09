@@ -39,7 +39,7 @@ contract ValidationStub is IValidationModule {
     function commitValidation(
         uint256,
         bytes32,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external override {}
 
@@ -48,7 +48,7 @@ contract ValidationStub is IValidationModule {
         bool,
         bytes32,
         bytes32,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external override {}
 
@@ -94,10 +94,10 @@ contract ValidationStub is IValidationModule {
 
     function setValidatorSubdomains(
         address[] calldata,
-        string[] calldata
+        bytes32[] calldata
     ) external override {}
 
-    function setMySubdomain(string calldata) external override {}
+    function setMySubdomain(bytes32) external override {}
 
     function setParameters(
         uint256,

@@ -15,8 +15,8 @@ const registryAbi = [
 ];
 const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
 const validationAbi = [
-  'function commitValidation(uint256 jobId, bytes32 hash, string subdomain, bytes32[] proof)',
-  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
+  'function commitValidation(uint256 jobId, bytes32 hash, bytes32 labelhash, bytes32[] proof)',
+  'function revealValidation(uint256 jobId, bool approve, bytes32 salt, bytes32 labelhash, bytes32[] proof)',
   'function finalize(uint256 jobId)',
 ];
 
@@ -75,8 +75,9 @@ async function submit(jobId, uri) {
 
 // Validators pass their `subdomain` label under `club.agi.eth` when voting.
 async function validate(jobId, hash, subdomain, proof, approve, salt) {
-  await validation.commitValidation(jobId, hash, subdomain, proof);
-  await validation.revealValidation(jobId, approve, salt, subdomain, proof);
+  const labelhash = ethers.id(subdomain);
+  await validation.commitValidation(jobId, hash, labelhash, proof);
+  await validation.revealValidation(jobId, approve, salt, labelhash, proof);
   await validation.finalize(jobId);
 }
 

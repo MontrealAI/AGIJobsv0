@@ -75,7 +75,7 @@ contract OracleValidationModule is IValidationModule, Ownable {
     function commitValidation(
         uint256,
         bytes32,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external pure override {}
 
@@ -86,7 +86,7 @@ contract OracleValidationModule is IValidationModule, Ownable {
         bool,
         bytes32,
         bytes32,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external pure override {}
 
@@ -154,10 +154,10 @@ contract OracleValidationModule is IValidationModule, Ownable {
     /// @inheritdoc IValidationModule
     function setValidatorSubdomains(
         address[] calldata,
-        string[] calldata
+        bytes32[] calldata
     ) external pure override {}
 
-    function setMySubdomain(string calldata) external pure override {}
+    function setMySubdomain(bytes32) external pure override {}
 
     /// @inheritdoc IValidationModule
     function validators(uint256)

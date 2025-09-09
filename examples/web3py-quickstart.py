@@ -36,15 +36,16 @@ def apply(job_id, subdomain, proof):
 
 
 def commit_and_reveal(job_id, commit_hash, subdomain, proof, approve, salt):
-    """Validators pass their `.club.agi.eth` label as `subdomain`."""
-    tx = validation.functions.commitValidation(job_id, commit_hash, subdomain, proof).build_transaction({
+    """Validators pass their `.club.agi.eth` label; provide keccak256(label)."""
+    labelhash = w3.keccak(text=subdomain)
+    tx = validation.functions.commitValidation(job_id, commit_hash, labelhash, proof).build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })
     signed = account.sign_transaction(tx)
     w3.eth.send_raw_transaction(signed.rawTransaction)
 
-    tx2 = validation.functions.revealValidation(job_id, approve, salt, subdomain, proof).build_transaction({
+    tx2 = validation.functions.revealValidation(job_id, approve, salt, labelhash, proof).build_transaction({
         "from": account.address,
         "nonce": w3.eth.get_transaction_count(account.address)
     })

@@ -101,7 +101,7 @@ describe('JobRegistry agent gating', function () {
     const jobId = await createJob();
     await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
       .to.emit(registry, 'JobApplied')
-      .withArgs(jobId, agent.address, 'a');
+      .withArgs(jobId, agent.address, ethers.id('a'), 'a');
   });
 
   it('rejects blacklisted agents', async () => {

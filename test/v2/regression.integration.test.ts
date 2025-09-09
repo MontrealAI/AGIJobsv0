@@ -188,11 +188,11 @@ describe('regression scenarios', function () {
         [1n, nonce, false, burnTxHash, salt, specHash]
       )
     );
-    await validation.connect(v1).commitValidation(1, commit, '', []);
+    await validation.connect(v1).commitValidation(1, commit, ethers.id(''), []);
     await time.increase(2);
     await validation
       .connect(v1)
-      .revealValidation(1, false, burnTxHash, salt, '', []);
+      .revealValidation(1, false, burnTxHash, salt, ethers.id(''), []);
     await time.increase(2);
     await validation.finalize(1);
     await registry.connect(employer).finalize(1);

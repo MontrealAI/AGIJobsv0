@@ -17,8 +17,8 @@ Coordinates job posting, assignment and dispute resolution.
 
 - `JobFunded(uint256 indexed jobId, address indexed employer, uint256 reward, uint256 fee)`
 - `JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)`
-- `JobApplied(uint256 indexed jobId, address indexed agent, string subdomain)`
-- `JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)`
+- `JobApplied(uint256 indexed jobId, address indexed agent, bytes32 labelhash, string subdomain)`
+- `JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, bytes32 labelhash, string subdomain)`
 - `JobCompleted(uint256 indexed jobId, bool success)`
 - `JobFinalized(uint256 indexed jobId, address indexed worker)`
 - `JobCancelled(uint256 indexed jobId)`

@@ -98,7 +98,7 @@ contract IdentityRegistryMock is Ownable {
 
     function isAuthorizedAgent(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external view returns (bool) {
         claimant; // silence unused
@@ -107,7 +107,7 @@ contract IdentityRegistryMock is Ownable {
 
     function isAuthorizedValidator(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     ) external view returns (bool) {
         claimant; // silence unused
@@ -116,7 +116,7 @@ contract IdentityRegistryMock is Ownable {
 
     function verifyAgent(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     )
         external
@@ -129,7 +129,7 @@ contract IdentityRegistryMock is Ownable {
 
     function verifyValidator(
         address claimant,
-        string calldata,
+        bytes32,
         bytes32[] calldata
     )
         external
