@@ -65,7 +65,7 @@ describe('JobRegistry integration', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     const Registry = await ethers.getContractFactory(
@@ -243,7 +243,7 @@ describe('JobRegistry integration', function () {
     const feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);

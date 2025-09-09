@@ -69,7 +69,7 @@ async function main() {
     'contracts/v2/StakeManager.sol:StakeManager'
   );
   const treasury =
-    typeof args.treasury === 'string' ? args.treasury : governance;
+    typeof args.treasury === 'string' ? args.treasury : ethers.ZeroAddress;
   const stake = await Stake.deploy(
     0,
     0,

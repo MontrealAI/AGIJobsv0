@@ -103,7 +103,7 @@ FeePool – Parameters:
 \_token: $AGIALPHA token address (same as in StakeManager).
 \_stakeManager: address from step 1.
 \_burnPct: percentage of each fee that should be burned. This is expressed 0–100 (not basis points here; e.g. enter 5 for 5%). If you want to start with burning enabled at 5%, enter 5; enter 0 to start with no burning and you can update it later.
-\_treasury: address to receive any tiny rounding remainders or undistributed fees. Often the same treasury used in StakeManager. Defaults to deployer if you put 0x0.
+\_treasury: address to receive any tiny rounding remainders or undistributed fees. Often the same treasury used in StakeManager. Defaults to burn if you put 0x0.
 Purpose: Collects protocol fees from jobs and later distributes them to platform stakers. The FeePool also manages burning of fees (it will call burn() on the token for the given burn percentage).
 PlatformRegistry (optional) – Parameters: stakeManager (from step 1), reputationEngine (from step 2), and minStake. This module can be used to register “platform” operators and enforce they stake a minimum amount to create sub-platforms. If your use case doesn’t involve multiple platforms or you’re not sure, you can skip deploying this for now.
 JobRouter (optional) – Parameter: platformRegistry address (from step 8). This helps route job posts to specific sub-platforms if using PlatformRegistry. Skip if not needed.

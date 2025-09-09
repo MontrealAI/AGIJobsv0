@@ -338,7 +338,7 @@ describe('PlatformRegistry', function () {
     const feePool = await FeePool.connect(owner).deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
 

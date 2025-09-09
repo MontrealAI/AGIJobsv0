@@ -551,8 +551,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     /// @notice update the treasury address used for blacklisted payouts
+    /// @dev Treasury must be zero (burn) or a non-owner address
     function setTreasury(address _treasury) external onlyGovernance {
-        if (_treasury == address(0)) revert InvalidTreasury();
+        if (_treasury != address(0) && _treasury == owner()) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }

@@ -74,7 +74,7 @@ describe('StakeManager release', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await feePool.connect(owner).setBurnPct(0);

@@ -79,7 +79,7 @@ describe('FeePool', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
@@ -412,7 +412,7 @@ describe('FeePool with no stakers', function () {
       0,
       100,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address
@@ -425,10 +425,12 @@ describe('FeePool with no stakers', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
+    await feePool.setTreasuryAllowlist(treasury.address, true);
+    await feePool.setTreasury(treasury.address);
   });
 
   it('burns fees when no stakers even with treasury set', async () => {
