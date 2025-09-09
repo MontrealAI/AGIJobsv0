@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable2Step} from "./utils/Ownable2Step.sol";
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
@@ -83,7 +82,7 @@ contract IdentityRegistry is Ownable2Step {
         IReputationEngine _reputationEngine,
         bytes32 _agentRootNode,
         bytes32 _clubRootNode
-    ) Ownable(msg.sender) {
+    ) Ownable2Step(msg.sender) {
         ens = _ens;
         if (address(_ens) != address(0)) {
             emit ENSUpdated(address(_ens));
