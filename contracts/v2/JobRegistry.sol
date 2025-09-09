@@ -15,6 +15,7 @@ import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -69,6 +70,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error NotReady();
     error CannotCancel();
     error OnlyEmployer();
+    error BurnAllowanceInsufficient();
 
     enum State {
         None,
@@ -1240,6 +1242,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     payee = treasury;
                     fundsRedirected = true;
                 }
+
+                uint256 pct = stakeManager.getAgentPayoutPct(payee);
+                uint256 modified = (rewardAfterValidator * pct) / 100;
+                uint256 burnAmount = (modified * stakeManager.burnPct()) / 100;
+                uint256 totalBurn = burnAmount;
+                if (address(pool) == address(0) && fee > 0) {
+                    totalBurn += fee;
+                }
+                if (totalBurn > 0) {
+                    IERC20 t = stakeManager.token();
+                    if (t.allowance(job.employer, address(stakeManager)) < totalBurn) {
+                        revert BurnAllowanceInsufficient();
+                    }
+                }
+
                 stakeManager.finalizeJobFunds(
                     jobKey,
                     job.employer,
@@ -1259,6 +1276,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     } else {
                         stakeManager.releaseReward(
                             jobKey,
+                            job.employer,
                             payee,
                             validatorReward
                         );
@@ -1327,6 +1345,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (job.reward > 0) {
                     stakeManager.releaseReward(
                         jobKey,
+                        job.employer,
                         recipient,
                         uint256(job.reward) + fee
                     );
@@ -1383,6 +1402,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             uint256 fee = (uint256(job.reward) * job.feePct) / 100;
             stakeManager.releaseReward(
                 bytes32(jobId),
+                job.employer,
                 job.employer,
                 uint256(job.reward) + fee
             );

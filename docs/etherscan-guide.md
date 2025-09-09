@@ -48,7 +48,7 @@ For a narrated deployment walkthrough, see [deployment-v2-agialpha.md](deploymen
    stakeAndActivate(1000000000000000000)
    ```
 
-4. **acknowledgeAndFinalize** – employers must call `JobRegistry.acknowledgeAndFinalize(jobId)` from their own wallet to settle a validated job and burn the fee portion; the platform never finalizes jobs or collects burned tokens.
+4. **burn & acknowledgeAndFinalize** – from the employer wallet, first burn the required fee share of `$AGIALPHA` (or approve the `StakeManager` to `burnFrom` your address) and then call `JobRegistry.acknowledgeAndFinalize(jobId)` to settle a validated job. The platform never finalizes jobs or collects burned tokens.
 
    ```text
    acknowledgeAndFinalize(1)
@@ -144,7 +144,7 @@ Before performing any on-chain action, employers, agents, and validators must ca
 3. In **Read Contract**, confirm **isTaxExempt()** returns `true`.
 4. Call **createJob** with job parameters and escrowed token amount.
 5. Monitor **JobCreated** events to confirm posting.
-6. After validation and any disputes, finalize by calling **acknowledgeAndFinalize(jobId)** from the employer wallet; this releases payments and burns the fee share.
+6. After validation and any disputes, the employer burns the fee share then calls **acknowledgeAndFinalize(jobId)** from their wallet to release payments.
 
 ### Agents
 
@@ -156,7 +156,7 @@ Before performing any on-chain action, employers, agents, and validators must ca
    ```
 
 3. Use **applyForJob** then **submit(jobId, resultHash, uri)** when work is ready.
-4. After validators reveal votes, wait for the employer to call **JobRegistry.acknowledgeAndFinalize(jobId)** to settle the job.
+4. After validators reveal votes, wait for the employer to burn the fee share and call **JobRegistry.acknowledgeAndFinalize(jobId)** to settle the job.
 
 ### Validators
 

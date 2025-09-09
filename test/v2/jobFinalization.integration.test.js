@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, network, artifacts } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
 
@@ -24,8 +24,15 @@ describe('job finalization integration', function () {
     [owner, employer, agent, validator1, validator2] =
       await ethers.getSigners();
 
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      'contracts/test/MockERC20.sol:MockERC20',
       AGIALPHA
     );
     await token.mint(owner.address, mintAmount);
@@ -156,9 +163,11 @@ describe('job finalization integration', function () {
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
+    const burnPctNow = await stakeManager.burnPct();
+    const burnAmt = ((reward - vReward) * BigInt(burnPctNow)) / 100n;
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      .approve(await stakeManager.getAddress(), reward + fee + burnAmt);
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.id('spec');
     await registry

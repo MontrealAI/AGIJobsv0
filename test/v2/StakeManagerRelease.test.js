@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, network, artifacts } = require('hardhat');
 
 describe('StakeManager release', function () {
   let token,
@@ -15,8 +15,15 @@ describe('StakeManager release', function () {
   beforeEach(async () => {
     [owner, user1, user2, treasury] = await ethers.getSigners();
     const { AGIALPHA } = require('../../scripts/constants');
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      'contracts/test/MockERC20.sol:MockERC20',
       AGIALPHA
     );
 
@@ -105,7 +112,7 @@ describe('StakeManager release', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .release(user1.address, ethers.parseEther('100'))
+        .release(user2.address, user1.address, ethers.parseEther('100'))
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(
@@ -151,7 +158,12 @@ describe('StakeManager release', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, user1.address, ethers.parseEther('100'))
+        .releaseReward(
+          jobId,
+          user2.address,
+          user1.address,
+          ethers.parseEther('100')
+        )
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('20'))

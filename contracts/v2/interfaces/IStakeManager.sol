@@ -85,15 +85,24 @@ interface IStakeManager {
 
     /// @notice release locked job reward to recipient
     /// @param jobId unique job identifier
+    /// @param employer employer responsible for burns
     /// @param to recipient of the reward
     /// @param amount base token amount with 18 decimals before bonuses
-    function releaseReward(bytes32 jobId, address to, uint256 amount) external;
+    function releaseReward(
+        bytes32 jobId,
+        address employer,
+        address to,
+        uint256 amount
+    ) external;
 
     /// @notice release previously locked stake for a user
     function releaseStake(address user, uint256 amount) external;
 
     /// @notice release funds locked via {lock}
-    function release(address to, uint256 amount) external;
+    /// @param employer employer responsible for burns
+    /// @param to recipient of the tokens
+    /// @param amount base token amount with 18 decimals before bonuses
+    function release(address employer, address to, uint256 amount) external;
 
     /// @notice finalize job funds by paying agent and forwarding fees
     function finalizeJobFunds(
