@@ -100,7 +100,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     IFeePool public feePool;
 
     /// @notice address receiving the treasury share of slashed stake
+    /// @dev Any non-zero treasury must be demonstrably non-platform-controlled.
     address public treasury;
+
+    /// @notice pre-approved community/DAO treasury address
+    /// @dev When set, `setTreasury` only accepts this address or the zero address
+    ///      to force burns.
+    address public communityTreasury;
 
     /// @notice JobRegistry contract tracking tax policy acknowledgements
     address public jobRegistry;
@@ -192,6 +198,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event MinStakeUpdated(uint256 minStake);
     event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
     event TreasuryUpdated(address indexed treasury);
+    event CommunityTreasuryUpdated(address indexed treasury);
     event JobRegistryUpdated(address indexed registry);
     event MaxStakePerAddressUpdated(uint256 maxStake);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
@@ -223,7 +230,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param _treasurySlashPct Percentage of slashed amount sent to treasury
     /// (0-100).
     /// @param _treasury Address receiving treasury share of slashed stake.
-    /// Defaults to deployer when zero address.
+    /// Set to the zero address to burn slashed stakes.
     /// @param _jobRegistry JobRegistry enforcing tax acknowledgements.
     /// @param _disputeModule Dispute module authorized to manage dispute fees.
     constructor(
@@ -252,8 +259,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
 
-        treasury = _treasury == address(0) ? msg.sender : _treasury;
-        emit TreasuryUpdated(treasury);
+        if (_treasury == owner()) revert InvalidTreasury();
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
         if (_jobRegistry != address(0)) {
             jobRegistry = _jobRegistry;
         }
@@ -342,10 +350,26 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
+    /// @notice designate the community/DAO treasury that may receive slashed stake
+    /// @param _community address of the community-controlled treasury
+    function setCommunityTreasury(address _community) external onlyGovernance {
+        if (_community == owner()) revert InvalidTreasury();
+        communityTreasury = _community;
+        emit CommunityTreasuryUpdated(_community);
+    }
+
     /// @notice update treasury recipient address
-    /// @param _treasury address receiving treasury slash share
+    /// @dev Any non-zero treasury must be demonstrably non-platform-controlled.
+    ///      When a `communityTreasury` is set, only that address or the zero address
+    ///      may be configured to force burns.
+    /// @param _treasury address receiving treasury slash share or zero for burns
     function setTreasury(address _treasury) external onlyGovernance {
-        if (_treasury == address(0)) revert InvalidTreasury();
+        if (_treasury == owner()) revert InvalidTreasury();
+        if (
+            communityTreasury != address(0) &&
+            _treasury != address(0) &&
+            _treasury != communityTreasury
+        ) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }

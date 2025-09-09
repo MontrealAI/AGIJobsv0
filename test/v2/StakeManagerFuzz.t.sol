@@ -15,7 +15,7 @@ contract StakeManagerFuzz is Test {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 50, 50, address(1), address(this), address(this), address(this));
     }
 
     function _deposit(address user, uint256 amount, StakeManager.Role role) internal {

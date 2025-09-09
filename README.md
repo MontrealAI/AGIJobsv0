@@ -34,7 +34,7 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 ### Fee handling and treasury
 
-`JobRegistry` routes protocol fees to `FeePool`, which burns a configurable percentage (`burnPct`) when an employer finalizes a job and escrows the remainder for platform stakers. `StakeManager.setTreasury`, `JobRegistry.setTreasury`, and `FeePool.setTreasury` configure a governance-controlled treasury that receives slashed stakes, blacklisted payouts, or undistributed fees. The platform only routes funds and never initiates or profits from burns.
+`JobRegistry` routes protocol fees to `FeePool`, which burns a configurable percentage (`burnPct`) when an employer finalizes a job and escrows the remainder for platform stakers. `StakeManager.setTreasury`, `JobRegistry.setTreasury`, and `FeePool.setTreasury` configure a governance-controlled treasury that receives slashed stakes, blacklisted payouts, or undistributed fees. Any non-zero treasury must be demonstrably community/DAO-controlled and not platform-owned. The platform only routes funds and never initiates or profits from burns.
 
 ### Deploy defaults
 
