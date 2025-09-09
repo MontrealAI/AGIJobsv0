@@ -501,7 +501,7 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
   Owner‑only `addAdditionalAgent/Validator(address)`; **emit** `AdditionalAgentUsed/AdditionalValidatorUsed(addr,label,jobId)` on use; add `clearAdditional...`.
 - **Cache/attestation (M):**  
   Short‑lived `(addr,role) → expiry`; optional AttestationRegistry hook (pre‑auth). Bust cache on root changes.
-- **Events (L):** `IdentityVerified(user, role, node, label)`, `IdentityFailed(user, role, label, reason)`.
+- **Events (L):** `IdentityVerified(user, role, node, label)`.
 
 #### A.2.2 `StakeManager`
 
@@ -586,7 +586,6 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
 
 ```solidity
 event IdentityVerified(address indexed user, uint8 indexed role, bytes32 indexed node, string label);
-event IdentityFailed(address indexed user, uint8 indexed role, string label, string reason);
 event AdditionalAgentUsed(address indexed user, string label, uint256 indexed jobId);
 event AdditionalValidatorUsed(address indexed user, string label, uint256 indexed jobId);
 
