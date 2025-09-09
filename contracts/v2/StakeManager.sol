@@ -308,6 +308,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
     }
 
+    /// @dev internal helper to burn tokens from an employer's balance
+    function _burnFromEmployer(
+        bytes32 jobId,
+        address employer,
+        uint256 amount
+    ) internal {
+        if (amount == 0) return;
+        try IERC20Burnable(address(token)).burnFrom(employer, amount) {
+            emit TokensBurned(jobId, amount);
+        } catch {
+            revert TokenNotBurnable();
+        }
+    }
+
     /// @notice update slashing percentage splits
     /// @param _employerSlashPct percentage sent to employer (0-100)
     /// @param _treasurySlashPct percentage sent to treasury (0-100)
@@ -891,17 +905,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice release locked job reward to recipient applying any AGI type bonus
     /// @param jobId unique job identifier
+    /// @param employer employer responsible for burns
     /// @param to recipient of the release (typically the agent)
     /// @param amount base token amount with 18 decimals before AGI bonus
     /// @dev Deposits fees into the FeePool without distributing them;
     ///      an external process should call `FeePool.distributeFees()`
     ///      periodically to settle rewards.
-    function releaseReward(bytes32 jobId, address to, uint256 amount)
-        external
-        onlyJobRegistry
-        whenNotPaused
-        nonReentrant
-    {
+    function releaseReward(
+        bytes32 jobId,
+        address employer,
+        address to,
+        uint256 amount
+    ) external onlyJobRegistry whenNotPaused nonReentrant {
         uint256 pct = getAgentPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
         uint256 feeAmount = (modified * feePct) / 100;
@@ -921,13 +936,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // off-chain keeper).
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
-                // Fee burning only occurs when employer-approved releases happen.
-                _burnToken(jobId, feeAmount);
+                token.safeTransfer(employer, feeAmount);
+                _burnFromEmployer(jobId, employer, feeAmount);
             }
         }
         if (burnAmount > 0) {
-            // Burn portion of employer funds during release.
-            _burnToken(jobId, burnAmount);
+            token.safeTransfer(employer, burnAmount);
+            _burnFromEmployer(jobId, employer, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -939,9 +954,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Does not adjust job-specific escrows; the caller must ensure
     ///      sufficient balance was locked earlier. Fees accumulate in the
     ///      FeePool until `FeePool.distributeFees()` is called separately.
+    /// @param employer address providing burn approval
     /// @param to Recipient receiving the tokens.
     /// @param amount Base token amount with 18 decimals before AGI bonus.
-    function release(address to, uint256 amount)
+    function release(address employer, address to, uint256 amount)
         external
         onlyJobRegistry
         whenNotPaused
@@ -964,13 +980,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 // invoked separately.
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
-                // Fee burning only occurs on employer-approved releases.
-                _burnToken(bytes32(0), feeAmount);
+                token.safeTransfer(employer, feeAmount);
+                _burnFromEmployer(bytes32(0), employer, feeAmount);
             }
         }
         if (burnAmount > 0) {
-            // Burn portion of employer funds as requested.
-            _burnToken(bytes32(0), burnAmount);
+            token.safeTransfer(employer, burnAmount);
+            _burnFromEmployer(bytes32(0), employer, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -1016,13 +1032,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 _feePool.distributeFees();
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
-                // Burn occurs only because the employer initiated finalization.
-                _burnToken(jobId, fee);
+                token.safeTransfer(employer, fee);
+                _burnFromEmployer(jobId, employer, fee);
             }
         }
         if (burnAmount > 0) {
-            // Burn the employer's portion as part of finalization.
-            _burnToken(jobId, burnAmount);
+            token.safeTransfer(employer, burnAmount);
+            _burnFromEmployer(jobId, employer, burnAmount);
         }
     }
 

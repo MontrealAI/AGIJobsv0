@@ -80,6 +80,15 @@ contract AGIALPHAToken is ERC20, Ownable {
         _burn(msg.sender, amount);
     }
 
+    /// @notice Burn tokens from an address using allowance.
+    /// @param from source address
+    /// @param amount token amount with 18 decimals
+    function burnFrom(address from, uint256 amount) external {
+        _spendAllowance(from, msg.sender, amount);
+        _acknowledged[from] = true;
+        _burn(from, amount);
+    }
+
     /// @dev Reject direct ETH transfers to preserve tax neutrality.
     receive() external payable {
         revert("AGIALPHA: no ether");

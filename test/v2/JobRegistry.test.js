@@ -160,7 +160,10 @@ describe('JobRegistry integration', function () {
   it('runs successful job lifecycle', async () => {
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward);
+      .approve(
+        await stakeManager.getAddress(),
+        reward + (reward * 10n) / 100n
+      );
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.id('spec');
     await expect(

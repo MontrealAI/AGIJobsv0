@@ -156,9 +156,14 @@ describe('job finalization integration', function () {
       .connect(agent)
       .approve(await stakeManager.getAddress(), stakeRequired);
     await stakeManager.connect(agent).depositStake(0, stakeRequired);
+    const burnPctNow = await stakeManager.burnPct();
+    const burnAmt = ((reward - vReward) * BigInt(burnPctNow)) / 100n;
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), reward + fee);
+      .approve(
+        await stakeManager.getAddress(),
+        reward + fee + burnAmt
+      );
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.id('spec');
     await registry

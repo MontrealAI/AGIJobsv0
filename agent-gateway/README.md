@@ -36,7 +36,9 @@ transactions use the wallet specified by `BOT_WALLET` or the first wallet in
 `WALLET_KEYS` if none is provided.
 
 The gateway also exposes helpers for committing and revealing validation
-results through REST endpoints:
+results through REST endpoints. Final payout still requires the employer to
+burn their fee share from their own wallet before calling
+`acknowledgeAndFinalize` on `JobRegistry`.
 
 ```
 POST /jobs/:id/commit { address, approve }

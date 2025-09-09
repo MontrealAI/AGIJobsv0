@@ -105,7 +105,7 @@ describe('StakeManager release', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .release(user1.address, ethers.parseEther('100'))
+        .release(user2.address, user1.address, ethers.parseEther('100'))
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(
@@ -151,7 +151,7 @@ describe('StakeManager release', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .releaseReward(jobId, user1.address, ethers.parseEther('100'))
+        .releaseReward(jobId, user2.address, user1.address, ethers.parseEther('100'))
     )
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('20'))
