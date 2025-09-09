@@ -100,7 +100,9 @@ describe('JobRegistry agent gating', function () {
     await verifier.addAdditionalAgent(agent.address);
     const jobId = await createJob();
     await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
-      .to.emit(registry, 'JobApplied')
+      .to.emit(registry, 'AgentIdentityVerified')
+      .withArgs(agent.address, ethers.ZeroHash, 'a', false, false)
+      .and.to.emit(registry, 'JobApplied')
       .withArgs(jobId, agent.address, 'a');
   });
 

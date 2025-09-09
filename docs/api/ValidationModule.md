@@ -31,6 +31,7 @@ Manages commit‑reveal voting for submitted jobs.
 - `JobRegistryUpdated(address registry)` / `StakeManagerUpdated(address manager)` / `IdentityRegistryUpdated(address registry)`
 - `JobNonceReset(uint256 jobId)`
 - `SelectionStrategyUpdated(SelectionStrategy strategy)`
+- `ValidatorIdentityVerified(address indexed validator, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle)`
 - `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)`
 - `ValidationRevealed(uint256 jobId, address validator, bool approve, string subdomain)`
 - `ValidationTallied(uint256 jobId, bool success, uint256 approvals, uint256 rejections)`

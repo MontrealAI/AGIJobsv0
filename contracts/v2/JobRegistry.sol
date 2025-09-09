@@ -274,6 +274,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event AgentAuthCacheUpdated(address indexed agent, bool authorized);
     event AgentAuthCacheDurationUpdated(uint256 duration);
     event AgentAuthCacheVersionBumped(uint256 version);
+    /// @notice Emitted when an agent's ENS identity is verified during a job action.
+    event AgentIdentityVerified(
+        address indexed agent,
+        bytes32 indexed node,
+        string label,
+        bool viaWrapper,
+        bool viaMerkle
+    );
 
     // job parameter template event
     event JobParametersUpdated(
@@ -876,13 +884,20 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             agentAuthCache[msg.sender] &&
             agentAuthExpiry[msg.sender] > block.timestamp &&
             agentAuthVersion[msg.sender] == agentAuthCacheVersion;
+        bytes32 node;
+        bool viaWrapper;
+        bool viaMerkle;
         if (!authorized) {
-            (authorized, , , ) = identityRegistry.verifyAgent(
-                msg.sender,
-                subdomain,
-                proof
-            );
+            (authorized, node, viaWrapper, viaMerkle) = identityRegistry
+                .verifyAgent(msg.sender, subdomain, proof);
             if (authorized) {
+                emit AgentIdentityVerified(
+                    msg.sender,
+                    node,
+                    subdomain,
+                    viaWrapper,
+                    viaMerkle
+                );
                 agentAuthCache[msg.sender] = true;
                 agentAuthExpiry[msg.sender] =
                     block.timestamp + agentAuthCacheDuration;
@@ -994,12 +1009,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        (bool authorized, , , ) = identityRegistry.verifyAgent(
-            msg.sender,
-            subdomain,
-            proof
-        );
+        (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
+            identityRegistry.verifyAgent(msg.sender, subdomain, proof);
         if (!authorized) revert NotAuthorizedAgent();
+        emit AgentIdentityVerified(
+            msg.sender,
+            node,
+            subdomain,
+            viaWrapper,
+            viaMerkle
+        );
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender

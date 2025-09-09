@@ -128,6 +128,8 @@ describe('Validator ENS integration', function () {
     )
       .to.emit(identity, 'OwnershipVerified')
       .withArgs(validator.address, 'v')
+      .and.to.emit(validation, 'ValidatorIdentityVerified')
+      .withArgs(validator.address, node, 'v', true, false)
       .and.to.emit(validation, 'ValidationCommitted')
       .withArgs(1, validator.address, ethers.id('h'), 'v');
   });
@@ -166,6 +168,8 @@ describe('Validator ENS integration', function () {
     )
       .to.emit(identity, 'OwnershipVerified')
       .withArgs(validator.address, 'v')
+      .and.to.emit(validation, 'ValidatorIdentityVerified')
+      .withArgs(validator.address, namehash(root, 'v'), 'v', true, false)
       .and.to.emit(validation, 'ValidationCommitted')
       .withArgs(2, validator.address, ethers.id('h'), 'v');
   });
@@ -232,7 +236,9 @@ describe('Validator ENS integration', function () {
     await expect(
       validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
     )
-      .to.emit(validation, 'ValidationCommitted')
+      .to.emit(validation, 'ValidatorIdentityVerified')
+      .withArgs(validator.address, node, 'v', false, false)
+      .and.to.emit(validation, 'ValidationCommitted')
       .withArgs(1, validator.address, ethers.id('h'), 'v');
   });
 

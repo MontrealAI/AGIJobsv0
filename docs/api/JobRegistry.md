@@ -17,6 +17,7 @@ Coordinates job posting, assignment and dispute resolution.
 
 - `JobFunded(uint256 indexed jobId, address indexed employer, uint256 reward, uint256 fee)`
 - `JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)`
+- `AgentIdentityVerified(address indexed agent, bytes32 indexed node, string label, bool viaWrapper, bool viaMerkle)`
 - `JobApplied(uint256 indexed jobId, address indexed agent, string subdomain)`
 - `JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)`
 - `JobCompleted(uint256 indexed jobId, bool success)`
