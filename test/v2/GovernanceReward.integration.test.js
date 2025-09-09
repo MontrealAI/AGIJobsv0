@@ -36,6 +36,9 @@ describe('Governance reward lifecycle', function () {
       owner.address
     );
 
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setMinStake(1);
 
     const JobRegistry = await ethers.getContractFactory(

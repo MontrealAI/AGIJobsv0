@@ -35,7 +35,7 @@ describe('Job finalization with contract employer', function () {
       0,
       0,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address

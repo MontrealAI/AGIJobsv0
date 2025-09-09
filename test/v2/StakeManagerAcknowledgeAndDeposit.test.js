@@ -30,7 +30,7 @@ describe('StakeManager acknowledgeAndDeposit', function () {
       0,
       50,
       50,
-      owner.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address

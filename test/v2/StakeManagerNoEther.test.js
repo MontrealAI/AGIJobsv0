@@ -18,7 +18,7 @@ describe('StakeManager ether rejection', function () {
       0,
       100,
       0,
-      owner.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address

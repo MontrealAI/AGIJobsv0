@@ -55,6 +55,7 @@ contract MockStakeManager is IStakeManager {
     function setSlashingPercentages(uint256, uint256) external override {}
     function setSlashingParameters(uint256, uint256) external override {}
     function setTreasury(address) external override {}
+    function setTreasuryAllowlist(address, bool) external override {}
     function setMaxStakePerAddress(uint256) external override {}
     function setMaxAGITypes(uint256) external override {}
     function setFeePct(uint256) external override {}

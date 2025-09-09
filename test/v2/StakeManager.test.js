@@ -27,6 +27,9 @@ describe('StakeManager', function () {
       ethers.ZeroAddress,
       owner.address
     );
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, true);
     await stakeManager.connect(owner).setMinStake(1);
   });
 
@@ -658,19 +661,85 @@ describe('StakeManager', function () {
     expect(employerAfter - employerBefore).to.equal(60n);
   });
 
-  it('restricts treasury updates to owner', async () => {
+  it('restricts treasury updates to owner and allowlist', async () => {
     await expect(
       stakeManager.connect(user).setTreasury(user.address)
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
+    await expect(
+      stakeManager.connect(owner).setTreasury(user.address)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
+    await stakeManager.connect(owner).setTreasuryAllowlist(user.address, true);
     await expect(stakeManager.connect(owner).setTreasury(user.address))
       .to.emit(stakeManager, 'TreasuryUpdated')
       .withArgs(user.address);
     expect(await stakeManager.treasury()).to.equal(user.address);
   });
 
+  it('allows setting treasury to zero address for burning', async () => {
+    await expect(stakeManager.connect(owner).setTreasury(ethers.ZeroAddress))
+      .to.emit(stakeManager, 'TreasuryUpdated')
+      .withArgs(ethers.ZeroAddress);
+  });
+
   it('rejects owner address as treasury', async () => {
     await expect(
       stakeManager.connect(owner).setTreasury(owner.address)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
+  });
+
+  it('reverts slashing when treasury removed from allowlist', async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const taxPolicy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await taxPolicy.connect(user).acknowledge();
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
+    await stakeManager.connect(user).depositStake(0, 100);
+
+    // Remove treasury from allowlist
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, false);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send('hardhat_setBalance', [
+      registryAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ['slash(address,uint8,uint256,address)'](
+          user.address,
+          0,
+          10,
+          employer.address
+        )
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
   });
 

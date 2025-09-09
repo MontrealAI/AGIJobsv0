@@ -30,7 +30,7 @@ describe('Job expiration boundary', function () {
       0,
       100,
       0,
-      treasury.address,
+      ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       owner.address

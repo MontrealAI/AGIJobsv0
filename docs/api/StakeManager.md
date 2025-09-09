@@ -5,7 +5,8 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 ## Functions
 
 - `setMinStake(uint256 minStake)` / `setMaxStakePerAddress(uint256 maxStake)` – configure stake limits.
-- `setTreasury(address treasury)` / `setFeePool(address feePool)` – wire fee destinations. Treasury must be non-zero and not the governance owner.
+- `setTreasury(address treasury)` / `setFeePool(address feePool)` – wire fee destinations. Treasury must be the zero address (burn) or an address pre-approved via `setTreasuryAllowlist` and not the governance owner.
+- `setTreasuryAllowlist(address treasury, bool allowed)` – manage the governance-approved treasury list.
 - `setJobRegistry(address registry)` / `setDisputeModule(address module)` / `setValidationModule(address module)` – connect modules. Staking reverts until a registry is configured.
 - `depositStake(uint8 role, uint256 amount)` – user stakes as agent (`0`) or validator (`1`).
 - `withdrawStake(uint8 role, uint256 amount)` – withdraw previously staked tokens.
