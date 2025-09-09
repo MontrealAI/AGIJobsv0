@@ -343,9 +343,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice update treasury recipient address
+    /// @dev Treasury must be a non-zero address distinct from the contract owner
     /// @param _treasury address receiving treasury slash share
     function setTreasury(address _treasury) external onlyGovernance {
         if (_treasury == address(0)) revert InvalidTreasury();
+        if (_treasury == owner()) revert InvalidTreasury();
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
