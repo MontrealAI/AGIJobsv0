@@ -321,6 +321,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         string subdomain
     );
     event JobCompleted(uint256 indexed jobId, bool success);
+    /// @notice Emitted when job funds are disbursed
+    /// @param jobId Identifier of the job
+    /// @param worker Agent who performed the job
+    /// @param netPaid Amount paid to the agent after burn
+    /// @param fee Protocol fee routed to the FeePool
+    event JobPayout(
+        uint256 indexed jobId,
+        address indexed worker,
+        uint256 netPaid,
+        uint256 fee
+    );
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
     /// @param worker Agent who performed the job
@@ -1317,11 +1328,20 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
             uint256 rewardAfterValidator =
                 uint256(job.reward) - validatorReward;
+            uint256 fee;
+            uint256 agentPct = 100;
+            uint256 burnPctStake;
             if (address(stakeManager) != address(0)) {
-                uint256 fee;
+                burnPctStake = stakeManager.burnPct();
+                agentPct = stakeManager.getAgentPayoutPct(job.agent);
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
+            }
+            uint256 agentModified = (rewardAfterValidator * agentPct) / 100;
+            uint256 burn = (agentModified * burnPctStake) / 100;
+            uint256 agentAmount = agentModified - burn;
+            if (address(stakeManager) != address(0)) {
                 address payee = job.agent;
                 if (isGov && treasury != address(0) && agentBlacklisted) {
                     payee = treasury;
@@ -1368,17 +1388,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                uint256 agentPct = 100;
-                if (address(stakeManager) != address(0)) {
-                    agentPct = stakeManager.getAgentPayoutPct(job.agent);
-                }
-                uint256 agentModified =
-                    (rewardAfterValidator * agentPct) / 100;
-                uint256 burn = 0;
-                if (address(stakeManager) != address(0)) {
-                    burn = (agentModified * stakeManager.burnPct()) / 100;
-                }
-                uint256 agentAmount = agentModified - burn;
                 uint256 completionTime = block.timestamp - job.assignedAt;
                 uint256 payout = agentAmount * 1e12;
                 uint256 agentGain = reputationEngine.calculateReputationPoints(
@@ -1406,6 +1415,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (address(certificateNFT) != address(0)) {
                 certificateNFT.mint(job.agent, jobId, job.uriHash);
             }
+            emit JobPayout(jobId, job.agent, agentAmount, fee);
         } else {
             if (address(stakeManager) != address(0)) {
                 uint256 fee = (uint256(job.reward) * job.feePct) / 100;
