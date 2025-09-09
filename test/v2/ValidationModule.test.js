@@ -74,9 +74,7 @@ describe('ValidationModule V2', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, jobStruct);
-    await jobRegistry
-      .connect(employer)
-      .submitBurnReceipt(1, burnTxHash, 0, 0);
+    await jobRegistry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
   });
 
   async function advance(seconds) {
@@ -348,9 +346,7 @@ describe('ValidationModule V2', function () {
     ).wait();
     await advance(61);
     await expect(
-      validation
-        .connect(v1)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
