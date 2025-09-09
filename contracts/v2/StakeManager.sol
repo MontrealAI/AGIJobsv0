@@ -58,6 +58,7 @@ error PendingPenalty();
 error TokenNotBurnable();
 error BurnAllowanceInsufficient();
 error Unauthorized();
+error NoPendingBurn();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -147,6 +148,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
 
+    /// @notice pending burns per job and employer awaiting proof
+    mapping(bytes32 => mapping(address => uint256)) public pendingBurns;
+
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
@@ -184,6 +188,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Emitted when a participant receives a payout in $AGIALPHA.
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
+    /// @notice Emitted when an employer must burn tokens off-chain
+    event BurnRecorded(bytes32 indexed jobId, address indexed employer, uint256 amount);
+    /// @notice Emitted when an employer provides burn proof
+    event BurnProofSubmitted(bytes32 indexed jobId, address indexed employer, uint256 amount);
     /// @notice Emitted when an employer finalizes job funds.
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
@@ -942,14 +950,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (escrow < total) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - total;
 
-        uint256 totalBurn = burnAmount;
-        if (address(feePool) == address(0)) {
-            totalBurn += feeAmount;
-        }
-        if (totalBurn > 0 && token.allowance(employer, address(this)) < totalBurn) {
-            revert BurnAllowanceInsufficient();
-        }
-
         if (feeAmount > 0) {
             if (address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), feeAmount);
@@ -960,12 +960,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 emit StakeReleased(jobId, address(feePool), feeAmount);
             } else {
                 token.safeTransfer(employer, feeAmount);
-                _burnFromEmployer(jobId, employer, feeAmount);
+                pendingBurns[jobId][employer] += feeAmount;
+                emit BurnRecorded(jobId, employer, feeAmount);
             }
         }
         if (burnAmount > 0) {
             token.safeTransfer(employer, burnAmount);
-            _burnFromEmployer(jobId, employer, burnAmount);
+            pendingBurns[jobId][employer] += burnAmount;
+            emit BurnRecorded(jobId, employer, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -995,14 +997,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - feeAmount - burnAmount;
 
-        uint256 totalBurn = burnAmount;
-        if (address(feePool) == address(0)) {
-            totalBurn += feeAmount;
-        }
-        if (totalBurn > 0 && token.allowance(employer, address(this)) < totalBurn) {
-            revert BurnAllowanceInsufficient();
-        }
-
         if (feeAmount > 0) {
             if (address(feePool) != address(0)) {
                 token.safeTransfer(address(feePool), feeAmount);
@@ -1012,12 +1006,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 emit StakeReleased(bytes32(0), address(feePool), feeAmount);
             } else {
                 token.safeTransfer(employer, feeAmount);
-                _burnFromEmployer(bytes32(0), employer, feeAmount);
+                pendingBurns[bytes32(0)][employer] += feeAmount;
+                emit BurnRecorded(bytes32(0), employer, feeAmount);
             }
         }
         if (burnAmount > 0) {
             token.safeTransfer(employer, burnAmount);
-            _burnFromEmployer(bytes32(0), employer, burnAmount);
+            pendingBurns[bytes32(0)][employer] += burnAmount;
+            emit BurnRecorded(bytes32(0), employer, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -1063,13 +1059,25 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 emit StakeReleased(jobId, address(_feePool), fee);
             } else {
                 token.safeTransfer(employer, fee);
-                _burnFromEmployer(jobId, employer, fee);
+                pendingBurns[jobId][employer] += fee;
+                emit BurnRecorded(jobId, employer, fee);
             }
         }
         if (burnAmount > 0) {
             token.safeTransfer(employer, burnAmount);
-            _burnFromEmployer(jobId, employer, burnAmount);
+            pendingBurns[jobId][employer] += burnAmount;
+            emit BurnRecorded(jobId, employer, burnAmount);
         }
+    }
+
+    /// @notice Burn tokens previously returned to the employer and submit proof
+    /// @param jobId unique job identifier associated with the burn
+    function submitBurnProof(bytes32 jobId) external nonReentrant {
+        uint256 amount = pendingBurns[jobId][msg.sender];
+        if (amount == 0) revert NoPendingBurn();
+        pendingBurns[jobId][msg.sender] = 0;
+        _burnFromEmployer(jobId, msg.sender, amount);
+        emit BurnProofSubmitted(jobId, msg.sender, amount);
     }
 
     /// @notice Distribute validator rewards evenly using the ValidationModule

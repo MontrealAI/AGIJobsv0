@@ -118,6 +118,12 @@ interface IStakeManager {
     /// @notice distribute validator rewards equally among selected validators
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
 
+    /// @notice submit proof that pending burns were executed by the employer
+    function submitBurnProof(bytes32 jobId) external;
+
+    /// @notice pending burn amount for a job and employer
+    function pendingBurn(bytes32 jobId, address employer) external view returns (uint256);
+
     /// @notice Current burn percentage applied to rewards
     function burnPct() external view returns (uint256);
 
