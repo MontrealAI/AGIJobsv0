@@ -139,9 +139,11 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         emit BurnPctUpdated(pct);
 
         if (_treasury != address(0)) {
-            if (_treasury == msg.sender || !treasuryAllowlist[_treasury]) {
+            if (_treasury == msg.sender) {
                 revert InvalidTreasury();
             }
+            treasuryAllowlist[_treasury] = true;
+            emit TreasuryAllowlistUpdated(_treasury, true);
             treasury = _treasury;
         }
         emit TreasuryUpdated(_treasury);
