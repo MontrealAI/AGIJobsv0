@@ -215,7 +215,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function setAgentMerkleRoot(bytes32) external override {}
 
-    function setJobParameters(uint256, uint256 stake) external override {
+    function setJobParameters(uint256 maxReward, uint256 stake) external override {
+        maxJobReward = maxReward;
         jobStake = stake;
     }
 

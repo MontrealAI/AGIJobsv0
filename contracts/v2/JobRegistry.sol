@@ -686,10 +686,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         ack = _acknowledge(user);
     }
 
-    function setJobParameters(uint256 reward, uint256 stake) external onlyGovernance {
+    function setJobParameters(uint256 maxReward, uint256 stake) external onlyGovernance {
         if (stake > type(uint96).max) revert StakeOverflow();
         jobStake = uint96(stake);
-        emit JobParametersUpdated(reward, stake, maxJobReward, maxJobDuration);
+        maxJobReward = maxReward;
+        emit JobParametersUpdated(0, stake, maxReward, maxJobDuration);
     }
 
     // ---------------------------------------------------------------------
