@@ -155,7 +155,7 @@ describe('Job expiration', function () {
       .to.emit(registry, 'JobExpired')
       .withArgs(jobId, employer.address)
       .and.to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 0n, 0n);
 
     expect(await token.balanceOf(employer.address)).to.equal(1200);
     expect(await token.balanceOf(agent.address)).to.equal(800);
@@ -196,6 +196,6 @@ describe('Job expiration', function () {
       .to.emit(registry, 'JobExpired')
       .withArgs(jobId, employer.address)
       .and.to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 0n, 0n);
   });
 });

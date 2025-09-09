@@ -209,7 +209,7 @@ describe('JobRegistry integration', function () {
       .withArgs(jobId, true);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, ethers.ANY_VALUE, 0n);
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
     expect(await rep.reputation(agent.address)).to.equal(0);
@@ -372,7 +372,7 @@ describe('JobRegistry integration', function () {
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 100n, 0n);
   });
 
   it('rejects non-employer finalization after dispute resolution', async () => {
@@ -400,7 +400,7 @@ describe('JobRegistry integration', function () {
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 100n, 0n);
   });
 
   it('rejects non-employer finalization after forced outcome', async () => {
@@ -438,7 +438,7 @@ describe('JobRegistry integration', function () {
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 100n, 0n);
   });
 
   it('allows employer to cancel before completion', async () => {

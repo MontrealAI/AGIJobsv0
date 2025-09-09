@@ -90,7 +90,14 @@ interface IJobRegistry {
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
     /// @param worker Agent who performed the job
-    event JobFinalized(uint256 indexed jobId, address indexed worker);
+    /// @param reward Amount of tokens paid to the worker after burns
+    /// @param fee Total protocol fee and burn amount deducted from the job
+    event JobFinalized(
+        uint256 indexed jobId,
+        address indexed worker,
+        uint256 reward,
+        uint256 fee
+    );
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event JobCancelled(uint256 indexed jobId);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);

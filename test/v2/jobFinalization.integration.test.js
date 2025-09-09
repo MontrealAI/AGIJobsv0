@@ -195,7 +195,7 @@ describe('job finalization integration', function () {
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, reward - vReward, fee);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
     const v1Bal = await token.balanceOf(validator1.address);
@@ -238,7 +238,7 @@ describe('job finalization integration', function () {
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash2);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, 0n, 0n);
     await network.provider.request({
       method: 'hardhat_stopImpersonatingAccount',
       params: [dispute.target],
@@ -279,7 +279,7 @@ describe('job finalization integration', function () {
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash3);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
-      .withArgs(jobId, agent.address);
+      .withArgs(jobId, agent.address, reward - vReward, fee);
     await network.provider.request({
       method: 'hardhat_stopImpersonatingAccount',
       params: [dispute.target],

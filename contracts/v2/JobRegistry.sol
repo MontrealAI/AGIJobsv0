@@ -324,7 +324,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Emitted when a job is finalized
     /// @param jobId Identifier of the job
     /// @param worker Agent who performed the job
-    event JobFinalized(uint256 indexed jobId, address indexed worker);
+    /// @param reward Amount of tokens paid to the worker after burns
+    /// @param fee Total protocol fee and burn amount deducted from the job
+    event JobFinalized(
+        uint256 indexed jobId,
+        address indexed worker,
+        uint256 reward,
+        uint256 fee
+    );
     event JobCancelled(uint256 indexed jobId);
     event BurnReceiptSubmitted(
         uint256 indexed jobId,
@@ -1303,6 +1310,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
         bool fundsRedirected;
+        uint256 agentReward;
+        uint256 totalFee;
         if (job.success) {
             IFeePool pool = feePool;
             address[] memory validators;
@@ -1317,12 +1326,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
             uint256 rewardAfterValidator =
                 uint256(job.reward) - validatorReward;
+            uint256 fee;
+            address payee = job.agent;
             if (address(stakeManager) != address(0)) {
-                uint256 fee;
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
-                address payee = job.agent;
                 if (isGov && treasury != address(0) && agentBlacklisted) {
                     payee = treasury;
                     fundsRedirected = true;
@@ -1366,6 +1375,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                         stakeManager.releaseStake(job.agent, uint256(job.stake));
                     }
                 }
+
+                uint256 pct = stakeManager.getAgentPayoutPct(job.agent);
+                uint256 modified = (rewardAfterValidator * pct) / 100;
+                uint256 burn = (modified * stakeManager.burnPct()) / 100;
+                agentReward = payee == job.agent ? modified - burn : 0;
+                totalFee = fee + burn;
+            } else {
+                agentReward = rewardAfterValidator;
             }
             if (address(reputationEngine) != address(0)) {
                 uint256 agentPct = 100;
@@ -1408,7 +1425,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         } else {
             if (address(stakeManager) != address(0)) {
-                uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+                uint256 feeFail = (uint256(job.reward) * job.feePct) / 100;
                 address recipient = job.employer;
                 if (isGov && treasury != address(0) && employerBlacklisted) {
                     recipient = treasury;
@@ -1419,7 +1436,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                         jobKey,
                         job.employer,
                         recipient,
-                        uint256(job.reward) + fee
+                        uint256(job.reward) + feeFail
                     );
                 }
                 if (job.stake > 0) {
@@ -1434,8 +1451,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (address(reputationEngine) != address(0)) {
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
+            agentReward = 0;
+            totalFee = 0;
         }
-        emit JobFinalized(jobId, job.agent);
+        emit JobFinalized(jobId, job.agent, agentReward, totalFee);
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
         }
