@@ -231,6 +231,7 @@ describe('Commit-reveal job lifecycle', function () {
       .revealValidation(1, true, burnTxHash, salt, '', []);
     await time.increase(2);
     await validation.finalize(1);
+    await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
     expect(await nft.ownerOf(1)).to.equal(agent.address);
@@ -318,6 +319,7 @@ describe('Commit-reveal job lifecycle', function () {
     );
     const sig = await moderator.signMessage(ethers.getBytes(hash));
     await env.dispute.connect(moderator).resolve(1, true, [sig]);
+    await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
     expect(await stake.stakeOf(agent.address, Role.Agent)).to.equal(0);

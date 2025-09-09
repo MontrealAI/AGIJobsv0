@@ -441,6 +441,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     function forceCancel(uint256 jobId) external override {
         cancelJob(jobId);
     }
+
+    function confirmEmployerBurn(uint256, bytes32) external override {}
 }
 
 contract MockReputationEngine is IReputationEngine {

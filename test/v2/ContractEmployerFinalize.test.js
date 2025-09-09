@@ -132,6 +132,19 @@ describe('Job finalization with contract employer', function () {
       .submit(jobId, ethers.id('res'), 'res', '', []);
 
     await setJobState(jobId, true);
+    const burnTxHash = ethers.ZeroHash;
+    await employerContract.submitBurnReceipt(
+      await registry.getAddress(),
+      jobId,
+      burnTxHash,
+      0,
+      0
+    );
+    await employerContract.confirmBurn(
+      await registry.getAddress(),
+      jobId,
+      burnTxHash
+    );
     await employerContract.finalizeJob(await registry.getAddress(), jobId);
 
     expect(await token.balanceOf(agent.address)).to.equal(reward);

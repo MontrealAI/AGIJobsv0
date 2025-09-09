@@ -195,6 +195,7 @@ describe('regression scenarios', function () {
       .revealValidation(1, false, burnTxHash, salt, '', []);
     await time.increase(2);
     await validation.finalize(1);
+    await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
     const deadline2 = BigInt((await time.latest()) + 3600);

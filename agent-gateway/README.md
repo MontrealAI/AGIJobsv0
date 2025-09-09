@@ -38,8 +38,8 @@ must acknowledge it before these calls will succeed.
 
 The gateway also exposes helpers for committing and revealing validation
 results through REST endpoints. Final payout still requires the employer to
-burn their fee share from their own wallet before calling
-`acknowledgeAndFinalize` on `JobRegistry`.
+burn their fee share, submit a receipt, confirm the burn, and then call
+`acknowledgeAndFinalize` on `JobRegistry` from their own wallet.
 
 ```
 POST /jobs/:id/commit { address, approve }

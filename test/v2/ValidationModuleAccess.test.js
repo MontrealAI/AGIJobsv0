@@ -312,6 +312,7 @@ describe('ValidationModule access controls', function () {
     ).wait();
     await advance(61);
     await validation.finalize(1);
+    await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
     job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(6); // Finalized

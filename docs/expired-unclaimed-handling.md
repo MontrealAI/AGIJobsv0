@@ -4,12 +4,12 @@ The platform never takes custody of idle funds. Expired stakes or unclaimed rewa
 
 ## Stakes
 
-* Stakes remain withdrawable by the original participant.
-* Governance may slash and redistribute expired stakes to active validators or a DAO treasury.
-* Any burn of slashed tokens must be performed by the DAO from its own wallet.
+- Stakes remain withdrawable by the original participant.
+- Governance may slash and redistribute expired stakes to active validators or a DAO treasury.
+- Any burn of slashed tokens must be performed by the DAO from its own wallet.
 
 ## Fees
 
-* Fees accumulate in `FeePool` under individual beneficiary balances.
-* Unclaimed balances may be left untouched, claimed later or redirected to a governance treasury.
-* The platform itself never recognizes these tokens as income.
+- Fees accumulate in `FeePool` under individual beneficiary balances.
+- Unclaimed balances may be left untouched, claimed later or redirected to a governance treasury.
+- The platform itself never recognizes these tokens as income.

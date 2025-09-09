@@ -206,6 +206,7 @@ describe('Kleros dispute module', function () {
     expect(await mockArb.lastJobId()).to.equal(1n);
 
     await mockArb.deliverResult(1, false); // agent wins
+    await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
     expect(await registry.jobs(1)).to.have.property('state', 6); // Finalized

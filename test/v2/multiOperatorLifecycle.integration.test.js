@@ -196,6 +196,11 @@ describe('multi-operator job lifecycle', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    const burnTxHash = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash, fee, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await registry.connect(employer).finalize(jobId);
 
     expect(await feePool.pendingFees()).to.equal(0);

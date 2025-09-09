@@ -274,6 +274,9 @@ describe('JobRegistry integration', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    const burnTxHash = ethers.ZeroHash;
+    await registry.connect(employer).submitBurnReceipt(jobId, burnTxHash, 0, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     await registry.connect(employer).finalize(jobId);
 
     // platform operator should be able to claim fee
@@ -324,12 +327,19 @@ describe('JobRegistry integration', function () {
       .connect(agent)
       .submit(jobId, ethers.id('result'), 'result', '', []);
     await validation.finalize(jobId);
+    const burnTxHash2 = ethers.ZeroHash;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTxHash2, burn, 0);
+    await expect(
+      registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash2)
+    )
+      .to.emit(registry, 'BurnConfirmed')
+      .withArgs(jobId, burnTxHash2);
     const jobKey = ethers.toBeHex(jobId, 32);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(stakeManager, 'RewardPaid')
-      .withArgs(jobKey, agent.address, 90n)
-      .and.to.emit(stakeManager, 'TokensBurned')
-      .withArgs(jobKey, burn);
+      .withArgs(jobKey, agent.address, 90n);
   });
 
   it('rejects non-employer finalization after validation', async () => {

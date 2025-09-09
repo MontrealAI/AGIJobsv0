@@ -46,9 +46,7 @@ registry.on('RecoveryInitiated', (reason) => {
   }
   log(`RecoveryInitiated: ${reason}`);
   if (recoveryEvents.length >= 5) {
-    log(
-      `ALERT: ${recoveryEvents.length} RecoveryInitiated events in 60s`
-    );
+    log(`ALERT: ${recoveryEvents.length} RecoveryInitiated events in 60s`);
   }
 });
 
