@@ -521,16 +521,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         types = agiTypes;
     }
 
-    /// @notice Determine the payout percentage for an agent based on AGI type NFTs
+    /// @notice Determine the highest payout percentage for a user based on AGI type NFTs
     /// @dev Iterates through registered AGI types and selects the highest payout
-    ///      percentage from NFTs held by the agent. Reverts from malicious NFT
+    ///      percentage from NFTs held by the user. Reverts from malicious NFT
     ///      contracts are ignored.
-    function getAgentPayoutPct(address agent) public view returns (uint256) {
+    /// @param user Address whose NFTs are checked for a payout boost.
+    /// @return pct The highest payout percentage (100 = no boost)
+    function getHighestPayoutPct(address user) public view returns (uint256 pct) {
         uint256 highest = 100;
         uint256 length = agiTypes.length;
         for (uint256 i; i < length;) {
             AGIType memory t = agiTypes[i];
-            try IERC721(t.nft).balanceOf(agent) returns (uint256 bal) {
+            try IERC721(t.nft).balanceOf(user) returns (uint256 bal) {
                 if (bal > 0 && t.payoutPct > highest) {
                     highest = t.payoutPct;
                 }
@@ -541,7 +543,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 ++i;
             }
         }
-        return highest;
+        pct = highest;
     }
 
     // ---------------------------------------------------------------
@@ -937,7 +939,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address to,
         uint256 amount
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        uint256 pct = getAgentPayoutPct(to);
+        uint256 pct = getHighestPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
         uint256 feeAmount = (modified * feePct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -982,7 +984,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         // apply AGI type payout modifier
-        uint256 pct = getAgentPayoutPct(to);
+        uint256 pct = getHighestPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
 
         // apply protocol fees and burn on the modified amount
@@ -1028,7 +1030,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
         emit JobFundsFinalized(jobId, employer);
-        uint256 pct = getAgentPayoutPct(agent);
+        uint256 pct = getHighestPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
@@ -1072,20 +1074,37 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (count == 0) revert NoValidators();
         uint256 escrow = jobEscrows[jobId];
         if (escrow < amount) revert InsufficientEscrow();
-        jobEscrows[jobId] = escrow - amount;
-        uint256 perValidator = amount / count;
-        uint256 remainder = amount - perValidator * count;
+
+        uint256 totalWeight;
+        uint256[] memory weights = new uint256[](count);
         for (uint256 i; i < count;) {
-            token.safeTransfer(vals[i], perValidator);
-            emit RewardPaid(jobId, vals[i], perValidator);
+            uint256 pct = getHighestPayoutPct(vals[i]);
+            weights[i] = pct;
+            totalWeight += pct;
             unchecked {
                 ++i;
             }
         }
+
+        uint256 distributed;
+        for (uint256 i; i < count;) {
+            uint256 payout = (amount * weights[i]) / totalWeight;
+            distributed += payout;
+            token.safeTransfer(vals[i], payout);
+            emit RewardPaid(jobId, vals[i], payout);
+            unchecked {
+                ++i;
+            }
+        }
+
+        uint256 remainder = amount - distributed;
         if (remainder > 0) {
             token.safeTransfer(vals[0], remainder);
             emit RewardPaid(jobId, vals[0], remainder);
+            distributed += remainder;
         }
+
+        jobEscrows[jobId] = escrow - distributed;
     }
 
     // ---------------------------------------------------------------

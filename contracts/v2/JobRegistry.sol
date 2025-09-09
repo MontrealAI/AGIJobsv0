@@ -1333,7 +1333,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             uint256 burnPctStake;
             if (address(stakeManager) != address(0)) {
                 burnPctStake = stakeManager.burnPct();
-                agentPct = stakeManager.getAgentPayoutPct(job.agent);
+                agentPct = stakeManager.getHighestPayoutPct(job.agent);
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
