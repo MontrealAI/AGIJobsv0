@@ -243,6 +243,7 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 ## Documentation
 
 - [Master guide](docs/master-guide.md)
+- [Codebase assessment & production sprint plan](docs/AGIJobsv0-production-sprint-plan.md)
 - [Architecture overview](docs/architecture-v2.md)
 - [Module and interface reference](docs/v2-module-interface-reference.md)
 - [Etherscan interaction guide](docs/etherscan-guide.md)
