@@ -70,7 +70,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error NotReady();
     error CannotCancel();
     error OnlyEmployer();
-    error BurnAllowanceInsufficient();
 
     enum State {
         None,
@@ -1241,20 +1240,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (isGov && treasury != address(0) && agentBlacklisted) {
                     payee = treasury;
                     fundsRedirected = true;
-                }
-
-                uint256 pct = stakeManager.getAgentPayoutPct(payee);
-                uint256 modified = (rewardAfterValidator * pct) / 100;
-                uint256 burnAmount = (modified * stakeManager.burnPct()) / 100;
-                uint256 totalBurn = burnAmount;
-                if (address(pool) == address(0) && fee > 0) {
-                    totalBurn += fee;
-                }
-                if (totalBurn > 0) {
-                    IERC20 t = stakeManager.token();
-                    if (t.allowance(job.employer, address(stakeManager)) < totalBurn) {
-                        revert BurnAllowanceInsufficient();
-                    }
                 }
 
                 address employerParam = isGov ? job.employer : msg.sender;

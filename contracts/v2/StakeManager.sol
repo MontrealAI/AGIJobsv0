@@ -58,6 +58,7 @@ error PendingPenalty();
 error TokenNotBurnable();
 error BurnAllowanceInsufficient();
 error Unauthorized();
+error NoPendingBurn();
 
 /// @title StakeManager
 /// @notice Handles staking balances, job escrows and slashing logic.
@@ -147,6 +148,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
 
+    struct PendingJob {
+        address employer;
+        address payee;
+        IFeePool feePool;
+        uint256 payout;
+        uint256 fee;
+        uint256 burn;
+    }
+
+    /// @notice pending releases awaiting employer burn confirmation
+    mapping(bytes32 => PendingJob) public pendingJobs;
+
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
@@ -183,6 +196,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     /// @notice Emitted when a participant receives a payout in $AGIALPHA.
     event RewardPaid(bytes32 indexed jobId, address indexed to, uint256 amount);
+    event BurnRequired(bytes32 indexed jobId, uint256 amount);
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
     /// @notice Emitted when an employer finalizes job funds.
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
@@ -946,30 +960,36 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (address(feePool) == address(0)) {
             totalBurn += feeAmount;
         }
-        if (totalBurn > 0 && token.allowance(employer, address(this)) < totalBurn) {
-            revert BurnAllowanceInsufficient();
-        }
 
-        if (feeAmount > 0) {
-            if (address(feePool) != address(0)) {
-                token.safeTransfer(address(feePool), feeAmount);
-                feePool.depositFee(feeAmount);
-                // Fees accumulate in the pool; distribution must be triggered
-                // separately via `FeePool.distributeFees()` (e.g. by an
-                // off-chain keeper).
-                emit StakeReleased(jobId, address(feePool), feeAmount);
-            } else {
-                token.safeTransfer(employer, feeAmount);
-                _burnFromEmployer(jobId, employer, feeAmount);
+        if (totalBurn > 0) {
+            PendingJob storage p = pendingJobs[jobId];
+            if (p.employer == address(0)) {
+                p.employer = employer;
+                p.payee = to;
+                p.feePool = feePool;
             }
-        }
-        if (burnAmount > 0) {
-            token.safeTransfer(employer, burnAmount);
-            _burnFromEmployer(jobId, employer, burnAmount);
-        }
-        if (payout > 0) {
-            token.safeTransfer(to, payout);
-            emit RewardPaid(jobId, to, payout);
+            p.payout += payout;
+            if (address(feePool) != address(0)) {
+                p.fee += feeAmount;
+            } else {
+                p.burn += feeAmount;
+            }
+            p.burn += burnAmount;
+            emit BurnRequired(jobId, totalBurn);
+        } else {
+            if (feeAmount > 0) {
+                if (address(feePool) != address(0)) {
+                    token.safeTransfer(address(feePool), feeAmount);
+                    feePool.depositFee(feeAmount);
+                    emit StakeReleased(jobId, address(feePool), feeAmount);
+                } else {
+                    token.safeTransfer(employer, feeAmount);
+                }
+            }
+            if (payout > 0) {
+                token.safeTransfer(to, payout);
+                emit RewardPaid(jobId, to, payout);
+            }
         }
     }
 
@@ -1051,25 +1071,73 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 escrow = jobEscrows[jobId];
         if (escrow < total) revert InsufficientEscrow();
         jobEscrows[jobId] = escrow - total;
-        if (payout > 0) {
-            token.safeTransfer(agent, payout);
-            emit RewardPaid(jobId, agent, payout);
+
+        uint256 totalBurn = burnAmount;
+        if (address(_feePool) == address(0)) {
+            totalBurn += fee;
         }
-        if (fee > 0) {
+
+        if (totalBurn > 0) {
+            PendingJob storage p = pendingJobs[jobId];
+            if (p.employer == address(0)) {
+                p.employer = employer;
+                p.payee = agent;
+                p.feePool = _feePool;
+            }
+            p.payout += payout;
             if (address(_feePool) != address(0)) {
-                token.safeTransfer(address(_feePool), fee);
-                _feePool.depositFee(fee);
-                _feePool.distributeFees();
-                emit StakeReleased(jobId, address(_feePool), fee);
+                p.fee += fee;
             } else {
-                token.safeTransfer(employer, fee);
-                _burnFromEmployer(jobId, employer, fee);
+                p.burn += fee;
+            }
+            p.burn += burnAmount;
+            emit BurnRequired(jobId, totalBurn);
+        } else {
+            if (payout > 0) {
+                token.safeTransfer(agent, payout);
+                emit RewardPaid(jobId, agent, payout);
+            }
+            if (fee > 0) {
+                if (address(_feePool) != address(0)) {
+                    token.safeTransfer(address(_feePool), fee);
+                    _feePool.depositFee(fee);
+                    _feePool.distributeFees();
+                    emit StakeReleased(jobId, address(_feePool), fee);
+                } else {
+                    token.safeTransfer(employer, fee);
+                }
             }
         }
-        if (burnAmount > 0) {
-            token.safeTransfer(employer, burnAmount);
-            _burnFromEmployer(jobId, employer, burnAmount);
+    }
+
+    /// @notice Release pending funds after employer confirms external burn
+    /// @param jobId unique job identifier
+    /// @param amount amount the employer asserts was burned
+    function confirmBurn(bytes32 jobId, uint256 amount)
+        external
+        whenNotPaused
+        nonReentrant
+    {
+        PendingJob storage p = pendingJobs[jobId];
+        if (p.employer == address(0)) revert NoPendingBurn();
+        if (msg.sender != p.employer) revert Unauthorized();
+        if (amount < p.burn) revert InvalidAmount();
+
+        if (p.payout > 0) {
+            token.safeTransfer(p.payee, p.payout);
+            emit RewardPaid(jobId, p.payee, p.payout);
         }
+        if (p.fee > 0 && address(p.feePool) != address(0)) {
+            token.safeTransfer(address(p.feePool), p.fee);
+            p.feePool.depositFee(p.fee);
+            p.feePool.distributeFees();
+            emit StakeReleased(jobId, address(p.feePool), p.fee);
+        }
+        if (p.burn > 0) {
+            token.safeTransfer(p.employer, p.burn);
+        }
+        emit TokensBurned(jobId, amount);
+        delete pendingJobs[jobId];
     }
 
     /// @notice Distribute validator rewards evenly using the ValidationModule
