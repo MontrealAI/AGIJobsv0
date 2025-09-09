@@ -72,6 +72,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error OnlyEmployer();
     error BurnReceiptMissing();
     error BurnNotConfirmed();
+    error BurnAmountTooLow();
 
     enum State {
         None,
@@ -93,6 +94,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         State state;
         bool success;
         bool burnConfirmed;
+        uint128 burnReceiptAmount;
         uint8 agentTypes;
         uint64 deadline;
         uint64 assignedAt;
@@ -167,6 +169,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (job.employer != msg.sender) revert OnlyEmployer();
         if (!burnReceipts[jobId][burnTxHash].exists) revert BurnReceiptMissing();
         job.burnConfirmed = true;
+        job.burnReceiptAmount = uint128(burnReceipts[jobId][burnTxHash].amount);
         emit BurnConfirmed(jobId, burnTxHash);
     }
 
@@ -322,6 +325,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 blockNumber
     );
     event BurnConfirmed(uint256 indexed jobId, bytes32 indexed burnTxHash);
+    event BurnDiscrepancy(
+        uint256 indexed jobId,
+        uint256 receiptAmount,
+        uint256 expectedAmount
+    );
     /// @notice Emitted when an assigned job is cancelled after missing its deadline
     /// @param jobId Identifier of the expired job
     /// @param caller Address that triggered the expiration
@@ -769,6 +777,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             state: State.Created,
             success: false,
             burnConfirmed: false,
+            burnReceiptAmount: 0,
             agentTypes: agentTypes,
             deadline: deadline,
             assignedAt: 0,
@@ -1240,12 +1249,25 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (job.state != State.Completed) revert NotReady();
         bool isGov = msg.sender == address(governance);
-        if (!isGov) {
-            uint256 burnRate = address(stakeManager) != address(0)
-                ? stakeManager.burnPct()
+        uint256 burnRate = address(stakeManager) != address(0)
+            ? stakeManager.burnPct()
+            : 0;
+        if (!isGov && (job.feePct > 0 || burnRate > 0)) {
+            if (!job.burnConfirmed) revert BurnNotConfirmed();
+            uint256 feeDue = (uint256(job.reward) * job.feePct) / 100;
+            uint256 validatorReward = validatorRewardPct > 0
+                ? (uint256(job.reward) * validatorRewardPct) / 100
                 : 0;
-            if (job.feePct > 0 || burnRate > 0) {
-                if (!job.burnConfirmed) revert BurnNotConfirmed();
+            uint256 burnDue =
+                ((uint256(job.reward) - validatorReward) * burnRate) / 100;
+            uint256 expectedBurn = feeDue + burnDue;
+            if (uint256(job.burnReceiptAmount) < expectedBurn) {
+                emit BurnDiscrepancy(
+                    jobId,
+                    job.burnReceiptAmount,
+                    expectedBurn
+                );
+                revert BurnAmountTooLow();
             }
         }
         bool agentBlacklisted;

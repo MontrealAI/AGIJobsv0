@@ -133,11 +133,12 @@ describe('Job finalization with contract employer', function () {
 
     await setJobState(jobId, true);
     const burnTxHash = ethers.ZeroHash;
+    const fee = (reward * feePct) / 100n;
     await employerContract.submitBurnReceipt(
       await registry.getAddress(),
       jobId,
       burnTxHash,
-      0,
+      fee,
       0
     );
     await employerContract.confirmBurn(

@@ -254,7 +254,7 @@ describe('job finalization integration', function () {
   });
 
   it("finalizes job in agent's favour after dispute", async () => {
-    const { jobId, vReward } = await setupJob(false);
+    const { jobId, fee, vReward } = await setupJob(false);
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, false);
@@ -275,7 +275,7 @@ describe('job finalization integration', function () {
     const burnTxHash3 = ethers.ZeroHash;
     await registry
       .connect(employer)
-      .submitBurnReceipt(jobId, burnTxHash3, 0, 0);
+      .submitBurnReceipt(jobId, burnTxHash3, fee, 0);
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash3);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobFinalized')
@@ -308,13 +308,14 @@ describe('job finalization integration', function () {
 
   it('emits burn and reward events on employer finalization', async () => {
     await stakeManager.connect(owner).setBurnPct(10);
-    const { jobId } = await setupJob(true);
+    const { jobId, fee } = await setupJob(true);
     await validation.finalize(jobId);
     const jobKey = ethers.toBeHex(jobId, 32);
     const validatorReward = (reward * BigInt(validatorRewardPct)) / 100n;
     const rewardAfterValidator = reward - validatorReward;
-    const burnAmount = (rewardAfterValidator * 10n) / 100n;
-    const agentReward = rewardAfterValidator - burnAmount;
+    const burnShare = (rewardAfterValidator * 10n) / 100n;
+    const burnAmount = fee + burnShare;
+    const agentReward = rewardAfterValidator - burnShare;
     const burnTxHash4 = ethers.ZeroHash;
     await registry
       .connect(employer)

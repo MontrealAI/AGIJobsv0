@@ -101,6 +101,11 @@ interface IJobRegistry {
         uint256 blockNumber
     );
     event BurnConfirmed(uint256 indexed jobId, bytes32 indexed burnTxHash);
+    event BurnDiscrepancy(
+        uint256 indexed jobId,
+        uint256 receiptAmount,
+        uint256 expectedAmount
+    );
 
     // owner wiring of modules
 
