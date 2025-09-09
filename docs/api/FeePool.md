@@ -11,7 +11,7 @@ Holds platform fees and distributes rewards.
 - `governanceWithdraw(address to, uint256 amount)` – governance timelock emergency withdrawal.
 - `setStakeManager(address manager)` – owner wires modules.
 - `setRewardRole(uint8 role)` – choose which stakers earn rewards.
-- `setBurnPct(uint256 pct)` / `setTreasury(address treasury)` – configure fee splits. Treasury defaults to `address(0)` and must be allowlisted via `setTreasuryAllowlist`.
+- `setBurnPct(uint256 pct)` / `setTreasury(address treasury)` – configure fee splits. Passing a non-zero treasury in the constructor auto-allowlists and sets it; otherwise treasury defaults to `address(0)` and later updates require `setTreasuryAllowlist`.
 - `setTreasuryAllowlist(address treasury, bool allowed)` – manage the governance-approved treasury list.
 - `setGovernance(address governance)` – set timelock enabled for withdrawals.
 

@@ -195,6 +195,17 @@ contract FeePoolTest {
         new FeePool(stakeManager, 0, address(this), ITaxPolicy(address(0)));
     }
 
+    function testConstructorAllowsNonZeroTreasury() public {
+        TestToken impl = new TestToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = TestToken(AGIALPHA);
+        stakeManager = new MockStakeManager();
+        address treasuryAddr = address(0xBEEF);
+        FeePool fp = new FeePool(stakeManager, 0, treasuryAddr, ITaxPolicy(address(0)));
+        require(fp.treasury() == treasuryAddr, "treasury");
+        require(fp.treasuryAllowlist(treasuryAddr), "allowlist");
+    }
+
     function testNoStakersBurnsFees() public {
         TestToken impl = new TestToken();
         vm.etch(AGIALPHA, address(impl).code);
