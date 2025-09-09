@@ -24,6 +24,8 @@ contract BadTaxPolicy is ITaxPolicy {
         return "bad";
     }
 
+    function setAcknowledger(address, bool) external {}
+
     function hasAcknowledged(address user) external view returns (bool) {
         return acknowledgedVersion[user] != 0;
     }

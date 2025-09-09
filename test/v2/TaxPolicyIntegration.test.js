@@ -57,6 +57,20 @@ describe('JobRegistry tax policy integration', function () {
     expect(await policy.acknowledgedVersion(user.address)).to.equal(1);
   });
 
+  it('reverts acknowledgeFor when caller is not authorized', async () => {
+    await expect(
+      policy.connect(owner).acknowledgeFor(user.address)
+    ).to.be.revertedWithCustomError(policy, 'NotAcknowledger');
+  });
+
+  it('allows authorized caller to acknowledge for another address', async () => {
+    await policy.connect(owner).setAcknowledger(owner.address, true);
+    await expect(policy.connect(owner).acknowledgeFor(user.address))
+      .to.emit(policy, 'PolicyAcknowledged')
+      .withArgs(user.address, 1);
+    expect(await policy.hasAcknowledged(user.address)).to.equal(true);
+  });
+
   it('exposes acknowledged version for users', async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
     expect(await policy.acknowledgedVersion(user.address)).to.equal(0);
@@ -103,6 +117,9 @@ describe('JobRegistry tax policy integration', function () {
 
   it('allows acknowledging for another address', async () => {
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await registry.connect(owner).setAcknowledger(owner.address, true);
     await registry.connect(owner).acknowledgeFor(user.address);
     expect(await policy.hasAcknowledged(user.address)).to.equal(true);

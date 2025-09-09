@@ -129,6 +129,9 @@ describe('JobRegistry integration', function () {
     await stakeManager.connect(owner).setFeePool(await feePool.getAddress());
     await nft.connect(owner).transferOwnership(await registry.getAddress());
     await registry.connect(owner).setTaxPolicy(await policy.getAddress());
+    await policy
+      .connect(owner)
+      .setAcknowledger(await registry.getAddress(), true);
     await policy.connect(owner).acknowledge();
     await policy.connect(employer).acknowledge();
     await policy.connect(agent).acknowledge();

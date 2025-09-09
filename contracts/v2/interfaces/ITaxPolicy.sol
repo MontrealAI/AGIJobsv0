@@ -13,6 +13,12 @@ interface ITaxPolicy {
     /// @return disclaimer Confirmation text stating the participant bears all tax liability.
     function acknowledgeFor(address user) external returns (string memory disclaimer);
 
+    /// @notice Allow or revoke an acknowledger address.
+    /// @dev Only callable by the policy owner.
+    /// @param acknowledger Address granted permission to acknowledge for users.
+    /// @param allowed True to allow the address, false to revoke.
+    function setAcknowledger(address acknowledger, bool allowed) external;
+
     /// @notice Check if a user has acknowledged the policy.
     /// @param user Address of the participant.
     function hasAcknowledged(address user) external view returns (bool);
