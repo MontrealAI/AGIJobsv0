@@ -79,8 +79,7 @@ describe('GovernanceReward', function () {
       1,
       50
     );
-
-    await feePool.connect(owner).transferOwnership(await reward.getAddress());
+    await feePool.setTreasury(await reward.getAddress());
 
     await token.mint(voter1.address, 100n * TOKEN);
     await token.mint(voter2.address, 300n * TOKEN);
