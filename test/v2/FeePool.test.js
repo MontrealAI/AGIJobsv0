@@ -16,7 +16,8 @@ describe('FeePool', function () {
 
   const { AGIALPHA } = require('../../scripts/constants');
   beforeEach(async () => {
-    [owner, user1, user2, user3, employer, treasury] = await ethers.getSigners();
+    [owner, user1, user2, user3, employer, treasury] =
+      await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
@@ -141,7 +142,9 @@ describe('FeePool', function () {
   });
 
   it('accounts for NFT multipliers when distributing rewards', async () => {
-    const MockNFT = await ethers.getContractFactory('contracts/legacy/MockERC721.sol:MockERC721');
+    const MockNFT = await ethers.getContractFactory(
+      'contracts/legacy/MockERC721.sol:MockERC721'
+    );
     const tier1 = await MockNFT.deploy();
     const tier2 = await MockNFT.deploy();
     await stakeManager.connect(owner).addAGIType(await tier1.getAddress(), 150);
