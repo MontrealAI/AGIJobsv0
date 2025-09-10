@@ -42,6 +42,7 @@ function createJob(uint256 reward, string memory uri)
 - Provide the token escrow that funds jobs.
 - Only the employer can finalize jobs by calling `acknowledgeAndFinalize(jobId)` from their own wallet.
 - That finalization burns a portion of the employer's deposit; the protocol never initiates or benefits from burns.
+- If the deposit is insufficient for the configured burn, the burn (then fee) is reduced so the total cost never exceeds `reward + fee`.
 - Burning is a disposal of property, so employers record any capital gain or loss on the burned amount based on cost basis versus fair market value at burn.
 - Token payments to agents may be deductible business expenses where applicable.
 

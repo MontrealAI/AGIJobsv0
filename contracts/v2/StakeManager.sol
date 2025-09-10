@@ -971,7 +971,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 payout = modified - feeAmount - burnAmount;
         uint256 total = payout + feeAmount + burnAmount;
         uint256 escrow = jobEscrows[jobId];
-        if (escrow < total) revert InsufficientEscrow();
+        if (escrow < total) {
+            uint256 deficit = total - escrow;
+            if (deficit > feeAmount + burnAmount) revert InsufficientEscrow();
+            uint256 burnReduction = deficit > burnAmount ? burnAmount : deficit;
+            burnAmount -= burnReduction;
+            deficit -= burnReduction;
+            uint256 feeReduction = deficit > feeAmount ? feeAmount : deficit;
+            feeAmount -= feeReduction;
+            total -= burnReduction + feeReduction;
+        }
         jobEscrows[jobId] = escrow - total;
 
         if (feeAmount > 0) {
@@ -1061,7 +1070,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 payout = modified - burnAmount;
         uint256 total = payout + fee + burnAmount;
         uint256 escrow = jobEscrows[jobId];
-        if (escrow < total) revert InsufficientEscrow();
+        if (escrow < total) {
+            uint256 deficit = total - escrow;
+            if (deficit > burnAmount + fee) revert InsufficientEscrow();
+            uint256 burnReduction = deficit > burnAmount ? burnAmount : deficit;
+            burnAmount -= burnReduction;
+            deficit -= burnReduction;
+            uint256 feeReduction = deficit > fee ? fee : deficit;
+            fee -= feeReduction;
+            total -= burnReduction + feeReduction;
+        }
         jobEscrows[jobId] = escrow - total;
         if (payout > 0) {
             token.safeTransfer(agent, payout);
