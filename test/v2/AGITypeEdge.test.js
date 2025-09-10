@@ -120,7 +120,7 @@ describe('StakeManager AGIType bonuses', function () {
       .withArgs(jobId, agent.address, 100);
   });
 
-  it('reverts when bonus payout exceeds escrow', async () => {
+  it('reverts when bonus payout exceeds escrow and no fees or burns are set', async () => {
     await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
     await nft1.mint(agent.address);
 

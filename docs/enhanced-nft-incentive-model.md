@@ -8,7 +8,7 @@ The v2 architecture introduces a list of `AGIType` entries in `StakeManager` tha
 
 ## 2. NFT Reward Multiplier Implementation
 
-- **Agents** – `StakeManager.getHighestPayoutPct` multiplies an agent's base reward by the highest applicable tier. Employers escrow only the base reward; any bonus is covered by reduced burns or fees.
+- **Agents** – `StakeManager.getHighestPayoutPct` multiplies an agent's base reward by the highest applicable tier. Employers escrow only the base reward; any bonus is covered by reduced burns or fees. If neither fee nor burn is available to absorb the difference, the call reverts with `InsufficientEscrow`.
 - **Validators** – `distributeValidatorRewards` weights each validator's share by their multiplier. A 150% NFT counts as weight `150` versus the default `100`.
 - **Platform operators** – the `FeePool` exposes `boostedStake(address)` to reveal a staker's weight (`stake * multiplier / 100`). Off-chain scripts can use this to apportion fee distributions so that operators with NFTs receive a larger portion of the fee pool.
 
