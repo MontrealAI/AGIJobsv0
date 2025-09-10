@@ -214,6 +214,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         )
         nonReentrant
     {
+        stakeManager.syncBoostedStake(msg.sender, rewardRole);
         _distributeFees();
     }
 
@@ -281,6 +282,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         )
         nonReentrant
     {
+        stakeManager.syncBoostedStake(msg.sender, rewardRole);
         _distributeFees();
         uint256 stake = stakeManager.stakeOf(msg.sender, rewardRole);
         // Deployer may claim but receives no rewards without stake.

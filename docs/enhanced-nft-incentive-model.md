@@ -10,7 +10,7 @@ The v2 architecture introduces a list of `AGIType` entries in `StakeManager` tha
 
 - **Agents** – `StakeManager.getHighestPayoutPct` multiplies an agent's base reward by the highest applicable tier. Employers escrow only the base reward; any bonus is covered by reduced burns or fees. If neither fee nor burn is available to absorb the difference, the call reverts with `InsufficientEscrow`.
 - **Validators** – `distributeValidatorRewards` weights each validator's share by their multiplier. A 150% NFT counts as weight `150` versus the default `100`.
-- **Platform operators** – the `FeePool` exposes `boostedStake(address)` to reveal a staker's weight (`stake * multiplier / 100`). Off-chain scripts can use this to apportion fee distributions so that operators with NFTs receive a larger portion of the fee pool.
+- **Platform operators** – the `FeePool` exposes `boostedStake(address)` to reveal a staker's weight (`stake * multiplier / 100`). Off-chain scripts can use this to apportion fee distributions so that operators with NFTs receive a larger portion of the fee pool. Participants should call `StakeManager.syncBoostedStake` after acquiring or losing an NFT to refresh their weight; `FeePool` invokes this helper automatically for callers when distributing or claiming rewards.
 
 The `getHighestPayoutPct` function is a general utility that any module can call to check the top multiplier for a given address and now serves agents, validators and platform participants alike.
 
