@@ -119,6 +119,19 @@ interface IStakeManager {
         bool byGovernance
     ) external;
 
+    /// @notice finalize job funds with a precomputed payout percentage
+    function finalizeJobFundsWithPct(
+        bytes32 jobId,
+        address employer,
+        address agent,
+        uint256 agentPct,
+        uint256 reward,
+        uint256 validatorReward,
+        uint256 fee,
+        IFeePool feePool,
+        bool byGovernance
+    ) external;
+
     /// @notice fund the operator reward pool
     function fundOperatorRewardPool(uint256 amount) external;
 

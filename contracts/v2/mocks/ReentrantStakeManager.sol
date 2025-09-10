@@ -53,6 +53,17 @@ contract ReentrantStakeManager is IStakeManager {
         IFeePool,
         bool
     ) external override {}
+    function finalizeJobFundsWithPct(
+        bytes32,
+        address,
+        address,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        IFeePool,
+        bool
+    ) external override {}
     function distributeValidatorRewards(bytes32, uint256) external override {}
     function fundOperatorRewardPool(uint256) external override {}
     function withdrawOperatorRewardPool(address, uint256) external override {}
