@@ -256,6 +256,11 @@ if (validation) {
 const app = express();
 app.use(express.json());
 
+// Basic health check for service monitoring
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Register an agent to receive job dispatches
 app.post('/agents', (req, res) => {
   const { id, url, wallet } = req.body;

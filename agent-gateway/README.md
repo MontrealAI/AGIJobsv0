@@ -44,6 +44,7 @@ burn their fee share, submit a receipt, confirm the burn, and then call
 ```
 POST /jobs/:id/commit { address, approve }
 POST /jobs/:id/reveal { address }
+GET  /health
 ```
 
 See `../examples` for SDK usage in Python and TypeScript.
