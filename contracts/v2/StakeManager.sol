@@ -1147,9 +1147,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         uint256 remainder = amount - distributed;
         if (remainder > 0) {
-            token.safeTransfer(vals[0], remainder);
-            emit RewardPaid(jobId, vals[0], remainder);
-            distributed += remainder;
+            address t = treasury;
+            if (t != address(0)) {
+                token.safeTransfer(t, remainder);
+                emit RewardPaid(jobId, t, remainder);
+                distributed += remainder;
+            }
+            // if treasury is zero address, remainder stays in escrow
         }
 
         jobEscrows[jobId] = escrow - distributed;
