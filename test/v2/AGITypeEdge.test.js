@@ -10,10 +10,45 @@ describe('StakeManager AGIType bonuses', function () {
     [owner, employer, agent, val1, val2, val3] = await ethers.getSigners();
 
     const { AGIALPHA } = require('../../scripts/constants');
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );
+    const balanceSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [employer.address, 0]
+      )
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      balanceSlot,
+      ethers.toBeHex(1000n, 32),
+    ]);
+    const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      supplySlot,
+      ethers.toBeHex(1000n, 32),
+    ]);
+    const ackSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [employer.address, 6]
+      )
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      ackSlot,
+      ethers.toBeHex(1n, 32),
+    ]);
 
     const StakeManager = await ethers.getContractFactory(
       'contracts/v2/StakeManager.sol:StakeManager'
@@ -28,6 +63,15 @@ describe('StakeManager AGIType bonuses', function () {
       owner.address
     );
     await stakeManager.connect(owner).setMinStake(1);
+    const stakeAddr = await stakeManager.getAddress();
+    const stakeAckSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      stakeAckSlot,
+      ethers.toBeHex(1n, 32),
+    ]);
 
     const JobRegistry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'
@@ -73,7 +117,6 @@ describe('StakeManager AGIType bonuses', function () {
     );
     malicious = await Mal.deploy();
 
-    await token.mint(employer.address, 1000);
   });
 
   it('applies highest AGIType bonus', async () => {

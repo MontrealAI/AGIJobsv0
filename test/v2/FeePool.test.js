@@ -141,6 +141,19 @@ describe('FeePool', function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
+  it('exposes boosted stake for NFT holders', async () => {
+    const MockNFT = await ethers.getContractFactory(
+      'contracts/legacy/MockERC721.sol:MockERC721'
+    );
+    const nft = await MockNFT.deploy();
+    await stakeManager.connect(owner).addAGIType(await nft.getAddress(), 150);
+    await nft.mint(user1.address);
+
+    expect(await feePool.boostedStake(user1.address)).to.equal(150n);
+    // user2 has no NFT and a raw stake of 300
+    expect(await feePool.boostedStake(user2.address)).to.equal(300n);
+  });
+
   it('accounts for NFT multipliers when distributing rewards', async () => {
     const MockNFT = await ethers.getContractFactory(
       'contracts/legacy/MockERC721.sol:MockERC721'

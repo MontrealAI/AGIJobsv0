@@ -31,6 +31,16 @@ describe('StakeManager validator reward remainder', function () {
       balanceSlot,
       ethers.toBeHex(1000n, 32),
     ]);
+    for (const addr of [valHigh.address, valLow1.address, valLow2.address]) {
+      const slot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 0])
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        slot,
+        ethers.toBeHex(0n, 32),
+      ]);
+    }
     const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
