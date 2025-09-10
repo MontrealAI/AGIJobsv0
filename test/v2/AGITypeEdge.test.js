@@ -140,9 +140,7 @@ describe('StakeManager AGIType bonuses', function () {
   it('reverts when AGI type payout exceeds the cap', async () => {
     const max = await stakeManager.MAX_PAYOUT_PCT();
     await expect(
-      stakeManager
-        .connect(owner)
-        .addAGIType(await nft1.getAddress(), max + 1n)
+      stakeManager.connect(owner).addAGIType(await nft1.getAddress(), max + 1n)
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
   });
 
