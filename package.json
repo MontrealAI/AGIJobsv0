@@ -35,7 +35,7 @@
   "dependencies": {
     "@prb/math": "^4.0.1",
     "ethers": "^6.15.0",
-    "express": "^5.1.0",
+    "express": "^4.21.2",
     "ws": "^8.18.3"
   }
 }
