@@ -9,23 +9,70 @@ describe('StakeManager extras', function () {
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );
-    await token.mint(user.address, ethers.parseEther('1000'));
-    const StakeManager = await ethers.getContractFactory(
-      'contracts/v2/StakeManager.sol:StakeManager'
+    const balanceSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [user.address, 0]
+      )
     );
-    stakeManager = await StakeManager.deploy(
-      0,
-      100,
-      0,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      balanceSlot,
+      ethers.toBeHex(ethers.parseEther('1000'), 32),
+    ]);
+    const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      supplySlot,
+      ethers.toBeHex(ethers.parseEther('1000'), 32),
+    ]);
+      const StakeManager = await ethers.getContractFactory(
+        'contracts/v2/StakeManager.sol:StakeManager'
+      );
+      stakeManager = await StakeManager.deploy(
+        0,
+        100,
+        0,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
+        ethers.ZeroAddress,
       owner.address
     );
+    await stakeManager.waitForDeployment();
+    const stakeAddr = await stakeManager.getAddress();
+    const ackSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [stakeAddr, 6]
+      )
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      ackSlot,
+      ethers.toBeHex(1n, 32),
+    ]);
+    const userAck = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [user.address, 6]
+      )
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      userAck,
+      ethers.toBeHex(1n, 32),
+    ]);
     await stakeManager.connect(owner).setMinStake(1);
   });
 
@@ -98,7 +145,7 @@ describe('StakeManager extras', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'MaxStakeExceeded');
   });
 
-  it('updates total boosted stake cache on stake changes', async () => {
+  it('updates boosted stake caches on stake changes', async () => {
     await setupRegistryAck(user);
     await token
       .connect(user)
@@ -107,9 +154,15 @@ describe('StakeManager extras', function () {
     expect(await stakeManager.totalBoostedStake(0)).to.equal(
       ethers.parseEther('200')
     );
+    expect(
+      await stakeManager.boostedStakeOf(user.address, 0)
+    ).to.equal(ethers.parseEther('200'));
     await stakeManager.connect(user).withdrawStake(0, ethers.parseEther('50'));
     expect(await stakeManager.totalBoostedStake(0)).to.equal(
       ethers.parseEther('150')
     );
+    expect(
+      await stakeManager.boostedStakeOf(user.address, 0)
+    ).to.equal(ethers.parseEther('150'));
   });
 });
