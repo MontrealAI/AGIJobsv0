@@ -17,7 +17,7 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `setMaxAGITypes(uint256 newMax)` – cap the number of AGI type entries.
 - `addAGIType(address nft, uint256 payoutPct)` – register or update a payout multiplier for holders of `nft`. The percentage is capped at `MAX_PAYOUT_PCT` (200%).
 - `removeAGIType(address nft)` – delete a previously registered AGI type.
-- `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` / `getHighestPayoutPct(address user)` – view functions.
+- `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` / `getTotalPayoutPct(address user)` – view functions.
 
 ## Events
 

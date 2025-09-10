@@ -538,14 +538,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///      contracts are ignored.
     /// @param user Address whose NFTs are checked for a payout boost.
     /// @return pct The highest payout percentage (100 = no boost)
-    function getHighestPayoutPct(address user) public view returns (uint256 pct) {
-        uint256 highest = 100;
+    function getTotalPayoutPct(address user) public view returns (uint256 pct) {
+        uint256 total = 100;
         uint256 length = agiTypes.length;
         for (uint256 i; i < length;) {
             AGIType memory t = agiTypes[i];
             try IERC721(t.nft).balanceOf(user) returns (uint256 bal) {
-                if (bal > 0 && t.payoutPct > highest) {
-                    highest = t.payoutPct;
+                if (bal > 0) {
+                    total += t.payoutPct - 100;
                 }
             } catch {
                 // ignore tokens with failing balanceOf
@@ -554,7 +554,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 ++i;
             }
         }
-        pct = highest;
+        pct = total;
     }
 
     // ---------------------------------------------------------------
@@ -625,7 +625,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 amount;
             if (total > maxStakePerAddress) revert MaxStakeExceeded();
         }
-        uint256 pct = getHighestPayoutPct(user);
+        uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (newStake * pct) / 100;
         uint256 oldBoosted = boostedStake[user][role];
         boostedStake[user][role] = newBoosted;
@@ -847,7 +847,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
 
-        uint256 pct = getHighestPayoutPct(user);
+        uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (newStake * pct) / 100;
         uint256 oldBoosted = boostedStake[user][role];
         boostedStake[user][role] = newBoosted;
@@ -961,7 +961,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address to,
         uint256 amount
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        uint256 pct = getHighestPayoutPct(to);
+        uint256 pct = getTotalPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
         uint256 feeAmount = (modified * feePct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
@@ -1015,7 +1015,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         // apply AGI type payout modifier
-        uint256 pct = getHighestPayoutPct(to);
+        uint256 pct = getTotalPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
 
         // apply protocol fees and burn on the modified amount
@@ -1061,7 +1061,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
         emit JobFundsFinalized(jobId, employer);
-        uint256 pct = getHighestPayoutPct(agent);
+        uint256 pct = getTotalPayoutPct(agent);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
@@ -1120,7 +1120,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 maxWeight;
         uint256 maxIndex;
         for (uint256 i; i < count;) {
-            uint256 pct = getHighestPayoutPct(vals[i]);
+            uint256 pct = getTotalPayoutPct(vals[i]);
             weights[i] = pct;
             totalWeight += pct;
             if (pct > maxWeight) {
@@ -1213,7 +1213,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
 
         uint256 newStake = staked - amount;
-        uint256 pct = getHighestPayoutPct(user);
+        uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (newStake * pct) / 100;
         uint256 oldBoosted = boostedStake[user][role];
         boostedStake[user][role] = newBoosted;
@@ -1314,7 +1314,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function syncBoostedStake(address user, Role role) public whenNotPaused {
         if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
-        uint256 pct = getHighestPayoutPct(user);
+        uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (staked * pct) / 100;
         uint256 oldBoosted = boostedStake[user][role];
         if (newBoosted == oldBoosted) return;

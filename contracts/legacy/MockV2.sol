@@ -98,7 +98,7 @@ contract MockStakeManager is IStakeManager {
         return totalStakes[role];
     }
 
-    function getHighestPayoutPct(address) external pure override returns (uint256) {
+    function getTotalPayoutPct(address) external pure override returns (uint256) {
         return 100;
     }
 

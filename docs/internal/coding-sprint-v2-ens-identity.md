@@ -39,7 +39,7 @@ This sprint modularises all behaviour from `AGIJobManagerv0.sol` into the v2 arc
 
 - Custody all funds in $AGIALPHA (18 decimals) with a fixed token address.
 - Handle deposits, withdrawals, escrow locking, releases and slashing.
-- Apply protocol fees and validator rewards; expose `getHighestPayoutPct` for NFT boosts and weight per‑job validator splits by this multiplier.
+- Apply protocol fees and validator rewards; expose `getTotalPayoutPct` for NFT boosts and weight per‑job validator splits by this multiplier.
 - Provide a `contribute` function for reward‑pool top‑ups to match v1's `contributeToRewardPool` and emit `RewardPoolContribution`.
 
 ### 5. ReputationEngine

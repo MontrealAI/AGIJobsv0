@@ -76,17 +76,17 @@ describe('StakeManager AGIType bonuses', function () {
     await token.mint(employer.address, 1000);
   });
 
-  it('applies highest AGIType bonus', async () => {
+  it('stacks AGIType bonuses', async () => {
     await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
     await stakeManager.connect(owner).addAGIType(await nft2.getAddress(), 175);
     await nft1.mint(agent.address);
     await nft2.mint(agent.address);
 
     const jobId = ethers.encodeBytes32String('job1');
-    await token.connect(employer).approve(await stakeManager.getAddress(), 200);
+    await token.connect(employer).approve(await stakeManager.getAddress(), 225);
     await stakeManager
       .connect(registrySigner)
-      .lockReward(jobId, employer.address, 200);
+      .lockReward(jobId, employer.address, 225);
 
     await expect(
       stakeManager
@@ -94,10 +94,11 @@ describe('StakeManager AGIType bonuses', function () {
         .releaseReward(jobId, employer.address, agent.address, 100)
     )
       .to.emit(stakeManager, 'RewardPaid')
-      .withArgs(jobId, agent.address, 175);
+      .withArgs(jobId, agent.address, 225);
 
-    expect(await token.balanceOf(agent.address)).to.equal(175n);
-    expect(await stakeManager.jobEscrows(jobId)).to.equal(25n);
+    expect(await stakeManager.getTotalPayoutPct(agent.address)).to.equal(225n);
+    expect(await token.balanceOf(agent.address)).to.equal(225n);
+    expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
   });
 
   it('ignores NFTs with failing balanceOf', async () => {
@@ -118,6 +119,16 @@ describe('StakeManager AGIType bonuses', function () {
     )
       .to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, agent.address, 100);
+  });
+
+  it('counts each AGIType at most once', async () => {
+    await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
+    await stakeManager.connect(owner).addAGIType(await nft2.getAddress(), 175);
+    await nft1.mint(agent.address);
+    await nft1.mint(agent.address);
+    await nft2.mint(agent.address);
+
+    expect(await stakeManager.getTotalPayoutPct(agent.address)).to.equal(225n);
   });
 
   it('reverts when bonus payout exceeds escrow and no fees or burns are set', async () => {
