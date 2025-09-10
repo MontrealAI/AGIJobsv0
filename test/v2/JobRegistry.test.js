@@ -209,7 +209,7 @@ describe('JobRegistry integration', function () {
       .withArgs(jobId, true);
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobPayout')
-      .withArgs(jobId, agent.address, reward, 0)
+      .withArgs(jobId, agent.address, reward, 0, 0)
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
 
