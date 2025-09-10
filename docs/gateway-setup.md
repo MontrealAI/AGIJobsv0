@@ -27,6 +27,7 @@ export JOB_REGISTRY_ADDRESS=<job_registry_address>
 export VALIDATION_MODULE_ADDRESS=<validation_module_address>
 export KEYSTORE_URL=<https_endpoint_for_keys>
 export KEYSTORE_TOKEN=<auth_token>
+export GATEWAY_API_KEY=<secret>
 
 npm run gateway
 ```
@@ -40,6 +41,13 @@ payload of private keys:
 
 `KEYSTORE_TOKEN` is sent as a bearer token in the `Authorization` header to
 authenticate the request.
+
+## Authentication
+
+Wallet endpoints are protected by either an API key or a signed message.
+Clients can supply the shared secret set in `GATEWAY_API_KEY` via the
+`X-Api-Key` header. Alternatively sign the string `Agent Gateway Auth` and
+send the signature and address using `X-Signature` and `X-Address` headers.
 
 ## Registering Agents
 
@@ -71,4 +79,4 @@ const ws = new WebSocket('ws://localhost:3000');
 ws.onmessage = (msg) => console.log(JSON.parse(msg.data));
 ```
 
-The gateway uses an in-memory store and is intended for local experimentation. Persistent storage and authentication should be added for production deployments.
+The gateway uses an in-memory store and is intended for local experimentation. Additional hardening and persistent storage should be added for production deployments.
