@@ -775,6 +775,7 @@ Record each address.
 
 - **ValidationModule** → `finalize(jobId)` (after reveal window, no dispute)
 - Agent receives net reward (`RewardPaid`); protocol fee to **FeePool**; a % is **burned** (`FeesBurned`) and the rest is claimable by platform stakers.
+- If the escrow cannot cover burns and fees, `StakeManager` trims the burn first, then fees, ensuring employers never pay beyond `reward + fee`.
 
 ### C.7 Dispute (optional)
 
