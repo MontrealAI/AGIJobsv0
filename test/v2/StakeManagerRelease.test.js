@@ -121,16 +121,16 @@ describe('StakeManager release', function () {
         ethers.parseEther('20')
       )
       .and.to.emit(stakeManager, 'RewardPaid')
-      .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther('70'));
+      .withArgs(ethers.ZeroHash, user1.address, ethers.parseEther('70'))
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(ethers.ZeroHash, ethers.parseEther('10'));
 
     expect((await token.balanceOf(user1.address)) - before1).to.equal(
       ethers.parseEther('70')
     );
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(
-      ethers.parseEther('10')
-    );
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(0n);
     const supplyAfter = await token.totalSupply();
-    expect(supplyAfter).to.equal(supplyBefore);
+    expect(supplyAfter).to.equal(supplyBefore - ethers.parseEther('10'));
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       ethers.parseEther('20')
     );
@@ -142,10 +142,9 @@ describe('StakeManager release', function () {
       (await token.balanceOf(user1.address)) -
         (before1 + ethers.parseEther('70'))
     ).to.equal(ethers.parseEther('5'));
-    expect(
-      (await token.balanceOf(user2.address)) -
-        (before2 + ethers.parseEther('10'))
-    ).to.equal(ethers.parseEther('15'));
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(
+      ethers.parseEther('15')
+    );
   });
 
   it('splits job fund release with fee and burn', async () => {
@@ -170,16 +169,16 @@ describe('StakeManager release', function () {
       .to.emit(stakeManager, 'StakeReleased')
       .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('20'))
       .and.to.emit(stakeManager, 'RewardPaid')
-      .withArgs(jobId, user1.address, ethers.parseEther('70'));
+      .withArgs(jobId, user1.address, ethers.parseEther('70'))
+      .and.to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobId, ethers.parseEther('10'));
 
     expect((await token.balanceOf(user1.address)) - before1).to.equal(
       ethers.parseEther('70')
     );
-    expect((await token.balanceOf(user2.address)) - before2).to.equal(
-      ethers.parseEther('10')
-    );
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(0n);
     const supplyAfter = await token.totalSupply();
-    expect(supplyAfter).to.equal(supplyBefore);
+    expect(supplyAfter).to.equal(supplyBefore - ethers.parseEther('10'));
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       ethers.parseEther('20')
     );
@@ -191,10 +190,9 @@ describe('StakeManager release', function () {
       (await token.balanceOf(user1.address)) -
         (before1 + ethers.parseEther('70'))
     ).to.equal(ethers.parseEther('5'));
-    expect(
-      (await token.balanceOf(user2.address)) -
-        (before2 + ethers.parseEther('10'))
-    ).to.equal(ethers.parseEther('15'));
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(
+      ethers.parseEther('15')
+    );
   });
 
   it('reverts when setting fee pool to zero', async () => {
