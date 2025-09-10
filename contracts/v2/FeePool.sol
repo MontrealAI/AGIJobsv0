@@ -295,6 +295,16 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         emit RewardsClaimed(msg.sender, owed);
     }
 
+    /// @notice Return a user's stake weighted by their NFT multiplier.
+    /// @dev Facilitates off-chain calculations of boosted rewards.
+    /// @param user address being queried
+    /// @return amount stake multiplied by the user's payout percentage
+    function boostedStake(address user) external view returns (uint256 amount) {
+        uint256 stake = stakeManager.stakeOf(user, rewardRole);
+        uint256 pct = stakeManager.getHighestPayoutPct(user);
+        amount = (stake * pct) / 100;
+    }
+
     // ---------------------------------------------------------------------
     // Owner and governance setters (use Etherscan's "Write Contract" tab)
     // ---------------------------------------------------------------------
