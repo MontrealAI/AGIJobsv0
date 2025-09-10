@@ -9,13 +9,14 @@ describe('FeePool', function () {
     owner,
     user1,
     user2,
+    user3,
     employer,
     treasury,
     registrySigner;
 
   const { AGIALPHA } = require('../../scripts/constants');
   beforeEach(async () => {
-    [owner, user1, user2, employer, treasury] = await ethers.getSigners();
+    [owner, user1, user2, user3, employer, treasury] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
@@ -68,9 +69,11 @@ describe('FeePool', function () {
       .setJobRegistry(await jobRegistry.getAddress());
     await policy.connect(user1).acknowledge();
     await policy.connect(user2).acknowledge();
+    await policy.connect(user3).acknowledge();
 
     await token.mint(user1.address, 1000);
     await token.mint(user2.address, 1000);
+    await token.mint(user3.address, 1000);
     await token.mint(employer.address, 1000);
 
     const FeePool = await ethers.getContractFactory(
@@ -93,6 +96,7 @@ describe('FeePool', function () {
 
     await token.connect(user1).approve(await stakeManager.getAddress(), 1000);
     await token.connect(user2).approve(await stakeManager.getAddress(), 1000);
+    await token.connect(user3).approve(await stakeManager.getAddress(), 1000);
     await stakeManager.connect(user1).depositStake(2, 100);
     await stakeManager.connect(user2).depositStake(2, 300);
   });
@@ -134,6 +138,40 @@ describe('FeePool', function () {
     await feePool.connect(user2).claimRewards();
     expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
     expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
+  });
+
+  it('accounts for NFT multipliers when distributing rewards', async () => {
+    const MockNFT = await ethers.getContractFactory('contracts/legacy/MockERC721.sol:MockERC721');
+    const tier1 = await MockNFT.deploy();
+    const tier2 = await MockNFT.deploy();
+    await stakeManager.connect(owner).addAGIType(await tier1.getAddress(), 150);
+    await stakeManager.connect(owner).addAGIType(await tier2.getAddress(), 200);
+    await tier1.mint(user2.address);
+    await tier2.mint(user3.address);
+    await stakeManager.connect(user3).depositStake(2, 100);
+    await stakeManager.connect(user2).withdrawStake(2, 200);
+
+    const feeAmount = 450;
+    await token.mint(await feePool.getAddress(), feeAmount);
+    await ethers.provider.send('hardhat_setBalance', [
+      await stakeManager.getAddress(),
+      '0x56BC75E2D63100000',
+    ]);
+    const smSigner = await ethers.getImpersonatedSigner(
+      await stakeManager.getAddress()
+    );
+    await feePool.connect(smSigner).depositFee(feeAmount);
+
+    await feePool.connect(owner).distributeFees();
+    const before1 = await token.balanceOf(user1.address);
+    const before2 = await token.balanceOf(user2.address);
+    const before3 = await token.balanceOf(user3.address);
+    await feePool.connect(user1).claimRewards();
+    await feePool.connect(user2).claimRewards();
+    await feePool.connect(user3).claimRewards();
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(100n);
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(150n);
+    expect((await token.balanceOf(user3.address)) - before3).to.equal(200n);
   });
 
   it('distributes rewards to validators when configured', async () => {

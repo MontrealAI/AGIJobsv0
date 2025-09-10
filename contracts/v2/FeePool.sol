@@ -228,7 +228,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         }
         amount -= burnAmount;
 
-        uint256 total = stakeManager.totalStake(rewardRole);
+        uint256 total = stakeManager.totalBoostedStake(rewardRole);
         if (total == 0) {
             if (amount > 0) {
                 _burnFees(msg.sender, amount);
@@ -288,7 +288,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
             emit RewardsClaimed(msg.sender, 0);
             return;
         }
-        uint256 cumulative = (stake * cumulativePerToken) / ACCUMULATOR_SCALE;
+        uint256 pct = stakeManager.getHighestPayoutPct(msg.sender);
+        uint256 boosted = (stake * pct) / 100;
+        uint256 cumulative = (boosted * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
         userCheckpoint[msg.sender] = cumulative;
         token.safeTransfer(msg.sender, owed);

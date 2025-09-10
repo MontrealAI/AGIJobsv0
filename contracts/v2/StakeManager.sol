@@ -128,6 +128,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice aggregate stake per role
     mapping(Role => uint256) public totalStakes;
 
+    /// @notice staker address list per role for boosted stake calculations
+    mapping(Role => address[]) private roleStakers;
+
+    /// @notice 1-indexed position of staker in `roleStakers` arrays
+    mapping(Role => mapping(address => uint256)) private roleStakerIndex;
+
     /// @notice minimum time-locked stake per user
     mapping(address => uint256) public lockedStakes;
 
@@ -603,7 +609,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @dev internal stake deposit routine shared by deposit helpers
     function _deposit(address user, Role role, uint256 amount) internal {
-        uint256 newStake = stakes[user][role] + amount;
+        uint256 oldStake = stakes[user][role];
+        uint256 newStake = oldStake + amount;
         if (newStake < minStake) revert BelowMinimumStake();
         if (maxStakePerAddress > 0) {
             uint256 total =
@@ -612,6 +619,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 stakes[user][Role.Platform] +
                 amount;
             if (total > maxStakePerAddress) revert MaxStakeExceeded();
+        }
+        if (oldStake == 0) {
+            roleStakers[role].push(user);
+            roleStakerIndex[role][user] = roleStakers[role].length;
         }
         stakes[user][role] = newStake;
         totalStakes[role] += amount;
@@ -832,6 +843,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         stakes[user][role] = newStake;
         totalStakes[role] -= amount;
+        if (newStake == 0) {
+            uint256 idx = roleStakerIndex[role][user];
+            if (idx != 0) {
+                address[] storage list = roleStakers[role];
+                uint256 last = list.length;
+                if (idx != last) {
+                    address lastUser = list[last - 1];
+                    list[idx - 1] = lastUser;
+                    roleStakerIndex[role][lastUser] = idx;
+                }
+                list.pop();
+                delete roleStakerIndex[role][user];
+            }
+        }
         token.safeTransfer(user, amount);
         emit StakeWithdrawn(user, role, amount);
     }
@@ -1165,8 +1190,23 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             burnShare += amount - distributed;
         }
 
-        stakes[user][role] = staked - amount;
+        uint256 newStake = staked - amount;
+        stakes[user][role] = newStake;
         totalStakes[role] -= amount;
+        if (newStake == 0) {
+            uint256 idx = roleStakerIndex[role][user];
+            if (idx != 0) {
+                address[] storage list = roleStakers[role];
+                uint256 last = list.length;
+                if (idx != last) {
+                    address lastUser = list[last - 1];
+                    list[idx - 1] = lastUser;
+                    roleStakerIndex[role][lastUser] = idx;
+                }
+                list.pop();
+                delete roleStakerIndex[role][user];
+            }
+        }
 
         unbonds[user].jailed = true;
 
@@ -1253,6 +1293,23 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param role participant role to query
     function totalStake(Role role) external view returns (uint256) {
         return totalStakes[role];
+    }
+
+    /// @notice Return the aggregate stake weighted by NFT multiplier for a role
+    /// @param role participant role to query
+    /// @return total aggregated boosted stake
+    function totalBoostedStake(Role role) external view returns (uint256 total) {
+        address[] storage list = roleStakers[role];
+        uint256 length = list.length;
+        for (uint256 i; i < length; ) {
+            address user = list[i];
+            uint256 st = stakes[user][role];
+            uint256 pct = getHighestPayoutPct(user);
+            total += (st * pct) / 100;
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
