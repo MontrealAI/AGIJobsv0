@@ -1,13 +1,22 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
 
 describe('Validator reward remainder', function () {
   const { AGIALPHA } = require('../../scripts/constants');
 
   async function deployFixture(withTreasury) {
-    const [owner, val1, val2, val3, employer, treasury] = await ethers.getSigners();
+    const [owner, val1, val2, val3, employer, treasury] =
+      await ethers.getSigners();
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     const token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      'contracts/test/MockERC20.sol:MockERC20',
       AGIALPHA
     );
     await token.mint(employer.address, 1000);
@@ -42,7 +51,9 @@ describe('Validator reward remainder', function () {
       [],
       owner.address
     );
-    await stakeManager.connect(owner).setJobRegistry(await jobRegistry.getAddress());
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
 
     const registryAddr = await jobRegistry.getAddress();
     await ethers.provider.send('hardhat_setBalance', [
@@ -101,15 +112,9 @@ describe('Validator reward remainder', function () {
   });
 
   it('leaves remainder in escrow when no treasury', async () => {
-    const {
-      stakeManager,
-      token,
-      registrySigner,
-      val1,
-      val2,
-      val3,
-      employer,
-    } = await deployFixture(false);
+    await network.provider.send('hardhat_reset');
+    const { stakeManager, token, registrySigner, val1, val2, val3, employer } =
+      await deployFixture(false);
 
     const jobId = ethers.encodeBytes32String('remJob2');
     await token.connect(employer).approve(await stakeManager.getAddress(), 10);
