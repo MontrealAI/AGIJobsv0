@@ -97,4 +97,19 @@ describe('StakeManager extras', function () {
       stakeManager.connect(user).depositStake(0, ethers.parseEther('100'))
     ).to.be.revertedWithCustomError(stakeManager, 'MaxStakeExceeded');
   });
+
+  it('updates total boosted stake cache on stake changes', async () => {
+    await setupRegistryAck(user);
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), ethers.parseEther('200'));
+    await stakeManager.connect(user).depositStake(0, ethers.parseEther('200'));
+    expect(await stakeManager.totalBoostedStake(0)).to.equal(
+      ethers.parseEther('200')
+    );
+    await stakeManager.connect(user).withdrawStake(0, ethers.parseEther('50'));
+    expect(await stakeManager.totalBoostedStake(0)).to.equal(
+      ethers.parseEther('150')
+    );
+  });
 });
