@@ -8,7 +8,8 @@ const WalletManager = require('./wallet');
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
 const VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS || '';
-const WALLET_KEYS = process.env.WALLET_KEYS || '';
+const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
+const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
 const PORT = process.env.PORT || 3000;
 const BOT_WALLET = process.env.BOT_WALLET || '';
 // $AGIALPHA token parameters
@@ -41,6 +42,39 @@ if ('VALIDATION_MODULE_ADDRESS' in process.env) {
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
+async function loadWalletKeys() {
+  if (!KEYSTORE_URL) {
+    console.error('KEYSTORE_URL is required to load wallet keys.');
+    process.exit(1);
+  }
+  try {
+    const res = await fetch(KEYSTORE_URL, {
+      headers: KEYSTORE_TOKEN
+        ? { Authorization: `Bearer ${KEYSTORE_TOKEN}` }
+        : {},
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const data = await res.json();
+    return data.keys || [];
+  } catch (err) {
+    console.error('Failed to load wallet keys', err);
+    process.exit(1);
+  }
+}
+
+let walletManager;
+let automationWallet;
+
+async function initWallets() {
+  const keys = await loadWalletKeys();
+  walletManager = new WalletManager(keys.join(','), provider);
+  if (BOT_WALLET) {
+    automationWallet = walletManager.get(BOT_WALLET);
+  } else {
+    const [first] = walletManager.list();
+    if (first) automationWallet = walletManager.get(first);
+  }
+}
 async function checkEnsSubdomain(address) {
   try {
     const name = await provider.lookupAddress(address);
@@ -51,7 +85,7 @@ async function checkEnsSubdomain(address) {
     ) {
       return null;
     }
-  } catch (err) {
+  } catch {
     // ignore lookup errors and fall through to warning
   }
   const warning =
@@ -77,15 +111,6 @@ async function verifyTokenDecimals() {
   } catch (err) {
     throw new Error(`Unable to verify AGIALPHA token decimals: ${err.message}`);
   }
-}
-
-const walletManager = new WalletManager(WALLET_KEYS, provider);
-let automationWallet;
-if (BOT_WALLET) {
-  automationWallet = walletManager.get(BOT_WALLET);
-} else {
-  const [first] = walletManager.list();
-  if (first) automationWallet = walletManager.get(first);
 }
 
 // Minimal ABI for JobRegistry interactions
@@ -386,7 +411,7 @@ app.post('/jobs/:id/reveal', async (req, res) => {
 let server;
 let wss;
 
-verifyTokenDecimals()
+Promise.all([verifyTokenDecimals(), initWallets()])
   .then(() => {
     server = http.createServer(app);
     wss = new WebSocketServer({ server });
@@ -396,7 +421,7 @@ verifyTokenDecimals()
         let msg;
         try {
           msg = JSON.parse(data);
-        } catch (err) {
+        } catch {
           return;
         }
         if (msg.type === 'register') {
@@ -431,7 +456,7 @@ verifyTokenDecimals()
     });
   })
   .catch((err) => {
-    console.error('AGIALPHA decimals verification failed', err);
+    console.error('Gateway startup failed', err);
     process.exit(1);
   });
 
