@@ -130,4 +130,33 @@ describe('StakeManager validator reward remainder', function () {
     expect(await token.balanceOf(valLow2.address)).to.equal(28n);
     expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
   });
+
+  it('weights payouts according to multiple NFT tiers', async () => {
+    const NFT175 = await ethers.getContractFactory(
+      'contracts/legacy/MockERC721.sol:MockERC721'
+    );
+    const nft175 = await NFT175.deploy();
+    await stakeManager
+      .connect(owner)
+      .addAGIType(await nft175.getAddress(), 175);
+    await nft175.mint(valLow1.address);
+
+    const jobId = ethers.encodeBytes32String('job2');
+    const amount = 100n;
+
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), amount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, amount);
+    await stakeManager
+      .connect(registrySigner)
+      .distributeValidatorRewards(jobId, amount);
+
+    expect(await token.balanceOf(valLow1.address)).to.equal(42n);
+    expect(await token.balanceOf(valHigh.address)).to.equal(35n);
+    expect(await token.balanceOf(valLow2.address)).to.equal(23n);
+    expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
+  });
 });
