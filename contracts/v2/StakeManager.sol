@@ -1315,6 +1315,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         return totalBoostedStakes[role];
     }
 
+    /// @notice Return a user's stake weighted by their NFT multiplier
+    /// @param user address being queried
+    /// @param role participant role to query
+    /// @return amount boosted stake for the user and role
+    function boostedStakeOf(address user, Role role) external view returns (uint256 amount) {
+        amount = boostedStake[user][role];
+    }
+
     /// @notice Confirms the contract and its owner can never incur tax liability.
     /// @return Always true, signalling perpetual tax exemption.
     function isTaxExempt() external pure returns (bool) {

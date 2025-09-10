@@ -75,6 +75,10 @@ contract ReentrantStakeManager is IStakeManager {
         return totalStakes[role];
     }
 
+    function boostedStakeOf(address user, Role role) external view override returns (uint256) {
+        return _stakes[user][role];
+    }
+
     function getHighestPayoutPct(address) external pure override returns (uint256) {
         return 100;
     }
