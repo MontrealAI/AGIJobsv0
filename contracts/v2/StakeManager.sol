@@ -1125,10 +1125,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         uint256 totalWeight;
         uint256[] memory weights = new uint256[](count);
+        uint256 maxWeight;
+        uint256 maxIndex;
         for (uint256 i; i < count;) {
             uint256 pct = getHighestPayoutPct(vals[i]);
             weights[i] = pct;
             totalWeight += pct;
+            if (pct > maxWeight) {
+                maxWeight = pct;
+                maxIndex = i;
+            }
             unchecked {
                 ++i;
             }
@@ -1147,8 +1153,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         uint256 remainder = amount - distributed;
         if (remainder > 0) {
-            token.safeTransfer(vals[0], remainder);
-            emit RewardPaid(jobId, vals[0], remainder);
+            // allocate any leftover to the validator with the largest weight
+            token.safeTransfer(vals[maxIndex], remainder);
+            emit RewardPaid(jobId, vals[maxIndex], remainder);
             distributed += remainder;
         }
 
