@@ -7,7 +7,10 @@ module.exports = {
     compilers: [
       {
         version: '0.8.28',
-        settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
+        settings: {
+          optimizer: { enabled: true, runs: 200, details: { yulDetails: { stackAllocation: true } } },
+          viaIR: true,
+        },
       },
       {
         version: '0.8.25',
