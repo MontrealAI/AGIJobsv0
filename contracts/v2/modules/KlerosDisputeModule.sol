@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.29;
 
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IDisputeModule} from "../interfaces/IDisputeModule.sol";
