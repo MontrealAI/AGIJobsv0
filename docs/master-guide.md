@@ -308,6 +308,8 @@ All amounts are `$AGIALPHA` **wei** (18 decimals). **Always** `approve` the rele
   - FeePool collects fee; **burnPct** triggers **`burn(...)`** on `$AGIALPHA`.
   - CertificateNFT mints to the Agent.
   - Reputation updates.
+  - **NFT boosts:** payouts scale by the cumulative multiplier returned from `StakeManager.getTotalPayoutPct`. Multiple NFTs add their boosts (`100 + Σ(payoutPct_i - 100)`), so `150%` + `125%` yields `175%`. Extra tokens are taken from fee and burn shares; if those pools lack funds the call reverts with `InsufficientEscrow`.
+  - **Snapshot & claim:** multipliers are checked at payout. Stakers who obtain or lose NFTs should call `StakeManager.syncBoostedStake` before claiming from the `FeePool`. `FeePool.claimRewards()` performs this step automatically and pays boosted rewards even when totals exceed `100%`.
 
 ### 8.5 Disputes
 
