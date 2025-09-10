@@ -159,6 +159,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice pool used to cover operator-funded reward bonuses
     uint256 public operatorRewardPool;
 
+    /// @notice emission rate of continuous operator rewards in tokens per second
+    uint256 public operatorRewardRate;
+
+    /// @notice timestamp when continuous rewards were last configured
+    uint256 public operatorRewardsStart;
+
+    /// @notice last timestamp an operator's rewards were accrued
+    mapping(address => uint256) public lastOperatorClaim;
+
+    /// @notice accrued but unclaimed continuous rewards per operator
+    mapping(address => uint256) public accruedOperatorRewards;
+
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
@@ -203,6 +215,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
     /// @notice Emitted when the operator reward pool balance changes.
     event RewardPoolUpdated(uint256 balance);
+    /// @notice Emitted when an operator claims continuous rewards.
+    event ContinuousRewardsClaimed(address indexed operator, uint256 amount);
+    /// @notice Emitted when the continuous reward rate is updated.
+    event OperatorRewardRateUpdated(uint256 rate);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
@@ -620,6 +636,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @dev internal stake deposit routine shared by deposit helpers
     function _deposit(address user, Role role, uint256 amount) internal {
+        if (role == Role.Platform) {
+            _accrueOperator(user);
+        }
         uint256 oldStake = stakes[user][role];
         uint256 newStake = oldStake + amount;
         if (newStake < minStake) revert BelowMinimumStake();
@@ -831,6 +850,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev internal stake withdrawal routine shared by withdraw helpers
     function _withdraw(address user, Role role, uint256 amount) internal {
         if (role > Role.Platform) revert InvalidRole();
+        if (role == Role.Platform) {
+            _accrueOperator(user);
+        }
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
         uint256 newStake = staked - amount;
@@ -1180,6 +1202,81 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit RewardPoolUpdated(operatorRewardPool);
     }
 
+    /// @notice set emission rate for continuous operator rewards (tokens per second)
+    /// @param rate new reward rate
+    function setOperatorRewardRate(uint256 rate) external onlyGovernance {
+        operatorRewardsStart = block.timestamp;
+        operatorRewardRate = rate;
+        emit OperatorRewardRateUpdated(rate);
+    }
+
+    /// @dev accrue continuous rewards for an operator up to the current time
+    /// @param operator address of the platform operator
+    function _accrueOperator(address operator) internal {
+        uint256 last = lastOperatorClaim[operator];
+        if (last < operatorRewardsStart) {
+            last = operatorRewardsStart;
+        }
+        uint256 elapsed = block.timestamp - last;
+        if (elapsed == 0) {
+            lastOperatorClaim[operator] = block.timestamp;
+            return;
+        }
+        uint256 boosted = boostedStake[operator][Role.Platform];
+        uint256 total = totalBoostedStakes[Role.Platform];
+        if (boosted == 0 || total == 0 || operatorRewardRate == 0) {
+            lastOperatorClaim[operator] = block.timestamp;
+            return;
+        }
+        uint256 reward = (elapsed * operatorRewardRate * boosted) / total;
+        if (reward > operatorRewardPool) reward = operatorRewardPool;
+        if (reward > 0) {
+            accruedOperatorRewards[operator] += reward;
+            operatorRewardPool -= reward;
+            emit RewardPoolUpdated(operatorRewardPool);
+        }
+        lastOperatorClaim[operator] = block.timestamp;
+    }
+
+    /// @notice claim accrued continuous rewards for the caller
+    /// @return reward amount of tokens claimed
+    function claimContinuousRewards()
+        external
+        whenNotPaused
+        nonReentrant
+        returns (uint256 reward)
+    {
+        _accrueOperator(msg.sender);
+        reward = accruedOperatorRewards[msg.sender];
+        if (reward > 0) {
+            accruedOperatorRewards[msg.sender] = 0;
+            token.safeTransfer(msg.sender, reward);
+            emit ContinuousRewardsClaimed(msg.sender, reward);
+        }
+    }
+
+    /// @notice view pending continuous rewards for an operator
+    /// @param operator address to query
+    /// @return reward pending reward amount
+    function pendingContinuousRewards(address operator)
+        external
+        view
+        returns (uint256 reward)
+    {
+        reward = accruedOperatorRewards[operator];
+        uint256 last = lastOperatorClaim[operator];
+        if (last == 0) last = operatorRewardsStart;
+        uint256 elapsed = block.timestamp - last;
+        if (elapsed == 0) return reward;
+        uint256 boosted = boostedStake[operator][Role.Platform];
+        uint256 total = totalBoostedStakes[Role.Platform];
+        if (boosted == 0 || total == 0 || operatorRewardRate == 0) return reward;
+        reward += (elapsed * operatorRewardRate * boosted) / total;
+        if (reward > operatorRewardPool + accruedOperatorRewards[operator]) {
+            reward = operatorRewardPool + accruedOperatorRewards[operator];
+        }
+    }
+
     /// @notice Distribute validator rewards evenly using the ValidationModule
     /// @param jobId unique job identifier
     /// @param amount total validator reward pool
@@ -1280,6 +1377,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address recipient
     ) internal {
         if (role > Role.Platform) revert InvalidRole();
+        if (role == Role.Platform) {
+            _accrueOperator(user);
+        }
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
         if (employerSlashPct + treasurySlashPct > 100) revert InvalidPercentage();
@@ -1396,6 +1496,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param role participant role for the stake
     function syncBoostedStake(address user, Role role) public whenNotPaused {
         if (role > Role.Platform) revert InvalidRole();
+        if (role == Role.Platform) {
+            _accrueOperator(user);
+        }
         uint256 staked = stakes[user][role];
         uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (staked * pct) / 100;
