@@ -198,10 +198,12 @@ describe('job finalization integration', function () {
       .withArgs(jobId, agent.address);
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
+    const jobKey = ethers.toBeHex(jobId, 32);
+    const remainder = await stakeManager.jobEscrows(jobKey);
     const v1Bal = await token.balanceOf(validator1.address);
     const v2Bal = await token.balanceOf(validator2.address);
     expect(agentAfter - agentBefore).to.equal(reward - vReward);
-    expect(employerAfter).to.equal(mintAmount - reward - fee);
+    expect(employerAfter).to.equal(mintAmount - reward - fee - remainder);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
     expect(await rep.reputation(agent.address)).to.equal(152n);
@@ -286,10 +288,12 @@ describe('job finalization integration', function () {
     });
     const agentAfter = await token.balanceOf(agent.address);
     const employerAfter = await token.balanceOf(employer.address);
+    const jobKey2 = ethers.toBeHex(jobId, 32);
+    const remainder2 = await stakeManager.jobEscrows(jobKey2);
     const v1Bal = await token.balanceOf(validator1.address);
     const v2Bal = await token.balanceOf(validator2.address);
     expect(agentAfter - agentBefore).to.equal(reward - vReward);
-    expect(employerAfter).to.equal(employerBefore);
+    expect(employerAfter).to.equal(employerBefore - remainder2);
     expect(v1Bal).to.equal(vReward / 2n);
     expect(v2Bal).to.equal(vReward / 2n);
     expect(await rep.reputation(agent.address)).to.equal(152n);
