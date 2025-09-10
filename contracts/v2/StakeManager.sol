@@ -993,7 +993,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
         if (burnAmount > 0) {
-            token.safeTransfer(employer, burnAmount);
+            _burnToken(jobId, burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
@@ -1035,7 +1035,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
         if (burnAmount > 0) {
-            token.safeTransfer(employer, burnAmount);
+            _burnToken(bytes32(0), burnAmount);
         }
         if (payout > 0) {
             token.safeTransfer(to, payout);
