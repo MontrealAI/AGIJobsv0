@@ -9,7 +9,8 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `RPC_URL` (default `http://localhost:8545`)
 - `JOB_REGISTRY_ADDRESS`
 - `VALIDATION_MODULE_ADDRESS` (optional)
-- `WALLET_KEYS` comma separated private keys managed by the gateway
+- `KEYSTORE_URL` HTTPS endpoint returning private keys managed by the gateway
+- `KEYSTORE_TOKEN` authentication token for the keystore API
 - `PORT` (default `3000`)
 - `BOT_WALLET` address of a managed wallet used for automated finalize/cancel actions (optional). If a tax policy is active, this wallet must first call `JobRegistry.acknowledgeTaxPolicy()`.
 
@@ -32,9 +33,20 @@ jobs are re-sent when a connection is re-established.
 The gateway listens for `JobSubmitted` and validation start events. When the
 reveal window closes it calls `ValidationModule.finalize`, and if a job misses
 its deadline it invokes `JobRegistry.cancelExpiredJob`. These automated
-transactions use the wallet specified by `BOT_WALLET` or the first wallet in
-`WALLET_KEYS` if none is provided. If a tax policy is configured, that wallet
-must acknowledge it before these calls will succeed.
+transactions use the wallet specified by `BOT_WALLET` or the first wallet
+returned by the keystore if none is provided. If a tax policy is configured,
+that wallet must acknowledge it before these calls will succeed.
+
+At startup the gateway loads private keys from `KEYSTORE_URL`. The endpoint
+should return JSON like:
+
+```
+{ "keys": ["0xabc...", "0xdef..."] }
+```
+
+`KEYSTORE_TOKEN` is included as a bearer token in the request's `Authorization`
+header. This allows integration with secure keystores such as Hashicorp Vault
+or a cloud KMS.
 
 The gateway also exposes helpers for committing and revealing validation
 results through REST endpoints. Final payout still requires the employer to

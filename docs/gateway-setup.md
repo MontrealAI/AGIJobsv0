@@ -25,12 +25,21 @@ Set the required environment variables and start the service:
 export RPC_URL=http://localhost:8545
 export JOB_REGISTRY_ADDRESS=<job_registry_address>
 export VALIDATION_MODULE_ADDRESS=<validation_module_address>
-export WALLET_KEYS=<comma_separated_private_keys>
+export KEYSTORE_URL=<https_endpoint_for_keys>
+export KEYSTORE_TOKEN=<auth_token>
 
 npm run gateway
 ```
 
-`WALLET_KEYS` accepts multiple comma‑separated private keys. The gateway loads each wallet and exposes them via the REST API.
+`KEYSTORE_URL` should point to an authenticated service that returns a JSON
+payload of private keys:
+
+```
+{ "keys": ["0xabc...", "0xdef..."] }
+```
+
+`KEYSTORE_TOKEN` is sent as a bearer token in the `Authorization` header to
+authenticate the request.
 
 ## Registering Agents
 
