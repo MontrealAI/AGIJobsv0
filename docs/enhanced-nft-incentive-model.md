@@ -8,11 +8,12 @@ The v2 architecture introduces a list of `AGIType` entries in `StakeManager` tha
 
 ## 2. NFT Reward Multiplier Implementation
 
-- **Agents** – `StakeManager.getHighestPayoutPct` multiplies an agent's base reward by the highest applicable tier. Employers escrow only the base reward; any bonus is covered by reduced burns or fees. If neither fee nor burn is available to absorb the difference, the call reverts with `InsufficientEscrow`.
+
+- **Agents** – `StakeManager.getTotalPayoutPct` multiplies an agent's base reward by the sum of all applicable tiers. Employers escrow only the base reward; any bonus is covered by reduced burns or fees. If neither fee nor burn is available to absorb the difference, the call reverts with `InsufficientEscrow`.
 - **Validators** – `distributeValidatorRewards` weights each validator's share by their multiplier. A 150% NFT counts as weight `150` versus the default `100`.
 - **Platform operators** – the `FeePool` exposes `boostedStake(address)` to reveal a staker's weight (`stake * multiplier / 100`). Off-chain scripts can use this to apportion fee distributions so that operators with NFTs receive a larger portion of the fee pool. Participants should call `StakeManager.syncBoostedStake` after acquiring or losing an NFT to refresh their weight; `FeePool` invokes this helper automatically for callers when distributing or claiming rewards.
 
-The `getHighestPayoutPct` function is a general utility that any module can call to check the top multiplier for a given address and now serves agents, validators and platform participants alike.
+The `getTotalPayoutPct` function is a general utility that any module can call to check the cumulative multiplier for a given address and now serves agents, validators and platform participants alike.
 
 ## 3. Game-Theoretic Robustness
 
@@ -25,6 +26,6 @@ Simulations show NFT holders consistently earn more than non‑holders while tot
 ## 5. Milestone-Based Implementation Plan
 
 1. **Design finalisation** – approve NFT tiers, payout caps and the list of supported contracts.
-2. **Solidity changes** – generalise `getHighestPayoutPct`, weight validator rewards, provide `boostedStake` for platform calculations and enforce the 200% multiplier cap.
+2. **Solidity changes** – generalise `getTotalPayoutPct`, weight validator rewards, provide `boostedStake` for platform calculations and enforce the 200% multiplier cap.
 3. **Simulation and audit** – unit tests and economic simulations confirm robustness; fix any findings.
 4. **Documentation and deployment** – update guides, deploy upgrades and announce NFT reward boosts to the community.

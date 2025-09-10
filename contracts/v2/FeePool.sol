@@ -290,7 +290,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
             emit RewardsClaimed(msg.sender, 0);
             return;
         }
-        uint256 pct = stakeManager.getHighestPayoutPct(msg.sender);
+        uint256 pct = stakeManager.getTotalPayoutPct(msg.sender);
         uint256 boosted = (stake * pct) / 100;
         uint256 cumulative = (boosted * cumulativePerToken) / ACCUMULATOR_SCALE;
         uint256 owed = cumulative - userCheckpoint[msg.sender];
@@ -305,7 +305,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @return amount stake multiplied by the user's payout percentage
     function boostedStake(address user) external view returns (uint256 amount) {
         uint256 stake = stakeManager.stakeOf(user, rewardRole);
-        uint256 pct = stakeManager.getHighestPayoutPct(user);
+        uint256 pct = stakeManager.getTotalPayoutPct(user);
         amount = (stake * pct) / 100;
     }
 
