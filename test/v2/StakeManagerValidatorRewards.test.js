@@ -131,4 +131,3 @@ describe('StakeManager validator reward remainder', function () {
     expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
   });
 });
-
