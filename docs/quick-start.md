@@ -63,6 +63,21 @@ const registry = await ethers.getContractAt('JobRegistry', registryAddress);
 await registry.connect(employer).finalize(jobId);
 ```
 
+## 5. Reward Boosts and Claims
+
+Holding approved NFTs increases payouts by adding their percentage boosts. Total multiplier = `100 + Σ(payoutPct_i - 100)`.
+
+Example: with `150%` and `125%` NFTs the multiplier becomes `175%` and a `10` token reward pays `17.5`. Extra tokens are funded from the protocol fee and burn pool; if those pools cannot cover the bonus, finalization reverts with `InsufficientEscrow`.
+
+Stakers who gain or lose NFTs should snapshot their weight before claiming:
+
+```javascript
+// sync-boost.js
+await stake.syncBoostedStake(user.address, role); // 0=agent, 1=validator, 2=platform
+```
+
+`FeePool.claimRewards()` automatically calls this helper and pays out boosted rewards even when totals exceed `100%`.
+
 ## FAQ
 
 **How do I get test tokens?** Use `AGIALPHAToken.mint()` from the deployer

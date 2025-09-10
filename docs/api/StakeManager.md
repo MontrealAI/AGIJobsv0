@@ -1,6 +1,6 @@
 # StakeManager API
 
-Handles staking, escrow and slashing of the $AGIALPHA token.
+Handles staking, escrow and slashing of the $AGIALPHA token. NFT ownership can boost payouts cumulatively; extra amounts are funded from protocol fees or reduced burns.
 
 ## Functions
 
@@ -15,9 +15,10 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `slash(address user, uint8 role, uint256 amount, address employer)` – JobRegistry slashes the user's stake for a given role and routes the employer share.
 - `slash(address user, uint256 amount, address recipient)` – DisputeModule slashes validator stake during disputes and sends the slashed amount to `recipient`.
 - `setMaxAGITypes(uint256 newMax)` – cap the number of AGI type entries.
-- `addAGIType(address nft, uint256 payoutPct)` – register or update a payout multiplier for holders of `nft`. The percentage is capped at `MAX_PAYOUT_PCT` (200%).
+- `addAGIType(address nft, uint256 payoutPct)` – register or update a payout multiplier for holders of `nft`. Multipliers from multiple NFTs **stack** by adding `payoutPct - 100` for each type. Each entry is capped at `MAX_PAYOUT_PCT` (200%).
 - `removeAGIType(address nft)` – delete a previously registered AGI type.
-- `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` / `getTotalPayoutPct(address user)` – view functions.
+- `syncBoostedStake(address user, uint8 role)` – recalculate a user's boosted stake after NFT changes. `FeePool.claimRewards` calls this automatically for the reward role.
+- `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` / `totalBoostedStake(uint8 role)` / `getTotalPayoutPct(address user)` – view functions. `getTotalPayoutPct` returns `100 + Σ(payoutPct_i - 100)` and may exceed `200` when multiple NFTs are held.
 
 ## Events
 
