@@ -91,6 +91,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint128 reward;
         uint96 stake;
         uint32 feePct;
+        uint32 agentPct;
         State state;
         bool success;
         bool burnConfirmed;
@@ -795,6 +796,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             reward: uint128(reward),
             stake: jobStake,
             feePct: feePctSnapshot,
+            agentPct: 100,
             state: State.Created,
             success: false,
             burnConfirmed: false,
@@ -935,7 +937,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
             stakeManager.lockStake(msg.sender, uint256(job.stake), lockTime);
         }
+        uint32 agentPct = 100;
+        if (address(stakeManager) != address(0)) {
+            agentPct = uint32(stakeManager.getTotalPayoutPct(msg.sender));
+        }
         job.agent = msg.sender;
+        job.agentPct = agentPct;
         job.state = State.Applied;
         job.assignedAt = uint64(block.timestamp);
         emit JobApplied(jobId, msg.sender, subdomain);
@@ -1331,9 +1338,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             uint256 rewardAfterValidator =
                 uint256(job.reward) - validatorReward;
             uint256 fee;
-            uint256 agentPct = 100;
+            uint256 agentPct = job.agentPct == 0 ? 100 : job.agentPct;
             if (address(stakeManager) != address(0)) {
-                agentPct = stakeManager.getTotalPayoutPct(job.agent);
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
                 }
@@ -1347,10 +1353,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 }
 
                 address employerParam = isGov ? job.employer : msg.sender;
-                stakeManager.finalizeJobFunds(
+                stakeManager.finalizeJobFundsWithPct(
                     jobKey,
                     employerParam,
                     payee,
+                    agentPct,
                     rewardAfterValidator,
                     validatorReward,
                     fee,

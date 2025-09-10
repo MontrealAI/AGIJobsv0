@@ -1067,8 +1067,36 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         IFeePool _feePool,
         bool byGovernance
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        emit JobFundsFinalized(jobId, employer);
         uint256 pct = getTotalPayoutPct(agent);
+        _finalizeJobFunds(jobId, employer, agent, pct, reward, validatorReward, fee, _feePool, byGovernance);
+    }
+
+    function finalizeJobFundsWithPct(
+        bytes32 jobId,
+        address employer,
+        address agent,
+        uint256 agentPct,
+        uint256 reward,
+        uint256 validatorReward,
+        uint256 fee,
+        IFeePool _feePool,
+        bool byGovernance
+    ) external onlyJobRegistry whenNotPaused nonReentrant {
+        _finalizeJobFunds(jobId, employer, agent, agentPct, reward, validatorReward, fee, _feePool, byGovernance);
+    }
+
+    function _finalizeJobFunds(
+        bytes32 jobId,
+        address employer,
+        address agent,
+        uint256 pct,
+        uint256 reward,
+        uint256 validatorReward,
+        uint256 fee,
+        IFeePool _feePool,
+        bool byGovernance
+    ) internal {
+        emit JobFundsFinalized(jobId, employer);
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
