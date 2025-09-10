@@ -18,6 +18,8 @@ const {
   decimals: AGIALPHA_DECIMALS,
 } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
+const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || '';
+const AUTH_MESSAGE = 'Agent Gateway Auth';
 
 // Startup validation for required addresses
 if (!JOB_REGISTRY_ADDRESS || !ethers.isAddress(JOB_REGISTRY_ADDRESS)) {
@@ -281,6 +283,26 @@ if (validation) {
 const app = express();
 app.use(express.json());
 
+function authMiddleware(req, res, next) {
+  const apiKey = req.header('x-api-key');
+  if (GATEWAY_API_KEY && apiKey === GATEWAY_API_KEY) return next();
+
+  const signature = req.header('x-signature');
+  const address = req.header('x-address');
+  if (signature && address) {
+    try {
+      const recovered = ethers
+        .verifyMessage(AUTH_MESSAGE, signature)
+        .toLowerCase();
+      if (recovered === address.toLowerCase()) return next();
+    } catch (err) {
+      // fall through to unauthorized
+    }
+  }
+
+  res.status(401).json({ error: 'unauthorized' });
+}
+
 // Basic health check for service monitoring
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -313,7 +335,7 @@ app.get('/jobs', (req, res) => {
 });
 
 // Apply for a job with a managed wallet
-app.post('/jobs/:id/apply', async (req, res) => {
+app.post('/jobs/:id/apply', authMiddleware, async (req, res) => {
   const { address } = req.body;
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
@@ -330,7 +352,7 @@ app.post('/jobs/:id/apply', async (req, res) => {
 });
 
 // Submit job result
-app.post('/jobs/:id/submit', async (req, res) => {
+app.post('/jobs/:id/submit', authMiddleware, async (req, res) => {
   const { address, result } = req.body;
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
@@ -382,7 +404,7 @@ async function revealHelper(jobId, wallet) {
 }
 
 // Commit validation decision
-app.post('/jobs/:id/commit', async (req, res) => {
+app.post('/jobs/:id/commit', authMiddleware, async (req, res) => {
   const { address, approve } = req.body;
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
@@ -395,7 +417,7 @@ app.post('/jobs/:id/commit', async (req, res) => {
 });
 
 // Reveal validation decision
-app.post('/jobs/:id/reveal', async (req, res) => {
+app.post('/jobs/:id/reveal', authMiddleware, async (req, res) => {
   const { address } = req.body;
   const wallet = walletManager.get(address);
   if (!wallet) return res.status(400).json({ error: 'unknown wallet' });

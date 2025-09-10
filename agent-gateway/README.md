@@ -13,6 +13,7 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `KEYSTORE_TOKEN` authentication token for the keystore API
 - `PORT` (default `3000`)
 - `BOT_WALLET` address of a managed wallet used for automated finalize/cancel actions (optional). If a tax policy is active, this wallet must first call `JobRegistry.acknowledgeTaxPolicy()`.
+- `GATEWAY_API_KEY` shared secret for API-key authentication (optional)
 
 Copy `.env.example` to `.env` and adjust values for your network:
 
@@ -47,6 +48,23 @@ should return JSON like:
 `KEYSTORE_TOKEN` is included as a bearer token in the request's `Authorization`
 header. This allows integration with secure keystores such as Hashicorp Vault
 or a cloud KMS.
+
+## Authentication
+
+Wallet-related endpoints require credentials. Clients may either:
+
+- Provide `GATEWAY_API_KEY` via the `X-Api-Key` header, or
+- Sign the string `Agent Gateway Auth` and send the signature and address in
+  `X-Signature` and `X-Address` headers.
+
+Example using an API key:
+
+```bash
+curl -X POST http://localhost:3000/jobs/1/apply \
+  -H 'X-Api-Key: <secret>' \
+  -H 'Content-Type: application/json' \
+  -d '{"address":"0x..."}'
+```
 
 The gateway also exposes helpers for committing and revealing validation
 results through REST endpoints. Final payout still requires the employer to
