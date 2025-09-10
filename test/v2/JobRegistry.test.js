@@ -393,7 +393,15 @@ describe('JobRegistry integration', function () {
       .connect(agent)
       .submit(jobId, ethers.id('res'), 'res', '', []);
     await validation.finalize(jobId);
-    await registry.connect(agent).dispute(jobId, ethers.id('evidence'));
+    const registryAddr = await registry.getAddress();
+    await network.provider.send('hardhat_setBalance', [
+      registryAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+    await dispute
+      .connect(registrySigner)
+      .raiseDispute(jobId, agent.address, ethers.id('evidence'));
     await dispute.connect(owner).setCommittee(owner.address);
     await dispute.connect(owner).setDisputeWindow(0);
     await dispute.connect(owner).resolve(jobId, false);

@@ -100,8 +100,8 @@ describe('Job finalization with contract employer', function () {
     const prev = BigInt(
       await ethers.provider.getStorage(await registry.getAddress(), slot)
     );
-    const stateOffset = 0n;
-    const successOffset = 8n;
+    const stateOffset = 32n;
+    const successOffset = 40n;
     const mask = (0xffn << stateOffset) | (0xffn << successOffset);
     const cleared = prev & ~mask;
     const value =

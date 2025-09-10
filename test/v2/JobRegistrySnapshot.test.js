@@ -7,7 +7,6 @@ describe('JobRegistry payout snapshot', function () {
   let token, stakeManager, validation, registry, identity, nft;
 
   beforeEach(async () => {
-    await network.provider.send('hardhat_reset');
     [owner, employer, agent, other] = await ethers.getSigners();
 
     const { address: AGIALPHA } = require('../../config/agialpha.json');
