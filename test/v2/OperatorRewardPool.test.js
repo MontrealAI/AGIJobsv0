@@ -102,6 +102,7 @@ describe('Operator reward pool', function () {
         agent.address,
         reward,
         0,
+        0,
         ethers.ZeroAddress,
         false
       );
@@ -130,6 +131,7 @@ describe('Operator reward pool', function () {
           employer.address,
           agent.address,
           reward,
+          0,
           0,
           ethers.ZeroAddress,
           false

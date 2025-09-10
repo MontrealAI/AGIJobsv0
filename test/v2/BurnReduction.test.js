@@ -158,6 +158,7 @@ describe('StakeManager burn reduction', function () {
           employer.address,
           agent.address,
           ethers.parseEther('100'),
+          0,
           ethers.parseEther('20'),
           await feePool.getAddress(),
           false

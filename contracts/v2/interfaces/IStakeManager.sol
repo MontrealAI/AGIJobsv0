@@ -113,6 +113,7 @@ interface IStakeManager {
         address employer,
         address agent,
         uint256 reward,
+        uint256 validatorReward,
         uint256 fee,
         IFeePool feePool,
         bool byGovernance

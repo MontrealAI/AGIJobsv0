@@ -512,7 +512,7 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
     → `{employerPct, treasuryPct}` (sum 100)
     → **burn remainder via `TOKEN.burn()`**
     → `StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare, burnShare)`.
-- **Fee remittance (M):** `finalizeJobFunds(jobId, employer, agent, reward, fee, pool, byGovernance)` → net to agent, validator rewards, fee to `FeePool`.
+- **Fee remittance (M):** `finalizeJobFunds(jobId, employer, agent, reward, validatorReward, fee, pool, byGovernance)` → net to agent, validator rewards, fee to `FeePool`.
 - **Guards (L):** `nonReentrant` + `whenNotPaused` on state mutators.
 
 #### A.2.3 `FeePool`

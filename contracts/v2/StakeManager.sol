@@ -1062,6 +1062,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address employer,
         address agent,
         uint256 reward,
+        uint256 validatorReward,
         uint256 fee,
         IFeePool _feePool,
         bool byGovernance
@@ -1071,10 +1072,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
-        uint256 total = reward + fee + burnAmount;
+
         uint256 escrow = jobEscrows[jobId];
-        if (escrow < total) {
-            uint256 deficit = total - escrow;
+        uint256 available = escrow - validatorReward;
+        uint256 total = reward + fee + burnAmount;
+        if (available < total) {
+            uint256 deficit = total - available;
             if (deficit > burnAmount + fee) revert InsufficientEscrow();
             uint256 burnReduction = deficit > burnAmount ? burnAmount : deficit;
             burnAmount -= burnReduction;
@@ -1083,18 +1086,25 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             fee -= feeReduction;
             total -= burnReduction + feeReduction;
         }
-        jobEscrows[jobId] = 0;
+
+        uint256 spent = reward + fee + burnAmount;
+        jobEscrows[jobId] = escrow - spent;
+
         uint256 extra = payout > reward ? payout - reward : 0;
         if (extra > 0) {
             if (operatorRewardPool < extra) revert InsufficientRewardPool();
             operatorRewardPool -= extra;
             emit RewardPoolUpdated(operatorRewardPool);
         }
-        if (escrow > total) {
-            uint256 leftover = escrow - total;
-            operatorRewardPool += leftover;
+
+        uint256 leftover = jobEscrows[jobId];
+        if (leftover > validatorReward) {
+            uint256 surplus = leftover - validatorReward;
+            jobEscrows[jobId] = validatorReward;
+            operatorRewardPool += surplus;
             emit RewardPoolUpdated(operatorRewardPool);
         }
+
         if (payout > 0) {
             token.safeTransfer(agent, payout);
             emit RewardPaid(jobId, agent, payout);

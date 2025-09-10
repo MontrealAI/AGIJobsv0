@@ -1354,6 +1354,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     employerParam,
                     payee,
                     rewardAfterValidator,
+                    validatorReward,
                     fee,
                     pool,
                     isGov
