@@ -16,7 +16,7 @@ The `getHighestPayoutPct` function is a general utility that any module can call
 
 ## 3. Game-Theoretic Robustness
 
-Weighting rewards by NFT multipliers removes the equal‑split sybil attack among validators and aligns incentives across roles. Caps on multiplier values and selecting only the highest tier prevent unbounded gains. Employers are not penalised for hiring NFT holders because extra payouts are subsidised by reduced burns or fees, so the best agents remain attractive hires.
+Weighting rewards by NFT multipliers removes the equal‑split sybil attack among validators and aligns incentives across roles. Multiplier values are capped at 200% and selecting only the highest tier prevents unbounded gains. Employers are not penalised for hiring NFT holders because extra payouts are subsidised by reduced burns or fees, so the best agents remain attractive hires.
 
 ## 4. Simulation of Reward Outcomes
 
@@ -25,6 +25,6 @@ Simulations show NFT holders consistently earn more than non‑holders while tot
 ## 5. Milestone-Based Implementation Plan
 
 1. **Design finalisation** – approve NFT tiers, payout caps and the list of supported contracts.
-2. **Solidity changes** – generalise `getHighestPayoutPct`, weight validator rewards, provide `boostedStake` for platform calculations and enforce reasonable multiplier caps.
+2. **Solidity changes** – generalise `getHighestPayoutPct`, weight validator rewards, provide `boostedStake` for platform calculations and enforce the 200% multiplier cap.
 3. **Simulation and audit** – unit tests and economic simulations confirm robustness; fix any findings.
 4. **Documentation and deployment** – update guides, deploy upgrades and announce NFT reward boosts to the community.
