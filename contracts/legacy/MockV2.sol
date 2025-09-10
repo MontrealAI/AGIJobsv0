@@ -170,8 +170,36 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         uint256 deadline
     );
 
-    function setJob(uint256 jobId, Job calldata job) external {
-        _jobs[jobId] = job;
+    struct LegacyJob {
+        address employer;
+        address agent;
+        uint256 reward;
+        uint256 stake;
+        bool success;
+        Status status;
+        bytes32 uriHash;
+        bytes32 resultHash;
+    }
+
+    function setJob(uint256 jobId, LegacyJob calldata job) external {
+        _jobs[jobId] = Job({
+            employer: job.employer,
+            agent: job.agent,
+            reward: uint128(job.reward),
+            stake: uint96(job.stake),
+            feePct: uint32(feePct),
+            agentPct: 0,
+            status: job.status,
+            success: job.success,
+            burnConfirmed: false,
+            burnReceiptAmount: 0,
+            agentTypes: 0,
+            deadline: 0,
+            assignedAt: 0,
+            uriHash: job.uriHash,
+            resultHash: job.resultHash,
+            specHash: bytes32(0)
+        });
     }
 
     function jobs(uint256 jobId) external view override returns (Job memory) {
@@ -298,12 +326,20 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         _jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
-            reward: reward,
-            stake: jobStake,
-            success: false,
+            reward: uint128(reward),
+            stake: uint96(jobStake),
+            feePct: uint32(feePct),
+            agentPct: 0,
             status: Status.Created,
+            success: false,
+            burnConfirmed: false,
+            burnReceiptAmount: 0,
+            agentTypes: 0,
+            deadline: deadline,
+            assignedAt: 0,
             uriHash: uriHash,
-            resultHash: bytes32(0)
+            resultHash: bytes32(0),
+            specHash: bytes32(0)
         });
         deadlines[jobId] = deadline;
         if (address(_stakeManager) != address(0) && reward > 0) {
