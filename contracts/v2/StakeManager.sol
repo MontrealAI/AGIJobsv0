@@ -1308,6 +1308,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         return totalStakes[role];
     }
 
+    /// @notice Recalculate a user's boosted stake after NFT changes
+    /// @param user address whose boosted stake is being updated
+    /// @param role participant role for the stake
+    function syncBoostedStake(address user, Role role) public whenNotPaused {
+        if (role > Role.Platform) revert InvalidRole();
+        uint256 staked = stakes[user][role];
+        uint256 pct = getHighestPayoutPct(user);
+        uint256 newBoosted = (staked * pct) / 100;
+        uint256 oldBoosted = boostedStake[user][role];
+        if (newBoosted == oldBoosted) return;
+        boostedStake[user][role] = newBoosted;
+        totalBoostedStakes[role] = totalBoostedStakes[role] + newBoosted - oldBoosted;
+    }
+
     /// @notice Return the aggregate stake weighted by NFT multiplier for a role
     /// @param role participant role to query
     /// @return total aggregated boosted stake

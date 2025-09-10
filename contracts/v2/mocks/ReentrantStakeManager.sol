@@ -62,6 +62,7 @@ contract ReentrantStakeManager is IStakeManager {
     function setValidatorRewardPct(uint256) external override {}
     function addAGIType(address, uint256) external override {}
     function removeAGIType(address) external override {}
+    function syncBoostedStake(address, Role) external override {}
 
     function stakeOf(address user, Role role) external view override returns (uint256) {
         return _stakes[user][role];

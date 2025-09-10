@@ -179,6 +179,11 @@ interface IStakeManager {
     /// @notice return aggregate stake weighted by NFT multipliers for a role
     function totalBoostedStake(Role role) external view returns (uint256);
 
+    /// @notice Recalculate boosted stake for a user when NFT holdings change
+    /// @param user address whose boosted stake is being updated
+    /// @param role participant role of the stake
+    function syncBoostedStake(address user, Role role) external;
+
     /// @notice address of the JobRegistry authorized to deposit fees
     function jobRegistry() external view returns (address);
 
