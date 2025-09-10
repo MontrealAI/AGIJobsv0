@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.29;
 
 /// @title INameWrapper
 /// @notice Minimal interface to check ownership of wrapped ENS names.
