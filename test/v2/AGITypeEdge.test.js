@@ -83,9 +83,7 @@ describe('StakeManager AGIType bonuses', function () {
     await nft2.mint(agent.address);
 
     const jobId = ethers.encodeBytes32String('job1');
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), 225);
+    await token.connect(employer).approve(await stakeManager.getAddress(), 225);
     await stakeManager
       .connect(registrySigner)
       .lockReward(jobId, employer.address, 225);
