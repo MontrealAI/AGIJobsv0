@@ -137,6 +137,13 @@ describe('StakeManager AGIType bonuses', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'InsufficientEscrow');
   });
 
+  it('reverts when AGI type payout exceeds the cap', async () => {
+    const max = await stakeManager.MAX_PAYOUT_PCT();
+    await expect(
+      stakeManager.connect(owner).addAGIType(await nft1.getAddress(), max + 1n)
+    ).to.be.revertedWithCustomError(stakeManager, 'InvalidPercentage');
+  });
+
   it('weights validator rewards by NFT boost', async () => {
     await stakeManager.connect(owner).addAGIType(await nft1.getAddress(), 150);
     await nft1.mint(val1.address);

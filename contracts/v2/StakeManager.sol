@@ -161,6 +161,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Upper limit on the number of AGI types to prevent excessive gas usage
     uint256 public constant MAX_AGI_TYPES_CAP = 50;
 
+    /// @notice Maximum allowed payout percentage for AGI types (100 = no boost)
+    uint256 public constant MAX_PAYOUT_PCT = 200;
+
     /// @notice Maximum allowed AGI types to avoid excessive gas
     uint256 public maxAGITypes = MAX_AGI_TYPES_CAP;
 
@@ -485,10 +488,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice Add or update an AGI type NFT bonus
     /// @dev `payoutPct` is expressed as a percentage where `100` represents no
-    ///      bonus and values above 100 increase the payout. Values below 100 can
-    ///      be used to provide a discount.
+    ///      bonus, values above `100` increase the payout and values below `100`
+    ///      can provide a discount. The percentage must not exceed
+    ///      {MAX_PAYOUT_PCT}.
     function addAGIType(address nft, uint256 payoutPct) external onlyGovernance {
         if (nft == address(0) || payoutPct == 0) revert InvalidParams();
+        if (payoutPct > MAX_PAYOUT_PCT) revert InvalidPercentage();
         uint256 length = agiTypes.length;
         for (uint256 i; i < length; ) {
             if (agiTypes[i].nft == nft) {

@@ -14,7 +14,10 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `lockDisputeFee(address payer, uint256 amount)` / `payDisputeFee(address to, uint256 amount)` – escrow dispute fees.
 - `slash(address user, uint8 role, uint256 amount, address employer)` – JobRegistry slashes the user's stake for a given role and routes the employer share.
 - `slash(address user, uint256 amount, address recipient)` – DisputeModule slashes validator stake during disputes and sends the slashed amount to `recipient`.
-- `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` – view functions.
+- `setMaxAGITypes(uint256 newMax)` – cap the number of AGI type entries.
+- `addAGIType(address nft, uint256 payoutPct)` – register or update a payout multiplier for holders of `nft`. The percentage is capped at `MAX_PAYOUT_PCT` (200%).
+- `removeAGIType(address nft)` – delete a previously registered AGI type.
+- `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` / `getHighestPayoutPct(address user)` – view functions.
 
 ## Events
 
@@ -29,3 +32,6 @@ Handles staking, escrow and slashing of the $AGIALPHA token.
 - `DisputeFeePaid(address indexed to, uint256 amount)`
 - `FeePctUpdated(uint256 pct)` / `BurnPctUpdated(uint256 pct)` / `ValidatorRewardPctUpdated(uint256 pct)`
 - `ModulesUpdated(address indexed jobRegistry, address indexed disputeModule)`
+- `MaxAGITypesUpdated(uint256 oldMax, uint256 newMax)`
+- `AGITypeUpdated(address indexed nft, uint256 payoutPct)`
+- `AGITypeRemoved(address indexed nft)`
