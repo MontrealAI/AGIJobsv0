@@ -116,7 +116,8 @@ interface IStakeManager {
         bool byGovernance
     ) external;
 
-    /// @notice distribute validator rewards equally among selected validators
+    /// @notice distribute validator rewards among selected validators
+    ///         weighted by their NFT multipliers
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
 
     /// @notice Current burn percentage applied to rewards
