@@ -127,6 +127,7 @@ describe('FeePool', function () {
         registrySigner.address,
         user1.address,
         0,
+        0,
         feeAmount,
         await feePool.getAddress(),
         false
@@ -200,6 +201,7 @@ describe('FeePool', function () {
         registrySigner.address,
         user1.address,
         0,
+        0,
         feeAmount,
         await feePool.getAddress(),
         false
@@ -232,6 +234,7 @@ describe('FeePool', function () {
         registrySigner.address,
         user1.address,
         0,
+        0,
         feeAmount,
         await feePool.getAddress(),
         false
@@ -262,6 +265,7 @@ describe('FeePool', function () {
         jobId,
         registrySigner.address,
         user1.address,
+        0,
         0,
         feeAmount,
         await feePool.getAddress(),
@@ -325,6 +329,7 @@ describe('FeePool', function () {
         jobId,
         registrySigner.address,
         user1.address,
+        0,
         0,
         feeAmount,
         await feePool.getAddress(),

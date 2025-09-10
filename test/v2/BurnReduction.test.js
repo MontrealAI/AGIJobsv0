@@ -82,6 +82,11 @@ describe('StakeManager burn reduction', function () {
       .connect(employer)
       .approve(await stakeManager.getAddress(), ethers.parseEther('1000'));
 
+    await token.mint(owner.address, ethers.parseEther('100'));
+    await token
+      .connect(owner)
+      .approve(await stakeManager.getAddress(), ethers.parseEther('100'));
+
     await stakeManager.connect(owner).setFeePool(await feePool.getAddress());
     await stakeManager.connect(owner).setFeePct(20);
     await stakeManager.connect(owner).setBurnPct(10);
@@ -136,10 +141,14 @@ describe('StakeManager burn reduction', function () {
     const jobId = ethers.encodeBytes32String('finalReduce');
     await stakeManager
       .connect(registrySigner)
-      .lockReward(jobId, employer.address, ethers.parseEther('120'));
+      .lockReward(jobId, employer.address, ethers.parseEther('110'));
 
     const beforeAgent = await token.balanceOf(agent.address);
     const afterLockEmployer = await token.balanceOf(employer.address);
+
+    await stakeManager
+      .connect(owner)
+      .fundOperatorRewardPool(ethers.parseEther('100'));
 
     await expect(
       stakeManager
@@ -149,13 +158,14 @@ describe('StakeManager burn reduction', function () {
           employer.address,
           agent.address,
           ethers.parseEther('100'),
+          0,
           ethers.parseEther('20'),
           await feePool.getAddress(),
           false
         )
     )
       .to.emit(stakeManager, 'StakeReleased')
-      .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('3'))
+      .withArgs(jobId, await feePool.getAddress(), ethers.parseEther('10'))
       .and.to.emit(stakeManager, 'RewardPaid')
       .withArgs(jobId, agent.address, ethers.parseEther('117'));
 

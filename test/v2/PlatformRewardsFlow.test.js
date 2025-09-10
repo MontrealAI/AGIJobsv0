@@ -155,6 +155,7 @@ describe('Platform reward flow', function () {
         registrySigner.address,
         alice.address,
         REWARD,
+        0,
         FEE,
         await feePool.getAddress(),
         false

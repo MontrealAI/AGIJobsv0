@@ -44,6 +44,7 @@ error TreasuryNotSet();
 error ValidationModuleNotSet();
 error NoValidators();
 error InsufficientEscrow();
+error InsufficientRewardPool();
 error AGITypeNotFound();
 error EtherNotAccepted();
 error InvalidTokenDecimals();
@@ -155,6 +156,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
 
+    /// @notice pool used to cover operator-funded reward bonuses
+    uint256 public operatorRewardPool;
+
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
@@ -197,6 +201,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event TokensBurned(bytes32 indexed jobId, uint256 amount);
     /// @notice Emitted when an employer finalizes job funds.
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
+    /// @notice Emitted when the operator reward pool balance changes.
+    event RewardPoolUpdated(uint256 balance);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address indexed module);
@@ -1056,6 +1062,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address employer,
         address agent,
         uint256 reward,
+        uint256 validatorReward,
         uint256 fee,
         IFeePool _feePool,
         bool byGovernance
@@ -1065,10 +1072,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 modified = (reward * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
-        uint256 total = payout + fee + burnAmount;
+
         uint256 escrow = jobEscrows[jobId];
-        if (escrow < total) {
-            uint256 deficit = total - escrow;
+        uint256 available = escrow - validatorReward;
+        uint256 total = reward + fee + burnAmount;
+        if (available < total) {
+            uint256 deficit = total - available;
             if (deficit > burnAmount + fee) revert InsufficientEscrow();
             uint256 burnReduction = deficit > burnAmount ? burnAmount : deficit;
             burnAmount -= burnReduction;
@@ -1077,7 +1086,25 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             fee -= feeReduction;
             total -= burnReduction + feeReduction;
         }
-        jobEscrows[jobId] = escrow - total;
+
+        uint256 spent = reward + fee + burnAmount;
+        jobEscrows[jobId] = escrow - spent;
+
+        uint256 extra = payout > reward ? payout - reward : 0;
+        if (extra > 0) {
+            if (operatorRewardPool < extra) revert InsufficientRewardPool();
+            operatorRewardPool -= extra;
+            emit RewardPoolUpdated(operatorRewardPool);
+        }
+
+        uint256 leftover = jobEscrows[jobId];
+        if (leftover > validatorReward) {
+            uint256 surplus = leftover - validatorReward;
+            jobEscrows[jobId] = validatorReward;
+            operatorRewardPool += surplus;
+            emit RewardPoolUpdated(operatorRewardPool);
+        }
+
         if (payout > 0) {
             token.safeTransfer(agent, payout);
             emit RewardPaid(jobId, agent, payout);
@@ -1095,6 +1122,34 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (burnAmount > 0) {
             token.safeTransfer(employer, burnAmount);
         }
+    }
+
+    /// @notice fund the operator reward pool
+    /// @param amount token amount with 18 decimals to add
+    function fundOperatorRewardPool(uint256 amount)
+        external
+        onlyGovernance
+        whenNotPaused
+        nonReentrant
+    {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        operatorRewardPool += amount;
+        emit RewardPoolUpdated(operatorRewardPool);
+    }
+
+    /// @notice withdraw tokens from the operator reward pool
+    /// @param to recipient of the tokens
+    /// @param amount token amount with 18 decimals to withdraw
+    function withdrawOperatorRewardPool(address to, uint256 amount)
+        external
+        onlyGovernance
+        whenNotPaused
+        nonReentrant
+    {
+        if (operatorRewardPool < amount) revert InsufficientRewardPool();
+        operatorRewardPool -= amount;
+        token.safeTransfer(to, amount);
+        emit RewardPoolUpdated(operatorRewardPool);
     }
 
     /// @notice Distribute validator rewards evenly using the ValidationModule
