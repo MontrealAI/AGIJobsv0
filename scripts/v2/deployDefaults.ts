@@ -1,14 +1,22 @@
 import { ethers, run } from 'hardhat';
 import { AGIALPHA_DECIMALS } from '../constants';
 
+// Helper to verify a contract on Etherscan (skips if API key not provided)
 async function verify(address: string, args: any[] = []) {
+  if (!process.env.ETHERSCAN_API_KEY) {
+    console.warn(
+      `Skipping Etherscan verification for ${address} (no API key set).`,
+    );
+    return;
+  }
   try {
     await run('verify:verify', {
       address,
       constructorArguments: args,
     });
+    console.log(`\u2713 Verified contract at ${address}`);
   } catch (err) {
-    console.error(`verification failed for ${address}`, err);
+    console.error(`Verification failed for ${address}:`, err);
   }
 }
 
@@ -21,13 +29,14 @@ async function main() {
       ? process.argv[governanceArgIndex + 1]
       : owner.address;
 
+  // Deploy the Deployer contract which orchestrates module deployment
   const Deployer = await ethers.getContractFactory(
-    'contracts/v2/Deployer.sol:Deployer'
+    'contracts/v2/Deployer.sol:Deployer',
   );
   const deployer = await Deployer.deploy();
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
-  console.log('Deployer', deployerAddress);
+  console.log('Deployer deployed at', deployerAddress);
 
   const ids = {
     ens: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
@@ -38,6 +47,7 @@ async function main() {
     agentMerkleRoot: ethers.ZeroHash,
   };
 
+  // Deploy all modules using the Deployer contract (single transaction)
   const tx = withTax
     ? await deployer.deployDefaults(ids, governance)
     : await deployer.deployDefaultsWithoutTaxPolicy(ids, governance);
@@ -46,7 +56,7 @@ async function main() {
   const decoded = deployer.interface.decodeEventLog(
     'Deployed',
     log.data,
-    log.topics
+    log.topics,
   );
 
   const [
@@ -65,47 +75,66 @@ async function main() {
     systemPause,
   ] = decoded as string[];
 
-  await verify(deployerAddress);
+  // Retrieve the ArbitratorCommittee address from the DisputeModule (for verification)
+  const disputeContract = await ethers.getContractAt(
+    'contracts/v2/modules/DisputeModule.sol:DisputeModule',
+    disputeModule,
+  );
+  const committee = await disputeContract.committee();
+
+  // Verify each deployed contract on Etherscan (if API key is available)
+  await verify(deployerAddress); // Deployer has no constructor params
   await verify(stakeManager, [
     ethers.parseUnits('1', AGIALPHA_DECIMALS),
-    0,
-    100,
-    governance,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    governance,
+    0, // _employerSlashPct
+    100, // _treasurySlashPct
+    governance, // _treasury
+    ethers.ZeroAddress, // _jobRegistry
+    ethers.ZeroAddress, // _disputeModule
+    governance, // _timelock
   ]);
   await verify(jobRegistry, [
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
-    5,
-    0,
-    [stakeManager],
+    ethers.ZeroAddress, // _validationModule
+    ethers.ZeroAddress, // _stakeManager
+    ethers.ZeroAddress, // _reputationEngine
+    ethers.ZeroAddress, // _disputeModule
+    ethers.ZeroAddress, // _certificateNFT
+    ethers.ZeroAddress, // _feePool
+    ethers.ZeroAddress, // _taxPolicy
+    5, // _feePct
+    0, // _jobStake
+    [stakeManager], // _acknowledgedModules
   ]);
   await verify(validationModule, [
     jobRegistry,
     stakeManager,
-    86400,
-    86400,
+    86400, // _commitWindow
+    86400, // _revealWindow
     0,
     0,
     [],
   ]);
-  await verify(reputationEngine);
-  await verify(disputeModule, [jobRegistry, 0, 0, governance]);
+  await verify(reputationEngine, [stakeManager]);
+  await verify(disputeModule, [
+    jobRegistry,
+    0, // _disputeFee
+    0, // _disputeWindow
+    ethers.ZeroAddress, // _committee
+  ]);
+  await verify(committee, [jobRegistry, disputeModule]);
   await verify(certificateNFT, ['Cert', 'CERT']);
   await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
   await verify(jobRouter, [platformRegistry]);
   await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
-  await verify(feePool, [stakeManager, 2, governance]);
+  await verify(feePool, [
+    stakeManager,
+    2, // _burnPct
+    governance, // _treasury
+    taxPolicy !== ethers.ZeroAddress ? taxPolicy : ethers.ZeroAddress, // _taxPolicy
+  ]);
   await verify(identityRegistry, [
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
+    ids.ens,
+    ids.nameWrapper,
     reputationEngine,
     ethers.ZeroHash,
     ethers.ZeroHash,
@@ -118,6 +147,7 @@ async function main() {
     platformRegistry,
     feePool,
     reputationEngine,
+    committee,
     governance,
   ]);
   if (withTax) {
@@ -127,7 +157,23 @@ async function main() {
     ]);
   }
 
-  console.log('Deployment complete');
+  console.log('Deployment complete.');
+  console.log('Addresses:');
+  console.log('  StakeManager:', stakeManager);
+  console.log('  ReputationEngine:', reputationEngine);
+  console.log('  IdentityRegistry:', identityRegistry);
+  console.log('  AttestationRegistry:', identityRegistry);
+  console.log('  JobRegistry:', jobRegistry);
+  console.log('  ValidationModule:', validationModule);
+  console.log('  DisputeModule:', disputeModule);
+  console.log('  ArbitratorCommittee:', committee);
+  console.log('  CertificateNFT:', certificateNFT);
+  console.log('  PlatformRegistry:', platformRegistry);
+  console.log('  JobRouter:', jobRouter);
+  console.log('  PlatformIncentives:', platformIncentives);
+  console.log('  FeePool:', feePool);
+  console.log('  TaxPolicy:', taxPolicy);
+  console.log('  SystemPause (governance controller):', systemPause);
 }
 
 main().catch((err) => {
