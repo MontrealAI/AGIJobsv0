@@ -43,6 +43,8 @@ contract MockStakeManager is IStakeManager {
     function release(address, address, uint256) external override {}
     function finalizeJobFunds(bytes32, address, address, uint256, uint256, IFeePool, bool) external override {}
     function distributeValidatorRewards(bytes32, uint256) external override {}
+    function fundOperatorRewardPool(uint256) external override {}
+    function withdrawOperatorRewardPool(address, uint256) external override {}
     function setDisputeModule(address module) external override {
         disputeModule = module;
     }
@@ -108,6 +110,10 @@ contract MockStakeManager is IStakeManager {
 
     function token() external pure override returns (IERC20) {
         return IERC20(address(0));
+    }
+
+    function operatorRewardPool() external pure override returns (uint256) {
+        return 0;
     }
 
     // legacy helper for tests

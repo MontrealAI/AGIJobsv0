@@ -25,6 +25,8 @@ interface IStakeManager {
     /// @notice Emitted when an employer finalizes a job's funds.
     /// @dev Signals that any subsequent burn events stem from employer action.
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
+    /// @notice Emitted when the operator reward pool balance changes.
+    event RewardPoolUpdated(uint256 balance);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
@@ -116,6 +118,12 @@ interface IStakeManager {
         bool byGovernance
     ) external;
 
+    /// @notice fund the operator reward pool
+    function fundOperatorRewardPool(uint256 amount) external;
+
+    /// @notice withdraw tokens from the operator reward pool
+    function withdrawOperatorRewardPool(address to, uint256 amount) external;
+
     /// @notice distribute validator rewards among selected validators
     ///         weighted by their NFT multipliers
     function distributeValidatorRewards(bytes32 jobId, uint256 amount) external;
@@ -125,6 +133,9 @@ interface IStakeManager {
 
     /// @notice ERC20 token used for staking operations
     function token() external view returns (IERC20);
+
+    /// @notice current balance of the operator reward pool
+    function operatorRewardPool() external view returns (uint256);
 
     /// @notice set the dispute module authorized to manage dispute fees
     function setDisputeModule(address module) external;
