@@ -8,6 +8,7 @@ Holds platform fees and distributes rewards.
 - `contribute(uint256 amount)` – anyone can add to the reward pool.
 - `distributeFees()` – move accumulated fees to the reward pool and burn portion.
 - `claimRewards()` – stakers claim their share of rewards.
+- `boostedStake(address user)` – view a staker's balance multiplied by any NFT payout bonus.
 - `governanceWithdraw(address to, uint256 amount)` – governance timelock emergency withdrawal.
 - `setStakeManager(address manager)` – owner wires modules.
 - `setRewardRole(uint8 role)` – choose which stakers earn rewards.
