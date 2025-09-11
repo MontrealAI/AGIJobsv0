@@ -1,27 +1,29 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
 import { verifyEnsSubdomain } from '../lib/ens';
+import { useError } from '../lib/error';
 
 export default function AttestPage() {
   const [name, setName] = useState('');
   const [role, setRole] = useState('0');
   const [who, setWho] = useState('');
   const [message, setMessage] = useState('');
+  const { setError } = useError();
 
   async function send(action: 'attest' | 'revoke') {
     try {
       if (!(window as any).ethereum) {
-        alert('wallet not found');
+        setError('wallet not found');
         return;
       }
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
       const addr = await signer.getAddress();
       const warning = await verifyEnsSubdomain(provider, addr);
-      if (warning) alert(warning);
+      if (warning) setError(warning);
       const registryAddr = process.env.NEXT_PUBLIC_ATTESTATION_ADDRESS;
       if (!registryAddr) {
-        alert('attestation registry not configured');
+        setError('attestation registry not configured');
         return;
       }
       const abi = [
