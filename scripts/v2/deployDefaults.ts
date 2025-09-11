@@ -1,14 +1,22 @@
 import { ethers, run } from 'hardhat';
 import { AGIALPHA_DECIMALS } from '../constants';
 
+// Helper to verify a contract on Etherscan (skips if API key not provided)
 async function verify(address: string, args: any[] = []) {
+  if (!process.env.ETHERSCAN_API_KEY) {
+    console.warn(
+      `Skipping Etherscan verification for ${address} (no API key set).`
+    );
+    return;
+  }
   try {
     await run('verify:verify', {
       address,
       constructorArguments: args,
     });
+    console.log(`✓ Verified contract at ${address}`);
   } catch (err) {
-    console.error(`verification failed for ${address}`, err);
+    console.error(`Verification failed for ${address}:`, err);
   }
 }
 
@@ -27,7 +35,7 @@ async function main() {
   const deployer = await Deployer.deploy();
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
-  console.log('Deployer', deployerAddress);
+  console.log('Deployer deployed at', deployerAddress);
 
   const ids = {
     ens: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
@@ -42,11 +50,11 @@ async function main() {
     ? await deployer.deployDefaults(ids, governance)
     : await deployer.deployDefaultsWithoutTaxPolicy(ids, governance);
   const receipt = await tx.wait();
-  const log = receipt.logs.find((l) => l.address === deployerAddress)!;
+  const log = receipt.logs.find((l) => l.address === deployerAddress);
   const decoded = deployer.interface.decodeEventLog(
     'Deployed',
-    log.data,
-    log.topics
+    log!.data,
+    log!.topics
   );
 
   const [
@@ -64,6 +72,13 @@ async function main() {
     identityRegistry,
     systemPause,
   ] = decoded as string[];
+
+  // Retrieve the ArbitratorCommittee address for verification
+  const disputeContract = await ethers.getContractAt(
+    'contracts/v2/modules/DisputeModule.sol:DisputeModule',
+    disputeModule
+  );
+  const committee = await disputeContract.committee();
 
   await verify(deployerAddress);
   await verify(stakeManager, [
@@ -96,16 +111,22 @@ async function main() {
     0,
     [],
   ]);
-  await verify(reputationEngine);
-  await verify(disputeModule, [jobRegistry, 0, 0, governance]);
+  await verify(reputationEngine, [stakeManager]);
+  await verify(disputeModule, [jobRegistry, 0, 0, ethers.ZeroAddress]);
+  await verify(committee, [jobRegistry, disputeModule]);
   await verify(certificateNFT, ['Cert', 'CERT']);
   await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
   await verify(jobRouter, [platformRegistry]);
   await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
-  await verify(feePool, [stakeManager, 2, governance]);
+  await verify(feePool, [
+    stakeManager,
+    2,
+    governance,
+    taxPolicy !== ethers.ZeroAddress ? taxPolicy : ethers.ZeroAddress,
+  ]);
   await verify(identityRegistry, [
-    ethers.ZeroAddress,
-    ethers.ZeroAddress,
+    ids.ens,
+    ids.nameWrapper,
     reputationEngine,
     ethers.ZeroHash,
     ethers.ZeroHash,
@@ -118,6 +139,7 @@ async function main() {
     platformRegistry,
     feePool,
     reputationEngine,
+    committee,
     governance,
   ]);
   if (withTax) {
@@ -127,7 +149,23 @@ async function main() {
     ]);
   }
 
-  console.log('Deployment complete');
+  console.log('Deployment complete.');
+  console.log('Addresses:');
+  console.log('  StakeManager:', stakeManager);
+  console.log('  ReputationEngine:', reputationEngine);
+  console.log('  IdentityRegistry:', identityRegistry);
+  console.log('  AttestationRegistry:', identityRegistry);
+  console.log('  JobRegistry:', jobRegistry);
+  console.log('  ValidationModule:', validationModule);
+  console.log('  DisputeModule:', disputeModule);
+  console.log('  ArbitratorCommittee:', committee);
+  console.log('  CertificateNFT:', certificateNFT);
+  console.log('  PlatformRegistry:', platformRegistry);
+  console.log('  JobRouter:', jobRouter);
+  console.log('  PlatformIncentives:', platformIncentives);
+  console.log('  FeePool:', feePool);
+  console.log('  TaxPolicy:', taxPolicy);
+  console.log('  SystemPause (governance controller):', systemPause);
 }
 
 main().catch((err) => {

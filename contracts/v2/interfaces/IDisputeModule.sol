@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.29;
 
 /// @title IDisputeModule
 /// @notice Minimal interface for the dispute module used by the arbitrator committee.
