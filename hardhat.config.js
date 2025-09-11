@@ -6,6 +6,10 @@ module.exports = {
   solidity: {
     compilers: [
       {
+        version: '0.8.29',
+        settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
+      },
+      {
         version: '0.8.25',
         settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
       },
@@ -18,7 +22,17 @@ module.exports = {
         settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
       },
     ],
-  },
+      overrides: {
+        'contracts/legacy/**/*.sol': {
+          version: '0.8.21',
+          settings: { optimizer: { enabled: true, runs: 200 }, viaIR: false },
+        },
+        'contracts/**/*.sol': {
+          version: '0.8.25',
+          settings: { optimizer: { enabled: true, runs: 200 }, viaIR: false },
+        },
+      },
+    },
   paths: {
     sources: './contracts',
   },
