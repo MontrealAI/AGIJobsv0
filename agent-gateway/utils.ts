@@ -82,8 +82,15 @@ export function sweepStaleJobs(now = Date.now()): void {
     }
   }
 }
-export function startSweeper(): void {
-  setInterval(() => sweepStaleJobs(), SWEEP_INTERVAL_MS);
+let sweeperInterval: NodeJS.Timeout;
+
+export function startSweeper(): NodeJS.Timeout {
+  sweeperInterval = setInterval(() => sweepStaleJobs(), SWEEP_INTERVAL_MS);
+  return sweeperInterval;
+}
+
+export function stopSweeper(): void {
+  if (sweeperInterval) clearInterval(sweeperInterval);
 }
 const finalizeTimers = new Map<string, NodeJS.Timeout>();
 const expiryTimers = new Map<string, NodeJS.Timeout>();

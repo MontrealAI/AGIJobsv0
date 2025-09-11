@@ -7,6 +7,7 @@ import {
   PORT,
   walletManager,
   startSweeper,
+  stopSweeper,
 } from './utils';
 import { registerEvents } from './events';
 
@@ -34,6 +35,20 @@ async function startGateway(): Promise<void> {
 }
 
 startGateway();
+
+function shutdown(): void {
+  console.log('Shutting down agent gateway...');
+  if (wss) wss.close();
+  stopSweeper();
+  if (server) {
+    server.close(() => process.exit(0));
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 export { app };
 export const getServer = () => server;
