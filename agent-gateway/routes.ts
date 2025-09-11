@@ -96,12 +96,12 @@ app.post(
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
-      const warning = await checkEnsSubdomain(wallet.address);
+      await checkEnsSubdomain(wallet.address);
       const tx = await (registry as any)
         .connect(wallet)
         .applyForJob(req.params.id, '', '0x');
       await tx.wait();
-      res.json(warning ? { tx: tx.hash, warning } : { tx: tx.hash });
+      res.json({ tx: tx.hash });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -117,13 +117,13 @@ app.post(
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
-      const warning = await checkEnsSubdomain(wallet.address);
+      await checkEnsSubdomain(wallet.address);
       const hash = ethers.id(result || '');
       const tx = await (registry as any)
         .connect(wallet)
         .submit(req.params.id, hash, result || '', '', '0x');
       await tx.wait();
-      res.json(warning ? { tx: tx.hash, warning } : { tx: tx.hash });
+      res.json({ tx: tx.hash });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
