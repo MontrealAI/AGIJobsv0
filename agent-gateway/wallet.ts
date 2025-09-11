@@ -1,7 +1,10 @@
-const { ethers } = require('ethers');
+import { ethers, Wallet, JsonRpcProvider } from 'ethers';
 
-class WalletManager {
-  constructor(keys, provider) {
+export default class WalletManager {
+  private provider: JsonRpcProvider;
+  private wallets: Map<string, Wallet>;
+
+  constructor(keys: string, provider: JsonRpcProvider) {
     this.provider = provider;
     this.wallets = new Map();
     if (keys) {
@@ -16,14 +19,12 @@ class WalletManager {
     }
   }
 
-  get(address) {
+  get(address?: string): Wallet | undefined {
     if (!address) return undefined;
     return this.wallets.get(address.toLowerCase());
   }
 
-  list() {
+  list(): string[] {
     return Array.from(this.wallets.values()).map((w) => w.address);
   }
 }
-
-module.exports = WalletManager;
