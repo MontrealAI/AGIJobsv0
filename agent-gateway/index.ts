@@ -15,26 +15,24 @@ let server: http.Server;
 let wss: WebSocketServer;
 
 async function startGateway(): Promise<void> {
-  try {
-    await verifyTokenDecimals();
-    await initWallets();
+  await verifyTokenDecimals();
+  await initWallets();
 
-    server = http.createServer(app);
-    wss = new WebSocketServer({ server });
-    registerEvents(wss);
-    startSweeper();
+  server = http.createServer(app);
+  wss = new WebSocketServer({ server });
+  registerEvents(wss);
+  startSweeper();
 
-    server.listen(PORT, () => {
-      console.log(`Agent gateway listening on port ${PORT}`);
-      console.log('Wallets:', walletManager.list());
-    });
-  } catch (err) {
-    console.error('Gateway startup failed', err);
-    process.exit(1);
-  }
+  server.listen(PORT, () => {
+    console.log(`Agent gateway listening on port ${PORT}`);
+    console.log('Wallets:', walletManager.list());
+  });
 }
 
-startGateway();
+startGateway().catch((err) => {
+  console.error('Gateway startup failed', err);
+  process.exit(1);
+});
 
 function shutdown(): void {
   console.log('Shutting down agent gateway...');
