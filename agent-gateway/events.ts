@@ -11,6 +11,8 @@ import {
   agents,
   pendingJobs,
   TOKEN_DECIMALS,
+  cleanupJob,
+  jobTimestamps,
 } from './utils';
 import { Job } from './types';
 
@@ -37,6 +39,7 @@ export function registerEvents(wss: WebSocketServer): void {
         fee: ethers.formatUnits(fee, TOKEN_DECIMALS),
       };
       jobs.set(job.jobId, job);
+      jobTimestamps.set(job.jobId, Date.now());
       broadcast(wss, { type: 'JobCreated', job });
       dispatch(wss, job);
       console.log('JobCreated', job);
@@ -64,6 +67,17 @@ export function registerEvents(wss: WebSocketServer): void {
       });
       scheduleFinalize(id);
       console.log('JobSubmitted', id);
+    }
+  );
+
+  registry.on(
+    'JobCompleted',
+    (jobId: ethers.BigNumberish, success: boolean) => {
+      const id = jobId.toString();
+      broadcast(wss, { type: 'JobCompleted', jobId: id, success });
+      cleanupJob(id);
+      jobTimestamps.delete(id);
+      console.log('JobCompleted', id, success);
     }
   );
 
