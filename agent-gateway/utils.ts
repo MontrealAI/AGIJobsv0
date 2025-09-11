@@ -166,9 +166,8 @@ export async function initWallets(): Promise<void> {
       const [first] = walletManager.list();
       if (first) automationWallet = walletManager.get(first);
     }
-  } catch (err) {
-    console.error('Failed to initialize wallets', err);
-    throw err;
+  } catch (err: any) {
+    throw new Error(`Failed to initialize wallets: ${err.message}`);
   }
 }
 
