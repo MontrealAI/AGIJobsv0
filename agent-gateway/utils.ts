@@ -93,8 +93,7 @@ export let automationWallet: Wallet | undefined;
 
 export async function loadWalletKeys(retry = true): Promise<string[]> {
   if (!KEYSTORE_URL) {
-    console.error('KEYSTORE_URL is required to load wallet keys.');
-    process.exit(1);
+    throw new Error('KEYSTORE_URL is required to load wallet keys.');
   }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -115,19 +114,23 @@ export async function loadWalletKeys(retry = true): Promise<string[]> {
       console.warn('Keystore request timed out, retrying once...');
       return loadWalletKeys(false);
     }
-    console.error('Failed to load wallet keys', err);
-    process.exit(1);
+    throw new Error(`Failed to load wallet keys: ${err.message}`);
   }
 }
 
 export async function initWallets(): Promise<void> {
-  const keys = await loadWalletKeys();
-  walletManager = new WalletManager(keys.join(','), provider);
-  if (BOT_WALLET) {
-    automationWallet = walletManager.get(BOT_WALLET);
-  } else {
-    const [first] = walletManager.list();
-    if (first) automationWallet = walletManager.get(first);
+  try {
+    const keys = await loadWalletKeys();
+    walletManager = new WalletManager(keys.join(','), provider);
+    if (BOT_WALLET) {
+      automationWallet = walletManager.get(BOT_WALLET);
+    } else {
+      const [first] = walletManager.list();
+      if (first) automationWallet = walletManager.get(first);
+    }
+  } catch (err) {
+    console.error('Failed to initialize wallets', err);
+    throw err;
   }
 }
 
