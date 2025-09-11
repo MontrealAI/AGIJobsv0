@@ -1,5 +1,14 @@
 const Deployer = artifacts.require('Deployer');
 
+/**
+ * Truffle migration for deploying the full AGIJobs v2 stack.
+ *
+ * Environment variables:
+ *  - GOVERNANCE_ADDRESS : multisig/timelock that will own the system
+ *  - NO_TAX             : set to any value to skip TaxPolicy deployment
+ *  - FEE_PCT            : protocol fee percentage (default 5)
+ *  - BURN_PCT           : fee burn percentage (default 5)
+ */
 module.exports = async function (deployer, network, accounts) {
   const governance = process.env.GOVERNANCE_ADDRESS || accounts[0];
   const withTax = !process.env.NO_TAX;
@@ -9,6 +18,7 @@ module.exports = async function (deployer, network, accounts) {
   await deployer.deploy(Deployer);
   const instance = await Deployer.deployed();
 
+  // Mainnet ENS registry, NameWrapper and AGIJobs subdomain roots
   const ids = {
     ens: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
     nameWrapper: '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',
