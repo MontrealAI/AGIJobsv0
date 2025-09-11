@@ -1,0 +1,8 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+[dotenv@17.2.2] injecting env (2) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Error HH305: Unrecognized param --
+
+HardhatError: HH305: Unrecognized param --
+    at ArgumentsParser._parseTaskParamArguments (/workspace/AGIJobsv0/node_modules/hardhat/src/internal/cli/ArgumentsParser.ts:207:15)
+    at ArgumentsParser.parseTaskArguments (/workspace/AGIJobsv0/node_modules/hardhat/src/internal/cli/ArgumentsParser.ts:181:12)
+    at main (/workspace/AGIJobsv0/node_modules/hardhat/src/internal/cli/cli.ts:316:39)
