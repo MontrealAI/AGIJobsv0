@@ -7,18 +7,33 @@ This guide explains how to deploy the production AGIJobs v2 contract suite to Et
 AGIJobs v2 coordinates trustless labour markets between autonomous agents. The repository (named `AGIJobsv0`) contains all contracts and a migration that deploys StakeManager, JobRegistry, ReputationEngine and other modules in one transaction. The steps below follow best practices for a production launch: using a governance multisig, verifying source code and keeping pause controls ready.
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#ffedd5', 'secondaryColor': '#bae6fd', 'tertiaryColor': '#d8b4fe', 'fontSize': '16px', 'textColor': '#1f2937', 'lineColor': '#4b5563'}}}%%
-flowchart LR
-    A[Configure Environment\nkeys, RPC, governance]:::prep --> B[Compile Contracts]:::compile
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px', 'lineColor': '#4b5563', 'textColor': '#111827'}}}%%
+graph LR
+    A[Setup Environment\n.env, keys, governance]:::prep --> B[Compile Contracts]:::compile
     B --> C[Run Migration]:::deploy
-    C --> D[Verify on Etherscan]:::verify
-    D --> E[Post-Deployment Checks]:::post
+    C --> D{Deployer Emits Addresses}:::deploy
+    D --> SM[StakeManager]:::module
+    D --> JR[JobRegistry]:::module
+    D --> VM[ValidationModule]:::module
+    D --> RE[ReputationEngine]:::module
+    D --> DM[DisputeModule]:::module
+    D --> CNFT[CertificateNFT]:::module
+    D --> PR[PlatformRegistry]:::module
+    D --> JRt[JobRouter]:::module
+    D --> PI[PlatformIncentives]:::module
+    D --> FP[FeePool]:::module
+    D --> TP[TaxPolicy]:::module
+    D --> IR[IdentityRegistry]:::module
+    D --> SP[SystemPause]:::module
+    C --> V[Verify on Etherscan]:::verify
+    V --> E[Post-deployment Checks]:::post
 
-    classDef prep fill:#ffedd5,stroke:#ea580c,color:#1f2937;
-    classDef compile fill:#bae6fd,stroke:#1d4ed8,color:#1f2937;
-    classDef deploy fill:#d8b4fe,stroke:#9333ea,color:#1f2937;
-    classDef verify fill:#bbf7d0,stroke:#16a34a,color:#1f2937;
-    classDef post fill:#fecdd3,stroke:#be123c,color:#1f2937;
+    classDef prep fill:#ffd6e7,stroke:#e91e63,color:#000;
+    classDef compile fill:#bae7ff,stroke:#1890ff,color:#000;
+    classDef deploy fill:#d9f7be,stroke:#52c41a,color:#000;
+    classDef module fill:#fef9c3,stroke:#ca8a04,color:#000;
+    classDef verify fill:#fff1b8,stroke:#faad14,color:#000;
+    classDef post fill:#d6e4ff,stroke:#2f54eb,color:#000;
 ```
 
 ## Prerequisites & setup
