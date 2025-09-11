@@ -10,7 +10,8 @@
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",
     "test": "npx hardhat test",
-    "gateway": "node agent-gateway/index.js",
+    "gateway": "npm run build:gateway && node agent-gateway/dist/index.js",
+    "build:gateway": "tsc -p agent-gateway/tsconfig.json",
     "format": "prettier --write \"**/*.{js,ts,md}\"",
     "format:check": "prettier --check \"**/*.{js,ts,md}\""
   },
@@ -30,7 +31,10 @@
     "prettier": "^2.8.8",
     "solhint": "^6.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@types/express": "^4.17.21",
+    "@types/ws": "^8.5.10",
+    "@types/node": "^20.12.12"
   },
   "dependencies": {
     "@prb/math": "^4.0.1",
