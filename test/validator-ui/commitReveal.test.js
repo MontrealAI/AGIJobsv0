@@ -1,5 +1,9 @@
 require('ts-node').register({
-  project: require('path').resolve(__dirname, '../../apps/validator-ui/tsconfig.json'),
+  project: require('path').resolve(
+    __dirname,
+    '../../apps/validator-ui/tsconfig.json'
+  ),
+  compilerOptions: { module: 'commonjs' },
 });
 const { expect } = require('chai');
 const { ethers } = require('hardhat');

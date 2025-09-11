@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ethers, Contract, TransactionResponse } from 'ethers';
 
 export function generateCommit(
