@@ -5,6 +5,45 @@ contracts to Ethereum mainnet using the Truffle CLI. It assumes you are
 deploying the canonical $AGIALPHA stack and want all modules wired together
 in one transaction.
 
+## Deployment flow
+
+```mermaid
+flowchart LR
+    A[Env setup] --> B[Compile]
+    B --> C[Migrate]
+    C --> D[Deployer]
+    D --> E[StakeManager]
+    D --> F[JobRegistry]
+    D --> G[ValidationModule]
+    D --> H[ReputationEngine]
+    D --> I[DisputeModule]
+    D --> J[CertificateNFT]
+    D --> K[PlatformRegistry]
+    D --> L[JobRouter]
+    D --> M[PlatformIncentives]
+    D --> N[FeePool]
+    D --> O[IdentityRegistry]
+    D --> P[SystemPause]
+    D --> Q[TaxPolicy]
+    style A fill:#ffedd5,stroke:#f97316,stroke-width:2px
+    style B fill:#d1fae5,stroke:#059669,stroke-width:2px
+    style C fill:#fde68a,stroke:#d97706,stroke-width:2px
+    style D fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px
+    style E fill:#bae6fd,stroke:#0284c7
+    style F fill:#fecdd3,stroke:#be123c
+    style G fill:#bbf7d0,stroke:#15803d
+    style H fill:#f5d0fe,stroke:#a855f7
+    style I fill:#fecaca,stroke:#dc2626
+    style J fill:#fef9c3,stroke:#ca8a04
+    style K fill:#ddd6fe,stroke:#7c3aed
+    style L fill:#ccfbf1,stroke:#0d9488
+    style M fill:#ffd7ba,stroke:#ea580c
+    style N fill:#a5f3fc,stroke:#0ea5e9
+    style O fill:#fef3c7,stroke:#ca8a04
+    style P fill:#fde68a,stroke:#b45309
+    style Q fill:#e0f2fe,stroke:#0369a1
+```
+
 ## Prerequisites
 
 1. **Node & npm** – Use Node 20.x and npm 10+. A matching `nvm` version is
@@ -21,11 +60,11 @@ in one transaction.
    ```
 4. **Ethereum access** – An RPC endpoint (Infura/Alchemy etc.) and a deployer
    private key with enough ETH.
- 5. **Governance address** – Multisig or timelock that will own the system.
- 6. **Etherscan API key** – Enables automatic verification.
- 7. **Dry-run** – Always run the migration on a public testnet (e.g. Sepolia)
-    with the same environment variables to confirm gas usage and wiring
-    before attempting a mainnet deployment.
+5. **Governance address** – Multisig or timelock that will own the system.
+6. **Etherscan API key** – Enables automatic verification.
+7. **Dry-run** – Always run the migration on a public testnet (e.g. Sepolia)
+   with the same environment variables to confirm gas usage and wiring
+   before attempting a mainnet deployment.
 
 ## Environment variables
 
