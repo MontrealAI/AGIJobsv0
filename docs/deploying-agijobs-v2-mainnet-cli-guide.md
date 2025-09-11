@@ -7,23 +7,23 @@ This guide explains how to deploy the production AGIJobs v2 contract suite to Et
 AGIJobs v2 coordinates trustless labour markets between autonomous agents. The repository (named `AGIJobsv0`) contains all contracts and a migration that deploys StakeManager, JobRegistry, ReputationEngine and other modules in one transaction. The steps below follow best practices for a production launch: using a governance multisig, verifying source code and keeping pause controls ready.
 
 ```mermaid
-%%{init: {'theme':'forest', 'themeVariables': { 'primaryColor': '#ffecd1', 'secondaryColor': '#c1fba4', 'tertiaryColor': '#a7f3d0', 'fontSize': '16px', 'textColor': '#1f2937', 'lineColor': '#4b5563'}}}%%
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#ffedd5', 'secondaryColor': '#bae6fd', 'tertiaryColor': '#d8b4fe', 'fontSize': '16px', 'textColor': '#1f2937', 'lineColor': '#4b5563'}}}%%
 flowchart LR
     A[Configure Environment\nkeys, RPC, governance]:::prep --> B[Compile Contracts]:::compile
     B --> C[Run Migration]:::deploy
     C --> D[Verify on Etherscan]:::verify
     D --> E[Post-Deployment Checks]:::post
 
-    classDef prep fill:#ffecd1,stroke:#d97706,color:#1f2937;
-    classDef compile fill:#c1fba4,stroke:#16a34a,color:#1f2937;
-    classDef deploy fill:#a7f3d0,stroke:#0d9488,color:#1f2937;
-    classDef verify fill:#bfdbfe,stroke:#1d4ed8,color:#1f2937;
-    classDef post fill:#e9d5ff,stroke:#7c3aed,color:#1f2937;
+    classDef prep fill:#ffedd5,stroke:#ea580c,color:#1f2937;
+    classDef compile fill:#bae6fd,stroke:#1d4ed8,color:#1f2937;
+    classDef deploy fill:#d8b4fe,stroke:#9333ea,color:#1f2937;
+    classDef verify fill:#bbf7d0,stroke:#16a34a,color:#1f2937;
+    classDef post fill:#fecdd3,stroke:#be123c,color:#1f2937;
 ```
 
 ## Prerequisites & setup
 
-- **Node & npm** – install Node.js 20.x and npm 10+. The repo includes an `.nvmrc` to help match versions.
+- **Node & npm** – install Node.js 20.x and npm 10+. Run `nvm use` to match the version in `.nvmrc`.
 - **Repository** – clone `MontrealAI/AGIJobsv0` and install dependencies plus Truffle tooling:
   ```bash
   git clone https://github.com/MontrealAI/AGIJobsv0.git
@@ -38,6 +38,7 @@ flowchart LR
   export GOVERNANCE_ADDRESS="0x<multisig_or_timelock>"
   export ETHERSCAN_API_KEY="<key>"
   ```
+- **Secrets** – never commit private keys or `.env` files to version control.
 - **Funding** – ensure the deployer account holds sufficient ETH to cover gas for all contract creations.
 - **Token & ENS** – `$AGIALPHA` lives at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`. Ensure you control `agi.eth` if enforcing ENS subdomains or adjust the migration.
 - **Dry‑run** – test the process on a public testnet (Sepolia/Goerli) before mainnet to confirm gas usage and environment variables.
@@ -152,7 +153,7 @@ npx truffle compile
 Run the migration to deploy and wire all modules. By default it uses a 5% protocol fee and burn and includes the TaxPolicy module. Set `NO_TAX=1` to omit it or override economics with `FEE_PCT` and `BURN_PCT`.
 
 ```bash
-npx truffle migrate --network mainnet
+npx truffle migrate --f 2 --to 2 --network mainnet
 ```
 
 The script prints the address of every module (StakeManager, JobRegistry, ValidationModule, ReputationEngine, DisputeModule, CertificateNFT, PlatformRegistry, JobRouter, PlatformIncentives, FeePool, [TaxPolicy,] IdentityRegistry and SystemPause). Save this output.
