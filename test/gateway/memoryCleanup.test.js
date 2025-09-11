@@ -58,8 +58,14 @@ describe('memory cleanup', function () {
   });
 
   it('clears timers on cleanupJob', () => {
-    utils.expiryTimers.set('1', setTimeout(() => {}, 1000));
-    utils.finalizeTimers.set('1', setTimeout(() => {}, 1000));
+    utils.expiryTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+    utils.finalizeTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
 
     utils.cleanupJob('1');
 
@@ -68,8 +74,14 @@ describe('memory cleanup', function () {
   });
 
   it('clears timers on expireJob', async () => {
-    utils.expiryTimers.set('1', setTimeout(() => {}, 1000));
-    utils.finalizeTimers.set('1', setTimeout(() => {}, 1000));
+    utils.expiryTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+    utils.finalizeTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
 
     utils.automationWallet = undefined;
     await utils.expireJob('1');
@@ -79,8 +91,14 @@ describe('memory cleanup', function () {
   });
 
   it('clears timers on finalizeJob', async () => {
-    utils.expiryTimers.set('1', setTimeout(() => {}, 1000));
-    utils.finalizeTimers.set('1', setTimeout(() => {}, 1000));
+    utils.expiryTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+    utils.finalizeTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
 
     utils.automationWallet = undefined;
     await utils.finalizeJob('1');
