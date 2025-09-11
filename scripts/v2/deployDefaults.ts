@@ -14,12 +14,28 @@ async function verify(address: string, args: any[] = []) {
 
 async function main() {
   const [owner] = await ethers.getSigners();
-  const withTax = !process.argv.includes('--no-tax');
-  const governanceArgIndex = process.argv.indexOf('--governance');
+  const args = process.argv.slice(2);
+  const withTax = !args.includes('--no-tax');
+  const governanceArgIndex = args.indexOf('--governance');
   const governance =
-    governanceArgIndex !== -1
-      ? process.argv[governanceArgIndex + 1]
-      : owner.address;
+    governanceArgIndex !== -1 ? args[governanceArgIndex + 1] : owner.address;
+
+  const feeArgIndex = args.indexOf('--fee');
+  const burnArgIndex = args.indexOf('--burn');
+  const feePct = feeArgIndex !== -1 ? Number(args[feeArgIndex + 1]) : 5;
+  const burnPct = burnArgIndex !== -1 ? Number(args[burnArgIndex + 1]) : 5;
+  const customEcon = feeArgIndex !== -1 || burnArgIndex !== -1;
+
+  const econ = {
+    feePct: feeArgIndex !== -1 ? feePct : 0,
+    burnPct: burnArgIndex !== -1 ? burnPct : 0,
+    employerSlashPct: 0,
+    treasurySlashPct: 0,
+    commitWindow: 0,
+    revealWindow: 0,
+    minStake: 0,
+    jobStake: 0,
+  };
 
   const Deployer = await ethers.getContractFactory(
     'contracts/v2/Deployer.sol:Deployer'
@@ -39,7 +55,11 @@ async function main() {
   };
 
   const tx = withTax
-    ? await deployer.deployDefaults(ids, governance)
+    ? customEcon
+      ? await deployer.deploy(econ, ids, governance)
+      : await deployer.deployDefaults(ids, governance)
+    : customEcon
+    ? await deployer.deployWithoutTaxPolicy(econ, ids, governance)
     : await deployer.deployDefaultsWithoutTaxPolicy(ids, governance);
   const receipt = await tx.wait();
   const log = receipt.logs.find((l) => l.address === deployerAddress)!;
@@ -83,7 +103,7 @@ async function main() {
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
-    5,
+    feePct,
     0,
     [stakeManager],
   ]);
@@ -102,7 +122,12 @@ async function main() {
   await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
   await verify(jobRouter, [platformRegistry]);
   await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);
-  await verify(feePool, [stakeManager, 2, governance]);
+  await verify(feePool, [
+    stakeManager,
+    burnPct,
+    ethers.ZeroAddress,
+    withTax ? taxPolicy : ethers.ZeroAddress,
+  ]);
   await verify(identityRegistry, [
     ethers.ZeroAddress,
     ethers.ZeroAddress,
