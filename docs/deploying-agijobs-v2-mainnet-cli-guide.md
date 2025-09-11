@@ -42,6 +42,32 @@ flowchart LR
 - **Token & ENS** – `$AGIALPHA` lives at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`. Ensure you control `agi.eth` if enforcing ENS subdomains or adjust the migration.
 - **Dry‑run** – test the process on a public testnet (Sepolia/Goerli) before mainnet to confirm gas usage and environment variables.
 
+### Truffle network configuration
+
+`truffle-config.js` consumes these variables to connect to mainnet via `HDWalletProvider` and enables automated source verification:
+
+```javascript
+// truffle-config.js
+module.exports = {
+  networks: {
+    mainnet: {
+      provider: () =>
+        new HDWalletProvider(
+          process.env.MAINNET_PRIVATE_KEY,
+          process.env.MAINNET_RPC_URL
+        ),
+      network_id: 1,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+    },
+  },
+  plugins: ['truffle-plugin-verify'],
+  api_keys: { etherscan: process.env.ETHERSCAN_API_KEY },
+};
+```
+
+
 ## 1. Compile
 
 Truffle uses `truffle-config.js` and the migration at `migrations/2_deploy_agijobs_v2.js`.
