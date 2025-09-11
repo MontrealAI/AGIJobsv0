@@ -14,7 +14,7 @@ const Deployer = artifacts.require('Deployer');
  * After deployment, verify contracts with:
  * `npx truffle run verify Deployer StakeManager JobRegistry ValidationModule ReputationEngine DisputeModule CertificateNFT PlatformRegistry JobRouter PlatformIncentives FeePool IdentityRegistry SystemPause --network mainnet`
  * (include TaxPolicy if deployed)
- * See docs/deploying-agijobs-v2-mainnet-cli-guide.md for full instructions.
+ * See docs/deploying-agijobs-v2-truffle-cli.md for full instructions.
  *
  * Run on a testnet first to confirm configuration before mainnet:
  * `npx truffle migrate --network sepolia`

@@ -45,6 +45,8 @@ The diagram illustrates how the `Deployer` contract fans out into every core mod
 - **Governance multisig/timelock** – export `GOVERNANCE_ADDRESS` with the address that should own the system.
 - **Etherscan key** – set `ETHERSCAN_API_KEY` to automatically verify all contracts.
 - **Optional parameters** – `FEE_PCT`, `BURN_PCT`, or `NO_TAX` can override default economics.
+- **Testnet dry‑run** – always run the migration on a public testnet such as Sepolia with the same environment variables before attempting mainnet.
+- **AGIALPHA token** – the token address and decimals are fixed in `config/agialpha.json` and compiled into the contracts; no extra configuration is required.
 
 Example `.env`:
 
@@ -58,12 +60,35 @@ BURN_PCT=5
 #NO_TAX=1
 ```
 
+### Truffle configuration
+
+`truffle-config.js` reads the environment variables above to configure the mainnet network using `HDWalletProvider`:
+
+```javascript
+// truffle-config.js
+module.exports = {
+  networks: {
+    mainnet: {
+      provider: () =>
+        new HDWalletProvider(
+          process.env.MAINNET_PRIVATE_KEY,
+          process.env.MAINNET_RPC_URL
+        ),
+      network_id: 1,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+    },
+  },
+};
+```
+
 ## Compile
 
-Compile contracts and generate constants:
+Compile contracts:
 
 ```bash
-npm run compile
+npx truffle compile
 ```
 
 ## Deploy
@@ -71,7 +96,13 @@ npm run compile
 Run the migration on mainnet. The script deploys all modules, wires them together and prints each address.
 
 ```bash
-npx truffle migrate --f 2 --to 2 --network mainnet
+npx truffle migrate --network mainnet
+```
+
+Dry‑run first on a testnet with the same parameters:
+
+```bash
+npx truffle migrate --network sepolia
 ```
 
 Set `NO_TAX=1` in the environment to omit the `TaxPolicy` module.
@@ -81,15 +112,20 @@ Set `NO_TAX=1` in the environment to omit the `TaxPolicy` module.
 The migration automatically runs `truffle-plugin-verify`. If any contract fails to verify, rerun:
 
 ```bash
-npx truffle run verify <ContractName> --network mainnet
+npx truffle run verify Deployer StakeManager JobRegistry ValidationModule \
+  ReputationEngine DisputeModule CertificateNFT PlatformRegistry JobRouter \
+  PlatformIncentives FeePool IdentityRegistry SystemPause --network mainnet
 ```
+
+Include `TaxPolicy` at the end if it was deployed.
 
 ## Post-deployment
 
 1. Confirm each module’s owner or governance address matches your multisig.
 2. Keep a record of the printed addresses; they are required for clients and future governance actions.
-3. Use `npm run verify:wiring` to sanity-check that contracts reference one another correctly.
-4. Be prepared to call `SystemPause.pauseAll()` from your governance address in emergencies.
+3. Use `npm run verify:wiring` to sanity‑check that contracts reference one another correctly.
+4. Exercise the `SystemPause` contract to ensure emergency controls work.
+5. Be prepared to call `SystemPause.pauseAll()` from your governance address in emergencies.
 
 ## Migration script
 
