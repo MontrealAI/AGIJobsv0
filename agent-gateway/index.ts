@@ -13,8 +13,11 @@ import { registerEvents } from './events';
 let server: http.Server;
 let wss: WebSocketServer;
 
-Promise.all([verifyTokenDecimals(), initWallets()])
-  .then(() => {
+async function startGateway(): Promise<void> {
+  try {
+    await verifyTokenDecimals();
+    await initWallets();
+
     server = http.createServer(app);
     wss = new WebSocketServer({ server });
     registerEvents(wss);
@@ -24,11 +27,13 @@ Promise.all([verifyTokenDecimals(), initWallets()])
       console.log(`Agent gateway listening on port ${PORT}`);
       console.log('Wallets:', walletManager.list());
     });
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('Gateway startup failed', err);
     process.exit(1);
-  });
+  }
+}
+
+startGateway();
 
 export { app };
 export const getServer = () => server;
