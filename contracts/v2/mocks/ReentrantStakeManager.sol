@@ -114,6 +114,12 @@ contract ReentrantStakeManager is IStakeManager {
         return 0;
     }
 
+    function maxTotalPayoutPct() external pure override returns (uint256) {
+        return 100;
+    }
+
+    function setMaxTotalPayoutPct(uint256) external override {}
+
     function slash(address user, Role role, uint256 amount, address) external override {
         if (attackSlash) {
             attackSlash = false;

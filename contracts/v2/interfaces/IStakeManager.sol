@@ -51,6 +51,7 @@ interface IStakeManager {
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
     event AGITypeRemoved(address indexed nft);
+    event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
@@ -145,6 +146,9 @@ interface IStakeManager {
     /// @notice Current burn percentage applied to rewards
     function burnPct() external view returns (uint256);
 
+    /// @notice Cap on total payout percentage across AGI types
+    function maxTotalPayoutPct() external view returns (uint256);
+
     /// @notice ERC20 token used for staking operations
     function token() external view returns (IERC20);
 
@@ -188,6 +192,7 @@ interface IStakeManager {
     function setTreasuryAllowlist(address _treasury, bool allowed) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
     function setMaxAGITypes(uint256 newMax) external;
+    function setMaxTotalPayoutPct(uint256 newMax) external;
     function addAGIType(address nft, uint256 payoutPct) external;
     function removeAGIType(address nft) external;
     function setFeePct(uint256 pct) external;

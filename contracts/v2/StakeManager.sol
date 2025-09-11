@@ -168,6 +168,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Maximum allowed payout percentage for AGI types (100 = no boost)
     uint256 public constant MAX_PAYOUT_PCT = 200;
 
+    /// @notice Configurable cap on the total payout percentage across all AGI types
+    uint256 public maxTotalPayoutPct = MAX_PAYOUT_PCT;
+
     /// @notice Maximum allowed AGI types to avoid excessive gas
     uint256 public maxAGITypes = MAX_AGI_TYPES_CAP;
 
@@ -181,6 +184,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
     event AGITypeRemoved(address indexed nft);
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
+    event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
@@ -492,6 +496,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit MaxAGITypesUpdated(old, newMax);
     }
 
+    /// @notice Update the maximum total payout percentage across AGI types
+    function setMaxTotalPayoutPct(uint256 newMax) external onlyGovernance {
+        if (newMax < 100 || newMax > MAX_PAYOUT_PCT) revert InvalidPercentage();
+        uint256 old = maxTotalPayoutPct;
+        maxTotalPayoutPct = newMax;
+        emit MaxTotalPayoutPctUpdated(old, newMax);
+    }
+
     /// @notice Add or update an AGI type NFT bonus
     /// @dev `payoutPct` is expressed as a percentage where `100` represents no
     ///      bonus, values above `100` increase the payout and values below `100`
@@ -545,13 +557,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param user Address whose NFTs are checked for a payout boost.
     /// @return pct The highest payout percentage (100 = no boost)
     function getTotalPayoutPct(address user) public view returns (uint256 pct) {
-        uint256 total = 100;
+        uint256 maxPct = 100;
         uint256 length = agiTypes.length;
-        for (uint256 i; i < length;) {
+        for (uint256 i; i < length; ) {
             AGIType memory t = agiTypes[i];
             try IERC721(t.nft).balanceOf(user) returns (uint256 bal) {
-                if (bal > 0) {
-                    total += t.payoutPct - 100;
+                if (bal > 0 && t.payoutPct > maxPct) {
+                    maxPct = t.payoutPct;
                 }
             } catch {
                 // ignore tokens with failing balanceOf
@@ -560,7 +572,10 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 ++i;
             }
         }
-        pct = total;
+        if (maxPct > maxTotalPayoutPct) {
+            maxPct = maxTotalPayoutPct;
+        }
+        pct = maxPct;
     }
 
     // ---------------------------------------------------------------
