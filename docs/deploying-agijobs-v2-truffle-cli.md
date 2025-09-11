@@ -5,19 +5,36 @@ This guide walks through deploying the complete AGIJobs v2 stack to Ethereum mai
 ## Deployment flow
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#d9f7be', 'secondaryColor': '#ffd6e7', 'tertiaryColor': '#bae7ff', 'fontSize': '16px', 'textColor': '#333', 'lineColor': '#555'}}}%%
-graph TD
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px', 'lineColor': '#4b5563', 'textColor': '#111827'}}}%%
+graph LR
     A[Setup Environment\n.env, keys, governance]:::prep --> B[Compile Contracts]:::compile
     B --> C[Run Migration]:::deploy
-    C --> D[Verify on Etherscan]:::verify
-    D --> E[Post-deployment Checks]:::post
+    C --> D{Deployer Emits Addresses}:::deploy
+    D --> SM[StakeManager]:::module
+    D --> JR[JobRegistry]:::module
+    D --> VM[ValidationModule]:::module
+    D --> RE[ReputationEngine]:::module
+    D --> DM[DisputeModule]:::module
+    D --> CNFT[CertificateNFT]:::module
+    D --> PR[PlatformRegistry]:::module
+    D --> JRt[JobRouter]:::module
+    D --> PI[PlatformIncentives]:::module
+    D --> FP[FeePool]:::module
+    D --> TP[TaxPolicy]:::module
+    D --> IR[IdentityRegistry]:::module
+    D --> SP[SystemPause]:::module
+    C --> V[Verify on Etherscan]:::verify
+    V --> E[Post-deployment Checks]:::post
 
     classDef prep fill:#ffd6e7,stroke:#e91e63,color:#000;
     classDef compile fill:#bae7ff,stroke:#1890ff,color:#000;
     classDef deploy fill:#d9f7be,stroke:#52c41a,color:#000;
+    classDef module fill:#fef9c3,stroke:#ca8a04,color:#000;
     classDef verify fill:#fff1b8,stroke:#faad14,color:#000;
     classDef post fill:#d6e4ff,stroke:#2f54eb,color:#000;
 ```
+
+The diagram illustrates how the `Deployer` contract fans out into every core module powering AGIJobs v2.
 
 ## Prerequisites
 
