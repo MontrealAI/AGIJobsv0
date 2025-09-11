@@ -1,7 +1,13 @@
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import app from './routes';
-import { verifyTokenDecimals, initWallets, PORT, walletManager } from './utils';
+import {
+  verifyTokenDecimals,
+  initWallets,
+  PORT,
+  walletManager,
+  startSweeper,
+} from './utils';
 import { registerEvents } from './events';
 
 let server: http.Server;
@@ -12,6 +18,7 @@ Promise.all([verifyTokenDecimals(), initWallets()])
     server = http.createServer(app);
     wss = new WebSocketServer({ server });
     registerEvents(wss);
+    startSweeper();
 
     server.listen(PORT, () => {
       console.log(`Agent gateway listening on port ${PORT}`);

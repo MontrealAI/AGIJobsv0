@@ -61,6 +61,30 @@ export const jobs = new Map<string, Job>();
 export const agents = new Map<string, AgentInfo>();
 export const commits = new Map<string, Record<string, CommitData>>();
 export const pendingJobs = new Map<string, Job[]>();
+export const jobTimestamps = new Map<string, number>();
+export const STALE_JOB_MS = Number(process.env.STALE_JOB_MS || 60 * 60 * 1000); // 1 hour
+const SWEEP_INTERVAL_MS = Number(process.env.SWEEP_INTERVAL_MS || 60 * 1000); // 1 minute
+export function cleanupJob(jobId: string): void {
+  commits.delete(jobId);
+  pendingJobs.forEach((queue, id) => {
+    pendingJobs.set(
+      id,
+      queue.filter((j) => j.jobId !== jobId)
+    );
+  });
+  jobs.delete(jobId);
+}
+export function sweepStaleJobs(now = Date.now()): void {
+  for (const [jobId, ts] of jobTimestamps.entries()) {
+    if (now - ts > STALE_JOB_MS) {
+      cleanupJob(jobId);
+      jobTimestamps.delete(jobId);
+    }
+  }
+}
+export function startSweeper(): void {
+  setInterval(() => sweepStaleJobs(), SWEEP_INTERVAL_MS);
+}
 const finalizeTimers = new Map<string, NodeJS.Timeout>();
 const expiryTimers = new Map<string, NodeJS.Timeout>();
 
