@@ -4,8 +4,16 @@ const { ethers } = require('ethers');
 const { decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
 const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 
-const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable ${name}`);
+  }
+  return value;
+}
+
+const provider = new ethers.JsonRpcProvider(requireEnv('RPC_URL'));
+const signer = new ethers.Wallet(requireEnv('PRIVATE_KEY'), provider);
 
 const registryAbi = [
   'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri)',
@@ -26,23 +34,23 @@ const attestAbi = [
 ];
 
 const registry = new ethers.Contract(
-  process.env.JOB_REGISTRY,
+  requireEnv('JOB_REGISTRY'),
   registryAbi,
   signer
 );
 const stakeManager = new ethers.Contract(
-  process.env.STAKE_MANAGER,
+  requireEnv('STAKE_MANAGER'),
   stakeAbi,
   signer
 );
 const validation = new ethers.Contract(
-  process.env.VALIDATION_MODULE,
+  requireEnv('VALIDATION_MODULE'),
   validationAbi,
   signer
 );
 
 const attestation = new ethers.Contract(
-  process.env.ATTESTATION_REGISTRY,
+  requireEnv('ATTESTATION_REGISTRY'),
   attestAbi,
   signer
 );
