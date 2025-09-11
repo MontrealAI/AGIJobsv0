@@ -11,8 +11,9 @@ const Deployer = artifacts.require('Deployer');
  *  - FEE_PCT            : protocol fee percentage (default 5)
  *  - BURN_PCT           : fee burn percentage (default 5)
  *
- * After deployment, verify contracts with:
- * `npx truffle run verify Deployer StakeManager JobRegistry ValidationModule ReputationEngine DisputeModule CertificateNFT PlatformRegistry JobRouter PlatformIncentives FeePool IdentityRegistry SystemPause --network mainnet`
+ * If `ETHERSCAN_API_KEY` is set the migration will attempt to verify the
+ * contracts automatically. To rerun manually use:
+ * `npx truffle run verify Deployer StakeManager JobRegistry ValidationModule ReputationEngine DisputeModule CertificateNFT PlatformRegistry JobRouter PlatformIncentives FeePool IdentityRegistry SystemPause --network <network>`
  * (include TaxPolicy if deployed)
  * See docs/deploying-agijobs-v2-truffle-cli.md for full instructions.
  *
@@ -84,4 +85,37 @@ module.exports = async function (deployer, network, accounts) {
   }
   console.log('IdentityRegistry:', args.identityRegistryAddr);
   console.log('SystemPause:', args.systemPause);
+
+  if (process.env.ETHERSCAN_API_KEY) {
+    const contracts = [
+      'Deployer',
+      'StakeManager',
+      'JobRegistry',
+      'ValidationModule',
+      'ReputationEngine',
+      'DisputeModule',
+      'CertificateNFT',
+      'PlatformRegistry',
+      'JobRouter',
+      'PlatformIncentives',
+      'FeePool',
+      'IdentityRegistry',
+      'SystemPause',
+    ];
+    if (withTax) {
+      contracts.push('TaxPolicy');
+    }
+    try {
+      const { execSync } = require('child_process');
+      const cmd = `npx truffle run verify ${contracts.join(
+        ' '
+      )} --network ${network}`;
+      console.log('Running:', cmd);
+      execSync(cmd, { stdio: 'inherit' });
+    } catch (err) {
+      console.error('Verification failed:', err.message);
+    }
+  } else {
+    console.log('ETHERSCAN_API_KEY not set; skipping auto-verify.');
+  }
 };

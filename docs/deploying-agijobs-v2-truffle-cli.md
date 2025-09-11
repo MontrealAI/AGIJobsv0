@@ -43,7 +43,7 @@ The diagram illustrates how the `Deployer` contract fans out into every core mod
 - **Truffle & plugins** – Truffle is already configured in `truffle-config.js` with the `truffle-plugin-verify` plugin. No global install is required; use the local `npx truffle` binary.
 - **Mainnet RPC & key** – set `MAINNET_RPC_URL` and `MAINNET_PRIVATE_KEY` in a `.env` file. The private key funds must cover deployment gas.
 - **Governance multisig/timelock** – export `GOVERNANCE_ADDRESS` with the address that should own the system.
-- **Etherscan key** – set `ETHERSCAN_API_KEY` to automatically verify all contracts.
+- **Etherscan key** – set `ETHERSCAN_API_KEY` so `truffle-plugin-verify` can verify contracts.
 - **Optional parameters** – `FEE_PCT`, `BURN_PCT`, or `NO_TAX` can override default economics.
 - **Testnet dry‑run** – always run the migration on a public testnet such as Sepolia with the same environment variables before attempting mainnet.
 - **AGIALPHA token** – the token address and decimals are fixed in `config/agialpha.json` and compiled into the contracts; no extra configuration is required.
@@ -109,7 +109,7 @@ Set `NO_TAX=1` in the environment to omit the `TaxPolicy` module.
 
 ## Verify
 
-The migration automatically runs `truffle-plugin-verify`. If any contract fails to verify, rerun:
+Verification is a separate step. After the migration completes, run the `truffle-plugin-verify` command:
 
 ```bash
 npx truffle run verify Deployer StakeManager JobRegistry ValidationModule \
@@ -117,7 +117,7 @@ npx truffle run verify Deployer StakeManager JobRegistry ValidationModule \
   PlatformIncentives FeePool IdentityRegistry SystemPause --network mainnet
 ```
 
-Include `TaxPolicy` at the end if it was deployed.
+This example verifies all core contracts. Include `TaxPolicy` at the end if it was deployed. The migration script can also invoke this command automatically when `ETHERSCAN_API_KEY` is set, but you can rerun it at any time to retry verification.
 
 ## Post-deployment
 
@@ -198,8 +198,40 @@ module.exports = async function (deployer, network, accounts) {
   }
   console.log('IdentityRegistry:', args.identityRegistryAddr);
   console.log('SystemPause:', args.systemPause);
+
+  if (process.env.ETHERSCAN_API_KEY) {
+    const contracts = [
+      'Deployer',
+      'StakeManager',
+      'JobRegistry',
+      'ValidationModule',
+      'ReputationEngine',
+      'DisputeModule',
+      'CertificateNFT',
+      'PlatformRegistry',
+      'JobRouter',
+      'PlatformIncentives',
+      'FeePool',
+      'IdentityRegistry',
+      'SystemPause',
+    ];
+    if (withTax) {
+      contracts.push('TaxPolicy');
+    }
+    try {
+      const { execSync } = require('child_process');
+      const cmd = `npx truffle run verify ${contracts.join(
+        ' '
+      )} --network ${network}`;
+      console.log('Running:', cmd);
+      execSync(cmd, { stdio: 'inherit' });
+    } catch (err) {
+      console.error('Verification failed:', err.message);
+    }
+  } else {
+    console.log('ETHERSCAN_API_KEY not set; skipping auto-verify.');
+  }
 };
 ```
 
 This script is stored at `migrations/2_deploy_agijobs_v2.js` and is ready for production use.
-
