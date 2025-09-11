@@ -56,7 +56,7 @@ export default function Home() {
             reward: ethers.formatUnits(job.rewardRaw ?? job.reward, DECIMALS),
             stake: ethers.formatUnits(job.stakeRaw ?? job.stake, DECIMALS),
             fee: ethers.formatUnits(job.feeRaw ?? job.fee, DECIMALS),
-            specHash: job.specHash ?? ethers.ZeroHash
+            specHash: job.specHash ?? ethers.ZeroHash,
           }))
         );
       } catch (err: any) {
@@ -89,7 +89,7 @@ export default function Home() {
     const abi = [
       'function jobNonce(uint256 jobId) view returns (uint256)',
       'function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)',
-      'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)'
+      'function revealValidation(uint256 jobId, bool approve, bytes32 salt, string subdomain, bytes32[] proof)',
     ];
     const contract = new ethers.Contract(validationAddr, abi, signer);
     const nonce: bigint = await contract.jobNonce(jobId);
@@ -121,9 +121,14 @@ export default function Home() {
       <ul>
         {jobs.map((job) => (
           <li key={job.jobId}>
-            Job {job.jobId} — reward {job.reward} stake {job.stake} fee {job.fee}{' '}
-            <button onClick={() => vote(job.jobId, true, job.specHash)}>Approve</button>{' '}
-            <button onClick={() => vote(job.jobId, false, job.specHash)}>Reject</button>
+            Job {job.jobId} — reward {job.reward} stake {job.stake} fee{' '}
+            {job.fee}{' '}
+            <button onClick={() => vote(job.jobId, true, job.specHash)}>
+              Approve
+            </button>{' '}
+            <button onClick={() => vote(job.jobId, false, job.specHash)}>
+              Reject
+            </button>
           </li>
         ))}
       </ul>

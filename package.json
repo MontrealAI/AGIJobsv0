@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && npx hardhat compile",
-    "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts",
+    "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts,.tsx",
     "pretest": "npx tsc scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",

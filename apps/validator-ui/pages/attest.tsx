@@ -26,7 +26,7 @@ export default function AttestPage() {
       }
       const abi = [
         'function attest(bytes32 node, uint8 role, address who)',
-        'function revoke(bytes32 node, uint8 role, address who)'
+        'function revoke(bytes32 node, uint8 role, address who)',
       ];
       const contract = new ethers.Contract(registryAddr, abi, signer);
       const node = ethers.namehash(name);
@@ -68,4 +68,3 @@ export default function AttestPage() {
     </main>
   );
 }
-
