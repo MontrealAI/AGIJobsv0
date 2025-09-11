@@ -42,7 +42,14 @@ export default function Home() {
         }
         const url =
           process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:3000';
-        const data = await fetch(`${url}/jobs`).then((res) => res.json());
+        const timeout = Number(
+          process.env.NEXT_PUBLIC_FETCH_TIMEOUT_MS || '5000'
+        );
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+        const data = await fetch(`${url}/jobs`, { signal: controller.signal })
+          .then((res) => res.json())
+          .finally(() => clearTimeout(timer));
         setJobs(
           data.map((job: any) => ({
             ...job,
@@ -52,8 +59,13 @@ export default function Home() {
             specHash: job.specHash ?? ethers.ZeroHash
           }))
         );
-      } catch (err) {
-        console.error(err);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          console.error('Job fetch timed out');
+          setMessage('Job request timed out');
+        } else {
+          console.error(err);
+        }
       }
     }
     loadJobs();

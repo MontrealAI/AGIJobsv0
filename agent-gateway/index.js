@@ -12,6 +12,7 @@ const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
 const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
 const PORT = process.env.PORT || 3000;
 const BOT_WALLET = process.env.BOT_WALLET || '';
+const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || '5000');
 // $AGIALPHA token parameters
 const {
   address: AGIALPHA_ADDRESS,
@@ -44,21 +45,30 @@ if ('VALIDATION_MODULE_ADDRESS' in process.env) {
 // Provider and wallet manager
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
-async function loadWalletKeys() {
+async function loadWalletKeys(retry = true) {
   if (!KEYSTORE_URL) {
     console.error('KEYSTORE_URL is required to load wallet keys.');
     process.exit(1);
   }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(KEYSTORE_URL, {
       headers: KEYSTORE_TOKEN
         ? { Authorization: `Bearer ${KEYSTORE_TOKEN}` }
         : {},
+      signal: controller.signal,
     });
+    clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const data = await res.json();
     return data.keys || [];
   } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError' && retry) {
+      console.warn('Keystore request timed out, retrying once...');
+      return loadWalletKeys(false);
+    }
     console.error('Failed to load wallet keys', err);
     process.exit(1);
   }
@@ -498,11 +508,22 @@ function dispatch(job) {
     if (info.ws && info.ws.readyState === 1) {
       info.ws.send(JSON.stringify({ type: 'job', job }));
     } else if (info.url) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       fetch(info.url, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(job),
-      }).catch((err) => console.error('dispatch error', err));
+        signal: controller.signal,
+      })
+        .catch((err) => {
+          if (err.name === 'AbortError') {
+            console.warn(`dispatch to ${info.url} timed out; job queued`);
+          } else {
+            console.error('dispatch error', err);
+          }
+        })
+        .finally(() => clearTimeout(timer));
     }
   });
 }

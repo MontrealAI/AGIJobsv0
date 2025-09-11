@@ -70,6 +70,10 @@ Use the `examples/ethers-quickstart.js` script to interact with the deployed con
 
 The [API reference](docs/api-reference.md) describes every public contract function and includes TypeScript and Python snippets. For an event‑driven workflow check the minimal [agent gateway](examples/agent-gateway.js) that listens for `JobCreated` events and applies automatically.
 
+### Network timeouts
+
+Outbound HTTP requests from the gateway, example agents and validator UI respect the `FETCH_TIMEOUT_MS` environment variable (default `5000` milliseconds). Browser clients read the value from `NEXT_PUBLIC_FETCH_TIMEOUT_MS`.
+
 ### Post a job
 
 ```bash
