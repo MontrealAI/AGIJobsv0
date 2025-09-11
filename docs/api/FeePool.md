@@ -7,7 +7,11 @@ Holds platform fees and distributes rewards.
 - `depositFee(uint256 amount)` – StakeManager deposits collected fees.
 - `contribute(uint256 amount)` – anyone can add to the reward pool.
 - `distributeFees()` – move accumulated fees to the reward pool and burn portion.
-- `claimRewards()` – stakers claim their share of rewards.
+- `claimRewards()` – stakers claim their share of rewards. Each user's stake is
+  multiplied by their highest NFT payout percentage from `StakeManager` so
+  holders of approved NFTs receive proportionally larger payouts.
+- `boostedStake(address user)` – view helper that returns a user's stake
+  weighted by the NFT multiplier (`stake * pct / 100`).
 - `governanceWithdraw(address to, uint256 amount)` – governance timelock emergency withdrawal.
 - `setStakeManager(address manager)` – owner wires modules.
 - `setRewardRole(uint8 role)` – choose which stakers earn rewards.
