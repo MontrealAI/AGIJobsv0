@@ -28,4 +28,3 @@ describe('Toast', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
-

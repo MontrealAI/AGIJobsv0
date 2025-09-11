@@ -23,4 +23,3 @@ export function useError() {
   if (!ctx) throw new Error('useError must be used within ErrorProvider');
   return ctx;
 }
-
