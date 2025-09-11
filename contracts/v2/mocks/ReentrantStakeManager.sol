@@ -67,6 +67,12 @@ contract ReentrantStakeManager is IStakeManager {
     function distributeValidatorRewards(bytes32, uint256) external override {}
     function fundOperatorRewardPool(uint256) external override {}
     function withdrawOperatorRewardPool(address, uint256) external override {}
+    function setOperatorRewardRate(uint256) external override {}
+    function claimContinuousRewards() external override returns (uint256) { return 0; }
+    function pendingContinuousRewards(address) external pure override returns (uint256) { return 0; }
+    function operatorRewardRate() external pure override returns (uint256) { return 0; }
+    function lastOperatorClaim(address) external pure override returns (uint256) { return 0; }
+    function accruedOperatorRewards(address) external pure override returns (uint256) { return 0; }
     function setDisputeModule(address) external override {}
     function setModules(address, address) external override {}
     function lockDisputeFee(address, uint256) external override {}

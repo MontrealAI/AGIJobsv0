@@ -27,6 +27,8 @@ interface IStakeManager {
     event JobFundsFinalized(bytes32 indexed jobId, address indexed employer);
     /// @notice Emitted when the operator reward pool balance changes.
     event RewardPoolUpdated(uint256 balance);
+    event ContinuousRewardsClaimed(address indexed operator, uint256 amount);
+    event OperatorRewardRateUpdated(uint256 rate);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event StakeSlashed(
@@ -138,6 +140,24 @@ interface IStakeManager {
 
     /// @notice withdraw tokens from the operator reward pool
     function withdrawOperatorRewardPool(address to, uint256 amount) external;
+
+    /// @notice set emission rate for continuous operator rewards
+    function setOperatorRewardRate(uint256 rate) external;
+
+    /// @notice claim accrued continuous rewards
+    function claimContinuousRewards() external returns (uint256);
+
+    /// @notice view pending continuous rewards for an operator
+    function pendingContinuousRewards(address operator) external view returns (uint256);
+
+    /// @notice current continuous reward rate
+    function operatorRewardRate() external view returns (uint256);
+
+    /// @notice last time an operator's rewards were accrued
+    function lastOperatorClaim(address operator) external view returns (uint256);
+
+    /// @notice accrued but unclaimed rewards for an operator
+    function accruedOperatorRewards(address operator) external view returns (uint256);
 
     /// @notice distribute validator rewards among selected validators
     ///         weighted by their NFT multipliers
