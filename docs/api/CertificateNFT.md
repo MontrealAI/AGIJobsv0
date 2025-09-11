@@ -16,5 +16,5 @@ ERC‑721 completion certificates with optional marketplace.
 - `JobRegistryUpdated(address registry)`
 - `StakeManagerUpdated(address manager)`
 - `NFTListed(uint256 tokenId, address seller, uint256 price)`
-- `NFTPurchased(uint256 tokenId, address buyer, uint256 price)`
+- `NFTPurchased(uint256 tokenId, address buyer, address seller, uint256 price)`
 - `NFTDelisted(uint256 tokenId)`

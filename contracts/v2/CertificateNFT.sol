@@ -32,6 +32,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error InsufficientAllowance();
     error InvalidStakeManagerVersion();
     error InvalidStakeManagerToken();
+    error StakeManagerNotSet();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
@@ -49,7 +50,12 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     event JobRegistryUpdated(address registry);
     event StakeManagerUpdated(address manager);
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
-    event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
+    event NFTPurchased(
+        uint256 indexed tokenId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 price
+    );
     event NFTDelisted(uint256 indexed tokenId);
 
     constructor(string memory name_, string memory symbol_)
@@ -123,17 +129,19 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
 
     /// @notice Purchase a listed certificate using 18‑decimal $AGIALPHA tokens.
     function purchase(uint256 tokenId) external nonReentrant whenNotPaused {
+        if (address(stakeManager) == address(0)) revert StakeManagerNotSet();
         Listing storage listing = listings[tokenId];
         if (!listing.active) revert NotListed();
         address seller = listing.seller;
         if (seller == msg.sender) revert SelfPurchase();
         IERC20 token = stakeManager.token();
-        if (token.allowance(msg.sender, address(this)) < listing.price) revert InsufficientAllowance();
+        if (token.allowance(msg.sender, address(this)) < listing.price)
+            revert InsufficientAllowance();
         uint256 price = listing.price;
         delete listings[tokenId];
         token.safeTransferFrom(msg.sender, seller, price);
         _safeTransfer(seller, msg.sender, tokenId, "");
-        emit NFTPurchased(tokenId, msg.sender, price);
+        emit NFTPurchased(tokenId, msg.sender, seller, price);
     }
 
     function delist(uint256 tokenId) external whenNotPaused {

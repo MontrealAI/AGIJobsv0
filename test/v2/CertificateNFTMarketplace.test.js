@@ -72,7 +72,7 @@ describe('CertificateNFT marketplace', function () {
     await token.connect(buyer).approve(await nft.getAddress(), price);
     await expect(nft.connect(buyer).purchase(1))
       .to.emit(nft, 'NFTPurchased')
-      .withArgs(1, buyer.address, price);
+      .withArgs(1, buyer.address, seller.address, price);
     expect(await nft.ownerOf(1)).to.equal(buyer.address);
 
     expect(await token.balanceOf(seller.address)).to.equal(sellerStart + price);
@@ -132,6 +132,24 @@ describe('CertificateNFT marketplace', function () {
     );
   });
 
+  it('reverts if stake manager is not set', async () => {
+    const NFT = await ethers.getContractFactory(
+      'contracts/v2/CertificateNFT.sol:CertificateNFT'
+    );
+    const nft2 = await NFT.deploy('Cert', 'CERT');
+    await nft2.setJobRegistry(owner.address);
+    await nft2.mint(
+      seller.address,
+      2,
+      ethers.keccak256(ethers.toUtf8Bytes('ipfs://2'))
+    );
+    await nft2.connect(seller).list(2, price);
+    await expect(nft2.connect(buyer).purchase(2)).to.be.revertedWithCustomError(
+      nft2,
+      'StakeManagerNotSet'
+    );
+  });
+
   it('pauses and unpauses marketplace actions', async () => {
     await expect(nft.connect(seller).pause())
       .to.be.revertedWithCustomError(nft, 'OwnableUnauthorizedAccount')
@@ -159,7 +177,7 @@ describe('CertificateNFT marketplace', function () {
     await nft.connect(owner).unpause();
     await expect(nft.connect(buyer).purchase(1))
       .to.emit(nft, 'NFTPurchased')
-      .withArgs(1, buyer.address, price);
+      .withArgs(1, buyer.address, seller.address, price);
 
     await nft.mint(
       seller.address,
@@ -191,7 +209,7 @@ describe('CertificateNFT marketplace', function () {
 
     await expect(attacker.buy(1))
       .to.emit(nft, 'NFTPurchased')
-      .withArgs(1, await attacker.getAddress(), price);
+      .withArgs(1, await attacker.getAddress(), seller.address, price);
     expect(await nft.ownerOf(1)).to.equal(await attacker.getAddress());
   });
 });
