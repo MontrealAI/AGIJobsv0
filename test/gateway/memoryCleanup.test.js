@@ -28,6 +28,10 @@ describe('memory cleanup', function () {
     utils.pendingJobs.clear();
     utils.commits.clear();
     utils.jobTimestamps.clear();
+    utils.expiryTimers.forEach((t) => clearTimeout(t));
+    utils.finalizeTimers.forEach((t) => clearTimeout(t));
+    utils.expiryTimers.clear();
+    utils.finalizeTimers.clear();
   });
 
   it('removes entries on JobCompleted', () => {
@@ -51,5 +55,55 @@ describe('memory cleanup', function () {
     expect(utils.pendingJobs.get('agent1')).to.be.empty;
     expect(utils.commits.has('1')).to.equal(false);
     expect(utils.jobTimestamps.has('1')).to.equal(false);
+  });
+
+  it('clears timers on cleanupJob', () => {
+    utils.expiryTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+    utils.finalizeTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+
+    utils.cleanupJob('1');
+
+    expect(utils.expiryTimers.has('1')).to.equal(false);
+    expect(utils.finalizeTimers.has('1')).to.equal(false);
+  });
+
+  it('clears timers on expireJob', async () => {
+    utils.expiryTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+    utils.finalizeTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+
+    utils.automationWallet = undefined;
+    await utils.expireJob('1');
+
+    expect(utils.expiryTimers.has('1')).to.equal(false);
+    expect(utils.finalizeTimers.has('1')).to.equal(false);
+  });
+
+  it('clears timers on finalizeJob', async () => {
+    utils.expiryTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+    utils.finalizeTimers.set(
+      '1',
+      setTimeout(() => {}, 1000)
+    );
+
+    utils.automationWallet = undefined;
+    await utils.finalizeJob('1');
+
+    expect(utils.expiryTimers.has('1')).to.equal(false);
+    expect(utils.finalizeTimers.has('1')).to.equal(false);
   });
 });

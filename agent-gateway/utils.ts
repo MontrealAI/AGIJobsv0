@@ -88,6 +88,14 @@ export const jobTimestamps = new Map<string, number>();
 export const STALE_JOB_MS = Number(process.env.STALE_JOB_MS || 60 * 60 * 1000); // 1 hour
 const SWEEP_INTERVAL_MS = Number(process.env.SWEEP_INTERVAL_MS || 60 * 1000); // 1 minute
 export function cleanupJob(jobId: string): void {
+  if (expiryTimers.has(jobId)) {
+    clearTimeout(expiryTimers.get(jobId)!);
+    expiryTimers.delete(jobId);
+  }
+  if (finalizeTimers.has(jobId)) {
+    clearTimeout(finalizeTimers.get(jobId)!);
+    finalizeTimers.delete(jobId);
+  }
   commits.delete(jobId);
   pendingJobs.forEach((queue, id) => {
     pendingJobs.set(
@@ -115,8 +123,8 @@ export function startSweeper(): NodeJS.Timeout {
 export function stopSweeper(): void {
   if (sweeperInterval) clearInterval(sweeperInterval);
 }
-const finalizeTimers = new Map<string, NodeJS.Timeout>();
-const expiryTimers = new Map<string, NodeJS.Timeout>();
+export const finalizeTimers = new Map<string, NodeJS.Timeout>();
+export const expiryTimers = new Map<string, NodeJS.Timeout>();
 
 export let walletManager: WalletManager;
 export let automationWallet: Wallet | undefined;
@@ -227,7 +235,15 @@ export async function scheduleExpiration(jobId: string): Promise<void> {
   }
 }
 
-async function expireJob(jobId: string): Promise<void> {
+export async function expireJob(jobId: string): Promise<void> {
+  if (expiryTimers.has(jobId)) {
+    clearTimeout(expiryTimers.get(jobId)!);
+    expiryTimers.delete(jobId);
+  }
+  if (finalizeTimers.has(jobId)) {
+    clearTimeout(finalizeTimers.get(jobId)!);
+    finalizeTimers.delete(jobId);
+  }
   if (!automationWallet) return;
   try {
     const signer = registry.connect(automationWallet) as any;
@@ -263,7 +279,15 @@ export async function scheduleFinalize(jobId: string): Promise<void> {
   }
 }
 
-async function finalizeJob(jobId: string): Promise<void> {
+export async function finalizeJob(jobId: string): Promise<void> {
+  if (expiryTimers.has(jobId)) {
+    clearTimeout(expiryTimers.get(jobId)!);
+    expiryTimers.delete(jobId);
+  }
+  if (finalizeTimers.has(jobId)) {
+    clearTimeout(finalizeTimers.get(jobId)!);
+    finalizeTimers.delete(jobId);
+  }
   if (!validation || !automationWallet) return;
   try {
     const tx = await (validation as any)
