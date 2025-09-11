@@ -3,7 +3,7 @@ require('ts-node').register({
     __dirname,
     '../../apps/validator-ui/tsconfig.json'
   ),
-  compilerOptions: { module: 'commonjs' },
+  compilerOptions: { module: 'commonjs', target: 'es2020' },
 });
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
