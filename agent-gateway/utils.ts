@@ -1,12 +1,14 @@
 import { ethers, Contract, Wallet, JsonRpcProvider } from 'ethers';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
+import agialpha from '../config/agialpha.json';
 import WalletManager from './wallet';
 import { Job, AgentInfo, CommitData } from './types';
 
 // Environment configuration
 export const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 export const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
-export const VALIDATION_MODULE_ADDRESS = process.env.VALIDATION_MODULE_ADDRESS || '';
+export const VALIDATION_MODULE_ADDRESS =
+  process.env.VALIDATION_MODULE_ADDRESS || '';
 export const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
 export const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
 export const BOT_WALLET = process.env.BOT_WALLET || '';
@@ -14,7 +16,7 @@ export const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || '5000');
 export const PORT = Number(process.env.PORT || 3000);
 
 // $AGIALPHA token parameters
-const { address: AGIALPHA_ADDRESS, decimals: AGIALPHA_DECIMALS } = require('../config/agialpha.json');
+const { address: AGIALPHA_ADDRESS, decimals: AGIALPHA_DECIMALS } = agialpha;
 export const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 export const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || '';
 export const AUTH_MESSAGE = 'Agent Gateway Auth';
@@ -45,7 +47,11 @@ const VALIDATION_MODULE_ABI = [
   'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
 ];
 
-export const registry = new Contract(JOB_REGISTRY_ADDRESS, JOB_REGISTRY_ABI, provider);
+export const registry = new Contract(
+  JOB_REGISTRY_ADDRESS,
+  JOB_REGISTRY_ABI,
+  provider
+);
 export const validation = VALIDATION_MODULE_ADDRESS
   ? new Contract(VALIDATION_MODULE_ADDRESS, VALIDATION_MODULE_ABI, provider)
   : null;
@@ -70,7 +76,9 @@ export async function loadWalletKeys(retry = true): Promise<string[]> {
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(KEYSTORE_URL, {
-      headers: KEYSTORE_TOKEN ? { Authorization: `Bearer ${KEYSTORE_TOKEN}` } : {},
+      headers: KEYSTORE_TOKEN
+        ? { Authorization: `Bearer ${KEYSTORE_TOKEN}` }
+        : {},
       signal: controller.signal,
     });
     clearTimeout(timer);
@@ -99,7 +107,9 @@ export async function initWallets(): Promise<void> {
   }
 }
 
-export async function checkEnsSubdomain(address: string): Promise<string | null> {
+export async function checkEnsSubdomain(
+  address: string
+): Promise<string | null> {
   try {
     const name = await provider.lookupAddress(address);
     if (
@@ -152,7 +162,10 @@ export async function scheduleExpiration(jobId: string): Promise<void> {
       await expireJob(jobId);
     } else {
       if (expiryTimers.has(jobId)) clearTimeout(expiryTimers.get(jobId));
-      expiryTimers.set(jobId, setTimeout(() => expireJob(jobId), delay * 1000));
+      expiryTimers.set(
+        jobId,
+        setTimeout(() => expireJob(jobId), delay * 1000)
+      );
     }
   } catch (err) {
     console.error('scheduleExpiration error', err);
@@ -185,7 +198,10 @@ export async function scheduleFinalize(jobId: string): Promise<void> {
       await finalizeJob(jobId);
     } else {
       if (finalizeTimers.has(jobId)) clearTimeout(finalizeTimers.get(jobId));
-      finalizeTimers.set(jobId, setTimeout(() => finalizeJob(jobId), delay * 1000));
+      finalizeTimers.set(
+        jobId,
+        setTimeout(() => finalizeJob(jobId), delay * 1000)
+      );
     }
   } catch (err) {
     console.error('scheduleFinalize error', err);
@@ -205,9 +221,12 @@ async function finalizeJob(jobId: string): Promise<void> {
   }
 }
 
-export function broadcast(wss: WebSocketServer | undefined, payload: any): void {
+export function broadcast(
+  wss: WebSocketServer | undefined,
+  payload: any
+): void {
   if (!wss) return;
-  wss.clients.forEach((client) => {
+  wss.clients.forEach((client: WebSocket) => {
     if (client.readyState === 1) {
       client.send(JSON.stringify(payload));
     }

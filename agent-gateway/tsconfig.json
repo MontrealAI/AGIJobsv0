@@ -4,6 +4,10 @@
     "module": "commonjs",
     "outDir": "dist",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "lib": ["ES2020", "DOM"],
+    "moduleResolution": "node",
+    "types": ["node", "ws"],
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true

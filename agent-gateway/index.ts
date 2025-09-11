@@ -1,12 +1,7 @@
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import app from './routes';
-import {
-  verifyTokenDecimals,
-  initWallets,
-  PORT,
-  walletManager,
-} from './utils';
+import { verifyTokenDecimals, initWallets, PORT, walletManager } from './utils';
 import { registerEvents } from './events';
 
 let server: http.Server;

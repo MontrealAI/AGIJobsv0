@@ -17,7 +17,14 @@ import { Job } from './types';
 export function registerEvents(wss: WebSocketServer): void {
   registry.on(
     'JobCreated',
-    (jobId: ethers.BigNumberish, employer: string, agentAddr: string, reward: bigint, stake: bigint, fee: bigint) => {
+    (
+      jobId: ethers.BigNumberish,
+      employer: string,
+      agentAddr: string,
+      reward: bigint,
+      stake: bigint,
+      fee: bigint
+    ) => {
       const job: Job = {
         jobId: jobId.toString(),
         employer,
@@ -39,7 +46,13 @@ export function registerEvents(wss: WebSocketServer): void {
 
   registry.on(
     'JobSubmitted',
-    (jobId: ethers.BigNumberish, worker: string, resultHash: string, resultURI: string, subdomain: string) => {
+    (
+      jobId: ethers.BigNumberish,
+      worker: string,
+      resultHash: string,
+      resultURI: string,
+      subdomain: string
+    ) => {
       const id = jobId.toString();
       broadcast(wss, {
         type: 'JobSubmitted',
@@ -55,12 +68,15 @@ export function registerEvents(wss: WebSocketServer): void {
   );
 
   if (validation) {
-    validation.on('ValidatorsSelected', (jobId: ethers.BigNumberish, validators: string[]) => {
-      const id = jobId.toString();
-      broadcast(wss, { type: 'ValidationStarted', jobId: id, validators });
-      scheduleFinalize(id);
-      console.log('ValidationStarted', id);
-    });
+    validation.on(
+      'ValidatorsSelected',
+      (jobId: ethers.BigNumberish, validators: string[]) => {
+        const id = jobId.toString();
+        broadcast(wss, { type: 'ValidationStarted', jobId: id, validators });
+        scheduleFinalize(id);
+        console.log('ValidationStarted', id);
+      }
+    );
   }
 
   wss.on('connection', (ws) => {
