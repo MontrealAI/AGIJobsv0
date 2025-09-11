@@ -136,6 +136,12 @@ contract MockStakeManager is IStakeManager {
         return 0;
     }
 
+    function maxTotalPayoutPct() external pure override returns (uint256) {
+        return 100;
+    }
+
+    function setMaxTotalPayoutPct(uint256) external override {}
+
     // legacy helper for tests
 }
 
