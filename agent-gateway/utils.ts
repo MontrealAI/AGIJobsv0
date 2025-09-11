@@ -131,9 +131,7 @@ export async function initWallets(): Promise<void> {
   }
 }
 
-export async function checkEnsSubdomain(
-  address: string
-): Promise<string | null> {
+export async function checkEnsSubdomain(address: string): Promise<void> {
   try {
     const name = await provider.lookupAddress(address);
     if (
@@ -141,7 +139,7 @@ export async function checkEnsSubdomain(
       (name.endsWith('.agent.agi.eth') || name.endsWith('.club.agi.eth')) &&
       name.split('.').length > 3
     ) {
-      return null;
+      return;
     }
   } catch {
     // ignore lookup errors and fall through to warning
@@ -149,7 +147,7 @@ export async function checkEnsSubdomain(
   const warning =
     'No valid *.agent.agi.eth or *.club.agi.eth subdomain detected for this address. See docs/ens-identity-setup.md';
   console.warn(warning);
-  return warning;
+  throw new Error(warning);
 }
 
 export async function verifyTokenDecimals(): Promise<void> {
@@ -287,9 +285,9 @@ export async function commitHelper(
   jobId: string,
   wallet: Wallet,
   approve: boolean
-): Promise<{ tx: string; salt: string; warning?: string }> {
+): Promise<{ tx: string; salt: string }> {
   if (!validation) throw new Error('validation module not configured');
-  const warning = await checkEnsSubdomain(wallet.address);
+  await checkEnsSubdomain(wallet.address);
   const nonce = await validation.jobNonce(jobId);
   const salt = ethers.hexlify(ethers.randomBytes(32));
   const commitHash = ethers.solidityPackedKeccak256(
@@ -303,22 +301,22 @@ export async function commitHelper(
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId)!;
   jobCommits[wallet.address.toLowerCase()] = { approve, salt };
-  return warning ? { tx: tx.hash, salt, warning } : { tx: tx.hash, salt };
+  return { tx: tx.hash, salt };
 }
 
 export async function revealHelper(
   jobId: string,
   wallet: Wallet
-): Promise<{ tx: string; warning?: string }> {
+): Promise<{ tx: string }> {
   if (!validation) throw new Error('validation module not configured');
   const jobCommits = commits.get(jobId) || {};
   const data = jobCommits[wallet.address.toLowerCase()];
   if (!data) throw new Error('no commit found');
-  const warning = await checkEnsSubdomain(wallet.address);
+  await checkEnsSubdomain(wallet.address);
   const tx = await (validation as any)
     .connect(wallet)
     .revealValidation(jobId, data.approve, data.salt, '', []);
   await tx.wait();
   delete jobCommits[wallet.address.toLowerCase()];
-  return warning ? { tx: tx.hash, warning } : { tx: tx.hash };
+  return { tx: tx.hash };
 }
