@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { generateCommit, scheduleReveal } from '../lib/commit';
 import { verifyEnsSubdomain } from '../lib/ens';
 import agiConfig from '../../../config/agialpha.json';
+import { useError } from '../lib/error';
 
 interface Job {
   jobId: string;
@@ -21,6 +22,7 @@ const DECIMALS = Number(
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [message, setMessage] = useState('');
+  const { setError } = useError();
 
   useEffect(() => {
     async function loadJobs() {
@@ -34,7 +36,7 @@ export default function Home() {
         const token = new ethers.Contract(agiAddress, tokenAbi, provider);
         const chainDecimals = Number(await token.decimals());
         if (chainDecimals !== DECIMALS) {
-          alert(
+          setError(
             `Configured decimals (${DECIMALS}) do not match on-chain decimals (${chainDecimals}).`
           );
           setMessage('Token decimals mismatch; jobs cannot be displayed');
@@ -73,17 +75,17 @@ export default function Home() {
 
   async function vote(jobId: string, approve: boolean, specHash: string) {
     if (!(window as any).ethereum) {
-      alert('wallet not found');
+      setError('wallet not found');
       return;
     }
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     const signer = await provider.getSigner();
     const addr = await signer.getAddress();
     const warning = await verifyEnsSubdomain(provider, addr);
-    if (warning) alert(warning);
+    if (warning) setError(warning);
     const validationAddr = process.env.NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS;
     if (!validationAddr) {
-      alert('validation module not configured');
+      setError('validation module not configured');
       return;
     }
     const abi = [
