@@ -21,8 +21,11 @@ in one transaction.
    ```
 4. **Ethereum access** – An RPC endpoint (Infura/Alchemy etc.) and a deployer
    private key with enough ETH.
-5. **Governance address** – Multisig or timelock that will own the system.
-6. **Etherscan API key** – Enables automatic verification.
+ 5. **Governance address** – Multisig or timelock that will own the system.
+ 6. **Etherscan API key** – Enables automatic verification.
+ 7. **Dry-run** – Always run the migration on a public testnet (e.g. Sepolia)
+    with the same environment variables to confirm gas usage and wiring
+    before attempting a mainnet deployment.
 
 ## Environment variables
 
