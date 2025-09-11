@@ -97,6 +97,10 @@ app.post(
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
       await checkEnsSubdomain(wallet.address);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+    try {
       const tx = await (registry as any)
         .connect(wallet)
         .applyForJob(req.params.id, '', '0x');
@@ -118,6 +122,10 @@ app.post(
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
       await checkEnsSubdomain(wallet.address);
+    } catch (err: any) {
+      return res.status(400).json({ error: err.message });
+    }
+    try {
       const hash = ethers.id(result || '');
       const tx = await (registry as any)
         .connect(wallet)

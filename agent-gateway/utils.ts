@@ -185,10 +185,9 @@ export async function checkEnsSubdomain(address: string): Promise<void> {
   } catch {
     // ignore lookup errors and fall through to warning
   }
-  const warning =
-    'No valid *.agent.agi.eth or *.club.agi.eth subdomain detected for this address. See docs/ens-identity-setup.md';
-  console.warn(warning);
-  throw new Error(warning);
+  throw new Error(
+    'No valid *.agent.agi.eth or *.club.agi.eth subdomain detected for this address. See docs/ens-identity-setup.md'
+  );
 }
 
 export async function verifyTokenDecimals(): Promise<void> {
