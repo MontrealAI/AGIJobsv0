@@ -637,11 +637,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         // Before the target block is mined, allow additional parties to
         // contribute entropy. Each contribution is mixed into the pool via XOR.
+        uint256 round = entropyRound[jobId];
+
         if (block.number <= selectionBlock[jobId]) {
             pendingEntropy[jobId] ^= uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
-            uint256 round = entropyRound[jobId];
             if (!entropyContributed[jobId][round][msg.sender]) {
                 entropyContributed[jobId][round][msg.sender] = true;
                 unchecked {
@@ -653,7 +654,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
 
         // Finalization path using the stored entropy and future blockhash.
         if (block.number <= selectionBlock[jobId]) revert AwaitBlockhash();
-        uint256 round = entropyRound[jobId];
         if (!entropyContributed[jobId][round][msg.sender]) {
             pendingEntropy[jobId] ^= uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
