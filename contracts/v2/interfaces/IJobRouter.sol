@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
 /// @title IJobRouter
 /// @notice Minimal interface for registering platforms with the router

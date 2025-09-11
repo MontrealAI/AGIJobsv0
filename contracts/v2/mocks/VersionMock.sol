@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
 /// @notice Minimal contract exposing a configurable `version` value.
 contract VersionMock {

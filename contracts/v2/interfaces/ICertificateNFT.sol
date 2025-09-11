@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
 /// @title ICertificateNFT
 /// @notice Interface for minting non-fungible job completion certificates
