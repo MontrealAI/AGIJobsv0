@@ -11,6 +11,11 @@ const Deployer = artifacts.require('Deployer');
  *  - FEE_PCT            : protocol fee percentage (default 5)
  *  - BURN_PCT           : fee burn percentage (default 5)
  *
+ * After deployment, verify contracts with:
+ * `npx truffle run verify Deployer StakeManager JobRegistry ValidationModule ReputationEngine DisputeModule CertificateNFT PlatformRegistry JobRouter PlatformIncentives FeePool IdentityRegistry SystemPause --network mainnet`
+ * (include TaxPolicy if deployed)
+ * See docs/deploying-agijobs-v2-mainnet-cli-guide.md for full instructions.
+ *
  * Run on a testnet first to confirm configuration before mainnet:
  * `npx truffle migrate --network sepolia`
  */
