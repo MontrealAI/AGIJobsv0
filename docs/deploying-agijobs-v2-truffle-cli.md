@@ -2,6 +2,23 @@
 
 This guide walks through deploying the complete AGIJobs v2 stack to Ethereum mainnet using [Truffle](https://trufflesuite.com). It assumes you are preparing a production deployment and want the full suite of contracts wired together in one command.
 
+## Deployment flow
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor': '#d9f7be', 'secondaryColor': '#ffd6e7', 'tertiaryColor': '#bae7ff', 'fontSize': '16px', 'textColor': '#333', 'lineColor': '#555'}}}%%
+graph TD
+    A[Setup Environment\n.env, keys, governance]:::prep --> B[Compile Contracts]:::compile
+    B --> C[Run Migration]:::deploy
+    C --> D[Verify on Etherscan]:::verify
+    D --> E[Post-deployment Checks]:::post
+
+    classDef prep fill:#ffd6e7,stroke:#e91e63,color:#000;
+    classDef compile fill:#bae7ff,stroke:#1890ff,color:#000;
+    classDef deploy fill:#d9f7be,stroke:#52c41a,color:#000;
+    classDef verify fill:#fff1b8,stroke:#faad14,color:#000;
+    classDef post fill:#d6e4ff,stroke:#2f54eb,color:#000;
+```
+
 ## Prerequisites
 
 - **Node.js 20.x & npm 10+** – run `nvm use` to match the version in `.nvmrc`.
