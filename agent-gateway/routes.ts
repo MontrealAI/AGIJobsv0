@@ -16,6 +16,11 @@ import {
 const app = express();
 app.use(express.json());
 
+let nonce = ethers.hexlify(ethers.randomBytes(16));
+function rotateNonce() {
+  nonce = ethers.hexlify(ethers.randomBytes(16));
+}
+
 function authMiddleware(
   req: express.Request,
   res: express.Response,
@@ -29,9 +34,12 @@ function authMiddleware(
   if (signature && address) {
     try {
       const recovered = ethers
-        .verifyMessage(AUTH_MESSAGE, signature)
+        .verifyMessage(AUTH_MESSAGE + nonce, signature)
         .toLowerCase();
-      if (recovered === address.toLowerCase()) return next();
+      if (recovered === address.toLowerCase()) {
+        rotateNonce();
+        return next();
+      }
     } catch {
       // fall through to unauthorized
     }
@@ -43,6 +51,10 @@ function authMiddleware(
 // Basic health check for service monitoring
 app.get('/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/nonce', (req: express.Request, res: express.Response) => {
+  res.json({ nonce });
 });
 
 // Register an agent to receive job dispatches
