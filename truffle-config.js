@@ -4,7 +4,11 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 module.exports = {
   networks: {
     mainnet: {
-      provider: () => new HDWalletProvider(process.env.MAINNET_PRIVATE_KEY, process.env.MAINNET_RPC_URL),
+      provider: () =>
+        new HDWalletProvider(
+          process.env.MAINNET_PRIVATE_KEY,
+          process.env.MAINNET_RPC_URL
+        ),
       network_id: 1,
       confirmations: 2,
       timeoutBlocks: 200,
