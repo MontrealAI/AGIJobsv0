@@ -19,7 +19,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [AGIALPHA configuration](#agialpha-configuration)
 - [Fee handling and treasury](#fee-handling-and-treasury)
 - [Deploy defaults](#deploy-defaults)
-- [Etherscan deployment](#etherscan-deployment)
+- [Mainnet Deployment](#mainnet-deployment)
 - [Migrating from legacy](#migrating-from-legacy)
 - [Quick Start](#quick-start)
 - [Deployed Addresses](#deployed-addresses)
@@ -51,12 +51,13 @@ npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <a
 
 Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax` to skip deploying `TaxPolicy`.
 
-### Etherscan deployment
+### Mainnet Deployment
+
+For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md).
 
 - [docs/deployment-production-guide.md](docs/deployment-production-guide.md) – step-by-step walkthrough for deploying AGI Jobs v2 using only a web browser and Etherscan.
 - [docs/deployment-guide-production.md](docs/deployment-guide-production.md) – production deployment checklist.
 - [docs/agi-jobs-v2-production-deployment-guide.md](docs/agi-jobs-v2-production-deployment-guide.md) – non‑technical guide highlighting best practices such as true token burning and owner updatability.
-- [docs/deploying-agijobs-v2-truffle-cli.md](docs/deploying-agijobs-v2-truffle-cli.md) – CLI walkthrough for deploying the full stack with Truffle.
 - [docs/burn-receipts.md](docs/burn-receipts.md) – employer-side token burn process and validator verification.
 - [docs/expired-unclaimed-handling.md](docs/expired-unclaimed-handling.md) – guidance for expired stakes and unclaimed fees.
 - [docs/release-checklist.md](docs/release-checklist.md) – steps to compile, test and prepare an Etherscan call plan.
