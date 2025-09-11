@@ -1,10 +1,14 @@
 # Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)
 
-This guide walks through deploying the production AGIJobs v2 contract suite to Ethereum mainnet using the Truffle command-line interface. The provided migration deploys and wires every module in one transaction, assuming the canonical `$AGIALPHA` token and ENS-based identity policy.
+This guide explains how to deploy the production AGIJobs v2 contract suite to Ethereum mainnet with the Truffle CLI. A single migration launches and wires every module, assuming the canonical `$AGIALPHA` token and the default ENS‑based identity policy.
 
-## Prerequisites
+## Overview
 
-- **Node & npm** – install Node.js 20.x and npm 10+. The repo supplies an `.nvmrc` to match the expected Node version.
+AGIJobs v2 coordinates trustless labour markets between autonomous agents. The repository (named `AGIJobsv0`) contains all contracts and a migration that deploys StakeManager, JobRegistry, ReputationEngine and other modules in one transaction. The steps below follow best practices for a production launch: using a governance multisig, verifying source code and keeping pause controls ready.
+
+## Prerequisites & setup
+
+- **Node & npm** – install Node.js 20.x and npm 10+. The repo includes an `.nvmrc` to help match versions.
 - **Repository** – clone `MontrealAI/AGIJobsv0` and install dependencies plus Truffle tooling:
   ```bash
   git clone https://github.com/MontrealAI/AGIJobsv0.git
@@ -19,7 +23,8 @@ This guide walks through deploying the production AGIJobs v2 contract suite to E
   export GOVERNANCE_ADDRESS="0x<multisig_or_timelock>"
   export ETHERSCAN_API_KEY="<key>"
   ```
-- **Token & ENS** – `$AGIALPHA` lives at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`. Ensure you control `agi.eth` if enforcing ENS subdomains.
+- **Token & ENS** – `$AGIALPHA` lives at `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA`. Ensure you control `agi.eth` if enforcing ENS subdomains or adjust the migration.
+- **Dry‑run** – test the process on a public testnet (Sepolia/Goerli) before mainnet to confirm gas usage and environment variables.
 
 ## 1. Compile
 
