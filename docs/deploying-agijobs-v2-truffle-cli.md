@@ -220,9 +220,7 @@ module.exports = async function (deployer, network, accounts) {
     }
     try {
       const { execSync } = require('child_process');
-      const cmd = `npx truffle run verify ${contracts.join(
-        ' '
-      )} --network ${network}`;
+      const cmd = `npx truffle run verify ${contracts.join(' ')} --network ${network}`;
       console.log('Running:', cmd);
       execSync(cmd, { stdio: 'inherit' });
     } catch (err) {
