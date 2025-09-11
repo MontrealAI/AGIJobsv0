@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.29;
 
 /// @title IJobEscrow
 /// @notice Minimal interface for job escrow helpers
