@@ -19,6 +19,8 @@ describe('memory cleanup', function () {
 
   before(() => {
     process.env.JOB_REGISTRY_ADDRESS = dummyAddress;
+    process.env.VALIDATION_MODULE_ADDRESS = dummyAddress;
+    process.env.KEYSTORE_URL = 'http://localhost';
     utils = require('../../agent-gateway/utils');
   });
 

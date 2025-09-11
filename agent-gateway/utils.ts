@@ -15,6 +15,29 @@ export const BOT_WALLET = process.env.BOT_WALLET || '';
 export const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || '5000');
 export const PORT = Number(process.env.PORT || 3000);
 
+function validateEnvConfig(): void {
+  const checkAddress = (value: string, name: string): void => {
+    if (!value) {
+      throw new Error(`${name} is required`);
+    }
+    if (!ethers.isAddress(value)) {
+      throw new Error(`${name} is not a valid address: ${value}`);
+    }
+  };
+  checkAddress(JOB_REGISTRY_ADDRESS, 'JOB_REGISTRY_ADDRESS');
+  checkAddress(VALIDATION_MODULE_ADDRESS, 'VALIDATION_MODULE_ADDRESS');
+  if (!KEYSTORE_URL) {
+    throw new Error('KEYSTORE_URL is required');
+  }
+  try {
+    new URL(KEYSTORE_URL);
+  } catch {
+    throw new Error(`KEYSTORE_URL is malformed: ${KEYSTORE_URL}`);
+  }
+}
+
+validateEnvConfig();
+
 // $AGIALPHA token parameters
 const { address: AGIALPHA_ADDRESS, decimals: AGIALPHA_DECIMALS } = agialpha;
 export const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
