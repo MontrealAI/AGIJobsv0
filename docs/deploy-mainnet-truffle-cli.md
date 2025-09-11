@@ -39,6 +39,30 @@ export BURN_PCT=5                          # burn percentage (0‑100)
 export NO_TAX=true                         # set to skip TaxPolicy
 ```
 
+### Truffle configuration
+
+`truffle-config.js` reads these variables to configure the mainnet network
+using `HDWalletProvider`:
+
+```javascript
+// truffle-config.js
+module.exports = {
+  networks: {
+    mainnet: {
+      provider: () =>
+        new HDWalletProvider(
+          process.env.MAINNET_PRIVATE_KEY,
+          process.env.MAINNET_RPC_URL
+        ),
+      network_id: 1,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+    },
+  },
+};
+```
+
 The `$AGIALPHA` token address and decimals are fixed in
 `config/agialpha.json` and compiled into the contracts; no extra token
 configuration is required.
