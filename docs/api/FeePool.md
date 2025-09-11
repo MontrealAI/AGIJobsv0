@@ -14,6 +14,8 @@ Holds platform fees and distributes rewards.
 - `setBurnPct(uint256 pct)` / `setTreasury(address treasury)` – configure fee splits. Passing a non-zero treasury in the constructor auto-allowlists and sets it; otherwise treasury defaults to `address(0)` and later updates require `setTreasuryAllowlist`.
 - `setTreasuryAllowlist(address treasury, bool allowed)` – manage the governance-approved treasury list.
 - `setGovernance(address governance)` – set timelock enabled for withdrawals.
+- `setPauser(address pauser)` – designate an address that can pause or unpause.
+- `setTaxPolicy(address policy)` – update the TaxPolicy reference.
 
 ## Events
 
@@ -29,3 +31,5 @@ Holds platform fees and distributes rewards.
 - `GovernanceUpdated(address governance)`
 - `GovernanceWithdrawal(address to, uint256 amount)`
 - `RewardPoolContribution(address contributor, uint256 amount)`
+- `PauserUpdated(address pauser)`
+- `TaxPolicyUpdated(address policy, uint256 version)`

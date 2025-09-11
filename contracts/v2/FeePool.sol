@@ -92,7 +92,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     event GovernanceWithdrawal(address indexed to, uint256 amount);
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event PauserUpdated(address indexed pauser);
-    event TaxPolicyUpdated(address indexed policy);
+    event TaxPolicyUpdated(address indexed policy, uint256 version);
 
     modifier onlyOwnerOrPauser() {
         if (msg.sender != owner() && msg.sender != pauser) {
@@ -151,7 +151,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         if (address(_taxPolicy) != address(0)) {
             if (!_taxPolicy.isTaxExempt()) revert PolicyNotTaxExempt();
             taxPolicy = _taxPolicy;
-            emit TaxPolicyUpdated(address(_taxPolicy));
+            emit TaxPolicyUpdated(address(_taxPolicy), _taxPolicy.policyVersion());
         }
     }
 
@@ -396,7 +396,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         if (address(_policy) == address(0)) revert InvalidTaxPolicy();
         if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
         taxPolicy = _policy;
-        emit TaxPolicyUpdated(address(_policy));
+        emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
