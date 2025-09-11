@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.30;
 
 import {Governable} from "./Governable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -874,6 +874,36 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         jobId = _createJob(reward, deadline, agentTypes, specHash, uri);
     }
 
+    function _verifyAgentAuthorization(
+        address agent,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal returns (bool authorized) {
+        authorized =
+            agentAuthCache[agent] &&
+            agentAuthExpiry[agent] > block.timestamp &&
+            agentAuthVersion[agent] == agentAuthCacheVersion;
+        if (!authorized) {
+            bytes32 node;
+            bool viaWrapper;
+            bool viaMerkle;
+            (authorized, node, viaWrapper, viaMerkle) = identityRegistry
+                .verifyAgent(agent, subdomain, proof);
+            if (authorized) {
+                emit AgentIdentityVerified(
+                    agent,
+                    node,
+                    subdomain,
+                    viaWrapper,
+                    viaMerkle
+                );
+                agentAuthCache[agent] = true;
+                agentAuthExpiry[agent] = block.timestamp + agentAuthCacheDuration;
+                agentAuthVersion[agent] = agentAuthCacheVersion;
+            }
+        }
+    }
+
     function _applyForJob(
         uint256 jobId,
         string calldata subdomain,
@@ -895,30 +925,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
         }
         if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        bool authorized =
-            agentAuthCache[msg.sender] &&
-            agentAuthExpiry[msg.sender] > block.timestamp &&
-            agentAuthVersion[msg.sender] == agentAuthCacheVersion;
-        bytes32 node;
-        bool viaWrapper;
-        bool viaMerkle;
-        if (!authorized) {
-            (authorized, node, viaWrapper, viaMerkle) = identityRegistry
-                .verifyAgent(msg.sender, subdomain, proof);
-            if (authorized) {
-                emit AgentIdentityVerified(
-                    msg.sender,
-                    node,
-                    subdomain,
-                    viaWrapper,
-                    viaMerkle
-                );
-                agentAuthCache[msg.sender] = true;
-                agentAuthExpiry[msg.sender] =
-                    block.timestamp + agentAuthCacheDuration;
-                agentAuthVersion[msg.sender] = agentAuthCacheVersion;
-            }
-        }
+        bool authorized = _verifyAgentAuthorization(msg.sender, subdomain, proof);
         if (!authorized) revert NotAuthorizedAgent();
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
@@ -1284,33 +1291,25 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _finalize(jobId);
     }
 
-    function _finalize(uint256 jobId) internal whenNotPaused {
-        Job storage job = jobs[jobId];
-        if (job.state != State.Completed) revert NotReady();
-        bool isGov = msg.sender == address(governance);
-        uint256 burnRate = address(stakeManager) != address(0)
-            ? stakeManager.burnPct()
+    function _validateBurn(uint256 jobId, Job storage job, uint256 burnRate) internal {
+        if (!job.burnConfirmed) revert BurnNotConfirmed();
+        uint256 feeDue = (uint256(job.reward) * job.feePct) / 100;
+        uint256 validatorReward = validatorRewardPct > 0
+            ? (uint256(job.reward) * validatorRewardPct) / 100
             : 0;
-        if (!isGov && (job.feePct > 0 || burnRate > 0)) {
-            if (!job.burnConfirmed) revert BurnNotConfirmed();
-            uint256 feeDue = (uint256(job.reward) * job.feePct) / 100;
-            uint256 validatorReward = validatorRewardPct > 0
-                ? (uint256(job.reward) * validatorRewardPct) / 100
-                : 0;
-            uint256 burnDue =
-                ((uint256(job.reward) - validatorReward) * burnRate) / 100;
-            uint256 expectedBurn = feeDue + burnDue;
-            if (uint256(job.burnReceiptAmount) < expectedBurn) {
-                emit BurnDiscrepancy(
-                    jobId,
-                    job.burnReceiptAmount,
-                    expectedBurn
-                );
-                revert BurnAmountTooLow();
-            }
+        uint256 burnDue = ((uint256(job.reward) - validatorReward) * burnRate) / 100;
+        uint256 expectedBurn = feeDue + burnDue;
+        if (uint256(job.burnReceiptAmount) < expectedBurn) {
+            emit BurnDiscrepancy(jobId, job.burnReceiptAmount, expectedBurn);
+            revert BurnAmountTooLow();
         }
-        bool agentBlacklisted;
-        bool employerBlacklisted;
+    }
+
+    function _checkBlacklists(Job storage job, bool isGov)
+        internal
+        view
+        returns (bool agentBlacklisted, bool employerBlacklisted)
+    {
         if (address(reputationEngine) != address(0)) {
             agentBlacklisted = reputationEngine.isBlacklisted(job.agent);
             employerBlacklisted = reputationEngine.isBlacklisted(job.employer);
@@ -1320,138 +1319,188 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (employerBlacklisted) revert BlacklistedEmployer();
             }
         }
-        job.state = State.Finalized;
-        bytes32 jobKey = bytes32(jobId);
-        bool fundsRedirected;
-        if (job.success) {
-            IFeePool pool = feePool;
-            address[] memory validators;
-            uint256 validatorReward;
-            if (address(validationModule) != address(0)) {
-                validators = validationModule.validators(jobId);
-                if (validatorRewardPct > 0) {
-                    validatorReward =
-                        (uint256(job.reward) * validatorRewardPct) / 100;
-                }
-            }
+    }
 
-            uint256 rewardAfterValidator =
-                uint256(job.reward) - validatorReward;
-            uint256 fee;
-            uint256 agentPct = job.agentPct == 0 ? 100 : job.agentPct;
-            if (address(stakeManager) != address(0)) {
-                if (address(pool) != address(0) && job.reward > 0) {
-                    fee = (uint256(job.reward) * job.feePct) / 100;
-                }
-            }
-            uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
-            if (address(stakeManager) != address(0)) {
-                address payee = job.agent;
-                if (isGov && treasury != address(0) && agentBlacklisted) {
-                    payee = treasury;
-                    fundsRedirected = true;
-                }
+    struct FinalizeSuccessVars {
+        uint256 validatorReward;
+        uint256 rewardAfterValidator;
+        uint256 agentPct;
+        uint256 fee;
+        uint256 agentAmount;
+    }
 
-                address employerParam = isGov ? job.employer : msg.sender;
-                stakeManager.finalizeJobFundsWithPct(
+    function _finalizeSuccess(
+        Job storage job,
+        uint256 jobId,
+        bytes32 jobKey,
+        bool isGov,
+        bool agentBlacklisted
+    ) internal returns (bool fundsRedirected) {
+        FinalizeSuccessVars memory vars;
+        if (address(validationModule) != address(0) && validatorRewardPct > 0) {
+            vars.validatorReward = (uint256(job.reward) * validatorRewardPct) / 100;
+        }
+        vars.rewardAfterValidator = uint256(job.reward) - vars.validatorReward;
+        vars.agentPct = job.agentPct == 0 ? 100 : job.agentPct;
+        if (address(stakeManager) != address(0)) {
+            fundsRedirected = _distributeSuccessFunds(
+                job,
+                jobId,
+                jobKey,
+                isGov,
+                agentBlacklisted,
+                vars
+            );
+        }
+        vars.agentAmount = (vars.rewardAfterValidator * vars.agentPct) / 100;
+        _finalizeSuccessReputation(job, jobId, vars.agentAmount);
+        if (address(certificateNFT) != address(0)) {
+            certificateNFT.mint(job.agent, jobId, job.uriHash);
+        }
+        uint256 bonus = vars.agentAmount - vars.rewardAfterValidator;
+        emit JobPayout(jobId, job.agent, vars.rewardAfterValidator, bonus, vars.fee);
+    }
+
+    function _distributeSuccessFunds(
+        Job storage job,
+        uint256 jobId,
+        bytes32 jobKey,
+        bool isGov,
+        bool agentBlacklisted,
+        FinalizeSuccessVars memory vars
+    ) internal returns (bool fundsRedirected) {
+        if (address(feePool) != address(0) && job.reward > 0) {
+            vars.fee = (uint256(job.reward) * job.feePct) / 100;
+        }
+        address payee = job.agent;
+        if (isGov && treasury != address(0) && agentBlacklisted) {
+            payee = treasury;
+            fundsRedirected = true;
+        }
+        address employerParam = isGov ? job.employer : msg.sender;
+        stakeManager.finalizeJobFundsWithPct(
+            jobKey,
+            employerParam,
+            payee,
+            vars.agentPct,
+            vars.rewardAfterValidator,
+            vars.validatorReward,
+            vars.fee,
+            feePool,
+            isGov
+        );
+        if (vars.validatorReward > 0) {
+            if (
+                address(validationModule) != address(0) &&
+                validationModule.validators(jobId).length > 0
+            ) {
+                stakeManager.distributeValidatorRewards(jobKey, vars.validatorReward);
+            } else {
+                stakeManager.releaseReward(
                     jobKey,
-                    employerParam,
+                    job.employer,
                     payee,
-                    agentPct,
-                    rewardAfterValidator,
-                    validatorReward,
-                    fee,
-                    pool,
-                    isGov
+                    vars.validatorReward
                 );
-
-                if (validatorReward > 0) {
-                    if (validators.length > 0) {
-                        stakeManager.distributeValidatorRewards(
-                            jobKey,
-                            validatorReward
-                        );
-                    } else {
-                        stakeManager.releaseReward(
-                            jobKey,
-                            job.employer,
-                            payee,
-                            validatorReward
-                        );
-                    }
-                }
-                if (job.stake > 0) {
-                    if (isGov && treasury != address(0) && agentBlacklisted) {
-                        stakeManager.slash(
-                            job.agent,
-                            IStakeManager.Role.Agent,
-                            uint256(job.stake),
-                            treasury
-                        );
-                    } else {
-                        stakeManager.releaseStake(job.agent, uint256(job.stake));
-                    }
-                }
-            }
-            if (address(reputationEngine) != address(0)) {
-                uint256 completionTime = block.timestamp - job.assignedAt;
-                uint256 payout = agentAmount * 1e12;
-                uint256 agentGain = reputationEngine.calculateReputationPoints(
-                    payout,
-                    completionTime
-                );
-                reputationEngine.onFinalize(
-                    job.agent,
-                    true,
-                    payout,
-                    completionTime
-                );
-                if (validators.length > 0) {
-                    for (uint256 i; i < validators.length;) {
-                        address val = validators[i];
-                        if (validationModule.votes(jobId, val)) {
-                            reputationEngine.rewardValidator(val, agentGain);
-                        }
-                        unchecked {
-                            ++i;
-                        }
-                    }
-                }
-            }
-            if (address(certificateNFT) != address(0)) {
-                certificateNFT.mint(job.agent, jobId, job.uriHash);
-            }
-            uint256 bonus = agentAmount - rewardAfterValidator;
-            emit JobPayout(jobId, job.agent, rewardAfterValidator, bonus, fee);
-        } else {
-            if (address(stakeManager) != address(0)) {
-                uint256 fee = (uint256(job.reward) * job.feePct) / 100;
-                address recipient = job.employer;
-                if (isGov && treasury != address(0) && employerBlacklisted) {
-                    recipient = treasury;
-                    fundsRedirected = true;
-                }
-                if (job.reward > 0) {
-                    stakeManager.releaseReward(
-                        jobKey,
-                        job.employer,
-                        recipient,
-                        uint256(job.reward) + fee
-                    );
-                }
-                if (job.stake > 0) {
-                    stakeManager.slash(
-                        job.agent,
-                        IStakeManager.Role.Agent,
-                        uint256(job.stake),
-                        recipient
-                    );
-                }
-            }
-            if (address(reputationEngine) != address(0)) {
-                reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
+        if (job.stake > 0) {
+            if (isGov && treasury != address(0) && agentBlacklisted) {
+                stakeManager.slash(
+                    job.agent,
+                    IStakeManager.Role.Agent,
+                    uint256(job.stake),
+                    treasury
+                );
+            } else {
+                stakeManager.releaseStake(job.agent, uint256(job.stake));
+            }
+        }
+    }
+
+    function _finalizeSuccessReputation(
+        Job storage job,
+        uint256 jobId,
+        uint256 agentAmount
+    ) internal {
+        if (address(reputationEngine) != address(0)) {
+            uint256 completionTime = block.timestamp - job.assignedAt;
+            uint256 payout = agentAmount * 1e12;
+            uint256 agentGain = reputationEngine.calculateReputationPoints(
+                payout,
+                completionTime
+            );
+            reputationEngine.onFinalize(job.agent, true, payout, completionTime);
+            if (address(validationModule) != address(0)) {
+                address[] memory validators = validationModule.validators(jobId);
+                for (uint256 i; i < validators.length;) {
+                    address val = validators[i];
+                    if (validationModule.votes(jobId, val)) {
+                        reputationEngine.rewardValidator(val, agentGain);
+                    }
+                    unchecked {
+                        ++i;
+                    }
+                }
+            }
+        }
+    }
+
+    function _finalizeFailure(
+        Job storage job,
+        uint256 jobId,
+        bytes32 jobKey,
+        bool isGov,
+        bool employerBlacklisted
+    ) internal returns (bool fundsRedirected) {
+        if (address(stakeManager) != address(0)) {
+            uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+            address recipient = job.employer;
+            if (isGov && treasury != address(0) && employerBlacklisted) {
+                recipient = treasury;
+                fundsRedirected = true;
+            }
+            if (job.reward > 0) {
+                stakeManager.releaseReward(
+                    jobKey,
+                    job.employer,
+                    recipient,
+                    uint256(job.reward) + fee
+                );
+            }
+            if (job.stake > 0) {
+                stakeManager.slash(
+                    job.agent,
+                    IStakeManager.Role.Agent,
+                    uint256(job.stake),
+                    recipient
+                );
+            }
+        }
+        if (address(reputationEngine) != address(0)) {
+            reputationEngine.onFinalize(job.agent, false, 0, 0);
+        }
+    }
+
+    function _finalize(uint256 jobId) internal whenNotPaused {
+        Job storage job = jobs[jobId];
+        if (job.state != State.Completed) revert NotReady();
+        bool isGov = msg.sender == address(governance);
+        uint256 burnRate = address(stakeManager) != address(0)
+            ? stakeManager.burnPct()
+            : 0;
+        if (!isGov && (job.feePct > 0 || burnRate > 0)) {
+            _validateBurn(jobId, job, burnRate);
+        }
+        (bool agentBlacklisted, bool employerBlacklisted) = _checkBlacklists(
+            job,
+            isGov
+        );
+        job.state = State.Finalized;
+        bytes32 jobKey = bytes32(jobId);
+        bool fundsRedirected = job.success
+            ? _finalizeSuccess(job, jobId, jobKey, isGov, agentBlacklisted)
+            : _finalizeFailure(job, jobId, jobKey, isGov, employerBlacklisted);
         emit JobFinalized(jobId, job.agent);
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
