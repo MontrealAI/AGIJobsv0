@@ -1,3 +1,4 @@
+require('dotenv').config();
 require('@nomicfoundation/hardhat-toolbox');
 require('hardhat-gas-reporter');
 
@@ -27,6 +28,12 @@ module.exports = {
       allowUnlimitedContractSize: true,
       gas: 100000000,
       blockGasLimit: 100000000,
+    },
+    mainnet: {
+      url: process.env.MAINNET_RPC_URL || '',
+      accounts: process.env.MAINNET_PRIVATE_KEY
+        ? [process.env.MAINNET_PRIVATE_KEY]
+        : [],
     },
   },
   mocha: {
