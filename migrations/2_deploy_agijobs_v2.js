@@ -1,13 +1,18 @@
 const Deployer = artifacts.require('Deployer');
 
 /**
- * Truffle migration for deploying the full AGIJobs v2 stack.
+ * Truffle migration for deploying the full AGIJobs v2 stack on Ethereum
+ * mainnet. It assumes the canonical $AGIALPHA token and mainnet ENS root
+ * nodes defined in `contracts/v2/Constants.sol` and below.
  *
  * Environment variables:
  *  - GOVERNANCE_ADDRESS : multisig/timelock that will own the system
  *  - NO_TAX             : set to any value to skip TaxPolicy deployment
  *  - FEE_PCT            : protocol fee percentage (default 5)
  *  - BURN_PCT           : fee burn percentage (default 5)
+ *
+ * Run on a testnet first to confirm configuration before mainnet:
+ * `npx truffle migrate --network sepolia`
  */
 module.exports = async function (deployer, network, accounts) {
   const governance = process.env.GOVERNANCE_ADDRESS || accounts[0];
