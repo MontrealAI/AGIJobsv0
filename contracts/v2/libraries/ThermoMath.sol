@@ -32,13 +32,24 @@ library ThermoMath {
         int256 mu
     ) internal pure returns (uint256[] memory w) {
         require(E.length == g.length, "len");
+        require(T > 0, "T>0");
         uint256 n = E.length;
         w = new uint256[](n);
+        if (n == 0) return w;
         uint256[] memory raw = new uint256[](n);
         uint256 sum;
+        int256 maxE = E[0];
+        int256 minE = E[0];
+        for (uint256 i = 1; i < n; i++) {
+            int256 Ei = E[i];
+            if (Ei > maxE) maxE = Ei;
+            if (Ei < minE) minE = Ei;
+        }
+        int256 upper = ((mu - minE) * WAD) / T;
+        int256 lower = ((mu - maxE) * WAD) / T;
+        if (upper > MAX_EXP_INPUT || lower < MIN_EXP_INPUT) revert ExpInputOutOfBounds();
         for (uint256 i = 0; i < n; i++) {
-            int256 denom = T == 0 ? int256(1) : T;
-            int256 x = ((mu - E[i]) * WAD) / denom;
+            int256 x = ((mu - E[i]) * WAD) / T;
             uint256 weight = g[i] * _exp(x);
             raw[i] = weight;
             sum += weight;

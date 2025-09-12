@@ -26,6 +26,14 @@ contract ThermoMathTest is Test {
         assertApproxEqAbs(w[1], 5e17, 1e12);
     }
 
+    function test_reverts_when_temperature_non_positive() public {
+        int256[] memory E = new int256[](1);
+        uint256[] memory g = new uint256[](1);
+        E[0] = 0; g[0] = 1;
+        vm.expectRevert(bytes("T>0"));
+        ThermoMath.mbWeights(E, g, 0, 0);
+    }
+
     function test_reverts_when_exp_input_too_large() public {
         int256[] memory E = new int256[](1);
         uint256[] memory g = new uint256[](1);

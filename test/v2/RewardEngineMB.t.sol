@@ -68,6 +68,23 @@ contract RewardEngineMBTest is Test {
         p.sig = bytes("");
     }
 
+    function _proofWithDeg(
+        address user,
+        int256 energy,
+        uint256 degeneracy
+    ) internal pure returns (RewardEngineMB.Proof memory p) {
+        IEnergyOracle.Attestation memory att = IEnergyOracle.Attestation({
+            jobId: 1,
+            user: user,
+            energy: energy,
+            degeneracy: degeneracy,
+            nonce: 1,
+            deadline: type(uint256).max
+        });
+        p.att = att;
+        p.sig = bytes("");
+    }
+
     function test_settleEpochDistributesBudget() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
@@ -98,6 +115,24 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.rewards(employer), budget * engine.roleShare(RewardEngineMB.Role.Employer) / 1e18);
         // Reputation update sign
         assertEq(rep.deltas(agent), -int256(1e18));
+    }
+
+    function test_reverts_on_negative_energy() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, -1);
+        data.agents = a;
+        vm.expectRevert(bytes("att"));
+        engine.settleEpoch(1, data);
+    }
+
+    function test_reverts_on_zero_degeneracy() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proofWithDeg(agent, 1, 0);
+        data.agents = a;
+        vm.expectRevert(bytes("att"));
+        engine.settleEpoch(1, data);
     }
 }
 
