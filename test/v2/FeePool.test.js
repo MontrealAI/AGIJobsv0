@@ -184,9 +184,7 @@ describe('FeePool', function () {
     await feePool.connect(owner).setRewarder(owner.address, true);
     await token.mint(await feePool.getAddress(), 50);
 
-    await expect(
-      feePool.connect(owner).reward(treasury.address, 50)
-    )
+    await expect(feePool.connect(owner).reward(treasury.address, 50))
       .to.emit(feePool, 'TreasuryRewarded')
       .withArgs(treasury.address, 50);
     expect(await feePool.treasuryRewards(treasury.address)).to.equal(50n);
