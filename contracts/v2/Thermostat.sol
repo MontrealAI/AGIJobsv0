@@ -25,6 +25,7 @@ contract Thermostat is Ownable {
     event PIDUpdated(int256 kp, int256 ki, int256 kd);
 
     constructor(int256 _temp, int256 _min, int256 _max) Ownable(msg.sender) {
+        require(_min > 0 && _max > _min, "bounds");
         systemTemperature = _temp;
         minTemp = _min;
         maxTemp = _max;
@@ -38,7 +39,7 @@ contract Thermostat is Ownable {
     }
 
     function setRoleTemperature(Role r, int256 temp) external onlyOwner {
-        require(temp >= minTemp && temp <= maxTemp, "bounds");
+        require(temp > 0 && temp >= minTemp && temp <= maxTemp, "bounds");
         roleTemps[r] = temp;
         emit RoleTemperatureUpdated(r, temp);
     }
@@ -61,6 +62,7 @@ contract Thermostat is Ownable {
         systemTemperature += delta;
         if (systemTemperature < minTemp) systemTemperature = minTemp;
         if (systemTemperature > maxTemp) systemTemperature = maxTemp;
+        require(systemTemperature > 0, "temp");
         lastError = error;
         emit TemperatureUpdated(systemTemperature);
     }
