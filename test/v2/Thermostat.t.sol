@@ -34,5 +34,16 @@ contract ThermostatTest is Test {
         vm.expectRevert("bounds");
         t.setRoleTemperature(Thermostat.Role.Agent, int256(-1));
     }
+
+    function test_tickEmitsEvent() public {
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        t.setPID(int256(1), int256(0), int256(0));
+
+        vm.expectEmit(false, false, false, true, address(t));
+        emit Thermostat.TemperatureUpdated(int256(200));
+        vm.expectEmit(false, false, false, true, address(t));
+        emit Thermostat.Tick(int256(500), int256(0), int256(0), int256(200));
+        t.tick(int256(500), int256(0), int256(0));
+    }
 }
 
