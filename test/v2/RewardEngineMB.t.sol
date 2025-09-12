@@ -144,6 +144,19 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.total(), 2e18, "scaled budget distributed");
     }
 
+    function test_setRoleShareEmits() public {
+        vm.expectEmit(true, false, false, true);
+        emit RewardEngineMB.RoleShareUpdated(RewardEngineMB.Role.Agent, 65e16);
+        engine.setRoleShare(RewardEngineMB.Role.Agent, 65e16);
+    }
+
+    function test_setMuEmits() public {
+        vm.expectEmit(true, false, false, true);
+        emit RewardEngineMB.MuUpdated(RewardEngineMB.Role.Agent, 1);
+        engine.setMu(RewardEngineMB.Role.Agent, 1);
+        assertEq(engine.mu(RewardEngineMB.Role.Agent), 1);
+    }
+
     function test_reverts_on_negative_energy() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
