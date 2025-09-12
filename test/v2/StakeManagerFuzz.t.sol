@@ -15,7 +15,7 @@ contract StakeManagerFuzz is Test {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 50, 50, 0, address(this), address(this), address(this), address(this));
     }
 
     function _deposit(address user, uint256 amount, StakeManager.Role role) internal {
@@ -31,7 +31,7 @@ contract StakeManagerFuzz is Test {
         vm.assume(slash <= deposit);
         _deposit(address(1), deposit, StakeManager.Role.Validator);
         vm.prank(address(this));
-        stake.slash(address(1), StakeManager.Role.Validator, slash, address(this));
+        stake.slash(address(1), StakeManager.Role.Validator, slash, address(this), bytes32(0));
         assertEq(stake.stakeOf(address(1), StakeManager.Role.Validator), deposit - slash);
     }
 

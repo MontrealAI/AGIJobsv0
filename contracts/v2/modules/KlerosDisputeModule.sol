@@ -103,6 +103,7 @@ contract KlerosDisputeModule is IDisputeModule {
 
     /// @inheritdoc IDisputeModule
     function slashValidator(
+        uint256,
         address,
         uint256,
         address

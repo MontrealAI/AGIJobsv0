@@ -36,7 +36,7 @@ contract PlatformIncentivesTest is Test {
         token = AGIALPHAToken(payable(AGIALPHA));
         jobRegistry = new MockJobRegistry();
         jobRegistry.setTaxPolicyVersion(1);
-        stakeManager = new StakeManager(0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
+        stakeManager = new StakeManager(0, 0, 0, 0, address(this), address(jobRegistry), address(0), address(this));
         platformRegistry = new PlatformRegistry(
             IStakeManager(address(stakeManager)),
             PlatformReputationEngine(address(0)),

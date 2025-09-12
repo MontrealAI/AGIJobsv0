@@ -24,7 +24,7 @@ contract ValidationSlashingFuzz is Test {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 0, 100, address(this), address(0), address(0), address(this));
+        stake = new StakeManager(1e18, 0, 100, 0, address(this), address(0), address(0), address(this));
         jobRegistry = new MockJobRegistry();
         stake.setJobRegistry(address(jobRegistry));
         identity = new IdentityRegistryToggle();

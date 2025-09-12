@@ -27,6 +27,7 @@ contract ValidatorSelectionFuzz is Test {
             1e18,
             0,
             100,
+            0,
             address(this),
             address(0),
             address(0),

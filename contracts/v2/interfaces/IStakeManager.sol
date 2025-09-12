@@ -36,7 +36,8 @@ interface IStakeManager {
         address indexed treasury,
         uint256 employerShare,
         uint256 treasuryShare,
-        uint256 burnShare
+        uint256 burnShare,
+        uint256 validatorShare
     );
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
@@ -44,7 +45,11 @@ interface IStakeManager {
     event ValidationModuleUpdated(address module);
     event ModulesUpdated(address jobRegistry, address disputeModule);
     event MinStakeUpdated(uint256 minStake);
-    event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event SlashingPercentagesUpdated(
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct,
+        uint256 validatorSlashPct
+    );
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event MaxStakePerAddressUpdated(uint256 maxStake);
@@ -55,6 +60,7 @@ interface IStakeManager {
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
+    event ValidatorSlashPaid(bytes32 indexed jobId, address indexed validator, uint256 amount);
 
     /// @notice deposit stake for caller for a specific role
     /// @param role participant role receiving credit
@@ -176,18 +182,30 @@ interface IStakeManager {
     /// @param role participant role of the slashed stake
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
-    function slash(address user, Role role, uint256 amount, address employer) external;
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer,
+        bytes32 jobId
+    ) external;
 
     /// @notice slash validator stake during dispute resolution
     /// @param user address whose stake will be reduced
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
-    function slash(address user, uint256 amount, address recipient) external;
+    function slash(
+        address user,
+        uint256 amount,
+        address recipient,
+        bytes32 jobId
+    ) external;
 
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
     function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
+    function setValidatorSlashPct(uint256 pct) external;
     function setTreasury(address _treasury) external;
     function setTreasuryAllowlist(address _treasury, bool allowed) external;
     function setMaxStakePerAddress(uint256 maxStake) external;

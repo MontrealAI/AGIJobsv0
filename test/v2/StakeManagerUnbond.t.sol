@@ -22,7 +22,7 @@ contract StakeManagerUnbond is Test {
         AGIALPHAToken impl = new AGIALPHAToken();
         vm.etch(AGIALPHA, address(impl).code);
         token = AGIALPHAToken(payable(AGIALPHA));
-        stake = new StakeManager(1e18, 50, 50, address(this), address(this), address(this), address(this));
+        stake = new StakeManager(1e18, 50, 50, 0, address(this), address(this), address(this), address(this));
         token.mint(user, 1e18);
         vm.prank(user);
         token.approve(address(stake), 1e18);
@@ -50,7 +50,7 @@ contract StakeManagerUnbond is Test {
 
     function testJailOnSlash() public {
         _request(5e17);
-        stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
+        stake.slash(user, StakeManager.Role.Validator, 1e17, address(this), bytes32(0));
         vm.warp(block.timestamp + stake.unbondingPeriod());
         vm.prank(user);
         vm.expectRevert(Jailed.selector);

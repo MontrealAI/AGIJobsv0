@@ -1386,7 +1386,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                             job.agent,
                             IStakeManager.Role.Agent,
                             uint256(job.stake),
-                            treasury
+                            treasury,
+                            jobKey
                         );
                     } else {
                         stakeManager.releaseStake(job.agent, uint256(job.stake));
@@ -1444,7 +1445,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                         job.agent,
                         IStakeManager.Role.Agent,
                         uint256(job.stake),
-                        recipient
+                        recipient,
+                        jobKey
                     );
                 }
             }

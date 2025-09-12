@@ -123,6 +123,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice percentage of slashed amount sent to treasury (out of 100)
     uint256 public treasurySlashPct;
 
+    /// @notice percentage of slashed amount allocated to validators (out of 100)
+    uint256 public validatorSlashPct;
+
     /// @notice staked balance per user and role
     mapping(address => mapping(Role => uint256)) public stakes;
 
@@ -196,7 +199,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address indexed treasury,
         uint256 employerShare,
         uint256 treasuryShare,
-        uint256 burnShare
+        uint256 burnShare,
+        uint256 validatorShare
     );
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
@@ -212,7 +216,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event DisputeModuleUpdated(address indexed module);
     event ValidationModuleUpdated(address indexed module);
     event MinStakeUpdated(uint256 minStake);
-    event SlashingPercentagesUpdated(uint256 employerSlashPct, uint256 treasurySlashPct);
+    event SlashingPercentagesUpdated(
+        uint256 employerSlashPct,
+        uint256 treasurySlashPct,
+        uint256 validatorSlashPct
+    );
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event JobRegistryUpdated(address indexed registry);
@@ -223,6 +231,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event ValidatorRewardPctUpdated(uint256 pct);
+    event ValidatorSlashPaid(bytes32 indexed jobId, address indexed validator, uint256 amount);
     event FeePoolUpdated(address indexed feePool);
     event UnbondingPeriodUpdated(uint256 newPeriod);
     event PauserUpdated(address indexed pauser);
@@ -253,6 +262,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 _minStake,
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct,
+        uint256 _validatorSlashPct,
         address _treasury,
         address _jobRegistry,
         address _disputeModule,
@@ -263,17 +273,23 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         minStake = _minStake == 0 ? DEFAULT_MIN_STAKE : _minStake;
         emit MinStakeUpdated(minStake);
-        if (_employerSlashPct + _treasurySlashPct == 0) {
+        if (_employerSlashPct + _treasurySlashPct + _validatorSlashPct == 0) {
             employerSlashPct = 0;
             treasurySlashPct = 100;
+            validatorSlashPct = 0;
         } else {
-            if (_employerSlashPct + _treasurySlashPct != 100) {
+            if (_employerSlashPct + _treasurySlashPct + _validatorSlashPct != 100) {
                 revert InvalidPercentage();
             }
             employerSlashPct = _employerSlashPct;
             treasurySlashPct = _treasurySlashPct;
+            validatorSlashPct = _validatorSlashPct;
         }
-        emit SlashingPercentagesUpdated(employerSlashPct, treasurySlashPct);
+        emit SlashingPercentagesUpdated(
+            employerSlashPct,
+            treasurySlashPct,
+            validatorSlashPct
+        );
 
         if (_treasury != address(0) && _treasury == owner()) {
             revert InvalidTreasury();
@@ -310,13 +326,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 _employerSlashPct,
         uint256 _treasurySlashPct
     ) internal {
-        if (
-            _employerSlashPct > 100 || _treasurySlashPct > 100
-        ) revert InvalidPercentage();
-        if (_employerSlashPct + _treasurySlashPct > 100) revert InvalidPercentage();
+        if (_employerSlashPct > 100 || _treasurySlashPct > 100)
+            revert InvalidPercentage();
+        if (_employerSlashPct + _treasurySlashPct + validatorSlashPct > 100)
+            revert InvalidPercentage();
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
-        emit SlashingPercentagesUpdated(_employerSlashPct, _treasurySlashPct);
+        emit SlashingPercentagesUpdated(
+            _employerSlashPct,
+            _treasurySlashPct,
+            validatorSlashPct
+        );
     }
 
     /// @dev internal helper to burn tokens
@@ -352,6 +372,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 _treasurySlashPct
     ) external onlyGovernance {
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
+    }
+
+    /// @notice update validator slashing percentage
+    /// @param pct percentage sent to validators (0-100)
+    function setValidatorSlashPct(uint256 pct) external onlyGovernance {
+        if (pct > 100) revert InvalidPercentage();
+        if (employerSlashPct + treasurySlashPct + pct > 100)
+            revert InvalidPercentage();
+        validatorSlashPct = pct;
+        emit SlashingPercentagesUpdated(
+            employerSlashPct,
+            treasurySlashPct,
+            pct
+        );
     }
 
     /// @notice update treasury recipient address
@@ -1292,20 +1326,24 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address user,
         Role role,
         uint256 amount,
-        address recipient
+        address recipient,
+        bytes32 jobId
     ) internal {
         if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
-        if (employerSlashPct + treasurySlashPct > 100) revert InvalidPercentage();
+        if (employerSlashPct + treasurySlashPct + validatorSlashPct > 100)
+            revert InvalidPercentage();
         if (treasury != address(0) && !treasuryAllowlist[treasury])
             revert InvalidTreasury();
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
+        uint256 validatorShare = (amount * validatorSlashPct) / 100;
         uint256 burnShare =
-            (amount * (100 - employerSlashPct - treasurySlashPct)) / 100;
-        uint256 distributed = employerShare + treasuryShare + burnShare;
+            (amount * (100 - employerSlashPct - treasurySlashPct - validatorSlashPct)) /
+                100;
+        uint256 distributed = employerShare + treasuryShare + burnShare + validatorShare;
         if (distributed < amount) {
             burnShare += amount - distributed;
         }
@@ -1350,6 +1388,65 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                 treasuryShare = 0;
             }
         }
+
+        if (validatorShare > 0) {
+            address vmAddr = address(validationModule);
+            if (vmAddr != address(0) && jobId != bytes32(0)) {
+                address[] memory vals = validationModule.validators(uint256(jobId));
+                uint256 count = vals.length;
+                if (count > 0) {
+                    uint256 totalWeight;
+                    uint256[] memory weights = new uint256[](count);
+                    uint256 maxWeight;
+                    uint256 maxIndex;
+                    for (uint256 i; i < count;) {
+                        address v = vals[i];
+                        if (v != user) {
+                            uint256 pct = getTotalPayoutPct(v);
+                            weights[i] = pct;
+                            totalWeight += pct;
+                            if (pct > maxWeight) {
+                                maxWeight = pct;
+                                maxIndex = i;
+                            }
+                        }
+                        unchecked {
+                            ++i;
+                        }
+                    }
+                    if (totalWeight > 0) {
+                        uint256 distributedVal;
+                        for (uint256 i; i < count;) {
+                            address v = vals[i];
+                            if (v == user) {
+                                unchecked { ++i; }
+                                continue;
+                            }
+                            uint256 payout =
+                                (validatorShare * weights[i]) / totalWeight;
+                            distributedVal += payout;
+                            token.safeTransfer(v, payout);
+                            emit ValidatorSlashPaid(jobId, v, payout);
+                            unchecked { ++i; }
+                        }
+                        uint256 remainder = validatorShare - distributedVal;
+                        if (remainder > 0) {
+                            token.safeTransfer(vals[maxIndex], remainder);
+                            emit ValidatorSlashPaid(jobId, vals[maxIndex], remainder);
+                        }
+                    } else {
+                        burnShare += validatorShare;
+                        validatorShare = 0;
+                    }
+                } else {
+                    burnShare += validatorShare;
+                    validatorShare = 0;
+                }
+            } else {
+                burnShare += validatorShare;
+                validatorShare = 0;
+            }
+        }
         if (burnShare > 0) {
             // Burned stake originates from the slashed participant, not employer funds.
             _burnToken(bytes32(0), burnShare);
@@ -1362,7 +1459,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             treasury,
             employerShare,
             treasuryShare,
-            burnShare
+            burnShare,
+            validatorShare
         );
     }
 
@@ -1371,26 +1469,29 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param role participant role of the slashed stake
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
+    /// @param jobId job identifier used for validator payouts
     function slash(
         address user,
         Role role,
         uint256 amount,
-        address employer
+        address employer,
+        bytes32 jobId
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        _slash(user, role, amount, employer);
+        _slash(user, role, amount, employer, jobId);
     }
 
     /// @notice slash a validator's stake during dispute resolution
     /// @param user address whose stake will be reduced
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
-    function slash(address user, uint256 amount, address recipient)
-        external
-        onlyDisputeModule
-        whenNotPaused
-        nonReentrant
-    {
-        _slash(user, Role.Validator, amount, recipient);
+    /// @param jobId job identifier used for validator payouts
+    function slash(
+        address user,
+        uint256 amount,
+        address recipient,
+        bytes32 jobId
+    ) external onlyDisputeModule whenNotPaused nonReentrant {
+        _slash(user, Role.Validator, amount, recipient, jobId);
     }
 
     /// @notice Return the total stake deposited by a user for a role

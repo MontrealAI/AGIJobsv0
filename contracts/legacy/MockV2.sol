@@ -84,24 +84,30 @@ contract MockStakeManager is IStakeManager {
     function setFeePool(IFeePool) external override {}
     function setBurnPct(uint256) external override {}
     function setValidatorRewardPct(uint256) external override {}
+    function setValidatorSlashPct(uint256) external override {}
     function addAGIType(address, uint256) external override {}
     function removeAGIType(address) external override {}
     function syncBoostedStake(address, Role) external override {}
 
-    function slash(address user, Role role, uint256 amount, address)
-        external
-        override
-    {
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address,
+        bytes32
+    ) external override {
         uint256 st = _stakes[user][role];
         require(st >= amount, "stake");
         _stakes[user][role] = st - amount;
         totalStakes[role] -= amount;
     }
 
-    function slash(address user, uint256 amount, address)
-        external
-        override
-    {
+    function slash(
+        address user,
+        uint256 amount,
+        address,
+        bytes32
+    ) external override {
         uint256 st = _stakes[user][Role.Validator];
         require(st >= amount, "stake");
         _stakes[user][Role.Validator] = st - amount;
@@ -482,7 +488,13 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             address recipient = job.success ? job.agent : job.employer;
             _stakeManager.release(job.employer, recipient, job.reward);
             if (!job.success) {
-                _stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, recipient);
+                _stakeManager.slash(
+                    job.agent,
+                    IStakeManager.Role.Agent,
+                    job.stake,
+                    recipient,
+                    bytes32(jobId)
+                );
             }
         }
         if (address(reputationEngine) != address(0)) {
