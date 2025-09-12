@@ -50,9 +50,10 @@ contract RewardEngineMBTest is Test {
     function setUp() public {
         thermo = new Thermostat(int256(1e18), int256(1), int256(2e18));
         pool = new MockFeePool();
-        rep = new MockReputation();
+       rep = new MockReputation();
         oracle = new MockEnergyOracle();
         engine = new RewardEngineMB(thermo, pool, rep, oracle);
+        engine.setSettler(address(this), true);
     }
 
     function _proof(address user, int256 energy) internal pure returns (RewardEngineMB.Proof memory p) {
@@ -180,6 +181,23 @@ contract RewardEngineMBTest is Test {
 
         engine.settleEpoch(1, data);
         engine.settleEpoch(2, data); // should not revert
+    }
+
+    function test_only_settler_can_settle_epoch() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18));
+        data.agents = a;
+
+        address nonSettler = address(0xBEEF);
+        vm.expectRevert(bytes("not settler"));
+        vm.prank(nonSettler);
+        engine.settleEpoch(1, data);
+
+        address settler = address(0xCAFE);
+        engine.setSettler(settler, true);
+        vm.prank(settler);
+        engine.settleEpoch(1, data); // should succeed
     }
 }
 
