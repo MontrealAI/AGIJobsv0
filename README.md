@@ -74,6 +74,9 @@ flowchart TD
     G --> B{"Budget = κ·max(0, −ΔG)"}:::calc
     B --> MB["Maxwell–Boltzmann Weights\nwᵢ ∝ gᵢ·e((μᵣ−Eᵢ)/Tᵣ)"]:::calc
 
+    MB --> FP((FeePool)):::dist
+    MB --> REP((ReputationEngine)):::rep
+
     subgraph Allocation
         AG[Agents]
         VD[Validators]
@@ -81,10 +84,15 @@ flowchart TD
         EM[Employers]
     end
 
-    MB -->|65%| AG:::dist
-    MB -->|15%| VD:::dist
-    MB -->|15%| OP:::dist
-    MB -->|5%| EM:::dist
+    FP -->|65%| AG:::dist
+    FP -->|15%| VD:::dist
+    FP -->|15%| OP:::dist
+    FP -->|5%| EM:::dist
+
+    REP --> AG
+    REP --> VD
+    REP --> OP
+    REP --> EM
 
     AG --> RAG[Reputation ↑]:::rep
     VD --> RVD[Reputation ↑]:::rep
