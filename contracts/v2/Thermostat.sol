@@ -23,6 +23,7 @@ contract Thermostat is Ownable {
     event TemperatureUpdated(int256 newTemp);
     event RoleTemperatureUpdated(Role role, int256 temp);
     event PIDUpdated(int256 kp, int256 ki, int256 kd);
+    event Tick(int256 emission, int256 backlog, int256 sla, int256 newTemp);
 
     constructor(int256 _temp, int256 _min, int256 _max) Ownable(msg.sender) {
         require(_min > 0 && _max > _min, "bounds");
@@ -65,6 +66,7 @@ contract Thermostat is Ownable {
         require(systemTemperature > 0, "temp");
         lastError = error;
         emit TemperatureUpdated(systemTemperature);
+        emit Tick(emission, backlog, sla, systemTemperature);
     }
 }
 
