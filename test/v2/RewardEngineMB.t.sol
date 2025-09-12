@@ -117,6 +117,31 @@ contract RewardEngineMBTest is Test {
         assertEq(rep.deltas(agent), -int256(1e18));
     }
 
+    function test_setKappaScalesBudget() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18));
+        data.agents = a;
+        RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
+        v[0] = _proof(validator, int256(1e18));
+        data.validators = v;
+        RewardEngineMB.Proof[] memory o = new RewardEngineMB.Proof[](1);
+        o[0] = _proof(operator, int256(1e18));
+        data.operators = o;
+        RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
+        e[0] = _proof(employer, int256(1e18));
+        data.employers = e;
+        data.totalValue = 0;
+        data.paidCosts = 1e18;
+        data.sumUpre = 0;
+        data.sumUpost = 0;
+
+        engine.setKappa(2e18);
+        engine.settleEpoch(1, data);
+        // budget should be double with kappa = 2e18
+        assertEq(pool.total(), 2e18, "scaled budget distributed");
+    }
+
     function test_reverts_on_negative_energy() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);

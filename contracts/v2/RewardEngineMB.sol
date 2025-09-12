@@ -52,6 +52,7 @@ contract RewardEngineMB is Ownable {
 
     event EpochSettled(uint256 indexed epoch, uint256 budget);
     event RewardIssued(address indexed user, Role role, uint256 amount);
+    event KappaUpdated(uint256 newKappa);
 
     constructor(
         Thermostat _thermostat,
@@ -77,6 +78,13 @@ contract RewardEngineMB is Ownable {
 
     function setMu(Role r, int256 _mu) external onlyOwner {
         mu[r] = _mu;
+    }
+
+    /// @notice Set the scaling factor converting free energy to token units.
+    /// @param _kappa New scaling coefficient in 18-decimal fixed point.
+    function setKappa(uint256 _kappa) external onlyOwner {
+        kappa = _kappa;
+        emit KappaUpdated(_kappa);
     }
 
     /// @notice Track highest attestation nonce per user per epoch
