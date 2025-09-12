@@ -10,3 +10,4 @@ scripts/**/*.js
 !scripts/constants.js
 
 build/
+lib/
