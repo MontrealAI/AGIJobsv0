@@ -113,6 +113,7 @@ contract RewardEngineMB is Ownable {
         uint256 count = 0;
         for (uint256 i = 0; i < n; i++) {
             IEnergyOracle.Attestation calldata att = proofs[i].att;
+            require(att.energy >= 0 && att.degeneracy > 0, "att");
             address signer = energyOracle.verify(att, proofs[i].sig);
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
             if (att.nonce <= usedNonces[att.user]) revert Replay(address(energyOracle));
