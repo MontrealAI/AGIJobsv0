@@ -178,6 +178,20 @@ describe('FeePool', function () {
     expect((await token.balanceOf(user3.address)) - before3).to.equal(200n);
   });
 
+  it('records leftover distributions to the treasury', async () => {
+    await feePool.connect(owner).setTreasuryAllowlist(treasury.address, true);
+    await feePool.connect(owner).setTreasury(treasury.address);
+    await feePool.connect(owner).setRewarder(owner.address, true);
+    await token.mint(await feePool.getAddress(), 50);
+
+    await expect(
+      feePool.connect(owner).reward(treasury.address, 50)
+    )
+      .to.emit(feePool, 'TreasuryRewarded')
+      .withArgs(treasury.address, 50);
+    expect(await feePool.treasuryRewards(treasury.address)).to.equal(50n);
+  });
+
   it('distributes rewards to validators when configured', async () => {
     // additional validator stakes
     await token.connect(user1).approve(await stakeManager.getAddress(), 100);
