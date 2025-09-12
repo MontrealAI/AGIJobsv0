@@ -52,6 +52,11 @@ flowchart LR
         E[(Employer)]
     end
 
+    A -. "energy use" .-> EO
+    V -. "energy use" .-> EO
+    O -. "energy use" .-> EO
+    E -. "energy use" .-> EO
+
     EO -- "attest E_i,g_i" --> RE
     TH -- "Tₛ/Tᵣ" --> RE
     RE --> MB

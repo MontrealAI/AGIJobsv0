@@ -97,6 +97,17 @@ flowchart TB
     class RA,RV,RO,RE rep;
 ```
 
+Default role shares for the epoch budget are shown below:
+
+```mermaid
+pie showData
+    title Role Share Distribution
+    "Agents" : 65
+    "Validators" : 15
+    "Operators" : 15
+    "Employers" : 5
+```
+
 #### Reward Settlement Flow
 
 ```mermaid
