@@ -4,10 +4,11 @@ pragma solidity ^0.8.25;
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IEnergyOracle} from "./interfaces/IEnergyOracle.sol";
 
 /// @title EnergyOracle
 /// @notice Verifies signed energy attestations used for reward settlement.
-contract EnergyOracle is EIP712, Ownable {
+contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
     using ECDSA for bytes32;
 
     bytes32 public constant TYPEHASH = keccak256(
@@ -17,23 +18,20 @@ contract EnergyOracle is EIP712, Ownable {
     mapping(address => bool) public signers;
     mapping(address => uint256) public nonces;
 
-    struct Attestation {
-        uint256 jobId;
-        address user;
-        int256 energy;
-        uint256 degeneracy;
-        uint256 nonce;
-        uint256 deadline;
-    }
-
     constructor() EIP712("EnergyOracle", "1") Ownable(msg.sender) {}
 
     function setSigner(address signer, bool allowed) external onlyOwner {
         signers[signer] = allowed;
     }
 
-    function verify(Attestation calldata att, bytes calldata sig) external view returns (bool) {
-        if (att.deadline < block.timestamp) return false;
+    /// @inheritdoc IEnergyOracle
+    function verify(IEnergyOracle.Attestation calldata att, bytes calldata sig)
+        external
+        view
+        override
+        returns (address signer)
+    {
+        if (att.deadline < block.timestamp) return address(0);
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
@@ -47,8 +45,8 @@ contract EnergyOracle is EIP712, Ownable {
                 )
             )
         );
-        address signer = ECDSA.recover(digest, sig);
-        return signers[signer];
+        signer = ECDSA.recover(digest, sig);
+        if (!signers[signer]) return address(0);
     }
 }
 
