@@ -31,6 +31,17 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 ```mermaid
 flowchart LR
+    EO[EnergyOracle] -->|attests energy| RE[RewardEngineMB]
+    RE -->|usage metrics| TH[Thermostat]
+    TH -->|Tₛ/Tᵣ| RE
+    RE --> FP[FeePool]
+    RE --> REP[ReputationEngine]
+    classDef mod fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+    class EO,RE,TH,FP,REP mod;
+```
+
+```mermaid
+flowchart LR
     subgraph Inputs["Sensors"]
         EO((EnergyOracle))
     end
