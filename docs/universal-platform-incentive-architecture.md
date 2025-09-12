@@ -30,19 +30,48 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 | 10               | 1.8×          | +9              |
 
 ```mermaid
-graph LR
-    Oracle((EnergyOracle)) -- "E_i, g_i attestations" --> Engine[RewardEngineMB]
-    Thermostat((Thermostat)) -- "Tₛ & T_r" --> Engine
-    Engine -- "AGIALPHA rewards" --> FeePool((FeePool))
-    Engine -- "reputation delta" --> Reputation[ReputationEngine]
-    FeePool --> Roles((Agents / Validators / Operators / Employers))
-    Reputation --> Roles
+graph TD
+    subgraph Measurement
+        Oracle((EnergyOracle))
+    end
+    subgraph Control
+        Thermostat((Thermostat))
+    end
+    subgraph Settlement[RewardEngineMB]
+        Engine[RewardEngineMB]
+        FeePool((FeePool))
+        Reputation[ReputationEngine]
+    end
+
+    Oracle -- "E_i, g_i, ΔU" --> Engine
+    Thermostat -- "Tₛ, T_r" --> Engine
+    Engine -- "AGIALPHA" --> FeePool
+    Engine -- "reputation Δ" --> Reputation
+    FeePool --> Agent((Agent))
+    FeePool --> Validator((Validator))
+    FeePool --> Operator((Operator))
+    FeePool --> Employer((Employer))
+    Reputation --> Agent
+    Reputation --> Validator
+    Reputation --> Operator
+    Reputation --> Employer
+
+    classDef oracle fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef control fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+    classDef role fill:#f0f0f0,stroke:#555,stroke-width:1px;
+
+    class Oracle oracle;
+    class Thermostat control;
+    class Engine,FeePool,Reputation engine;
+    class Agent,Validator,Operator,Employer role;
 ```
 
 ### Reward Settlement Process
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant Employer
     participant Agent
     participant Validator
@@ -57,9 +86,10 @@ sequenceDiagram
     Validator->>Employer: Approve results
     Agent->>Oracle: Report energy
     Oracle-->>Engine: Signed attestation
-    Engine->>Thermostat: Request temperatures
-    Thermostat-->>Engine: Tₛ & T_r
-    Engine->>Engine: Compute ΔG & MB weights
+    Engine->>Thermostat: Query Tₛ & T_r
+    Thermostat-->>Engine: Temperatures
+    Note over Engine,FeePool: budget = κ·max(0, -(ΔH - Tₛ·ΔS))
+    Engine->>Engine: Compute MB weights
     Engine->>FeePool: Allocate rewards
     Engine->>Reputation: Update scores
     FeePool-->>Agent: Token reward
@@ -69,6 +99,7 @@ sequenceDiagram
     Reputation-->>Agent: Reputation gain
     Reputation-->>Validator: Reputation gain
     Reputation-->>Operator: Reputation gain
+    Reputation-->>Employer: Reputation gain
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
