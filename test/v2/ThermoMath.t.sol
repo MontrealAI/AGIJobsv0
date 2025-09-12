@@ -3,6 +3,11 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import {ThermoMath} from "../../contracts/v2/libraries/ThermoMath.sol";
+import { SD59x18 } from "@prb/math/src/sd59x18/ValueType.sol";
+import { exp } from "@prb/math/src/sd59x18/Math.sol";
+
+int256 constant MAX_EXP_INPUT = 133_084258667509499440;
+int256 constant MIN_EXP_INPUT = -41_446531673892822322;
 
 contract ThermoMathTest is Test {
     function test_weights_normalize() public {
@@ -72,6 +77,32 @@ contract ThermoMathTest is Test {
         E[0] = 0; g[0] = 1;
         vm.expectRevert(ThermoMath.ExpInputOutOfBounds.selector);
         ThermoMath.mbWeights(E, g, 1e18, -42e18);
+    }
+
+    function testFuzz_weight_overflow_reverts(int256 x) public {
+        vm.assume(x >= MIN_EXP_INPUT && x <= MAX_EXP_INPUT);
+        uint256 expX = uint256(SD59x18.unwrap(exp(SD59x18.wrap(x))));
+        vm.assume(expX > 1);
+        uint256 gOverflow = type(uint256).max / expX + 1;
+        int256[] memory E = new int256[](1);
+        uint256[] memory g = new uint256[](1);
+        E[0] = 0;
+        g[0] = gOverflow;
+        vm.expectRevert(ThermoMath.WeightOverflow.selector);
+        ThermoMath.mbWeights(E, g, 1e18, x);
+    }
+
+    function testFuzz_weight_boundary_normalizes(int256 x) public {
+        vm.assume(x >= MIN_EXP_INPUT && x <= MAX_EXP_INPUT);
+        uint256 expX = uint256(SD59x18.unwrap(exp(SD59x18.wrap(x))));
+        vm.assume(expX > 0);
+        uint256 gLimit = type(uint256).max / expX;
+        int256[] memory E = new int256[](1);
+        uint256[] memory g = new uint256[](1);
+        E[0] = 0;
+        g[0] = gLimit;
+        uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, x);
+        assertEq(w[0], 1e18, "normalized");
     }
 }
 
