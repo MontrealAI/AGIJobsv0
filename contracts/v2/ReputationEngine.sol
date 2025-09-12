@@ -176,6 +176,40 @@ contract ReputationEngine is Ownable, Pausable {
         }
     }
 
+    /// @notice Adjust reputation by a signed delta.
+    /// @dev Negative values reduce reputation and may trigger blacklisting.
+    ///      Positive values increase reputation with diminishing returns and
+    ///      may clear an existing blacklist if the new score meets the
+    ///      premium threshold.
+    /// @param user The account whose reputation is modified.
+    /// @param delta Signed change to apply.
+    function update(address user, int256 delta) external onlyCaller whenNotPaused {
+        if (delta == 0) return;
+
+        if (delta > 0) {
+            uint256 current = reputation[user];
+            uint256 newScore = _enforceReputationGrowth(current, uint256(delta));
+            uint256 diff = newScore - current;
+            reputation[user] = newScore;
+            emit ReputationUpdated(user, int256(diff), newScore);
+            if (blacklisted[user] && newScore >= premiumThreshold) {
+                blacklisted[user] = false;
+                emit BlacklistUpdated(user, false);
+            }
+        } else {
+            uint256 amount = uint256(-delta);
+            uint256 current = reputation[user];
+            uint256 newScore = current > amount ? current - amount : 0;
+            reputation[user] = newScore;
+            uint256 diff = current - newScore;
+            emit ReputationUpdated(user, -int256(diff), newScore);
+            if (!blacklisted[user] && newScore < premiumThreshold) {
+                blacklisted[user] = true;
+                emit BlacklistUpdated(user, true);
+            }
+        }
+    }
+
     function getReputation(address user) external view returns (uint256) {
         return reputation[user];
     }

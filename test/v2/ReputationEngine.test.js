@@ -94,6 +94,32 @@ describe('ReputationEngine', function () {
     expect(await engine.meetsThreshold(user.address)).to.equal(true);
   });
 
+  it('updates reputation with signed deltas', async () => {
+    // Negative update blacklists below threshold
+    await engine.connect(caller).update(user.address, -1);
+    expect(await engine.reputationOf(user.address)).to.equal(0n);
+    expect(await engine.isBlacklisted(user.address)).to.equal(true);
+
+    // Positive update increases reputation and clears blacklist when threshold met
+    const delta = 5n;
+    // helper function replicating growth
+    const tokenScale = 10n ** 18n;
+    const max = BigInt(await engine.MAX_REPUTATION());
+    const enforceGrowth = (current, points) => {
+      const newRep = current + points;
+      const numerator = newRep * newRep * tokenScale;
+      const denominator = max * max;
+      const factor = tokenScale + numerator / denominator;
+      const diminished = (newRep * tokenScale) / factor;
+      return diminished > max ? max : diminished;
+    };
+    const expected = enforceGrowth(0n, delta);
+
+    await engine.connect(caller).update(user.address, delta);
+    expect(await engine.reputationOf(user.address)).to.equal(expected);
+    expect(await engine.isBlacklisted(user.address)).to.equal(false);
+  });
+
   it('rejects unauthorized callers', async () => {
     await expect(engine.connect(user).add(user.address, 1)).to.be.revertedWith(
       'not authorized'
