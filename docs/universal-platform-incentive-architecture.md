@@ -31,7 +31,7 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 ```mermaid
 flowchart LR
-    subgraph Measurement["Measurement"]
+    subgraph Inputs["Sensors"]
         EO((EnergyOracle))
     end
     subgraph Control["Thermostat"]
@@ -41,33 +41,42 @@ flowchart LR
         RE[[RewardEngineMB]]
         MB{{MB Weights}}
     end
-    subgraph Settlement["Settlement"]
+    subgraph Outputs["Distribution"]
         FP((FeePool))
         REP[[ReputationEngine]]
     end
+    subgraph Roles
+        A[(Agent)]
+        V[(Validator)]
+        O[(Operator)]
+        E[(Employer)]
+    end
 
-    EO -- energy & degeneracy --> RE
-    TH -- Tₛ/T_r --> RE
+    EO -- "attest E_i,g_i" --> RE
+    TH -- "Tₛ/Tᵣ" --> RE
     RE --> MB
     MB --> FP
     MB --> REP
-    FP --> Agent((Agent))
-    FP --> Validator((Validator))
-    FP --> Operator((Operator))
-    FP --> Employer((Employer))
-    REP --> Agent
-    REP --> Validator
-    REP --> Operator
-    REP --> Employer
+    FP -->|65%| A
+    FP -->|15%| V
+    FP -->|15%| O
+    FP -->|5%| E
+    REP --> A
+    REP --> V
+    REP --> O
+    REP --> E
 
     classDef meas fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef ctrl fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
     classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
-    classDef settle fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef out fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef roles fill:#eef9ff,stroke:#004a99,stroke-width:1px;
+
     class EO meas;
     class TH ctrl;
     class RE,MB engine;
-    class FP,REP,Agent,Validator,Operator,Employer settle;
+    class FP,REP out;
+    class A,V,O,E roles;
 ```
 
 ### Reward Settlement Process
