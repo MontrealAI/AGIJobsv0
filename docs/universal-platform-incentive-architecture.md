@@ -29,11 +29,32 @@ flowchart LR
     classDef oracle fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
     classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
     classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef out fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
 
-    EO((EnergyOracle)):::oracle -- attestation --> RE[RewardEngineMB]:::engine
-    RE -- temp query --> TH((Thermostat)):::thermo
-    TH -- Tₛ/Tᵣ --> RE
-    RE -- usage feedback --> TH
+    subgraph EO["EnergyOracle"]
+        EO1[Capture metrics]
+        EO2[Sign attestation]
+    end
+
+    subgraph RE["RewardEngineMB"]
+        RE1[Verify & aggregate]
+        RE2[Compute ΔG & MB weights]
+    end
+
+    subgraph TH["Thermostat"]
+        TH1[(Tₛ/Tᵣ)]
+        TH2[PID adjust]
+    end
+
+    EO1 --> EO2
+    EO2 -->|attestation| RE1
+    RE1 --> RE2
+    RE2 -->|query temp| TH1
+    TH1 --> RE2
+    RE2 -->|usage feedback| TH2
+    TH2 --> TH1
+    RE2 --> FP((FeePool)):::out
+    RE2 --> REP((ReputationEngine)):::out
 ```
 
 | Energy Used (kJ) | Reward Weight | Reputation Gain |

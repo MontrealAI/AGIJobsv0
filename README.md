@@ -49,19 +49,41 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
 
 ```mermaid
-mindmap
-  root((Thermodynamic Incentives))
-    "Free-Energy Budgeting"
-      "G = H - T·S"
-      "Budget = κ·max(0, -ΔG)"
-    "Role Shares"
-      "Agents 65%"
-      "Validators 15%"
-      "Operators 15%"
-      "Employers 5%"
-    "Reputation"
-      "Low energy → Reputation ↑"
-      "High energy → Reputation ↓"
+flowchart LR
+    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef share fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+
+    subgraph Budget["Free‑Energy Budgeting"]
+        G["ΔG = (Value − Costs) − Tₛ·ΔS"]:::budget
+        B["Budget = κ·max(0, −ΔG)"]:::budget
+        G --> B
+    end
+
+    subgraph Shares["Role Shares"]
+        AG[Agents 65%]:::share
+        VD[Validators 15%]:::share
+        OP[Operators 15%]:::share
+        EM[Employers 5%]:::share
+    end
+
+    subgraph Reputation["Energy‑Efficient Reputation"]
+        Rplus["Low energy → Reputation ↑"]:::rep
+        Rminus["High energy → Reputation ↓"]:::rep
+    end
+
+    B --> AG
+    B --> VD
+    B --> OP
+    B --> EM
+    AG --> Rplus
+    VD --> Rplus
+    OP --> Rplus
+    EM --> Rplus
+    AG -. high E .-> Rminus
+    VD -. high E .-> Rminus
+    OP -. high E .-> Rminus
+    EM -. high E .-> Rminus
 ```
 
 | Energy Used (kJ) | Reward Weight | Reputation Gain |
