@@ -56,6 +56,8 @@ contract RewardEngineMB is Ownable {
     event RewardIssued(address indexed user, Role role, uint256 amount);
     event KappaUpdated(uint256 newKappa);
     event TreasuryUpdated(address indexed treasury);
+    event RoleShareUpdated(Role indexed role, uint256 share);
+    event MuUpdated(Role indexed role, int256 muValue);
 
     constructor(
         Thermostat _thermostat,
@@ -77,10 +79,12 @@ contract RewardEngineMB is Ownable {
     function setRoleShare(Role r, uint256 share) external onlyOwner {
         roleShare[r] = share;
         _validateRoleShares();
+        emit RoleShareUpdated(r, share);
     }
 
     function setMu(Role r, int256 _mu) external onlyOwner {
         mu[r] = _mu;
+        emit MuUpdated(r, _mu);
     }
 
     /// @notice Set the scaling factor converting free energy to token units.
