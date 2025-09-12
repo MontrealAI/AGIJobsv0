@@ -27,11 +27,11 @@ contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
     /// @inheritdoc IEnergyOracle
     function verify(IEnergyOracle.Attestation calldata att, bytes calldata sig)
         external
-        view
         override
         returns (address signer)
     {
         if (att.deadline < block.timestamp) return address(0);
+        if (att.nonce <= nonces[att.user]) return address(0);
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
@@ -47,6 +47,7 @@ contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
         );
         signer = ECDSA.recover(digest, sig);
         if (!signers[signer]) return address(0);
+        nonces[att.user] = att.nonce;
     }
 }
 

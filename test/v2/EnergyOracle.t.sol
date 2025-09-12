@@ -76,5 +76,16 @@ contract EnergyOracleTest is Test {
         address recovered = oracle.verify(att, sig);
         assertEq(recovered, address(0));
     }
+
+    function test_verify_rejects_replay() public {
+        EnergyOracle.Attestation memory att = _att();
+        bytes32 digest = _hash(att);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, digest);
+        bytes memory sig = abi.encodePacked(r, s, v);
+        address recovered = oracle.verify(att, sig);
+        assertEq(recovered, signer);
+        recovered = oracle.verify(att, sig);
+        assertEq(recovered, address(0));
+    }
 }
 
