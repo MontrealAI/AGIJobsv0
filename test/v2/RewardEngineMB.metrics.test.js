@@ -81,4 +81,3 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     expect(await feePool.rewards(treasury.address)).to.equal(leftover);
   });
 });
-
