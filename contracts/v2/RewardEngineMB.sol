@@ -46,6 +46,7 @@ contract RewardEngineMB is Ownable {
     mapping(Role => uint256) public roleShare; // scaled to 1e18
     mapping(Role => int256) public mu;
     mapping(address => bool) public settlers;
+    address public treasury;
 
     int256 public constant WAD = 1e18;
 
@@ -54,6 +55,7 @@ contract RewardEngineMB is Ownable {
     event EpochSettled(uint256 indexed epoch, uint256 budget);
     event RewardIssued(address indexed user, Role role, uint256 amount);
     event KappaUpdated(uint256 newKappa);
+    event TreasuryUpdated(address indexed treasury);
 
     constructor(
         Thermostat _thermostat,
@@ -100,6 +102,11 @@ contract RewardEngineMB is Ownable {
         settlers[settler] = allowed;
     }
 
+    function setTreasury(address _treasury) external onlyOwner {
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
+    }
+
     function settleEpoch(uint256 epoch, EpochData calldata data) external {
         require(settlers[msg.sender], "not settler");
         int256 dH = int256(data.totalValue) - int256(data.paidCosts);
@@ -114,10 +121,17 @@ contract RewardEngineMB is Ownable {
         RoleData memory operators = _aggregate(data.operators, epoch);
         RoleData memory employers = _aggregate(data.employers, epoch);
 
-        _distribute(Role.Agent, budget, agents);
-        _distribute(Role.Validator, budget, validators);
-        _distribute(Role.Operator, budget, operators);
-        _distribute(Role.Employer, budget, employers);
+        uint256 distributed;
+        distributed += _distribute(Role.Agent, budget, agents);
+        distributed += _distribute(Role.Validator, budget, validators);
+        distributed += _distribute(Role.Operator, budget, operators);
+        distributed += _distribute(Role.Employer, budget, employers);
+
+        uint256 leftover = budget - distributed;
+        if (leftover > 0) {
+            require(treasury != address(0), "treasury");
+            feePool.reward(treasury, leftover);
+        }
         emit EpochSettled(epoch, budget);
     }
 
@@ -162,8 +176,8 @@ contract RewardEngineMB is Ownable {
         }
     }
 
-    function _distribute(Role r, uint256 budget, RoleData memory rd) internal {
-        if (rd.users.length == 0) return;
+    function _distribute(Role r, uint256 budget, RoleData memory rd) internal returns (uint256 distributed) {
+        if (rd.users.length == 0) return 0;
         int256 Tr = thermostat.getRoleTemperature(Thermostat.Role(uint8(r)));
         uint256[] memory weights = ThermoMath.mbWeights(rd.energies, rd.degeneracies, Tr, mu[r]);
         uint256 bucket = budget * roleShare[r] / uint256(WAD);
@@ -172,6 +186,7 @@ contract RewardEngineMB is Ownable {
             feePool.reward(rd.users[i], amt);
             reputation.update(rd.users[i], -rd.energies[i]);
             emit RewardIssued(rd.users[i], r, amt);
+            distributed += amt;
         }
     }
 
