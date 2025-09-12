@@ -25,6 +25,9 @@ contract EnergyOracleTest is Test {
         att.role = 0;
         att.nonce = 1;
         att.deadline = block.timestamp + 1 hours;
+        att.uPre = 1;
+        att.uPost = 2;
+        att.value = 3;
     }
 
     function _hash(EnergyOracle.Attestation memory att) internal view returns (bytes32) {
@@ -38,7 +41,10 @@ contract EnergyOracleTest is Test {
                 att.epochId,
                 att.role,
                 att.nonce,
-                att.deadline
+                att.deadline,
+                att.uPre,
+                att.uPost,
+                att.value
             )
         );
         bytes32 domainSeparator = keccak256(

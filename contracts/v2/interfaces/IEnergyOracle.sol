@@ -11,6 +11,9 @@ interface IEnergyOracle {
         uint8 role;
         uint256 nonce;
         uint256 deadline;
+        uint256 uPre;
+        uint256 uPost;
+        uint256 value;
     }
 
     /// @return signer Address of oracle signer if signature valid, zero address otherwise
