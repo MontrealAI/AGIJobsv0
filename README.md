@@ -57,40 +57,39 @@ An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward w
 
 ```mermaid
 flowchart TB
-    %% Thermodynamic free-energy budgeting
-    subgraph Thermodynamics
-        value[Total Value] --> dH["ΔH = Value - Costs"]
-        costs[Paid Costs] --> dH
-        u_pre[Uncertainty Before] --> dS["ΔS = U_pre - U_post"]
-        u_post[Uncertainty After] --> dS
-        Ts["Tₛ (Thermostat)"] --> dG["ΔG = ΔH - Tₛ·ΔS"]
+    %% Thermodynamic free-energy budgeting and allocation
+    subgraph Budgeting["Free-Energy Budgeting"]
+        V[Total Value] --> dH["ΔH"]
+        C[Paid Costs] --> dH
+        Upre[Uncertainty Before] --> dS["ΔS"]
+        Upost[Uncertainty After] --> dS
+        T[System Temp Tₛ] --> dG["ΔG = ΔH - Tₛ·ΔS"]
         dH --> dG
         dS --> dG
-        dG --> budget[/"Budget = κ·max(0, -ΔG)"/]
+        dG --> budget["Budget = κ·max(0, -ΔG)"]
     end
 
-    %% Role distribution from the free-energy budget
-    subgraph Distribution["Role Shares"]
-        budget --> A["Agents\n65%"]
-        budget --> V["Validators\n15%"]
-        budget --> O["Operators\n15%"]
-        budget --> E["Employers\n5%"]
+    subgraph MB["Maxwell–Boltzmann Distribution"]
+        budget --> weights["w_i ∝ g_i·exp((mu_r - E_i)/T_r)"]
+        weights --> Agents["Agents 65%"]
+        weights --> Validators["Validators 15%"]
+        weights --> Operators["Operators 15%"]
+        weights --> Employers["Employers 5%"]
     end
 
-    %% Energy-efficient reputation gains
-    subgraph Reputation["Energy → Reputation"]
-        A -->|lower E| RA["Reputation ↑"]
-        V -->|lower E| RV["Reputation ↑"]
-        O -->|lower E| RO["Reputation ↑"]
-        E -->|lower E| RE["Reputation ↑"]
+    subgraph Reputation["Energy‑Efficient Reputation"]
+        Agents --> RA["Reputation ↑"]
+        Validators --> RV["Reputation ↑"]
+        Operators --> RO["Reputation ↑"]
+        Employers --> RE["Reputation ↑"]
     end
 
     classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef role fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    class value,costs,dH,u_pre,u_post,dS,Ts,dG,budget thermo;
-    class A,V,O,E role;
+    class V,C,Upre,Upost,T,dH,dS,dG,budget,weights thermo;
+    class Agents,Validators,Operators,Employers role;
     class RA,RV,RO,RE rep;
 ```
 
@@ -102,6 +101,7 @@ sequenceDiagram
     participant Employer
     participant Agent
     participant Validator
+    participant Operator
     participant Oracle as EnergyOracle
     participant Engine as RewardEngineMB
     participant Thermostat
@@ -111,22 +111,25 @@ sequenceDiagram
     Employer->>Agent: Post job & funds
     Agent->>Validator: Submit work
     Validator->>Employer: Approve results
-    Agent->>Oracle: Report energy
+    Agent->>Oracle: Report energy use
     Oracle-->>Engine: Signed attestation
-    Engine->>Thermostat: Query Tₛ & T_r
+    Engine->>Thermostat: Query Tₛ/Tᵣ
     Thermostat-->>Engine: Temperatures
-    Note over Engine,FeePool: budget = κ·max(0, -(ΔH - Tₛ·ΔS))
+    Note over Engine: budget = κ·max(0,-(ΔH - Tₛ·ΔS))
     Engine->>Engine: Compute MB weights
-    Engine->>FeePool: Allocate rewards
-    Engine->>Reputation: Update scores
-    FeePool-->>Agent: Token reward
-    FeePool-->>Validator: Token reward
-    FeePool-->>Operator: Token reward
-    FeePool-->>Employer: Rebate
-    Reputation-->>Agent: Reputation gain
-    Reputation-->>Validator: Reputation gain
-    Reputation-->>Operator: Reputation gain
-    Reputation-->>Employer: Reputation gain
+    par Distribution
+        Engine->>FeePool: Allocate rewards
+        Engine->>Reputation: Update scores
+    and Payouts
+        FeePool-->>Agent: Token reward
+        FeePool-->>Validator: Token reward
+        FeePool-->>Operator: Token reward
+        FeePool-->>Employer: Rebate
+        Reputation-->>Agent: Reputation ↑
+        Reputation-->>Validator: Reputation ↑
+        Reputation-->>Operator: Reputation ↑
+        Reputation-->>Employer: Reputation ↑
+    end
 ```
 
 ### Deploy defaults
