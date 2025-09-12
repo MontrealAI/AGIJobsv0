@@ -45,6 +45,7 @@ contract RewardEngineMB is Ownable {
     uint256 public kappa = 1e18; // scaling factor
     mapping(Role => uint256) public roleShare; // scaled to 1e18
     mapping(Role => int256) public mu;
+    mapping(address => bool) public settlers;
 
     int256 public constant WAD = 1e18;
 
@@ -95,7 +96,12 @@ contract RewardEngineMB is Ownable {
     error InvalidProof(address oracle);
     error Replay(address oracle);
 
-    function settleEpoch(uint256 epoch, EpochData calldata data) external onlyOwner {
+    function setSettler(address settler, bool allowed) external onlyOwner {
+        settlers[settler] = allowed;
+    }
+
+    function settleEpoch(uint256 epoch, EpochData calldata data) external {
+        require(settlers[msg.sender], "not settler");
         int256 dH = int256(data.totalValue) - int256(data.paidCosts);
         int256 dS = int256(data.sumUpre) - int256(data.sumUpost);
         int256 Tsys = thermostat.systemTemperature();
