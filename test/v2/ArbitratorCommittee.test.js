@@ -27,6 +27,7 @@ describe('ArbitratorCommittee', function () {
       0,
       0,
       0,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
