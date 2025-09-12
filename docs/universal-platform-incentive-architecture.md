@@ -31,22 +31,26 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 ```mermaid
 flowchart LR
-    subgraph Measurement
+    subgraph Measurement["Measurement"]
         EO((EnergyOracle))
     end
-    subgraph Control
+    subgraph Control["Thermostat"]
         TH((Thermostat))
     end
-    subgraph Settlement[RewardEngineMB]
-        RE[RewardEngineMB]
+    subgraph Engine["RewardEngineMB"]
+        RE[[RewardEngineMB]]
+        MB{{MB Weights}}
+    end
+    subgraph Settlement["Settlement"]
         FP((FeePool))
-        REP[ReputationEngine]
+        REP[[ReputationEngine]]
     end
 
-    EO -- attestation --> RE
-    TH -- "Tₛ/T_r" --> RE
-    RE -- rewards --> FP
-    RE -- "reputation Δ" --> REP
+    EO -- energy & degeneracy --> RE
+    TH -- Tₛ/T_r --> RE
+    RE --> MB
+    MB --> FP
+    MB --> REP
     FP --> Agent((Agent))
     FP --> Validator((Validator))
     FP --> Operator((Operator))
@@ -58,13 +62,12 @@ flowchart LR
 
     classDef meas fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef ctrl fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
-    classDef settle fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
-    classDef role fill:#f0f0f0,stroke:#555,stroke-width:1px;
-
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+    classDef settle fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
     class EO meas;
     class TH ctrl;
-    class RE,FP,REP settle;
-    class Agent,Validator,Operator,Employer role;
+    class RE,MB engine;
+    class FP,REP,Agent,Validator,Operator,Employer settle;
 ```
 
 ### Reward Settlement Process
@@ -75,6 +78,7 @@ sequenceDiagram
     participant Employer
     participant Agent
     participant Validator
+    participant Operator
     participant Oracle as EnergyOracle
     participant Engine as RewardEngineMB
     participant Thermostat
@@ -84,22 +88,25 @@ sequenceDiagram
     Employer->>Agent: Post job & funds
     Agent->>Validator: Submit work
     Validator->>Employer: Approve results
-    Agent->>Oracle: Report energy
+    Agent->>Oracle: Report energy use
     Oracle-->>Engine: Signed attestation
-    Engine->>Thermostat: Query Tₛ & T_r
+    Engine->>Thermostat: Query Tₛ/Tᵣ
     Thermostat-->>Engine: Temperatures
-    Note over Engine,FeePool: budget = κ·max(0, -(ΔH - Tₛ·ΔS))
+    Note over Engine: budget = κ·max(0,-(ΔH - Tₛ·ΔS))
     Engine->>Engine: Compute MB weights
-    Engine->>FeePool: Allocate rewards
-    Engine->>Reputation: Update scores
-    FeePool-->>Agent: Token reward
-    FeePool-->>Validator: Token reward
-    FeePool-->>Operator: Token reward
-    FeePool-->>Employer: Rebate
-    Reputation-->>Agent: Reputation gain
-    Reputation-->>Validator: Reputation gain
-    Reputation-->>Operator: Reputation gain
-    Reputation-->>Employer: Reputation gain
+    par Distribution
+        Engine->>FeePool: Allocate rewards
+        Engine->>Reputation: Update scores
+    and Payouts
+        FeePool-->>Agent: Token reward
+        FeePool-->>Validator: Token reward
+        FeePool-->>Operator: Token reward
+        FeePool-->>Employer: Rebate
+        Reputation-->>Agent: Reputation ↑
+        Reputation-->>Validator: Reputation ↑
+        Reputation-->>Operator: Reputation ↑
+        Reputation-->>Employer: Reputation ↑
+    end
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
