@@ -116,7 +116,7 @@ contract RewardEngineMB is Ownable {
         int256 dH = int256(data.totalValue) - int256(data.paidCosts);
         int256 dS = int256(data.sumUpre) - int256(data.sumUpost);
         int256 Tsys = thermostat.systemTemperature();
-        int256 free = -(dH - Tsys * dS);
+        int256 free = -(dH - (Tsys * dS) / WAD);
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
 

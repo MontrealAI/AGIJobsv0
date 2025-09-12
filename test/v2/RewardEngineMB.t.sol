@@ -154,6 +154,31 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.total(), 2e18, "scaled budget distributed");
     }
 
+    function test_entropyScalingUsesWad() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        data.agents = a;
+        RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
+        v[0] = _proof(validator, int256(1e18), 1, RewardEngineMB.Role.Validator);
+        data.validators = v;
+        RewardEngineMB.Proof[] memory o = new RewardEngineMB.Proof[](1);
+        o[0] = _proof(operator, int256(1e18), 1, RewardEngineMB.Role.Operator);
+        data.operators = o;
+        RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
+        e[0] = _proof(employer, int256(1e18), 1, RewardEngineMB.Role.Employer);
+        data.employers = e;
+        data.totalValue = 0;
+        data.paidCosts = 0;
+        data.sumUpre = 1e18;
+        data.sumUpost = 0;
+
+        engine.settleEpoch(1, data);
+
+        uint256 budget = 1e18; // Tsys * dS / WAD = 1e18
+        assertEq(pool.total(), budget, "entropy scaling");
+    }
+
     function test_setRoleShareEmits() public {
         vm.expectEmit(true, false, false, true);
         emit RewardEngineMB.RoleShareUpdated(RewardEngineMB.Role.Agent, 65e16);
