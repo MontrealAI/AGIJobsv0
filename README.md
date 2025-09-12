@@ -18,6 +18,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Identity policy](#identity-policy)
 - [AGIALPHA configuration](#agialpha-configuration)
 - [Fee handling and treasury](#fee-handling-and-treasury)
+- [Thermodynamic Incentives](#thermodynamic-incentives)
 - [Deploy defaults](#deploy-defaults)
 - [Mainnet Deployment](#mainnet-deployment)
 - [Migrating from legacy](#migrating-from-legacy)
@@ -40,6 +41,27 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 ### Fee handling and treasury
 
 `JobRegistry` routes protocol fees to `FeePool`, which burns a configurable percentage (`burnPct`) when an employer finalizes a job and escrows the remainder for platform stakers. By default the `treasury` is unset (`address(0)`), so any rounding dust is burned. Governance may later call `StakeManager.setTreasury`, `JobRegistry.setTreasury`, or `FeePool.setTreasury` to direct funds to a community-controlled treasury. These setters reject the owner address and, for `FeePool`, require the target to be pre-approved via `setTreasuryAllowlist`. The platform only routes funds and never initiates or profits from burns.
+
+### Thermodynamic Incentives
+
+`RewardEngineMB` meters energy consumption against a global free‑energy budget and assigns each role a share of that budget. The `Thermostat` normalises per‑task usage while `EnergyOracle` supplies measurements, letting the engine raise reward weight and reputation for energy‑efficient participants.
+
+| Energy Used (kJ) | Reward Weight | Reputation Gain |
+| ---------------- | ------------- | --------------- |
+| 20               | 1.0×          | +5              |
+| 10               | 1.8×          | +9              |
+
+An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward weight and reputation.
+
+```mermaid
+flowchart LR
+    Start[Job completed] --> Oracle(EnergyOracle reports usage)
+    Oracle --> Thermostat{Thermostat compares to role budget}
+    Thermostat --> Engine[RewardEngineMB adjusts weight]
+    Engine --> FeePool((FeePool))
+    FeePool --> Reputation[ReputationEngine updates score]
+    Reputation --> Payout[Agent receives payout]
+```
 
 ### Deploy defaults
 

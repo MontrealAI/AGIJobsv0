@@ -20,6 +20,23 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 - **FeePool** – receives fees from `StakeManager` and distributes them to staked operators in proportion to their stake. The owner can adjust burn percentage, treasury and reward role without redeploying.
 - **PlatformIncentives** – helper that stakes `$AGIALPHA` on behalf of an operator and registers them with both `PlatformRegistry` and `JobRouter`. The owner (main deployer) may register with `amount = 0` to remain tax neutral and earn no routing or fee share. When routing or fee sharing isn't required, operators can instead call `PlatformRegistry.stakeAndRegister` or `acknowledgeStakeAndRegister` directly.
 
+### RewardEngineMB, Thermostat & EnergyOracle
+
+`RewardEngineMB` tracks a free‑energy budget for each role. The `EnergyOracle` reports per‑task consumption and the `Thermostat` compares it with role allocations, adjusting reward weight when usage falls below budget. Efficient agents therefore earn a larger share of fees and gain reputation faster.
+
+| Energy Used (kJ) | Reward Weight | Reputation Gain |
+| ---------------- | ------------- | --------------- |
+| 20               | 1.0×          | +5              |
+| 10               | 1.8×          | +9              |
+
+```mermaid
+flowchart LR
+    Oracle(EnergyOracle) --> Thermostat{Thermostat}
+    Thermostat --> Engine[RewardEngineMB]
+    Engine --> FeePool((FeePool))
+    FeePool --> Reputation[ReputationEngine]
+```
+
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
 
 ## Incentive Flow
