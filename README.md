@@ -56,45 +56,42 @@ Each epoch the resulting free‑energy budget is split **65 %** to agents, **1
 An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward weight and reputation.
 
 ```mermaid
-graph TD
-    %% Free-Energy Budgeting
-    subgraph FE["Free-Energy Budgeting"]
-        value[Total Value] --> dH["ΔH (Enthalpy)"]
+flowchart TB
+    %% Thermodynamic free-energy budgeting
+    subgraph Thermodynamics
+        value[Total Value] --> dH["ΔH = Value - Costs"]
         costs[Paid Costs] --> dH
-        u_pre[Uncertainty Before] --> dS["ΔS (Entropy)"]
+        u_pre[Uncertainty Before] --> dS["ΔS = U_pre - U_post"]
         u_post[Uncertainty After] --> dS
-        temp["Tₛ (Thermostat)"] --> budget[/"Budget = max(0, -(ΔH - Tₛ·ΔS))"/]
-        dH --> budget
-        dS --> budget
+        Ts["Tₛ (Thermostat)"] --> dG["ΔG = ΔH - Tₛ·ΔS"]
+        dH --> dG
+        dS --> dG
+        dG --> budget[/"Budget = κ·max(0, -ΔG)"/]
     end
 
-    %% Role Distribution
-    subgraph Roles["Role Shares"]
+    %% Role distribution from the free-energy budget
+    subgraph Distribution["Role Shares"]
         budget --> A["Agents\n65%"]
         budget --> V["Validators\n15%"]
         budget --> O["Operators\n15%"]
         budget --> E["Employers\n5%"]
     end
 
-    %% Reputation Incentives
-    subgraph Reputation["Energy Efficiency → Reputation"]
-        A -->|efficiency ↑| RA["Reputation ↑"]
-        V -->|efficiency ↑| RV["Reputation ↑"]
-        O -->|efficiency ↑| RO["Reputation ↑"]
-        E -->|efficiency ↑| RE["Reputation ↑"]
+    %% Energy-efficient reputation gains
+    subgraph Reputation["Energy → Reputation"]
+        A -->|lower E| RA["Reputation ↑"]
+        V -->|lower E| RV["Reputation ↑"]
+        O -->|lower E| RO["Reputation ↑"]
+        E -->|lower E| RE["Reputation ↑"]
     end
 
-    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef role fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    class budget budget;
+    class value,costs,dH,u_pre,u_post,dS,Ts,dG,budget thermo;
     class A,V,O,E role;
     class RA,RV,RO,RE rep;
-
-    style FE fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    style Roles fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
-    style Reputation fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 ```
 
 #### Reward Settlement Flow
