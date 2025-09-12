@@ -24,6 +24,18 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 
 `RewardEngineMB` tracks a free‑energy budget for each role. The `EnergyOracle` reports per‑task consumption and the `Thermostat` compares it with role allocations, adjusting reward weight when usage falls below budget. Efficient agents therefore earn a larger share of fees and gain reputation faster.
 
+```mermaid
+flowchart LR
+    classDef oracle fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+    classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+
+    EO((EnergyOracle)):::oracle -- attestation --> RE[RewardEngineMB]:::engine
+    RE -- temp query --> TH((Thermostat)):::thermo
+    TH -- Tₛ/Tᵣ --> RE
+    RE -- usage feedback --> TH
+```
+
 | Energy Used (kJ) | Reward Weight | Reputation Gain |
 | ---------------- | ------------- | --------------- |
 | 20               | 1.0×          | +5              |
