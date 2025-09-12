@@ -31,10 +31,7 @@ contract RewardEngineMB is Ownable {
         Proof[] validators;
         Proof[] operators;
         Proof[] employers;
-        uint256 totalValue;
         uint256 paidCosts;
-        uint256 sumUpre;
-        uint256 sumUpost;
     }
 
     Thermostat public thermostat;
@@ -113,17 +110,41 @@ contract RewardEngineMB is Ownable {
 
     function settleEpoch(uint256 epoch, EpochData calldata data) external {
         require(settlers[msg.sender], "not settler");
-        int256 dH = int256(data.totalValue) - int256(data.paidCosts);
-        int256 dS = int256(data.sumUpre) - int256(data.sumUpost);
+        uint256 totalValue;
+        uint256 sumUpre;
+        uint256 sumUpost;
+
+        RoleData memory agents;
+        RoleData memory validators;
+        RoleData memory operators;
+        RoleData memory employers;
+        uint256 v;
+        uint256 pre;
+        uint256 post;
+
+        (agents, v, pre, post) = _aggregate(data.agents, epoch, Role.Agent);
+        totalValue += v;
+        sumUpre += pre;
+        sumUpost += post;
+        (validators, v, pre, post) = _aggregate(data.validators, epoch, Role.Validator);
+        totalValue += v;
+        sumUpre += pre;
+        sumUpost += post;
+        (operators, v, pre, post) = _aggregate(data.operators, epoch, Role.Operator);
+        totalValue += v;
+        sumUpre += pre;
+        sumUpost += post;
+        (employers, v, pre, post) = _aggregate(data.employers, epoch, Role.Employer);
+        totalValue += v;
+        sumUpre += pre;
+        sumUpost += post;
+
+        int256 dH = int256(totalValue) - int256(data.paidCosts);
+        int256 dS = int256(sumUpre) - int256(sumUpost);
         int256 Tsys = thermostat.systemTemperature();
         int256 free = -(dH - (Tsys * dS) / WAD);
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
-
-        RoleData memory agents = _aggregate(data.agents, epoch, Role.Agent);
-        RoleData memory validators = _aggregate(data.validators, epoch, Role.Validator);
-        RoleData memory operators = _aggregate(data.operators, epoch, Role.Operator);
-        RoleData memory employers = _aggregate(data.employers, epoch, Role.Employer);
 
         uint256 distributed;
         distributed += _distribute(Role.Agent, budget, agents);
@@ -141,7 +162,7 @@ contract RewardEngineMB is Ownable {
 
     function _aggregate(Proof[] calldata proofs, uint256 epoch, Role role)
         internal
-        returns (RoleData memory rd)
+        returns (RoleData memory rd, uint256 value, uint256 uPre, uint256 uPost)
     {
         uint256 n = proofs.length;
         rd.users = new address[](n);
@@ -156,6 +177,9 @@ contract RewardEngineMB is Ownable {
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
             if (att.nonce <= usedNonces[att.user][epoch]) revert Replay(address(energyOracle));
             usedNonces[att.user][epoch] = att.nonce;
+            value += att.value;
+            uPre += att.uPre;
+            uPost += att.uPost;
             uint256 idx = _index[att.user];
             if (idx == 0) {
                 rd.users[count] = att.user;

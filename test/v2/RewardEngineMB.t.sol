@@ -70,7 +70,10 @@ contract RewardEngineMBTest is Test {
             epochId: epoch,
             role: uint8(role),
             nonce: 1,
-            deadline: type(uint256).max
+            deadline: type(uint256).max,
+            uPre: 0,
+            uPost: 0,
+            value: 0
         });
         p.att = att;
         p.sig = bytes("");
@@ -91,7 +94,10 @@ contract RewardEngineMBTest is Test {
             epochId: epoch,
             role: uint8(role),
             nonce: 1,
-            deadline: type(uint256).max
+            deadline: type(uint256).max,
+            uPre: 0,
+            uPost: 0,
+            value: 0
         });
         p.att = att;
         p.sig = bytes("");
@@ -101,6 +107,7 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[0].att.uPre = 1e18;
         data.agents = a;
         RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
         v[0] = _proof(validator, int256(1e18), 1, RewardEngineMB.Role.Validator);
@@ -111,10 +118,7 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
         e[0] = _proof(employer, int256(1e18), 1, RewardEngineMB.Role.Employer);
         data.employers = e;
-        data.totalValue = 0;
         data.paidCosts = 1e18;
-        data.sumUpre = 0;
-        data.sumUpost = 0;
 
         engine.settleEpoch(1, data);
 
@@ -143,10 +147,7 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
         e[0] = _proof(employer, int256(1e18), 1, RewardEngineMB.Role.Employer);
         data.employers = e;
-        data.totalValue = 0;
         data.paidCosts = 1e18;
-        data.sumUpre = 0;
-        data.sumUpost = 0;
 
         engine.setKappa(2e18);
         engine.settleEpoch(1, data);
@@ -168,10 +169,7 @@ contract RewardEngineMBTest is Test {
         RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
         e[0] = _proof(employer, int256(1e18), 1, RewardEngineMB.Role.Employer);
         data.employers = e;
-        data.totalValue = 0;
         data.paidCosts = 0;
-        data.sumUpre = 1e18;
-        data.sumUpost = 0;
 
         engine.settleEpoch(1, data);
 
@@ -279,10 +277,7 @@ contract RewardEngineMBTest is Test {
         a[1] = _proof(address(0xA2), int256(1e18), 1, RewardEngineMB.Role.Agent);
         a[2] = _proof(address(0xA3), int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
-        data.totalValue = 0;
         data.paidCosts = 1e18;
-        data.sumUpre = 0;
-        data.sumUpost = 0;
 
         engine.setTreasury(treasury);
         engine.settleEpoch(1, data);
