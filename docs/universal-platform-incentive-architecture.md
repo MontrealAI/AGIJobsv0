@@ -30,40 +30,40 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 | 10               | 1.8×          | +9              |
 
 ```mermaid
-graph TD
+flowchart LR
     subgraph Measurement
-        Oracle((EnergyOracle))
+        EO((EnergyOracle))
     end
     subgraph Control
-        Thermostat((Thermostat))
+        TH((Thermostat))
     end
     subgraph Settlement[RewardEngineMB]
-        Engine[RewardEngineMB]
-        FeePool((FeePool))
-        Reputation[ReputationEngine]
+        RE[RewardEngineMB]
+        FP((FeePool))
+        REP[ReputationEngine]
     end
 
-    Oracle -- "E_i, g_i, ΔU" --> Engine
-    Thermostat -- "Tₛ, T_r" --> Engine
-    Engine -- "AGIALPHA" --> FeePool
-    Engine -- "reputation Δ" --> Reputation
-    FeePool --> Agent((Agent))
-    FeePool --> Validator((Validator))
-    FeePool --> Operator((Operator))
-    FeePool --> Employer((Employer))
-    Reputation --> Agent
-    Reputation --> Validator
-    Reputation --> Operator
-    Reputation --> Employer
+    EO -- attestation --> RE
+    TH -- "Tₛ/T_r" --> RE
+    RE -- rewards --> FP
+    RE -- "reputation Δ" --> REP
+    FP --> Agent((Agent))
+    FP --> Validator((Validator))
+    FP --> Operator((Operator))
+    FP --> Employer((Employer))
+    REP --> Agent
+    REP --> Validator
+    REP --> Operator
+    REP --> Employer
 
-    classDef oracle fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef control fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
-    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+    classDef meas fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef ctrl fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
+    classDef settle fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
     classDef role fill:#f0f0f0,stroke:#555,stroke-width:1px;
 
-    class Oracle oracle;
-    class Thermostat control;
-    class Engine,FeePool,Reputation engine;
+    class EO meas;
+    class TH ctrl;
+    class RE,FP,REP settle;
     class Agent,Validator,Operator,Employer role;
 ```
 
