@@ -58,6 +58,10 @@ An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward w
 ```mermaid
 flowchart TB
     %% Thermodynamic free-energy budgeting and allocation
+    EO((EnergyOracle)) -- "E_i, g_i" --> weights
+    TH((Thermostat)) -- Tₛ --> T
+    TH -- Tᵣ --> weights
+
     subgraph Budgeting["Free-Energy Budgeting"]
         V[Total Value] --> dH["ΔH"]
         C[Paid Costs] --> dH
@@ -70,11 +74,11 @@ flowchart TB
     end
 
     subgraph MB["Maxwell–Boltzmann Distribution"]
-        budget --> weights["w_i ∝ g_i·exp((mu_r - E_i)/T_r)"]
-        weights --> Agents["Agents 65%"]
-        weights --> Validators["Validators 15%"]
-        weights --> Operators["Operators 15%"]
-        weights --> Employers["Employers 5%"]
+        budget --> weights["w_i ∝ g_i·exp((μ_r - E_i)/T_r)"]
+        weights -->|65%| Agents[Agents]
+        weights -->|15%| Validators[Validators]
+        weights -->|15%| Operators[Operators]
+        weights -->|5%| Employers[Employers]
     end
 
     subgraph Reputation["Energy‑Efficient Reputation"]
@@ -88,7 +92,7 @@ flowchart TB
     classDef role fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    class V,C,Upre,Upost,T,dH,dS,dG,budget,weights thermo;
+    class V,C,Upre,Upost,T,dH,dS,dG,budget,weights,EO,TH thermo;
     class Agents,Validators,Operators,Employers role;
     class RA,RV,RO,RE rep;
 ```
