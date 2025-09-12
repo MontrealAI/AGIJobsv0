@@ -56,45 +56,58 @@ Each epoch the resulting free‑energy budget is split **65 %** to agents, **1
 An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward weight and reputation.
 
 ```mermaid
-flowchart TB
-    %% Thermodynamic free-energy budgeting and allocation
-    EO((EnergyOracle)) -- "E_i, g_i" --> weights
-    TH((Thermostat)) -- Tₛ --> T
-    TH -- Tᵣ --> weights
-    Mu((μ_r)) -- "chemical potential" --> weights
+flowchart LR
+    %% Thermodynamic budgeting → MB weights → role rewards → reputation
 
-    subgraph Budgeting["Free-Energy Budgeting"]
+    subgraph Inputs["Sensors"]
+        EO((EnergyOracle))
+        TH((Thermostat))
+        MU((μᵣ))
+    end
+
+    subgraph Budget["Free‑Energy Budget"]
         V[Total Value] --> dH["ΔH"]
         C[Paid Costs] --> dH
-        Upre[Uncertainty Before] --> dS["ΔS"]
-        Upost[Uncertainty After] --> dS
-        T[System Temp Tₛ] --> dG["ΔG = ΔH - Tₛ·ΔS"]
+        U0[Uncertainty Before] --> dS["ΔS"]
+        U1[Uncertainty After] --> dS
+        T((Tₛ)) --> dG["ΔG = ΔH - Tₛ·ΔS"]
         dH --> dG
         dS --> dG
-        dG --> budget["Budget = κ·max(0, -ΔG)"]
+        dG --> B{"Budget = κ·max(0,-ΔG)"}
     end
 
-    subgraph MB["Maxwell–Boltzmann Distribution"]
-        budget --> weights["w_i ∝ g_i·exp((μ_r - E_i)/T_r)"]
-        weights -->|65%| Agents[Agents]
-        weights -->|15%| Validators[Validators]
-        weights -->|15%| Operators[Operators]
-        weights -->|5%| Employers[Employers]
+    EO -- "Eᵢ,gᵢ" --> MB["MB Weights wᵢ ∝ gᵢ·e((μᵣ−Eᵢ)/Tᵣ)"]
+    TH -- "Tₛ/Tᵣ" --> MB
+    MU -- "μᵣ" --> MB
+    B --> MB
+
+    subgraph Roles["Role Shares"]
+        A[Agents]
+        Vd[Validators]
+        O[Operators]
+        Em[Employers]
     end
+
+    MB -->|65%| A
+    MB -->|15%| Vd
+    MB -->|15%| O
+    MB -->|5%| Em
 
     subgraph Reputation["Energy‑Efficient Reputation"]
-        Agents --> RA["Reputation ↑"]
-        Validators --> RV["Reputation ↑"]
-        Operators --> RO["Reputation ↑"]
-        Employers --> RE["Reputation ↑"]
+        A --> RA["Reputation ↑"]
+        Vd --> RV["Reputation ↑"]
+        O --> RO["Reputation ↑"]
+        Em --> RE["Reputation ↑"]
     end
 
-    classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef role fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
+    classDef sensor fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef role fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    class V,C,Upre,Upost,T,dH,dS,dG,budget,weights,EO,TH,Mu thermo;
-    class Agents,Validators,Operators,Employers role;
+    class EO,TH,MU sensor;
+    class V,C,U0,U1,T,dH,dS,dG,B budget;
+    class A,Vd,O,Em role;
     class RA,RV,RO,RE rep;
 ```
 
