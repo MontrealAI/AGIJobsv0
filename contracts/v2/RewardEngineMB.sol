@@ -48,6 +48,8 @@ contract RewardEngineMB is Ownable {
 
     int256 public constant WAD = 1e18;
 
+    error InvalidRoleShareSum(uint256 sum);
+
     event EpochSettled(uint256 indexed epoch, uint256 budget);
 
     constructor(
@@ -64,10 +66,12 @@ contract RewardEngineMB is Ownable {
         roleShare[Role.Validator] = 15e16;
         roleShare[Role.Operator] = 15e16;
         roleShare[Role.Employer] = 5e16;
+        _validateRoleShares();
     }
 
     function setRoleShare(Role r, uint256 share) external onlyOwner {
         roleShare[r] = share;
+        _validateRoleShares();
     }
 
     function setMu(Role r, int256 _mu) external onlyOwner {
@@ -148,6 +152,15 @@ contract RewardEngineMB is Ownable {
             feePool.reward(rd.users[i], amt);
             reputation.update(rd.users[i], -rd.energies[i]);
         }
+    }
+
+    function _validateRoleShares() private view {
+        uint256 sum =
+            roleShare[Role.Agent] +
+            roleShare[Role.Validator] +
+            roleShare[Role.Operator] +
+            roleShare[Role.Employer];
+        if (sum != uint256(WAD)) revert InvalidRoleShareSum(sum);
     }
 }
 
