@@ -86,3 +86,48 @@ stateDiagram-v2
     Rewards --> Reputation: Update scores
     Reputation --> [*]
 ```
+
+## Module Interaction Overview
+
+```mermaid
+flowchart LR
+    classDef sensor fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+    classDef dist fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef role fill:#eef9ff,stroke:#004a99,stroke-width:1px;
+
+    subgraph Sensors
+        EO((EnergyOracle)):::sensor
+        TH((Thermostat)):::sensor
+    end
+
+    subgraph Engine["RewardEngineMB"]
+        MB{{MB Weights}}:::engine
+    end
+
+    subgraph Outputs
+        FP((FeePool)):::dist
+        REP((ReputationEngine)):::dist
+    end
+
+    subgraph Roles
+        AG[Agent]:::role
+        VD[Validator]:::role
+        OP[Operator]:::role
+        EM[Employer]:::role
+    end
+
+    EO --> Engine
+    TH --> Engine
+    Engine --> MB
+    MB --> FP
+    MB --> REP
+    FP --> AG
+    FP --> VD
+    FP --> OP
+    FP --> EM
+    REP --> AG
+    REP --> VD
+    REP --> OP
+    REP --> EM
+```
