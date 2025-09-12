@@ -80,6 +80,7 @@ contract RewardEngineMB is Ownable {
 
     /// @notice Settle an epoch and distribute rewards.
     mapping(address => uint256) public usedNonces;
+    mapping(address => uint256) private _index;
 
     error InvalidProof(address oracle);
     error Replay(address oracle);
@@ -116,21 +117,20 @@ contract RewardEngineMB is Ownable {
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
             if (att.nonce <= usedNonces[att.user]) revert Replay(address(energyOracle));
             usedNonces[att.user] = att.nonce;
-            bool found = false;
-            for (uint256 j = 0; j < count; j++) {
-                if (rd.users[j] == att.user) {
-                    rd.energies[j] += att.energy;
-                    rd.degeneracies[j] += att.degeneracy;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            uint256 idx = _index[att.user];
+            if (idx == 0) {
                 rd.users[count] = att.user;
                 rd.energies[count] = att.energy;
                 rd.degeneracies[count] = att.degeneracy;
-                count++;
+                _index[att.user] = ++count;
+            } else {
+                uint256 pos = idx - 1;
+                rd.energies[pos] += att.energy;
+                rd.degeneracies[pos] += att.degeneracy;
             }
+        }
+        for (uint256 i = 0; i < count; i++) {
+            delete _index[rd.users[i]];
         }
         assembly {
             let users := mload(rd)
