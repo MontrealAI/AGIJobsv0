@@ -19,20 +19,39 @@ contract ThermostatTest is Test {
         assertEq(t.getRoleTemperature(Thermostat.Role.Agent), 100);
         t.setRoleTemperature(Thermostat.Role.Agent, int256(150));
         assertEq(t.getRoleTemperature(Thermostat.Role.Agent), 150);
+        t.unsetRoleTemperature(Thermostat.Role.Agent);
+        assertEq(t.getRoleTemperature(Thermostat.Role.Agent), 100);
     }
     function test_constructorInvalidBounds() public {
-        vm.expectRevert("bounds");
+        vm.expectRevert(bytes("bounds"));
         new Thermostat(int256(100), int256(0), int256(200));
-        vm.expectRevert("bounds");
+        vm.expectRevert(bytes("bounds"));
         new Thermostat(int256(100), int256(10), int256(10));
     }
 
     function test_setRoleTemperatureRequiresPositive() public {
         Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
-        vm.expectRevert("bounds");
+        vm.expectRevert(bytes("bounds"));
         t.setRoleTemperature(Thermostat.Role.Agent, int256(0));
-        vm.expectRevert("bounds");
+        vm.expectRevert(bytes("bounds"));
         t.setRoleTemperature(Thermostat.Role.Agent, int256(-1));
+    }
+
+    function test_setSystemTemperatureAndBounds() public {
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        vm.expectEmit(false, false, false, true, address(t));
+        emit Thermostat.TemperatureUpdated(int256(150));
+        t.setSystemTemperature(int256(150));
+        assertEq(t.systemTemperature(), 150);
+
+        vm.expectRevert(bytes("temp"));
+        t.setSystemTemperature(int256(0));
+
+        t.setTemperatureBounds(int256(50), int256(120));
+        assertEq(t.systemTemperature(), 120); // clamped to new max
+
+        vm.expectRevert(bytes("bounds"));
+        t.setTemperatureBounds(int256(0), int256(10));
     }
 
     function test_tickEmitsEvent() public {
