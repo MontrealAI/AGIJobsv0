@@ -44,9 +44,9 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 ### Thermodynamic Incentives
 
-`RewardEngineMB` meters energy consumption against a global free‑energy budget and assigns each role a share of that budget. The `Thermostat` normalises per‑task usage while `EnergyOracle` supplies measurements, letting the engine raise reward weight and reputation for energy‑efficient participants.
+`RewardEngineMB` meters energy consumption against a global free‑energy budget and assigns each role a share of that budget. The `Thermostat` normalises per‑task usage while `EnergyOracle` supplies measurements, letting the engine raise reward weight and reputation for energy‑efficient participants. Role‑level chemical potentials (μᵣ) shift baseline rewards to keep the system in balance.
 
-Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation.
+Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
 
 | Energy Used (kJ) | Reward Weight | Reputation Gain |
 | ---------------- | ------------- | --------------- |
@@ -61,6 +61,7 @@ flowchart TB
     EO((EnergyOracle)) -- "E_i, g_i" --> weights
     TH((Thermostat)) -- Tₛ --> T
     TH -- Tᵣ --> weights
+    Mu((μ_r)) -- "chemical potential" --> weights
 
     subgraph Budgeting["Free-Energy Budgeting"]
         V[Total Value] --> dH["ΔH"]
@@ -92,7 +93,7 @@ flowchart TB
     classDef role fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    class V,C,Upre,Upost,T,dH,dS,dG,budget,weights,EO,TH thermo;
+    class V,C,Upre,Upost,T,dH,dS,dG,budget,weights,EO,TH,Mu thermo;
     class Agents,Validators,Operators,Employers role;
     class RA,RV,RO,RE rep;
 ```
