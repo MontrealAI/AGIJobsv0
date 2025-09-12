@@ -73,3 +73,16 @@ sequenceDiagram
     Reputation-->>Employer: Reputation ↑
     Note over FeePool,Reputation: Rewards and reputation finalised
 ```
+
+## Settlement States
+
+```mermaid
+stateDiagram-v2
+    [*] --> Data
+    Data: Collect job metrics
+    Data --> Budget: Compute ΔH & ΔS
+    Budget --> Weights: Apply MB weights
+    Weights --> Rewards: Distribute tokens
+    Rewards --> Reputation: Update scores
+    Reputation --> [*]
+```

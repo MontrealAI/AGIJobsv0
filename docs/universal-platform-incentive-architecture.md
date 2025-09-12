@@ -122,6 +122,23 @@ flowchart LR
     class A,V,O,E roles;
 ```
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant EO as EnergyOracle
+    participant RE as RewardEngineMB
+    participant TH as Thermostat
+    loop each epoch
+        EO->>RE: attest(Eᵢ,gᵢ,ΔS,value)
+        RE->>TH: request Tₛ/Tᵣ
+        TH-->>RE: return temperatures
+        RE->>TH: report usage error
+        TH-->>RE: adjust Tₛ/Tᵣ
+        RE->>RE: compute ΔG & weights
+    end
+    Note over EO,TH: PID loop keeps rewards energy-efficient
+```
+
 ### Reward Settlement Process
 
 ```mermaid
