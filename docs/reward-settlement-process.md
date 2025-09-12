@@ -131,3 +131,19 @@ flowchart LR
     REP --> OP
     REP --> EM
 ```
+
+## Participant Journey
+
+```mermaid
+journey
+    title Reward Settlement Journey
+    section Job Lifecycle
+      Post job & fund escrow: 5: Employer
+      Complete work: 5: Agent
+      Validate result: 5: Validator
+    section Incentive Loop
+      Attest energy: 4: EnergyOracle
+      Settle epoch: 4: RewardEngineMB
+      Distribute rewards: 5: FeePool
+      Reputation update: 5: ReputationEngine
+```

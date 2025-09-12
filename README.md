@@ -49,6 +49,27 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
 
 ```mermaid
+stateDiagram-v2
+    classDef meas fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef calc fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef dist fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+
+    [*] --> Metrics
+    Metrics: Measure Eᵢ,gᵢ,ΔS,value
+    Metrics --> Budget: ΔG budget
+    Budget --> Weights: MB weights
+    Weights --> Distribution: Role splits
+    Distribution --> Reputation: Rep updates
+    Reputation --> Metrics
+    class Metrics meas;
+    class Budget calc;
+    class Weights calc;
+    class Distribution dist;
+    class Reputation rep;
+```
+
+```mermaid
 flowchart LR
     classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef share fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
