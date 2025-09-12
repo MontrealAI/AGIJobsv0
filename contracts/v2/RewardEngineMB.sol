@@ -62,6 +62,13 @@ contract RewardEngineMB is Ownable {
     event TreasuryUpdated(address indexed treasury);
     event RoleShareUpdated(Role indexed role, uint256 share);
     event MuUpdated(Role indexed role, int256 muValue);
+    event RewardBudget(
+        uint256 indexed epoch,
+        uint256 minted,
+        uint256 burned,
+        uint256 redistributed,
+        uint256 distributionRatio
+    );
 
     constructor(
         Thermostat _thermostat,
@@ -164,6 +171,8 @@ contract RewardEngineMB is Ownable {
             require(treasury != address(0), "treasury");
             feePool.reward(treasury, leftover);
         }
+        uint256 ratio = budget > 0 ? (distributed * uint256(WAD)) / budget : 0;
+        emit RewardBudget(epoch, budget, 0, distributed, ratio);
         emit EpochSettled(epoch, budget, dH, dS, Tsys, leftover);
     }
 

@@ -198,6 +198,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 treasuryShare,
         uint256 burnShare
     );
+    event SlashingStats(
+        uint256 timestamp,
+        uint256 minted,
+        uint256 burned,
+        uint256 redistributed,
+        uint256 burnRatio
+    );
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     /// @notice Emitted when a participant receives a payout in $AGIALPHA.
@@ -1354,7 +1361,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             // Burned stake originates from the slashed participant, not employer funds.
             _burnToken(bytes32(0), burnShare);
         }
-
+        uint256 redistributed = employerShare + treasuryShare;
+        uint256 ratio = redistributed > 0 ? (burnShare * TOKEN_SCALE) / redistributed : 0;
         emit StakeSlashed(
             user,
             role,
@@ -1364,6 +1372,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             treasuryShare,
             burnShare
         );
+        emit SlashingStats(block.timestamp, 0, burnShare, redistributed, ratio);
     }
 
     /// @notice slash stake from a user for a specific role and distribute shares
