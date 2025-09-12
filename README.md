@@ -160,7 +160,8 @@ single key can change parameters:
    - `transferOwnership(multisig)` on all other modules such as
      `ValidationModule`, `ReputationEngine`, `IdentityRegistry`,
      `CertificateNFT`, `DisputeModule`, `FeePool`, `PlatformRegistry`,
-     `JobRouter`, `PlatformIncentives`, `TaxPolicy` and `SystemPause`.
+     `JobRouter`, `PlatformIncentives`, `EnergyOracle`, `Thermostat`,
+     `RewardEngineMB`, `TaxPolicy` and `SystemPause`.
      To automate this step run:
 
    ```bash

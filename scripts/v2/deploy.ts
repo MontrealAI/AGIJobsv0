@@ -191,17 +191,47 @@ async function main() {
     'contracts/v2/FeePool.sol:FeePool'
   );
   const burnPct = typeof args.burnPct === 'string' ? parseInt(args.burnPct) : 0;
-  const feePool = await FeePool.deploy(
-    await stake.getAddress(),
-    burnPct,
-    treasury,
-    await tax.getAddress()
-  );
-  await feePool.waitForDeployment();
+    const feePool = await FeePool.deploy(
+      await stake.getAddress(),
+      burnPct,
+      treasury,
+      await tax.getAddress()
+    );
+    await feePool.waitForDeployment();
 
-  const PlatformRegistry = await ethers.getContractFactory(
-    'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
-  );
+    const Thermostat = await ethers.getContractFactory(
+      'contracts/v2/Thermostat.sol:Thermostat'
+    );
+    const thermostat = await Thermostat.deploy(
+      ethers.parseUnits('1', 18),
+      1n,
+      ethers.parseUnits('2', 18)
+    );
+    await thermostat.waitForDeployment();
+
+    const EnergyOracle = await ethers.getContractFactory(
+      'contracts/v2/EnergyOracle.sol:EnergyOracle'
+    );
+    const energyOracle = await EnergyOracle.deploy();
+    await energyOracle.waitForDeployment();
+
+    const RewardEngine = await ethers.getContractFactory(
+      'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
+    );
+    const rewardEngine = await RewardEngine.deploy(
+      await thermostat.getAddress(),
+      await feePool.getAddress(),
+      await reputation.getAddress(),
+      await energyOracle.getAddress()
+    );
+    await rewardEngine.waitForDeployment();
+
+    await thermostat.transferOwnership(governance);
+    await rewardEngine.transferOwnership(governance);
+
+    const PlatformRegistry = await ethers.getContractFactory(
+      'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
+    );
   const minPlatformStake = ethers.parseUnits(
     typeof args.minPlatformStake === 'string' ? args.minPlatformStake : '1000',
     AGIALPHA_DECIMALS
@@ -375,13 +405,16 @@ async function main() {
     console.log('DisputeModule:', activeDispute);
   }
   console.log('CertificateNFT:', await nft.getAddress());
-  console.log('TaxPolicy:', await tax.getAddress());
-  console.log('FeePool:', await feePool.getAddress());
-  console.log('PlatformRegistry:', await platformRegistry.getAddress());
-  console.log('JobRouter:', await jobRouter.getAddress());
-  console.log('PlatformIncentives:', await incentives.getAddress());
+    console.log('TaxPolicy:', await tax.getAddress());
+    console.log('FeePool:', await feePool.getAddress());
+    console.log('PlatformRegistry:', await platformRegistry.getAddress());
+    console.log('JobRouter:', await jobRouter.getAddress());
+    console.log('PlatformIncentives:', await incentives.getAddress());
+    console.log('EnergyOracle:', await energyOracle.getAddress());
+    console.log('Thermostat:', await thermostat.getAddress());
+    console.log('RewardEngineMB:', await rewardEngine.getAddress());
 
-  const addresses = {
+    const addresses = {
     token: AGIALPHA,
     stakeManager: await stake.getAddress(),
     jobRegistry: await registry.getAddress(),
@@ -391,13 +424,16 @@ async function main() {
     certificateNFT: await nft.getAddress(),
     taxPolicy: await tax.getAddress(),
     feePool: await feePool.getAddress(),
-    platformRegistry: await platformRegistry.getAddress(),
-    jobRouter: await jobRouter.getAddress(),
-    platformIncentives: await incentives.getAddress(),
-    identityRegistry: await identity.getAddress(),
-    attestationRegistry: await attestation.getAddress(),
-    systemPause: await pause.getAddress(),
-  };
+      platformRegistry: await platformRegistry.getAddress(),
+      jobRouter: await jobRouter.getAddress(),
+      platformIncentives: await incentives.getAddress(),
+      energyOracle: await energyOracle.getAddress(),
+      thermostat: await thermostat.getAddress(),
+      rewardEngineMB: await rewardEngine.getAddress(),
+      identityRegistry: await identity.getAddress(),
+      attestationRegistry: await attestation.getAddress(),
+      systemPause: await pause.getAddress(),
+    };
 
   writeFileSync(
     join(__dirname, '..', '..', 'docs', 'deployment-addresses.json'),
@@ -474,16 +510,28 @@ async function main() {
     await platformRegistry.getAddress(),
     governance,
   ]);
-  await verify(await incentives.getAddress(), [
-    await stake.getAddress(),
-    await platformRegistry.getAddress(),
-    await jobRouter.getAddress(),
-    governance,
-  ]);
-  await verify(await pause.getAddress(), [
-    await registry.getAddress(),
-    await stake.getAddress(),
-    await validation.getAddress(),
+    await verify(await incentives.getAddress(), [
+      await stake.getAddress(),
+      await platformRegistry.getAddress(),
+      await jobRouter.getAddress(),
+      governance,
+    ]);
+    await verify(await energyOracle.getAddress(), []);
+    await verify(await thermostat.getAddress(), [
+      ethers.parseUnits('1', 18),
+      1n,
+      ethers.parseUnits('2', 18),
+    ]);
+    await verify(await rewardEngine.getAddress(), [
+      await thermostat.getAddress(),
+      await feePool.getAddress(),
+      await reputation.getAddress(),
+      await energyOracle.getAddress(),
+    ]);
+    await verify(await pause.getAddress(), [
+      await registry.getAddress(),
+      await stake.getAddress(),
+      await validation.getAddress(),
     await dispute.getAddress(),
     await platformRegistry.getAddress(),
     await feePool.getAddress(),
