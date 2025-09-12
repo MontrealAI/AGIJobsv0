@@ -97,6 +97,41 @@ graph TD
     style Reputation fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 ```
 
+#### Reward Settlement Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Employer
+    participant Agent
+    participant Validator
+    participant Oracle as EnergyOracle
+    participant Engine as RewardEngineMB
+    participant Thermostat
+    participant FeePool
+    participant Reputation
+
+    Employer->>Agent: Post job & funds
+    Agent->>Validator: Submit work
+    Validator->>Employer: Approve results
+    Agent->>Oracle: Report energy
+    Oracle-->>Engine: Signed attestation
+    Engine->>Thermostat: Query Tₛ & T_r
+    Thermostat-->>Engine: Temperatures
+    Note over Engine,FeePool: budget = κ·max(0, -(ΔH - Tₛ·ΔS))
+    Engine->>Engine: Compute MB weights
+    Engine->>FeePool: Allocate rewards
+    Engine->>Reputation: Update scores
+    FeePool-->>Agent: Token reward
+    FeePool-->>Validator: Token reward
+    FeePool-->>Operator: Token reward
+    FeePool-->>Employer: Rebate
+    Reputation-->>Agent: Reputation gain
+    Reputation-->>Validator: Reputation gain
+    Reputation-->>Operator: Reputation gain
+    Reputation-->>Employer: Reputation gain
+```
+
 ### Deploy defaults
 
 Spin up the full stack with a single helper script:
