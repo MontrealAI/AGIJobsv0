@@ -134,5 +134,27 @@ contract RewardEngineMBTest is Test {
         vm.expectRevert(bytes("att"));
         engine.settleEpoch(1, data);
     }
+
+    function test_replay_nonce_same_epoch_reverts() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18));
+        data.agents = a;
+
+        engine.settleEpoch(1, data);
+
+        vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.Replay.selector, address(oracle)));
+        engine.settleEpoch(1, data);
+    }
+
+    function test_same_nonce_different_epochs_ok() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18));
+        data.agents = a;
+
+        engine.settleEpoch(1, data);
+        engine.settleEpoch(2, data); // should not revert
+    }
 }
 

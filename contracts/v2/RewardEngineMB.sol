@@ -79,8 +79,9 @@ contract RewardEngineMB is Ownable {
         mu[r] = _mu;
     }
 
-    /// @notice Settle an epoch and distribute rewards.
-    mapping(address => uint256) public usedNonces;
+    /// @notice Track highest attestation nonce per user per epoch
+    /// @dev used for replay protection across epochs
+    mapping(address => mapping(uint256 => uint256)) public usedNonces;
     mapping(address => uint256) private _index;
 
     error InvalidProof(address oracle);
@@ -94,10 +95,10 @@ contract RewardEngineMB is Ownable {
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
 
-        RoleData memory agents = _aggregate(data.agents);
-        RoleData memory validators = _aggregate(data.validators);
-        RoleData memory operators = _aggregate(data.operators);
-        RoleData memory employers = _aggregate(data.employers);
+        RoleData memory agents = _aggregate(data.agents, epoch);
+        RoleData memory validators = _aggregate(data.validators, epoch);
+        RoleData memory operators = _aggregate(data.operators, epoch);
+        RoleData memory employers = _aggregate(data.employers, epoch);
 
         _distribute(Role.Agent, budget, agents);
         _distribute(Role.Validator, budget, validators);
@@ -106,7 +107,10 @@ contract RewardEngineMB is Ownable {
         emit EpochSettled(epoch, budget);
     }
 
-    function _aggregate(Proof[] calldata proofs) internal returns (RoleData memory rd) {
+    function _aggregate(Proof[] calldata proofs, uint256 epoch)
+        internal
+        returns (RoleData memory rd)
+    {
         uint256 n = proofs.length;
         rd.users = new address[](n);
         rd.energies = new int256[](n);
@@ -117,8 +121,8 @@ contract RewardEngineMB is Ownable {
             require(att.energy >= 0 && att.degeneracy > 0, "att");
             address signer = energyOracle.verify(att, proofs[i].sig);
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
-            if (att.nonce <= usedNonces[att.user]) revert Replay(address(energyOracle));
-            usedNonces[att.user] = att.nonce;
+            if (att.nonce <= usedNonces[att.user][epoch]) revert Replay(address(energyOracle));
+            usedNonces[att.user][epoch] = att.nonce;
             uint256 idx = _index[att.user];
             if (idx == 0) {
                 rd.users[count] = att.user;
