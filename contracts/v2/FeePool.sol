@@ -30,6 +30,8 @@ error PolicyNotTaxExempt();
 error NotGovernance();
 /// @dev Caller is neither the owner nor the designated pauser.
 error NotOwnerOrPauser();
+/// @dev Caller not authorized to reward.
+error NotRewarder();
 
 /// @title FeePool
 /// @notice Accumulates job fees and distributes them to stakers proportionally.
@@ -78,6 +80,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice checkpoint of claimed rewards per user
     mapping(address => uint256) public userCheckpoint;
 
+    /// @notice addresses allowed to call reward
+    mapping(address => bool) public rewarders;
+
     event FeeDeposited(address indexed from, uint256 amount);
     event FeesDistributed(uint256 amount);
     event FeesBurned(address indexed caller, uint256 amount);
@@ -93,6 +98,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     event RewardPoolContribution(address indexed contributor, uint256 amount);
     event PauserUpdated(address indexed pauser);
     event TaxPolicyUpdated(address indexed policy);
+    event RewarderUpdated(address indexed rewarder, bool allowed);
 
     modifier onlyOwnerOrPauser() {
         if (msg.sender != owner() && msg.sender != pauser) {
@@ -104,6 +110,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     function setPauser(address _pauser) external onlyOwner {
         pauser = _pauser;
         emit PauserUpdated(_pauser);
+    }
+
+    /// @notice Authorize an address to distribute rewards.
+    function setRewarder(address rewarder, bool allowed) external onlyOwner {
+        rewarders[rewarder] = allowed;
+        emit RewarderUpdated(rewarder, allowed);
     }
 
     /// @notice Deploys the FeePool.
@@ -195,6 +207,16 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         token.safeTransferFrom(msg.sender, address(this), amount);
         pendingFees += amount;
         emit RewardPoolContribution(msg.sender, amount);
+    }
+
+    /// @notice Transfer reward tokens to a recipient. Callable by authorised rewarders.
+    /// @param to address receiving the reward
+    /// @param amount token amount with 18 decimals
+    function reward(address to, uint256 amount) external whenNotPaused {
+        if (!rewarders[msg.sender]) revert NotRewarder();
+        if (to == address(0)) revert InvalidRecipient();
+        if (amount == 0) revert ZeroAmount();
+        token.safeTransfer(to, amount);
     }
 
     /// @notice Distribute accumulated fees to stakers.
