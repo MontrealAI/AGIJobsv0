@@ -14,6 +14,7 @@ library ThermoMath {
     int256 internal constant MIN_EXP_INPUT = -41_446531673892822322;
 
     error ExpInputOutOfBounds();
+    error WeightOverflow();
 
     /// @dev uses PRBMath's fixed-point exponential
     function _exp(int256 x) private pure returns (uint256) {
@@ -50,7 +51,9 @@ library ThermoMath {
         if (upper > MAX_EXP_INPUT || lower < MIN_EXP_INPUT) revert ExpInputOutOfBounds();
         for (uint256 i = 0; i < n; i++) {
             int256 x = ((mu - E[i]) * WAD) / T;
-            uint256 weight = g[i] * _exp(x);
+            uint256 e = _exp(x);
+            if (g[i] > type(uint256).max / e) revert WeightOverflow();
+            uint256 weight = g[i] * e;
             raw[i] = weight;
             sum += weight;
         }
