@@ -12,6 +12,6 @@ interface IEnergyOracle {
     }
 
     /// @return signer Address of oracle signer if signature valid, zero address otherwise
-    function verify(Attestation calldata att, bytes calldata sig) external view returns (address signer);
+    function verify(Attestation calldata att, bytes calldata sig) external returns (address signer);
 }
 
