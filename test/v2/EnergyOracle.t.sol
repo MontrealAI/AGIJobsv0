@@ -21,6 +21,8 @@ contract EnergyOracleTest is Test {
         att.user = address(0xBEEF);
         att.energy = int256(1);
         att.degeneracy = 2;
+        att.epochId = 1;
+        att.role = 0;
         att.nonce = 1;
         att.deadline = block.timestamp + 1 hours;
     }
@@ -33,6 +35,8 @@ contract EnergyOracleTest is Test {
                 att.user,
                 att.energy,
                 att.degeneracy,
+                att.epochId,
+                att.role,
                 att.nonce,
                 att.deadline
             )
@@ -47,6 +51,20 @@ contract EnergyOracleTest is Test {
             )
         );
         return keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+    }
+
+    function test_verify_rejects_modified_epoch_or_role() public {
+        EnergyOracle.Attestation memory att = _att();
+        bytes32 digest = _hash(att);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPk, digest);
+        bytes memory sig = abi.encodePacked(r, s, v);
+        att.epochId = 2;
+        address recovered = oracle.verify(att, sig);
+        assertEq(recovered, address(0));
+        att.epochId = 1;
+        att.role = 1;
+        recovered = oracle.verify(att, sig);
+        assertEq(recovered, address(0));
     }
 
     function test_verify_valid_signature() public {

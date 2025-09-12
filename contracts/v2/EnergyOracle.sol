@@ -12,7 +12,7 @@ contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
     using ECDSA for bytes32;
 
     bytes32 public constant TYPEHASH = keccak256(
-        "EnergyAttestation(uint256 jobId,address user,int256 energy,uint256 degeneracy,uint256 nonce,uint256 deadline)"
+        "EnergyAttestation(uint256 jobId,address user,int256 energy,uint256 degeneracy,uint256 epochId,uint8 role,uint256 nonce,uint256 deadline)"
     );
 
     mapping(address => bool) public signers;
@@ -40,6 +40,8 @@ contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
                     att.user,
                     att.energy,
                     att.degeneracy,
+                    att.epochId,
+                    att.role,
                     att.nonce,
                     att.deadline
                 )

@@ -7,6 +7,8 @@ interface IEnergyOracle {
         address user;
         int256 energy;
         uint256 degeneracy;
+        uint256 epochId;
+        uint8 role;
         uint256 nonce;
         uint256 deadline;
     }
