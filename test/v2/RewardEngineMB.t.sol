@@ -6,6 +6,7 @@ import {RewardEngineMB} from "../../contracts/v2/RewardEngineMB.sol";
 import {Thermostat} from "../../contracts/v2/Thermostat.sol";
 import {IReputationEngineV2} from "../../contracts/v2/interfaces/IReputationEngineV2.sol";
 import {IFeePool} from "../../contracts/v2/interfaces/IFeePool.sol";
+import {IEnergyOracle} from "../../contracts/v2/interfaces/IEnergyOracle.sol";
 
 contract MockFeePool is IFeePool {
     mapping(address => uint256) public rewards;
@@ -28,11 +29,18 @@ contract MockReputation is IReputationEngineV2 {
     }
 }
 
+contract MockEnergyOracle is IEnergyOracle {
+    function verify(Attestation calldata att, bytes calldata) external pure override returns (address) {
+        return att.user; // treat user's address as signer for testing
+    }
+}
+
 contract RewardEngineMBTest is Test {
     RewardEngineMB engine;
     MockFeePool pool;
     MockReputation rep;
     Thermostat thermo;
+    MockEnergyOracle oracle;
 
     address agent = address(0x1);
     address validator = address(0x2);
@@ -43,25 +51,37 @@ contract RewardEngineMBTest is Test {
         thermo = new Thermostat(int256(1e18), int256(1), int256(2e18));
         pool = new MockFeePool();
         rep = new MockReputation();
-        engine = new RewardEngineMB(thermo, pool, rep);
+        oracle = new MockEnergyOracle();
+        engine = new RewardEngineMB(thermo, pool, rep, oracle);
     }
 
-    function _roleData(address user, int256 energy) internal pure returns (RewardEngineMB.RoleData memory rd) {
-        address[] memory users = new address[](1);
-        users[0] = user;
-        int256[] memory energies = new int256[](1);
-        energies[0] = energy;
-        uint256[] memory deg = new uint256[](1);
-        deg[0] = 1;
-        rd = RewardEngineMB.RoleData({users: users, energies: energies, degeneracies: deg});
+    function _proof(address user, int256 energy) internal pure returns (RewardEngineMB.Proof memory p) {
+        IEnergyOracle.Attestation memory att = IEnergyOracle.Attestation({
+            jobId: 1,
+            user: user,
+            energy: energy,
+            degeneracy: 1,
+            nonce: 1,
+            deadline: type(uint256).max
+        });
+        p.att = att;
+        p.sig = bytes("");
     }
 
     function test_settleEpochDistributesBudget() public {
         RewardEngineMB.EpochData memory data;
-        data.agents = _roleData(agent, int256(1e18));
-        data.validators = _roleData(validator, int256(1e18));
-        data.operators = _roleData(operator, int256(1e18));
-        data.employers = _roleData(employer, int256(1e18));
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18));
+        data.agents = a;
+        RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
+        v[0] = _proof(validator, int256(1e18));
+        data.validators = v;
+        RewardEngineMB.Proof[] memory o = new RewardEngineMB.Proof[](1);
+        o[0] = _proof(operator, int256(1e18));
+        data.operators = o;
+        RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
+        e[0] = _proof(employer, int256(1e18));
+        data.employers = e;
         data.totalValue = 0;
         data.paidCosts = 1e18;
         data.sumUpre = 0;

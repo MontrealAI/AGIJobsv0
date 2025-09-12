@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+interface IEnergyOracle {
+    struct Attestation {
+        uint256 jobId;
+        address user;
+        int256 energy;
+        uint256 degeneracy;
+        uint256 nonce;
+        uint256 deadline;
+    }
+
+    /// @return signer Address of oracle signer if signature valid, zero address otherwise
+    function verify(Attestation calldata att, bytes calldata sig) external view returns (address signer);
+}
+
