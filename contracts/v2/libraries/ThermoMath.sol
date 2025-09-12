@@ -1,21 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import { SD59x18 } from "@prb/math/src/sd59x18/ValueType.sol";
+import { exp } from "@prb/math/src/sd59x18/Math.sol";
+
 /// @title ThermoMath
 /// @notice Utility functions for computing approximate Maxwell-Boltzmann weights.
 library ThermoMath {
     int256 internal constant WAD = 1e18;
 
-    /// @dev simple exponential approximation using 10-term Taylor series
+    // The maximum and minimum exponent inputs accepted by the PRBMath `exp` function.
+    int256 internal constant MAX_EXP_INPUT = 133_084258667509499440;
+    int256 internal constant MIN_EXP_INPUT = -41_446531673892822322;
+
+    error ExpInputOutOfBounds();
+
+    /// @dev uses PRBMath's fixed-point exponential
     function _exp(int256 x) private pure returns (uint256) {
-        int256 term = WAD;
-        int256 sum = WAD;
-        for (uint8 i = 1; i < 10; i++) {
-            term = (term * x) / int256(WAD) / int256(uint256(i));
-            sum += term;
+        if (x > MAX_EXP_INPUT || x < MIN_EXP_INPUT) {
+            revert ExpInputOutOfBounds();
         }
-        if (sum < 0) return 0;
-        return uint256(sum);
+        int256 result = SD59x18.unwrap(exp(SD59x18.wrap(x)));
+        return uint256(result);
     }
 
     /// @notice Computes normalized MB-like weights.
