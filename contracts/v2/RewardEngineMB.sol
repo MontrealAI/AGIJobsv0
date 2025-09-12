@@ -51,6 +51,7 @@ contract RewardEngineMB is Ownable {
     error InvalidRoleShareSum(uint256 sum);
 
     event EpochSettled(uint256 indexed epoch, uint256 budget);
+    event RewardIssued(address indexed user, Role role, uint256 amount);
 
     constructor(
         Thermostat _thermostat,
@@ -152,6 +153,7 @@ contract RewardEngineMB is Ownable {
             uint256 amt = bucket * weights[i] / uint256(WAD);
             feePool.reward(rd.users[i], amt);
             reputation.update(rd.users[i], -rd.energies[i]);
+            emit RewardIssued(rd.users[i], r, amt);
         }
     }
 
