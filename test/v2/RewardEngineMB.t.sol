@@ -57,12 +57,18 @@ contract RewardEngineMBTest is Test {
         engine.setSettler(address(this), true);
     }
 
-    function _proof(address user, int256 energy) internal pure returns (RewardEngineMB.Proof memory p) {
+    function _proof(address user, int256 energy, uint256 epoch, RewardEngineMB.Role role)
+        internal
+        pure
+        returns (RewardEngineMB.Proof memory p)
+    {
         IEnergyOracle.Attestation memory att = IEnergyOracle.Attestation({
             jobId: 1,
             user: user,
             energy: energy,
             degeneracy: 1,
+            epochId: epoch,
+            role: uint8(role),
             nonce: 1,
             deadline: type(uint256).max
         });
@@ -73,13 +79,17 @@ contract RewardEngineMBTest is Test {
     function _proofWithDeg(
         address user,
         int256 energy,
-        uint256 degeneracy
+        uint256 degeneracy,
+        uint256 epoch,
+        RewardEngineMB.Role role
     ) internal pure returns (RewardEngineMB.Proof memory p) {
         IEnergyOracle.Attestation memory att = IEnergyOracle.Attestation({
             jobId: 1,
             user: user,
             energy: energy,
             degeneracy: degeneracy,
+            epochId: epoch,
+            role: uint8(role),
             nonce: 1,
             deadline: type(uint256).max
         });
@@ -90,16 +100,16 @@ contract RewardEngineMBTest is Test {
     function test_settleEpochDistributesBudget() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proof(agent, int256(1e18));
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
         RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
-        v[0] = _proof(validator, int256(1e18));
+        v[0] = _proof(validator, int256(1e18), 1, RewardEngineMB.Role.Validator);
         data.validators = v;
         RewardEngineMB.Proof[] memory o = new RewardEngineMB.Proof[](1);
-        o[0] = _proof(operator, int256(1e18));
+        o[0] = _proof(operator, int256(1e18), 1, RewardEngineMB.Role.Operator);
         data.operators = o;
         RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
-        e[0] = _proof(employer, int256(1e18));
+        e[0] = _proof(employer, int256(1e18), 1, RewardEngineMB.Role.Employer);
         data.employers = e;
         data.totalValue = 0;
         data.paidCosts = 1e18;
@@ -122,16 +132,16 @@ contract RewardEngineMBTest is Test {
     function test_setKappaScalesBudget() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proof(agent, int256(1e18));
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
         RewardEngineMB.Proof[] memory v = new RewardEngineMB.Proof[](1);
-        v[0] = _proof(validator, int256(1e18));
+        v[0] = _proof(validator, int256(1e18), 1, RewardEngineMB.Role.Validator);
         data.validators = v;
         RewardEngineMB.Proof[] memory o = new RewardEngineMB.Proof[](1);
-        o[0] = _proof(operator, int256(1e18));
+        o[0] = _proof(operator, int256(1e18), 1, RewardEngineMB.Role.Operator);
         data.operators = o;
         RewardEngineMB.Proof[] memory e = new RewardEngineMB.Proof[](1);
-        e[0] = _proof(employer, int256(1e18));
+        e[0] = _proof(employer, int256(1e18), 1, RewardEngineMB.Role.Employer);
         data.employers = e;
         data.totalValue = 0;
         data.paidCosts = 1e18;
@@ -160,7 +170,7 @@ contract RewardEngineMBTest is Test {
     function test_reverts_on_negative_energy() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proof(agent, -1);
+        a[0] = _proof(agent, -1, 1, RewardEngineMB.Role.Agent);
         data.agents = a;
         vm.expectRevert(bytes("att"));
         engine.settleEpoch(1, data);
@@ -169,7 +179,7 @@ contract RewardEngineMBTest is Test {
     function test_reverts_on_zero_degeneracy() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proofWithDeg(agent, 1, 0);
+        a[0] = _proofWithDeg(agent, 1, 0, 1, RewardEngineMB.Role.Agent);
         data.agents = a;
         vm.expectRevert(bytes("att"));
         engine.settleEpoch(1, data);
@@ -178,7 +188,7 @@ contract RewardEngineMBTest is Test {
     function test_replay_nonce_same_epoch_reverts() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proof(agent, int256(1e18));
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
 
         engine.settleEpoch(1, data);
@@ -190,17 +200,40 @@ contract RewardEngineMBTest is Test {
     function test_same_nonce_different_epochs_ok() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proof(agent, int256(1e18));
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
 
         engine.settleEpoch(1, data);
+
+        a[0] = _proof(agent, int256(1e18), 2, RewardEngineMB.Role.Agent);
+        data.agents = a;
         engine.settleEpoch(2, data); // should not revert
+    }
+
+    function test_mismatched_epoch_reverts() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        // attests to epoch 2 but settle epoch 1
+        a[0] = _proof(agent, int256(1e18), 2, RewardEngineMB.Role.Agent);
+        data.agents = a;
+        vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.InvalidProof.selector, address(oracle)));
+        engine.settleEpoch(1, data);
+    }
+
+    function test_mismatched_role_reverts() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        // role Operator but aggregated as Agent
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Operator);
+        data.agents = a;
+        vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.InvalidProof.selector, address(oracle)));
+        engine.settleEpoch(1, data);
     }
 
     function test_only_settler_can_settle_epoch() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
-        a[0] = _proof(agent, int256(1e18));
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
 
         address nonSettler = address(0xBEEF);
@@ -217,9 +250,9 @@ contract RewardEngineMBTest is Test {
     function test_leftover_budget_sent_to_treasury() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](3);
-        a[0] = _proof(address(0xA1), int256(1e18));
-        a[1] = _proof(address(0xA2), int256(1e18));
-        a[2] = _proof(address(0xA3), int256(1e18));
+        a[0] = _proof(address(0xA1), int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[1] = _proof(address(0xA2), int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[2] = _proof(address(0xA3), int256(1e18), 1, RewardEngineMB.Role.Agent);
         data.agents = a;
         data.totalValue = 0;
         data.paidCosts = 1e18;

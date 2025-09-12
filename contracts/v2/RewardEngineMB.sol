@@ -120,10 +120,10 @@ contract RewardEngineMB is Ownable {
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
 
-        RoleData memory agents = _aggregate(data.agents, epoch);
-        RoleData memory validators = _aggregate(data.validators, epoch);
-        RoleData memory operators = _aggregate(data.operators, epoch);
-        RoleData memory employers = _aggregate(data.employers, epoch);
+        RoleData memory agents = _aggregate(data.agents, epoch, Role.Agent);
+        RoleData memory validators = _aggregate(data.validators, epoch, Role.Validator);
+        RoleData memory operators = _aggregate(data.operators, epoch, Role.Operator);
+        RoleData memory employers = _aggregate(data.employers, epoch, Role.Employer);
 
         uint256 distributed;
         distributed += _distribute(Role.Agent, budget, agents);
@@ -139,7 +139,7 @@ contract RewardEngineMB is Ownable {
         emit EpochSettled(epoch, budget);
     }
 
-    function _aggregate(Proof[] calldata proofs, uint256 epoch)
+    function _aggregate(Proof[] calldata proofs, uint256 epoch, Role role)
         internal
         returns (RoleData memory rd)
     {
@@ -151,6 +151,7 @@ contract RewardEngineMB is Ownable {
         for (uint256 i = 0; i < n; i++) {
             IEnergyOracle.Attestation calldata att = proofs[i].att;
             require(att.energy >= 0 && att.degeneracy > 0, "att");
+            if (att.epochId != epoch || att.role != uint8(role)) revert InvalidProof(address(energyOracle));
             address signer = energyOracle.verify(att, proofs[i].sig);
             if (signer == address(0)) revert InvalidProof(address(energyOracle));
             if (att.nonce <= usedNonces[att.user][epoch]) revert Replay(address(energyOracle));
