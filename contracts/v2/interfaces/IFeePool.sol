@@ -24,4 +24,9 @@ interface IFeePool {
     /// @param to address receiving the tokens
     /// @param amount token amount with 18 decimals
     function governanceWithdraw(address to, uint256 amount) external;
+
+    /// @notice Transfer reward tokens to a recipient.
+    /// @param to address receiving the reward
+    /// @param amount token amount with 18 decimals
+    function reward(address to, uint256 amount) external;
 }
