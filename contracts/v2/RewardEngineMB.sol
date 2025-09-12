@@ -49,7 +49,14 @@ contract RewardEngineMB is Ownable {
 
     error InvalidRoleShareSum(uint256 sum);
 
-    event EpochSettled(uint256 indexed epoch, uint256 budget);
+    event EpochSettled(
+        uint256 indexed epoch,
+        uint256 budget,
+        int256 dH,
+        int256 dS,
+        int256 systemTemperature,
+        uint256 leftover
+    );
     event RewardIssued(address indexed user, Role role, uint256 amount);
     event KappaUpdated(uint256 newKappa);
     event TreasuryUpdated(address indexed treasury);
@@ -157,7 +164,7 @@ contract RewardEngineMB is Ownable {
             require(treasury != address(0), "treasury");
             feePool.reward(treasury, leftover);
         }
-        emit EpochSettled(epoch, budget);
+        emit EpochSettled(epoch, budget, dH, dS, Tsys, leftover);
     }
 
     function _aggregate(Proof[] calldata proofs, uint256 epoch, Role role)

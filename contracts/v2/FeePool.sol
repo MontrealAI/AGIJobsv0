@@ -63,6 +63,8 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     address public treasury;
     /// @notice Allowlisted treasury addresses permitted to receive dust
     mapping(address => bool) public treasuryAllowlist;
+    /// @notice Total amount distributed to each treasury address
+    mapping(address => uint256) public treasuryRewards;
 
     /// @notice timelock or governance contract authorized for withdrawals
     TimelockController public governance;
@@ -99,6 +101,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     event PauserUpdated(address indexed pauser);
     event TaxPolicyUpdated(address indexed policy);
     event RewarderUpdated(address indexed rewarder, bool allowed);
+    event TreasuryRewarded(address indexed treasury, uint256 amount);
 
     modifier onlyOwnerOrPauser() {
         if (msg.sender != owner() && msg.sender != pauser) {
@@ -217,6 +220,10 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         if (to == address(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
         token.safeTransfer(to, amount);
+        if (to == treasury) {
+            treasuryRewards[to] += amount;
+            emit TreasuryRewarded(to, amount);
+        }
     }
 
     /// @notice Distribute accumulated fees to stakers.
