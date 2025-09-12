@@ -22,6 +22,7 @@ describe('StakeManager', function () {
       0,
       50,
       50,
+      0,
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

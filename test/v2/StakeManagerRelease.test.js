@@ -34,6 +34,7 @@ describe('StakeManager release', function () {
       0,
       100,
       0,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
