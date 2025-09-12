@@ -57,23 +57,44 @@ An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward w
 
 ```mermaid
 graph TD
-    subgraph "Epoch Free-Energy Budgeting"
-        value[Total Value] --> dH["ΔH"]
+    %% Free-Energy Budgeting
+    subgraph FE["Free-Energy Budgeting"]
+        value[Total Value] --> dH["ΔH (Enthalpy)"]
         costs[Paid Costs] --> dH
-        u_pre[Uncertainty Before] --> dS["ΔS"]
+        u_pre[Uncertainty Before] --> dS["ΔS (Entropy)"]
         u_post[Uncertainty After] --> dS
-        dH --> G{"Budget = max(0, -(ΔH - T·ΔS))"}
-        dS --> G
-        temp["Tₛ from Thermostat"] --> G
+        temp["Tₛ (Thermostat)"] --> budget[/"Budget = max(0, -(ΔH - Tₛ·ΔS))"/]
+        dH --> budget
+        dS --> budget
     end
-    G -->|"65%"| Agents
-    G -->|"15%"| Validators
-    G -->|"15%"| Operators
-    G -->|"5%"| Employers
-    Agents -->|"Lower energy ⇒ higher weight"| Rep["Reputation ↑"]
-    Validators --> Rep
-    Operators --> Rep
-    Employers --> Rep
+
+    %% Role Distribution
+    subgraph Roles["Role Shares"]
+        budget --> A["Agents\n65%"]
+        budget --> V["Validators\n15%"]
+        budget --> O["Operators\n15%"]
+        budget --> E["Employers\n5%"]
+    end
+
+    %% Reputation Incentives
+    subgraph Reputation["Energy Efficiency → Reputation"]
+        A -->|efficiency ↑| RA["Reputation ↑"]
+        V -->|efficiency ↑| RV["Reputation ↑"]
+        O -->|efficiency ↑| RO["Reputation ↑"]
+        E -->|efficiency ↑| RE["Reputation ↑"]
+    end
+
+    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef role fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
+    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+
+    class budget budget;
+    class A,V,O,E role;
+    class RA,RV,RO,RE rep;
+
+    style FE fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    style Roles fill:#e6f2ff,stroke:#0366d6,stroke-width:1px;
+    style Reputation fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 ```
 
 ### Deploy defaults
