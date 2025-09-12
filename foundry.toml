@@ -1,7 +1,7 @@
 [profile.default]
-solc_version = "0.8.25"
-src = 'contracts/v2'
-test = 'test/v2'
+solc_version = "0.8.30"
+src = 'contracts'
+test = 'test'
 libs = ['lib', 'node_modules']
 remappings = ['@openzeppelin/contracts=node_modules/@openzeppelin/contracts']
 via_ir = true
