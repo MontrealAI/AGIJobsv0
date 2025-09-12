@@ -46,6 +46,8 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 `RewardEngineMB` meters energy consumption against a global free‑energy budget and assigns each role a share of that budget. The `Thermostat` normalises per‑task usage while `EnergyOracle` supplies measurements, letting the engine raise reward weight and reputation for energy‑efficient participants.
 
+Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation.
+
 | Energy Used (kJ) | Reward Weight | Reputation Gain |
 | ---------------- | ------------- | --------------- |
 | 20               | 1.0×          | +5              |
@@ -54,13 +56,24 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward weight and reputation.
 
 ```mermaid
-flowchart LR
-    Start[Job completed] --> Oracle(EnergyOracle reports usage)
-    Oracle --> Thermostat{Thermostat compares to role budget}
-    Thermostat --> Engine[RewardEngineMB adjusts weight]
-    Engine --> FeePool((FeePool))
-    FeePool --> Reputation[ReputationEngine updates score]
-    Reputation --> Payout[Agent receives payout]
+graph TD
+    subgraph "Epoch Free-Energy Budgeting"
+        value[Total Value] --> dH["ΔH"]
+        costs[Paid Costs] --> dH
+        u_pre[Uncertainty Before] --> dS["ΔS"]
+        u_post[Uncertainty After] --> dS
+        dH --> G{"Budget = max(0, -(ΔH - T·ΔS))"}
+        dS --> G
+        temp["Tₛ from Thermostat"] --> G
+    end
+    G -->|"65%"| Agents
+    G -->|"15%"| Validators
+    G -->|"15%"| Operators
+    G -->|"5%"| Employers
+    Agents -->|"Lower energy ⇒ higher weight"| Rep["Reputation ↑"]
+    Validators --> Rep
+    Operators --> Rep
+    Employers --> Rep
 ```
 
 ### Deploy defaults

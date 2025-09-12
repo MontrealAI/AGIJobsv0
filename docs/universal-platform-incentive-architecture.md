@@ -30,11 +30,45 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 | 10               | 1.8×          | +9              |
 
 ```mermaid
-flowchart LR
-    Oracle(EnergyOracle) --> Thermostat{Thermostat}
-    Thermostat --> Engine[RewardEngineMB]
-    Engine --> FeePool((FeePool))
-    FeePool --> Reputation[ReputationEngine]
+graph LR
+    Oracle((EnergyOracle)) -- "E_i, g_i attestations" --> Engine[RewardEngineMB]
+    Thermostat((Thermostat)) -- "Tₛ & T_r" --> Engine
+    Engine -- "AGIALPHA rewards" --> FeePool((FeePool))
+    Engine -- "reputation delta" --> Reputation[ReputationEngine]
+    FeePool --> Roles((Agents / Validators / Operators / Employers))
+    Reputation --> Roles
+```
+
+### Reward Settlement Process
+
+```mermaid
+sequenceDiagram
+    participant Employer
+    participant Agent
+    participant Validator
+    participant Oracle as EnergyOracle
+    participant Engine as RewardEngineMB
+    participant Thermostat
+    participant FeePool
+    participant Reputation
+
+    Employer->>Agent: Post job & funds
+    Agent->>Validator: Submit work
+    Validator->>Employer: Approve results
+    Agent->>Oracle: Report energy
+    Oracle-->>Engine: Signed attestation
+    Engine->>Thermostat: Request temperatures
+    Thermostat-->>Engine: Tₛ & T_r
+    Engine->>Engine: Compute ΔG & MB weights
+    Engine->>FeePool: Allocate rewards
+    Engine->>Reputation: Update scores
+    FeePool-->>Agent: Token reward
+    FeePool-->>Validator: Token reward
+    FeePool-->>Operator: Token reward
+    FeePool-->>Employer: Rebate
+    Reputation-->>Agent: Reputation gain
+    Reputation-->>Validator: Reputation gain
+    Reputation-->>Operator: Reputation gain
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
