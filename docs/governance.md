@@ -41,3 +41,22 @@ EOA ownership is not possible.
 
 This flow ensures all privileged operations occur only after the
 configured delay or multi-party approval.
+
+## Parameter changes
+
+After deployment, modules such as `RewardEngineMB` and `Thermostat`
+transfer ownership to a governance timelock. Adjusting their parameters
+follows the same queue-and-execute pattern:
+
+1. **Schedule** the call on the timelock with the encoded function data.
+2. **Execute** the transaction once the timelock delay has elapsed.
+
+The script `scripts/v2/queueOwnershipTransfer.ts` demonstrates this
+workflow by queueing and executing `transferOwnership` for both modules:
+
+```bash
+TIMELOCK=<timelock> NEW_OWNER=<new> REWARD_ENGINE=<engine> THERMOSTAT=<thermo> \
+  npx hardhat run scripts/v2/queueOwnershipTransfer.ts --network <net>
+```
+
+Replace the encoded function to schedule other parameter updates.

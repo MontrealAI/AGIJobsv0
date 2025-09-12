@@ -48,6 +48,9 @@ async function main() {
     'platformRegistry',
     'jobRouter',
     'platformIncentives',
+    'energyOracle',
+    'thermostat',
+    'rewardEngineMB',
     'systemPause',
   ];
 
