@@ -56,59 +56,40 @@ Each epoch the resulting free‑energy budget is split **65 %** to agents, **1
 An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward weight and reputation.
 
 ```mermaid
-flowchart LR
-    %% Thermodynamic budgeting → MB weights → role rewards → reputation
-
-    subgraph Inputs["Sensors"]
-        EO((EnergyOracle))
-        TH((Thermostat))
-        MU((μᵣ))
-    end
-
-    subgraph Budget["Free‑Energy Budget"]
-        V[Total Value] --> dH["ΔH"]
-        C[Paid Costs] --> dH
-        U0[Uncertainty Before] --> dS["ΔS"]
-        U1[Uncertainty After] --> dS
-        T((Tₛ)) --> dG["ΔG = ΔH - Tₛ·ΔS"]
-        dH --> dG
-        dS --> dG
-        dG --> B{"Budget = κ·max(0,-ΔG)"}
-    end
-
-    EO -- "Eᵢ,gᵢ" --> MB["MB Weights wᵢ ∝ gᵢ·e((μᵣ−Eᵢ)/Tᵣ)"]
-    TH -- "Tₛ/Tᵣ" --> MB
-    MU -- "μᵣ" --> MB
-    B --> MB
-
-    subgraph Roles["Role Shares"]
-        A[Agents]
-        Vd[Validators]
-        O[Operators]
-        Em[Employers]
-    end
-
-    MB -->|65%| A
-    MB -->|15%| Vd
-    MB -->|15%| O
-    MB -->|5%| Em
-
-    subgraph Reputation["Energy‑Efficient Reputation"]
-        A --> RA["Reputation ↑"]
-        Vd --> RV["Reputation ↑"]
-        O --> RO["Reputation ↑"]
-        Em --> RE["Reputation ↑"]
-    end
+flowchart TD
+    %% Sensors feed Gibbs free energy which drives MB allocation and reputation
 
     classDef sensor fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
-    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef role fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef calc fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef dist fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    class EO,TH,MU sensor;
-    class V,C,U0,U1,T,dH,dS,dG,B budget;
-    class A,Vd,O,Em role;
-    class RA,RV,RO,RE rep;
+    subgraph Sensors
+        EO((EnergyOracle)):::sensor
+        TH((Thermostat)):::sensor
+        MU((μᵣ)):::sensor
+    end
+
+    Sensors --> G["ΔG = (Value − Costs) − Tₛ·ΔS"]:::calc
+    G --> B{"Budget = κ·max(0, −ΔG)"}:::calc
+    B --> MB["Maxwell–Boltzmann Weights\nwᵢ ∝ gᵢ·e((μᵣ−Eᵢ)/Tᵣ)"]:::calc
+
+    subgraph Allocation
+        AG[Agents]
+        VD[Validators]
+        OP[Operators]
+        EM[Employers]
+    end
+
+    MB -->|65%| AG:::dist
+    MB -->|15%| VD:::dist
+    MB -->|15%| OP:::dist
+    MB -->|5%| EM:::dist
+
+    AG --> RAG[Reputation ↑]:::rep
+    VD --> RVD[Reputation ↑]:::rep
+    OP --> ROP[Reputation ↑]:::rep
+    EM --> REM[Reputation ↑]:::rep
 ```
 
 Default role shares for the epoch budget are shown below:
@@ -159,6 +140,7 @@ sequenceDiagram
         Reputation-->>Operator: Reputation ↑
         Reputation-->>Employer: Reputation ↑
     end
+    Note over FeePool,Reputation: Rewards and reputation finalised
 ```
 
 ### Deploy defaults

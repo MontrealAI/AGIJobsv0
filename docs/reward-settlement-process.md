@@ -6,24 +6,36 @@ The reward engine settles each epoch by converting reduced free energy into toke
 
 ```mermaid
 flowchart TD
-    Start((Job Completed)) --> Oracle["EnergyOracle\nattests E_i,g_i,u_pre,u_post,value"]
-    Oracle --> Engine[RewardEngineMB]
-    Engine --> Thermostat
-    Thermostat --> Engine
-    Engine --> Budget["ΔG → κ·budget"]
-    Budget --> Weights["MB weights per role"]
-    Weights --> FeePool
-    Weights --> ReputationEngine
-    FeePool -->|65%| Agent
-    FeePool -->|15%| Validator
-    FeePool -->|15%| Operator
-    FeePool -->|5%| Employer
-    ReputationEngine --> Agent
-    ReputationEngine --> Validator
-    ReputationEngine --> Operator
-    ReputationEngine --> Employer
-    classDef core fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
-    class Engine,Thermostat,Oracle,FeePool,ReputationEngine,Budget,Weights core;
+    %% Job completion flows through energy oracle and thermostat into MB rewards
+
+    classDef sensor fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef calc fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef dist fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+
+    Start((Job Completed)) --> EO["EnergyOracle\nattests Eᵢ,gᵢ,u_pre,u_post,value"]:::sensor
+    EO --> EN[RewardEngineMB]:::calc
+    EN --> TH[Thermostat]:::sensor
+    TH --> EN
+    EN --> G["ΔG = (Value − Costs) − Tₛ·ΔS"]:::calc
+    G --> B{"Budget = κ·max(0, −ΔG)"}:::calc
+    B --> MB["MB weights per role"]:::calc
+    MB --> FP(FeePool):::dist
+    MB --> REP(ReputationEngine):::dist
+    FP -->|65%| Agent
+    FP -->|15%| Validator
+    FP -->|15%| Operator
+    FP -->|5%| Employer
+    REP --> Agent
+    REP --> Validator
+    REP --> Operator
+    REP --> Employer
+
+    class EO sensor;
+    class TH sensor;
+    class EN,G,B,MB calc;
+    class FP,REP dist;
+    class Agent,Validator,Operator,Employer rep;
 ```
 
 ## Settlement Sequence
@@ -59,4 +71,5 @@ sequenceDiagram
     Reputation-->>Validator: Reputation ↑
     Reputation-->>Operator: Reputation ↑
     Reputation-->>Employer: Reputation ↑
+    Note over FeePool,Reputation: Rewards and reputation finalised
 ```
