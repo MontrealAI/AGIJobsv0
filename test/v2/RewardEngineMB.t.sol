@@ -46,6 +46,7 @@ contract RewardEngineMBTest is Test {
     address validator = address(0x2);
     address operator = address(0x3);
     address employer = address(0x4);
+    address treasury = address(0x5);
 
     function setUp() public {
         thermo = new Thermostat(int256(1e18), int256(1), int256(2e18));
@@ -198,6 +199,31 @@ contract RewardEngineMBTest is Test {
         engine.setSettler(settler, true);
         vm.prank(settler);
         engine.settleEpoch(1, data); // should succeed
+    }
+
+    function test_leftover_budget_sent_to_treasury() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](3);
+        a[0] = _proof(address(0xA1), int256(1e18));
+        a[1] = _proof(address(0xA2), int256(1e18));
+        a[2] = _proof(address(0xA3), int256(1e18));
+        data.agents = a;
+        data.totalValue = 0;
+        data.paidCosts = 1e18;
+        data.sumUpre = 0;
+        data.sumUpost = 0;
+
+        engine.setTreasury(treasury);
+        engine.settleEpoch(1, data);
+
+        uint256 budget = 1e18;
+        uint256 agentBucket = (budget * engine.roleShare(RewardEngineMB.Role.Agent)) / 1e18;
+        uint256 perAgent = agentBucket / 3;
+        uint256 distributed = perAgent * 3;
+        uint256 leftover = budget - distributed;
+
+        assertEq(pool.total(), budget, "total budget accounted");
+        assertEq(pool.rewards(treasury), leftover, "leftover to treasury");
     }
 }
 
