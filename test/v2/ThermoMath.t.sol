@@ -25,5 +25,21 @@ contract ThermoMathTest is Test {
         assertApproxEqAbs(w[0], 5e17, 1e12);
         assertApproxEqAbs(w[1], 5e17, 1e12);
     }
+
+    function test_reverts_when_exp_input_too_large() public {
+        int256[] memory E = new int256[](1);
+        uint256[] memory g = new uint256[](1);
+        E[0] = 0; g[0] = 1;
+        vm.expectRevert(ThermoMath.ExpInputOutOfBounds.selector);
+        ThermoMath.mbWeights(E, g, 1e18, 135e18);
+    }
+
+    function test_reverts_when_exp_input_too_small() public {
+        int256[] memory E = new int256[](1);
+        uint256[] memory g = new uint256[](1);
+        E[0] = 0; g[0] = 1;
+        vm.expectRevert(ThermoMath.ExpInputOutOfBounds.selector);
+        ThermoMath.mbWeights(E, g, 1e18, -42e18);
+    }
 }
 
