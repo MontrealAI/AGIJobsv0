@@ -30,20 +30,40 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 | 10               | 1.8×          | +9              |
 
 ```mermaid
-flowchart LR
-    EO((EnergyOracle)):::oracle -->|attests Eᵢ,gᵢ| RE[[RewardEngineMB]]:::engine
-    TH((Thermostat)):::thermo -->|Tₛ/Tᵣ| RE
-    RE --> FP((FeePool)):::out
-    RE --> REP((ReputationEngine)):::out
+flowchart TD
+    %% Energy attestation → temperature control → rewards and reputation
 
     classDef oracle fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
     classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
     classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef out fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
 
-    class EO oracle;
-    class RE engine;
-    class TH thermo;
+    subgraph EO["EnergyOracle"]
+        EO1[Measure Eᵢ,gᵢ,ΔS,value]
+        EO2[Sign attestation]
+    end
+
+    subgraph RE["RewardEngineMB"]
+        RE1[Verify attestation]
+        RE2[Compute ΔG]
+        RE3[Apply MB weights]
+    end
+
+    subgraph TH["Thermostat"]
+        TH1[Provide Tₛ/Tᵣ]
+    end
+
+    EO1 --> EO2
+    EO2 --> RE1
+    RE1 --> RE2
+    RE2 --> TH1
+    TH1 --> RE3
+    RE3 --> FP((FeePool)):::out
+    RE3 --> REP((ReputationEngine)):::out
+
+    class EO1,EO2 oracle;
+    class RE1,RE2,RE3 engine;
+    class TH1 thermo;
     class FP,REP out;
 ```
 
@@ -139,6 +159,7 @@ sequenceDiagram
         Reputation-->>Operator: Reputation ↑
         Reputation-->>Employer: Reputation ↑
     end
+    Note over FeePool,Reputation: Rewards and reputation finalised
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
