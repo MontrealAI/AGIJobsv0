@@ -44,228 +44,30 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 ### Thermodynamic Incentives
 
-`RewardEngineMB` meters energy consumption against a global free‑energy budget and assigns each role a share of that budget. The `Thermostat` normalises per‑task usage while `EnergyOracle` supplies measurements, letting the engine raise reward weight and reputation for energy‑efficient participants. Role‑level chemical potentials (μᵣ) shift baseline rewards to keep the system in balance.
+`RewardEngineMB` meters task energy against a global free‑energy budget. The `EnergyOracle` reports per‑task energy `Eᵢ` and entropy `S`, while the `Thermostat` sets the system temperature `T` that scales reward spread. Using the Gibbs relation `G = H − T·S`, the engine increases rewards for low‑energy work and adjusts role‑level chemical potentials (μᵣ) to maintain balance.
 
-Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
-
-For a deeper technical overview including formulas and tuning guidance, see
-[docs/thermodynamic-incentives.md](docs/thermodynamic-incentives.md).
+Higher `T` amplifies the entropy term, spreading rewards across more participants; lower `T` concentrates payouts on the most energy‑efficient contributors. Each epoch the free‑energy budget divides **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full walkthrough and [docs/thermodynamic-incentives.md](docs/thermodynamic-incentives.md) for derivations.
 
 ```mermaid
 flowchart LR
     %% Styling
     classDef meas fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
-    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef engine fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
     classDef role fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
-    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    %% Metrics
-    subgraph Metrics
-        EO[EnergyOracle\nEᵢ,gᵢ,ΔS]:::meas
-        TH[Thermostat\nTₛ,Tᵣ]:::meas
-    end
-
-    %% Free-energy engine
-    EO --> RE["RewardEngineMB\nΔG=(Value−Costs)−Tₛ·ΔS\nBudget=κ·max(0,−ΔG)"]:::budget
-    TH --> RE
-
-    %% Role shares
+    EO[EnergyOracle\\nEᵢ,S]:::meas --> RE[RewardEngineMB\\nG = H − T·S]:::engine
+    TH[Thermostat\\nsets T]:::meas --> RE
     RE -->|65%| AG[Agents]:::role
     RE -->|15%| VA[Validators]:::role
     RE -->|15%| OP[Operators]:::role
     RE -->|5%| EM[Employers]:::role
-
-    %% Reputation feedback
-    AG --> RAG["Reputation↑ if low energy"]:::rep
-    VA --> RVA["Reputation↑ if low energy"]:::rep
-    OP --> ROP["Reputation↑ if low energy"]:::rep
-    EM --> REM["Reputation↑ if low energy"]:::rep
-
-    RAG -.-> TH
-    RVA -.-> TH
-    ROP -.-> TH
-    REM -.-> TH
 ```
 
-```mermaid
-mindmap
-  root((Thermodynamic Incentives))
-    Free-Energy Budget
-      ΔG = (Value − Costs) − Tₛ·ΔS
-      Budget = κ·max(0, −ΔG)
-      Thermostat: adjusts Tₛ
-    Role Shares
-      Agents: 65%
-      Validators: 15%
-      Operators: 15%
-      Employers: 5%
-    Reputation
-      Efficient Work: Reputation↑
-      Wasteful Work: Reputation↓
-      Feedback → Thermostat
-```
+#### Best Practices
 
-```mermaid
-stateDiagram-v2
-    classDef meas fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
-    classDef calc fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef dist fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
-    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
-
-    [*] --> Metrics
-    Metrics: Measure Eᵢ,gᵢ,ΔS,value
-    Metrics --> Budget: ΔG budget
-    Budget --> Weights: MB weights
-    Weights --> Distribution: Role splits
-    Distribution --> Reputation: Rep updates
-    Reputation --> Metrics
-    class Metrics meas;
-    class Budget calc;
-    class Weights calc;
-    class Distribution dist;
-    class Reputation rep;
-```
-
-```mermaid
-flowchart LR
-    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef share fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
-    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
-
-    subgraph Budget["Free‑Energy Budgeting"]
-        G["ΔG = (Value − Costs) − Tₛ·ΔS"]:::budget
-        B["Budget = κ·max(0, −ΔG)"]:::budget
-        G --> B
-    end
-
-    subgraph Shares["Role Shares"]
-        AG[Agents 65%]:::share
-        VD[Validators 15%]:::share
-        OP[Operators 15%]:::share
-        EM[Employers 5%]:::share
-    end
-
-    subgraph Reputation["Energy‑Efficient Reputation"]
-        Rplus["Low energy → Reputation ↑"]:::rep
-        Rminus["High energy → Reputation ↓"]:::rep
-    end
-
-    B --> AG
-    B --> VD
-    B --> OP
-    B --> EM
-    AG --> Rplus
-    VD --> Rplus
-    OP --> Rplus
-    EM --> Rplus
-    AG -. high E .-> Rminus
-    VD -. high E .-> Rminus
-    OP -. high E .-> Rminus
-    EM -. high E .-> Rminus
-```
-
-| Energy Used (kJ) | Reward Weight | Reputation Gain |
-| ---------------- | ------------- | --------------- |
-| 20               | 1.0×          | +5              |
-| 10               | 1.8×          | +9              |
-
-An agent cutting its draw from 20 kJ to 10 kJ nearly doubles both its reward weight and reputation.
-
-```mermaid
-flowchart TD
-    %% Sensors feed Gibbs free energy which drives MB allocation and reputation
-
-    classDef sensor fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
-    classDef calc fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef dist fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
-    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
-
-    subgraph Sensors
-        EO((EnergyOracle)):::sensor
-        TH((Thermostat)):::sensor
-        MU((μᵣ)):::sensor
-    end
-
-    Sensors --> G["ΔG = (Value − Costs) − Tₛ·ΔS"]:::calc
-    G --> B{"Budget = κ·max(0, −ΔG)"}:::calc
-    B --> MB["Maxwell–Boltzmann Weights\nwᵢ ∝ gᵢ·e((μᵣ−Eᵢ)/Tᵣ)"]:::calc
-
-    MB --> FP((FeePool)):::dist
-    MB --> REP((ReputationEngine)):::rep
-
-    subgraph Allocation
-        AG[Agents]
-        VD[Validators]
-        OP[Operators]
-        EM[Employers]
-    end
-
-    FP -->|65%| AG:::dist
-    FP -->|15%| VD:::dist
-    FP -->|15%| OP:::dist
-    FP -->|5%| EM:::dist
-
-    REP --> AG
-    REP --> VD
-    REP --> OP
-    REP --> EM
-
-    AG --> RAG[Reputation ↑]:::rep
-    VD --> RVD[Reputation ↑]:::rep
-    OP --> ROP[Reputation ↑]:::rep
-    EM --> REM[Reputation ↑]:::rep
-```
-
-Default role shares for the epoch budget are shown below:
-
-```mermaid
-pie showData
-    title Role Share Distribution
-    "Agents" : 65
-    "Validators" : 15
-    "Operators" : 15
-    "Employers" : 5
-```
-
-#### Reward Settlement Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Employer
-    participant Agent
-    participant Validator
-    participant Operator
-    participant Oracle as EnergyOracle
-    participant Engine as RewardEngineMB
-    participant Thermostat
-    participant FeePool
-    participant Reputation
-
-    Employer->>Agent: Post job & funds
-    Agent->>Validator: Submit work
-    Validator->>Employer: Approve results
-    Agent->>Oracle: Report energy use
-    Oracle-->>Engine: Signed attestation
-    Engine->>Thermostat: Query Tₛ/Tᵣ
-    Thermostat-->>Engine: Temperatures
-    Note over Engine: budget = κ·max(0,-(ΔH - Tₛ·ΔS))
-    Engine->>Engine: Compute MB weights
-    par Distribution
-        Engine->>FeePool: Allocate rewards
-        Engine->>Reputation: Update scores
-    and Payouts
-        FeePool-->>Agent: Token reward
-        FeePool-->>Validator: Token reward
-        FeePool-->>Operator: Token reward
-        FeePool-->>Employer: Rebate
-        Reputation-->>Agent: Reputation ↑
-        Reputation-->>Validator: Reputation ↑
-        Reputation-->>Operator: Reputation ↑
-        Reputation-->>Employer: Reputation ↑
-    end
-    Note over FeePool,Reputation: Rewards and reputation finalised
-```
+- **Agents** – Optimise code and workflows to minimise measured energy per task; consistent low energy boosts rewards and reputation.
+- **Validators** – Use efficient validation routines and cache common checks to lower entropy in votes, increasing payout weight.
+- **Employers** – Design jobs with clear requirements so agents expend minimal energy on speculation or rework, improving overall budget share.
 
 ### Deploy defaults
 

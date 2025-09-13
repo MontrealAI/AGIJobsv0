@@ -89,12 +89,25 @@ NoValidationModule fast = new NoValidationModule(registry);
 registry.setValidationModule(address(fast));
 ```
 
-## Incentive Mechanics
+## Thermodynamic Incentives
 
-Honest participation minimises a system-wide free energy similar to the thermodynamic relation `G = H - T S`.
-Slashing raises the enthalpy `H` of dishonest paths, while commit–reveal randomness injects entropy `S`.
-Governance tunes the effective temperature `T` via parameters such as stake ratios and reward percentages.
-When calibrated so that honest behaviour yields the lowest `G`, deviations carry higher expected energy cost than cooperation.
+`RewardEngineMB` coordinates payouts using thermodynamic principles. The `EnergyOracle` supplies per-task energy and entropy, while the `Thermostat` sets the effective temperature `T`. Gibbs free energy `G = H − T·S` guides the reward budget: higher `T` emphasises entropy and spreads rewards across many participants, whereas lower `T` concentrates them on the most efficient actors.
+
+```mermaid
+flowchart LR
+    EO[EnergyOracle] --> RE[RewardEngineMB]
+    TH[Thermostat \nsets T] --> RE
+    RE -->|65%| AG[Agents]
+    RE -->|15%| VA[Validators]
+    RE -->|15%| OP[Operators]
+    RE -->|5%| EM[Employers]
+```
+
+### Best Practices
+
+- **Agents** – Reduce energy per task through optimisation and caching to earn a larger share of the budget.
+- **Validators** – Keep validation scripts lightweight and deterministic to minimise entropy in votes.
+- **Employers** – Define tasks clearly so agents avoid wasted effort, preserving more free energy for rewards.
 
 ## Deployment Addresses
 
