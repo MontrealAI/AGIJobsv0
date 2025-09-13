@@ -213,8 +213,11 @@ contract DisputeModule is Ownable, Pausable {
         );
 
         IStakeManager sm = _stakeManager();
-        if (address(sm) != address(0) && disputeFee > 0) {
-            sm.lockDisputeFee(claimant, disputeFee);
+        if (address(sm) != address(0)) {
+            if (disputeFee > 0) {
+                sm.lockDisputeFee(claimant, disputeFee);
+            }
+            sm.recordDispute();
         }
 
         disputes[jobId] =

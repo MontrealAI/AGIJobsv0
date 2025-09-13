@@ -19,6 +19,9 @@ Handles staking, escrow and slashing of the $AGIALPHA token. NFT ownership boost
 - `addAGIType(address nft, uint256 payoutPct)` – register or update a payout multiplier for holders of `nft`. Only the highest multiplier applies. Each entry is capped at `MAX_PAYOUT_PCT` (200%) and totals are further limited by `maxTotalPayoutPct`.
 - `removeAGIType(address nft)` – delete a previously registered AGI type.
 - `syncBoostedStake(address user, uint8 role)` – recalculate a user's boosted stake after NFT changes. `FeePool.claimRewards` calls this automatically for the reward role.
+- `autoTuneStakes(bool enabled)` – toggles automatic adjustment of `minStake` based on recent dispute activity.
+- `configureAutoStake(uint256 threshold, uint256 upPct, uint256 downPct, uint256 window, uint256 floor, uint256 ceil)` – configures dispute thresholds and bounds for automatic stake tuning.
+- `recordDispute()` / `checkpointStake()` – DisputeModule calls `recordDispute` whenever a dispute is raised; anyone may call `checkpointStake` to evaluate adjustments when no disputes occurred.
 - `stakeOf(address user, uint8 role)` / `totalStake(uint8 role)` / `totalBoostedStake(uint8 role)` / `getTotalPayoutPct(address user)` – view functions. `getTotalPayoutPct` returns the highest `payoutPct` among held NFTs (or `100` when none) capped by `maxTotalPayoutPct`.
 
 ## Events
@@ -38,3 +41,4 @@ Handles staking, escrow and slashing of the $AGIALPHA token. NFT ownership boost
 - `MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax)`
 - `AGITypeUpdated(address indexed nft, uint256 payoutPct)`
 - `AGITypeRemoved(address indexed nft)`
+- `AutoStakeTuningEnabled(bool enabled)` / `AutoStakeConfigUpdated(uint256 threshold, uint256 upPct, uint256 downPct, uint256 window, uint256 floor, uint256 ceil)`

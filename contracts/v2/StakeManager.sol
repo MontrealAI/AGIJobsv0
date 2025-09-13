@@ -162,6 +162,33 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Dispute module authorized to manage dispute fees
     address public disputeModule;
 
+    /// @notice whether automatic stake tuning is enabled
+    bool public autoStakeTuning;
+
+    /// @notice number of disputes seen in the current tuning window
+    uint256 public disputeCount;
+
+    /// @notice timestamp of the last stake adjustment
+    uint256 public lastStakeTune;
+
+    /// @notice duration of the observation window for dispute counts
+    uint256 public stakeTuneWindow = 1 weeks;
+
+    /// @notice dispute count threshold that triggers a stake increase
+    uint256 public stakeDisputeThreshold = 10;
+
+    /// @notice percentage increment applied to minStake when threshold exceeded
+    uint256 public stakeIncreasePct = 20;
+
+    /// @notice percentage decrement applied to minStake when no disputes occur
+    uint256 public stakeDecreasePct = 10;
+
+    /// @notice floor for automatically tuned minStake
+    uint256 public minStakeFloor = DEFAULT_MIN_STAKE;
+
+    /// @notice ceiling for automatically tuned minStake (0 disables the cap)
+    uint256 public maxMinStake;
+
     /// @notice Upper limit on the number of AGI types to prevent excessive gas usage
     uint256 public constant MAX_AGI_TYPES_CAP = 50;
 
@@ -182,9 +209,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     AGIType[] public agiTypes;
 
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
-    event AGITypeRemoved(address indexed nft);
+    event AGITypeRemoved(address indexed nft); 
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
+    event AutoStakeTuningEnabled(bool enabled);
+    event AutoStakeConfigUpdated(
+        uint256 threshold,
+        uint256 upPct,
+        uint256 downPct,
+        uint256 window,
+        uint256 floor,
+        uint256 ceil
+    );
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
@@ -246,6 +282,79 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit PauserUpdated(_pauser);
     }
 
+    /// @notice enable or disable automatic tuning of minStake based on disputes
+    /// @param enabled true to enable auto tuning
+    function autoTuneStakes(bool enabled) external onlyGovernance {
+        autoStakeTuning = enabled;
+        emit AutoStakeTuningEnabled(enabled);
+    }
+
+    /// @notice configure parameters used for automatic stake tuning
+    /// @param threshold dispute count triggering a stake increase
+    /// @param upPct percentage increase applied when threshold is exceeded
+    /// @param downPct percentage decrease applied when no disputes occur
+    /// @param window observation period for dispute counting
+    /// @param floor minimum value that minStake can reach
+    /// @param ceil maximum value that minStake can reach (0 disables cap)
+    function configureAutoStake(
+        uint256 threshold,
+        uint256 upPct,
+        uint256 downPct,
+        uint256 window,
+        uint256 floor,
+        uint256 ceil
+    ) external onlyGovernance {
+        if (upPct > 100 || downPct > 100) revert InvalidPercentage();
+        stakeDisputeThreshold = threshold;
+        stakeIncreasePct = upPct;
+        stakeDecreasePct = downPct;
+        if (window > 0) stakeTuneWindow = window;
+        if (floor > 0) minStakeFloor = floor;
+        maxMinStake = ceil;
+        emit AutoStakeConfigUpdated(
+            threshold,
+            upPct,
+            downPct,
+            stakeTuneWindow,
+            minStakeFloor,
+            ceil
+        );
+    }
+
+    /// @notice record a dispute occurrence for auto stake tuning
+    function recordDispute() external {
+        if (msg.sender != disputeModule) revert OnlyDisputeModule();
+        if (!autoStakeTuning) return;
+        ++disputeCount;
+        _maybeAdjustStake();
+    }
+
+    /// @notice trigger stake evaluation if the tuning window has elapsed
+    function checkpointStake() external {
+        if (!autoStakeTuning) return;
+        _maybeAdjustStake();
+    }
+
+    function _maybeAdjustStake() internal {
+        if (block.timestamp < lastStakeTune + stakeTuneWindow) return;
+        uint256 oldMin = minStake;
+        if (disputeCount >= stakeDisputeThreshold) {
+            uint256 inc = (minStake * stakeIncreasePct) / 100;
+            if (inc == 0) inc = 1;
+            uint256 newMin = minStake + inc;
+            if (maxMinStake != 0 && newMin > maxMinStake) newMin = maxMinStake;
+            minStake = newMin;
+        } else if (disputeCount == 0 && minStake > minStakeFloor) {
+            uint256 dec = (minStake * stakeDecreasePct) / 100;
+            uint256 newMin = minStake > dec ? minStake - dec : minStakeFloor;
+            if (newMin < minStakeFloor) newMin = minStakeFloor;
+            minStake = newMin;
+        }
+        lastStakeTune = block.timestamp;
+        disputeCount = 0;
+        if (oldMin != minStake) emit MinStakeUpdated(minStake);
+    }
+
     /// @notice Deploys the StakeManager.
     /// @param _minStake Minimum stake required to participate. Defaults to
     /// DEFAULT_MIN_STAKE when set to zero.
@@ -297,6 +406,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (_jobRegistry != address(0) || _disputeModule != address(0)) {
             emit ModulesUpdated(_jobRegistry, _disputeModule);
         }
+        minStakeFloor = minStake;
+        lastStakeTune = block.timestamp;
     }
 
     // ---------------------------------------------------------------

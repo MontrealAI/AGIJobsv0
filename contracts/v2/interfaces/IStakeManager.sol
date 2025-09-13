@@ -53,6 +53,15 @@ interface IStakeManager {
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
     event AGITypeRemoved(address indexed nft);
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
+    event AutoStakeTuningEnabled(bool enabled);
+    event AutoStakeConfigUpdated(
+        uint256 threshold,
+        uint256 upPct,
+        uint256 downPct,
+        uint256 window,
+        uint256 floor,
+        uint256 ceil
+    );
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event ValidatorRewardPctUpdated(uint256 pct);
@@ -214,6 +223,17 @@ interface IStakeManager {
     function setFeePool(IFeePool pool) external;
     function setBurnPct(uint256 pct) external;
     function setValidatorRewardPct(uint256 pct) external;
+    function autoTuneStakes(bool enabled) external;
+    function configureAutoStake(
+        uint256 threshold,
+        uint256 upPct,
+        uint256 downPct,
+        uint256 window,
+        uint256 floor,
+        uint256 ceil
+    ) external;
+    function recordDispute() external;
+    function checkpointStake() external;
 
     /// @notice return total stake deposited by a user for a role
     function stakeOf(address user, Role role) external view returns (uint256);
