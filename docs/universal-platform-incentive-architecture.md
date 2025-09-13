@@ -25,6 +25,31 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 `RewardEngineMB` tracks a free‑energy budget for each role. The `EnergyOracle` reports per‑task consumption and the `Thermostat` compares it with role allocations, adjusting reward weight when usage falls below budget. Efficient agents therefore earn a larger share of fees and gain reputation faster.
 
 ```mermaid
+flowchart LR
+    classDef oracle fill:#dff9fb,stroke:#00a8ff,stroke-width:2px;
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
+    classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:2px;
+    classDef payout fill:#fdf5ff,stroke:#8e24aa,stroke-width:2px;
+
+    subgraph Off-Chain
+        EO[EnergyOracle]:::oracle
+    end
+    subgraph On-Chain
+        RE[RewardEngineMB]:::engine
+        TH[Thermostat]:::thermo
+        FP[FeePool]:::payout
+        REP[ReputationEngine]:::payout
+    end
+
+    EO -->|signed metrics| RE
+    RE -->|temperature query| TH
+    TH -->|Tₛ/Tᵣ| RE
+    RE -->|usage feedback| TH
+    RE -->|token rewards| FP
+    RE -->|reputation updates| REP
+```
+
+```mermaid
 classDiagram
     class EnergyOracle {
         +attest(E_i,g_i,ΔS,value)
@@ -262,6 +287,33 @@ sequenceDiagram
 ```
 
 ### Reward Settlement Process
+
+```mermaid
+flowchart TD
+    classDef actor fill:#e1f5fe,stroke:#0277bd,stroke-width:2px;
+    classDef oracle fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
+    classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:2px;
+    classDef payout fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
+
+    Employer:::actor -->|post job & funds| Agent:::actor
+    Agent -->|submit work| Validator:::actor
+    Validator -->|approve| Employer
+    Agent --> EO[EnergyOracle]:::oracle
+    EO --> RE[RewardEngineMB]:::engine
+    RE --> TH[Thermostat]:::thermo
+    TH --> RE
+    RE --> FP[FeePool]:::payout
+    RE --> REP[ReputationEngine]:::payout
+    FP --> Agent
+    FP --> Validator
+    FP --> Operator:::actor
+    FP --> Employer
+    REP --> Agent
+    REP --> Validator
+    REP --> Operator
+    REP --> Employer
+```
 
 ```mermaid
 sequenceDiagram
