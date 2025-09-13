@@ -68,13 +68,7 @@ function finalizeEpoch(epoch: number) {
 
 reward.on(
   'RewardBudget',
-  (
-    epoch: bigint,
-    minted: bigint,
-    burned: bigint,
-    redistributed: bigint,
-    _distributionRatio: bigint
-  ) => {
+  (epoch: bigint, minted: bigint, burned: bigint, redistributed: bigint) => {
     if (currentEpoch !== Number(epoch)) {
       if (currentEpoch !== 0) finalizeEpoch(currentEpoch);
       currentEpoch = Number(epoch);
@@ -96,12 +90,7 @@ reward.on(
 
 stake.on(
   'SlashingStats',
-  (
-    _ts: bigint,
-    minted: bigint,
-    burned: bigint,
-    redistributed: bigint
-  ) => {
+  (_ts: bigint, minted: bigint, burned: bigint, redistributed: bigint) => {
     if (currentStats) {
       currentStats.minted += minted;
       currentStats.burned += burned;
