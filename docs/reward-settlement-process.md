@@ -147,3 +147,14 @@ journey
       Distribute rewards: 5: FeePool
       Reputation update: 5: ReputationEngine
 ```
+
+```mermaid
+timeline
+    title Epoch Reward Settlement
+    Job completion: Work finished
+    Energy attestation: Oracle signs metrics
+    Temperature query: Engine pulls Tₛ/Tᵣ
+    Free-energy budget: ΔG evaluated
+    MB distribution: Rewards allocated
+    Reputation update: Efficiency recorded
+```
