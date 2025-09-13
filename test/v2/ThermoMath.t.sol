@@ -92,6 +92,17 @@ contract ThermoMathTest is Test {
         ThermoMath.mbWeights(E, g, 1e18, -42e18);
     }
 
+    function test_reverts_when_energy_gap_exceeds_bounds() public {
+        int256[] memory E = new int256[](2);
+        uint256[] memory g = new uint256[](2);
+        E[0] = 0;
+        E[1] = -MAX_EXP_INPUT - 1e18;
+        g[0] = 1;
+        g[1] = 1;
+        vm.expectRevert(ThermoMath.ExpInputOutOfBounds.selector);
+        ThermoMath.mbWeights(E, g, 1e18, 0);
+    }
+
     function testFuzz_weight_overflow_reverts(int256 x) public {
         vm.assume(x >= MIN_EXP_INPUT && x <= MAX_EXP_INPUT);
         uint256 expX = uint256(SD59x18.unwrap(exp(SD59x18.wrap(x))));
@@ -103,6 +114,16 @@ contract ThermoMathTest is Test {
         g[0] = gOverflow;
         vm.expectRevert(ThermoMath.WeightOverflow.selector);
         ThermoMath.mbWeights(E, g, 1e18, x);
+    }
+
+    function test_reverts_when_degeneracy_too_large() public {
+        int256[] memory E = new int256[](1);
+        uint256[] memory g = new uint256[](1);
+        E[0] = 0;
+        uint256 gOverflow = type(uint256).max / 1e18 + 1;
+        g[0] = gOverflow;
+        vm.expectRevert(ThermoMath.WeightOverflow.selector);
+        ThermoMath.mbWeights(E, g, 1e18, 0);
     }
 
     function testFuzz_weight_boundary_normalizes(int256 x) public {
@@ -130,6 +151,20 @@ contract ThermoMathTest is Test {
         assertApproxEqAbs(sum, 1e18, 1, "normalized");
         assertGt(w[0], 9e17, "low energy dominates");
         assertLt(w[1], 1000, "high energy negligible");
+    }
+
+    function test_extreme_degeneracy_normalizes() public {
+        int256[] memory E = new int256[](2);
+        uint256[] memory g = new uint256[](2);
+        E[0] = 0;
+        E[1] = 0;
+        uint256 e = uint256(SD59x18.unwrap(exp(SD59x18.wrap(0))));
+        uint256 gLarge = type(uint256).max / e - 1;
+        g[0] = gLarge;
+        g[1] = 1;
+        uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, 0);
+        uint256 sum = w[0] + w[1];
+        assertApproxEqAbs(sum, 1e18, 1, "normalized");
     }
 }
 
