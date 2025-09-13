@@ -49,10 +49,12 @@ threshold, ensuring that repeated bad actors are removed from the market.
 ## Temperature Control
 
 `Thermostat.tick` adjusts the global temperature based on three KPI inputs:
-reward emission error, job backlog error and SLA error.  Governance may also set
-role‑specific temperatures to encourage or dampen participation in a given role.
-All temperature changes are constrained within the `[minTemp, maxTemp]` bounds to
-prevent extreme rewards.
+reward emission error, job backlog error and SLA error.  Governance can also set
+role‑specific temperatures with `setRoleTemperature` (and later remove them with
+`unsetRoleTemperature`) to encourage or dampen participation in a given role.
+When no override exists, `getRoleTemperature` falls back to the global system
+temperature.  All temperature changes are constrained within the `[minTemp,
+maxTemp]` bounds to prevent extreme rewards.
 
 ## Events and Monitoring
 
