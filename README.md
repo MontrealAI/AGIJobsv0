@@ -48,6 +48,9 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
 
+For a deeper technical overview including formulas and tuning guidance, see
+[docs/thermodynamic-incentives.md](docs/thermodynamic-incentives.md).
+
 ```mermaid
 flowchart LR
     %% Styling
