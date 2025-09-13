@@ -3,6 +3,15 @@ import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig();
 
+/**
+ * Stake adjustment policy:
+ * Governance runs this script periodically (e.g. weekly) to derive
+ * recommended minimum and maximum stake values from recent job rewards.
+ * When executed with the `--apply` flag the script calls
+ * `setStakeRecommendations` so collateral requirements track off-chain
+ * activity without exceeding `MaxStakePerAddress` or lowering security.
+ */
+
 function parseArgs() {
   const argv = process.argv.slice(2);
   const args: Record<string, string | boolean> = {};
@@ -45,8 +54,7 @@ async function main() {
 
   const stakeAbi = [
     'event StakeDeposited(address indexed user,uint8 indexed role,uint256 amount)',
-    'function setMinStake(uint256)',
-    'function setMaxStakePerAddress(uint256)',
+    'function setStakeRecommendations(uint256,uint256)',
     'function setSlashingPercentages(uint256,uint256)',
   ];
 
@@ -119,21 +127,19 @@ async function main() {
     const wallet = new ethers.Wallet(key, provider);
     const stakeSigned = stake.connect(wallet);
 
-    if (recommendedMin > 0n) {
-      const tx1 = await stakeSigned.setMinStake(recommendedMin);
-      await tx1.wait();
-      console.log(`setMinStake tx: ${tx1.hash}`);
-    }
-    const tx2 = await stakeSigned.setMaxStakePerAddress(recommendedMax);
-    await tx2.wait();
-    console.log(`setMaxStakePerAddress tx: ${tx2.hash}`);
+    const tx1 = await stakeSigned.setStakeRecommendations(
+      recommendedMin,
+      recommendedMax
+    );
+    await tx1.wait();
+    console.log(`setStakeRecommendations tx: ${tx1.hash}`);
     if (employerPct !== undefined && treasuryPct !== undefined) {
-      const tx3 = await stakeSigned.setSlashingPercentages(
+      const tx2 = await stakeSigned.setSlashingPercentages(
         employerPct,
         treasuryPct
       );
-      await tx3.wait();
-      console.log(`setSlashingPercentages tx: ${tx3.hash}`);
+      await tx2.wait();
+      console.log(`setSlashingPercentages tx: ${tx2.hash}`);
     }
   }
 }
