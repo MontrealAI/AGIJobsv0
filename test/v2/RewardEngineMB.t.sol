@@ -183,6 +183,12 @@ contract RewardEngineMBTest is Test {
         engine.setRoleShare(RewardEngineMB.Role.Agent, 65e16);
     }
 
+    function test_setSettlerEmits() public {
+        vm.expectEmit(true, false, false, true);
+        emit RewardEngineMB.SettlerUpdated(address(0xBEEF), true);
+        engine.setSettler(address(0xBEEF), true);
+    }
+
     function test_setMuEmits() public {
         vm.expectEmit(true, false, false, true);
         emit RewardEngineMB.MuUpdated(RewardEngineMB.Role.Agent, 1);

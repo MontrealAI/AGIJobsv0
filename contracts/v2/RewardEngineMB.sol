@@ -62,6 +62,7 @@ contract RewardEngineMB is Ownable {
     event TreasuryUpdated(address indexed treasury);
     event RoleShareUpdated(Role indexed role, uint256 share);
     event MuUpdated(Role indexed role, int256 muValue);
+    event SettlerUpdated(address indexed settler, bool allowed);
     event RewardBudget(
         uint256 indexed epoch,
         uint256 minted,
@@ -115,6 +116,7 @@ contract RewardEngineMB is Ownable {
 
     function setSettler(address settler, bool allowed) external onlyOwner {
         settlers[settler] = allowed;
+        emit SettlerUpdated(settler, allowed);
     }
 
     function setTreasury(address _treasury) external onlyOwner {
