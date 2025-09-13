@@ -48,3 +48,24 @@ executed.
 
 This flow ensures all privileged operations occur only after the
 configured delay or multi-party approval.
+
+## Quadratic Voting
+
+For community proposals that require broad input, the `QuadraticVoting` module
+implements a simple on-chain quadratic voting scheme. Token holders may cast
+`v` votes for or against a proposal, paying a cost of `v^2` $AGIALPHA tokens.
+The spent tokens are transferred to a designated treasury and are not
+refundable. This quadratic cost makes it increasingly expensive for a single
+participant to dominate a vote while still allowing stakeholders to signal the
+intensity of their preferences.
+
+1. Governance creates a proposal using `createProposal(bytes32 id)`.
+2. Voters approve the `QuadraticVoting` contract to spend their tokens and call
+   `vote(id, support, votes)`.
+3. The contract increments the tally and transfers the quadratic cost to the
+   treasury.
+4. Results are retrieved via `proposalVotes(id)` which returns the `for` and
+   `against` totals.
+
+The module is intentionally minimal and can be combined with a timelock or
+other governance process to enact approved proposals.
