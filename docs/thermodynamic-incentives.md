@@ -61,6 +61,15 @@ Higher temperatures flatten the Maxwell–Boltzmann curve so rewards are spread
 more evenly across participants.  Lower temperatures sharpen the distribution,
 concentrating rewards on low‑energy, highly efficient contributors.
 
+## Governance Controls
+
+All critical knobs in the incentive system are gated behind the governance
+timelock. Through on‑chain proposals the community may adjust role reward
+percentages, per‑role chemical potentials `μᵣ`, the scaling constant `κ`,
+authorized epoch settlers and thermostat bounds such as `minTemp` and
+`maxTemp`. These levers let governance cool a system that is issuing rewards too
+rapidly or raise temperatures when participation stalls.
+
 ## Governance Delay and Exit
 
 Parameter changes for the reward engine and thermostat are queued through the
