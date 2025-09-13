@@ -38,7 +38,17 @@ interface IStakeManager {
         uint256 treasuryShare,
         uint256 burnShare
     );
-    event ValidatorSlashReward(address indexed validator, uint256 amount);
+    /// @notice Emitted when stake is slashed from a participant.
+    /// @param agent Address whose stake was reduced.
+    /// @param amount Total amount slashed from the agent.
+    /// @param validator Address of the validator or recipient that triggered the slash.
+    event Slash(address indexed agent, uint256 amount, address indexed validator);
+
+    /// @notice Emitted when a validator receives a reward from slashing.
+    /// @param validator Address of the validator being rewarded.
+    /// @param amount Amount of tokens transferred to the validator.
+    /// @param jobId Optional job identifier associated with the reward.
+    event RewardValidator(address indexed validator, uint256 amount, bytes32 indexed jobId);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);

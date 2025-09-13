@@ -234,7 +234,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 treasuryShare,
         uint256 burnShare
     );
-    event ValidatorSlashReward(address indexed validator, uint256 amount);
+    event Slash(address indexed agent, uint256 amount, address indexed validator);
+    event RewardValidator(address indexed validator, uint256 amount, bytes32 indexed jobId);
     event SlashingStats(
         uint256 timestamp,
         uint256 minted,
@@ -1488,7 +1489,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
                         if (reward > 0) {
                             remaining -= reward;
                             token.safeTransfer(validators[i], reward);
-                            emit ValidatorSlashReward(validators[i], reward);
+                            emit RewardValidator(validators[i], reward, bytes32(0));
                         }
                     }
                     if (remaining > 0) {
@@ -1527,6 +1528,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         uint256 redistributed = employerShare + treasuryShare + validatorShare;
         uint256 ratio = redistributed > 0 ? (burnShare * TOKEN_SCALE) / redistributed : 0;
+        emit Slash(user, amount, validators.length > 0 ? validators[0] : recipient);
         emit StakeSlashed(
             user,
             role,
