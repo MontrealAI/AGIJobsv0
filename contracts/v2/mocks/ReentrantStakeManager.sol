@@ -155,4 +155,14 @@ contract ReentrantStakeManager is IStakeManager {
         _stakes[user][Role.Validator] = st - amount;
         totalStakes[Role.Validator] -= amount;
     }
+
+    function slashWithValidators(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer,
+        address[] calldata
+    ) external override {
+        this.slash(user, role, amount, employer);
+    }
 }

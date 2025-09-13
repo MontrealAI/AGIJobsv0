@@ -184,6 +184,15 @@ interface IStakeManager {
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient) external;
 
+    /// @notice slash stake and reward validators who flagged misconduct
+    function slashWithValidators(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer,
+        address[] calldata validators
+    ) external;
+
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;
