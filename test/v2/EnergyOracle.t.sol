@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import {EnergyOracle} from "../../contracts/v2/EnergyOracle.sol";
+import {Governable} from "../../contracts/v2/Governable.sol";
 
 contract EnergyOracleTest is Test {
     EnergyOracle oracle;
@@ -10,7 +11,7 @@ contract EnergyOracleTest is Test {
     address signer;
 
     function setUp() public {
-        oracle = new EnergyOracle();
+        oracle = new EnergyOracle(address(this));
         signerPk = 0xA11CE;
         signer = vm.addr(signerPk);
         oracle.setSigner(signer, true);
@@ -110,6 +111,13 @@ contract EnergyOracleTest is Test {
         assertEq(recovered, signer);
         recovered = oracle.verify(att, sig);
         assertEq(recovered, address(0));
+    }
+
+    function test_only_governance_can_set_signer() public {
+        address attacker = address(0xDEAD);
+        vm.expectRevert(Governable.NotGovernance.selector);
+        vm.prank(attacker);
+        oracle.setSigner(attacker, true);
     }
 }
 
