@@ -80,6 +80,12 @@ async function main() {
   await attestation.waitForDeployment();
   await identity.setAttestationRegistry(await attestation.getAddress());
 
+  const EnergyOracle = await ethers.getContractFactory(
+    'contracts/v2/EnergyOracle.sol:EnergyOracle'
+  );
+  const energyOracle = await EnergyOracle.deploy(deployer.address);
+  await energyOracle.waitForDeployment();
+
   const Dispute = await ethers.getContractFactory(
     'contracts/v2/modules/DisputeModule.sol:DisputeModule'
   );
@@ -204,6 +210,7 @@ async function main() {
   await nft.transferOwnership(await pause.getAddress());
   await identity.transferOwnership(await pause.getAddress());
   await attestation.transferOwnership(await pause.getAddress());
+  await energyOracle.setGovernance(await pause.getAddress());
 
   console.log('StakeManager:', await stake.getAddress());
   console.log('ReputationEngine:', await reputation.getAddress());
@@ -212,6 +219,7 @@ async function main() {
   console.log('JobRegistry:', await registry.getAddress());
   console.log('DisputeModule:', await dispute.getAddress());
   console.log('CertificateNFT:', await nft.getAddress());
+  console.log('EnergyOracle:', await energyOracle.getAddress());
   console.log('SystemPause:', await pause.getAddress());
 }
 

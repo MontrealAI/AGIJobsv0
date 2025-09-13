@@ -3,12 +3,12 @@ pragma solidity ^0.8.25;
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IEnergyOracle} from "./interfaces/IEnergyOracle.sol";
+import {Governable} from "./Governable.sol";
 
 /// @title EnergyOracle
 /// @notice Verifies signed energy attestations used for reward settlement.
-contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
+contract EnergyOracle is EIP712, Governable, IEnergyOracle {
     using ECDSA for bytes32;
 
     bytes32 public constant TYPEHASH = keccak256(
@@ -18,9 +18,8 @@ contract EnergyOracle is EIP712, Ownable, IEnergyOracle {
     mapping(address => bool) public signers;
     mapping(address => uint256) public nonces;
 
-    constructor() EIP712("EnergyOracle", "1") Ownable(msg.sender) {}
-
-    function setSigner(address signer, bool allowed) external onlyOwner {
+    constructor(address _governance) EIP712("EnergyOracle", "1") Governable(_governance) {}
+    function setSigner(address signer, bool allowed) external onlyGovernance {
         signers[signer] = allowed;
     }
 
