@@ -30,7 +30,9 @@ const stake = new Contract(STAKE_MANAGER, slashIface, provider);
 interface EpochStats {
   minted: bigint;
   burned: bigint;
-  ratio: number;
+  redistributed: bigint;
+  burnRatio: number;
+  distributionRatio: number;
 }
 const epochs: Record<number, EpochStats> = {};
 let currentEpoch = 0;
@@ -38,18 +40,23 @@ let currentStats: EpochStats | undefined;
 
 function finalizeEpoch(epoch: number) {
   if (!currentStats) return;
-  const ratio =
+  const burnRatio =
     currentStats.minted > 0n
       ? Number(currentStats.burned) / Number(currentStats.minted)
       : 0;
-  currentStats.ratio = ratio;
+  const distributionRatio =
+    currentStats.minted > 0n
+      ? Number(currentStats.redistributed) / Number(currentStats.minted)
+      : 0;
+  currentStats.burnRatio = burnRatio;
+  currentStats.distributionRatio = distributionRatio;
   epochs[epoch] = { ...currentStats };
   console.log(
-    `Epoch ${epoch} minted=${currentStats.minted.toString()} burned=${currentStats.burned.toString()} ratio=${ratio.toFixed(
+    `Epoch ${epoch} minted=${currentStats.minted.toString()} burned=${currentStats.burned.toString()} redistributed=${currentStats.redistributed.toString()} burnRatio=${burnRatio.toFixed(
       4
-    )}`
+    )} distributionRatio=${distributionRatio.toFixed(4)}`
   );
-  const divergence = Math.abs(1 - ratio);
+  const divergence = Math.abs(1 - burnRatio);
   if (divergence > ALERT_THRESHOLD) {
     console.log(
       `ALERT: burn/mint ratio divergence ${divergence.toFixed(
@@ -59,23 +66,49 @@ function finalizeEpoch(epoch: number) {
   }
 }
 
-reward.on('RewardBudget', (epoch: bigint, minted: bigint, burned: bigint) => {
-  if (currentEpoch !== Number(epoch)) {
-    if (currentEpoch !== 0) finalizeEpoch(currentEpoch);
-    currentEpoch = Number(epoch);
-    currentStats = { minted, burned, ratio: 0 };
-  } else if (currentStats) {
-    // accumulate if multiple events per epoch
-    currentStats.minted += minted;
-    currentStats.burned += burned;
+reward.on(
+  'RewardBudget',
+  (
+    epoch: bigint,
+    minted: bigint,
+    burned: bigint,
+    redistributed: bigint,
+    _distributionRatio: bigint
+  ) => {
+    if (currentEpoch !== Number(epoch)) {
+      if (currentEpoch !== 0) finalizeEpoch(currentEpoch);
+      currentEpoch = Number(epoch);
+      currentStats = {
+        minted,
+        burned,
+        redistributed,
+        burnRatio: 0,
+        distributionRatio: 0,
+      };
+    } else if (currentStats) {
+      // accumulate if multiple events per epoch
+      currentStats.minted += minted;
+      currentStats.burned += burned;
+      currentStats.redistributed += redistributed;
+    }
   }
-});
+);
 
-stake.on('SlashingStats', (_ts: bigint, _minted: bigint, burned: bigint) => {
-  if (currentStats) {
-    currentStats.burned += burned;
+stake.on(
+  'SlashingStats',
+  (
+    _ts: bigint,
+    minted: bigint,
+    burned: bigint,
+    redistributed: bigint
+  ) => {
+    if (currentStats) {
+      currentStats.minted += minted;
+      currentStats.burned += burned;
+      currentStats.redistributed += redistributed;
+    }
   }
-});
+);
 
 const app = express();
 app.get('/', (_req, res) => {
