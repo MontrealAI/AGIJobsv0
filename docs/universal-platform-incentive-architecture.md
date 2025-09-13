@@ -518,6 +518,50 @@ flowchart TD
     H --> Employer
 ```
 
+#### Advanced Interaction Sequence
+
+```mermaid
+%% Feedback loop with conditional budget
+sequenceDiagram
+    autonumber
+    participant EO as EnergyOracle
+    participant RE as RewardEngineMB
+    participant TH as Thermostat
+    participant FP as FeePool
+    participant REP as ReputationEngine
+    EO->>RE: attest(jobId, energy, g)
+    loop per role
+        RE->>TH: requestTemperature(role)
+        TH-->>RE: T_r
+        RE->>RE: compute weight(role)
+    end
+    alt free energy available
+        RE->>FP: reward(user)
+        RE->>REP: update(user)
+    else zero budget
+        RE-->>EO: logNoPayout()
+    end
+    RE-->>TH: usageFeedback()
+```
+
+#### Reward Settlement Journey
+
+```mermaid
+journey
+    title End-to-End Reward Settlement
+    section Off-Chain Preparation
+        Agent completes job: 3: Agent
+        EnergyOracle signs attestation: 4: EnergyOracle
+    section On-Chain Processing
+        RewardEngineMB verifies metrics: 4: RewardEngineMB
+        Thermostat supplies temperature: 3: Thermostat
+        Weights & budget calculated: 4: RewardEngineMB
+    section Distribution
+        FeePool sends token rewards: 5: FeePool
+        ReputationEngine updates scores: 5: ReputationEngine
+        Participants receive rewards: 5: AllRoles
+```
+
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
 
 ## Incentive Flow
