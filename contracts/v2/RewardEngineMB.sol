@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Governable} from "./Governable.sol";
 import {Thermostat} from "./Thermostat.sol";
 import {ThermoMath} from "./libraries/ThermoMath.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
@@ -10,7 +10,7 @@ import {IEnergyOracle} from "./interfaces/IEnergyOracle.sol";
 
 /// @title RewardEngineMB
 /// @notice Distributes epoch rewards using Maxwell-Boltzmann statistics.
-contract RewardEngineMB is Ownable {
+contract RewardEngineMB is Governable {
     using ThermoMath for int256[];
 
     enum Role {Agent, Validator, Operator, Employer}
@@ -75,8 +75,9 @@ contract RewardEngineMB is Ownable {
         Thermostat _thermostat,
         IFeePool _feePool,
         IReputationEngineV2 _rep,
-        IEnergyOracle _oracle
-    ) Ownable(msg.sender) {
+        IEnergyOracle _oracle,
+        address _governance
+    ) Governable(_governance) {
         thermostat = _thermostat;
         feePool = _feePool;
         reputation = _rep;
@@ -88,20 +89,20 @@ contract RewardEngineMB is Ownable {
         _validateRoleShares();
     }
 
-    function setRoleShare(Role r, uint256 share) external onlyOwner {
+    function setRoleShare(Role r, uint256 share) external onlyGovernor {
         roleShare[r] = share;
         _validateRoleShares();
         emit RoleShareUpdated(r, share);
     }
 
-    function setMu(Role r, int256 _mu) external onlyOwner {
+    function setMu(Role r, int256 _mu) external onlyGovernor {
         mu[r] = _mu;
         emit MuUpdated(r, _mu);
     }
 
     /// @notice Set the scaling factor converting free energy to token units.
     /// @param _kappa New scaling coefficient in 18-decimal fixed point.
-    function setKappa(uint256 _kappa) external onlyOwner {
+    function setKappa(uint256 _kappa) external onlyGovernor {
         kappa = _kappa;
         emit KappaUpdated(_kappa);
     }
@@ -114,12 +115,12 @@ contract RewardEngineMB is Ownable {
     error InvalidProof(address oracle);
     error Replay(address oracle);
 
-    function setSettler(address settler, bool allowed) external onlyOwner {
+    function setSettler(address settler, bool allowed) external onlyGovernor {
         settlers[settler] = allowed;
         emit SettlerUpdated(settler, allowed);
     }
 
-    function setTreasury(address _treasury) external onlyOwner {
+    function setTreasury(address _treasury) external onlyGovernor {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }

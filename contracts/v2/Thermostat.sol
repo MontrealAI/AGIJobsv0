@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Governable} from "./Governable.sol";
 
 /// @title Thermostat
 /// @notice PID controller maintaining system temperature for reward distribution.
-contract Thermostat is Ownable {
+contract Thermostat is Governable {
     enum Role {Agent, Validator, Operator, Employer}
 
     int256 public systemTemperature;
@@ -31,14 +31,16 @@ contract Thermostat is Ownable {
     event KPIWeightsUpdated(int256 wEmission, int256 wBacklog, int256 wSla);
     event Tick(int256 emission, int256 backlog, int256 sla, int256 newTemp);
 
-    constructor(int256 _temp, int256 _min, int256 _max) Ownable(msg.sender) {
+    constructor(int256 _temp, int256 _min, int256 _max, address _governance)
+        Governable(_governance)
+    {
         require(_min > 0 && _max > _min, "bounds");
         systemTemperature = _temp;
         minTemp = _min;
         maxTemp = _max;
     }
 
-    function setPID(int256 _kp, int256 _ki, int256 _kd) external onlyOwner {
+    function setPID(int256 _kp, int256 _ki, int256 _kd) external onlyGovernor {
         kp = _kp;
         ki = _ki;
         kd = _kd;
@@ -47,7 +49,7 @@ contract Thermostat is Ownable {
 
     function setKPIWeights(int256 _wEmission, int256 _wBacklog, int256 _wSla)
         external
-        onlyOwner
+        onlyGovernor
     {
         wEmission = _wEmission;
         wBacklog = _wBacklog;
@@ -56,14 +58,14 @@ contract Thermostat is Ownable {
     }
 
     /// @notice Sets a new system temperature within bounds.
-    function setSystemTemperature(int256 temp) external onlyOwner {
+    function setSystemTemperature(int256 temp) external onlyGovernor {
         require(temp > 0 && temp >= minTemp && temp <= maxTemp, "temp");
         systemTemperature = temp;
         emit TemperatureUpdated(temp);
     }
 
     /// @notice Updates minimum and maximum allowable temperatures.
-    function setTemperatureBounds(int256 _min, int256 _max) external onlyOwner {
+    function setTemperatureBounds(int256 _min, int256 _max) external onlyGovernor {
         require(_min > 0 && _max > _min, "bounds");
         minTemp = _min;
         maxTemp = _max;
@@ -73,14 +75,14 @@ contract Thermostat is Ownable {
         emit TemperatureUpdated(systemTemperature);
     }
 
-    function setRoleTemperature(Role r, int256 temp) external onlyOwner {
+    function setRoleTemperature(Role r, int256 temp) external onlyGovernor {
         require(temp > 0 && temp >= minTemp && temp <= maxTemp, "bounds");
         roleTemps[r] = temp;
         emit RoleTemperatureUpdated(r, temp);
     }
 
     /// @notice Removes a role-specific temperature override.
-    function unsetRoleTemperature(Role r) external onlyOwner {
+    function unsetRoleTemperature(Role r) external onlyGovernor {
         delete roleTemps[r];
         emit RoleTemperatureUpdated(r, 0);
     }
@@ -95,7 +97,7 @@ contract Thermostat is Ownable {
     /// @param emission Current emission growth error.
     /// @param backlog Current backlog age error.
     /// @param sla Current SLA hit rate error.
-    function tick(int256 emission, int256 backlog, int256 sla) external onlyOwner {
+    function tick(int256 emission, int256 backlog, int256 sla) external onlyGovernor {
         int256 error =
             wEmission * emission + wBacklog * backlog + wSla * sla;
         integral += error;

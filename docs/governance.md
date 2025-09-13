@@ -9,8 +9,8 @@ EOA ownership is not possible.
 1. Deploy an on-chain controller such as OpenZeppelin's
    `TimelockController` or a Gnosis Safe.
 2. Note its address and use it as the final constructor argument when
-   deploying `StakeManager`, `JobRegistry` and any other `Governable`
-   modules. Example using Hardhat:
+   deploying `StakeManager`, `JobRegistry`, `Thermostat`, `RewardEngineMB`
+   and any other `Governable` modules. Example using Hardhat:
    ```javascript
    const timelock = '0xTimelockAddress';
    const stake = await StakeManager.deploy(
@@ -25,7 +25,7 @@ EOA ownership is not possible.
    );
    ```
 3. After deployment the timelock or multisig becomes the only account
-   capable of invoking functions marked `onlyGovernance`.
+   capable of invoking functions marked `onlyGovernor`.
 
 ## Upgrading through the timelock
 
