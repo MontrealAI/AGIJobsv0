@@ -140,10 +140,12 @@ describe('StakeManager validator slash rewards', function () {
           [val1.address, val2.address]
         )
     )
-      .to.emit(stakeManager, 'ValidatorSlashReward')
-      .withArgs(val1.address, 2n * ONE)
-      .and.to.emit(stakeManager, 'ValidatorSlashReward')
-      .withArgs(val2.address, 6n * ONE);
+      .to.emit(stakeManager, 'RewardValidator')
+      .withArgs(val1.address, 2n * ONE, ethers.ZeroHash)
+      .and.to.emit(stakeManager, 'RewardValidator')
+      .withArgs(val2.address, 6n * ONE, ethers.ZeroHash)
+      .and.to.emit(stakeManager, 'Slash')
+      .withArgs(agent.address, 40n * ONE, val1.address);
 
     expect(await token.balanceOf(val1.address)).to.equal(902n * ONE);
     expect(await token.balanceOf(val2.address)).to.equal(706n * ONE);
