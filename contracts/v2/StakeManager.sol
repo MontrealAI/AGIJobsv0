@@ -198,6 +198,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 treasuryShare,
         uint256 burnShare
     );
+    event ValidatorSlashReward(address indexed validator, uint256 amount);
     event SlashingStats(
         uint256 timestamp,
         uint256 minted,
@@ -1299,7 +1300,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address user,
         Role role,
         uint256 amount,
-        address recipient
+        address recipient,
+        address[] memory validators
     ) internal {
         if (role > Role.Platform) revert InvalidRole();
         uint256 staked = stakes[user][role];
@@ -1339,6 +1341,44 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
 
+        uint256 validatorShare;
+        if (validatorRewardPct > 0 && validators.length > 0) {
+            uint256 base = burnShare > 0 ? burnShare : treasuryShare;
+            validatorShare = (base * validatorRewardPct) / 100;
+            if (validatorShare > 0) {
+                if (burnShare > 0) burnShare -= validatorShare;
+                else treasuryShare -= validatorShare;
+
+                uint256 total;
+                uint256 len = validators.length;
+                uint256[] memory vals = new uint256[](len);
+                for (uint256 i; i < len; ++i) {
+                    uint256 s = stakes[validators[i]][Role.Validator];
+                    vals[i] = s;
+                    total += s;
+                }
+                if (total > 0) {
+                    uint256 remaining = validatorShare;
+                    for (uint256 i; i < len; ++i) {
+                        uint256 reward = (validatorShare * vals[i]) / total;
+                        if (reward > 0) {
+                            remaining -= reward;
+                            token.safeTransfer(validators[i], reward);
+                            emit ValidatorSlashReward(validators[i], reward);
+                        }
+                    }
+                    if (remaining > 0) {
+                        if (burnShare > 0) burnShare += remaining;
+                        else treasuryShare += remaining;
+                    }
+                } else {
+                    if (burnShare > 0) burnShare += validatorShare;
+                    else treasuryShare += validatorShare;
+                    validatorShare = 0;
+                }
+            }
+        }
+
         if (employerShare > 0) {
             if (recipient == address(0)) revert InvalidRecipient();
             if (recipient == address(feePool) && address(feePool) != address(0)) {
@@ -1361,7 +1401,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             // Burned stake originates from the slashed participant, not employer funds.
             _burnToken(bytes32(0), burnShare);
         }
-        uint256 redistributed = employerShare + treasuryShare;
+        uint256 redistributed = employerShare + treasuryShare + validatorShare;
         uint256 ratio = redistributed > 0 ? (burnShare * TOKEN_SCALE) / redistributed : 0;
         emit StakeSlashed(
             user,
@@ -1386,7 +1426,18 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 amount,
         address employer
     ) external onlyJobRegistry whenNotPaused nonReentrant {
-        _slash(user, role, amount, employer);
+        address[] memory validators;
+        _slash(user, role, amount, employer, validators);
+    }
+
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer,
+        address[] calldata validators
+    ) external onlyJobRegistry whenNotPaused nonReentrant {
+        _slash(user, role, amount, employer, validators);
     }
 
     /// @notice slash a validator's stake during dispute resolution
@@ -1399,7 +1450,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         whenNotPaused
         nonReentrant
     {
-        _slash(user, Role.Validator, amount, recipient);
+        address[] memory validators;
+        _slash(user, Role.Validator, amount, recipient, validators);
+    }
+
+    function slash(
+        address user,
+        uint256 amount,
+        address recipient,
+        address[] calldata validators
+    ) external onlyDisputeModule whenNotPaused nonReentrant {
+        _slash(user, Role.Validator, amount, recipient, validators);
     }
 
     /// @notice Return the total stake deposited by a user for a role

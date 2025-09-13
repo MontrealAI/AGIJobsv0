@@ -38,6 +38,7 @@ interface IStakeManager {
         uint256 treasuryShare,
         uint256 burnShare
     );
+    event ValidatorSlashReward(address indexed validator, uint256 amount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);
@@ -54,6 +55,7 @@ interface IStakeManager {
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
+    event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
 
     /// @notice deposit stake for caller for a specific role
@@ -177,12 +179,25 @@ interface IStakeManager {
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
     function slash(address user, Role role, uint256 amount, address employer) external;
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer,
+        address[] calldata validators
+    ) external;
 
     /// @notice slash validator stake during dispute resolution
     /// @param user address whose stake will be reduced
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient) external;
+    function slash(
+        address user,
+        uint256 amount,
+        address recipient,
+        address[] calldata validators
+    ) external;
 
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
