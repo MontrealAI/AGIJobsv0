@@ -286,6 +286,40 @@ sequenceDiagram
     Note over EO,TH: PID loop keeps rewards energy-efficient
 ```
 
+#### Comprehensive Interaction Map
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2e7d32', 'edgeLabelBackground':'#fff' }}}%%
+graph TB
+    classDef oracle fill:#dff9fb,stroke:#0984e3,stroke-width:2px;
+    classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
+    classDef thermo fill:#fff5e6,stroke:#ffa200,stroke-width:2px;
+    classDef aux fill:#fdf5ff,stroke:#8e24aa,stroke-width:2px;
+    classDef user fill:#e1f5fe,stroke:#0277bd,stroke-width:2px;
+
+    subgraph OffChain
+        EO[/Energy Oracle/]:::oracle
+    end
+
+    subgraph OnChain
+        subgraph IncentiveCore
+            RE[[RewardEngineMB]]:::engine
+            TH{{Thermostat}}:::thermo
+        end
+        FP[(FeePool)]:::aux
+        REP[(ReputationEngine)]:::aux
+    end
+
+    EO --|attested metrics| RE
+    RE --|temperature query| TH
+    TH --|Tₛ/Tᵣ| RE
+    RE --|usage feedback| TH
+    RE --|token rewards| FP
+    RE --|reputation delta| REP
+    FP --|payouts| U[(Participants)]:::user
+    REP --|score updates| U
+```
+
 ### Reward Settlement Process
 
 ```mermaid
@@ -351,6 +385,24 @@ sequenceDiagram
         Reputation-->>Employer: Reputation ↑
     end
     Note over FeePool,Reputation: Rewards and reputation finalised
+```
+
+#### Reward Settlement State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> AwaitingEpoch
+    AwaitingEpoch --> CollectingAttestations : job results arrive
+    CollectingAttestations --> Budgeting : metrics aggregated
+    Budgeting --> TemperatureCheck : query thermostat
+    TemperatureCheck --> Weighting : MB weighting
+    Weighting --> Distribution : reward & reputation
+    Distribution --> EpochClosed
+    EpochClosed --> AwaitingEpoch : next epoch
+
+    note right of TemperatureCheck
+      Thermostat tunes system temperature
+    end note
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
