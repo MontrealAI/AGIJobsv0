@@ -84,4 +84,3 @@ describe('StakeManager auto stake tuning', function () {
     expect(await stakeManager.minStake()).to.equal(80n);
   });
 });
-
