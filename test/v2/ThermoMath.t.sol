@@ -117,5 +117,19 @@ contract ThermoMathTest is Test {
         uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, x);
         assertEq(w[0], 1e18, "normalized");
     }
+
+    function test_extreme_energy_skew_normalizes() public {
+        int256[] memory E = new int256[](2);
+        uint256[] memory g = new uint256[](2);
+        E[0] = 1e18;
+        E[1] = 40e18;
+        g[0] = 1;
+        g[1] = 1;
+        uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, 0);
+        uint256 sum = w[0] + w[1];
+        assertApproxEqAbs(sum, 1e18, 1, "normalized");
+        assertGt(w[0], 9e17, "low energy dominates");
+        assertLt(w[1], 1000, "high energy negligible");
+    }
 }
 
