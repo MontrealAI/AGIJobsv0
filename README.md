@@ -48,6 +48,13 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 
 Higher `T` amplifies the entropy term, spreading rewards across more participants; lower `T` concentrates payouts on the most energy‑efficient contributors. Each epoch the free‑energy budget divides **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full walkthrough and [docs/thermodynamic-incentives.md](docs/thermodynamic-incentives.md) for derivations.
 
+**Role shares per epoch**
+
+- Agents – 65 %
+- Validators – 15 %
+- Operators – 15 %
+- Employers – 5 %
+
 ```mermaid
 flowchart LR
     %% Styling
@@ -68,6 +75,7 @@ flowchart LR
 - **Agents** – Optimise code and workflows to minimise measured energy per task; consistent low energy boosts rewards and reputation.
 - **Validators** – Use efficient validation routines and cache common checks to lower entropy in votes, increasing payout weight.
 - **Employers** – Design jobs with clear requirements so agents expend minimal energy on speculation or rework, improving overall budget share.
+- **Operators** – Maintain energy‑efficient, highly available infrastructure and publish transparent metrics so the oracle can measure consumption accurately.
 
 ### Deploy defaults
 
