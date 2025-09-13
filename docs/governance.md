@@ -4,6 +4,13 @@ Contracts inheriting from `Governable` expect a timelock or multisig
 address. The controller is stored as a contract interface so that direct
 EOA ownership is not possible.
 
+The system uses a **7 day** timelock delay so all privileged operations are
+announced before execution. During this window agents and validators can exit
+by unbonding their stake. Call `StakeManager.requestWithdraw` to start the
+unbonding process and, after the `unbondingPeriod` elapses, use
+`StakeManager.finalizeWithdraw` to retrieve tokens before the proposal is
+executed.
+
 ## Deploying with a timelock
 
 1. Deploy an on-chain controller such as OpenZeppelin's
