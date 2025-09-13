@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
+import {IReputationEngineV2} from "./interfaces/IReputationEngineV2.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 
 /// @title ReputationEngine
@@ -11,7 +12,7 @@ import {TOKEN_SCALE} from "./Constants.sol";
 /// Only authorised callers may update scores.
 /// @dev Holds no funds and rejects ether so neither the contract nor the
 ///      owner ever custodies assets or incurs tax liabilities.
-contract ReputationEngine is Ownable, Pausable {
+contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
@@ -150,30 +151,12 @@ contract ReputationEngine is Ownable, Pausable {
     /// @notice Increase reputation for a user.
     /// @dev Blacklisted users may gain reputation to clear their status.
     function add(address user, uint256 amount) external onlyCaller whenNotPaused {
-        uint256 current = reputation[user];
-        uint256 newScore = _enforceReputationGrowth(current, amount);
-        uint256 delta = newScore - current;
-        reputation[user] = newScore;
-        emit ReputationUpdated(user, int256(delta), newScore);
-
-        if (blacklisted[user] && newScore >= premiumThreshold) {
-            blacklisted[user] = false;
-            emit BlacklistUpdated(user, false);
-        }
+        _increaseReputation(user, amount);
     }
 
     /// @notice Decrease reputation for a user.
     function subtract(address user, uint256 amount) external onlyCaller whenNotPaused {
-        uint256 current = reputation[user];
-        uint256 newScore = current > amount ? current - amount : 0;
-        reputation[user] = newScore;
-        uint256 delta = current - newScore;
-        emit ReputationUpdated(user, -int256(delta), newScore);
-
-        if (!blacklisted[user] && newScore < premiumThreshold) {
-            blacklisted[user] = true;
-            emit BlacklistUpdated(user, true);
-        }
+        _decreaseReputation(user, amount);
     }
 
     /// @notice Adjust reputation by a signed delta.
@@ -183,30 +166,37 @@ contract ReputationEngine is Ownable, Pausable {
     ///      premium threshold.
     /// @param user The account whose reputation is modified.
     /// @param delta Signed change to apply.
-    function update(address user, int256 delta) external onlyCaller whenNotPaused {
-        if (delta == 0) return;
-
+    function update(address user, int256 delta) external override onlyCaller whenNotPaused {
         if (delta > 0) {
-            uint256 current = reputation[user];
-            uint256 newScore = _enforceReputationGrowth(current, uint256(delta));
-            uint256 diff = newScore - current;
-            reputation[user] = newScore;
-            emit ReputationUpdated(user, int256(diff), newScore);
-            if (blacklisted[user] && newScore >= premiumThreshold) {
-                blacklisted[user] = false;
-                emit BlacklistUpdated(user, false);
-            }
-        } else {
-            uint256 amount = uint256(-delta);
-            uint256 current = reputation[user];
-            uint256 newScore = current > amount ? current - amount : 0;
-            reputation[user] = newScore;
-            uint256 diff = current - newScore;
-            emit ReputationUpdated(user, -int256(diff), newScore);
-            if (!blacklisted[user] && newScore < premiumThreshold) {
-                blacklisted[user] = true;
-                emit BlacklistUpdated(user, true);
-            }
+            _increaseReputation(user, uint256(delta));
+        } else if (delta < 0) {
+            _decreaseReputation(user, uint256(-delta));
+        }
+    }
+
+    /// @notice Internal helper to increase reputation and handle blacklist logic.
+    function _increaseReputation(address user, uint256 amount) internal {
+        uint256 current = reputation[user];
+        uint256 newScore = _enforceReputationGrowth(current, amount);
+        uint256 delta = newScore - current;
+        reputation[user] = newScore;
+        emit ReputationUpdated(user, int256(delta), newScore);
+        if (blacklisted[user] && newScore >= premiumThreshold) {
+            blacklisted[user] = false;
+            emit BlacklistUpdated(user, false);
+        }
+    }
+
+    /// @notice Internal helper to decrease reputation and manage blacklists.
+    function _decreaseReputation(address user, uint256 amount) internal {
+        uint256 current = reputation[user];
+        uint256 newScore = current > amount ? current - amount : 0;
+        reputation[user] = newScore;
+        uint256 delta = current - newScore;
+        emit ReputationUpdated(user, -int256(delta), newScore);
+        if (!blacklisted[user] && newScore < premiumThreshold) {
+            blacklisted[user] = true;
+            emit BlacklistUpdated(user, true);
         }
     }
 
