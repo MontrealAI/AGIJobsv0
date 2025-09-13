@@ -179,13 +179,9 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        .slashWithValidators(
-          user.address,
-          0,
-          100,
-          employer.address,
-          [validator.address]
-        )
+        .slashWithValidators(user.address, 0, 100, employer.address, [
+          validator.address,
+        ])
     ).to.emit(stakeManager, 'StakeSlashed');
 
     expect(await token.balanceOf(employer.address)).to.equal(1050n);
