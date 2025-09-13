@@ -14,6 +14,16 @@ contract ThermostatTest is Test {
         assertEq(t.systemTemperature(), 1);
     }
 
+    function test_weightedTickAdjustsError() public {
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        t.setPID(int256(1), int256(0), int256(0));
+        vm.expectEmit(false, false, false, true, address(t));
+        emit Thermostat.KPIWeightsUpdated(int256(2), int256(1), int256(0));
+        t.setKPIWeights(int256(2), int256(1), int256(0));
+        t.tick(int256(10), int256(10), int256(10));
+        assertEq(t.systemTemperature(), 130);
+    }
+
     function test_roleTemperatureOverride() public {
         Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
         assertEq(t.getRoleTemperature(Thermostat.Role.Agent), 100);
