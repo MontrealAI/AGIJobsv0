@@ -82,6 +82,8 @@ For a production deployment checklist, consult [deployment-guide-production.md](
 | ReputationEngine | `setCaller` (`false`), `setStakeManager` (constructor address), `setScoringWeights` (`1e18`, `1e18`), `setThreshold` (`0`), `blacklist` (`false`)                                             | Manage scoring weights, authorised callers, and blacklist threshold.                              |
 | CertificateNFT   | `setJobRegistry` (0 address)                                                                                                                                                                  | Authorise minting registry; URIs emitted in events with hashes on-chain.                          |
 
+StakeManager defaults to routing all seized stake to the treasury (`employerSlashPct = 0`, `treasurySlashPct = 100`). This avoids giving employers a windfall for slashing and funds shared infrastructure. Governance can later adjust the split with `setSlashingPercentages` to refund employers if desired.
+
 Example of swapping validation logic:
 
 ```solidity

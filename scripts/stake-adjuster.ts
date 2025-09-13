@@ -32,6 +32,13 @@ async function main() {
   const registryAddress =
     (args['job-registry'] as string) || process.env.JOB_REGISTRY;
 
+  const employerPct = args['employer-pct']
+    ? Number(args['employer-pct'])
+    : undefined;
+  const treasuryPct = args['treasury-pct']
+    ? Number(args['treasury-pct'])
+    : undefined;
+
   if (!stakeAddress || !registryAddress) {
     throw new Error('stake-manager and job-registry addresses are required');
   }
@@ -40,6 +47,7 @@ async function main() {
     'event StakeDeposited(address indexed user,uint8 indexed role,uint256 amount)',
     'function setMinStake(uint256)',
     'function setMaxStakePerAddress(uint256)',
+    'function setSlashingPercentages(uint256,uint256)',
   ];
 
   const jobAbi = [
@@ -97,6 +105,12 @@ async function main() {
     )} tokens`
   );
 
+  if (employerPct !== undefined && treasuryPct !== undefined) {
+    console.log(
+      `Requested slashing percentages: employer ${employerPct}% treasury ${treasuryPct}%`
+    );
+  }
+
   if (args['apply']) {
     const key = process.env.PRIVATE_KEY;
     if (!key) {
@@ -113,6 +127,14 @@ async function main() {
     const tx2 = await stakeSigned.setMaxStakePerAddress(recommendedMax);
     await tx2.wait();
     console.log(`setMaxStakePerAddress tx: ${tx2.hash}`);
+    if (employerPct !== undefined && treasuryPct !== undefined) {
+      const tx3 = await stakeSigned.setSlashingPercentages(
+        employerPct,
+        treasuryPct
+      );
+      await tx3.wait();
+      console.log(`setSlashingPercentages tx: ${tx3.hash}`);
+    }
   }
 }
 
