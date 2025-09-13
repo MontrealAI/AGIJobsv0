@@ -49,6 +49,41 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
 
 ```mermaid
+flowchart TD
+    classDef role fill:#eef9ff,stroke:#004a99,stroke-width:1px;
+    classDef meas fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef share fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+
+    subgraph Participants
+        A[Agent]:::role --> M
+        V[Validator]:::role --> M
+        O[Operator]:::role --> M
+        E[Employer]:::role --> M
+    end
+
+    M[(EnergyOracle\n+ Thermostat)]:::meas --> B["Budget = κ·max(0, −((Value − Costs) − Tₛ·ΔS))"]:::budget
+
+    subgraph Shares
+        B -->|65%| SA[Agents]:::share
+        B -->|15%| SV[Validators]:::share
+        B -->|15%| SO[Operators]:::share
+        B -->|5%| SE[Employers]:::share
+    end
+
+    SA --> RA["Reputation↑ if low energy"]:::rep
+    SV --> RV["Reputation↑ if low energy"]:::rep
+    SO --> RO["Reputation↑ if low energy"]:::rep
+    SE --> REp["Reputation↑ if low energy"]:::rep
+
+    RA -.-> M
+    RV -.-> M
+    RO -.-> M
+    REp -.-> M
+```
+
+```mermaid
 mindmap
   root((Thermodynamic Incentives))
     Free-Energy Budgeting
