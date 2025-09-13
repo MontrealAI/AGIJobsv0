@@ -25,6 +25,39 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 `RewardEngineMB` tracks a free‑energy budget for each role. The `EnergyOracle` reports per‑task consumption and the `Thermostat` compares it with role allocations, adjusting reward weight when usage falls below budget. Efficient agents therefore earn a larger share of fees and gain reputation faster.
 
 ```mermaid
+%% Interactive view linking core modules
+flowchart TB
+    classDef offchain fill:#dff9fb,stroke:#00a8ff,stroke-width:2px;
+    classDef onchain fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
+    classDef control fill:#fff5e6,stroke:#ffa200,stroke-width:2px;
+    classDef payout fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
+
+    subgraph Off-Chain Services
+        EO[fa:fa-bolt EnergyOracle]:::offchain
+    end
+
+    subgraph On-Chain Incentive Layer
+        RE[fa:fa-coins RewardEngineMB]:::onchain
+        TH[fa:fa-thermometer-half Thermostat]:::control
+        FP[fa:fa-piggy-bank FeePool]:::payout
+        REP[fa:fa-star ReputationEngine]:::payout
+    end
+
+    EO -- Signed attestation --> RE
+    RE -- Query temperature --> TH
+    TH -- Tₛ/Tᵣ --> RE
+    RE -- Feedback loop --> TH
+    RE -- Token rewards --> FP
+    RE -- Reputation delta --> REP
+
+    click EO "../contracts/v2/EnergyOracle.sol" "EnergyOracle.sol"
+    click RE "../contracts/v2/RewardEngineMB.sol" "RewardEngineMB.sol"
+    click TH "../contracts/v2/Thermostat.sol" "Thermostat.sol"
+    click FP "../contracts/v2/FeePool.sol" "FeePool.sol"
+    click REP "../contracts/v2/ReputationEngine.sol" "ReputationEngine.sol"
+```
+
+```mermaid
 flowchart LR
     classDef oracle fill:#dff9fb,stroke:#00a8ff,stroke-width:2px;
     classDef engine fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
@@ -403,6 +436,36 @@ stateDiagram-v2
     note right of TemperatureCheck
       Thermostat tunes system temperature
     end note
+```
+
+#### End-to-End Reward Settlement Flowchart
+
+```mermaid
+flowchart TD
+    classDef off fill:#dff9fb,stroke:#00a8ff,stroke-width:2px;
+    classDef on fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
+    classDef out fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
+
+    subgraph Off-Chain
+        A[Agent metrics submitted]:::off --> O[EnergyOracle signs]:::off
+    end
+
+    subgraph On-Chain Settlement
+        O --> R[RewardEngineMB verifies & aggregates]:::on
+        R --> T[Thermostat adjusts temperature]:::on
+        T --> R
+        R --> D[FeePool distributes tokens]:::out
+        R --> U[ReputationEngine updates scores]:::out
+    end
+
+    D -->|tokens| Agent
+    D -->|tokens| Validator
+    D -->|tokens| Operator
+    D -->|rebate| Employer
+    U -->|reputation| Agent
+    U -->|reputation| Validator
+    U -->|reputation| Operator
+    U -->|reputation| Employer
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
