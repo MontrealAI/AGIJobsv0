@@ -4,10 +4,10 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('StakeManager', function () {
   const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
-  let token, stakeManager, owner, user, employer, treasury;
+  let token, stakeManager, owner, user, employer, treasury, validator;
 
   beforeEach(async () => {
-    [owner, user, employer, treasury] = await ethers.getSigners();
+    [owner, user, employer, treasury, validator] = await ethers.getSigners();
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
@@ -131,6 +131,63 @@ describe('StakeManager', function () {
           ethers.ZeroAddress
         )
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidRecipient');
+  });
+
+  it('distributes validator rewards on slashing', async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const taxPolicy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await taxPolicy.connect(user).acknowledge();
+
+    await stakeManager.connect(owner).setSlashingPercentages(50, 40);
+    await stakeManager.connect(owner).setValidatorSlashPct(10);
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await stakeManager.connect(user).depositStake(0, 200);
+
+    const registryAddr = await jobRegistry.getAddress();
+    await ethers.provider.send('hardhat_setBalance', [
+      registryAddr,
+      '0x56BC75E2D63100000',
+    ]);
+    const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .slashWithValidators(user.address, 0, 100, employer.address, [
+          validator.address,
+        ])
+    ).to.emit(stakeManager, 'StakeSlashed');
+
+    expect(await token.balanceOf(employer.address)).to.equal(1050n);
+    expect(await token.balanceOf(treasury.address)).to.equal(1040n);
+    expect(await token.balanceOf(validator.address)).to.equal(10n);
+    expect(await stakeManager.stakes(user.address, 0)).to.equal(100n);
   });
 
   it('rejects unauthorized slashing and excessive amounts', async () => {

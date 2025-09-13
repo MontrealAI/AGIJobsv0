@@ -1323,16 +1323,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.state = State.Finalized;
         bytes32 jobKey = bytes32(jobId);
         bool fundsRedirected;
+        address[] memory validators;
+        if (address(validationModule) != address(0)) {
+            validators = validationModule.validators(jobId);
+        }
         if (job.success) {
             IFeePool pool = feePool;
-            address[] memory validators;
             uint256 validatorReward;
-            if (address(validationModule) != address(0)) {
-                validators = validationModule.validators(jobId);
-                if (validatorRewardPct > 0) {
-                    validatorReward =
-                        (uint256(job.reward) * validatorRewardPct) / 100;
-                }
+            if (address(validationModule) != address(0) && validatorRewardPct > 0) {
+                validatorReward = (uint256(job.reward) * validatorRewardPct) / 100;
             }
 
             uint256 rewardAfterValidator =
@@ -1440,11 +1439,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     );
                 }
                 if (job.stake > 0) {
-                    stakeManager.slash(
+                    stakeManager.slashWithValidators(
                         job.agent,
                         IStakeManager.Role.Agent,
                         uint256(job.stake),
-                        recipient
+                        recipient,
+                        validators
                     );
                 }
             }
