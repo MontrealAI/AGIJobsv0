@@ -2,6 +2,38 @@
 
 The reward engine settles each epoch by converting reduced free energy into tokens and reputation. The diagrams below illustrate the end-to-end flow from job completion to payouts.
 
+## End-to-End Overview
+
+```mermaid
+flowchart LR
+    classDef role fill:#eef9ff,stroke:#004a99,stroke-width:1px;
+    classDef step fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef out fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
+
+    subgraph Job["Job Lifecycle"]
+        E1[Employer posts job]:::role --> A1[Agent submits work]:::role --> V1[Validator approves]:::role
+    end
+
+    subgraph Energy["Energy Accounting"]
+        V1 --> OR[EnergyOracle attests metrics]:::step --> RE[RewardEngineMB computes ΔG]:::step --> TH[Thermostat adjusts T]:::step
+    end
+
+    subgraph Distribution
+        RE --> FP[FeePool allocates tokens]:::out
+        RE --> REP[ReputationEngine updates scores]:::rep
+    end
+
+    FP --> A2[Agent reward]:::role
+    FP --> V2[Validator reward]:::role
+    FP --> O2[Operator reward]:::role
+    FP --> E2[Employer rebate]:::role
+    REP --> A2
+    REP --> V2
+    REP --> O2
+    REP --> E2
+```
+
 ## Free-Energy Flow
 
 ```mermaid
