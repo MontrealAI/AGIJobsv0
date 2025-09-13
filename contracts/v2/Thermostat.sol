@@ -40,7 +40,7 @@ contract Thermostat is Governable {
         maxTemp = _max;
     }
 
-    function setPID(int256 _kp, int256 _ki, int256 _kd) external onlyGovernor {
+    function setPID(int256 _kp, int256 _ki, int256 _kd) external onlyGovernance {
         kp = _kp;
         ki = _ki;
         kd = _kd;
@@ -49,7 +49,7 @@ contract Thermostat is Governable {
 
     function setKPIWeights(int256 _wEmission, int256 _wBacklog, int256 _wSla)
         external
-        onlyGovernor
+        onlyGovernance
     {
         wEmission = _wEmission;
         wBacklog = _wBacklog;
@@ -58,14 +58,14 @@ contract Thermostat is Governable {
     }
 
     /// @notice Sets a new system temperature within bounds.
-    function setSystemTemperature(int256 temp) external onlyGovernor {
+    function setSystemTemperature(int256 temp) external onlyGovernance {
         require(temp > 0 && temp >= minTemp && temp <= maxTemp, "temp");
         systemTemperature = temp;
         emit TemperatureUpdated(temp);
     }
 
     /// @notice Updates minimum and maximum allowable temperatures.
-    function setTemperatureBounds(int256 _min, int256 _max) external onlyGovernor {
+    function setTemperatureBounds(int256 _min, int256 _max) external onlyGovernance {
         require(_min > 0 && _max > _min, "bounds");
         minTemp = _min;
         maxTemp = _max;
@@ -75,14 +75,14 @@ contract Thermostat is Governable {
         emit TemperatureUpdated(systemTemperature);
     }
 
-    function setRoleTemperature(Role r, int256 temp) external onlyGovernor {
+    function setRoleTemperature(Role r, int256 temp) external onlyGovernance {
         require(temp > 0 && temp >= minTemp && temp <= maxTemp, "bounds");
         roleTemps[r] = temp;
         emit RoleTemperatureUpdated(r, temp);
     }
 
     /// @notice Removes a role-specific temperature override.
-    function unsetRoleTemperature(Role r) external onlyGovernor {
+    function unsetRoleTemperature(Role r) external onlyGovernance {
         delete roleTemps[r];
         emit RoleTemperatureUpdated(r, 0);
     }
@@ -97,7 +97,7 @@ contract Thermostat is Governable {
     /// @param emission Current emission growth error.
     /// @param backlog Current backlog age error.
     /// @param sla Current SLA hit rate error.
-    function tick(int256 emission, int256 backlog, int256 sla) external onlyGovernor {
+    function tick(int256 emission, int256 backlog, int256 sla) external onlyGovernance {
         int256 error =
             wEmission * emission + wBacklog * backlog + wSla * sla;
         integral += error;

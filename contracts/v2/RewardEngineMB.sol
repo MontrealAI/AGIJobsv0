@@ -89,20 +89,20 @@ contract RewardEngineMB is Governable {
         _validateRoleShares();
     }
 
-    function setRoleShare(Role r, uint256 share) external onlyGovernor {
+    function setRoleShare(Role r, uint256 share) external onlyGovernance {
         roleShare[r] = share;
         _validateRoleShares();
         emit RoleShareUpdated(r, share);
     }
 
-    function setMu(Role r, int256 _mu) external onlyGovernor {
+    function setMu(Role r, int256 _mu) external onlyGovernance {
         mu[r] = _mu;
         emit MuUpdated(r, _mu);
     }
 
     /// @notice Set the scaling factor converting free energy to token units.
     /// @param _kappa New scaling coefficient in 18-decimal fixed point.
-    function setKappa(uint256 _kappa) external onlyGovernor {
+    function setKappa(uint256 _kappa) external onlyGovernance {
         kappa = _kappa;
         emit KappaUpdated(_kappa);
     }
@@ -115,12 +115,12 @@ contract RewardEngineMB is Governable {
     error InvalidProof(address oracle);
     error Replay(address oracle);
 
-    function setSettler(address settler, bool allowed) external onlyGovernor {
+    function setSettler(address settler, bool allowed) external onlyGovernance {
         settlers[settler] = allowed;
         emit SettlerUpdated(settler, allowed);
     }
 
-    function setTreasury(address _treasury) external onlyGovernor {
+    function setTreasury(address _treasury) external onlyGovernance {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
