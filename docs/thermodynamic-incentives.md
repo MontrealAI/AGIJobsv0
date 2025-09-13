@@ -55,6 +55,9 @@ role‑specific temperatures with `setRoleTemperature` (and later remove them wi
 When no override exists, `getRoleTemperature` falls back to the global system
 temperature.  All temperature changes are constrained within the `[minTemp,
 maxTemp]` bounds to prevent extreme rewards.
+Higher temperatures flatten the Maxwell–Boltzmann curve so rewards are spread
+more evenly across participants.  Lower temperatures sharpen the distribution,
+concentrating rewards on low‑energy, highly efficient contributors.
 
 ## Events and Monitoring
 
