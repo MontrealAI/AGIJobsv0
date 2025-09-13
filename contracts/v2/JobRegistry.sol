@@ -102,10 +102,19 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bytes32 uriHash;
         bytes32 resultHash;
         bytes32 specHash;
+        bool wasDisputed;
     }
 
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
+
+    struct EmployerStats {
+        uint32 totalJobs;
+        uint32 successfulJobs;
+        uint32 disputedJobs;
+    }
+
+    mapping(address => EmployerStats) public employerStats;
 
     struct BurnReceipt {
         uint256 amount;
@@ -358,6 +367,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event JobExpired(uint256 indexed jobId, address indexed caller);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    /// @notice Emitted when an employer's job statistics change
+    event EmployerStatsUpdated(
+        address indexed employer,
+        uint256 totalJobs,
+        uint256 successfulJobs,
+        uint256 disputedJobs
+    );
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
     event ExpirationGracePeriodUpdated(uint256 period);
@@ -806,8 +822,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             assignedAt: 0,
             uriHash: uriHash,
             resultHash: bytes32(0),
-            specHash: specHash
+            specHash: specHash,
+            wasDisputed: false
         });
+        EmployerStats storage stats = employerStats[msg.sender];
+        stats.totalJobs++;
+        emit EmployerStatsUpdated(msg.sender, stats.totalJobs, stats.successfulJobs, stats.disputedJobs);
         uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
             fee = (reward * feePctSnapshot) / 100;
@@ -1202,6 +1222,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         ) revert CannotDispute();
         if (job.state == State.Completed) {
             job.state = State.Disputed;
+            if (!job.wasDisputed) {
+                job.wasDisputed = true;
+                EmployerStats storage stats = employerStats[job.employer];
+                stats.disputedJobs++;
+                emit EmployerStatsUpdated(job.employer, stats.totalJobs, stats.successfulJobs, stats.disputedJobs);
+            }
         }
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender)) revert Blacklisted();
@@ -1454,6 +1480,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
+        if (job.success && !job.wasDisputed) {
+            EmployerStats storage stats = employerStats[job.employer];
+            stats.successfulJobs++;
+            emit EmployerStatsUpdated(job.employer, stats.totalJobs, stats.successfulJobs, stats.disputedJobs);
+        }
         emit JobFinalized(jobId, job.agent);
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
@@ -1550,6 +1581,20 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.state = State.Completed;
         _finalize(jobId);
         emit JobExpired(jobId, msg.sender);
+    }
+
+    /// @notice Retrieve aggregated statistics for an employer
+    /// @param employer Address of the employer to query
+    /// @return total Total jobs created
+    /// @return success Jobs completed successfully without dispute
+    /// @return disputed Jobs that entered dispute
+    function getEmployerStats(address employer)
+        external
+        view
+        returns (uint256 total, uint256 success, uint256 disputed)
+    {
+        EmployerStats storage stats = employerStats[employer];
+        return (stats.totalJobs, stats.successfulJobs, stats.disputedJobs);
     }
 
     // ---------------------------------------------------------------------
