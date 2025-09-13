@@ -32,7 +32,10 @@ describe('StakeManager validator slash rewards', function () {
     ]);
     for (const addr of addresses) {
       const balSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 0])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 0]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -40,7 +43,10 @@ describe('StakeManager validator slash rewards', function () {
         ethers.toBeHex(1000n * ONE, 32),
       ]);
       const ackSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 6])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 6]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -49,7 +55,10 @@ describe('StakeManager validator slash rewards', function () {
       ]);
     }
     const tBalSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [treasury.address, 0])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [treasury.address, 0]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -57,7 +66,10 @@ describe('StakeManager validator slash rewards', function () {
       ethers.toBeHex(0, 32),
     ]);
     const tAckSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [treasury.address, 6])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [treasury.address, 6]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -95,7 +107,10 @@ describe('StakeManager validator slash rewards', function () {
 
     const stakeAddr = await stakeManager.getAddress();
     const stakeAck = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [stakeAddr, 6]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,

@@ -38,6 +38,7 @@ interface IStakeManager {
         uint256 treasuryShare,
         uint256 burnShare
     );
+    event ValidatorSlashReward(address indexed validator, uint256 amount);
     event DisputeFeeLocked(address indexed payer, uint256 amount);
     event DisputeFeePaid(address indexed to, uint256 amount);
     event DisputeModuleUpdated(address module);
@@ -54,6 +55,7 @@ interface IStakeManager {
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
+    event ValidatorRewardPctUpdated(uint256 pct);
     event FeePoolUpdated(address indexed feePool);
 
     /// @notice deposit stake for caller for a specific role
