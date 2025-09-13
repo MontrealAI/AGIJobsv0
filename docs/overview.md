@@ -102,6 +102,13 @@ registry.setValidationModule(address(fast));
 
 `RewardEngineMB` coordinates payouts using thermodynamic principles. The `EnergyOracle` supplies per-task energy and entropy, while the `Thermostat` sets the effective temperature `T`. Gibbs free energy `G = H − T·S` guides the reward budget: higher `T` emphasises entropy and spreads rewards across many participants, whereas lower `T` concentrates them on the most efficient actors.
 
+**Role shares per epoch**
+
+- Agents – 65 %
+- Validators – 15 %
+- Operators – 15 %
+- Employers – 5 %
+
 ```mermaid
 flowchart LR
     EO[EnergyOracle] --> RE[RewardEngineMB]
@@ -117,6 +124,7 @@ flowchart LR
 - **Agents** – Reduce energy per task through optimisation and caching to earn a larger share of the budget.
 - **Validators** – Keep validation scripts lightweight and deterministic to minimise entropy in votes.
 - **Employers** – Define tasks clearly so agents avoid wasted effort, preserving more free energy for rewards.
+- **Operators** – Run energy‑efficient infrastructure and expose telemetry so the oracle can track consumption accurately.
 
 ## Deployment Addresses
 
