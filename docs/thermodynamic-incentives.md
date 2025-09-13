@@ -61,6 +61,15 @@ Higher temperatures flatten the Maxwell–Boltzmann curve so rewards are spread
 more evenly across participants.  Lower temperatures sharpen the distribution,
 concentrating rewards on low‑energy, highly efficient contributors.
 
+## Governance Delay and Exit
+
+Parameter changes for the reward engine and thermostat are queued through the
+governance timelock, which is configured with a **7 day** delay. Agents and
+validators who disagree with a proposed change may leave during this period by
+calling `StakeManager.requestWithdraw` and, after the `unbondingPeriod`
+expires, `StakeManager.finalizeWithdraw` to recover their stake before the new
+settings take effect.
+
 ## Events and Monitoring
 
 `RewardEngineMB` emits a `RewardBudget` event every epoch with the total budget
