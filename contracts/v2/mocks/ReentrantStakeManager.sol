@@ -138,6 +138,19 @@ contract ReentrantStakeManager is IStakeManager {
         totalStakes[role] -= amount;
     }
 
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address,
+        address[] calldata
+    ) external override {
+        uint256 st = _stakes[user][role];
+        require(st >= amount, "stake");
+        _stakes[user][role] = st - amount;
+        totalStakes[role] -= amount;
+    }
+
     function slash(address user, uint256 amount, address) external override {
         if (attackSlash) {
             attackSlash = false;
@@ -150,6 +163,18 @@ contract ReentrantStakeManager is IStakeManager {
                 }
             }
         }
+        uint256 st = _stakes[user][Role.Validator];
+        require(st >= amount, "stake");
+        _stakes[user][Role.Validator] = st - amount;
+        totalStakes[Role.Validator] -= amount;
+    }
+
+    function slash(
+        address user,
+        uint256 amount,
+        address,
+        address[] calldata
+    ) external override {
         uint256 st = _stakes[user][Role.Validator];
         require(st >= amount, "stake");
         _stakes[user][Role.Validator] = st - amount;

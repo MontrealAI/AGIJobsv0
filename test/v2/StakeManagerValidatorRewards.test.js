@@ -1,13 +1,15 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-describe('StakeManager validator reward remainder', function () {
+describe('StakeManager validator slash rewards', function () {
   const { AGIALPHA } = require('../../scripts/constants');
-  let owner, employer, valHigh, valLow1, valLow2;
-  let token, stakeManager, jobRegistry, registrySigner;
+  const Role = { Agent: 0, Validator: 1 };
+  const ONE = 10n ** 18n;
+  let owner, treasury, agent, val1, val2, employer;
+  let token, stakeManager, registrySigner;
 
   beforeEach(async () => {
-    [owner, employer, valHigh, valLow1, valLow2] = await ethers.getSigners();
+    [owner, treasury, agent, val1, val2, employer] = await ethers.getSigners();
 
     const artifact = await artifacts.readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
@@ -20,69 +22,53 @@ describe('StakeManager validator reward remainder', function () {
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );
-    const balanceSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['address', 'uint256'],
-        [employer.address, 0]
-      )
-    );
-    await network.provider.send('hardhat_setStorageAt', [
-      AGIALPHA,
-      balanceSlot,
-      ethers.toBeHex(1000n, 32),
-    ]);
+
+    const addresses = [agent.address, val1.address, val2.address];
     const supplySlot = '0x' + (2).toString(16).padStart(64, '0');
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
       supplySlot,
-      ethers.toBeHex(1000n, 32),
+      ethers.toBeHex(3000n * ONE, 32),
     ]);
-    const ackSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['address', 'uint256'],
-        [employer.address, 6]
-      )
+    for (const addr of addresses) {
+      const balSlot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 0])
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        balSlot,
+        ethers.toBeHex(1000n * ONE, 32),
+      ]);
+      const ackSlot = ethers.keccak256(
+        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 6])
+      );
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        ackSlot,
+        ethers.toBeHex(1n, 32),
+      ]);
+    }
+    const tBalSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [treasury.address, 0])
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
-      ackSlot,
-      ethers.toBeHex(1n, 32),
+      tBalSlot,
+      ethers.toBeHex(0, 32),
     ]);
-
-    const StakeManager = await ethers.getContractFactory(
-      'contracts/v2/StakeManager.sol:StakeManager'
-    );
-    stakeManager = await StakeManager.deploy(
-      0,
-      100,
-      0,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      owner.address
-    );
-    await stakeManager.connect(owner).setMinStake(1);
-
-    const stakeAddr = await stakeManager.getAddress();
-    const stakeAckSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['address', 'uint256'],
-        [stakeAddr, 6]
-      )
+    const tAckSlot = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [treasury.address, 6])
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
-      stakeAckSlot,
+      tAckSlot,
       ethers.toBeHex(1n, 32),
     ]);
 
     const JobReg = await ethers.getContractFactory(
-      'contracts/v2/mocks/VersionMock.sol:VersionMock'
+      'contracts/v2/mocks/JobRegistryAckStub.sol:JobRegistryAckStub'
     );
-    jobRegistry = await JobReg.deploy(2);
-    await stakeManager
-      .connect(owner)
-      .setJobRegistry(await jobRegistry.getAddress());
+    const jobRegistry = await JobReg.deploy(ethers.ZeroAddress);
     const regAddr = await jobRegistry.getAddress();
     await ethers.provider.send('hardhat_setBalance', [
       regAddr,
@@ -90,73 +76,93 @@ describe('StakeManager validator reward remainder', function () {
     ]);
     registrySigner = await ethers.getImpersonatedSigner(regAddr);
 
-    const Validation = await ethers.getContractFactory(
-      'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
+    const StakeManager = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
     );
-    const validation = await Validation.deploy();
-    await validation.setValidators([
-      valLow1.address,
-      valHigh.address,
-      valLow2.address,
+    stakeManager = await StakeManager.deploy(
+      0,
+      0,
+      0,
+      treasury.address,
+      regAddr,
+      ethers.ZeroAddress,
+      owner.address
+    );
+    await stakeManager.connect(owner).setValidatorRewardPct(20);
+    await stakeManager
+      .connect(owner)
+      .setTreasuryAllowlist(treasury.address, true);
+
+    const stakeAddr = await stakeManager.getAddress();
+    const stakeAck = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [stakeAddr, 6])
+    );
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      stakeAck,
+      ethers.toBeHex(1n, 32),
     ]);
-    await stakeManager
-      .connect(owner)
-      .setValidationModule(await validation.getAddress());
 
-    const NFT = await ethers.getContractFactory(
-      'contracts/legacy/MockERC721.sol:MockERC721'
-    );
-    const nft = await NFT.deploy();
-    await stakeManager.connect(owner).addAGIType(await nft.getAddress(), 150);
-    await nft.mint(valHigh.address);
+    await token.connect(agent).approve(stakeAddr, 1000n * ONE);
+    await token.connect(val1).approve(stakeAddr, 1000n * ONE);
+    await token.connect(val2).approve(stakeAddr, 1000n * ONE);
+
+    await stakeManager.connect(agent).depositStake(Role.Agent, 100n * ONE);
   });
 
-  it('assigns remainder to the validator with the largest weight', async () => {
-    const jobId = ethers.encodeBytes32String('job1');
-    const amount = 100n;
+  it('distributes validator rewards on slashing', async () => {
+    await stakeManager.connect(val1).depositStake(Role.Validator, 100n * ONE);
+    await stakeManager.connect(val2).depositStake(Role.Validator, 300n * ONE);
 
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), amount);
-    await stakeManager
-      .connect(registrySigner)
-      .lockReward(jobId, employer.address, amount);
-    await stakeManager
-      .connect(registrySigner)
-      .distributeValidatorRewards(jobId, amount);
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ['slash(address,uint8,uint256,address,address[])'](
+          agent.address,
+          Role.Agent,
+          40n * ONE,
+          employer.address,
+          [val1.address, val2.address]
+        )
+    )
+      .to.emit(stakeManager, 'ValidatorSlashReward')
+      .withArgs(val1.address, 2n * ONE)
+      .and.to.emit(stakeManager, 'ValidatorSlashReward')
+      .withArgs(val2.address, 6n * ONE);
 
-    expect(await token.balanceOf(valLow1.address)).to.equal(28n);
-    expect(await token.balanceOf(valHigh.address)).to.equal(44n);
-    expect(await token.balanceOf(valLow2.address)).to.equal(28n);
-    expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
+    expect(await token.balanceOf(val1.address)).to.equal(902n * ONE);
+    expect(await token.balanceOf(val2.address)).to.equal(706n * ONE);
+    expect(await token.balanceOf(treasury.address)).to.equal(32n * ONE);
   });
 
-  it('weights payouts according to multiple NFT tiers', async () => {
-    const NFT175 = await ethers.getContractFactory(
-      'contracts/legacy/MockERC721.sol:MockERC721'
-    );
-    const nft175 = await NFT175.deploy();
-    await stakeManager
-      .connect(owner)
-      .addAGIType(await nft175.getAddress(), 175);
-    await nft175.mint(valLow1.address);
-
-    const jobId = ethers.encodeBytes32String('job2');
-    const amount = 100n;
-
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), amount);
+  it('handles empty validator arrays', async () => {
     await stakeManager
       .connect(registrySigner)
-      .lockReward(jobId, employer.address, amount);
+      ['slash(address,uint8,uint256,address,address[])'](
+        agent.address,
+        Role.Agent,
+        40n * ONE,
+        employer.address,
+        []
+      );
+
+    expect(await token.balanceOf(treasury.address)).to.equal(40n * ONE);
+    expect(await token.balanceOf(val1.address)).to.equal(1000n * ONE);
+  });
+
+  it('skips rewards when validator stake is zero', async () => {
     await stakeManager
       .connect(registrySigner)
-      .distributeValidatorRewards(jobId, amount);
+      ['slash(address,uint8,uint256,address,address[])'](
+        agent.address,
+        Role.Agent,
+        40n * ONE,
+        employer.address,
+        [val1.address, val2.address]
+      );
 
-    expect(await token.balanceOf(valLow1.address)).to.equal(42n);
-    expect(await token.balanceOf(valHigh.address)).to.equal(35n);
-    expect(await token.balanceOf(valLow2.address)).to.equal(23n);
-    expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
+    expect(await token.balanceOf(treasury.address)).to.equal(40n * ONE);
+    expect(await token.balanceOf(val1.address)).to.equal(1000n * ONE);
+    expect(await token.balanceOf(val2.address)).to.equal(1000n * ONE);
   });
 });

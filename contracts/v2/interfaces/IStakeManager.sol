@@ -177,12 +177,25 @@ interface IStakeManager {
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
     function slash(address user, Role role, uint256 amount, address employer) external;
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address employer,
+        address[] calldata validators
+    ) external;
 
     /// @notice slash validator stake during dispute resolution
     /// @param user address whose stake will be reduced
     /// @param amount token amount with 18 decimals to slash
     /// @param recipient address receiving the slashed share
     function slash(address user, uint256 amount, address recipient) external;
+    function slash(
+        address user,
+        uint256 amount,
+        address recipient,
+        address[] calldata validators
+    ) external;
 
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;

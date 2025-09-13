@@ -262,9 +262,20 @@ contract DisputeModule is Ownable, Pausable {
             address valMod = address(jobRegistry.validationModule());
             if (valMod != address(0)) {
                 address[] memory validators = IValidationModule(valMod).validators(jobId);
+                uint256 count;
                 for (uint256 i; i < validators.length; ++i) {
-                    if (!IValidationModule(valMod).votes(jobId, validators[i])) {
-                        sm.slash(validators[i], fee, employer);
+                    if (IValidationModule(valMod).votes(jobId, validators[i])) {
+                        ++count;
+                    }
+                }
+                address[] memory participants = new address[](count);
+                uint256 p;
+                for (uint256 i; i < validators.length; ++i) {
+                    address v = validators[i];
+                    if (IValidationModule(valMod).votes(jobId, v)) {
+                        participants[p++] = v;
+                    } else {
+                        sm.slash(v, fee, employer, participants);
                     }
                 }
             }
