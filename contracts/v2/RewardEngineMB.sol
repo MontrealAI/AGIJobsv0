@@ -125,7 +125,9 @@ contract RewardEngineMB is Governable {
         emit TreasuryUpdated(_treasury);
     }
 
-    function settleEpoch(uint256 epoch, EpochData calldata data) external {
+    function settleEpoch(uint256 epoch, EpochData calldata data) external
+        /// #if_succeeds {:msg "budget >= distributed"} budget >= distributed;
+    {
         require(settlers[msg.sender], "not settler");
         uint256 totalValue;
         uint256 sumUpre;
