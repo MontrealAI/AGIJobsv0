@@ -119,5 +119,11 @@ contract EnergyOracleTest is Test {
         vm.prank(attacker);
         oracle.setSigner(attacker, true);
     }
-}
 
+    function test_setSigner_emits_event() public {
+        address newSigner = address(0xC0FFEE);
+        vm.expectEmit(true, false, false, true, address(oracle));
+        emit EnergyOracle.SignerUpdated(newSigner, true);
+        oracle.setSigner(newSigner, true);
+    }
+}

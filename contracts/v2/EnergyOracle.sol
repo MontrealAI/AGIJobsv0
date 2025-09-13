@@ -11,6 +11,11 @@ import {Governable} from "./Governable.sol";
 contract EnergyOracle is EIP712, Governable, IEnergyOracle {
     using ECDSA for bytes32;
 
+    /// @notice Emitted when a signer is added or removed from the oracle.
+    /// @param signer The address of the signer that was updated.
+    /// @param allowed True if the signer is authorized, false if removed.
+    event SignerUpdated(address indexed signer, bool allowed);
+
     bytes32 public constant TYPEHASH = keccak256(
         "EnergyAttestation(uint256 jobId,address user,int256 energy,uint256 degeneracy,uint256 epochId,uint8 role,uint256 nonce,uint256 deadline,uint256 uPre,uint256 uPost,uint256 value)"
     );
@@ -19,8 +24,13 @@ contract EnergyOracle is EIP712, Governable, IEnergyOracle {
     mapping(address => uint256) public nonces;
 
     constructor(address _governance) EIP712("EnergyOracle", "1") Governable(_governance) {}
+
+    /// @notice Enable or disable a signer authorised to attest energy usage.
+    /// @param signer The address of the signer to update.
+    /// @param allowed Whether the signer is allowed to sign attestations.
     function setSigner(address signer, bool allowed) external onlyGovernance {
         signers[signer] = allowed;
+        emit SignerUpdated(signer, allowed);
     }
 
     /// @inheritdoc IEnergyOracle
@@ -54,4 +64,3 @@ contract EnergyOracle is EIP712, Governable, IEnergyOracle {
         nonces[att.user] = att.nonce;
     }
 }
-
