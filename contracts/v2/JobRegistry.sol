@@ -16,6 +16,7 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ThermoMath} from "./libraries/ThermoMath.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -233,6 +234,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     uint256 public validatorRewardPct;
     uint256 public constant DEFAULT_VALIDATOR_REWARD_PCT = 8;
     uint256 public expirationGracePeriod;
+    bool public useBoltzmannReward;
+    int256 public temperature = int256(1e18);
 
     // module configuration events
     event ModuleUpdated(string module, address newAddress);
@@ -244,6 +247,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event IdentityRegistryUpdated(address identityRegistry);
     event ValidatorRewardPctUpdated(uint256 pct);
     event PauserUpdated(address indexed pauser);
+    event TemperatureUpdated(int256 newTemperature);
+    event BoltzmannRewardToggled(bool enabled);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
     /// @param version Incrementing version participants must acknowledge.
@@ -648,6 +653,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setExpirationGracePeriod(uint256 period) external onlyGovernance {
         expirationGracePeriod = period;
         emit ExpirationGracePeriodUpdated(period);
+    }
+
+    /// @notice Set the temperature parameter used for Boltzmann reward weighting
+    /// @param newTemperature Positive temperature value in 18-decimal fixed point
+    function setTemperature(int256 newTemperature) external onlyGovernance {
+        require(newTemperature > 0, "invalid T");
+        temperature = newTemperature;
+        emit TemperatureUpdated(newTemperature);
+    }
+
+    /// @notice Enable or disable Maxwell-Boltzmann reward distribution
+    /// @param enabled True to enable MB weighting for validator rewards
+    function setBoltzmannReward(bool enabled) external onlyGovernance {
+        useBoltzmannReward = enabled;
+        emit BoltzmannRewardToggled(enabled);
     }
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
@@ -1331,8 +1351,26 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             IFeePool pool = feePool;
             uint256 validatorReward;
             if (validators.length > 0 && validatorRewardPct > 0) {
-                validatorReward =
-                    (uint256(job.reward) * validatorRewardPct) / 100;
+                if (useBoltzmannReward) {
+                    int256[] memory energies = new int256[](2);
+                    energies[0] = int256((block.timestamp - job.assignedAt) * 1e18);
+                    energies[1] = int256(2e18);
+                    uint256[] memory g = new uint256[](2);
+                    g[0] = 1;
+                    g[1] = validators.length;
+                    uint256[] memory weights = ThermoMath.mbWeights(
+                        energies,
+                        g,
+                        temperature,
+                        0
+                    );
+                    uint256 maxVR =
+                        (uint256(job.reward) * validatorRewardPct) / 100;
+                    validatorReward = (maxVR * weights[1]) / 1e18;
+                } else {
+                    validatorReward =
+                        (uint256(job.reward) * validatorRewardPct) / 100;
+                }
             }
 
             uint256 rewardAfterValidator =
