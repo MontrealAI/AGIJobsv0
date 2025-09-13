@@ -89,12 +89,18 @@ contract RewardEngineMB is Governable {
         _validateRoleShares();
     }
 
+    /// @notice Configure how much of the reward budget a role receives.
+    /// @param r The participant role to adjust.
+    /// @param share Portion of the budget scaled by 1e18.
     function setRoleShare(Role r, uint256 share) external onlyGovernance {
         roleShare[r] = share;
         _validateRoleShares();
         emit RoleShareUpdated(r, share);
     }
 
+    /// @notice Set the chemical potential \(\mu\) used in MB weighting for a role.
+    /// @param r The role whose \(\mu\) is being configured.
+    /// @param _mu Fixed-point chemical potential value.
     function setMu(Role r, int256 _mu) external onlyGovernance {
         mu[r] = _mu;
         emit MuUpdated(r, _mu);
@@ -115,16 +121,24 @@ contract RewardEngineMB is Governable {
     error InvalidProof(address oracle);
     error Replay(address oracle);
 
+    /// @notice Grant or revoke permission to settle reward epochs.
+    /// @param settler Address being updated.
+    /// @param allowed True to authorize the settler, false to revoke.
     function setSettler(address settler, bool allowed) external onlyGovernance {
         settlers[settler] = allowed;
         emit SettlerUpdated(settler, allowed);
     }
 
+    /// @notice Set the treasury address to receive unallocated rewards.
+    /// @param _treasury Destination for leftover budgets.
     function setTreasury(address _treasury) external onlyGovernance {
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
 
+    /// @notice Distribute rewards for an epoch based on energy attestations.
+    /// @param epoch The epoch identifier to settle.
+    /// @param data Batches of signed attestations and paid cost data.
     function settleEpoch(uint256 epoch, EpochData calldata data) external
         /// #if_succeeds {:msg "budget >= distributed"} budget >= distributed;
     {

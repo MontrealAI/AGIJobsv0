@@ -40,6 +40,10 @@ contract Thermostat is Governable {
         maxTemp = _max;
     }
 
+    /// @notice Set PID gains for adjusting system temperature.
+    /// @param _kp Proportional gain.
+    /// @param _ki Integral gain.
+    /// @param _kd Derivative gain.
     function setPID(int256 _kp, int256 _ki, int256 _kd) external onlyGovernance {
         kp = _kp;
         ki = _ki;
@@ -47,6 +51,10 @@ contract Thermostat is Governable {
         emit PIDUpdated(_kp, _ki, _kd);
     }
 
+    /// @notice Weight each KPI's contribution to thermal error.
+    /// @param _wEmission Multiplier for emission error.
+    /// @param _wBacklog Multiplier for backlog error.
+    /// @param _wSla Multiplier for SLA error.
     function setKPIWeights(int256 _wEmission, int256 _wBacklog, int256 _wSla)
         external
         onlyGovernance
@@ -58,6 +66,7 @@ contract Thermostat is Governable {
     }
 
     /// @notice Sets a new system temperature within bounds.
+    /// @param temp Desired system temperature.
     function setSystemTemperature(int256 temp) external onlyGovernance {
         require(temp > 0 && temp >= minTemp && temp <= maxTemp, "temp");
         systemTemperature = temp;
@@ -65,6 +74,8 @@ contract Thermostat is Governable {
     }
 
     /// @notice Updates minimum and maximum allowable temperatures.
+    /// @param _min New minimum temperature.
+    /// @param _max New maximum temperature.
     function setTemperatureBounds(int256 _min, int256 _max) external onlyGovernance {
         require(_min > 0 && _max > _min, "bounds");
         minTemp = _min;
@@ -75,6 +86,9 @@ contract Thermostat is Governable {
         emit TemperatureUpdated(systemTemperature);
     }
 
+    /// @notice Override system temperature for a specific role.
+    /// @param r Role to update.
+    /// @param temp New temperature for the role.
     function setRoleTemperature(Role r, int256 temp) external onlyGovernance {
         require(temp > 0 && temp >= minTemp && temp <= maxTemp, "bounds");
         roleTemps[r] = temp;
@@ -82,11 +96,15 @@ contract Thermostat is Governable {
     }
 
     /// @notice Removes a role-specific temperature override.
+    /// @param r Role whose override is cleared.
     function unsetRoleTemperature(Role r) external onlyGovernance {
         delete roleTemps[r];
         emit RoleTemperatureUpdated(r, 0);
     }
 
+    /// @notice Return the temperature applied to a role.
+    /// @param r Role being queried.
+    /// @return Temperature value for the role or system default.
     function getRoleTemperature(Role r) public view returns (int256) {
         int256 t = roleTemps[r];
         if (t == 0) return systemTemperature;
