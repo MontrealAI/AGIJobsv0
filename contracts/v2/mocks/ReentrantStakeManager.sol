@@ -82,6 +82,7 @@ contract ReentrantStakeManager is IStakeManager {
     function setFeePool(IFeePool) external override {}
     function setBurnPct(uint256) external override {}
     function setValidatorRewardPct(uint256) external override {}
+    function setValidatorSlashPct(uint256) external override {}
     function addAGIType(address, uint256) external override {}
     function removeAGIType(address) external override {}
     function syncBoostedStake(address, Role) external override {}
@@ -120,7 +121,13 @@ contract ReentrantStakeManager is IStakeManager {
 
     function setMaxTotalPayoutPct(uint256) external override {}
 
-    function slash(address user, Role role, uint256 amount, address) external override {
+    function slash(
+        address user,
+        Role role,
+        uint256 amount,
+        address,
+        bytes32
+    ) external override {
         if (attackSlash) {
             attackSlash = false;
             (bool ok, bytes memory err) = address(validation).call(
@@ -138,7 +145,12 @@ contract ReentrantStakeManager is IStakeManager {
         totalStakes[role] -= amount;
     }
 
-    function slash(address user, uint256 amount, address) external override {
+    function slash(
+        address user,
+        uint256 amount,
+        address,
+        bytes32
+    ) external override {
         if (attackSlash) {
             attackSlash = false;
             (bool ok, bytes memory err) = address(validation).call(

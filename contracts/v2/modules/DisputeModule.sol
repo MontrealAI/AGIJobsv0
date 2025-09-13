@@ -264,7 +264,7 @@ contract DisputeModule is Ownable, Pausable {
                 address[] memory validators = IValidationModule(valMod).validators(jobId);
                 for (uint256 i; i < validators.length; ++i) {
                     if (!IValidationModule(valMod).votes(jobId, validators[i])) {
-                        sm.slash(validators[i], fee, employer);
+                        sm.slash(validators[i], fee, employer, bytes32(jobId));
                     }
                 }
             }
@@ -279,6 +279,7 @@ contract DisputeModule is Ownable, Pausable {
     /// @param employer Employer receiving the slashed share.
     /// @dev Only callable by the arbitrator committee.
     function slashValidator(
+        uint256 jobId,
         address juror,
         uint256 amount,
         address employer
@@ -286,7 +287,7 @@ contract DisputeModule is Ownable, Pausable {
         require(msg.sender == committee, "not committee");
         IStakeManager sm = _stakeManager();
         if (address(sm) != address(0) && amount > 0) {
-            sm.slash(juror, amount, employer);
+            sm.slash(juror, amount, employer, bytes32(jobId));
         }
         emit JurorSlashed(juror, amount, employer);
     }

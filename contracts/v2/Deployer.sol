@@ -275,6 +275,7 @@ contract Deployer is Ownable {
             minStake,
             employerSlashPct,
             treasurySlashPct,
+            0,
             governance,
             address(0),
             address(0),

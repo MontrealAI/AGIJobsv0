@@ -42,6 +42,7 @@ describe('comprehensive job flows', function () {
       0,
       100,
       0,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

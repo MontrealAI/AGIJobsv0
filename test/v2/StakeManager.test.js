@@ -22,6 +22,7 @@ describe('StakeManager', function () {
       0,
       50,
       50,
+      0,
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -107,15 +108,25 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           0,
           100,
-          employer.address
+          employer.address,
+          jobId
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0);
+      .withArgs(
+        user.address,
+        0,
+        employer.address,
+        treasury.address,
+        50,
+        50,
+        0,
+        0
+      );
     expect(await stakeManager.stakes(user.address, 0)).to.equal(50n);
     expect(await stakeManager.totalStake(0)).to.equal(50n);
     expect(await token.balanceOf(employer.address)).to.equal(750n);
@@ -124,11 +135,12 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           0,
           10,
-          ethers.ZeroAddress
+          ethers.ZeroAddress,
+          jobId
         )
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidRecipient');
   });
@@ -169,11 +181,12 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(user)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           0,
           10,
-          employer.address
+          employer.address,
+          ethers.ZeroHash
         )
     ).to.be.revertedWithCustomError(stakeManager, 'OnlyJobRegistry');
 
@@ -187,11 +200,12 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           0,
           200,
-          employer.address
+          employer.address,
+          ethers.ZeroHash
         )
     ).to.be.revertedWithCustomError(stakeManager, 'InsufficientStake');
   });
@@ -250,11 +264,12 @@ describe('StakeManager', function () {
     const employerBefore = await token.balanceOf(employer.address);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         user.address,
         0,
         100,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
     const supplyAfter = await token.totalSupply();
     const employerAfter = await token.balanceOf(employer.address);
@@ -307,11 +322,12 @@ describe('StakeManager', function () {
       expect(await stakeManager.stakes(user.address, role)).to.equal(100n);
       await stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           role,
           50,
-          employer.address
+          employer.address,
+          ethers.ZeroHash
         );
       expect(await stakeManager.stakes(user.address, role)).to.equal(50n);
     }
@@ -364,11 +380,12 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           3,
           1,
-          employer.address
+          employer.address,
+          ethers.ZeroHash
         )
     ).to.be.revertedWithoutReason();
   });
@@ -507,7 +524,7 @@ describe('StakeManager', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setSlashingPercentages(60, 40))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(60, 40);
+      .withArgs(60, 40, 0);
     expect(await stakeManager.employerSlashPct()).to.equal(60);
     expect(await stakeManager.treasurySlashPct()).to.equal(40);
   });
@@ -515,7 +532,7 @@ describe('StakeManager', function () {
   it('allows slashing percentages that sum under 100', async () => {
     await expect(stakeManager.connect(owner).setSlashingPercentages(60, 20))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(60, 20);
+      .withArgs(60, 20, 0);
     expect(await stakeManager.employerSlashPct()).to.equal(60);
     expect(await stakeManager.treasurySlashPct()).to.equal(20);
   });
@@ -539,11 +556,12 @@ describe('StakeManager', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         owner.address,
         0,
         100,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
     expect(await stakeManager.stakes(owner.address, 0)).to.equal(0n);
     expect(await token.balanceOf(employer.address)).to.equal(1070n);
@@ -577,11 +595,12 @@ describe('StakeManager', function () {
     const supplyBefore = await token.totalSupply();
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         owner.address,
         0,
         100,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
     const supplyAfter = await token.totalSupply();
     expect(supplyBefore - supplyAfter).to.equal(10n);
@@ -615,11 +634,12 @@ describe('StakeManager', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         owner.address,
         0,
         40,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
     expect(await token.balanceOf(treasury.address)).to.equal(40n);
     expect(await token.balanceOf(employer.address)).to.equal(1000n);
@@ -647,11 +667,12 @@ describe('StakeManager', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         owner.address,
         0,
         101,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
     const supplyAfter = await token.totalSupply();
     const treasuryAfter = await token.balanceOf(treasury.address);
@@ -734,11 +755,12 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           0,
           10,
-          employer.address
+          employer.address,
+          ethers.ZeroHash
         )
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
   });
@@ -909,15 +931,25 @@ describe('StakeManager', function () {
     await expect(
       stakeManager
         .connect(registrySigner)
-        ['slash(address,uint8,uint256,address)'](
+        ['slash(address,uint8,uint256,address,bytes32)'](
           user.address,
           0,
           100,
-          employer.address
+          employer.address,
+          ethers.ZeroHash
         )
     )
       .to.emit(stakeManager, 'StakeSlashed')
-      .withArgs(user.address, 0, employer.address, treasury.address, 50, 50, 0)
+      .withArgs(
+        user.address,
+        0,
+        employer.address,
+        treasury.address,
+        50,
+        50,
+        0,
+        0
+      )
       .and.to.emit(stakeManager, 'StakeUnlocked')
       .withArgs(user.address, 100);
 
@@ -1001,11 +1033,12 @@ describe('StakeManager', function () {
 
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         user.address,
         0,
         100,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
     await stakeManager.connect(user).withdrawStake(0, 100);
 
@@ -1061,11 +1094,12 @@ describe('StakeManager', function () {
 
     await stakeManager
       .connect(registrySigner)
-      ['slash(address,uint8,uint256,address)'](
+      ['slash(address,uint8,uint256,address,bytes32)'](
         user.address,
         0,
         amount,
-        employer.address
+        employer.address,
+        ethers.ZeroHash
       );
 
     const employerAfter = await token.balanceOf(employer.address);
@@ -1089,7 +1123,7 @@ describe('StakeManager', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'NotGovernance');
     await expect(stakeManager.connect(owner).setSlashingPercentages(40, 60))
       .to.emit(stakeManager, 'SlashingPercentagesUpdated')
-      .withArgs(40n, 60n);
+      .withArgs(40n, 60n, 0n);
   });
 
   it('acknowledgeAndDeposit records acknowledgement and restricts callers', async () => {

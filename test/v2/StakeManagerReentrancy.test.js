@@ -26,6 +26,7 @@ describe('StakeManager reentrancy', function () {
       0,
       50,
       50,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

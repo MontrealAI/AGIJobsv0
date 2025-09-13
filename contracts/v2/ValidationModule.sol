@@ -1245,7 +1245,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         val,
                         IStakeManager.Role.Validator,
                         slashAmount,
-                        job.employer
+                        job.employer,
+                        bytes32(jobId)
                     );
                 }
                 if (address(reputationEngine) != address(0)) {
@@ -1320,7 +1321,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         val,
                         IStakeManager.Role.Validator,
                         slashAmount,
-                        job.employer
+                        job.employer,
+                        bytes32(jobId)
                     );
                 }
                 if (address(reputationEngine) != address(0)) {

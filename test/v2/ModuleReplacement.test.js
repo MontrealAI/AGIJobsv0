@@ -26,6 +26,7 @@ async function deploySystem() {
     0,
     0,
     0,
+    0,
     ethers.ZeroAddress,
     ethers.ZeroAddress,
     ethers.ZeroAddress,

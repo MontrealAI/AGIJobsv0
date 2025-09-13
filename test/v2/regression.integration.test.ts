@@ -25,7 +25,7 @@ async function deploySystem() {
     'contracts/v2/StakeManager.sol:StakeManager'
   );
   const stake = await Stake.deploy(
-    await token.getAddress(),
+    0,
     0,
     0,
     0,

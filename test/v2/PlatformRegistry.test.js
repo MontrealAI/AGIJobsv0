@@ -18,18 +18,19 @@ describe('PlatformRegistry', function () {
     await token.mint(platform.address, STAKE);
     await token.mint(owner.address, STAKE);
 
-    const Stake = await ethers.getContractFactory(
-      'contracts/v2/StakeManager.sol:StakeManager'
-    );
-    stakeManager = await Stake.connect(platform).deploy(
-      0,
-      100,
-      0,
-      treasury.address,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
-      platform.address
-    );
+  const Stake = await ethers.getContractFactory(
+    'contracts/v2/StakeManager.sol:StakeManager'
+  );
+  stakeManager = await Stake.connect(platform).deploy(
+    0,
+    100,
+    0,
+    0,
+    treasury.address,
+    ethers.ZeroAddress,
+    ethers.ZeroAddress,
+    platform.address
+  );
     await stakeManager.connect(platform).setMinStake(STAKE);
     const MockRegistry = await ethers.getContractFactory(
       'contracts/legacy/MockV2.sol:MockJobRegistry'

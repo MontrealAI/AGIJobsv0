@@ -37,6 +37,7 @@ describe('FeePool', function () {
       0,
       100,
       0,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -299,6 +300,7 @@ describe('FeePool', function () {
       0,
       100,
       0,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
@@ -469,6 +471,7 @@ describe('FeePool with no stakers', function () {
     stakeManager = await StakeManager.deploy(
       0,
       100,
+      0,
       0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

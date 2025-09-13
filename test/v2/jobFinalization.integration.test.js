@@ -46,6 +46,7 @@ describe('job finalization integration', function () {
       0,
       100,
       0,
+      0,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
       ethers.ZeroAddress,

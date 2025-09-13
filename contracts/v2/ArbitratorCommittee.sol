@@ -150,7 +150,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
         for (uint256 i; i < c.jurors.length; ++i) {
             address juror = c.jurors[i];
             if (doSlash && c.commits[juror] != bytes32(0) && !c.revealed[juror]) {
-                disputeModule.slashValidator(juror, absenteeSlash, employer);
+                disputeModule.slashValidator(jobId, juror, absenteeSlash, employer);
             }
             delete c.isJuror[juror];
         }
