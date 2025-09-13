@@ -14,6 +14,8 @@ contract Thermostat is Governable {
     int256 public kp;
     int256 public ki;
     int256 public kd;
+    int256 public integralMin;
+    int256 public integralMax;
 
     int256 public wEmission = 1;
     int256 public wBacklog = 1;
@@ -30,6 +32,7 @@ contract Thermostat is Governable {
     event TemperatureBoundsUpdated(int256 minTemp, int256 maxTemp);
     event KPIWeightsUpdated(int256 wEmission, int256 wBacklog, int256 wSla);
     event Tick(int256 emission, int256 backlog, int256 sla, int256 newTemp);
+    event IntegralBoundsUpdated(int256 integralMin, int256 integralMax);
 
     constructor(int256 _temp, int256 _min, int256 _max, address _governance)
         Governable(_governance)
@@ -38,6 +41,8 @@ contract Thermostat is Governable {
         systemTemperature = _temp;
         minTemp = _min;
         maxTemp = _max;
+        integralMin = type(int256).min;
+        integralMax = type(int256).max;
     }
 
     /// @notice Set PID gains for adjusting system temperature.
@@ -86,6 +91,16 @@ contract Thermostat is Governable {
         emit TemperatureUpdated(systemTemperature);
     }
 
+    /// @notice Update the integral term bounds to prevent windup.
+    /// @param _min New minimum integral value.
+    /// @param _max New maximum integral value.
+    function setIntegralBounds(int256 _min, int256 _max) external onlyGovernance {
+        require(_max > _min, "bounds");
+        integralMin = _min;
+        integralMax = _max;
+        emit IntegralBoundsUpdated(_min, _max);
+    }
+
     /// @notice Override system temperature for a specific role.
     /// @param r Role to update.
     /// @param temp New temperature for the role.
@@ -119,6 +134,8 @@ contract Thermostat is Governable {
         int256 error =
             wEmission * emission + wBacklog * backlog + wSla * sla;
         integral += error;
+        if (integral < integralMin) integral = integralMin;
+        if (integral > integralMax) integral = integralMax;
         int256 derivative = error - lastError;
         int256 delta = kp * error + ki * integral + kd * derivative;
         systemTemperature += delta;
