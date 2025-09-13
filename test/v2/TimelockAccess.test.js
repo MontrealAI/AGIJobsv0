@@ -18,8 +18,13 @@ describe('Timelock access control', function () {
     await timelock.grantRole(executorRole, admin.address);
 
     // mock staking token at AGIALPHA address
-    const mock = await artifacts.readArtifact('contracts/test/MockERC20.sol:MockERC20');
-    await network.provider.send('hardhat_setCode', [AGIALPHA, mock.deployedBytecode]);
+    const mock = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      mock.deployedBytecode,
+    ]);
 
     const Reward = await ethers.getContractFactory(
       'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
@@ -50,7 +55,12 @@ describe('Timelock access control', function () {
     const Thermo = await ethers.getContractFactory(
       'contracts/v2/Thermostat.sol:Thermostat'
     );
-    const thermo = await Thermo.deploy(100, 1, 1000, await timelock.getAddress());
+    const thermo = await Thermo.deploy(
+      100,
+      1,
+      1000,
+      await timelock.getAddress()
+    );
     await thermo.waitForDeployment();
 
     // direct calls revert
@@ -76,9 +86,30 @@ describe('Timelock access control', function () {
     const salt2 = ethers.id('stake');
     const salt3 = ethers.id('thermo');
 
-    await timelock.schedule(reward.target, 0, rewardData, ethers.ZeroHash, salt1, delay);
-    await timelock.schedule(stake.target, 0, stakeData, ethers.ZeroHash, salt2, delay);
-    await timelock.schedule(thermo.target, 0, thermoData, ethers.ZeroHash, salt3, delay);
+    await timelock.schedule(
+      reward.target,
+      0,
+      rewardData,
+      ethers.ZeroHash,
+      salt1,
+      delay
+    );
+    await timelock.schedule(
+      stake.target,
+      0,
+      stakeData,
+      ethers.ZeroHash,
+      salt2,
+      delay
+    );
+    await timelock.schedule(
+      thermo.target,
+      0,
+      thermoData,
+      ethers.ZeroHash,
+      salt3,
+      delay
+    );
 
     // cannot execute before delay
     await expect(
@@ -94,9 +125,21 @@ describe('Timelock access control', function () {
     await network.provider.send('evm_increaseTime', [delay]);
     await network.provider.send('evm_mine');
 
-    await timelock.execute(reward.target, 0, rewardData, ethers.ZeroHash, salt1);
+    await timelock.execute(
+      reward.target,
+      0,
+      rewardData,
+      ethers.ZeroHash,
+      salt1
+    );
     await timelock.execute(stake.target, 0, stakeData, ethers.ZeroHash, salt2);
-    await timelock.execute(thermo.target, 0, thermoData, ethers.ZeroHash, salt3);
+    await timelock.execute(
+      thermo.target,
+      0,
+      thermoData,
+      ethers.ZeroHash,
+      salt3
+    );
 
     expect(await reward.kappa()).to.equal(2);
     expect(await stake.feePct()).to.equal(1);
@@ -105,4 +148,3 @@ describe('Timelock access control', function () {
     expect(await thermo.kd()).to.equal(3n);
   });
 });
-
