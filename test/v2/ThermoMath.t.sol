@@ -44,6 +44,19 @@ contract ThermoMathTest is Test {
         assertGt(w[0], w[1], "lower energy should weigh more");
     }
 
+    function test_weight_ratio_matches_exp() public {
+        int256[] memory E = new int256[](2);
+        uint256[] memory g = new uint256[](2);
+        E[0] = 1e18;
+        E[1] = 4e18;
+        g[0] = 1;
+        g[1] = 1;
+        uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, 0);
+        uint256 ratio = (w[1] * 1e18) / w[0];
+        int256 expected = SD59x18.unwrap(exp(SD59x18.wrap(E[0] - E[1])));
+        assertApproxEqAbs(ratio, uint256(expected), 1e12);
+    }
+
     function test_degeneracy_scales_weights() public {
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
