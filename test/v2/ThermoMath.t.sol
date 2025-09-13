@@ -166,5 +166,20 @@ contract ThermoMathTest is Test {
         uint256 sum = w[0] + w[1];
         assertApproxEqAbs(sum, 1e18, 1, "normalized");
     }
+
+    function test_energy_near_exp_bounds_normalizes() public {
+        int256[] memory E = new int256[](2);
+        uint256[] memory g = new uint256[](2);
+        E[0] = 0;
+        // second energy pushes exponent close to MIN_EXP_INPUT without reverting
+        E[1] = -MIN_EXP_INPUT - 1; // 41_446_531_673_892_822_322 - 1
+        g[0] = 1;
+        g[1] = 1;
+        uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, 0);
+        uint256 sum = w[0] + w[1];
+        assertApproxEqAbs(sum, 1e18, 1, "normalized");
+        assertGt(w[0], 1e18 - 10, "low energy dominates");
+        assertLt(w[1], 10, "high energy negligible");
+    }
 }
 
