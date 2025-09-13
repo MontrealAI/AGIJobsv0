@@ -132,6 +132,7 @@ contract RewardEngineMB is Governable {
     /// @notice Set the treasury address to receive unallocated rewards.
     /// @param _treasury Destination for leftover budgets.
     function setTreasury(address _treasury) external onlyGovernance {
+        require(_treasury != address(0), "treasury");
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }

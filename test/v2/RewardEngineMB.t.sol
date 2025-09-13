@@ -159,6 +159,11 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.total(), 2e18, "scaled budget distributed");
     }
 
+    function test_setTreasuryRejectsZero() public {
+        vm.expectRevert("treasury");
+        engine.setTreasury(address(0));
+    }
+
     function test_entropyScalingUsesWad() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
