@@ -198,4 +198,34 @@ describe('StakeManager multi-validator slashing', function () {
     expect(await engine.reputationOf(val1.address)).to.be.gt(0n);
     expect(await engine.reputationOf(val2.address)).to.be.gt(0n);
   });
+
+  it('refunds employer share when an agent is slashed', async () => {
+    await stakeManager.connect(owner).setValidatorRewardPct(0);
+    await stakeManager.connect(owner).setSlashingPercentages(60, 40);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        ['slash(address,uint8,uint256,address,address[])'](
+          agent.address,
+          Role.Agent,
+          40n * ONE,
+          employer.address,
+          []
+        )
+    )
+      .to.emit(stakeManager, 'StakeSlashed')
+      .withArgs(
+        agent.address,
+        Role.Agent,
+        employer.address,
+        treasury.address,
+        24n * ONE,
+        16n * ONE,
+        0
+      );
+
+    expect(await token.balanceOf(employer.address)).to.equal(24n * ONE);
+    expect(await token.balanceOf(treasury.address)).to.equal(16n * ONE);
+  });
 });
