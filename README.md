@@ -49,46 +49,48 @@ Token parameters are defined once in [`config/agialpha.json`](config/agialpha.js
 Each epoch the resulting free‑energy budget is split **65 %** to agents, **15 %** to validators, **15 %** to operators and **5 %** to employers, rewarding low‑energy contributors with more tokens and reputation. See [docs/reward-settlement-process.md](docs/reward-settlement-process.md) for a full settlement walkthrough.
 
 ```mermaid
-flowchart TD
-    classDef role fill:#eef9ff,stroke:#004a99,stroke-width:1px;
+flowchart LR
+    %% Styling
     classDef meas fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
     classDef budget fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
-    classDef share fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+    classDef role fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
     classDef rep fill:#e8ffe8,stroke:#2e7d32,stroke-width:1px;
 
-    subgraph Participants
-        A[Agent]:::role --> M
-        V[Validator]:::role --> M
-        O[Operator]:::role --> M
-        E[Employer]:::role --> M
+    %% Metrics
+    subgraph Metrics
+        EO[EnergyOracle\nEᵢ,gᵢ,ΔS]:::meas
+        TH[Thermostat\nTₛ,Tᵣ]:::meas
     end
 
-    M[(EnergyOracle\n+ Thermostat)]:::meas --> B["Budget = κ·max(0, −((Value − Costs) − Tₛ·ΔS))"]:::budget
+    %% Free-energy engine
+    EO --> RE["RewardEngineMB\nΔG=(Value−Costs)−Tₛ·ΔS\nBudget=κ·max(0,−ΔG)"]:::budget
+    TH --> RE
 
-    subgraph Shares
-        B -->|65%| SA[Agents]:::share
-        B -->|15%| SV[Validators]:::share
-        B -->|15%| SO[Operators]:::share
-        B -->|5%| SE[Employers]:::share
-    end
+    %% Role shares
+    RE -->|65%| AG[Agents]:::role
+    RE -->|15%| VA[Validators]:::role
+    RE -->|15%| OP[Operators]:::role
+    RE -->|5%| EM[Employers]:::role
 
-    SA --> RA["Reputation↑ if low energy"]:::rep
-    SV --> RV["Reputation↑ if low energy"]:::rep
-    SO --> RO["Reputation↑ if low energy"]:::rep
-    SE --> REp["Reputation↑ if low energy"]:::rep
+    %% Reputation feedback
+    AG --> RAG["Reputation↑ if low energy"]:::rep
+    VA --> RVA["Reputation↑ if low energy"]:::rep
+    OP --> ROP["Reputation↑ if low energy"]:::rep
+    EM --> REM["Reputation↑ if low energy"]:::rep
 
-    RA -.-> M
-    RV -.-> M
-    RO -.-> M
-    REp -.-> M
+    RAG -.-> TH
+    RVA -.-> TH
+    ROP -.-> TH
+    REM -.-> TH
 ```
 
 ```mermaid
 mindmap
   root((Thermodynamic Incentives))
-    Free-Energy Budgeting
+    Free-Energy Budget
       ΔG = (Value − Costs) − Tₛ·ΔS
       Budget = κ·max(0, −ΔG)
+      Thermostat: adjusts Tₛ
     Role Shares
       Agents: 65%
       Validators: 15%
@@ -97,6 +99,7 @@ mindmap
     Reputation
       Efficient Work: Reputation↑
       Wasteful Work: Reputation↓
+      Feedback → Thermostat
 ```
 
 ```mermaid

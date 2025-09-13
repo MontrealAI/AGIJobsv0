@@ -2,6 +2,33 @@
 
 The reward engine settles each epoch by converting reduced free energy into tokens and reputation. The diagrams below illustrate the end-to-end flow from job completion to payouts.
 
+## High-Level Pipeline
+
+```mermaid
+flowchart TB
+    classDef stage fill:#fff5e6,stroke:#ffa200,stroke-width:1px;
+    classDef role fill:#eef9ff,stroke:#004a99,stroke-width:1px;
+    classDef engine fill:#dff9fb,stroke:#00a8ff,stroke-width:1px;
+    classDef out fill:#fdf5ff,stroke:#8e24aa,stroke-width:1px;
+
+    subgraph Lifecycle
+        Emp[Employer posts job]:::role --> Ag[Agent completes]:::role --> Val[Validator finalises]:::role
+    end
+    Lifecycle --> EO[EnergyOracle attests]:::engine
+    EO --> RE[RewardEngineMB\nΔG & MB weights]:::stage
+    RE --> TH[Thermostat adjusts T]:::engine
+    RE --> FP[FeePool distributes tokens]:::out
+    RE --> REP[ReputationEngine updates scores]:::out
+    FP -->|65%| RA[Agents]:::role
+    FP -->|15%| RV[Validators]:::role
+    FP -->|15%| RO[Operators]:::role
+    FP -->|5%| REb[Employers]:::role
+    REP --> RA
+    REP --> RV
+    REP --> RO
+    REP --> REb
+```
+
 ## End-to-End Overview
 
 ```mermaid
