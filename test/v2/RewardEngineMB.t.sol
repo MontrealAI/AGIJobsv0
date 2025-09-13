@@ -291,5 +291,17 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.total(), budget, "total budget accounted");
         assertEq(pool.rewards(treasury), leftover, "leftover to treasury");
     }
+
+    function test_leftover_without_treasury_reverts() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](2);
+        a[0] = _proof(address(0xA1), int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[0].att.uPre = 1e18;
+        a[1] = _proof(address(0xA2), int256(2e18), 1, RewardEngineMB.Role.Agent);
+        data.agents = a;
+        engine.setKappa(1);
+        vm.expectRevert(bytes("treasury"));
+        engine.settleEpoch(1, data);
+    }
 }
 
