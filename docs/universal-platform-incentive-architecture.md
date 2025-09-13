@@ -25,6 +25,27 @@ The AGI Jobs v2 suite implements a single, stake‑based framework that treats t
 `RewardEngineMB` tracks a free‑energy budget for each role. The `EnergyOracle` reports per‑task consumption and the `Thermostat` compares it with role allocations, adjusting reward weight when usage falls below budget. Efficient agents therefore earn a larger share of fees and gain reputation faster.
 
 ```mermaid
+%% Closed-loop interaction sequence
+sequenceDiagram
+    autonumber
+    participant EO as EnergyOracle
+    participant RE as RewardEngineMB
+    participant TH as Thermostat
+    participant FP as FeePool
+    participant REP as ReputationEngine
+
+    EO->>RE: attest(jobId, energy, g)
+    RE->>TH: queryTemperature(role)
+    TH-->>RE: Tₛ & Tᵣ
+    RE->>RE: compute ΔG & MB weights
+    opt temperature drift
+        RE-->>TH: usage feedback
+    end
+    RE->>FP: reward(user, tokens)
+    RE->>REP: update(user, reputation)
+```
+
+```mermaid
 %% Interactive view linking core modules
 flowchart TB
     classDef offchain fill:#dff9fb,stroke:#00a8ff,stroke-width:2px;
@@ -466,6 +487,35 @@ flowchart TD
     U -->|reputation| Validator
     U -->|reputation| Operator
     U -->|reputation| Employer
+```
+
+```mermaid
+%% Decision aware settlement pipeline
+flowchart TD
+    classDef off fill:#dff9fb,stroke:#00a8ff,stroke-width:2px;
+    classDef on fill:#e8ffe8,stroke:#2e7d32,stroke-width:2px;
+    classDef decision fill:#fff5e6,stroke:#ffa200,stroke-width:2px;
+
+    subgraph Submission
+        A[Agent completes job]:::off --> B[EnergyOracle signs attestation]:::off
+    end
+    subgraph Settlement
+        B --> C[RewardEngineMB aggregates metrics]:::on
+        C --> D{Budget > 0?}:::decision
+        D -->|Yes| E[Query Thermostat]:::on
+        E --> F[Compute MB weights]:::on
+        F --> G[Distribute token rewards]:::on
+        F --> H[Update reputation]:::on
+        D -->|No| I[End epoch without payout]:::on
+    end
+    G --> Agent
+    G --> Validator
+    G --> Operator
+    G --> Employer
+    H --> Agent
+    H --> Validator
+    H --> Operator
+    H --> Employer
 ```
 
 Every contract rejects direct ETH and exposes `isTaxExempt()` so neither the contracts nor the owner ever hold taxable revenue. Participants interact only through token transfers.
