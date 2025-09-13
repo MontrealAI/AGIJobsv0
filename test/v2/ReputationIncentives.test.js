@@ -2,7 +2,13 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('Reputation incentives', function () {
-  let engine, owner, caller, honestAgent, honestValidator, cheatAgent, cheatValidator;
+  let engine,
+    owner,
+    caller,
+    honestAgent,
+    honestValidator,
+    cheatAgent,
+    cheatValidator;
 
   beforeEach(async () => {
     [owner, caller, honestAgent, honestValidator, cheatAgent, cheatValidator] =
@@ -25,7 +31,9 @@ describe('Reputation incentives', function () {
     const duration = 100000;
     const rounds = 3;
     const gamma = 0.9;
-    const gain = Number(await engine.calculateReputationPoints(payout, duration));
+    const gain = Number(
+      await engine.calculateReputationPoints(payout, duration)
+    );
 
     const agentHonest = [];
     const agentCheat = [];
@@ -41,7 +49,9 @@ describe('Reputation incentives', function () {
       agentHonest.push(Number(after - prev));
 
       prev = await engine.reputationOf(honestValidator.address);
-      await engine.connect(caller).rewardValidator(honestValidator.address, gain);
+      await engine
+        .connect(caller)
+        .rewardValidator(honestValidator.address, gain);
       after = await engine.reputationOf(honestValidator.address);
       validatorHonest.push(Number(after - prev));
 
@@ -69,4 +79,3 @@ describe('Reputation incentives', function () {
     expect(honestValidatorNPV).to.be.gt(cheatValidatorNPV);
   });
 });
-
