@@ -71,6 +71,13 @@ Each contract exposes `isTaxExempt(addr)` and rejects direct ETH to keep value t
 For a step-by-step deployment walkthrough with owner-only setters, see [deployment-v2-agialpha.md](deployment-v2-agialpha.md).
 For a production deployment checklist, consult [deployment-guide-production.md](deployment-guide-production.md).
 
+### Governance Timelock
+
+All privileged parameter changes are executed through an
+OpenZeppelin `TimelockController` configured with a **7‑day delay**.
+Transactions must be queued and can only be executed once the delay has
+elapsed, giving the community time to review upcoming changes.
+
 ### Owner Controls and Defaults
 
 | Module           | Owner-only setters (default)                                                                                                                                                                  | Purpose                                                                                           |
