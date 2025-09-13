@@ -491,6 +491,19 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit MaxStakePerAddressUpdated(maxStake);
     }
 
+    /// @notice set recommended minimum and maximum stake values
+    /// @dev `newMax` may be zero to disable the limit but must not be below `newMin`
+    /// @param newMin recommended minimum stake with 18 decimals
+    /// @param newMax recommended maximum total stake per address with 18 decimals
+    function setStakeRecommendations(uint256 newMin, uint256 newMax) external onlyGovernance {
+        if (newMin == 0) revert InvalidMinStake();
+        if (newMax != 0 && newMax < newMin) revert InvalidParams();
+        minStake = newMin;
+        emit MinStakeUpdated(newMin);
+        maxStakePerAddress = newMax;
+        emit MaxStakePerAddressUpdated(newMax);
+    }
+
     /// @notice Update the maximum number of AGI types allowed
     function setMaxAGITypes(uint256 newMax) external onlyGovernance {
         if (newMax > MAX_AGI_TYPES_CAP) {

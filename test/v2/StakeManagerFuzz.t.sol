@@ -2,7 +2,7 @@
 pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
-import {StakeManager} from "../../contracts/v2/StakeManager.sol";
+import {StakeManager, MaxStakeExceeded, BelowMinimumStake, InvalidParams} from "../../contracts/v2/StakeManager.sol";
 import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AGIALPHA} from "../../contracts/v2/Constants.sol";
@@ -48,7 +48,43 @@ contract StakeManagerFuzz is Test {
         vm.prank(address(2));
         token.approve(address(stake), second);
         vm.prank(address(2));
-        vm.expectRevert("max stake");
+        vm.expectRevert(MaxStakeExceeded.selector);
         stake.depositStake(StakeManager.Role.Agent, second);
+    }
+
+    function testFuzz_setStakeRecommendations_reverts(uint256 minRec, uint256 maxRec) public {
+        vm.assume(minRec > 0);
+        vm.assume(maxRec > 0);
+        vm.assume(maxRec < minRec);
+        vm.expectRevert(InvalidParams.selector);
+        stake.setStakeRecommendations(minRec, maxRec);
+    }
+
+    function testFuzz_setStakeRecommendations_enforcesBounds(
+        uint256 minRec,
+        uint256 maxRec
+    ) public {
+        vm.assume(minRec >= stake.minStake());
+        vm.assume(maxRec > minRec);
+        vm.assume(maxRec < 1e24);
+        stake.setStakeRecommendations(minRec, maxRec);
+
+        // below min should revert
+        uint256 below = minRec - 1;
+        token.mint(address(3), below);
+        vm.prank(address(3));
+        token.approve(address(stake), below);
+        vm.prank(address(3));
+        vm.expectRevert(BelowMinimumStake.selector);
+        stake.depositStake(StakeManager.Role.Agent, below);
+
+        // above max should revert
+        uint256 above = maxRec + 1;
+        token.mint(address(4), above);
+        vm.prank(address(4));
+        token.approve(address(stake), above);
+        vm.prank(address(4));
+        vm.expectRevert(MaxStakeExceeded.selector);
+        stake.depositStake(StakeManager.Role.Agent, above);
     }
 }
