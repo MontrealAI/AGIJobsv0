@@ -74,5 +74,21 @@ contract ThermostatTest is Test {
         emit Thermostat.Tick(int256(500), int256(0), int256(0), int256(200));
         t.tick(int256(500), int256(0), int256(0));
     }
+
+    function test_integralClampingPreventsRunaway() public {
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
+        t.setPID(int256(0), int256(1), int256(0));
+        t.setIntegralBounds(int256(-100), int256(100));
+
+        for (uint256 i = 0; i < 5; i++) {
+            t.tick(int256(1000), 0, 0);
+        }
+        assertEq(t.systemTemperature(), 200);
+
+        t.tick(int256(-1000), 0, 0);
+        assertEq(t.systemTemperature(), 100);
+        t.tick(int256(-1000), 0, 0);
+        assertEq(t.systemTemperature(), 1);
+    }
 }
 
