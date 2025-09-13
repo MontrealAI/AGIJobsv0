@@ -1,12 +1,12 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
 describe('StakeManager slashing configuration', function () {
-  const { AGIALPHA } = require('../../scripts/constants');
-  let owner, treasury, token, stakeManager;
+  let owner, stakeManager;
 
   beforeEach(async () => {
-    [owner, treasury] = await ethers.getSigners();
+    [owner] = await ethers.getSigners();
     const artifact = await artifacts.readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
@@ -14,10 +14,6 @@ describe('StakeManager slashing configuration', function () {
       AGIALPHA,
       artifact.deployedBytecode,
     ]);
-    token = await ethers.getContractAt(
-      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
-      AGIALPHA
-    );
     const StakeManager = await ethers.getContractFactory(
       'contracts/v2/StakeManager.sol:StakeManager'
     );
@@ -40,7 +36,6 @@ describe('StakeManager slashing configuration', function () {
 });
 
 describe('StakeManager multi-validator slashing', function () {
-  const { AGIALPHA } = require('../../scripts/constants');
   const Role = { Agent: 0, Validator: 1 };
   const ONE = 10n ** 18n;
   let owner, treasury, agent, val1, val2, employer;
@@ -70,10 +65,10 @@ describe('StakeManager multi-validator slashing', function () {
     ]);
     for (const addr of addresses) {
       const balSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [
-          addr,
-          0,
-        ])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 0]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -81,10 +76,10 @@ describe('StakeManager multi-validator slashing', function () {
         ethers.toBeHex(1000n * ONE, 32),
       ]);
       const ackSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [
-          addr,
-          6,
-        ])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 6]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -93,10 +88,10 @@ describe('StakeManager multi-validator slashing', function () {
       ]);
     }
     const tBalSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [
-        treasury.address,
-        0,
-      ])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [treasury.address, 0]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -104,10 +99,10 @@ describe('StakeManager multi-validator slashing', function () {
       ethers.toBeHex(0, 32),
     ]);
     const tAckSlot = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [
-        treasury.address,
-        6,
-      ])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [treasury.address, 6]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
@@ -145,10 +140,10 @@ describe('StakeManager multi-validator slashing', function () {
 
     const stakeAddr = await stakeManager.getAddress();
     const stakeAck = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [
-        stakeAddr,
-        6,
-      ])
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['address', 'uint256'],
+        [stakeAddr, 6]
+      )
     );
     await network.provider.send('hardhat_setStorageAt', [
       AGIALPHA,
