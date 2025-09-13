@@ -126,6 +126,13 @@ flowchart LR
 - **Employers** – Define tasks clearly so agents avoid wasted effort, preserving more free energy for rewards.
 - **Operators** – Run energy‑efficient infrastructure and expose telemetry so the oracle can track consumption accurately.
 
+### Governance Tuning
+
+Metrics from the reward/burn dashboard reveal how much of each epoch's budget is burned or redistributed. If the burn ratio drifts
+from unity or redistribution becomes skewed, governance can submit timelock proposals to steer incentives. Proposals may call
+`RewardEngineMB.setMu()` to change the emission coefficient `μ` or `Thermostat.setSystemTemperature()` to adjust the global
+temperature. After the delay elapses and the proposal is executed, the new parameters take effect.
+
 ## Deployment Addresses
 
 | Contract         | Network          | Address                                                                                                               |
