@@ -7,13 +7,19 @@ import {ThermoMath} from "./libraries/ThermoMath.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IReputationEngineV2} from "./interfaces/IReputationEngineV2.sol";
 import {IEnergyOracle} from "./interfaces/IEnergyOracle.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title RewardEngineMB
 /// @notice Distributes epoch rewards using Maxwell-Boltzmann statistics.
-contract RewardEngineMB is Governable {
+contract RewardEngineMB is Governable, ReentrancyGuard {
     using ThermoMath for int256[];
 
-    enum Role {Agent, Validator, Operator, Employer}
+    enum Role {
+        Agent,
+        Validator,
+        Operator,
+        Employer
+    }
 
     struct RoleData {
         address[] users;
@@ -44,18 +50,15 @@ contract RewardEngineMB is Governable {
     mapping(Role => int256) public mu;
     mapping(address => bool) public settlers;
     address public treasury;
+    uint256 public maxProofs = 100;
 
     int256 public constant WAD = 1e18;
 
     error InvalidRoleShareSum(uint256 sum);
+    error ProofCountExceeded(uint256 length, uint256 maxLength);
 
     event EpochSettled(
-        uint256 indexed epoch,
-        uint256 budget,
-        int256 dH,
-        int256 dS,
-        int256 systemTemperature,
-        uint256 leftover
+        uint256 indexed epoch, uint256 budget, int256 dH, int256 dS, int256 systemTemperature, uint256 leftover
     );
     event RewardIssued(address indexed user, Role role, uint256 amount);
     event KappaUpdated(uint256 newKappa);
@@ -64,11 +67,7 @@ contract RewardEngineMB is Governable {
     event MuUpdated(Role indexed role, int256 muValue);
     event SettlerUpdated(address indexed settler, bool allowed);
     event RewardBudget(
-        uint256 indexed epoch,
-        uint256 minted,
-        uint256 burned,
-        uint256 redistributed,
-        uint256 distributionRatio
+        uint256 indexed epoch, uint256 minted, uint256 burned, uint256 redistributed, uint256 distributionRatio
     );
 
     constructor(
@@ -137,11 +136,17 @@ contract RewardEngineMB is Governable {
         emit TreasuryUpdated(_treasury);
     }
 
+    /// @notice Set the maximum number of proofs allowed per role in an epoch.
+    /// @param max Maximum length of each proofs array.
+    function setMaxProofs(uint256 max) external onlyGovernance {
+        maxProofs = max;
+    }
+
     /// @notice Distribute rewards for an epoch based on energy attestations.
     /// @param epoch The epoch identifier to settle.
     /// @param data Batches of signed attestations and paid cost data.
-    function settleEpoch(uint256 epoch, EpochData calldata data) external
-        /// #if_succeeds {:msg "budget >= distributed"} budget >= distributed;
+    function settleEpoch(uint256 epoch, EpochData calldata data) external nonReentrant 
+    /// #if_succeeds {:msg "budget >= distributed"} budget >= distributed;
     {
         require(settlers[msg.sender], "not settler");
         uint256 totalValue;
@@ -201,6 +206,7 @@ contract RewardEngineMB is Governable {
         returns (RoleData memory rd, uint256 value, uint256 uPre, uint256 uPost)
     {
         uint256 n = proofs.length;
+        if (n > maxProofs) revert ProofCountExceeded(n, maxProofs);
         rd.users = new address[](n);
         rd.energies = new int256[](n);
         rd.degeneracies = new uint256[](n);
@@ -257,11 +263,7 @@ contract RewardEngineMB is Governable {
 
     function _validateRoleShares() private view {
         uint256 sum =
-            roleShare[Role.Agent] +
-            roleShare[Role.Validator] +
-            roleShare[Role.Operator] +
-            roleShare[Role.Employer];
+            roleShare[Role.Agent] + roleShare[Role.Validator] + roleShare[Role.Operator] + roleShare[Role.Employer];
         if (sum != uint256(WAD)) revert InvalidRoleShareSum(sum);
     }
 }
-

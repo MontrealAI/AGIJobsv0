@@ -129,12 +129,9 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// provided and may be the zero address to burn residual fees.
     /// @param _taxPolicy Address of the TaxPolicy contract governing
     ///        contributions and withdrawals.
-    constructor(
-        IStakeManager _stakeManager,
-        uint256 _burnPct,
-        address _treasury,
-        ITaxPolicy _taxPolicy
-    ) Ownable(msg.sender) {
+    constructor(IStakeManager _stakeManager, uint256 _burnPct, address _treasury, ITaxPolicy _taxPolicy)
+        Ownable(msg.sender)
+    {
         if (IERC20Metadata(address(token)).decimals() != AGIALPHA_DECIMALS) {
             revert InvalidTokenDecimals();
         }
@@ -197,13 +194,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     function contribute(uint256 amount)
         external
         whenNotPaused
-        requiresTaxAcknowledgement(
-            taxPolicy,
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(taxPolicy, msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         if (amount == 0) revert ZeroAmount();
@@ -215,7 +206,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice Transfer reward tokens to a recipient. Callable by authorised rewarders.
     /// @param to address receiving the reward
     /// @param amount token amount with 18 decimals
-    function reward(address to, uint256 amount) external whenNotPaused {
+    function reward(address to, uint256 amount) external whenNotPaused nonReentrant {
         if (!rewarders[msg.sender]) revert NotRewarder();
         if (to == address(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
@@ -234,13 +225,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     function distributeFees()
         public
         whenNotPaused
-        requiresTaxAcknowledgement(
-            taxPolicy,
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(taxPolicy, msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         stakeManager.syncBoostedStake(msg.sender, rewardRole);
@@ -302,13 +287,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
      */
     function claimRewards()
         external
-        requiresTaxAcknowledgement(
-            taxPolicy,
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(taxPolicy, msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         stakeManager.syncBoostedStake(msg.sender, rewardRole);
@@ -360,13 +339,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     function governanceWithdraw(address to, uint256 amount)
         external
         onlyGovernance
-        requiresTaxAcknowledgement(
-            taxPolicy,
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(taxPolicy, msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         if (to == address(0) || to == owner()) revert InvalidRecipient();
@@ -451,4 +424,3 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         revert EtherNotAccepted();
     }
 }
-

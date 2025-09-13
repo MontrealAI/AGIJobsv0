@@ -15,19 +15,49 @@ int256 constant MIN_EXP_INPUT = -41_446531673892822322;
 contract MockFeePool is IFeePool {
     mapping(address => uint256) public rewards;
     uint256 public total;
-    function version() external pure override returns (uint256) {return 2;}
+
+    function version() external pure override returns (uint256) {
+        return 2;
+    }
+
     function depositFee(uint256) external override {}
     function distributeFees() external override {}
     function claimRewards() external override {}
     function governanceWithdraw(address, uint256) external override {}
+
     function reward(address to, uint256 amount) external override {
         rewards[to] += amount;
         total += amount;
     }
 }
 
+contract ReentrantFeePool is IFeePool {
+    RewardEngineMB engine;
+    mapping(address => uint256) public rewards;
+
+    function setEngine(RewardEngineMB _engine) external {
+        engine = _engine;
+    }
+
+    function version() external pure override returns (uint256) {
+        return 2;
+    }
+
+    function depositFee(uint256) external override {}
+    function distributeFees() external override {}
+    function claimRewards() external override {}
+    function governanceWithdraw(address, uint256) external override {}
+
+    function reward(address to, uint256 amount) external override {
+        rewards[to] += amount;
+        RewardEngineMB.EpochData memory data; // empty
+        engine.settleEpoch(99, data); // attempt reentrancy
+    }
+}
+
 contract MockReputation is IReputationEngineV2 {
     mapping(address => int256) public deltas;
+
     function update(address user, int256 delta) external override {
         deltas[user] = delta;
     }
@@ -83,13 +113,11 @@ contract RewardEngineMBTest is Test {
         p.sig = bytes("");
     }
 
-    function _proofWithDeg(
-        address user,
-        int256 energy,
-        uint256 degeneracy,
-        uint256 epoch,
-        RewardEngineMB.Role role
-    ) internal pure returns (RewardEngineMB.Proof memory p) {
+    function _proofWithDeg(address user, int256 energy, uint256 degeneracy, uint256 epoch, RewardEngineMB.Role role)
+        internal
+        pure
+        returns (RewardEngineMB.Proof memory p)
+    {
         IEnergyOracle.Attestation memory att = IEnergyOracle.Attestation({
             jobId: 1,
             user: user,
@@ -253,8 +281,10 @@ contract RewardEngineMBTest is Test {
         uint256 bucket = 1e18 * engine.roleShare(RewardEngineMB.Role.Agent) / 1e18;
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
-        E[0] = int256(1e18); E[1] = int256(2e18);
-        g[0] = 1; g[1] = 1;
+        E[0] = int256(1e18);
+        E[1] = int256(2e18);
+        g[0] = 1;
+        g[1] = 1;
         uint256[] memory w = ThermoMath.mbWeights(E, g, maxT, 0);
         uint256 expected1 = bucket * w[0] / 1e18;
         uint256 expected2 = bucket * w[1] / 1e18;
@@ -265,8 +295,12 @@ contract RewardEngineMBTest is Test {
     function test_mbWeights_sums_to_1e18() public {
         int256[] memory E = new int256[](3);
         uint256[] memory g = new uint256[](3);
-        E[0] = 1e18; E[1] = 2e18; E[2] = 3e18;
-        g[0] = 1; g[1] = 1; g[2] = 1;
+        E[0] = 1e18;
+        E[1] = 2e18;
+        E[2] = 3e18;
+        g[0] = 1;
+        g[1] = 1;
+        g[2] = 1;
         uint256[] memory w = ThermoMath.mbWeights(E, g, 1e18, 0);
         uint256 sum = w[0] + w[1] + w[2];
         assertApproxEqAbs(sum, 1e18, 1);
@@ -282,8 +316,10 @@ contract RewardEngineMBTest is Test {
         vm.assume(upper <= MAX_EXP_INPUT && lower >= MIN_EXP_INPUT);
         int256[] memory E = new int256[](2);
         uint256[] memory g = new uint256[](2);
-        E[0] = e1; E[1] = e2;
-        g[0] = 1; g[1] = 1;
+        E[0] = e1;
+        E[1] = e2;
+        g[0] = 1;
+        g[1] = 1;
         uint256[] memory w = ThermoMath.mbWeights(E, g, T, 0);
         uint256 sum = w[0] + w[1];
         assertApproxEqAbs(sum, 1e18, 1);
@@ -421,5 +457,29 @@ contract RewardEngineMBTest is Test {
         vm.expectRevert(bytes("treasury"));
         engine.settleEpoch(1, data);
     }
-}
 
+    function test_proof_array_length_bound() public {
+        engine.setMaxProofs(1);
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](2);
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        a[1] = _proof(address(0xBEEF), int256(1e18), 1, RewardEngineMB.Role.Agent);
+        data.agents = a;
+        vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.ProofCountExceeded.selector, 2, 1));
+        engine.settleEpoch(1, data);
+    }
+
+    function test_reentrancy_guard_on_settleEpoch() public {
+        ReentrantFeePool rpool = new ReentrantFeePool();
+        RewardEngineMB eng = new RewardEngineMB(thermo, rpool, rep, oracle, address(this));
+        rpool.setEngine(eng);
+        eng.setSettler(address(this), true);
+        eng.setSettler(address(rpool), true);
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        data.agents = a;
+        vm.expectRevert("ReentrancyGuard: reentrant call");
+        eng.settleEpoch(1, data);
+    }
+}
