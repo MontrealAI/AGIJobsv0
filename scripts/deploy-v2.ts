@@ -127,6 +127,50 @@ async function main() {
   );
   await feePool.waitForDeployment();
 
+  const initialTemp = ethers.parseUnits('1', 18);
+  const minTemp = ethers.parseUnits('0.5', 18);
+  const maxTemp = ethers.parseUnits('2', 18);
+
+  const Thermostat = await ethers.getContractFactory(
+    'contracts/v2/Thermostat.sol:Thermostat'
+  );
+  const thermostat = await Thermostat.deploy(
+    initialTemp,
+    minTemp,
+    maxTemp,
+    deployer.address
+  );
+  await thermostat.waitForDeployment();
+  await thermostat.setTemperatureBounds(minTemp, maxTemp);
+
+  const RewardEngine = await ethers.getContractFactory(
+    'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
+  );
+  const rewardEngine = await RewardEngine.deploy(
+    await thermostat.getAddress(),
+    await feePool.getAddress(),
+    await reputation.getAddress(),
+    await energyOracle.getAddress(),
+    deployer.address
+  );
+  await rewardEngine.waitForDeployment();
+
+  await feePool.setRewarder(await rewardEngine.getAddress(), true);
+  await reputation.setCaller(await rewardEngine.getAddress(), true);
+
+  const shares = [
+    ethers.parseUnits('0.65', 18),
+    ethers.parseUnits('0.15', 18),
+    ethers.parseUnits('0.15', 18),
+    ethers.parseUnits('0.05', 18),
+  ];
+  for (let i = 0; i < shares.length; i++) {
+    await rewardEngine.setRoleShare(i, shares[i]);
+    await rewardEngine.setMu(i, 0);
+  }
+  await rewardEngine.setSettler(deployer.address, true);
+  await energyOracle.setSigner(deployer.address, true);
+
   const PlatformRegistry = await ethers.getContractFactory(
     'contracts/v2/PlatformRegistry.sol:PlatformRegistry'
   );
@@ -172,6 +216,9 @@ async function main() {
     ensureContract(await feePool.getAddress(), 'FeePool'),
     ensureContract(await reputation.getAddress(), 'ReputationEngine'),
     ensureContract(await attestation.getAddress(), 'AttestationRegistry'),
+    ensureContract(await energyOracle.getAddress(), 'EnergyOracle'),
+    ensureContract(await thermostat.getAddress(), 'Thermostat'),
+    ensureContract(await rewardEngine.getAddress(), 'RewardEngineMB'),
   ]);
 
   const SystemPause = await ethers.getContractFactory(
@@ -211,6 +258,8 @@ async function main() {
   await identity.transferOwnership(await pause.getAddress());
   await attestation.transferOwnership(await pause.getAddress());
   await energyOracle.setGovernance(await pause.getAddress());
+  await rewardEngine.setGovernance(await pause.getAddress());
+  await thermostat.setGovernance(await pause.getAddress());
 
   console.log('StakeManager:', await stake.getAddress());
   console.log('ReputationEngine:', await reputation.getAddress());
@@ -220,6 +269,8 @@ async function main() {
   console.log('DisputeModule:', await dispute.getAddress());
   console.log('CertificateNFT:', await nft.getAddress());
   console.log('EnergyOracle:', await energyOracle.getAddress());
+  console.log('Thermostat:', await thermostat.getAddress());
+  console.log('RewardEngineMB:', await rewardEngine.getAddress());
   console.log('SystemPause:', await pause.getAddress());
 }
 
