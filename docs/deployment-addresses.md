@@ -19,3 +19,5 @@ Deployments are anchored to the `$AGIALPHA` token at
 | ------------------ | -------------------------------------------- |
 | `$AGIALPHA` Token  | `0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA` |
 | `AGIJobManager v0` | `0x0178b6bad606aaf908f72135b8ec32fc1d5ba477` |
+| `RewardEngineMB`   | `0x0000000000000000000000000000000000000000` |
+| `Thermostat`       | `0x0000000000000000000000000000000000000000` |

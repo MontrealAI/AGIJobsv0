@@ -6,7 +6,7 @@ import {Thermostat} from "../../contracts/v2/Thermostat.sol";
 
 contract ThermostatTest is Test {
     function test_tickClampsTemperature() public {
-        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
         t.setPID(int256(1), int256(0), int256(0));
         t.tick(int256(500), 0, 0);
         assertEq(t.systemTemperature(), 200);
@@ -15,7 +15,7 @@ contract ThermostatTest is Test {
     }
 
     function test_weightedTickAdjustsError() public {
-        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
         t.setPID(int256(1), int256(0), int256(0));
         vm.expectEmit(false, false, false, true, address(t));
         emit Thermostat.KPIWeightsUpdated(int256(2), int256(1), int256(0));
@@ -25,7 +25,7 @@ contract ThermostatTest is Test {
     }
 
     function test_roleTemperatureOverride() public {
-        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
         assertEq(t.getRoleTemperature(Thermostat.Role.Agent), 100);
         t.setRoleTemperature(Thermostat.Role.Agent, int256(150));
         assertEq(t.getRoleTemperature(Thermostat.Role.Agent), 150);
@@ -34,13 +34,13 @@ contract ThermostatTest is Test {
     }
     function test_constructorInvalidBounds() public {
         vm.expectRevert(bytes("bounds"));
-        new Thermostat(int256(100), int256(0), int256(200));
+        new Thermostat(int256(100), int256(0), int256(200), address(this));
         vm.expectRevert(bytes("bounds"));
-        new Thermostat(int256(100), int256(10), int256(10));
+        new Thermostat(int256(100), int256(10), int256(10), address(this));
     }
 
     function test_setRoleTemperatureRequiresPositive() public {
-        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
         vm.expectRevert(bytes("bounds"));
         t.setRoleTemperature(Thermostat.Role.Agent, int256(0));
         vm.expectRevert(bytes("bounds"));
@@ -48,7 +48,7 @@ contract ThermostatTest is Test {
     }
 
     function test_setSystemTemperatureAndBounds() public {
-        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
         vm.expectEmit(false, false, false, true, address(t));
         emit Thermostat.TemperatureUpdated(int256(150));
         t.setSystemTemperature(int256(150));
@@ -65,7 +65,7 @@ contract ThermostatTest is Test {
     }
 
     function test_tickEmitsEvent() public {
-        Thermostat t = new Thermostat(int256(100), int256(1), int256(200));
+        Thermostat t = new Thermostat(int256(100), int256(1), int256(200), address(this));
         t.setPID(int256(1), int256(0), int256(0));
 
         vm.expectEmit(false, false, false, true, address(t));

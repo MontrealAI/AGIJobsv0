@@ -11,7 +11,8 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const thermostat = await Thermostat.deploy(
       ethers.parseUnits('1', 18),
       1,
-      ethers.parseUnits('2', 18)
+      ethers.parseUnits('2', 18),
+      owner.address
     );
 
     const MockFeePool = await ethers.getContractFactory(
@@ -32,7 +33,13 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const RewardEngine = await ethers.getContractFactory(
       'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
     );
-    const engine = await RewardEngine.deploy(thermostat, feePool, rep, oracle);
+    const engine = await RewardEngine.deploy(
+      thermostat,
+      feePool,
+      rep,
+      oracle,
+      owner.address
+    );
 
     await engine.setSettler(owner.address, true);
     await engine.setTreasury(treasury.address);

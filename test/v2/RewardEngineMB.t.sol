@@ -49,11 +49,11 @@ contract RewardEngineMBTest is Test {
     address treasury = address(0x5);
 
     function setUp() public {
-        thermo = new Thermostat(int256(1e18), int256(1), int256(2e18));
+        thermo = new Thermostat(int256(1e18), int256(1), int256(2e18), address(this));
         pool = new MockFeePool();
-       rep = new MockReputation();
+        rep = new MockReputation();
         oracle = new MockEnergyOracle();
-        engine = new RewardEngineMB(thermo, pool, rep, oracle);
+        engine = new RewardEngineMB(thermo, pool, rep, oracle, address(this));
         engine.setSettler(address(this), true);
     }
 

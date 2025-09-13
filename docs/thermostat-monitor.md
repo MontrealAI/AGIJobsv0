@@ -7,7 +7,7 @@ This monitor periodically calculates KPI errors and updates the on-chain `Thermo
 - Node.js 20+
 - access to an Ethereum RPC endpoint
 - deployed `Thermostat` contract address
-- wallet key authorised to call `tick`
+- governance timelock or authorised executor to call `tick`
 - optional analytics service returning KPI errors
 
 ## Environment

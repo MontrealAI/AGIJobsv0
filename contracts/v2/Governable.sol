@@ -25,8 +25,17 @@ abstract contract Governable {
         governance = TimelockController(payable(_governance));
     }
 
-    modifier onlyGovernance() {
+    function _checkGovernor() internal view {
         if (msg.sender != address(governance)) revert NotGovernance();
+    }
+
+    modifier onlyGovernance() {
+        _checkGovernor();
+        _;
+    }
+
+    modifier onlyGovernor() {
+        _checkGovernor();
         _;
     }
 

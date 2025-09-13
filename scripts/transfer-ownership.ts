@@ -37,7 +37,7 @@ async function main() {
   const [signer] = await ethers.getSigners();
   const lowerOwner = newOwner.toLowerCase();
 
-  const governable = ['stakeManager', 'jobRegistry'];
+  const governable = ['stakeManager', 'jobRegistry', 'rewardEngine', 'thermostat'];
   const ownable = [
     'validationModule',
     'reputationEngine',
