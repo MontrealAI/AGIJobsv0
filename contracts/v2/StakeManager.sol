@@ -309,7 +309,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice record a dispute occurrence for auto stake tuning
-    function recordDispute() external {
+    /// @dev disabled while the contract is paused
+    function recordDispute() external whenNotPaused {
         if (msg.sender != disputeModule) revert OnlyDisputeModule();
         if (!autoStakeTuning) return;
         ++disputeCount;
@@ -317,7 +318,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @notice trigger stake evaluation if the tuning window has elapsed
-    function checkpointStake() external {
+    /// @dev disabled while the contract is paused
+    function checkpointStake() external whenNotPaused {
         if (!autoStakeTuning) return;
         _maybeAdjustStake();
     }

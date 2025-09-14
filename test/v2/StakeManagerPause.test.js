@@ -24,7 +24,7 @@ describe('StakeManager pause', function () {
       0,
       ethers.ZeroAddress,
       await mockReg.getAddress(),
-      ethers.ZeroAddress,
+      owner.address,
       owner.address
     );
     await stakeManager.connect(owner).setMinStake(1);
@@ -60,5 +60,16 @@ describe('StakeManager pause', function () {
 
     await stakeManager.connect(owner).unpause();
     await stakeManager.connect(user).withdrawStake(0, ethers.parseEther('100'));
+  });
+
+  it('pauses dispute recording and checkpointing', async () => {
+    await stakeManager.connect(owner).autoTuneStakes(true);
+    await stakeManager.connect(owner).pause();
+    await expect(
+      stakeManager.connect(owner).recordDispute()
+    ).to.be.revertedWithCustomError(stakeManager, 'EnforcedPause');
+    await expect(
+      stakeManager.connect(owner).checkpointStake()
+    ).to.be.revertedWithCustomError(stakeManager, 'EnforcedPause');
   });
 });
