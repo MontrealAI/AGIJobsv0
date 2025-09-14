@@ -225,6 +225,18 @@ interface IStakeManager {
         address[] calldata validators
     ) external;
 
+    /// @notice slash a validator and reward the challenger
+    /// @param user address of the validator being slashed
+    /// @param amount token amount to slash
+    /// @param challenger recipient of the validator reward
+    /// @param jobId associated job identifier for indexing
+    function slashAndReward(
+        address user,
+        uint256 amount,
+        address challenger,
+        bytes32 jobId
+    ) external;
+
     /// @notice owner configuration helpers
     function setMinStake(uint256 _minStake) external;
     function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external;

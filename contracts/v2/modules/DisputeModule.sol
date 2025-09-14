@@ -6,7 +6,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IJobRegistry} from "../interfaces/IJobRegistry.sol";
 import {IStakeManager} from "../interfaces/IStakeManager.sol";
 import {IValidationModule} from "../interfaces/IValidationModule.sol";
-import {TOKEN_SCALE} from "../Constants.sol";
+import {TOKEN_SCALE, BURN_ADDRESS} from "../Constants.sol";
 import {ArbitratorCommittee} from "../ArbitratorCommittee.sol";
 
 /// @title DisputeModule
@@ -213,12 +213,9 @@ contract DisputeModule is Ownable, Pausable {
         );
 
         IStakeManager sm = _stakeManager();
-        if (address(sm) != address(0)) {
-            if (disputeFee > 0) {
-                sm.lockDisputeFee(claimant, disputeFee);
-            }
-            sm.recordDispute();
-        }
+        require(address(sm) != address(0) && disputeFee > 0, "bond");
+        sm.lockDisputeFee(claimant, disputeFee);
+        sm.recordDispute();
 
         disputes[jobId] =
             Dispute({
@@ -250,7 +247,6 @@ contract DisputeModule is Ownable, Pausable {
         d.resolved = true;
 
         address employer = job.employer;
-        address recipient = employerWins ? employer : d.claimant;
         uint256 fee = d.fee;
         delete disputes[jobId];
 
@@ -258,27 +254,21 @@ contract DisputeModule is Ownable, Pausable {
 
         IStakeManager sm = _stakeManager();
         if (fee > 0 && address(sm) != address(0)) {
-            sm.payDisputeFee(recipient, fee);
+            bool claimantWins =
+                (employerWins && d.claimant == employer) ||
+                (!employerWins && d.claimant == job.agent);
+            address target = claimantWins ? d.claimant : BURN_ADDRESS;
+            sm.payDisputeFee(target, fee);
         }
 
         if (!employerWins && address(sm) != address(0)) {
             address valMod = address(jobRegistry.validationModule());
             if (valMod != address(0)) {
                 address[] memory validators = IValidationModule(valMod).validators(jobId);
-                uint256 count;
-                for (uint256 i; i < validators.length; ++i) {
-                    if (IValidationModule(valMod).votes(jobId, validators[i])) {
-                        ++count;
-                    }
-                }
-                address[] memory participants = new address[](count);
-                uint256 p;
                 for (uint256 i; i < validators.length; ++i) {
                     address v = validators[i];
-                    if (IValidationModule(valMod).votes(jobId, v)) {
-                        participants[p++] = v;
-                    } else {
-                        sm.slash(v, fee, employer, participants);
+                    if (!IValidationModule(valMod).votes(jobId, v)) {
+                        sm.slashAndReward(v, fee, d.claimant, bytes32(jobId));
                     }
                 }
             }

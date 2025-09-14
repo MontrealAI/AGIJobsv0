@@ -198,4 +198,16 @@ contract ReentrantStakeManager is IStakeManager {
         _stakes[user][Role.Validator] = st - amount;
         totalStakes[Role.Validator] -= amount;
     }
+
+    function slashAndReward(
+        address user,
+        uint256 amount,
+        address,
+        bytes32
+    ) external override {
+        uint256 st = _stakes[user][Role.Validator];
+        require(st >= amount, "stake");
+        _stakes[user][Role.Validator] = st - amount;
+        totalStakes[Role.Validator] -= amount;
+    }
 }
