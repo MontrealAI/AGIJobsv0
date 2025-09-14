@@ -42,8 +42,10 @@ REWARD_ENGINE=0xRewardEngineAddress \
 STAKE_MANAGER=0xStakeManagerAddress \
 LAMBDA=1 \             # optional, scales utility weight
 PORT=3001 \            # optional, exposes JSON metrics
+MAX_EPOCHS=100 \      # optional, retain last 100 epochs
 npx ts-node scripts/monitor/hamiltonian-state.ts
 ```
 
 The script logs the Hamiltonian for each processed epoch and serves the latest
-metrics at `http://localhost:PORT`.
+metrics at `http://localhost:PORT`. Only the most recent `MAX_EPOCHS` epochs
+are kept in memory (default `100`).
