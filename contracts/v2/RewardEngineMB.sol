@@ -7,6 +7,8 @@ import {ThermoMath} from "./libraries/ThermoMath.sol";
 import {IFeePool} from "./interfaces/IFeePool.sol";
 import {IReputationEngineV2} from "./interfaces/IReputationEngineV2.sol";
 import {IEnergyOracle} from "./interfaces/IEnergyOracle.sol";
+import {IERC20Mintable} from "./interfaces/IERC20Mintable.sol";
+import {AGIALPHA} from "./Constants.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /// @title RewardEngineMB
@@ -44,6 +46,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     IFeePool public feePool;
     IReputationEngineV2 public reputation;
     IEnergyOracle public energyOracle;
+    IERC20Mintable public immutable token = IERC20Mintable(AGIALPHA);
 
     uint256 public kappa = 1e18; // scaling factor
     mapping(Role => uint256) public roleShare; // scaled to 1e18
@@ -200,6 +203,14 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
 
+        uint256 minted;
+        if (budget > 0) {
+            require(treasury != address(0), "treasury");
+            token.mint(address(feePool), budget);
+            token.mint(treasury, budget);
+            minted = budget * 2;
+        }
+
         uint256 distributed;
         distributed += _distribute(Role.Agent, budget, agents);
         distributed += _distribute(Role.Validator, budget, validators);
@@ -208,12 +219,11 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
 
         uint256 leftover = budget - distributed;
         if (leftover > 0) {
-            require(treasury != address(0), "treasury");
-            feePool.reward(treasury, leftover);
+            token.burn(address(feePool), leftover);
         }
         uint256 ratio = budget > 0 ? (distributed * uint256(WAD)) / budget : 0;
         epochSettled[epoch] = true;
-        emit RewardBudget(epoch, budget, 0, distributed, ratio);
+        emit RewardBudget(epoch, minted, leftover, distributed, ratio);
         emit EpochSettled(epoch, budget, dH, dS, Tsys, leftover);
     }
 
