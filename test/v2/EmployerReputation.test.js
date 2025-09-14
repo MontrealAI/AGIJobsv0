@@ -177,6 +177,8 @@ describe('Employer reputation', function () {
     const repStats = await registry.getEmployerReputation(employer.address);
     expect(repStats[0]).to.equal(1n);
     expect(repStats[1]).to.equal(0n);
+    const score = await registry.getEmployerScore(employer.address);
+    expect(score).to.equal(ethers.parseEther('1'));
   });
 
   it('records dispute count when job ends in dispute', async () => {
@@ -203,5 +205,7 @@ describe('Employer reputation', function () {
     const repStats = await registry.getEmployerReputation(employer.address);
     expect(repStats[0]).to.equal(0n);
     expect(repStats[1]).to.equal(1n);
+    const score = await registry.getEmployerScore(employer.address);
+    expect(score).to.equal(0n);
   });
 });
