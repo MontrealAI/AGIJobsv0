@@ -217,8 +217,6 @@ describe('RewardEngineMB', function () {
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       feePoolBalBefore + budget
     );
-    expect(await token.balanceOf(treasury.address)).to.equal(
-      treasuryBalBefore
-    );
+    expect(await token.balanceOf(treasury.address)).to.equal(treasuryBalBefore);
   });
 });
