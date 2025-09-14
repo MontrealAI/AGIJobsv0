@@ -52,14 +52,18 @@ configured delay or multi-party approval.
 ## Quadratic Voting
 
 `QuadraticVoting` introduces a voting mechanism where the cost of casting votes
-scales quadratically: committing `n` votes locks `n^2` governance tokens (typically
-AGIALPHA). Locked funds remain in the contract until the proposal is executed by
-the configured executor. After execution, each voter may call `claimRefund` to
-retrieve the exact tokens they locked.
+scales quadratically: committing `n` votes costs `n^2` governance tokens
+typically denominated in AGIALPHA. A configurable percentage of this cost is
+locked as a refundable deposit while the remainder is charged as a fee. The fee
+is sent to the configured `treasury` or burned if the treasury is unset.
+Deposits remain in the contract until the proposal is executed by the configured
+executor. After execution, each voter may call `claimRefund` to retrieve only the
+locked deposit – the fee portion is always deducted.
 
-Example: voting with 3 votes costs 9 tokens, while 5 votes costs 25 tokens.
-Voters approve the contract to transfer tokens on their behalf, `castVote` to
-lock the cost, and once `execute` is called they can reclaim funds. The contract
+Example: with a 50% refundable rate, voting with 4 votes costs 16 tokens. Eight
+tokens are locked as a refundable deposit and the other eight are immediately
+sent to the treasury. After `execute`, calling `claimRefund` returns the locked
+eight tokens but the voter permanently paid the eight token fee. The contract
 optionally calls `GovernanceReward.recordVoters` so rewards can be distributed
 based on participation.
 
