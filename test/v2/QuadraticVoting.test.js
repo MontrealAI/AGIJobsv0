@@ -13,7 +13,10 @@ describe('QuadraticVoting', function () {
     const QuadraticVoting = await ethers.getContractFactory(
       'contracts/v2/QuadraticVoting.sol:QuadraticVoting'
     );
-    qv = await QuadraticVoting.deploy(await token.getAddress(), executor.address);
+    qv = await QuadraticVoting.deploy(
+      await token.getAddress(),
+      executor.address
+    );
     await token.connect(voter).approve(await qv.getAddress(), 1000);
   });
 
@@ -45,4 +48,3 @@ describe('QuadraticVoting', function () {
     expect(recorded[0]).to.equal(voter.address);
   });
 });
-
