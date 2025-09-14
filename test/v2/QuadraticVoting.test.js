@@ -24,7 +24,8 @@ describe('QuadraticVoting', function () {
 
   it('charges quadratic cost, locks deposit and sends fee', async () => {
     const treasuryBefore = await token.balanceOf(owner.address);
-    await qv.connect(voter).castVote(1, 3); // cost 9 => deposit 4, fee 5
+    const block = await ethers.provider.getBlock('latest');
+    await qv.connect(voter).castVote(1, 3, block.timestamp + 100); // cost 9 => deposit 4, fee 5
     expect(await token.balanceOf(voter.address)).to.equal(991n);
     expect(await token.balanceOf(await qv.getAddress())).to.equal(4n);
     expect(await qv.locked(1, voter.address)).to.equal(4n);
@@ -34,7 +35,8 @@ describe('QuadraticVoting', function () {
 
   it('refunds only the deposit after execution', async () => {
     const treasuryBefore = await token.balanceOf(owner.address);
-    await qv.connect(voter).castVote(1, 4); // cost 16 => deposit 8, fee 8
+    const block = await ethers.provider.getBlock('latest');
+    await qv.connect(voter).castVote(1, 4, block.timestamp + 100); // cost 16 => deposit 8, fee 8
     await qv.connect(executor).execute(1);
     await qv.connect(voter).claimRefund(1);
     expect(await token.balanceOf(voter.address)).to.equal(992n);
@@ -48,9 +50,30 @@ describe('QuadraticVoting', function () {
     );
     const reward = await Mock.deploy();
     await qv.connect(owner).setGovernanceReward(await reward.getAddress());
-    await qv.connect(voter).castVote(1, 2);
+    const block = await ethers.provider.getBlock('latest');
+    await qv.connect(voter).castVote(1, 2, block.timestamp + 100);
     await expect(qv.connect(executor).execute(1)).to.emit(reward, 'Recorded');
     const recorded = await reward.getLastVoters();
     expect(recorded[0]).to.equal(voter.address);
+  });
+
+  it('reverts refund before deadline without execution', async () => {
+    const block = await ethers.provider.getBlock('latest');
+    await qv.connect(voter).castVote(1, 2, block.timestamp + 100);
+    await expect(qv.connect(voter).claimRefund(1)).to.be.revertedWith(
+      'inactive'
+    );
+  });
+
+  it('allows refund after deadline without execution', async () => {
+    const block = await ethers.provider.getBlock('latest');
+    const deadline = block.timestamp + 100;
+    await qv.connect(voter).castVote(1, 2, deadline);
+    await ethers.provider.send('evm_increaseTime', [101]);
+    await ethers.provider.send('evm_mine');
+    await expect(qv.connect(voter).claimRefund(1))
+      .to.emit(qv, 'ProposalExpired')
+      .withArgs(1);
+    expect(await token.balanceOf(voter.address)).to.equal(998n);
   });
 });

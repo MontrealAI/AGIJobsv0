@@ -57,13 +57,18 @@ typically denominated in AGIALPHA. A configurable percentage of this cost is
 locked as a refundable deposit while the remainder is charged as a fee. The fee
 is sent to the configured `treasury` or burned if the treasury is unset.
 Deposits remain in the contract until the proposal is executed by the configured
-executor. After execution, each voter may call `claimRefund` to retrieve only the
-locked deposit – the fee portion is always deducted.
+executor or the voting deadline expires. Each proposal stores a `deadline`
+timestamp supplied with the first `castVote` call. Further votes are rejected
+once the deadline passes.
+
+After execution or once the deadline has elapsed, each voter may call
+`claimRefund` to retrieve only the locked deposit – the fee portion is always
+deducted.
 
 Example: with a 50% refundable rate, voting with 4 votes costs 16 tokens. Eight
 tokens are locked as a refundable deposit and the other eight are immediately
-sent to the treasury. After `execute`, calling `claimRefund` returns the locked
-eight tokens but the voter permanently paid the eight token fee. The contract
-optionally calls `GovernanceReward.recordVoters` so rewards can be distributed
-based on participation.
+sent to the treasury. After `execute` **or once the deadline expires**, calling
+`claimRefund` returns the locked eight tokens but the voter permanently paid the
+eight token fee. The contract optionally calls `GovernanceReward.recordVoters`
+so rewards can be distributed based on participation.
 
