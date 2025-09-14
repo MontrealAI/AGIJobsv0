@@ -131,9 +131,9 @@ describe('RewardEngineMB', function () {
       paidCosts: 0n,
     };
 
-      const tx = await engine.settleEpoch(1, data);
-      const receipt = await tx.wait();
-      const budget = receipt.logs.find(
+    const tx = await engine.settleEpoch(1, data);
+    const receipt = await tx.wait();
+    const budget = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === 'EpochSettled'
     ).args.budget;
 
