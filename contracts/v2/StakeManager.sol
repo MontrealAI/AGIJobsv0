@@ -97,6 +97,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice percentage of released amount allocated to validators (0-100)
     uint256 public validatorRewardPct;
 
+    /// @notice maximum number of validators processed per slashing call
+    uint256 public constant MAX_VALIDATORS = 50;
+
     /// @notice FeePool receiving protocol fees
     IFeePool public feePool;
 
@@ -209,17 +212,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     AGIType[] public agiTypes;
 
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
-    event AGITypeRemoved(address indexed nft); 
+    event AGITypeRemoved(address indexed nft);
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
     event AutoStakeTuningEnabled(bool enabled);
     event AutoStakeConfigUpdated(
-        uint256 threshold,
-        uint256 upPct,
-        uint256 downPct,
-        uint256 window,
-        uint256 floor,
-        uint256 ceil
+        uint256 threshold, uint256 upPct, uint256 downPct, uint256 window, uint256 floor, uint256 ceil
     );
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
@@ -236,13 +234,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     );
     event Slash(address indexed agent, uint256 amount, address indexed validator);
     event RewardValidator(address indexed validator, uint256 amount, bytes32 indexed jobId);
-    event SlashingStats(
-        uint256 timestamp,
-        uint256 minted,
-        uint256 burned,
-        uint256 redistributed,
-        uint256 burnRatio
-    );
+    event SlashingStats(uint256 timestamp, uint256 minted, uint256 burned, uint256 redistributed, uint256 burnRatio);
     event StakeEscrowLocked(bytes32 indexed jobId, address indexed from, uint256 amount);
     event StakeReleased(bytes32 indexed jobId, address indexed to, uint256 amount);
     /// @notice Emitted when a participant receives a payout in $AGIALPHA.
@@ -273,8 +265,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event PauserUpdated(address indexed pauser);
 
     modifier onlyGovernanceOrPauser() {
-        if (!(msg.sender == address(governance) || msg.sender == pauser))
+        if (!(msg.sender == address(governance) || msg.sender == pauser)) {
             revert Unauthorized();
+        }
         _;
     }
 
@@ -312,14 +305,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (window > 0) stakeTuneWindow = window;
         if (floor > 0) minStakeFloor = floor;
         maxMinStake = ceil;
-        emit AutoStakeConfigUpdated(
-            threshold,
-            upPct,
-            downPct,
-            stakeTuneWindow,
-            minStakeFloor,
-            ceil
-        );
+        emit AutoStakeConfigUpdated(threshold, upPct, downPct, stakeTuneWindow, minStakeFloor, ceil);
     }
 
     /// @notice record a dispute occurrence for auto stake tuning
@@ -426,13 +412,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     }
 
     /// @dev internal helper to update slashing percentages
-    function _setSlashingPercentages(
-        uint256 _employerSlashPct,
-        uint256 _treasurySlashPct
-    ) internal {
-        if (
-            _employerSlashPct > 100 || _treasurySlashPct > 100
-        ) revert InvalidPercentage();
+    function _setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) internal {
+        if (_employerSlashPct > 100 || _treasurySlashPct > 100) revert InvalidPercentage();
         if (_employerSlashPct + _treasurySlashPct > 100) revert InvalidPercentage();
         employerSlashPct = _employerSlashPct;
         treasurySlashPct = _treasurySlashPct;
@@ -457,20 +438,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice update slashing percentage splits
     /// @param _employerSlashPct percentage sent to employer (0-100)
     /// @param _treasurySlashPct percentage sent to treasury (0-100)
-    function setSlashingPercentages(
-        uint256 _employerSlashPct,
-        uint256 _treasurySlashPct
-    ) external onlyGovernance {
+    function setSlashingPercentages(uint256 _employerSlashPct, uint256 _treasurySlashPct) external onlyGovernance {
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
     /// @notice update slashing percentages (alias)
     /// @param _employerSlashPct percentage sent to employer (0-100)
     /// @param _treasurySlashPct percentage sent to treasury (0-100)
-    function setSlashingParameters(
-        uint256 _employerSlashPct,
-        uint256 _treasurySlashPct
-    ) external onlyGovernance {
+    function setSlashingParameters(uint256 _employerSlashPct, uint256 _treasurySlashPct) external onlyGovernance {
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
@@ -489,10 +464,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Allow or disallow a treasury address
     /// @param _treasury Treasury candidate
     /// @param allowed True to allow, false to revoke
-    function setTreasuryAllowlist(address _treasury, bool allowed)
-        external
-        onlyGovernance
-    {
+    function setTreasuryAllowlist(address _treasury, bool allowed) external onlyGovernance {
         treasuryAllowlist[_treasury] = allowed;
         emit TreasuryAllowlistUpdated(_treasury, allowed);
     }
@@ -511,8 +483,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the dispute module authorized to manage dispute fees
     /// @param module module contract allowed to move dispute fees
     function setDisputeModule(address module) external onlyGovernance {
-        if (module == address(0) || IDisputeModule(module).version() != 2)
+        if (module == address(0) || IDisputeModule(module).version() != 2) {
             revert InvalidDisputeModule();
+        }
         disputeModule = module;
         emit DisputeModuleUpdated(module);
     }
@@ -520,8 +493,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice set the validation module used to source validator lists
     /// @param module ValidationModule contract address
     function setValidationModule(address module) external onlyGovernance {
-        if (module == address(0) || IValidationModule(module).version() != 2)
+        if (module == address(0) || IValidationModule(module).version() != 2) {
             revert InvalidValidationModule();
+        }
         validationModule = IValidationModule(module);
         emit ValidationModuleUpdated(module);
     }
@@ -530,10 +504,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Staking is disabled until `jobRegistry` is set.
     /// @param _jobRegistry registry contract enforcing tax acknowledgements
     /// @param _disputeModule module contract allowed to move dispute fees
-    function setModules(address _jobRegistry, address _disputeModule)
-        external
-        onlyGovernance
-    {
+    function setModules(address _jobRegistry, address _disputeModule) external onlyGovernance {
         if (_jobRegistry == address(0) || _disputeModule == address(0)) revert InvalidModule();
         if (IJobRegistry(_jobRegistry).version() != 2) revert InvalidJobRegistry();
         if (IDisputeModule(_disputeModule).version() != 2) revert InvalidDisputeModule();
@@ -646,7 +617,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (nft == address(0) || payoutPct == 0) revert InvalidParams();
         if (payoutPct > MAX_PAYOUT_PCT) revert InvalidPercentage();
         uint256 length = agiTypes.length;
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < length;) {
             if (agiTypes[i].nft == nft) {
                 agiTypes[i].payoutPct = payoutPct;
                 emit AGITypeUpdated(nft, payoutPct);
@@ -664,7 +635,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice Remove an AGI type
     function removeAGIType(address nft) external onlyGovernance {
         uint256 length = agiTypes.length;
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < length;) {
             if (agiTypes[i].nft == nft) {
                 agiTypes[i] = agiTypes[length - 1];
                 agiTypes.pop();
@@ -692,7 +663,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function getTotalPayoutPct(address user) public view returns (uint256 pct) {
         uint256 maxPct = 100;
         uint256 length = agiTypes.length;
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < length;) {
             AGIType memory t = agiTypes[i];
             try IERC721(t.nft).balanceOf(user) returns (uint256 bal) {
                 if (bal > 0 && t.payoutPct > maxPct) {
@@ -731,15 +702,8 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param user address whose stake is being locked
     /// @param amount token amount with 18 decimals
     /// @param lockTime seconds until the stake unlocks
-    function lockStake(address user, uint256 amount, uint64 lockTime)
-        external
-        onlyJobRegistry
-        whenNotPaused
-    {
-        uint256 total =
-            stakes[user][Role.Agent] +
-            stakes[user][Role.Validator] +
-            stakes[user][Role.Platform];
+    function lockStake(address user, uint256 amount, uint64 lockTime) external onlyJobRegistry whenNotPaused {
+        uint256 total = stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform];
         if (total < lockedStakes[user] + amount) revert InsufficientStake();
         uint64 newUnlock = uint64(block.timestamp + lockTime);
         if (newUnlock > unlockTime[user]) {
@@ -752,11 +716,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice release previously locked stake for a user
     /// @param user address whose stake is being unlocked
     /// @param amount token amount with 18 decimals to unlock
-    function releaseStake(address user, uint256 amount)
-        external
-        onlyJobRegistry
-        whenNotPaused
-    {
+    function releaseStake(address user, uint256 amount) external onlyJobRegistry whenNotPaused {
         uint256 locked = lockedStakes[user];
         if (locked < amount) revert InsufficientLocked();
         lockedStakes[user] = locked - amount;
@@ -773,10 +733,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (newStake < minStake) revert BelowMinimumStake();
         if (maxStakePerAddress > 0) {
             uint256 total =
-                stakes[user][Role.Agent] +
-                stakes[user][Role.Validator] +
-                stakes[user][Role.Platform] +
-                amount;
+                stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform] + amount;
             if (total > maxStakePerAddress) revert MaxStakeExceeded();
         }
         uint256 pct = getTotalPayoutPct(user);
@@ -819,13 +776,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function depositStakeFor(address user, Role role, uint256 amount)
         external
         whenNotPaused
-        requiresTaxAcknowledgement(
-            _policyFor(user),
-            user,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(_policyFor(user), user, owner(), address(0), address(0))
         nonReentrant
     {
         if (user == address(0)) revert InvalidUser();
@@ -841,13 +792,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function depositStake(Role role, uint256 amount)
         external
         whenNotPaused
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         if (role > Role.Platform) revert InvalidRole();
@@ -863,7 +808,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      *      current tax policy via the associated `JobRegistry`.
      * @param role Participant role receiving credit for the stake.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
-    */
+     */
     function acknowledgeAndDeposit(Role role, uint256 amount) external whenNotPaused nonReentrant {
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
@@ -874,13 +819,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Deposits stake for the caller after verifying tax acknowledgement.
     function _acknowledgedDeposit(Role role, uint256 amount)
         internal
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
     {
         if (role > Role.Platform) revert InvalidRole();
         if (amount == 0) revert InvalidAmount();
@@ -897,11 +836,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      * @param role Participant role receiving credit for the stake.
      * @param amount Stake amount in $AGIALPHA with 18 decimals.
      */
-    function acknowledgeAndDepositFor(
-        address user,
-        Role role,
-        uint256 amount
-    ) external whenNotPaused nonReentrant {
+    function acknowledgeAndDepositFor(address user, Role role, uint256 amount) external whenNotPaused nonReentrant {
         if (user == address(0)) revert InvalidUser();
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
@@ -918,13 +853,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function requestWithdraw(Role role, uint256 amount)
         external
         whenNotPaused
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
     {
         if (role > Role.Platform) revert InvalidRole();
         if (amount == 0) revert InvalidAmount();
@@ -936,12 +865,11 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 locked = lockedStakes[msg.sender];
         uint64 unlock = unlockTime[msg.sender];
         uint256 totalStakeUser =
-            stakes[msg.sender][Role.Agent] +
-            stakes[msg.sender][Role.Validator] +
-            stakes[msg.sender][Role.Platform];
+            stakes[msg.sender][Role.Agent] + stakes[msg.sender][Role.Validator] + stakes[msg.sender][Role.Platform];
         uint256 remaining = totalStakeUser - amount;
-        if (locked > 0 && block.timestamp < unlock && remaining < locked)
+        if (locked > 0 && block.timestamp < unlock && remaining < locked) {
             revert InsufficientLocked();
+        }
 
         Unbond storage u = unbonds[msg.sender];
         if (u.amt != 0) revert UnbondPending();
@@ -957,13 +885,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function finalizeWithdraw(Role role)
         external
         whenNotPaused
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         Unbond storage u = unbonds[msg.sender];
@@ -986,10 +908,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
         uint256 locked = lockedStakes[user];
         uint64 unlock = unlockTime[user];
-        uint256 totalStakeUser =
-            stakes[user][Role.Agent] +
-            stakes[user][Role.Validator] +
-            stakes[user][Role.Platform];
+        uint256 totalStakeUser = stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform];
         uint256 remaining = totalStakeUser - amount;
         if (locked > 0) {
             if (block.timestamp < unlock) {
@@ -1022,13 +941,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function withdrawStake(Role role, uint256 amount)
         external
         whenNotPaused
-        requiresTaxAcknowledgement(
-            _policy(),
-            msg.sender,
-            owner(),
-            address(0),
-            address(0)
-        )
+        requiresTaxAcknowledgement(_policy(), msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
         _withdraw(msg.sender, role, amount);
@@ -1059,11 +972,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
      * @param role Participant role of the stake being withdrawn.
      * @param amount Withdraw amount in $AGIALPHA with 18 decimals.
      */
-    function acknowledgeAndWithdrawFor(
-        address user,
-        Role role,
-        uint256 amount
-    ) external onlyGovernance whenNotPaused nonReentrant {
+    function acknowledgeAndWithdrawFor(address user, Role role, uint256 amount)
+        external
+        onlyGovernance
+        whenNotPaused
+        nonReentrant
+    {
         if (user == address(0)) revert InvalidUser();
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
@@ -1080,11 +994,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param jobId unique job identifier
     /// @param from employer providing the escrow
     /// @param amount token amount with 18 decimals; employer must approve first
-    function lockReward(bytes32 jobId, address from, uint256 amount)
-        external
-        onlyJobRegistry
-        whenNotPaused
-    {
+    function lockReward(bytes32 jobId, address from, uint256 amount) external onlyJobRegistry whenNotPaused {
         token.safeTransferFrom(from, address(this), amount);
         jobEscrows[jobId] += amount;
         emit StakeEscrowLocked(jobId, from, amount);
@@ -1109,12 +1019,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @dev Deposits fees into the FeePool without distributing them;
     ///      an external process should call `FeePool.distributeFees()`
     ///      periodically to settle rewards.
-    function releaseReward(
-        bytes32 jobId,
-        address employer,
-        address to,
-        uint256 amount
-    ) external onlyJobRegistry whenNotPaused nonReentrant {
+    function releaseReward(bytes32 jobId, address employer, address to, uint256 amount)
+        external
+        onlyJobRegistry
+        whenNotPaused
+        nonReentrant
+    {
         uint256 pct = getTotalPayoutPct(to);
         uint256 modified = (amount * pct) / 100;
         uint256 feeAmount = (modified * feePct) / 100;
@@ -1302,12 +1212,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
 
     /// @notice fund the operator reward pool
     /// @param amount token amount with 18 decimals to add
-    function fundOperatorRewardPool(uint256 amount)
-        external
-        onlyGovernance
-        whenNotPaused
-        nonReentrant
-    {
+    function fundOperatorRewardPool(uint256 amount) external onlyGovernance whenNotPaused nonReentrant {
         token.safeTransferFrom(msg.sender, address(this), amount);
         operatorRewardPool += amount;
         emit RewardPoolUpdated(operatorRewardPool);
@@ -1393,12 +1298,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     ///         `payDisputeFee`
     /// @param payer address providing the fee, must approve first
     /// @param amount token amount with 18 decimals
-    function lockDisputeFee(address payer, uint256 amount)
-        external
-        onlyDisputeModule
-        whenNotPaused
-        nonReentrant
-    {
+    function lockDisputeFee(address payer, uint256 amount) external onlyDisputeModule whenNotPaused nonReentrant {
         token.safeTransferFrom(payer, address(this), amount);
         emit DisputeFeeLocked(payer, amount);
     }
@@ -1406,12 +1306,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice pay a locked dispute fee to the recipient
     /// @param to recipient of the fee payout
     /// @param amount token amount with 18 decimals
-    function payDisputeFee(address to, uint256 amount)
-        external
-        onlyDisputeModule
-        whenNotPaused
-        nonReentrant
-    {
+    function payDisputeFee(address to, uint256 amount) external onlyDisputeModule whenNotPaused nonReentrant {
         token.safeTransfer(to, amount);
         emit DisputeFeePaid(to, amount);
     }
@@ -1421,24 +1316,19 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // ---------------------------------------------------------------
 
     /// @dev internal slashing routine used by dispute and job slashing
-    function _slash(
-        address user,
-        Role role,
-        uint256 amount,
-        address recipient,
-        address[] memory validators
-    ) internal {
+    function _slash(address user, Role role, uint256 amount, address recipient, address[] memory validators) internal {
         if (role > Role.Platform) revert InvalidRole();
+        require(validators.length <= MAX_VALIDATORS, "too many validators");
         uint256 staked = stakes[user][role];
         if (staked < amount) revert InsufficientStake();
         if (employerSlashPct + treasurySlashPct > 100) revert InvalidPercentage();
-        if (treasury != address(0) && !treasuryAllowlist[treasury])
+        if (treasury != address(0) && !treasuryAllowlist[treasury]) {
             revert InvalidTreasury();
+        }
 
         uint256 employerShare = (amount * employerSlashPct) / 100;
         uint256 treasuryShare = (amount * treasurySlashPct) / 100;
-        uint256 burnShare =
-            (amount * (100 - employerSlashPct - treasurySlashPct)) / 100;
+        uint256 burnShare = (amount * (100 - employerSlashPct - treasurySlashPct)) / 100;
         uint256 distributed = employerShare + treasuryShare + burnShare;
         if (distributed < amount) {
             burnShare += amount - distributed;
@@ -1529,16 +1419,54 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 redistributed = employerShare + treasuryShare + validatorShare;
         uint256 ratio = redistributed > 0 ? (burnShare * TOKEN_SCALE) / redistributed : 0;
         emit Slash(user, amount, validators.length > 0 ? validators[0] : recipient);
-        emit StakeSlashed(
-            user,
-            role,
-            recipient,
-            treasury,
-            employerShare,
-            treasuryShare,
-            burnShare
-        );
+        emit StakeSlashed(user, role, recipient, treasury, employerShare, treasuryShare, burnShare);
         emit SlashingStats(block.timestamp, 0, burnShare, redistributed, ratio);
+    }
+
+    /// @dev helper to process validator lists exceeding MAX_VALIDATORS
+    function _slashBatched(address user, Role role, uint256 amount, address recipient, address[] calldata validators)
+        internal
+    {
+        uint256 len = validators.length;
+        uint256[] memory stakesCache = new uint256[](len);
+        uint256 total;
+        for (uint256 i; i < len; ++i) {
+            uint256 s = stakes[validators[i]][Role.Validator];
+            stakesCache[i] = s;
+            total += s;
+        }
+        if (total == 0) {
+            address[] memory empty;
+            _slash(user, role, amount, recipient, empty);
+            return;
+        }
+
+        uint256 allocated;
+        uint256 start;
+        while (start < len) {
+            uint256 end = start + MAX_VALIDATORS;
+            if (end > len) end = len;
+            uint256 chunkStake;
+            for (uint256 i = start; i < end; ++i) {
+                chunkStake += stakesCache[i];
+            }
+            uint256 chunkAmount = (amount * chunkStake) / total;
+            if (end == len && allocated + chunkAmount < amount) {
+                chunkAmount = amount - allocated;
+            }
+            address[] memory slice = new address[](end - start);
+            for (uint256 i = start; i < end; ++i) {
+                slice[i - start] = validators[i];
+            }
+            _slash(user, role, chunkAmount, recipient, slice);
+            allocated += chunkAmount;
+            start = end;
+        }
+
+        if (allocated < amount) {
+            address[] memory empty;
+            _slash(user, role, amount - allocated, recipient, empty);
+        }
     }
 
     /// @notice slash stake from a user for a specific role and distribute shares
@@ -1546,24 +1474,27 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @param role participant role of the slashed stake
     /// @param amount token amount with 18 decimals to slash
     /// @param employer recipient of the employer share
-    function slash(
-        address user,
-        Role role,
-        uint256 amount,
-        address employer
-    ) external onlyJobRegistry whenNotPaused nonReentrant {
+    function slash(address user, Role role, uint256 amount, address employer)
+        external
+        onlyJobRegistry
+        whenNotPaused
+        nonReentrant
+    {
         address[] memory validators;
         _slash(user, role, amount, employer, validators);
     }
 
-    function slash(
-        address user,
-        Role role,
-        uint256 amount,
-        address employer,
-        address[] calldata validators
-    ) external onlyJobRegistry whenNotPaused nonReentrant {
-        _slash(user, role, amount, employer, validators);
+    function slash(address user, Role role, uint256 amount, address employer, address[] calldata validators)
+        external
+        onlyJobRegistry
+        whenNotPaused
+        nonReentrant
+    {
+        if (validators.length > MAX_VALIDATORS) {
+            _slashBatched(user, role, amount, employer, validators);
+        } else {
+            _slash(user, role, amount, employer, validators);
+        }
     }
 
     /// @notice slash a validator's stake during dispute resolution
@@ -1580,13 +1511,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _slash(user, Role.Validator, amount, recipient, validators);
     }
 
-    function slash(
-        address user,
-        uint256 amount,
-        address recipient,
-        address[] calldata validators
-    ) external onlyDisputeModule whenNotPaused nonReentrant {
-        _slash(user, Role.Validator, amount, recipient, validators);
+    function slash(address user, uint256 amount, address recipient, address[] calldata validators)
+        external
+        onlyDisputeModule
+        whenNotPaused
+        nonReentrant
+    {
+        if (validators.length > MAX_VALIDATORS) {
+            _slashBatched(user, Role.Validator, amount, recipient, validators);
+        } else {
+            _slash(user, Role.Validator, amount, recipient, validators);
+        }
     }
 
     /// @notice Return the total stake deposited by a user for a role
@@ -1643,4 +1578,3 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         revert EtherNotAccepted();
     }
 }
-
