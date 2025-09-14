@@ -25,6 +25,13 @@ library ThermoMath {
         return uint256(result);
     }
 
+    /// @notice Compute e^x where x is a signed 18-decimal fixed-point number.
+    /// @param x Exponent in WAD format.
+    /// @return result Exponential of `x` also scaled by 1e18.
+    function expWad(int256 x) internal pure returns (uint256 result) {
+        result = _exp(x);
+    }
+
     /// @notice Computes normalized MB-like weights.
     function mbWeights(
         int256[] memory E,

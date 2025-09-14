@@ -14,7 +14,6 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// @title RewardEngineMB
 /// @notice Distributes epoch rewards using Maxwell-Boltzmann statistics.
 contract RewardEngineMB is Governable, ReentrancyGuard {
-    using ThermoMath for int256[];
 
     enum Role {
         Agent,
@@ -57,6 +56,9 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     uint256 public maxProofs = 100;
     mapping(uint256 => bool) public epochSettled;
 
+    /// @notice Fallback temperature when Thermostat is unset.
+    int256 public temperature;
+
     int256 public constant WAD = 1e18;
     uint256 public constant MAX_KAPPA = type(uint256).max / uint256(WAD);
 
@@ -64,7 +66,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     error ProofCountExceeded(uint256 length, uint256 maxLength);
 
     event EpochSettled(
-        uint256 indexed epoch, uint256 budget, int256 dH, int256 dS, int256 systemTemperature, uint256 leftover
+        uint256 indexed epoch, uint256 budget, int256 dH, int256 dS, int256 systemTemperature, uint256 dust
     );
     event RewardIssued(address indexed user, Role role, uint256 amount);
     event KappaUpdated(uint256 newKappa);
@@ -74,7 +76,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     event BaselineEnergyUpdated(Role indexed role, int256 baseline);
     event SettlerUpdated(address indexed settler, bool allowed);
     event RewardBudget(
-        uint256 indexed epoch, uint256 minted, uint256 burned, uint256 redistributed, uint256 distributionRatio
+        uint256 indexed epoch, uint256 minted, uint256 dust, uint256 redistributed, uint256 distributionRatio
     );
 
     constructor(
@@ -159,6 +161,19 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         maxProofs = max;
     }
 
+    /// @notice Update the Thermostat contract reference.
+    /// @param _thermostat New thermostat contract or zero address to disable.
+    function setThermostat(Thermostat _thermostat) external onlyGovernance {
+        thermostat = _thermostat;
+    }
+
+    /// @notice Set a manual system temperature when no Thermostat is used.
+    /// @param temp Temperature value in WAD units.
+    function setTemperature(int256 temp) external onlyGovernance {
+        require(temp > 0, "temp");
+        temperature = temp;
+    }
+
     /// @notice Distribute rewards for an epoch based on energy attestations.
     /// @param epoch The epoch identifier to settle.
     /// @param data Batches of signed attestations and paid cost data.
@@ -198,7 +213,8 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
 
         int256 dH = int256(totalValue) - int256(data.paidCosts);
         int256 dS = int256(sumUpre) - int256(sumUpost);
-        int256 Tsys = thermostat.systemTemperature();
+        int256 Tsys =
+            address(thermostat) != address(0) ? thermostat.systemTemperature() : temperature;
         int256 free = -(dH - (Tsys * dS) / WAD);
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
@@ -217,14 +233,15 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         distributed += _distribute(Role.Operator, budget, operators);
         distributed += _distribute(Role.Employer, budget, employers);
 
-        uint256 leftover = budget - distributed;
-        if (leftover > 0) {
-            token.burn(address(feePool), leftover);
+        uint256 dust = budget - distributed;
+        if (dust > 0) {
+            feePool.reward(treasury, dust);
+            distributed += dust;
         }
         uint256 ratio = budget > 0 ? (distributed * uint256(WAD)) / budget : 0;
         epochSettled[epoch] = true;
-        emit RewardBudget(epoch, minted, leftover, distributed, ratio);
-        emit EpochSettled(epoch, budget, dH, dS, Tsys, leftover);
+        emit RewardBudget(epoch, minted, dust, distributed, ratio);
+        emit EpochSettled(epoch, budget, dH, dS, Tsys, dust);
     }
 
     function _aggregate(Proof[] calldata proofs, uint256 epoch, Role role)
@@ -274,13 +291,27 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     }
 
     function _distribute(Role r, uint256 budget, RoleData memory rd) internal returns (uint256 distributed) {
-        if (rd.users.length == 0) return 0;
-        int256 Tr = thermostat.getRoleTemperature(Thermostat.Role(uint8(r)));
-        uint256[] memory weights = ThermoMath.mbWeights(rd.energies, rd.degeneracies, Tr, mu[r]);
         uint256 bucket = budget * roleShare[r] / uint256(WAD);
+        if (bucket == 0 || rd.users.length == 0) return 0;
+
+        int256 Tr =
+            address(thermostat) != address(0)
+                ? thermostat.getRoleTemperature(Thermostat.Role(uint8(r)))
+                : temperature;
+        require(Tr > 0, "T>0");
+
+        uint256[] memory weights = new uint256[](rd.users.length);
+        uint256 sum;
+        for (uint256 i = 0; i < rd.users.length; i++) {
+            int256 x = (-rd.energies[i] * int256(WAD)) / Tr;
+            uint256 e = ThermoMath.expWad(x);
+            uint256 w = rd.degeneracies[i] * e;
+            weights[i] = w;
+            sum += w;
+        }
         int256 baseline = baselineEnergy[r];
         for (uint256 i = 0; i < rd.users.length; i++) {
-            uint256 amt = bucket * weights[i] / uint256(WAD);
+            uint256 amt = sum > 0 ? (bucket * weights[i]) / sum : 0;
             feePool.reward(rd.users[i], amt);
             reputation.update(rd.users[i], baseline - rd.energies[i]);
             emit RewardIssued(rd.users[i], r, amt);
