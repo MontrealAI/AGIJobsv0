@@ -7,7 +7,6 @@ describe('JobRegistry Treasury', function () {
   let owner, treasury;
 
   beforeEach(async function () {
-    await network.provider.send('hardhat_reset');
     [owner, treasury] = await ethers.getSigners();
 
     const artifact = await artifacts.readArtifact(
@@ -51,6 +50,22 @@ describe('JobRegistry Treasury', function () {
       [],
       owner.address
     );
+  });
+
+  afterEach(async function () {
+    const mock = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      mock.deployedBytecode,
+    ]);
+    const ownerSlot = '0x' + (5).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      ownerSlot,
+      '0x' + '00'.repeat(32),
+    ]);
   });
 
   it('rejects owner treasury address', async function () {
