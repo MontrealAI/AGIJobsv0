@@ -195,9 +195,7 @@ describe('Employer reputation', function () {
       .connect(agent)
       .submit(jobId, ethers.id('res'), 'res', '', []);
     await validation.finalize(jobId);
-    await registry
-      .connect(agent)
-      .dispute(jobId, ethers.id('evidence'));
+    await registry.connect(agent).dispute(jobId, ethers.id('evidence'));
     await dispute.connect(owner).setCommittee(owner.address);
     await dispute.connect(owner).setDisputeWindow(0);
     await dispute.connect(owner).resolve(jobId, true);
