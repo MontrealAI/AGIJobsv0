@@ -213,12 +213,10 @@ describe('RewardEngineMB', function () {
     expect(rT).to.equal(3n);
     expect(r1 + r2 + rT).to.equal(budget);
     expect(await feePool.total()).to.equal(budget);
-    expect(await token.totalSupply()).to.equal(supplyBefore + budget * 2n);
+    expect(await token.totalSupply()).to.equal(supplyBefore + budget);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       feePoolBalBefore + budget
     );
-    expect(await token.balanceOf(treasury.address)).to.equal(
-      treasuryBalBefore + budget
-    );
+    expect(await token.balanceOf(treasury.address)).to.equal(treasuryBalBefore);
   });
 });

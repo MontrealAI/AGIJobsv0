@@ -223,17 +223,22 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         if (budget > 0) {
             require(treasury != address(0), "treasury");
             token.mint(address(feePool), budget);
-            token.mint(treasury, budget);
-            minted = budget * 2;
+            minted = budget;
         }
 
-        uint256 distributed;
-        distributed += _distribute(Role.Agent, budget, agents);
-        distributed += _distribute(Role.Validator, budget, validators);
-        distributed += _distribute(Role.Operator, budget, operators);
-        distributed += _distribute(Role.Employer, budget, employers);
+        // compute weights for each role
+        (uint256[] memory wA, uint256 sumA) = _weights(agents, Role.Agent);
+        (uint256[] memory wV, uint256 sumV) = _weights(validators, Role.Validator);
+        (uint256[] memory wO, uint256 sumO) = _weights(operators, Role.Operator);
+        (uint256[] memory wE, uint256 sumE) = _weights(employers, Role.Employer);
 
-        uint256 dust = budget - distributed;
+        uint256 distributed;
+        distributed += _distribute(Role.Agent, budget, agents, wA, sumA);
+        distributed += _distribute(Role.Validator, budget, validators, wV, sumV);
+        distributed += _distribute(Role.Operator, budget, operators, wO, sumO);
+        distributed += _distribute(Role.Employer, budget, employers, wE, sumE);
+
+        uint256 dust = budget > distributed ? budget - distributed : 0;
         if (dust > 0) {
             feePool.reward(treasury, dust);
             distributed += dust;
@@ -290,28 +295,36 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         }
     }
 
-    function _distribute(Role r, uint256 budget, RoleData memory rd) internal returns (uint256 distributed) {
-        uint256 bucket = budget * roleShare[r] / uint256(WAD);
-        if (bucket == 0 || rd.users.length == 0) return 0;
-
+    function _weights(RoleData memory rd, Role r) private view returns (uint256[] memory w, uint256 sum) {
         int256 Tr =
             address(thermostat) != address(0)
                 ? thermostat.getRoleTemperature(Thermostat.Role(uint8(r)))
                 : temperature;
         require(Tr > 0, "T>0");
-
-        uint256[] memory weights = new uint256[](rd.users.length);
-        uint256 sum;
-        for (uint256 i = 0; i < rd.users.length; i++) {
+        uint256 n = rd.users.length;
+        w = new uint256[](n);
+        for (uint256 i = 0; i < n; i++) {
             int256 x = (-rd.energies[i] * int256(WAD)) / Tr;
             uint256 e = ThermoMath.expWad(x);
-            uint256 w = rd.degeneracies[i] * e;
-            weights[i] = w;
-            sum += w;
+            w[i] = e;
+            sum += e * rd.degeneracies[i];
         }
+    }
+
+    function _distribute(
+        Role r,
+        uint256 budget,
+        RoleData memory rd,
+        uint256[] memory w,
+        uint256 sum
+    ) internal returns (uint256 distributed) {
+        uint256 bucket = budget * roleShare[r] / uint256(WAD);
+        if (bucket == 0 || rd.users.length == 0) return 0;
+
         int256 baseline = baselineEnergy[r];
         for (uint256 i = 0; i < rd.users.length; i++) {
-            uint256 amt = sum > 0 ? (bucket * weights[i]) / sum : 0;
+            uint256 gw = w[i] * rd.degeneracies[i];
+            uint256 amt = sum > 0 ? (bucket * gw) / sum : 0;
             feePool.reward(rd.users[i], amt);
             reputation.update(rd.users[i], baseline - rd.energies[i]);
             emit RewardIssued(rd.users[i], r, amt);
