@@ -194,6 +194,8 @@ contract RewardEngineMBTest is Test {
 
     function test_setKappaRejectsOverflow() public {
         uint256 maxKappa = engine.MAX_KAPPA();
+        engine.setKappa(maxKappa);
+        assertEq(engine.kappa(), maxKappa);
         vm.expectRevert("kappa overflow");
         engine.setKappa(maxKappa + 1);
     }
