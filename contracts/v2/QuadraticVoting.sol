@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {AGIALPHA, BURN_ADDRESS} from "./Constants.sol";
@@ -18,7 +19,7 @@ error TokenNotBurnable();
 /// square of votes. Tokens are locked when voting and can be refunded after the
 /// proposal is executed or after the voting deadline expires. The contract can
 /// notify a GovernanceReward contract to record voters for reward distribution.
-contract QuadraticVoting is Ownable {
+contract QuadraticVoting is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable token;
@@ -85,7 +86,7 @@ contract QuadraticVoting is Ownable {
     }
 
     /// @notice Cast `numVotes` on `proposalId` paying `numVotes^2` tokens with a voting deadline.
-    function castVote(uint256 proposalId, uint256 numVotes, uint256 deadline) external {
+    function castVote(uint256 proposalId, uint256 numVotes, uint256 deadline) external nonReentrant {
         require(!executed[proposalId], "executed");
         require(numVotes > 0, "votes");
         uint256 d = proposalDeadline[proposalId];
@@ -116,7 +117,7 @@ contract QuadraticVoting is Ownable {
     }
 
     /// @notice Execute a proposal, enabling refunds and recording voters.
-    function execute(uint256 proposalId) external {
+    function execute(uint256 proposalId) external nonReentrant {
         require(!executed[proposalId], "executed");
         require(msg.sender == proposalExecutor || msg.sender == owner(), "exec");
         executed[proposalId] = true;
@@ -127,7 +128,7 @@ contract QuadraticVoting is Ownable {
     }
 
     /// @notice Claim back tokens locked for a proposal after execution or expiry.
-    function claimRefund(uint256 proposalId) external {
+    function claimRefund(uint256 proposalId) external nonReentrant {
         uint256 amount = locked[proposalId][msg.sender];
         require(amount > 0, "no refund");
         if (!executed[proposalId]) {
