@@ -42,6 +42,17 @@ interface IReputationEngine {
     /// @notice Alternate view to mirror v1 naming
     function reputationOf(address user) external view returns (uint256);
 
+    /// @notice Retrieve accumulated entropy penalties for a user
+    /// @param user Address to query
+    /// @return The current entropy score of the user
+    function entropy(address user) external view returns (uint256);
+
+    /// @notice Alias for {entropy}
+    function getEntropy(address user) external view returns (uint256);
+
+    /// @notice Alternate view for legacy naming
+    function entropyOf(address user) external view returns (uint256);
+
     /// @notice Check if a user is blacklisted
     /// @param user Address to query
     /// @return True if the user is blacklisted

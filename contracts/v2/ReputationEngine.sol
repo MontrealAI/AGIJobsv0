@@ -42,6 +42,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     uint256 public constant PAYOUT_EXPONENT = 3;
 
     mapping(address => uint256) public reputation;
+    mapping(address => uint256) private _entropy;
     mapping(address => bool) private blacklisted;
     mapping(address => bool) public callers;
     uint256 public premiumThreshold;
@@ -52,6 +53,7 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     address public pauser;
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
+    event EntropyUpdated(address indexed user, uint256 newEntropy);
     event BlacklistUpdated(address indexed user, bool status);
     event CallerUpdated(address indexed caller, bool allowed);
     event PremiumThresholdUpdated(uint256 newThreshold);
@@ -170,7 +172,10 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         if (delta > 0) {
             _increaseReputation(user, uint256(delta));
         } else if (delta < 0) {
-            _decreaseReputation(user, uint256(-delta));
+            uint256 amount = uint256(-delta);
+            _decreaseReputation(user, amount);
+            _entropy[user] += amount;
+            emit EntropyUpdated(user, _entropy[user]);
         }
     }
 
@@ -207,6 +212,21 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     /// @notice Alias for {reputation}.
     function reputationOf(address user) external view returns (uint256) {
         return reputation[user];
+    }
+
+    /// @notice Retrieve accumulated entropy penalties for a user.
+    function entropy(address user) public view returns (uint256) {
+        return _entropy[user];
+    }
+
+    /// @notice Alias for {entropy}.
+    function getEntropy(address user) external view returns (uint256) {
+        return _entropy[user];
+    }
+
+    /// @notice Backwards compatible view for legacy naming.
+    function entropyOf(address user) external view returns (uint256) {
+        return _entropy[user];
     }
 
     /// @notice Expose blacklist status for a user.
