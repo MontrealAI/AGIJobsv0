@@ -170,6 +170,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         return (stats.positive, stats.negative);
     }
 
+    function getEmployerRating(address employer) external view returns (uint256) {
+        EmployerStats storage stats = employerStats[employer];
+        uint256 total = stats.positive + stats.negative;
+        if (total == 0) return 0;
+        return stats.positive * TOKEN_SCALE / total;
+    }
+
     /// @notice Confirms previously submitted burn evidence.
     /// @dev Employers must acknowledge the active tax policy before calling.
     function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash)
@@ -374,6 +381,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event JobExpired(uint256 indexed jobId, address indexed caller);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
+    event EmployerStatsUpdated(address indexed employer, uint256 positive, uint256 negative);
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
     event ExpirationGracePeriodUpdated(uint256 period);
@@ -1470,11 +1478,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
+        EmployerStats storage stats = employerStats[job.employer];
         if (job.success) {
-            employerStats[job.employer].positive++;
+            stats.positive++;
         } else {
-            employerStats[job.employer].negative++;
+            stats.negative++;
         }
+        emit EmployerStatsUpdated(job.employer, stats.positive, stats.negative);
         emit JobFinalized(jobId, job.agent);
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
