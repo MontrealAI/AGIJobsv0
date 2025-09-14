@@ -70,8 +70,15 @@ interface IStakeManager {
         uint256 downPct,
         uint256 window,
         uint256 floor,
-        uint256 ceil
+        uint256 ceil,
+        int256 tempThreshold,
+        int256 hThreshold,
+        uint256 disputeWeight,
+        uint256 tempWeight,
+        uint256 hamWeight
     );
+    event ThermostatUpdated(address indexed thermostat);
+    event HamiltonianFeedUpdated(address indexed feed);
     event FeePctUpdated(uint256 pct);
     event BurnPctUpdated(uint256 pct);
     event ValidatorRewardPctUpdated(uint256 pct);
@@ -240,8 +247,15 @@ interface IStakeManager {
         uint256 downPct,
         uint256 window,
         uint256 floor,
-        uint256 ceil
+        uint256 ceil,
+        int256 tempThreshold,
+        int256 hThreshold,
+        uint256 disputeWeight,
+        uint256 tempWeight,
+        uint256 hamWeight
     ) external;
+    function setThermostat(address thermostat) external;
+    function setHamiltonianFeed(address feed) external;
     function recordDispute() external;
     function checkpointStake() external;
 

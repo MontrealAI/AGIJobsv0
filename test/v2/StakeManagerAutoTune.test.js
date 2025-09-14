@@ -4,7 +4,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('StakeManager auto stake tuning', function () {
   const { AGIALPHA } = require('../../scripts/constants');
-  let stakeManager, owner, dispute;
+  let stakeManager, owner, dispute, thermostat, hamFeed;
 
   beforeEach(async () => {
     [owner, dispute] = await ethers.getSigners();
@@ -15,6 +15,14 @@ describe('StakeManager auto stake tuning', function () {
       AGIALPHA,
       mock.deployedBytecode,
     ]);
+    const Thermostat = await ethers.getContractFactory(
+      'contracts/v2/Thermostat.sol:Thermostat'
+    );
+    thermostat = await Thermostat.deploy(100, 1, 200, owner.address);
+    const HamFeed = await ethers.getContractFactory(
+      'contracts/test/MockHamiltonianFeed.sol:MockHamiltonianFeed'
+    );
+    hamFeed = await HamFeed.deploy();
     const StakeManager = await ethers.getContractFactory(
       'contracts/v2/StakeManager.sol:StakeManager'
     );
@@ -33,7 +41,7 @@ describe('StakeManager auto stake tuning', function () {
   it('increases min stake when disputes exceed threshold', async () => {
     await stakeManager
       .connect(owner)
-      .configureAutoStake(2, 50, 50, 1000, 10, 0);
+      .configureAutoStake(2, 50, 50, 1000, 10, 0, 0, 0, 1, 0, 0);
 
     await stakeManager.connect(dispute).recordDispute();
     await stakeManager.connect(dispute).recordDispute();
@@ -50,7 +58,7 @@ describe('StakeManager auto stake tuning', function () {
   it('decreases min stake when no disputes occur', async () => {
     await stakeManager
       .connect(owner)
-      .configureAutoStake(1, 50, 50, 1000, 10, 0);
+      .configureAutoStake(1, 50, 50, 1000, 10, 0, 0, 0, 1, 0, 0);
 
     await time.increase(1000);
 
@@ -63,7 +71,7 @@ describe('StakeManager auto stake tuning', function () {
   it('respects floor and ceiling bounds', async () => {
     await stakeManager
       .connect(owner)
-      .configureAutoStake(2, 50, 50, 1000, 80, 120);
+      .configureAutoStake(2, 50, 50, 1000, 80, 120, 0, 0, 1, 0, 0);
 
     await stakeManager.connect(dispute).recordDispute();
     await stakeManager.connect(dispute).recordDispute();
@@ -82,5 +90,35 @@ describe('StakeManager auto stake tuning', function () {
       .to.emit(stakeManager, 'MinStakeUpdated')
       .withArgs(80n);
     expect(await stakeManager.minStake()).to.equal(80n);
+  });
+
+  it('increases min stake when temperature exceeds threshold', async () => {
+    await stakeManager
+      .connect(owner)
+      .setThermostat(await thermostat.getAddress());
+    await stakeManager
+      .connect(owner)
+      .configureAutoStake(0, 50, 50, 1000, 10, 0, 150, 0, 1, 1, 0);
+    await thermostat.connect(owner).setSystemTemperature(200);
+    await time.increase(1000);
+    await expect(stakeManager.checkpointStake())
+      .to.emit(stakeManager, 'MinStakeUpdated')
+      .withArgs(150n);
+    expect(await stakeManager.minStake()).to.equal(150n);
+  });
+
+  it('increases min stake when Hamiltonian exceeds threshold', async () => {
+    await stakeManager
+      .connect(owner)
+      .setHamiltonianFeed(await hamFeed.getAddress());
+    await stakeManager
+      .connect(owner)
+      .configureAutoStake(0, 50, 50, 1000, 10, 0, 0, 1, 1, 0, 1);
+    await hamFeed.setHamiltonian(2);
+    await time.increase(1000);
+    await expect(stakeManager.checkpointStake())
+      .to.emit(stakeManager, 'MinStakeUpdated')
+      .withArgs(150n);
+    expect(await stakeManager.minStake()).to.equal(150n);
   });
 });

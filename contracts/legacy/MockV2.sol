@@ -91,8 +91,15 @@ contract MockStakeManager is IStakeManager {
         uint256,
         uint256,
         uint256,
+        uint256,
+        int256,
+        int256,
+        uint256,
+        uint256,
         uint256
     ) external override {}
+    function setThermostat(address) external override {}
+    function setHamiltonianFeed(address) external override {}
     function recordDispute() external override {}
     function checkpointStake() external override {}
     function addAGIType(address, uint256) external override {}
