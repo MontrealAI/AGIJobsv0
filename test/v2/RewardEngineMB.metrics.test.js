@@ -1,9 +1,24 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
+const { AGIALPHA } = require('../../scripts/constants');
 
 describe('RewardEngineMB thermodynamic metrics', function () {
-  it('emits dH, dS, temperature and leftover', async function () {
-    const [owner, treasury] = await ethers.getSigners();
+  let owner, treasury, token, engine, feePool;
+
+  beforeEach(async () => {
+    [owner, treasury] = await ethers.getSigners();
+
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    token = await ethers.getContractAt(
+      'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
+      AGIALPHA
+    );
 
     const Thermostat = await ethers.getContractFactory(
       'contracts/v2/Thermostat.sol:Thermostat'
@@ -18,7 +33,7 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const MockFeePool = await ethers.getContractFactory(
       'contracts/v2/mocks/RewardEngineMBMocks.sol:MockFeePool'
     );
-    const feePool = await MockFeePool.deploy();
+    feePool = await MockFeePool.deploy();
 
     const MockReputation = await ethers.getContractFactory(
       'contracts/v2/mocks/RewardEngineMBMocks.sol:MockReputation'
@@ -33,7 +48,7 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const RewardEngine = await ethers.getContractFactory(
       'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
     );
-    const engine = await RewardEngine.deploy(
+    engine = await RewardEngine.deploy(
       thermostat,
       feePool,
       rep,
@@ -44,6 +59,15 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     await engine.setSettler(owner.address, true);
     await engine.setTreasury(treasury.address);
 
+    const ownerSlot = '0x' + (5).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      ownerSlot,
+      ethers.zeroPadValue(await engine.getAddress(), 32),
+    ]);
+  });
+
+  it('emits metrics and mints/burns correctly', async function () {
     const att = {
       jobId: 1,
       user: owner.address,
@@ -73,62 +97,35 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const dS = ethers.parseUnits('1', 18);
     const Tsys = ethers.parseUnits('1', 18);
     const budget = ethers.parseUnits('2', 18);
-    const leftover = ethers.parseUnits('0.7', 18);
+    const distributed = (budget * 65n) / 100n;
+    const leftover = budget - distributed;
+    const minted = budget * 2n;
 
-    const event = receipt.logs.find(
+    const esEvent = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === 'EpochSettled'
     );
-    expect(event.args.epoch).to.equal(1n);
-    expect(event.args.budget).to.equal(budget);
-    expect(event.args.dH).to.equal(dH);
-    expect(event.args.dS).to.equal(dS);
-    expect(event.args.systemTemperature).to.equal(Tsys);
-    expect(event.args.leftover).to.equal(leftover);
+    expect(esEvent.args.epoch).to.equal(1n);
+    expect(esEvent.args.budget).to.equal(budget);
+    expect(esEvent.args.dH).to.equal(dH);
+    expect(esEvent.args.dS).to.equal(dS);
+    expect(esEvent.args.systemTemperature).to.equal(Tsys);
+    expect(esEvent.args.leftover).to.equal(leftover);
 
-    expect(await feePool.rewards(treasury.address)).to.equal(leftover);
+    const rbEvent = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === 'RewardBudget'
+    );
+    expect(rbEvent.args.minted).to.equal(minted);
+    expect(rbEvent.args.burned).to.equal(leftover);
+    expect(rbEvent.args.redistributed).to.equal(distributed);
+
+    expect(await token.totalSupply()).to.equal(budget + distributed);
+    expect(await token.balanceOf(treasury.address)).to.equal(budget);
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
+      distributed
+    );
   });
 
   it('reverts when settling an epoch twice', async function () {
-    const [owner] = await ethers.getSigners();
-
-    const Thermostat = await ethers.getContractFactory(
-      'contracts/v2/Thermostat.sol:Thermostat'
-    );
-    const thermostat = await Thermostat.deploy(
-      ethers.parseUnits('1', 18),
-      1,
-      ethers.parseUnits('2', 18),
-      owner.address
-    );
-
-    const MockFeePool = await ethers.getContractFactory(
-      'contracts/v2/mocks/RewardEngineMBMocks.sol:MockFeePool'
-    );
-    const feePool = await MockFeePool.deploy();
-
-    const MockReputation = await ethers.getContractFactory(
-      'contracts/v2/mocks/RewardEngineMBMocks.sol:MockReputation'
-    );
-    const rep = await MockReputation.deploy();
-
-    const MockEnergyOracle = await ethers.getContractFactory(
-      'contracts/v2/mocks/RewardEngineMBMocks.sol:MockEnergyOracle'
-    );
-    const oracle = await MockEnergyOracle.deploy();
-
-    const RewardEngine = await ethers.getContractFactory(
-      'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
-    );
-    const engine = await RewardEngine.deploy(
-      thermostat,
-      feePool,
-      rep,
-      oracle,
-      owner.address
-    );
-
-    await engine.setSettler(owner.address, true);
-
     const att = {
       jobId: 1,
       user: owner.address,

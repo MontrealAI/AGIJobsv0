@@ -8,6 +8,8 @@ import {ThermoMath} from "../../contracts/v2/libraries/ThermoMath.sol";
 import {IReputationEngineV2} from "../../contracts/v2/interfaces/IReputationEngineV2.sol";
 import {IFeePool} from "../../contracts/v2/interfaces/IFeePool.sol";
 import {IEnergyOracle} from "../../contracts/v2/interfaces/IEnergyOracle.sol";
+import {AGIALPHAToken} from "../../contracts/test/AGIALPHAToken.sol";
+import {AGIALPHA} from "../../contracts/v2/Constants.sol";
 
 int256 constant MAX_EXP_INPUT = 133_084258667509499440;
 int256 constant MIN_EXP_INPUT = -41_446531673892822322;
@@ -75,6 +77,7 @@ contract RewardEngineMBTest is Test {
     MockReputation rep;
     Thermostat thermo;
     MockEnergyOracle oracle;
+    AGIALPHAToken token;
 
     address agent = address(0x1);
     address validator = address(0x2);
@@ -83,12 +86,18 @@ contract RewardEngineMBTest is Test {
     address treasury = address(0x5);
 
     function setUp() public {
+        AGIALPHAToken impl = new AGIALPHAToken();
+        vm.etch(AGIALPHA, address(impl).code);
+        token = AGIALPHAToken(payable(AGIALPHA));
         thermo = new Thermostat(int256(1e18), int256(1), int256(2e18), address(this));
         pool = new MockFeePool();
         rep = new MockReputation();
         oracle = new MockEnergyOracle();
         engine = new RewardEngineMB(thermo, pool, rep, oracle, address(this));
         engine.setSettler(address(this), true);
+        engine.setTreasury(treasury);
+        bytes32 ownerSlot = bytes32(uint256(5));
+        vm.store(AGIALPHA, ownerSlot, bytes32(uint256(uint160(address(engine)))));
     }
 
     function _proof(address user, int256 energy, uint256 epoch, RewardEngineMB.Role role)
@@ -513,6 +522,9 @@ contract RewardEngineMBTest is Test {
         rpool.setEngine(eng);
         eng.setSettler(address(this), true);
         eng.setSettler(address(rpool), true);
+        eng.setTreasury(treasury);
+        bytes32 ownerSlot = bytes32(uint256(5));
+        vm.store(AGIALPHA, ownerSlot, bytes32(uint256(uint160(address(eng)))));
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
         a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
