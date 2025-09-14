@@ -17,7 +17,11 @@ describe('RewardEngineMB setKappa', function () {
     await reward.waitForDeployment();
 
     await expect(reward.setKappa(0)).to.be.revertedWith('kappa');
+
     const max = await reward.MAX_KAPPA();
+    await reward.setKappa(max);
+    expect(await reward.kappa()).to.equal(max);
+
     await expect(reward.setKappa(max + 1n)).to.be.revertedWith(
       'kappa overflow'
     );

@@ -55,7 +55,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     mapping(uint256 => bool) public epochSettled;
 
     int256 public constant WAD = 1e18;
-    uint256 public constant MAX_KAPPA = type(uint256).max / 1e18;
+    uint256 public constant MAX_KAPPA = type(uint256).max / uint256(WAD);
 
     error InvalidRoleShareSum(uint256 sum);
     error ProofCountExceeded(uint256 length, uint256 maxLength);
