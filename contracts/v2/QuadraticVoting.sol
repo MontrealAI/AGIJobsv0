@@ -16,8 +16,8 @@ error TokenNotBurnable();
 /// @title QuadraticVoting
 /// @notice Simple quadratic voting mechanism where voting cost grows with the
 /// square of votes. Tokens are locked when voting and can be refunded after the
-/// proposal is executed. The contract can notify a GovernanceReward contract to
-/// record voters for reward distribution.
+/// proposal is executed or after the voting deadline expires. The contract can
+/// notify a GovernanceReward contract to record voters for reward distribution.
 contract QuadraticVoting is Ownable {
     using SafeERC20 for IERC20;
 
@@ -30,6 +30,10 @@ contract QuadraticVoting is Ownable {
 
     // proposalId => executed status
     mapping(uint256 => bool) public executed;
+    // proposalId => voting deadline
+    mapping(uint256 => uint256) public proposalDeadline;
+    // proposalId => marked expired
+    mapping(uint256 => bool) public expired;
     // proposalId => voter => votes cast
     mapping(uint256 => mapping(address => uint256)) public votes;
     // proposalId => voter => tokens locked (cost)
@@ -41,6 +45,7 @@ contract QuadraticVoting is Ownable {
 
     event VoteCast(uint256 indexed proposalId, address indexed voter, uint256 votes, uint256 cost);
     event ProposalExecuted(uint256 indexed proposalId);
+    event ProposalExpired(uint256 indexed proposalId);
     event RefundClaimed(uint256 indexed proposalId, address indexed voter, uint256 amount);
     event GovernanceRewardUpdated(address indexed governanceReward);
     event ProposalExecutorUpdated(address indexed executor);
@@ -79,10 +84,17 @@ contract QuadraticVoting is Ownable {
         emit RefundPctUpdated(pct);
     }
 
-    /// @notice Cast `numVotes` on `proposalId` paying `numVotes^2` tokens.
-    function castVote(uint256 proposalId, uint256 numVotes) external {
+    /// @notice Cast `numVotes` on `proposalId` paying `numVotes^2` tokens with a voting deadline.
+    function castVote(uint256 proposalId, uint256 numVotes, uint256 deadline) external {
         require(!executed[proposalId], "executed");
         require(numVotes > 0, "votes");
+        uint256 d = proposalDeadline[proposalId];
+        if (d == 0) {
+            require(deadline > block.timestamp, "deadline");
+            proposalDeadline[proposalId] = deadline;
+        } else {
+            require(block.timestamp <= d, "expired");
+        }
         uint256 cost = numVotes * numVotes;
         token.safeTransferFrom(msg.sender, address(this), cost);
 
@@ -114,11 +126,18 @@ contract QuadraticVoting is Ownable {
         emit ProposalExecuted(proposalId);
     }
 
-    /// @notice Claim back tokens locked for a proposal after execution.
+    /// @notice Claim back tokens locked for a proposal after execution or expiry.
     function claimRefund(uint256 proposalId) external {
-        require(executed[proposalId], "not executed");
         uint256 amount = locked[proposalId][msg.sender];
         require(amount > 0, "no refund");
+        if (!executed[proposalId]) {
+            uint256 d = proposalDeadline[proposalId];
+            require(d != 0 && block.timestamp > d, "inactive");
+            if (!expired[proposalId]) {
+                expired[proposalId] = true;
+                emit ProposalExpired(proposalId);
+            }
+        }
         locked[proposalId][msg.sender] = 0;
         token.safeTransfer(msg.sender, amount);
         emit RefundClaimed(proposalId, msg.sender, amount);
