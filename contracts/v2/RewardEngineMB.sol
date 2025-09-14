@@ -48,6 +48,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     uint256 public kappa = 1e18; // scaling factor
     mapping(Role => uint256) public roleShare; // scaled to 1e18
     mapping(Role => int256) public mu;
+    mapping(Role => int256) public baselineEnergy;
     mapping(address => bool) public settlers;
     address public treasury;
     uint256 public maxProofs = 100;
@@ -66,6 +67,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     event TreasuryUpdated(address indexed treasury);
     event RoleShareUpdated(Role indexed role, uint256 share);
     event MuUpdated(Role indexed role, int256 muValue);
+    event BaselineEnergyUpdated(Role indexed role, int256 baseline);
     event SettlerUpdated(address indexed settler, bool allowed);
     event RewardBudget(
         uint256 indexed epoch, uint256 minted, uint256 burned, uint256 redistributed, uint256 distributionRatio
@@ -104,6 +106,14 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     function setMu(Role r, int256 _mu) external onlyGovernance {
         mu[r] = _mu;
         emit MuUpdated(r, _mu);
+    }
+
+    /// @notice Configure the baseline energy used for reputation updates.
+    /// @param r The role whose baseline is being set.
+    /// @param baseline Baseline energy value.
+    function setBaselineEnergy(Role r, int256 baseline) external onlyGovernance {
+        baselineEnergy[r] = baseline;
+        emit BaselineEnergyUpdated(r, baseline);
     }
 
     /// @notice Set the scaling factor converting free energy to token units.
@@ -255,10 +265,11 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         int256 Tr = thermostat.getRoleTemperature(Thermostat.Role(uint8(r)));
         uint256[] memory weights = ThermoMath.mbWeights(rd.energies, rd.degeneracies, Tr, mu[r]);
         uint256 bucket = budget * roleShare[r] / uint256(WAD);
+        int256 baseline = baselineEnergy[r];
         for (uint256 i = 0; i < rd.users.length; i++) {
             uint256 amt = bucket * weights[i] / uint256(WAD);
             feePool.reward(rd.users[i], amt);
-            reputation.update(rd.users[i], -rd.energies[i]);
+            reputation.update(rd.users[i], baseline - rd.energies[i]);
             emit RewardIssued(rd.users[i], r, amt);
             distributed += amt;
         }

@@ -214,6 +214,20 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.total(), budget, "entropy scaling");
     }
 
+    function test_baseline_energy_adjusts_reputation() public {
+        engine.setBaselineEnergy(RewardEngineMB.Role.Agent, int256(1e18));
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](2);
+        address efficient = address(0xA1);
+        address wasteful = address(0xA2);
+        a[0] = _proof(efficient, int256(5e17), 1, RewardEngineMB.Role.Agent);
+        a[1] = _proof(wasteful, int256(2e18), 1, RewardEngineMB.Role.Agent);
+        data.agents = a;
+        engine.settleEpoch(1, data);
+        assertGt(rep.deltas(efficient), 0);
+        assertLt(rep.deltas(wasteful), 0);
+    }
+
     function test_equal_energies_uniform_split() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](2);
