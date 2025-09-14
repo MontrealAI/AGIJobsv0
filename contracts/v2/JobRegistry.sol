@@ -392,6 +392,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
     event ExpirationGracePeriodUpdated(uint256 period);
+    /// @notice Emitted when an employer's reputation counters change
+    /// @param employer Address of the employer
+    /// @param positive Number of successfully finalized jobs
+    /// @param negative Number of jobs that ended negatively (e.g., dispute loss)
+    event EmployerReputationUpdated(address indexed employer, uint256 positive, uint256 negative);
     event GovernanceFinalized(
         uint256 indexed jobId,
         address indexed caller,
@@ -1485,11 +1490,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
+        EmployerStats storage stats = employerStats[job.employer];
         if (job.success) {
-            employerStats[job.employer].positive++;
+            stats.positive++;
         } else {
-            employerStats[job.employer].negative++;
+            stats.negative++;
         }
+        emit EmployerReputationUpdated(job.employer, stats.positive, stats.negative);
         emit JobFinalized(jobId, job.agent);
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
