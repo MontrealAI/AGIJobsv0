@@ -97,8 +97,8 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const dS = ethers.parseUnits('1', 18);
     const Tsys = ethers.parseUnits('1', 18);
     const budget = ethers.parseUnits('2', 18);
-    const distributed = (budget * 65n) / 100n;
-    const leftover = budget - distributed;
+    const agentShare = (budget * 65n) / 100n;
+    const dust = budget - agentShare;
     const minted = budget * 2n;
 
     const esEvent = receipt.logs.find(
@@ -109,20 +109,19 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     expect(esEvent.args.dH).to.equal(dH);
     expect(esEvent.args.dS).to.equal(dS);
     expect(esEvent.args.systemTemperature).to.equal(Tsys);
-    expect(esEvent.args.leftover).to.equal(leftover);
+    expect(esEvent.args.dust).to.equal(dust);
 
     const rbEvent = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === 'RewardBudget'
     );
     expect(rbEvent.args.minted).to.equal(minted);
-    expect(rbEvent.args.burned).to.equal(leftover);
-    expect(rbEvent.args.redistributed).to.equal(distributed);
+    expect(rbEvent.args.dust).to.equal(dust);
+    expect(rbEvent.args.redistributed).to.equal(budget);
 
-    expect(await token.totalSupply()).to.equal(budget + distributed);
+    expect(await token.totalSupply()).to.equal(budget * 2n);
     expect(await token.balanceOf(treasury.address)).to.equal(budget);
-    expect(await token.balanceOf(await feePool.getAddress())).to.equal(
-      distributed
-    );
+    expect(await token.balanceOf(await feePool.getAddress())).to.equal(budget);
+    expect(await feePool.rewards(owner.address)).to.equal(agentShare);
   });
 
   it('reverts when settling an epoch twice', async function () {
