@@ -29,9 +29,7 @@ describe('QuadraticVoting', function () {
     expect(await token.balanceOf(await qv.getAddress())).to.equal(4n);
     expect(await qv.locked(1, voter.address)).to.equal(4n);
     expect(await qv.votes(1, voter.address)).to.equal(3n);
-    expect(await token.balanceOf(owner.address)).to.equal(
-      treasuryBefore + 5n
-    );
+    expect(await token.balanceOf(owner.address)).to.equal(treasuryBefore + 5n);
   });
 
   it('refunds only the deposit after execution', async () => {
@@ -41,9 +39,7 @@ describe('QuadraticVoting', function () {
     await qv.connect(voter).claimRefund(1);
     expect(await token.balanceOf(voter.address)).to.equal(992n);
     expect(await token.balanceOf(await qv.getAddress())).to.equal(0n);
-    expect(await token.balanceOf(owner.address)).to.equal(
-      treasuryBefore + 8n
-    );
+    expect(await token.balanceOf(owner.address)).to.equal(treasuryBefore + 8n);
   });
 
   it('records voters in governance reward', async () => {
