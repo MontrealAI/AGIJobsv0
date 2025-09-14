@@ -4,7 +4,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('StakeManager auto stake tuning', function () {
   const { AGIALPHA } = require('../../scripts/constants');
-  let stakeManager, owner, dispute, thermostat, hamFeed;
+  let stakeManager, owner, dispute, thermostat, hamMonitor;
 
   beforeEach(async () => {
     [owner, dispute] = await ethers.getSigners();
@@ -19,10 +19,10 @@ describe('StakeManager auto stake tuning', function () {
       'contracts/v2/Thermostat.sol:Thermostat'
     );
     thermostat = await Thermostat.deploy(100, 1, 200, owner.address);
-    const HamFeed = await ethers.getContractFactory(
-      'contracts/test/MockHamiltonianFeed.sol:MockHamiltonianFeed'
+    const HamMonitor = await ethers.getContractFactory(
+      'contracts/v2/HamiltonianMonitor.sol:HamiltonianMonitor'
     );
-    hamFeed = await HamFeed.deploy();
+    hamMonitor = await HamMonitor.deploy(5, owner.address);
     const StakeManager = await ethers.getContractFactory(
       'contracts/v2/StakeManager.sol:StakeManager'
     );
@@ -110,11 +110,11 @@ describe('StakeManager auto stake tuning', function () {
   it('increases min stake when Hamiltonian exceeds threshold', async () => {
     await stakeManager
       .connect(owner)
-      .setHamiltonianFeed(await hamFeed.getAddress());
+      .setHamiltonianFeed(await hamMonitor.getAddress());
     await stakeManager
       .connect(owner)
       .configureAutoStake(0, 50, 50, 1000, 10, 0, 0, 1, 1, 0, 1);
-    await hamFeed.setHamiltonian(2);
+    await hamMonitor.connect(owner).record(5, 2);
     await time.increase(1000);
     await expect(stakeManager.checkpointStake())
       .to.emit(stakeManager, 'MinStakeUpdated')
