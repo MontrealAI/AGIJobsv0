@@ -10,6 +10,7 @@ import {TOKEN_SCALE} from "./Constants.sol";
 
 interface IReputationEngine {
     function reputation(address user) external view returns (uint256);
+    function entropy(address user) external view returns (uint256);
     function isBlacklisted(address user) external view returns (bool);
     function stakeWeight() external view returns (uint256);
     function reputationWeight() external view returns (uint256);
@@ -252,6 +253,12 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
         // Deployer may register without staking but receives no routing boost.
         if (operator == owner() && stake == 0) return 0;
         uint256 rep = reputationEngine.reputation(operator);
+        uint256 ent = reputationEngine.entropy(operator);
+        if (rep > ent) {
+            rep -= ent;
+        } else {
+            rep = 0;
+        }
         uint256 stakeW = reputationEngine.stakeWeight();
         uint256 repW = reputationEngine.reputationWeight();
         return ((stake * stakeW) + (rep * repW)) / TOKEN_SCALE;

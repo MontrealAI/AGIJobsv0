@@ -568,6 +568,7 @@ contract MockReputationEngine is IReputationEngine {
     uint256 public constant version = 2;
 
     mapping(address => uint256) private _rep;
+    mapping(address => uint256) private _entropy;
     mapping(address => bool) private _blacklist;
     uint256 public threshold;
 
@@ -578,6 +579,7 @@ contract MockReputationEngine is IReputationEngine {
     function subtract(address user, uint256 amount) external override {
         uint256 rep = _rep[user];
         _rep[user] = rep > amount ? rep - amount : 0;
+        _entropy[user] += amount;
     }
 
     function reputation(address user) external view override returns (uint256) {
@@ -590,6 +592,18 @@ contract MockReputationEngine is IReputationEngine {
 
     function reputationOf(address user) external view override returns (uint256) {
         return _rep[user];
+    }
+
+    function entropy(address user) external view override returns (uint256) {
+        return _entropy[user];
+    }
+
+    function getEntropy(address user) external view override returns (uint256) {
+        return _entropy[user];
+    }
+
+    function entropyOf(address user) external view override returns (uint256) {
+        return _entropy[user];
     }
 
     function isBlacklisted(address user) external view override returns (bool) {
