@@ -51,6 +51,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     mapping(address => bool) public settlers;
     address public treasury;
     uint256 public maxProofs = 100;
+    mapping(uint256 => bool) public epochSettled;
 
     int256 public constant WAD = 1e18;
 
@@ -145,10 +146,11 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     /// @notice Distribute rewards for an epoch based on energy attestations.
     /// @param epoch The epoch identifier to settle.
     /// @param data Batches of signed attestations and paid cost data.
-    function settleEpoch(uint256 epoch, EpochData calldata data) external nonReentrant 
+    function settleEpoch(uint256 epoch, EpochData calldata data) external nonReentrant
     /// #if_succeeds {:msg "budget >= distributed"} budget >= distributed;
     {
         require(settlers[msg.sender], "not settler");
+        require(!epochSettled[epoch], "settled");
         uint256 totalValue;
         uint256 sumUpre;
         uint256 sumUpost;
@@ -197,6 +199,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
             feePool.reward(treasury, leftover);
         }
         uint256 ratio = budget > 0 ? (distributed * uint256(WAD)) / budget : 0;
+        epochSettled[epoch] = true;
         emit RewardBudget(epoch, budget, 0, distributed, ratio);
         emit EpochSettled(epoch, budget, dH, dS, Tsys, leftover);
     }

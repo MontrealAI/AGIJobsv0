@@ -87,4 +87,71 @@ describe('RewardEngineMB thermodynamic metrics', function () {
 
     expect(await feePool.rewards(treasury.address)).to.equal(leftover);
   });
+
+  it('reverts when settling an epoch twice', async function () {
+    const [owner] = await ethers.getSigners();
+
+    const Thermostat = await ethers.getContractFactory(
+      'contracts/v2/Thermostat.sol:Thermostat'
+    );
+    const thermostat = await Thermostat.deploy(
+      ethers.parseUnits('1', 18),
+      1,
+      ethers.parseUnits('2', 18),
+      owner.address
+    );
+
+    const MockFeePool = await ethers.getContractFactory(
+      'contracts/v2/mocks/RewardEngineMBMocks.sol:MockFeePool'
+    );
+    const feePool = await MockFeePool.deploy();
+
+    const MockReputation = await ethers.getContractFactory(
+      'contracts/v2/mocks/RewardEngineMBMocks.sol:MockReputation'
+    );
+    const rep = await MockReputation.deploy();
+
+    const MockEnergyOracle = await ethers.getContractFactory(
+      'contracts/v2/mocks/RewardEngineMBMocks.sol:MockEnergyOracle'
+    );
+    const oracle = await MockEnergyOracle.deploy();
+
+    const RewardEngine = await ethers.getContractFactory(
+      'contracts/v2/RewardEngineMB.sol:RewardEngineMB'
+    );
+    const engine = await RewardEngine.deploy(
+      thermostat,
+      feePool,
+      rep,
+      oracle,
+      owner.address
+    );
+
+    await engine.setSettler(owner.address, true);
+
+    const att = {
+      jobId: 1,
+      user: owner.address,
+      energy: 0n,
+      degeneracy: 1,
+      epochId: 1,
+      role: 0,
+      nonce: 1,
+      deadline: 0,
+      uPre: 0n,
+      uPost: 0,
+      value: 0,
+    };
+
+    const data = {
+      agents: [{ att, sig: '0x' }],
+      validators: [],
+      operators: [],
+      employers: [],
+      paidCosts: 0n,
+    };
+
+    await engine.settleEpoch(1, data);
+    await expect(engine.settleEpoch(1, data)).to.be.revertedWith('settled');
+  });
 });

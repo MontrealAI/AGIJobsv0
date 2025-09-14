@@ -424,6 +424,17 @@ contract RewardEngineMBTest is Test {
         engine.settleEpoch(1, data); // should succeed
     }
 
+    function test_epoch_cannot_be_settled_twice() public {
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](1);
+        a[0] = _proof(agent, int256(1e18), 1, RewardEngineMB.Role.Agent);
+        data.agents = a;
+
+        engine.settleEpoch(1, data);
+        vm.expectRevert(bytes("settled"));
+        engine.settleEpoch(1, data);
+    }
+
     function test_leftover_budget_sent_to_treasury() public {
         RewardEngineMB.EpochData memory data;
         RewardEngineMB.Proof[] memory a = new RewardEngineMB.Proof[](3);
