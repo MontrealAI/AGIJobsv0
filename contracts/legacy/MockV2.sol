@@ -240,12 +240,22 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             assignedAt: 0,
             uriHash: job.uriHash,
             resultHash: job.resultHash,
-            specHash: bytes32(0)
+            specHash: bytes32(0),
+            wasDisputed: false
         });
     }
 
     function jobs(uint256 jobId) external view override returns (Job memory) {
         return _jobs[jobId];
+    }
+
+    function getEmployerStats(address)
+        external
+        pure
+        override
+        returns (uint256 total, uint256 success, uint256 disputed)
+    {
+        return (0, 0, 0);
     }
 
     function getSpecHash(uint256) external pure override returns (bytes32) {
@@ -381,7 +391,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             assignedAt: 0,
             uriHash: uriHash,
             resultHash: bytes32(0),
-            specHash: bytes32(0)
+            specHash: bytes32(0),
+            wasDisputed: false
         });
         deadlines[jobId] = deadline;
         if (address(_stakeManager) != address(0) && reward > 0) {

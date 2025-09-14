@@ -34,6 +34,7 @@ interface IJobRegistry {
         bytes32 uriHash;
         bytes32 resultHash;
         bytes32 specHash;
+        bool wasDisputed;
     }
 
     /// @dev Reverts when job creation parameters have not been configured
@@ -124,6 +125,13 @@ interface IJobRegistry {
         uint256 indexed jobId,
         uint256 receiptAmount,
         uint256 expectedAmount
+    );
+    /// @notice Emitted when an employer's job statistics are updated
+    event EmployerStatsUpdated(
+        address indexed employer,
+        uint256 totalJobs,
+        uint256 successfulJobs,
+        uint256 disputedJobs
     );
 
     // owner wiring of modules
@@ -340,4 +348,14 @@ interface IJobRegistry {
     /// @param jobId Identifier of the job to query
     /// @return Job The job struct containing all job details
     function jobs(uint256 jobId) external view returns (Job memory);
+
+    /// @notice Return aggregated statistics for an employer's jobs
+    /// @param employer Address of the employer to query
+    /// @return total total jobs created
+    /// @return success jobs finalized successfully without dispute
+    /// @return disputed jobs that entered dispute
+    function getEmployerStats(address employer)
+        external
+        view
+        returns (uint256 total, uint256 success, uint256 disputed);
 }
