@@ -115,6 +115,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     mapping(uint256 => mapping(bytes32 => BurnReceipt)) private burnReceipts;
 
+    struct EmployerStats {
+        uint256 positive;
+        uint256 negative;
+    }
+
+    mapping(address => EmployerStats) public employerStats;
+
     function getSpecHash(uint256 jobId) external view returns (bytes32) {
         return jobs[jobId].specHash;
     }
@@ -152,6 +159,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         returns (bool)
     {
         return burnReceipts[jobId][burnTxHash].exists;
+    }
+
+    function getEmployerReputation(address employer)
+        external
+        view
+        returns (uint256 positive, uint256 negative)
+    {
+        EmployerStats storage stats = employerStats[employer];
+        return (stats.positive, stats.negative);
     }
 
     /// @notice Confirms previously submitted burn evidence.
@@ -1453,6 +1469,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (address(reputationEngine) != address(0)) {
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
+        }
+        if (job.success) {
+            employerStats[job.employer].positive++;
+        } else {
+            employerStats[job.employer].negative++;
         }
         emit JobFinalized(jobId, job.agent);
         if (isGov) {
