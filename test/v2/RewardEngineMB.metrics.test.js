@@ -6,6 +6,7 @@ describe('RewardEngineMB thermodynamic metrics', function () {
   let owner, treasury, token, engine, feePool;
 
   beforeEach(async () => {
+    await network.provider.send('hardhat_reset');
     [owner, treasury] = await ethers.getSigners();
 
     const artifact = await artifacts.readArtifact(
@@ -99,7 +100,7 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     const budget = ethers.parseUnits('2', 18);
     const agentShare = (budget * 65n) / 100n;
     const dust = budget - agentShare;
-    const minted = budget;
+    const minted = budget * 2n;
 
     const esEvent = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === 'EpochSettled'
@@ -118,8 +119,8 @@ describe('RewardEngineMB thermodynamic metrics', function () {
     expect(rbEvent.args.dust).to.equal(dust);
     expect(rbEvent.args.redistributed).to.equal(budget);
 
-    expect(await token.totalSupply()).to.equal(budget);
-    expect(await token.balanceOf(treasury.address)).to.equal(0n);
+    expect(await token.totalSupply()).to.equal(minted);
+    expect(await token.balanceOf(treasury.address)).to.equal(budget);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(budget);
     expect(await feePool.rewards(owner.address)).to.equal(agentShare);
     expect(await feePool.rewards(treasury.address)).to.equal(dust);

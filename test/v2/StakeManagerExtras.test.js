@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
 
 // Additional StakeManager unit tests focusing on staking flows and limits
 
@@ -9,6 +9,13 @@ describe('StakeManager extras', function () {
 
   beforeEach(async () => {
     [owner, user, treasury] = await ethers.getSigners();
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
