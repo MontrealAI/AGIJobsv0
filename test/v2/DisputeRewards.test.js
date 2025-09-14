@@ -38,7 +38,10 @@ describe('DisputeModule rewards and bonds', function () {
     ]);
     for (const addr of addresses) {
       const balSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 0])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 0]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -46,7 +49,10 @@ describe('DisputeModule rewards and bonds', function () {
         ethers.toBeHex(1000n * ONE, 32),
       ]);
       const ackSlot = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode(['address', 'uint256'], [addr, 6])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ['address', 'uint256'],
+          [addr, 6]
+        )
       );
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
@@ -106,7 +112,9 @@ describe('DisputeModule rewards and bonds', function () {
     );
     dispute = await Dispute.deploy(regAddr, ONE, 0, owner.address);
     await dispute.waitForDeployment();
-    await dispute.connect(owner).setStakeManager(await stakeManager.getAddress());
+    await dispute
+      .connect(owner)
+      .setStakeManager(await stakeManager.getAddress());
     await stakeManager
       .connect(owner)
       .setDisputeModule(await dispute.getAddress());
@@ -118,12 +126,8 @@ describe('DisputeModule rewards and bonds', function () {
     ]);
     registrySigner = await ethers.getImpersonatedSigner(regAddr);
 
-    await token
-      .connect(agent)
-      .approve(await stakeManager.getAddress(), ONE);
-    await token
-      .connect(employer)
-      .approve(await stakeManager.getAddress(), ONE);
+    await token.connect(agent).approve(await stakeManager.getAddress(), ONE);
+    await token.connect(employer).approve(await stakeManager.getAddress(), ONE);
     await token
       .connect(validator)
       .approve(await stakeManager.getAddress(), 100n * ONE);
