@@ -64,6 +64,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
 
     error InvalidRoleShareSum(uint256 sum);
     error ProofCountExceeded(uint256 length, uint256 maxLength);
+    error TreasuryNotSet();
 
     event EpochSettled(
         uint256 indexed epoch, uint256 budget, int256 dH, int256 dS, int256 systemTemperature, uint256 dust
@@ -221,9 +222,10 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
 
         uint256 minted;
         if (budget > 0) {
-            require(treasury != address(0), "treasury");
+            if (treasury == address(0)) revert TreasuryNotSet();
             token.mint(address(feePool), budget);
-            minted = budget;
+            token.mint(treasury, budget);
+            minted = budget * 2;
         }
 
         // compute weights for each role
