@@ -187,6 +187,17 @@ contract RewardEngineMBTest is Test {
         assertEq(pool.total(), 2e18, "scaled budget distributed");
     }
 
+    function test_setKappaRejectsZero() public {
+        vm.expectRevert("kappa");
+        engine.setKappa(0);
+    }
+
+    function test_setKappaRejectsOverflow() public {
+        uint256 maxKappa = engine.MAX_KAPPA();
+        vm.expectRevert("kappa overflow");
+        engine.setKappa(maxKappa + 1);
+    }
+
     function test_setTreasuryRejectsZero() public {
         vm.expectRevert("treasury");
         engine.setTreasury(address(0));
