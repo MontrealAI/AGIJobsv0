@@ -14,4 +14,6 @@ The registry tracks a simple reputation score for each employer. When a job
 finalizes successfully, the employer's positive count increases. If a job ends
 in dispute, the negative count increments. Anyone can call
 `getEmployerReputation(address)` on `JobRegistry` to retrieve these counters and
-evaluate an employer's history before engaging.
+`getEmployerScore(address)` for a normalized reputation score between 0 and 1
+(scaled by `1e18`). Evaluating an employer's history before engaging helps
+participants route work toward reliable counterparties.

@@ -170,6 +170,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         return (stats.positive, stats.negative);
     }
 
+    /// @notice Compute a normalized employer reputation score.
+    /// @dev Returns the ratio of positive to total outcomes scaled by 1e18.
+    /// A score of 1e18 represents a perfect record, while 0 indicates only
+    /// negative outcomes. If an employer has no history, the score is 0.
+    /// @param employer Address of the employer to query.
+    /// @return score Reputation score in 18-decimal fixed point.
+    function getEmployerScore(address employer) external view returns (uint256 score) {
+        EmployerStats storage stats = employerStats[employer];
+        uint256 total = stats.positive + stats.negative;
+        if (total == 0) {
+            return 0;
+        }
+        return (stats.positive * TOKEN_SCALE) / total;
+    }
+
     /// @notice Confirms previously submitted burn evidence.
     /// @dev Employers must acknowledge the active tax policy before calling.
     function confirmEmployerBurn(uint256 jobId, bytes32 burnTxHash)
