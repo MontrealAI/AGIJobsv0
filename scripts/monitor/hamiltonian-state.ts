@@ -9,6 +9,7 @@ const REWARD_ENGINE = process.env.REWARD_ENGINE as string;
 const STAKE_MANAGER = process.env.STAKE_MANAGER as string;
 const LAMBDA = Number(process.env.LAMBDA || '1');
 const PORT = Number(process.env.PORT || '3001');
+const MAX_EPOCHS = Number(process.env.MAX_EPOCHS || '100');
 
 if (!RPC_URL || !REWARD_ENGINE || !STAKE_MANAGER) {
   console.error('RPC_URL, REWARD_ENGINE and STAKE_MANAGER must be set');
@@ -34,6 +35,7 @@ interface EpochStats {
   h: number;
 }
 const epochs: Record<number, EpochStats> = {};
+const epochOrder: number[] = [];
 let currentEpoch = 0;
 let currentStats: EpochStats | undefined;
 
@@ -46,6 +48,11 @@ function finalizeEpoch(epoch: number) {
   const h = dissipation - LAMBDA * redistributed;
   currentStats.h = h;
   epochs[epoch] = { ...currentStats };
+  epochOrder.push(epoch);
+  if (MAX_EPOCHS > 0 && epochOrder.length > MAX_EPOCHS) {
+    const outdated = epochOrder.shift();
+    if (outdated !== undefined) delete epochs[outdated];
+  }
   console.log(
     `Epoch ${epoch} H=${h.toFixed(4)} D=${dissipation.toFixed(
       4
