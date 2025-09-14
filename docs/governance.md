@@ -48,3 +48,18 @@ executed.
 
 This flow ensures all privileged operations occur only after the
 configured delay or multi-party approval.
+
+## Quadratic Voting
+
+`QuadraticVoting` introduces a voting mechanism where the cost of casting votes
+scales quadratically: committing `n` votes locks `n^2` governance tokens (typically
+AGIALPHA). Locked funds remain in the contract until the proposal is executed by
+the configured executor. After execution, each voter may call `claimRefund` to
+retrieve the exact tokens they locked.
+
+Example: voting with 3 votes costs 9 tokens, while 5 votes costs 25 tokens.
+Voters approve the contract to transfer tokens on their behalf, `castVote` to
+lock the cost, and once `execute` is called they can reclaim funds. The contract
+optionally calls `GovernanceReward.recordVoters` so rewards can be distributed
+based on participation.
+
