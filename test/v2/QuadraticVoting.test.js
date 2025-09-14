@@ -25,9 +25,7 @@ describe('QuadraticVoting', function () {
   it('charges quadratic cost, locks deposit and sends fee', async () => {
     const treasuryBefore = await token.balanceOf(owner.address);
     const block = await ethers.provider.getBlock('latest');
-    await qv
-      .connect(voter)
-      .castVote(1, 3, block.timestamp + 100); // cost 9 => deposit 4, fee 5
+    await qv.connect(voter).castVote(1, 3, block.timestamp + 100); // cost 9 => deposit 4, fee 5
     expect(await token.balanceOf(voter.address)).to.equal(991n);
     expect(await token.balanceOf(await qv.getAddress())).to.equal(4n);
     expect(await qv.locked(1, voter.address)).to.equal(4n);
@@ -38,9 +36,7 @@ describe('QuadraticVoting', function () {
   it('refunds only the deposit after execution', async () => {
     const treasuryBefore = await token.balanceOf(owner.address);
     const block = await ethers.provider.getBlock('latest');
-    await qv
-      .connect(voter)
-      .castVote(1, 4, block.timestamp + 100); // cost 16 => deposit 8, fee 8
+    await qv.connect(voter).castVote(1, 4, block.timestamp + 100); // cost 16 => deposit 8, fee 8
     await qv.connect(executor).execute(1);
     await qv.connect(voter).claimRefund(1);
     expect(await token.balanceOf(voter.address)).to.equal(992n);
