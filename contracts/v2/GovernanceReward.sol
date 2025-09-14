@@ -19,6 +19,7 @@ contract GovernanceReward is Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public constant ACCUMULATOR_SCALE = 1e12;
+    uint256 public constant MAX_VOTERS = 100;
 
     /// @notice default epoch length when constructor param is zero
     uint256 public constant DEFAULT_EPOCH_LENGTH = 1 weeks;
@@ -120,6 +121,7 @@ contract GovernanceReward is Ownable {
 
     /// @notice record voters for the current epoch and snapshot their stake
     function recordVoters(address[] calldata voters) external onlyOwner {
+        require(voters.length <= MAX_VOTERS, "voters");
         uint256 epoch = currentEpoch;
         for (uint256 i; i < voters.length; i++) {
             address v = voters[i];

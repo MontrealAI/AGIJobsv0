@@ -12,6 +12,7 @@ interface IGovernanceReward {
 }
 
 error TokenNotBurnable();
+error VoterCapReached();
 
 /// @title QuadraticVoting
 /// @notice Simple quadratic voting mechanism where voting cost grows with the
@@ -20,6 +21,8 @@ error TokenNotBurnable();
 /// record voters for reward distribution.
 contract QuadraticVoting is Ownable {
     using SafeERC20 for IERC20;
+
+    uint256 public constant MAX_VOTERS = 100;
 
     IERC20 public immutable token;
     IGovernanceReward public governanceReward;
@@ -34,8 +37,8 @@ contract QuadraticVoting is Ownable {
     mapping(uint256 => mapping(address => uint256)) public votes;
     // proposalId => voter => tokens locked (cost)
     mapping(uint256 => mapping(address => uint256)) public locked;
-    // proposalId => list of voters (for reward snapshot)
-    mapping(uint256 => address[]) private proposalVoters;
+    // proposalId => number of unique voters
+    mapping(uint256 => uint256) private voterCounts;
     // proposalId => voter => has voted
     mapping(uint256 => mapping(address => bool)) private hasVoted;
 
@@ -97,19 +100,24 @@ contract QuadraticVoting is Ownable {
         }
         votes[proposalId][msg.sender] += numVotes;
         if (!hasVoted[proposalId][msg.sender]) {
+            if (voterCounts[proposalId] >= MAX_VOTERS) {
+                revert VoterCapReached();
+            }
             hasVoted[proposalId][msg.sender] = true;
-            proposalVoters[proposalId].push(msg.sender);
+            voterCounts[proposalId] += 1;
         }
         emit VoteCast(proposalId, msg.sender, numVotes, cost);
     }
 
     /// @notice Execute a proposal, enabling refunds and recording voters.
-    function execute(uint256 proposalId) external {
+    /// @param voters list of voters derived from off-chain logs
+    function execute(uint256 proposalId, address[] calldata voters) external {
         require(!executed[proposalId], "executed");
         require(msg.sender == proposalExecutor || msg.sender == owner(), "exec");
         executed[proposalId] = true;
-        if (address(governanceReward) != address(0)) {
-            governanceReward.recordVoters(proposalVoters[proposalId]);
+        if (address(governanceReward) != address(0) && voters.length > 0) {
+            require(voters.length <= MAX_VOTERS, "voters");
+            governanceReward.recordVoters(voters);
         }
         emit ProposalExecuted(proposalId);
     }
@@ -126,7 +134,7 @@ contract QuadraticVoting is Ownable {
 
     /// @notice Returns number of voters for a proposal.
     function proposalVoterCount(uint256 proposalId) external view returns (uint256) {
-        return proposalVoters[proposalId].length;
+        return voterCounts[proposalId];
     }
 
     function _burnToken(uint256 amount) internal {
