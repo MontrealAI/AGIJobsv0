@@ -18,6 +18,8 @@ import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IDisputeModule} from "./interfaces/IDisputeModule.sol";
 import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+import {Thermostat} from "./Thermostat.sol";
+import {IHamiltonian} from "./interfaces/IHamiltonian.sol";
 
 error InvalidPercentage();
 error InvalidTreasury();
@@ -192,6 +194,23 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice ceiling for automatically tuned minStake (0 disables the cap)
     uint256 public maxMinStake;
 
+    /// @notice Thermostat contract providing system temperature
+    Thermostat public thermostat;
+
+    /// @notice Hamiltonian feed supplying system energy metric
+    IHamiltonian public hamiltonianFeed;
+
+    /// @notice temperature threshold that triggers stake increase
+    int256 public stakeTempThreshold;
+
+    /// @notice Hamiltonian threshold that triggers stake increase
+    int256 public stakeHamiltonianThreshold;
+
+    /// @notice weights applied to dispute count, temperature and Hamiltonian
+    uint256 public disputeWeight = 1;
+    uint256 public temperatureWeight;
+    uint256 public hamiltonianWeight;
+
     /// @notice Upper limit on the number of AGI types to prevent excessive gas usage
     uint256 public constant MAX_AGI_TYPES_CAP = 50;
 
@@ -217,8 +236,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event MaxTotalPayoutPctUpdated(uint256 oldMax, uint256 newMax);
     event AutoStakeTuningEnabled(bool enabled);
     event AutoStakeConfigUpdated(
-        uint256 threshold, uint256 upPct, uint256 downPct, uint256 window, uint256 floor, uint256 ceil
+        uint256 threshold,
+        uint256 upPct,
+        uint256 downPct,
+        uint256 window,
+        uint256 floor,
+        uint256 ceil,
+        int256 tempThreshold,
+        int256 hThreshold,
+        uint256 disputeWeight,
+        uint256 tempWeight,
+        uint256 hamWeight
     );
+    event ThermostatUpdated(address indexed thermostat);
+    event HamiltonianFeedUpdated(address indexed feed);
 
     event StakeDeposited(address indexed user, Role indexed role, uint256 amount);
     event StakeWithdrawn(address indexed user, Role indexed role, uint256 amount);
@@ -276,6 +307,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit PauserUpdated(_pauser);
     }
 
+    /// @notice set external contracts providing temperature and Hamiltonian metrics
+    function setThermostat(address _thermostat) external onlyGovernance {
+        thermostat = Thermostat(_thermostat);
+        emit ThermostatUpdated(_thermostat);
+    }
+
+    function setHamiltonianFeed(address _feed) external onlyGovernance {
+        hamiltonianFeed = IHamiltonian(_feed);
+        emit HamiltonianFeedUpdated(_feed);
+    }
+
     /// @notice enable or disable automatic tuning of minStake based on disputes
     /// @param enabled true to enable auto tuning
     function autoTuneStakes(bool enabled) external onlyGovernance {
@@ -296,7 +338,12 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 downPct,
         uint256 window,
         uint256 floor,
-        uint256 ceil
+        uint256 ceil,
+        int256 tempThreshold,
+        int256 hThreshold,
+        uint256 disputeW,
+        uint256 tempW,
+        uint256 hamW
     ) external onlyGovernance {
         if (upPct > 100 || downPct > 100) revert InvalidPercentage();
         stakeDisputeThreshold = threshold;
@@ -305,7 +352,24 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         if (window > 0) stakeTuneWindow = window;
         if (floor > 0) minStakeFloor = floor;
         maxMinStake = ceil;
-        emit AutoStakeConfigUpdated(threshold, upPct, downPct, stakeTuneWindow, minStakeFloor, ceil);
+        stakeTempThreshold = tempThreshold;
+        stakeHamiltonianThreshold = hThreshold;
+        disputeWeight = disputeW;
+        temperatureWeight = tempW;
+        hamiltonianWeight = hamW;
+        emit AutoStakeConfigUpdated(
+            threshold,
+            upPct,
+            downPct,
+            stakeTuneWindow,
+            minStakeFloor,
+            ceil,
+            tempThreshold,
+            hThreshold,
+            disputeW,
+            tempW,
+            hamW
+        );
     }
 
     /// @notice record a dispute occurrence for auto stake tuning
@@ -327,13 +391,23 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function _maybeAdjustStake() internal {
         if (block.timestamp < lastStakeTune + stakeTuneWindow) return;
         uint256 oldMin = minStake;
-        if (disputeCount >= stakeDisputeThreshold) {
+        uint256 score = disputeCount * disputeWeight;
+        if (address(thermostat) != address(0) && temperatureWeight > 0 && stakeTempThreshold != 0) {
+            int256 t = thermostat.systemTemperature();
+            if (t >= stakeTempThreshold) score += temperatureWeight;
+        }
+        if (address(hamiltonianFeed) != address(0) && hamiltonianWeight > 0 && stakeHamiltonianThreshold != 0) {
+            int256 h = hamiltonianFeed.currentHamiltonian();
+            if (h >= stakeHamiltonianThreshold) score += hamiltonianWeight;
+        }
+        uint256 thresholdScore = stakeDisputeThreshold * disputeWeight;
+        if ((thresholdScore == 0 && score > 0) || (thresholdScore > 0 && score >= thresholdScore)) {
             uint256 inc = (minStake * stakeIncreasePct) / 100;
             if (inc == 0) inc = 1;
             uint256 newMin = minStake + inc;
             if (maxMinStake != 0 && newMin > maxMinStake) newMin = maxMinStake;
             minStake = newMin;
-        } else if (disputeCount == 0 && minStake > minStakeFloor) {
+        } else if (score == 0 && minStake > minStakeFloor) {
             uint256 dec = (minStake * stakeDecreasePct) / 100;
             uint256 newMin = minStake > dec ? minStake - dec : minStakeFloor;
             if (newMin < minStakeFloor) newMin = minStakeFloor;
