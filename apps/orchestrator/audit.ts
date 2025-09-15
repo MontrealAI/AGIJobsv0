@@ -47,3 +47,8 @@ export function auditLogPathFor(date: string): string {
   ensureDirectory(AUDIT_ROOT);
   return path.join(AUDIT_ROOT, `${date}.log`);
 }
+
+export function getAuditLogDirectory(): string {
+  ensureDirectory(AUDIT_ROOT);
+  return AUDIT_ROOT;
+}

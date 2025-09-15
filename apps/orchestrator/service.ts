@@ -20,6 +20,7 @@ import {
   selectAgent,
 } from './bidding';
 import { auditLog } from './audit';
+import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 
@@ -132,6 +133,7 @@ export class MetaOrchestrator {
   private capabilityMatrix: CapabilityMatrix = {};
   private orchestratorIdentity: AgentIdentity | undefined;
   private validatorIdentities: AgentIdentity[] = [];
+  private auditAnchor: AuditAnchoringService | null = null;
   private readonly appliedJobs = new Map<string, AppliedJobState>();
   private readonly assignmentTimers = new Map<string, NodeJS.Timeout>();
   private readonly commitTimers = new Map<string, NodeJS.Timeout>();
@@ -160,6 +162,7 @@ export class MetaOrchestrator {
       this.identityManager
     );
     await this.instantiateContracts();
+    await this.initializeAuditAnchoring();
   }
 
   private async instantiateContracts(): Promise<void> {
@@ -184,10 +187,70 @@ export class MetaOrchestrator {
     }
   }
 
+  private async initializeAuditAnchoring(): Promise<void> {
+    const maybeNumber = (value: string | undefined): number | undefined => {
+      if (value === undefined) return undefined;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
+    let wallet: Wallet | null = null;
+    const overrideKey = process.env.AUDIT_ANCHOR_PRIVATE_KEY;
+    if (overrideKey) {
+      try {
+        wallet = new Wallet(overrideKey, this.provider);
+      } catch (err) {
+        console.warn(
+          'Invalid AUDIT_ANCHOR_PRIVATE_KEY provided; falling back to orchestrator identity.',
+          err
+        );
+        wallet = null;
+      }
+    }
+
+    if (!wallet && this.orchestratorIdentity) {
+      wallet = this.orchestratorIdentity.wallet.connect(this.provider);
+    }
+
+    if (!wallet) {
+      console.warn(
+        'Audit anchoring disabled: no orchestrator identity or AUDIT_ANCHOR_PRIVATE_KEY available.'
+      );
+      return;
+    }
+
+    const options: AuditAnchoringOptions = {
+      provider: this.provider,
+      wallet,
+    };
+    if (process.env.AUDIT_ANCHOR_ADDRESS) {
+      options.anchorAddress = process.env.AUDIT_ANCHOR_ADDRESS;
+    }
+    if (process.env.AUDIT_ANCHOR_STATE_FILE) {
+      options.stateFile = process.env.AUDIT_ANCHOR_STATE_FILE;
+    }
+    const interval = maybeNumber(process.env.AUDIT_ANCHOR_INTERVAL_MS);
+    if (interval !== undefined) {
+      options.intervalMs = interval;
+    }
+    const minAge = maybeNumber(process.env.AUDIT_ANCHOR_MIN_FILE_AGE_MS);
+    if (minAge !== undefined) {
+      options.minFileAgeMs = minAge;
+    }
+    const maxFiles = maybeNumber(process.env.AUDIT_ANCHOR_MAX_FILES);
+    if (maxFiles !== undefined) {
+      options.maxFilesPerRun = maxFiles;
+    }
+
+    this.auditAnchor = new AuditAnchoringService(options);
+    await this.auditAnchor.initialize();
+  }
+
   start(): void {
     if (this.running) return;
     this.running = true;
     this.registerEventHandlers();
+    this.auditAnchor?.start();
     auditLog('orchestrator.started', {
       actor: this.orchestratorIdentity?.address,
       details: {
@@ -200,6 +263,7 @@ export class MetaOrchestrator {
   stop(): void {
     if (!this.running) return;
     this.running = false;
+    this.auditAnchor?.stop();
     this.registry.removeAllListeners();
     if (this.validationModule) this.validationModule.removeAllListeners();
     for (const timer of this.assignmentTimers.values()) clearInterval(timer);
@@ -243,6 +307,11 @@ export class MetaOrchestrator {
         jobId: jobId.toString(),
         details: { success },
       });
+      if (this.auditAnchor) {
+        this.auditAnchor
+          .trigger()
+          .catch((err) => console.error('audit anchor trigger failed', err));
+      }
       const key = jobId.toString();
       this.appliedJobs.delete(key);
       const timer = this.assignmentTimers.get(key);
@@ -257,6 +326,11 @@ export class MetaOrchestrator {
       if (timer) clearInterval(timer);
       this.assignmentTimers.delete(key);
       auditLog('job.cancelled', { jobId: key, details: {} });
+      if (this.auditAnchor) {
+        this.auditAnchor
+          .trigger()
+          .catch((err) => console.error('audit anchor trigger failed', err));
+      }
     });
 
     if (this.validationModule) {
@@ -362,7 +436,7 @@ export class MetaOrchestrator {
     if (this.stakeManager) {
       await ensureStake(wallet, requirements.stake, this.provider);
     }
-    const registry = this.registry.connect(wallet);
+    const registry = this.registry.connect(wallet) as any;
     const subdomain = toSubdomain(identity);
     const tx = await registry.applyForJob(summary.jobId, subdomain, []);
     await tx.wait();
@@ -534,9 +608,8 @@ export class MetaOrchestrator {
       ['uint256', 'uint256', 'bool', 'bytes32'],
       [jobId, nonce, approve, salt]
     );
-    const tx = await this.validationModule
-      .connect(wallet)
-      .commitValidation(jobId, commitHash, '', []);
+    const writer = this.validationModule.connect(wallet) as any;
+    const tx = await writer.commitValidation(jobId, commitHash, '', []);
     await tx.wait();
     auditLog('validator.commit', {
       jobId: jobId.toString(),
@@ -561,9 +634,14 @@ export class MetaOrchestrator {
     const key = `${jobId.toString()}:${identity.address.toLowerCase()}`;
     const data = this.commits.get(key);
     if (!data) return;
-    const tx = await this.validationModule
-      .connect(data.wallet)
-      .revealValidation(jobId, data.approve, data.salt, '', []);
+    const writer = this.validationModule.connect(data.wallet) as any;
+    const tx = await writer.revealValidation(
+      jobId,
+      data.approve,
+      data.salt,
+      '',
+      []
+    );
     await tx.wait();
     auditLog('validator.reveal', {
       jobId: jobId.toString(),
