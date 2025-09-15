@@ -10,6 +10,7 @@
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",
     "test": "npx hardhat test",
+    "fuzz": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' npx hardhat run scripts/oracle/fuzz.ts",
     "gateway": "npm run build:gateway && node agent-gateway/dist/index.js",
     "build:gateway": "tsc -p agent-gateway/tsconfig.json",
     "format": "prettier --write \"**/*.{js,ts,md}\"",
