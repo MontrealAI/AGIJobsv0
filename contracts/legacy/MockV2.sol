@@ -561,6 +561,19 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     }
 
     function confirmEmployerBurn(uint256, bytes32) external override {}
+
+    function getEmployerReputation(address)
+        external
+        pure
+        override
+        returns (uint256 successful, uint256 failed)
+    {
+        return (0, 0);
+    }
+
+    function getEmployerScore(address) external pure override returns (uint256) {
+        return 0;
+    }
 }
 
 contract MockReputationEngine is IReputationEngine {

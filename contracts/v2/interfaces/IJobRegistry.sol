@@ -340,4 +340,16 @@ interface IJobRegistry {
     /// @param jobId Identifier of the job to query
     /// @return Job The job struct containing all job details
     function jobs(uint256 jobId) external view returns (Job memory);
+
+    /// @notice Retrieve reputation statistics for an employer.
+    /// @param employer Address of the employer.
+    /// @return successful Number of successfully finalised jobs.
+    /// @return failed Number of failed or disputed jobs.
+    function getEmployerReputation(address employer)
+        external
+        view
+        returns (uint256 successful, uint256 failed);
+
+    /// @notice Compute normalized employer score scaled by 1e18.
+    function getEmployerScore(address employer) external view returns (uint256 score);
 }

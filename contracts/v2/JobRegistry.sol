@@ -115,9 +115,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     mapping(uint256 => mapping(bytes32 => BurnReceipt)) private burnReceipts;
 
+    /// @notice Tracks job outcomes for each employer.
     struct EmployerStats {
-        uint256 positive;
-        uint256 negative;
+        /// @notice Number of successfully finalised jobs.
+        uint256 successful;
+        /// @notice Number of jobs that ended in dispute or failure.
+        uint256 failed;
     }
 
     mapping(address => EmployerStats) public employerStats;
@@ -161,13 +164,17 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         return burnReceipts[jobId][burnTxHash].exists;
     }
 
+    /// @notice Retrieve raw reputation statistics for an employer.
+    /// @param employer Address of the employer to query.
+    /// @return successful Count of successfully finalised jobs.
+    /// @return failed Count of jobs that failed or were disputed.
     function getEmployerReputation(address employer)
         external
         view
-        returns (uint256 positive, uint256 negative)
+        returns (uint256 successful, uint256 failed)
     {
         EmployerStats storage stats = employerStats[employer];
-        return (stats.positive, stats.negative);
+        return (stats.successful, stats.failed);
     }
 
     /// @notice Compute a normalized employer reputation score.
@@ -178,11 +185,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @return score Reputation score in 18-decimal fixed point.
     function getEmployerScore(address employer) external view returns (uint256 score) {
         EmployerStats storage stats = employerStats[employer];
-        uint256 total = stats.positive + stats.negative;
+        uint256 total = stats.successful + stats.failed;
         if (total == 0) {
             return 0;
         }
-        return (stats.positive * TOKEN_SCALE) / total;
+        return (stats.successful * TOKEN_SCALE) / total;
     }
 
     /// @notice Confirms previously submitted burn evidence.
@@ -1486,9 +1493,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
         if (job.success) {
-            employerStats[job.employer].positive++;
+            employerStats[job.employer].successful++;
         } else {
-            employerStats[job.employer].negative++;
+            employerStats[job.employer].failed++;
         }
         emit JobFinalized(jobId, job.agent);
         if (isGov) {

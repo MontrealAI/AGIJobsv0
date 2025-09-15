@@ -6,6 +6,8 @@ import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IPlatformRegistryFull} from "./interfaces/IPlatformRegistryFull.sol";
 import {IJobRouter} from "./interfaces/IJobRouter.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
+import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
+import {TOKEN_SCALE} from "./Constants.sol";
 
 /// @title PlatformIncentives
 /// @notice Helper that stakes $AGIALPHA for platform operators and registers them
@@ -15,6 +17,9 @@ contract PlatformIncentives is Ownable {
     IStakeManager public stakeManager;
     IPlatformRegistryFull public platformRegistry;
     IJobRouter public jobRouter;
+
+    /// @notice Maximum discount percentage applied to protocol fees.
+    uint256 public constant MAX_DISCOUNT_PCT = 20;
 
     event ModulesUpdated(
         address indexed stakeManager,
@@ -116,6 +121,30 @@ contract PlatformIncentives is Ownable {
         platformRegistry.registerFor(msg.sender);
         jobRouter.registerFor(msg.sender);
         emit Activated(msg.sender, amount);
+    }
+
+    /// @notice Compute fee discount percentage for an employer based on reputation.
+    /// @param employer Address of the employer to evaluate.
+    /// @return discountPct Percentage discount to apply to protocol fees (0-100).
+    function getFeeDiscount(address employer) public view returns (uint256 discountPct) {
+        address registry = stakeManager.jobRegistry();
+        if (registry == address(0)) return 0;
+        uint256 score = IJobRegistry(registry).getEmployerScore(employer);
+        return (score * MAX_DISCOUNT_PCT) / TOKEN_SCALE;
+    }
+
+    /// @notice Apply fee discount to a given amount for an employer.
+    /// @param employer Address of the employer.
+    /// @param amount Original fee amount.
+    /// @return discounted Fee amount after applying the employer discount.
+    function applyFeeDiscount(address employer, uint256 amount)
+        external
+        view
+        returns (uint256 discounted)
+    {
+        uint256 pct = getFeeDiscount(employer);
+        if (pct == 0) return amount;
+        return amount - ((amount * pct) / 100);
     }
 
     /// @notice Confirms this contract and its owner remain tax neutral.
