@@ -8,6 +8,12 @@ import {
 } from './identity';
 import { readTrainingRecords } from '../shared/trainingRecords';
 import { readEnergySamples } from '../shared/energyMonitor';
+import {
+  getEfficiencyIndex,
+  findCategoryBreakdown,
+  clearEfficiencyCache,
+  type EfficiencyBreakdown,
+} from '../shared/efficiencyMetrics';
 import { walletManager } from './utils';
 import { getStakeBalance } from './stakeCoordinator';
 
@@ -276,16 +282,59 @@ function energyScore(profile: AgentProfile): number {
   return 1 / (1 + profile.averageEnergy / 1000);
 }
 
+function energyPreferenceFromThermodynamics(
+  breakdown?: EfficiencyBreakdown
+): number {
+  if (!breakdown) {
+    return 0;
+  }
+  if (breakdown.averageEnergy <= 0) {
+    return 1;
+  }
+  return 1 / (1 + breakdown.averageEnergy / 1000);
+}
+
+function rewardEfficiencyScore(breakdown?: EfficiencyBreakdown): number {
+  if (!breakdown) {
+    return 0;
+  }
+  const rewardPerEnergy = breakdown.rewardPerEnergy;
+  if (!Number.isFinite(rewardPerEnergy) || rewardPerEnergy <= 0) {
+    return 0;
+  }
+  return Math.min(1, Math.log10(1 + rewardPerEnergy) / 2);
+}
+
+function thermodynamicScore(breakdown?: EfficiencyBreakdown): number {
+  if (!breakdown) {
+    return 0;
+  }
+  const value = breakdown.efficiencyScore;
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+  return Math.min(1, value);
+}
+
+function formatScore(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '0.000';
+  }
+  return value.toFixed(3);
+}
+
 export interface MatchResult {
   profile: AgentProfile;
   score: number;
   analysis: JobAnalysis;
   reasons: string[];
+  thermodynamics?: EfficiencyBreakdown;
 }
 
 export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
   const analysis = await analyseJob(job);
   const profiles = await listAgentProfiles();
+  const efficiencyIndex = await getEfficiencyIndex();
   let best: MatchResult | null = null;
   for (const profile of profiles) {
     const reasons: string[] = [];
@@ -294,19 +343,45 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
       reasons.push(`category-match:${analysis.category}`);
     }
     const reputationScore = profile.reputationScore;
-    const energy = energyScore(profile);
+    const baselineEnergy = energyScore(profile);
     const stakeScore = stakeAdequacyScore(profile, analysis.stake);
+    const efficiencyReport = efficiencyIndex.get(profile.address.toLowerCase());
+    const thermodynamics = efficiencyReport
+      ? findCategoryBreakdown(efficiencyReport, analysis.category)
+      : undefined;
+    const thermoScore = thermodynamicScore(thermodynamics);
+    const energyComponent =
+      thermodynamics !== undefined && thermodynamics !== null
+        ? energyPreferenceFromThermodynamics(thermodynamics)
+        : baselineEnergy;
+    const rewardComponent = rewardEfficiencyScore(thermodynamics);
+    if (thermodynamics) {
+      reasons.push(`thermo:${formatScore(thermodynamics.efficiencyScore)}`);
+      if (thermodynamics.rewardPerEnergy > 0) {
+        reasons.push(
+          `reward-per-energy:${formatScore(thermodynamics.rewardPerEnergy)}`
+        );
+      }
+      if (thermodynamics.averageEnergy > 0) {
+        reasons.push(`avg-energy:${formatScore(thermodynamics.averageEnergy)}`);
+      }
+    } else {
+      reasons.push(`energy-baseline:${formatScore(baselineEnergy)}`);
+    }
     const aggregate =
-      categoryScore * 0.4 +
-      reputationScore * 0.3 +
-      energy * 0.2 +
-      stakeScore * 0.1;
+      categoryScore * 0.3 +
+      reputationScore * 0.2 +
+      energyComponent * 0.15 +
+      stakeScore * 0.1 +
+      thermoScore * 0.2 +
+      rewardComponent * 0.05;
     if (!best || aggregate > best.score) {
       best = {
         profile,
         score: aggregate,
         analysis,
         reasons,
+        thermodynamics,
       };
     }
   }
@@ -317,4 +392,5 @@ export function clearProfileCache(): void {
   profileCache.clear();
   statsCache = null;
   jobMetadataCache = new Map();
+  clearEfficiencyCache();
 }
