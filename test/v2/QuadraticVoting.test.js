@@ -1,15 +1,17 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+
 describe('QuadraticVoting', function () {
-  let token, qv, owner, voter, executor;
+  let token, qv, owner, voter1, voter2, executor;
 
   beforeEach(async () => {
-    [owner, voter, executor] = await ethers.getSigners();
+    [owner, voter1, voter2, executor] = await ethers.getSigners();
     const MockToken = await ethers.getContractFactory(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     token = await MockToken.deploy();
-    await token.mint(voter.address, 1000);
+    await token.mint(voter1.address, 1000);
+    await token.mint(voter2.address, 1000);
     const QuadraticVoting = await ethers.getContractFactory(
       'contracts/v2/QuadraticVoting.sol:QuadraticVoting'
     );
@@ -18,30 +20,38 @@ describe('QuadraticVoting', function () {
       executor.address
     );
     await qv.connect(owner).setTreasury(owner.address);
-    await qv.connect(owner).setRefundPct(50);
-    await token.connect(voter).approve(await qv.getAddress(), 1000);
+    await token.connect(voter1).approve(await qv.getAddress(), 1000);
+    await token.connect(voter2).approve(await qv.getAddress(), 1000);
   });
 
-  it('charges quadratic cost, locks deposit and sends fee', async () => {
-    const treasuryBefore = await token.balanceOf(owner.address);
+  it('charges quadratic cost and sends to treasury', async () => {
     const block = await ethers.provider.getBlock('latest');
-    await qv.connect(voter).castVote(1, 3, block.timestamp + 100); // cost 9 => deposit 4, fee 5
-    expect(await token.balanceOf(voter.address)).to.equal(991n);
-    expect(await token.balanceOf(await qv.getAddress())).to.equal(4n);
-    expect(await qv.locked(1, voter.address)).to.equal(4n);
-    expect(await qv.votes(1, voter.address)).to.equal(3n);
-    expect(await token.balanceOf(owner.address)).to.equal(treasuryBefore + 5n);
+    const treasuryBefore = await token.balanceOf(owner.address);
+    await qv.connect(voter1).castVote(1, 3, block.timestamp + 100); // cost 9
+    expect(await token.balanceOf(voter1.address)).to.equal(991n);
+    expect(await token.balanceOf(owner.address)).to.equal(treasuryBefore + 9n);
+    expect(await qv.votes(1, voter1.address)).to.equal(3n);
+    expect(await qv.costs(1, voter1.address)).to.equal(9n);
   });
 
-  it('refunds only the deposit after execution', async () => {
-    const treasuryBefore = await token.balanceOf(owner.address);
+  it('distributes rewards proportional to sqrt(cost)', async () => {
     const block = await ethers.provider.getBlock('latest');
-    await qv.connect(voter).castVote(1, 4, block.timestamp + 100); // cost 16 => deposit 8, fee 8
+    const treasuryBefore = await token.balanceOf(owner.address);
+    await qv.connect(voter1).castVote(1, 4, block.timestamp + 100); // cost 16, sqrt 4
+    await qv.connect(voter2).castVote(1, 1, block.timestamp + 100); // cost 1, sqrt 1
     await qv.connect(executor).execute(1);
-    await qv.connect(voter).claimRefund(1);
-    expect(await token.balanceOf(voter.address)).to.equal(992n);
-    expect(await token.balanceOf(await qv.getAddress())).to.equal(0n);
-    expect(await token.balanceOf(owner.address)).to.equal(treasuryBefore + 8n);
+    await token.connect(owner).approve(await qv.getAddress(), 1000);
+
+    await expect(qv.connect(voter1).claimReward(1))
+      .to.emit(qv, 'RewardClaimed')
+      .withArgs(1, voter1.address, 13n);
+    await expect(qv.connect(voter2).claimReward(1))
+      .to.emit(qv, 'RewardClaimed')
+      .withArgs(1, voter2.address, 3n);
+
+    expect(await token.balanceOf(owner.address)).to.equal(treasuryBefore + 1n);
+    expect(await token.balanceOf(voter1.address)).to.equal(997n);
+    expect(await token.balanceOf(voter2.address)).to.equal(1002n);
   });
 
   it('records voters in governance reward', async () => {
@@ -51,29 +61,17 @@ describe('QuadraticVoting', function () {
     const reward = await Mock.deploy();
     await qv.connect(owner).setGovernanceReward(await reward.getAddress());
     const block = await ethers.provider.getBlock('latest');
-    await qv.connect(voter).castVote(1, 2, block.timestamp + 100);
+    await qv.connect(voter1).castVote(1, 2, block.timestamp + 100);
     await expect(qv.connect(executor).execute(1)).to.emit(reward, 'Recorded');
     const recorded = await reward.getLastVoters();
-    expect(recorded[0]).to.equal(voter.address);
+    expect(recorded[0]).to.equal(voter1.address);
   });
 
-  it('reverts refund before deadline without execution', async () => {
+  it('reverts reward claim before execution', async () => {
     const block = await ethers.provider.getBlock('latest');
-    await qv.connect(voter).castVote(1, 2, block.timestamp + 100);
-    await expect(qv.connect(voter).claimRefund(1)).to.be.revertedWith(
+    await qv.connect(voter1).castVote(1, 2, block.timestamp + 100);
+    await expect(qv.connect(voter1).claimReward(1)).to.be.revertedWith(
       'inactive'
     );
-  });
-
-  it('allows refund after deadline without execution', async () => {
-    const block = await ethers.provider.getBlock('latest');
-    const deadline = block.timestamp + 100;
-    await qv.connect(voter).castVote(1, 2, deadline);
-    await ethers.provider.send('evm_increaseTime', [101]);
-    await ethers.provider.send('evm_mine');
-    await expect(qv.connect(voter).claimRefund(1))
-      .to.emit(qv, 'ProposalExpired')
-      .withArgs(1);
-    expect(await token.balanceOf(voter.address)).to.equal(998n);
   });
 });
