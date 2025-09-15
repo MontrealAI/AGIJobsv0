@@ -13,9 +13,13 @@ import {
   TOKEN_DECIMALS,
   cleanupJob,
   jobTimestamps,
+  stakeManager,
 } from './utils';
 import { Job } from './types';
 import { handleJob } from './orchestrator';
+import { appendTrainingRecord, RewardPayout } from '../shared/trainingRecords';
+
+const rewardPayoutCache = new Map<string, RewardPayout[]>();
 
 export function registerEvents(wss: WebSocketServer): void {
   registry.on(
@@ -51,6 +55,30 @@ export function registerEvents(wss: WebSocketServer): void {
     }
   );
 
+  if (stakeManager) {
+    stakeManager.on(
+      'RewardPaid',
+      (jobId: string, recipient: string, amount: bigint) => {
+        let id: string;
+        try {
+          id = ethers.getBigInt(jobId).toString();
+        } catch {
+          id = jobId.toString();
+        }
+        if (id === '0') return;
+        const payout: RewardPayout = {
+          recipient,
+          raw: amount.toString(),
+          formatted: ethers.formatUnits(amount, TOKEN_DECIMALS),
+        };
+        if (!rewardPayoutCache.has(id)) {
+          rewardPayoutCache.set(id, []);
+        }
+        rewardPayoutCache.get(id)!.push(payout);
+      }
+    );
+  }
+
   registry.on(
     'JobSubmitted',
     (
@@ -76,9 +104,96 @@ export function registerEvents(wss: WebSocketServer): void {
 
   registry.on(
     'JobCompleted',
-    (jobId: ethers.BigNumberish, success: boolean) => {
+    async (jobId: ethers.BigNumberish, success: boolean) => {
       const id = jobId.toString();
       broadcast(wss, { type: 'JobCompleted', jobId: id, success });
+
+      let rewardRaw = '0';
+      let rewardFormatted = '0';
+      let employer: string | undefined;
+      let agentAddress: string | undefined;
+      let agentType: number | undefined;
+      let category: string | undefined;
+
+      try {
+        const chainJob = await registry.jobs(id);
+        if (chainJob) {
+          const rewardValue = chainJob.reward as bigint | undefined;
+          if (typeof rewardValue !== 'undefined') {
+            rewardRaw = rewardValue.toString();
+            rewardFormatted = ethers.formatUnits(rewardValue, TOKEN_DECIMALS);
+          }
+          employer = (chainJob.employer as string) || undefined;
+          agentAddress = (chainJob.agent as string) || undefined;
+          const typeValue =
+            typeof chainJob.agentTypes !== 'undefined'
+              ? Number(chainJob.agentTypes)
+              : undefined;
+          if (!Number.isNaN(typeValue as number)) {
+            agentType = typeValue as number;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load job details for training log', id, err);
+      }
+
+      const cachedJob = jobs.get(id);
+      if (!rewardRaw || rewardRaw === '0') {
+        if (cachedJob?.rewardRaw) {
+          rewardRaw = cachedJob.rewardRaw;
+        }
+        if (cachedJob?.reward) {
+          rewardFormatted = cachedJob.reward;
+        }
+      }
+      if (!employer && cachedJob?.employer) {
+        employer = cachedJob.employer;
+      }
+      if (
+        !agentAddress &&
+        cachedJob?.agent &&
+        cachedJob.agent !== ethers.ZeroAddress
+      ) {
+        agentAddress = cachedJob.agent;
+      }
+
+      if (agentAddress === ethers.ZeroAddress) {
+        agentAddress = undefined;
+      }
+
+      if (typeof agentType === 'number' && !Number.isNaN(agentType)) {
+        category = `agentType-${agentType}`;
+      }
+
+      const payouts = rewardPayoutCache.get(id);
+      const createdAt = jobTimestamps.get(id);
+      const durationMs = createdAt ? Date.now() - createdAt : undefined;
+      const recordedAt = new Date().toISOString();
+
+      try {
+        await appendTrainingRecord({
+          kind: 'job',
+          jobId: id,
+          recordedAt,
+          agent: agentAddress,
+          employer,
+          agentType,
+          category: category ?? undefined,
+          success,
+          reward: {
+            posted: { raw: rewardRaw, formatted: rewardFormatted },
+            payouts,
+            decimals: TOKEN_DECIMALS,
+          },
+          metadata: {
+            durationMs,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to append training record', err);
+      }
+
+      rewardPayoutCache.delete(id);
       cleanupJob(id);
       jobTimestamps.delete(id);
       console.log('JobCompleted', id, success);

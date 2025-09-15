@@ -7,6 +7,7 @@ import { Job, AgentInfo, CommitData } from './types';
 // Environment configuration
 export const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
 export const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
+export const STAKE_MANAGER_ADDRESS = process.env.STAKE_MANAGER_ADDRESS || '';
 export const VALIDATION_MODULE_ADDRESS =
   process.env.VALIDATION_MODULE_ADDRESS || '';
 export const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
@@ -25,6 +26,13 @@ function validateEnvConfig(): void {
     }
   };
   checkAddress(JOB_REGISTRY_ADDRESS, 'JOB_REGISTRY_ADDRESS');
+  if (STAKE_MANAGER_ADDRESS) {
+    checkAddress(STAKE_MANAGER_ADDRESS, 'STAKE_MANAGER_ADDRESS');
+  } else {
+    console.warn(
+      'STAKE_MANAGER_ADDRESS is not set; reward logging will be disabled.'
+    );
+  }
   checkAddress(VALIDATION_MODULE_ADDRESS, 'VALIDATION_MODULE_ADDRESS');
   if (!KEYSTORE_URL) {
     throw new Error('KEYSTORE_URL is required');
@@ -60,6 +68,10 @@ const JOB_REGISTRY_ABI = [
   'function expirationGracePeriod() view returns (uint256)',
 ];
 
+const STAKE_MANAGER_ABI = [
+  'event RewardPaid(bytes32 indexed jobId,address indexed to,uint256 amount)',
+];
+
 // Minimal ABI for ValidationModule interactions
 const VALIDATION_MODULE_ABI = [
   'function jobNonce(uint256 jobId) view returns (uint256)',
@@ -77,6 +89,9 @@ export const registry = new Contract(
 );
 export const validation = VALIDATION_MODULE_ADDRESS
   ? new Contract(VALIDATION_MODULE_ADDRESS, VALIDATION_MODULE_ABI, provider)
+  : null;
+export const stakeManager = STAKE_MANAGER_ADDRESS
+  ? new Contract(STAKE_MANAGER_ADDRESS, STAKE_MANAGER_ABI, provider)
   : null;
 
 // In-memory stores
