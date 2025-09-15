@@ -1,11 +1,7 @@
 import { ethers, Contract, Provider, Wallet } from 'ethers';
 import fs from 'fs';
 import path from 'path';
-import {
-  RPC_URL,
-  JOB_REGISTRY_ADDRESS,
-  STAKE_MANAGER_ADDRESS,
-} from './config';
+import { RPC_URL, JOB_REGISTRY_ADDRESS, STAKE_MANAGER_ADDRESS } from './config';
 
 // Minimal ABIs for required contract interactions
 const JOB_REGISTRY_ABI = [
@@ -45,7 +41,11 @@ export async function fetchJobRequirements(
   jobId: number | string,
   provider: Provider = new ethers.JsonRpcProvider(RPC_URL)
 ): Promise<JobRequirements> {
-  const registry = new Contract(JOB_REGISTRY_ADDRESS, JOB_REGISTRY_ABI, provider);
+  const registry = new Contract(
+    JOB_REGISTRY_ADDRESS,
+    JOB_REGISTRY_ABI,
+    provider
+  );
   const job = await registry.jobs(jobId);
   return {
     stake: job.stake as bigint,
@@ -124,7 +124,10 @@ export async function applyForJob(
     reputationEngineAddress,
     provider
   );
-  if (!chosen || chosen.address.toLowerCase() !== wallet.address.toLowerCase()) {
+  if (
+    !chosen ||
+    chosen.address.toLowerCase() !== wallet.address.toLowerCase()
+  ) {
     throw new Error('Wallet not selected for this category');
   }
   await ensureStake(wallet, requirements.stake, provider);
