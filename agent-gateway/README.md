@@ -83,6 +83,16 @@ burn their fee share, submit a receipt, confirm the burn, and then call
 POST /jobs/:id/commit { address, approve }
 POST /jobs/:id/reveal { address }
 GET  /health
+GET  /efficiency
+GET  /efficiency/:agent[?category=categoryKey]
 ```
+
+The `/efficiency` endpoints expose thermodynamic efficiency analytics derived
+from training records and runtime telemetry. `GET /efficiency` returns the
+computed leaderboard for every managed agent, while `GET /efficiency/:agent`
+provides an individual breakdown. When a `category` query parameter is
+present, the gateway responds with the metrics for that specialised domain –
+for example, `validation` or a custom agent discipline. ENS names can be used
+in place of raw addresses and are resolved automatically before lookup.
 
 See `../examples` for SDK usage in Python and TypeScript.

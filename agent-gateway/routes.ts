@@ -11,12 +11,18 @@ import {
   pendingJobs,
   GATEWAY_API_KEY,
   AUTH_MESSAGE,
+  provider,
 } from './utils';
 import { postJob, listPostedJobs } from './employer';
 import { getRetrainingQueue, getSpawnRequests } from './learning';
 import { quarantineReport, releaseAgent } from './security';
 import { telemetryQueueLength } from './telemetry';
 import { listValidatorAssignments } from './validator';
+import {
+  getEfficiencyIndex,
+  getAgentEfficiency,
+  findCategoryBreakdown,
+} from '../shared/efficiencyMetrics';
 
 const app = express();
 app.use(express.json());
@@ -100,6 +106,52 @@ app.get(
   '/validator/assignments',
   (req: express.Request, res: express.Response) => {
     res.json(listValidatorAssignments());
+  }
+);
+
+app.get('/efficiency', async (req: express.Request, res: express.Response) => {
+  try {
+    const index = await getEfficiencyIndex();
+    res.json(Array.from(index.values()));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get(
+  '/efficiency/:agent',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      let key = req.params.agent;
+      if (key.endsWith('.eth')) {
+        try {
+          const resolved = await provider.resolveName(key);
+          if (resolved) {
+            key = resolved;
+          }
+        } catch (err) {
+          console.warn('ENS resolve failed for efficiency lookup', err);
+        }
+      }
+      const report = await getAgentEfficiency(key);
+      if (!report) {
+        res.status(404).json({ error: 'agent not found' });
+        return;
+      }
+      const category = req.query.category as string | undefined;
+      if (category) {
+        const breakdown = findCategoryBreakdown(report, category);
+        if (!breakdown) {
+          res.status(404).json({ error: 'category not found' });
+          return;
+        }
+        res.json({ agent: report.agent, category: breakdown });
+        return;
+      }
+      res.json(report);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   }
 );
 
