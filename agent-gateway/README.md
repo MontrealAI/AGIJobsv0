@@ -38,6 +38,14 @@ transactions use the wallet specified by `BOT_WALLET` or the first wallet
 returned by the keystore if none is provided. If a tax policy is configured,
 that wallet must acknowledge it before these calls will succeed.
 
+If one of the managed wallets owns a validator ENS identity under
+`*.club.agi.eth`, the gateway now participates in commit–reveal validation
+automatically. When a managed validator address is selected for a job the
+gateway retrieves the submission artifact, verifies the integrity hash, and
+commits an approve/reject vote. Reveals are scheduled shortly after the commit
+window closes, and validation telemetry is logged for energy/oracle reporting.
+The validator state is observable via `GET /validator/assignments`.
+
 At startup the gateway loads private keys from `KEYSTORE_URL`. The endpoint
 should return JSON like:
 

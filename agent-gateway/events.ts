@@ -18,6 +18,11 @@ import {
 import { Job } from './types';
 import { handleJob } from './orchestrator';
 import { appendTrainingRecord, RewardPayout } from '../shared/trainingRecords';
+import {
+  handleValidatorSelection,
+  handleJobSubmissionForValidators,
+  handleJobCompletionForValidators,
+} from './validator';
 
 const rewardPayoutCache = new Map<string, RewardPayout[]>();
 
@@ -103,6 +108,16 @@ export function registerEvents(wss: WebSocketServer): void {
       });
       scheduleFinalize(id);
       console.log('JobSubmitted', id);
+      handleJobSubmissionForValidators({
+        jobId: id,
+        worker,
+        resultHash,
+        resultURI,
+        subdomain,
+        receivedAt: new Date().toISOString(),
+      }).catch((err) =>
+        console.error('validator submission handling failed', err)
+      );
     }
   );
 
@@ -201,6 +216,7 @@ export function registerEvents(wss: WebSocketServer): void {
       cleanupJob(id);
       jobTimestamps.delete(id);
       console.log('JobCompleted', id, success);
+      handleJobCompletionForValidators(id);
     }
   );
 
@@ -212,6 +228,9 @@ export function registerEvents(wss: WebSocketServer): void {
         broadcast(wss, { type: 'ValidationStarted', jobId: id, validators });
         scheduleFinalize(id);
         console.log('ValidationStarted', id);
+        handleValidatorSelection(id, validators).catch((err) =>
+          console.error('validator selection handling failed', err)
+        );
       }
     );
   }
