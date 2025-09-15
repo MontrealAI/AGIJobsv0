@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
+import { instrumentTask } from './metrics';
+
 export interface StageDefinition {
   name: string;
   agent: string | ((input: any) => Promise<any>);
@@ -120,7 +122,20 @@ export async function runJob(
 
   for (let i = jobState.currentStage; i < stages.length; i++) {
     const stage = stages[i];
-    const output = await invokeAgent(stage.agent, input);
+    const agentId =
+      typeof stage.agent === 'string'
+        ? stage.agent
+        : stage.name || `stage-${i}`;
+    const output = await instrumentTask(
+      {
+        jobId,
+        stageName: stage.name,
+        agentId,
+        input,
+        metadata: { stageIndex: i },
+      },
+      () => invokeAgent(stage.agent, input)
+    );
     const cid = await uploadToIPFS(output);
     jobState.stages[i].cid = cid;
     jobState.currentStage = i + 1;

@@ -2,6 +2,12 @@ import { ethers, Contract, Provider, Wallet } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 import { RPC_URL, JOB_REGISTRY_ADDRESS, STAKE_MANAGER_ADDRESS } from './config';
+import {
+  DEFAULT_MAX_ENERGY_SCORE,
+  DEFAULT_MIN_EFFICIENCY_SCORE,
+  getAgentEnergyStats,
+  getJobEnergyLog,
+} from './metrics';
 
 // Minimal ABIs for required contract interactions
 const JOB_REGISTRY_ABI = [
@@ -26,6 +32,7 @@ export interface JobRequirements {
 export interface AgentInfo {
   address: string;
   energy?: number;
+  efficiencyScore?: number;
 }
 
 export type CapabilityMatrix = Record<string, AgentInfo[]>;
@@ -34,7 +41,33 @@ export function loadCapabilityMatrix(
   matrixPath = path.resolve(__dirname, '../../config/agents.json')
 ): CapabilityMatrix {
   const data = fs.readFileSync(matrixPath, 'utf8');
-  return JSON.parse(data) as CapabilityMatrix;
+  const matrix = JSON.parse(data) as CapabilityMatrix;
+  for (const category of Object.keys(matrix)) {
+    matrix[category] = matrix[category].map((agent) => {
+      const stats = getAgentEnergyStats(agent.address);
+      if (!stats) return agent;
+      return {
+        ...agent,
+        energy: stats.averageEnergyScore,
+        efficiencyScore: stats.averageEfficiencyScore,
+      };
+    });
+  }
+  return matrix;
+}
+
+export interface SelectAgentOptions {
+  provider?: Provider;
+  jobId?: string | number;
+  minEfficiencyScore?: number;
+  maxEnergyScore?: number;
+}
+
+function normalizeReputation(value: bigint): number {
+  if (value <= 0n) return 0;
+  const maxSafe = BigInt(Number.MAX_SAFE_INTEGER);
+  const safeValue = value > maxSafe ? Number.MAX_SAFE_INTEGER : Number(value);
+  return Math.log10(safeValue + 1);
 }
 
 export async function fetchJobRequirements(
@@ -57,38 +90,87 @@ export async function selectAgent(
   category: string,
   capabilityMatrix: CapabilityMatrix,
   reputationEngineAddress: string,
-  provider: Provider = new ethers.JsonRpcProvider(RPC_URL)
+  options: SelectAgentOptions = {}
 ): Promise<AgentInfo | null> {
   const candidates = capabilityMatrix[category];
   if (!candidates || candidates.length === 0) return null;
+  const provider = options.provider ?? new ethers.JsonRpcProvider(RPC_URL);
+  const minEfficiency =
+    options.minEfficiencyScore ?? DEFAULT_MIN_EFFICIENCY_SCORE;
+  const maxEnergy = options.maxEnergyScore ?? DEFAULT_MAX_ENERGY_SCORE;
+  const jobId = options.jobId;
   const reputationEngine = new Contract(
     reputationEngineAddress,
     REPUTATION_ENGINE_ABI,
     provider
   );
-  let best = candidates[0];
-  let bestRep = await reputationEngine.reputation(best.address);
-  for (const agent of candidates.slice(1)) {
-    const rep = await reputationEngine.reputation(agent.address);
-    if (rep > bestRep) {
-      best = agent;
-      bestRep = rep;
-    } else if (rep === bestRep) {
-      const agentEnergy = agent.energy ?? Number.MAX_SAFE_INTEGER;
-      const bestEnergy = best.energy ?? Number.MAX_SAFE_INTEGER;
-      if (agentEnergy < bestEnergy) {
-        best = agent;
-      }
+  const evaluated: {
+    agent: AgentInfo;
+    reputation: bigint;
+    predictedEnergy: number;
+    efficiency: number;
+    combinedScore: number;
+  }[] = [];
+
+  for (const agent of candidates) {
+    const reputation = await reputationEngine.reputation(agent.address);
+    const stats = getAgentEnergyStats(agent.address);
+    const jobLog = jobId ? getJobEnergyLog(agent.address, jobId) : null;
+    const predictedEnergyRaw =
+      jobLog?.summary.energyScore ??
+      stats?.averageEnergyScore ??
+      agent.energy ??
+      Number.MAX_SAFE_INTEGER;
+    const predictedEnergy = Number.isFinite(predictedEnergyRaw)
+      ? predictedEnergyRaw
+      : Number.MAX_SAFE_INTEGER;
+    if (predictedEnergy > maxEnergy) {
+      continue;
     }
+    const efficiencyRaw =
+      jobLog?.summary.efficiencyScore ??
+      stats?.averageEfficiencyScore ??
+      agent.efficiencyScore ??
+      (predictedEnergy > 0 ? 1 / (predictedEnergy + 1) : 1);
+    const efficiency = Number.isFinite(efficiencyRaw) ? efficiencyRaw : 0;
+    if (efficiency < minEfficiency) {
+      continue;
+    }
+    const reputationScore = normalizeReputation(reputation);
+    const energyComponent = predictedEnergy > 0 ? 1 / (predictedEnergy + 1) : 1;
+    const reliability = stats?.successRate ?? 1;
+    const combinedScore =
+      reputationScore * 0.4 +
+      efficiency * 0.3 +
+      energyComponent * 0.2 +
+      reliability * 0.1;
+
+    evaluated.push({
+      agent,
+      reputation,
+      predictedEnergy,
+      efficiency,
+      combinedScore,
+    });
   }
-  if (bestRep === 0n) {
-    best = candidates.reduce((min, a) => {
-      const aEnergy = a.energy ?? Number.MAX_SAFE_INTEGER;
-      const mEnergy = min.energy ?? Number.MAX_SAFE_INTEGER;
-      return aEnergy < mEnergy ? a : min;
-    }, best);
+
+  if (evaluated.length === 0) {
+    return null;
   }
-  return best;
+
+  evaluated.sort((a, b) => {
+    if (b.combinedScore !== a.combinedScore) {
+      return b.combinedScore - a.combinedScore;
+    }
+    return a.predictedEnergy - b.predictedEnergy;
+  });
+
+  const winner = evaluated[0];
+  return {
+    ...winner.agent,
+    energy: winner.predictedEnergy,
+    efficiencyScore: winner.efficiency,
+  };
 }
 
 export async function ensureStake(
@@ -118,16 +200,14 @@ export async function applyForJob(
 ): Promise<void> {
   const requirements = await fetchJobRequirements(jobId, provider);
   const matrix = loadCapabilityMatrix(matrixPath);
-  const chosen = await selectAgent(
-    category,
-    matrix,
-    reputationEngineAddress,
-    provider
-  );
-  if (
-    !chosen ||
-    chosen.address.toLowerCase() !== wallet.address.toLowerCase()
-  ) {
+  const chosen = await selectAgent(category, matrix, reputationEngineAddress, {
+    provider,
+    jobId,
+  });
+  if (!chosen) {
+    throw new Error('No suitable agent found under current energy constraints');
+  }
+  if (chosen.address.toLowerCase() !== wallet.address.toLowerCase()) {
     throw new Error('Wallet not selected for this category');
   }
   await ensureStake(wallet, requirements.stake, provider);
