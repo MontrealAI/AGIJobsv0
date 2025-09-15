@@ -1,6 +1,7 @@
 import { ethers, Contract, Provider, Wallet } from 'ethers';
 import fs from 'fs';
 import path from 'path';
+import agialphaConfig from '../../config/agialpha.json';
 import { RPC_URL, JOB_REGISTRY_ADDRESS, STAKE_MANAGER_ADDRESS } from './config';
 import {
   DEFAULT_MAX_ENERGY_SCORE,
@@ -20,6 +21,29 @@ const STAKE_MANAGER_ABI = [
   'function depositStake(uint8 role,uint256 amount)',
 ];
 
+const STAKE_ROLE_AGENT = 0;
+
+function parseNumericEnv(value: string | undefined, fallback: number): number {
+  if (value === undefined) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+const TOKEN_DECIMALS = parseNumericEnv(
+  process.env.TOKEN_DECIMALS,
+  typeof agialphaConfig.decimals === 'number' ? agialphaConfig.decimals : 18
+);
+
+const DEFAULT_ENERGY_COST_PER_UNIT = parseNumericEnv(
+  process.env.ENERGY_COST_PER_UNIT,
+  1
+);
+
+const DEFAULT_MIN_PROFIT_MARGIN = parseNumericEnv(
+  process.env.MIN_PROFIT_MARGIN,
+  0.05
+);
+
 const REPUTATION_ENGINE_ABI = [
   'function reputation(address user) view returns (uint256)',
 ];
@@ -27,12 +51,15 @@ const REPUTATION_ENGINE_ABI = [
 export interface JobRequirements {
   stake: bigint;
   agentTypes: number;
+  reward: bigint;
 }
 
 export interface AgentInfo {
   address: string;
   energy?: number;
   efficiencyScore?: number;
+  skills?: string[];
+  metadata?: Record<string, unknown>;
 }
 
 export type CapabilityMatrix = Record<string, AgentInfo[]>;
@@ -44,10 +71,20 @@ export function loadCapabilityMatrix(
   const matrix = JSON.parse(data) as CapabilityMatrix;
   for (const category of Object.keys(matrix)) {
     matrix[category] = matrix[category].map((agent) => {
-      const stats = getAgentEnergyStats(agent.address);
-      if (!stats) return agent;
-      return {
+      const normalizedSkills = Array.isArray(agent.skills)
+        ? agent.skills
+            .filter((skill): skill is string => typeof skill === 'string')
+            .map((skill) => skill.trim())
+            .filter((skill) => skill.length > 0)
+        : undefined;
+      const baseAgent: AgentInfo = {
         ...agent,
+        ...(normalizedSkills ? { skills: normalizedSkills } : {}),
+      };
+      const stats = getAgentEnergyStats(agent.address);
+      if (!stats) return baseAgent;
+      return {
+        ...baseAgent,
         energy: stats.averageEnergyScore,
         efficiencyScore: stats.averageEfficiencyScore,
       };
@@ -61,13 +98,37 @@ export interface SelectAgentOptions {
   jobId?: string | number;
   minEfficiencyScore?: number;
   maxEnergyScore?: number;
+  requiredSkills?: string[];
+  requiredStake?: bigint;
+  stakeManagerAddress?: string;
+  reward?: bigint;
+  rewardDecimals?: number;
+  minProfitMargin?: number;
+  energyCostPerUnit?: number;
+  includeDiagnostics?: boolean;
 }
 
-function normalizeReputation(value: bigint): number {
-  if (value <= 0n) return 0;
-  const maxSafe = BigInt(Number.MAX_SAFE_INTEGER);
-  const safeValue = value > maxSafe ? Number.MAX_SAFE_INTEGER : Number(value);
-  return Math.log10(safeValue + 1);
+export interface SelectionDiagnosticsEntry {
+  address: string;
+  reputation: string;
+  predictedEnergy: number;
+  efficiency: number;
+  skillMatches: number;
+  profitMargin: string;
+  profitable: boolean;
+  stakeSufficient: boolean;
+}
+
+export interface SelectionDiagnostics {
+  evaluated: SelectionDiagnosticsEntry[];
+  considered: SelectionDiagnosticsEntry[];
+  pool: SelectionDiagnosticsEntry[];
+}
+
+export interface SelectionResult {
+  agent: AgentInfo | null;
+  skipReason?: string;
+  diagnostics?: SelectionDiagnostics;
 }
 
 export async function fetchJobRequirements(
@@ -83,6 +144,7 @@ export async function fetchJobRequirements(
   return {
     stake: job.stake as bigint,
     agentTypes: Number(job.agentTypes),
+    reward: job.reward as bigint,
   };
 }
 
@@ -91,29 +153,81 @@ export async function selectAgent(
   capabilityMatrix: CapabilityMatrix,
   reputationEngineAddress: string,
   options: SelectAgentOptions = {}
-): Promise<AgentInfo | null> {
+): Promise<SelectionResult> {
   const candidates = capabilityMatrix[category];
-  if (!candidates || candidates.length === 0) return null;
+  const includeDiagnostics = options.includeDiagnostics === true;
+  const emptyDiagnostics: SelectionDiagnostics | undefined = includeDiagnostics
+    ? { evaluated: [], considered: [], pool: [] }
+    : undefined;
+  if (!candidates || candidates.length === 0) {
+    return { agent: null, diagnostics: emptyDiagnostics };
+  }
   const provider = options.provider ?? new ethers.JsonRpcProvider(RPC_URL);
   const minEfficiency =
     options.minEfficiencyScore ?? DEFAULT_MIN_EFFICIENCY_SCORE;
   const maxEnergy = options.maxEnergyScore ?? DEFAULT_MAX_ENERGY_SCORE;
   const jobId = options.jobId;
+  const requiredSkills = new Set(
+    (options.requiredSkills ?? [])
+      .filter((skill) => typeof skill === 'string')
+      .map((skill) => skill.toLowerCase())
+  );
   const reputationEngine = new Contract(
     reputationEngineAddress,
     REPUTATION_ENGINE_ABI,
     provider
   );
-  const evaluated: {
+  const stakeManager = options.stakeManagerAddress
+    ? new Contract(options.stakeManagerAddress, STAKE_MANAGER_ABI, provider)
+    : null;
+  const rewardProvided =
+    options.reward !== undefined && options.reward !== null;
+  const rewardAmount = rewardProvided ? (options.reward as bigint) : 0n;
+  const rewardValue = rewardProvided
+    ? Number(
+        ethers.formatUnits(
+          rewardAmount,
+          options.rewardDecimals ?? TOKEN_DECIMALS
+        )
+      )
+    : null;
+  const energyCostPerUnit =
+    options.energyCostPerUnit ?? DEFAULT_ENERGY_COST_PER_UNIT;
+  const minProfitMargin = options.minProfitMargin ?? DEFAULT_MIN_PROFIT_MARGIN;
+
+  interface EvaluatedAgent {
     agent: AgentInfo;
     reputation: bigint;
     predictedEnergy: number;
     efficiency: number;
-    combinedScore: number;
-  }[] = [];
+    skillMatches: number;
+    profitMargin: number;
+    profitable: boolean;
+    stakeSufficient: boolean;
+  }
+
+  const formatDiagnostics = (
+    entries: EvaluatedAgent[]
+  ): SelectionDiagnosticsEntry[] =>
+    entries.map((entry) => ({
+      address: entry.agent.address,
+      reputation: entry.reputation.toString(),
+      predictedEnergy: entry.predictedEnergy,
+      efficiency: entry.efficiency,
+      skillMatches: entry.skillMatches,
+      profitMargin: Number.isFinite(entry.profitMargin)
+        ? entry.profitMargin.toFixed(6)
+        : 'Infinity',
+      profitable: entry.profitable,
+      stakeSufficient: entry.stakeSufficient,
+    }));
+
+  const evaluated: EvaluatedAgent[] = [];
 
   for (const agent of candidates) {
-    const reputation = await reputationEngine.reputation(agent.address);
+    const reputation = (await reputationEngine.reputation(
+      agent.address
+    )) as bigint;
     const stats = getAgentEnergyStats(agent.address);
     const jobLog = jobId ? getJobEnergyLog(agent.address, jobId) : null;
     const predictedEnergyRaw =
@@ -136,40 +250,140 @@ export async function selectAgent(
     if (efficiency < minEfficiency) {
       continue;
     }
-    const reputationScore = normalizeReputation(reputation);
-    const energyComponent = predictedEnergy > 0 ? 1 / (predictedEnergy + 1) : 1;
-    const reliability = stats?.successRate ?? 1;
-    const combinedScore =
-      reputationScore * 0.4 +
-      efficiency * 0.3 +
-      energyComponent * 0.2 +
-      reliability * 0.1;
+
+    const candidateSkills = new Set<string>();
+    if (Array.isArray(agent.skills)) {
+      for (const skill of agent.skills) {
+        if (typeof skill === 'string' && skill.trim().length > 0) {
+          candidateSkills.add(skill.toLowerCase());
+        }
+      }
+    }
+    const metadataSkills = Array.isArray(
+      (agent.metadata as { skills?: unknown[] } | undefined)?.skills
+    )
+      ? ((agent.metadata as { skills?: unknown[] }).skills as unknown[])
+      : null;
+    if (metadataSkills) {
+      for (const value of metadataSkills) {
+        if (typeof value === 'string' && value.trim().length > 0) {
+          candidateSkills.add(value.toLowerCase());
+        }
+      }
+    }
+    let skillMatches = 0;
+    if (requiredSkills.size > 0) {
+      for (const skill of requiredSkills) {
+        if (candidateSkills.has(skill)) {
+          skillMatches += 1;
+        }
+      }
+    }
+
+    const energyCost = predictedEnergy * energyCostPerUnit;
+    const profitValue =
+      rewardValue === null
+        ? Number.POSITIVE_INFINITY
+        : rewardValue - energyCost;
+    const profitMargin =
+      rewardValue === null
+        ? Number.POSITIVE_INFINITY
+        : energyCost > 0
+        ? profitValue / energyCost
+        : Number.POSITIVE_INFINITY;
+    const profitable =
+      rewardValue === null ? true : profitMargin >= minProfitMargin;
+
+    let stakeSufficient = true;
+    if (stakeManager && options.requiredStake && options.requiredStake > 0n) {
+      try {
+        const currentStake = (await stakeManager.stakeOf(
+          agent.address,
+          STAKE_ROLE_AGENT
+        )) as bigint;
+        stakeSufficient = currentStake >= options.requiredStake;
+      } catch (err) {
+        console.warn(
+          'stakeOf lookup failed for agent during selection',
+          agent.address,
+          err
+        );
+        stakeSufficient = false;
+      }
+    }
 
     evaluated.push({
       agent,
       reputation,
       predictedEnergy,
       efficiency,
-      combinedScore,
+      skillMatches,
+      profitMargin,
+      profitable,
+      stakeSufficient,
     });
   }
 
   if (evaluated.length === 0) {
-    return null;
+    return { agent: null, diagnostics: emptyDiagnostics };
   }
 
-  evaluated.sort((a, b) => {
-    if (b.combinedScore !== a.combinedScore) {
-      return b.combinedScore - a.combinedScore;
+  const candidatesWithStake = evaluated.filter(
+    (entry) => entry.stakeSufficient
+  );
+  const considered =
+    candidatesWithStake.length > 0 ? candidatesWithStake : evaluated;
+
+  const profitableCandidates =
+    rewardValue === null
+      ? considered
+      : considered.filter((entry) => entry.profitable);
+
+  if (rewardValue !== null && profitableCandidates.length === 0) {
+    const diagnostics = includeDiagnostics
+      ? {
+          evaluated: formatDiagnostics(evaluated),
+          considered: formatDiagnostics(considered),
+          pool: [],
+        }
+      : undefined;
+    return { agent: null, skipReason: 'unprofitable', diagnostics };
+  }
+
+  const pool =
+    rewardValue !== null && profitableCandidates.length > 0
+      ? profitableCandidates
+      : considered;
+
+  pool.sort((a, b) => {
+    if (b.skillMatches !== a.skillMatches) {
+      return b.skillMatches - a.skillMatches;
     }
-    return a.predictedEnergy - b.predictedEnergy;
+    if (a.reputation === b.reputation) {
+      if (a.predictedEnergy !== b.predictedEnergy) {
+        return a.predictedEnergy - b.predictedEnergy;
+      }
+      return a.agent.address.localeCompare(b.agent.address);
+    }
+    return a.reputation < b.reputation ? 1 : -1;
   });
 
-  const winner = evaluated[0];
+  const diagnostics = includeDiagnostics
+    ? {
+        evaluated: formatDiagnostics(evaluated),
+        considered: formatDiagnostics(considered),
+        pool: formatDiagnostics(pool),
+      }
+    : undefined;
+
+  const winner = pool[0];
   return {
-    ...winner.agent,
-    energy: winner.predictedEnergy,
-    efficiencyScore: winner.efficiency,
+    agent: {
+      ...winner.agent,
+      energy: winner.predictedEnergy,
+      efficiencyScore: winner.efficiency,
+    },
+    diagnostics,
   };
 }
 
@@ -183,10 +397,13 @@ export async function ensureStake(
     STAKE_MANAGER_ABI,
     wallet.connect(provider)
   );
-  const balance: bigint = await stakeManager.stakeOf(wallet.address, 0);
+  const balance: bigint = await stakeManager.stakeOf(
+    wallet.address,
+    STAKE_ROLE_AGENT
+  );
   if (balance >= requiredStake) return;
   const deficit = requiredStake - balance;
-  const tx = await stakeManager.depositStake(0, deficit);
+  const tx = await stakeManager.depositStake(STAKE_ROLE_AGENT, deficit);
   await tx.wait();
 }
 
@@ -200,10 +417,22 @@ export async function applyForJob(
 ): Promise<void> {
   const requirements = await fetchJobRequirements(jobId, provider);
   const matrix = loadCapabilityMatrix(matrixPath);
-  const chosen = await selectAgent(category, matrix, reputationEngineAddress, {
-    provider,
-    jobId,
-  });
+  const decision = await selectAgent(
+    category,
+    matrix,
+    reputationEngineAddress,
+    {
+      provider,
+      jobId,
+      reward: requirements.reward,
+      requiredStake: requirements.stake,
+      stakeManagerAddress: STAKE_MANAGER_ADDRESS || undefined,
+    }
+  );
+  if (decision.skipReason) {
+    throw new Error(`Job not eligible: ${decision.skipReason}`);
+  }
+  const chosen = decision.agent;
   if (!chosen) {
     throw new Error('No suitable agent found under current energy constraints');
   }

@@ -35,7 +35,27 @@ await applyForJob(1, 'data-entry', wallet, REPUTATION_ENGINE_ADDRESS);
 ```
 
 `applyForJob` will:
+
 1. Read job requirements from `JobRegistry`.
-2. Select the registered agent with the highest reputation for the requested category. If all reputations are equal, the agent with the lowest historical energy usage is chosen.
-3. Ensure the agent has sufficient stake, topping up via `StakeManager.depositStake` if required.
-4. Submit the job application on behalf of the selected agent.
+2. Analyse job metadata (skills, thermodynamic hints and historical energy telemetry) to rank agents. Candidates with matching skills are preferred; ties are broken by highest on-chain reputation and then by the lowest predicted energy usage.
+3. Skip the job altogether when the offered reward cannot cover the projected energy cost plus the configured profit margin.
+4. Ensure the chosen agent has sufficient stake, topping up via `StakeManager.depositStake` when their locked $AGIALPHA balance is below the job requirement.
+5. Submit the job application on behalf of the selected agent.
+
+## Offline analysis CLI
+
+Use `scripts/agents/analyze.ts` to inspect how the selector ranks agents for a
+given job without submitting an application. The script accepts either a JSON
+metadata file or command line flags for the job category, skill requirements,
+reward, and staking thresholds. It queries the on-chain reputation engine and
+stake manager to mirror the live selection, returning the winning agent together
+with diagnostic rankings.
+
+```bash
+npx ts-node scripts/agents/analyze.ts \
+  --category data-entry \
+  --skills "ocr,transcription" \
+  --reward 150 \
+  --reward-decimals 18 \
+  --reputation 0x...reputationEngine
+```
