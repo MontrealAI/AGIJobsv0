@@ -30,7 +30,9 @@ export function registerEvents(wss: WebSocketServer): void {
       agentAddr: string,
       reward: bigint,
       stake: bigint,
-      fee: bigint
+      fee: bigint,
+      specHash: string,
+      uri: string
     ) => {
       const job: Job = {
         jobId: jobId.toString(),
@@ -42,6 +44,8 @@ export function registerEvents(wss: WebSocketServer): void {
         stake: ethers.formatUnits(stake, TOKEN_DECIMALS),
         feeRaw: fee.toString(),
         fee: ethers.formatUnits(fee, TOKEN_DECIMALS),
+        specHash,
+        uri,
       };
       jobs.set(job.jobId, job);
       jobTimestamps.set(job.jobId, Date.now());

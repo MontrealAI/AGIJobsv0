@@ -20,17 +20,31 @@ const REVERSE_ABI = [
 
 const AGENT_ROOT = ethers.namehash('agent.agi.eth');
 const CLUB_ROOT = ethers.namehash('club.agi.eth');
+const BUSINESS_ROOT = ethers.namehash('a.agi.eth');
 
-function parseArgs() {
+type Role = 'agent' | 'validator' | 'business';
+
+function parseArgs(): { name: string; role: Role } {
   const argv = process.argv.slice(2);
   if (!argv.length) {
-    console.error('Usage: ts-node manageEnsKeys.ts <name> [--validator]');
+    console.error(
+      'Usage: ts-node manageEnsKeys.ts <name> [--role=agent|validator|business]'
+    );
     process.exit(1);
   }
   const name = argv[0];
-  const validator =
-    argv.includes('--validator') || argv.includes('--role=validator');
-  return { name, validator };
+  let role: Role = 'agent';
+  for (const arg of argv.slice(1)) {
+    if (arg === '--validator') role = 'validator';
+    if (arg === '--business' || arg === '--orchestrator') role = 'business';
+    if (arg.startsWith('--role=')) {
+      const value = arg.split('=')[1] as Role;
+      if (value === 'agent' || value === 'validator' || value === 'business') {
+        role = value;
+      }
+    }
+  }
+  return { name, role };
 }
 
 async function registerEnsSubdomain(
@@ -38,11 +52,21 @@ async function registerEnsSubdomain(
   rootWallet: ethers.Wallet,
   subWallet: ethers.Wallet,
   label: string,
-  validator: boolean
+  role: Role
 ) {
   const registry = new ethers.Contract(ENS_REGISTRY, REGISTRY_ABI, rootWallet);
-  const parentNode = validator ? CLUB_ROOT : AGENT_ROOT;
-  const parent = validator ? 'club.agi.eth' : 'agent.agi.eth';
+  const parentNode =
+    role === 'validator'
+      ? CLUB_ROOT
+      : role === 'business'
+      ? BUSINESS_ROOT
+      : AGENT_ROOT;
+  const parent =
+    role === 'validator'
+      ? 'club.agi.eth'
+      : role === 'business'
+      ? 'a.agi.eth'
+      : 'agent.agi.eth';
   const resolverAddr = await registry.resolver(parentNode);
   if (resolverAddr === ethers.ZeroAddress) {
     throw new Error('Parent node has no resolver set');
@@ -79,7 +103,7 @@ async function registerEnsSubdomain(
 }
 
 async function main() {
-  const { name, validator } = parseArgs();
+  const { name, role } = parseArgs();
   const rpc = process.env.RPC_URL || 'http://localhost:8545';
   const provider = new ethers.JsonRpcProvider(rpc);
 
@@ -96,7 +120,7 @@ async function main() {
     rootWallet,
     agentWallet,
     name,
-    validator
+    role
   );
 
   const outDir = path.join(__dirname, '..', '..', 'config', 'agents');
@@ -106,7 +130,7 @@ async function main() {
     address: agentWallet.address,
     privateKey: agentWallet.privateKey,
     ens: ensName,
-    role: validator ? 'validator' : 'agent',
+    role,
   };
   fs.writeFileSync(outFile, JSON.stringify(data, null, 2));
   console.log(`Registered ${ensName} -> ${agentWallet.address}`);

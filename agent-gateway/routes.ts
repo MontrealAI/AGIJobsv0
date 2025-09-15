@@ -12,6 +12,10 @@ import {
   GATEWAY_API_KEY,
   AUTH_MESSAGE,
 } from './utils';
+import { postJob, listPostedJobs } from './employer';
+import { getRetrainingQueue, getSpawnRequests } from './learning';
+import { quarantineReport, releaseAgent } from './security';
+import { telemetryQueueLength } from './telemetry';
 
 const app = express();
 app.use(express.json());
@@ -87,6 +91,10 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
   res.json(Array.from(jobs.values()));
 });
 
+app.get('/telemetry', (req: express.Request, res: express.Response) => {
+  res.json({ pending: telemetryQueueLength() });
+});
+
 // Apply for a job with a managed wallet
 app.post(
   '/jobs/:id/apply',
@@ -135,6 +143,60 @@ app.post(
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  }
+);
+
+app.post(
+  '/employer/jobs',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const record = await postJob(req.body);
+      res.json(record);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/employer/jobs',
+  async (req: express.Request, res: express.Response) => {
+    res.json(await listPostedJobs());
+  }
+);
+
+app.get(
+  '/learning/retraining',
+  async (req: express.Request, res: express.Response) => {
+    res.json(await getRetrainingQueue());
+  }
+);
+
+app.get(
+  '/learning/spawn',
+  async (req: express.Request, res: express.Response) => {
+    res.json(await getSpawnRequests());
+  }
+);
+
+app.get(
+  '/security/quarantine',
+  (req: express.Request, res: express.Response) => {
+    res.json(quarantineReport());
+  }
+);
+
+app.post(
+  '/security/quarantine/release',
+  authMiddleware,
+  (req: express.Request, res: express.Response) => {
+    const { address } = req.body as { address: string };
+    if (!address) {
+      return res.status(400).json({ error: 'address required' });
+    }
+    releaseAgent(address);
+    res.json({ address });
   }
 );
 

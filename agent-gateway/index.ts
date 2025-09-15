@@ -10,6 +10,7 @@ import {
   stopSweeper,
 } from './utils';
 import { registerEvents } from './events';
+import { startTelemetryService, stopTelemetryService } from './telemetry';
 
 let server: http.Server;
 let wss: WebSocketServer;
@@ -17,6 +18,7 @@ let wss: WebSocketServer;
 async function startGateway(): Promise<void> {
   await verifyTokenDecimals();
   await initWallets();
+  await startTelemetryService();
 
   server = http.createServer(app);
   wss = new WebSocketServer({ server });
@@ -38,6 +40,7 @@ function shutdown(): void {
   console.log('Shutting down agent gateway...');
   if (wss) wss.close();
   stopSweeper();
+  stopTelemetryService();
   if (server) {
     server.close(() => process.exit(0));
   } else {
