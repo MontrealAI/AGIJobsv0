@@ -59,6 +59,7 @@ interface IStakeManager {
     event TreasuryUpdated(address indexed treasury);
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event MaxStakePerAddressUpdated(uint256 maxStake);
+    event MaxStakePctUpdated(uint256 pct);
     event MaxAGITypesUpdated(uint256 oldMax, uint256 newMax);
     event AGITypeUpdated(address indexed nft, uint256 payoutPct);
     event AGITypeRemoved(address indexed nft);
@@ -232,6 +233,7 @@ interface IStakeManager {
     function setTreasury(address _treasury) external;
     function setTreasuryAllowlist(address _treasury, bool allowed) external;
     function setMaxStakePerAddress(uint256 maxStake) external;
+    function setMaxStakePct(uint256 pct) external;
     function setMaxAGITypes(uint256 newMax) external;
     function setMaxTotalPayoutPct(uint256 newMax) external;
     function addAGIType(address nft, uint256 payoutPct) external;

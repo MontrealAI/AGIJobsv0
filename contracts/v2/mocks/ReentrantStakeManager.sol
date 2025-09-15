@@ -77,6 +77,7 @@ contract ReentrantStakeManager is IStakeManager {
     function setTreasury(address) external override {}
     function setTreasuryAllowlist(address, bool) external override {}
     function setMaxStakePerAddress(uint256) external override {}
+    function setMaxStakePct(uint256) external override {}
     function setMaxAGITypes(uint256) external override {}
     function setFeePct(uint256) external override {}
     function setFeePool(IFeePool) external override {}
