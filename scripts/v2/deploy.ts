@@ -44,6 +44,84 @@ async function verify(address: string, args: any[] = []) {
   }
 }
 
+export interface RegistryPostJobOptions {
+  registryAddress: string;
+  description: string;
+  reward: bigint | number | string;
+  params: {
+    deadline: bigint | number | string;
+    agentTypes?: number;
+    specHash: string;
+    uri: string;
+  };
+  orchestrator?: string;
+}
+
+export async function postJobFromOrchestrator(
+  options: RegistryPostJobOptions
+): Promise<{ txHash: string; jobId: string }> {
+  const [defaultSigner] = await ethers.getSigners();
+  const orchestratorSigner = options.orchestrator
+    ? await ethers.getSigner(options.orchestrator)
+    : defaultSigner;
+  const registry = await ethers.getContractAt(
+    'contracts/v2/JobRegistry.sol:JobRegistry',
+    options.registryAddress,
+    orchestratorSigner
+  );
+  const coder = ethers.AbiCoder.defaultAbiCoder();
+  const reward = ethers.toBigInt(options.reward);
+  const encoded = coder.encode(
+    ['tuple(uint64 deadline,uint8 agentTypes,bytes32 specHash,string uri)'],
+    [
+      [
+        BigInt(options.params.deadline),
+        options.params.agentTypes ?? 0,
+        options.params.specHash,
+        options.params.uri,
+      ],
+    ]
+  );
+
+  let predicted: bigint | null = null;
+  try {
+    predicted = await registry.postJob.staticCall(
+      options.description,
+      reward,
+      encoded
+    );
+  } catch (err) {
+    console.warn('postJob static call failed', err);
+  }
+
+  const tx = await registry.postJob(options.description, reward, encoded);
+  const receipt = await tx.wait();
+
+  let jobId: string | null = predicted ? predicted.toString() : null;
+  if (receipt) {
+    const target = String(registry.target).toLowerCase();
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== target) continue;
+      try {
+        const parsed = registry.interface.parseLog(log);
+        if (parsed && parsed.name === 'JobCreated') {
+          jobId = parsed.args.jobId.toString();
+          break;
+        }
+      } catch {
+        // ignore logs that do not match the JobRegistry ABI
+      }
+    }
+  }
+
+  if (!jobId) {
+    const latest = await registry.nextJobId();
+    jobId = latest.toString();
+  }
+
+  return { txHash: tx.hash, jobId };
+}
+
 async function main() {
   const [deployer] = await ethers.getSigners();
   const args = parseArgs();
