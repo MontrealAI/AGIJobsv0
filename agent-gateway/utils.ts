@@ -13,6 +13,7 @@ export const VALIDATION_MODULE_ADDRESS =
 export const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
 export const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
 export const BOT_WALLET = process.env.BOT_WALLET || '';
+export const ORCHESTRATOR_WALLET = process.env.ORCHESTRATOR_WALLET || '';
 export const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || '5000');
 export const PORT = Number(process.env.PORT || 3000);
 
@@ -57,19 +58,25 @@ export const provider: JsonRpcProvider = new ethers.JsonRpcProvider(RPC_URL);
 
 // Minimal ABI for JobRegistry interactions
 const JOB_REGISTRY_ABI = [
-  'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee)',
+  'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)',
+  'event JobApplied(uint256 indexed jobId, address indexed agent, string subdomain)',
   'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
+  'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) external returns (uint256)',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
   'function acknowledgeTaxPolicy() external returns (string)',
   'function cancelExpiredJob(uint256 jobId) external',
   'function taxPolicy() view returns (address)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint8 state,bool success,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash)',
   'function expirationGracePeriod() view returns (uint256)',
+  'function nextJobId() view returns (uint256)',
 ];
 
 const STAKE_MANAGER_ABI = [
   'event RewardPaid(bytes32 indexed jobId,address indexed to,uint256 amount)',
+  'function depositStake(uint8 role, uint256 amount)',
+  'function stakeOf(address user, uint8 role) view returns (uint256)',
+  'function minStake() view returns (uint256)',
 ];
 
 // Minimal ABI for ValidationModule interactions
@@ -143,6 +150,7 @@ export const expiryTimers = new Map<string, NodeJS.Timeout>();
 
 export let walletManager: WalletManager;
 export let automationWallet: Wallet | undefined;
+export let orchestratorWallet: Wallet | undefined;
 
 export async function loadWalletKeys(retry = true): Promise<string[]> {
   if (!KEYSTORE_URL) {
@@ -181,6 +189,11 @@ export async function initWallets(): Promise<void> {
       const [first] = walletManager.list();
       if (first) automationWallet = walletManager.get(first);
     }
+    if (ORCHESTRATOR_WALLET) {
+      orchestratorWallet = walletManager.get(ORCHESTRATOR_WALLET);
+    } else {
+      orchestratorWallet = automationWallet;
+    }
   } catch (err: any) {
     throw new Error(`Failed to initialize wallets: ${err.message}`);
   }
@@ -191,7 +204,9 @@ export async function checkEnsSubdomain(address: string): Promise<void> {
     const name = await provider.lookupAddress(address);
     if (
       name &&
-      (name.endsWith('.agent.agi.eth') || name.endsWith('.club.agi.eth')) &&
+      (name.endsWith('.agent.agi.eth') ||
+        name.endsWith('.club.agi.eth') ||
+        name.endsWith('.a.agi.eth')) &&
       name.split('.').length > 3
     ) {
       return;

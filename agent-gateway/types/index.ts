@@ -8,6 +8,8 @@ export interface Job {
   stake: string;
   feeRaw: string;
   fee: string;
+  specHash?: string;
+  uri?: string;
 }
 
 import type { WebSocket } from 'ws';
