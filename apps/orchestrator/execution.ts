@@ -75,10 +75,11 @@ export async function uploadToIPFS(
   content: any,
   apiUrl = process.env.IPFS_API_URL || 'http://localhost:5001/api/v0'
 ): Promise<string> {
-  const data =
-    (typeof content === 'string' || content instanceof Uint8Array
+  const data = (
+    typeof content === 'string' || content instanceof Uint8Array
       ? content
-      : JSON.stringify(content)) as any;
+      : JSON.stringify(content)
+  ) as any;
   const form = new FormData();
   form.append('file', new Blob([data]));
   const res = await fetch(`${apiUrl}/add`, { method: 'POST', body: form });

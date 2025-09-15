@@ -78,4 +78,3 @@ export async function postJob(spec: PostJobSpec): Promise<{
 
   return { jobId, jsonUri, markdownUri };
 }
-
