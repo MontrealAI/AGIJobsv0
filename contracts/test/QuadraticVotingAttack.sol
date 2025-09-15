@@ -8,7 +8,7 @@ import {ReentrantERC20, IReentrantCaller} from "./ReentrantERC20.sol";
 contract QuadraticVotingAttack is IReentrantCaller {
     enum AttackType {
         Cast,
-        Refund
+        Reward
     }
 
     QuadraticVoting public qv;
@@ -32,11 +32,11 @@ contract QuadraticVotingAttack is IReentrantCaller {
         qv.castVote(proposalId, 1, deadline);
     }
 
-    function attackRefund() external {
-        attackType = AttackType.Refund;
+    function attackReward() external {
+        attackType = AttackType.Reward;
         token.setCaller(address(this));
         token.setAttack(true);
-        qv.claimRefund(proposalId);
+        qv.claimReward(proposalId);
     }
 
     function vote() external {
@@ -47,8 +47,8 @@ contract QuadraticVotingAttack is IReentrantCaller {
     function reenter() external override {
         if (attackType == AttackType.Cast) {
             qv.castVote(proposalId, 1, deadline);
-        } else if (attackType == AttackType.Refund) {
-            qv.claimRefund(proposalId);
+        } else if (attackType == AttackType.Reward) {
+            qv.claimReward(proposalId);
         }
     }
 }

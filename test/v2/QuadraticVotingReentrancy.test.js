@@ -16,6 +16,7 @@ describe('QuadraticVoting reentrancy', function () {
       await token.getAddress(),
       executor.address
     );
+    await qv.connect(deployer).setTreasury(deployer.address);
 
     const block = await ethers.provider.getBlock('latest');
     const deadline = block.timestamp + 100;
@@ -38,7 +39,7 @@ describe('QuadraticVoting reentrancy', function () {
     );
   });
 
-  it('guards claimRefund against reentrancy', async () => {
+  it('guards claimReward against reentrancy', async () => {
     const [deployer, executor] = await ethers.getSigners();
     const Token = await ethers.getContractFactory(
       'contracts/test/ReentrantERC20.sol:ReentrantERC20'
@@ -51,6 +52,7 @@ describe('QuadraticVoting reentrancy', function () {
       await token.getAddress(),
       executor.address
     );
+    await qv.connect(deployer).setTreasury(deployer.address);
 
     const block = await ethers.provider.getBlock('latest');
     const deadline = block.timestamp + 100;
@@ -66,11 +68,12 @@ describe('QuadraticVoting reentrancy', function () {
     );
 
     await token.mint(await attack.getAddress(), 10n);
-    // perform normal vote to lock deposit
+    // perform normal vote to accrue cost
     await attack.vote();
     await qv.connect(executor).execute(1);
+    await token.connect(deployer).approve(await qv.getAddress(), 10n);
 
-    await expect(attack.attackRefund()).to.be.revertedWithCustomError(
+    await expect(attack.attackReward()).to.be.revertedWithCustomError(
       qv,
       'ReentrancyGuardReentrantCall'
     );
