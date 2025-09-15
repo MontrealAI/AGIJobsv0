@@ -16,6 +16,7 @@ import { postJob, listPostedJobs } from './employer';
 import { getRetrainingQueue, getSpawnRequests } from './learning';
 import { quarantineReport, releaseAgent } from './security';
 import { telemetryQueueLength } from './telemetry';
+import { listValidatorAssignments } from './validator';
 
 const app = express();
 app.use(express.json());
@@ -94,6 +95,13 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
 });
+
+app.get(
+  '/validator/assignments',
+  (req: express.Request, res: express.Response) => {
+    res.json(listValidatorAssignments());
+  }
+);
 
 // Apply for a job with a managed wallet
 app.post(
