@@ -6,6 +6,7 @@ import {
   saveJobGraph,
   loadState,
 } from './execution';
+import { auditLog } from './audit';
 
 const REGISTRY_ABI = [
   'function nextJobId() view returns (uint256)',
@@ -30,6 +31,16 @@ export async function postJob(spec: PostJobSpec): Promise<{
   const { wallet, metadata, dependencies = [], agentTypes } = spec;
   const reward = BigInt(spec.reward);
   const deadline = BigInt(spec.deadline);
+
+  auditLog('job.post_initiated', {
+    actor: wallet.address,
+    details: {
+      reward: reward.toString(),
+      deadline: deadline.toString(),
+      dependencies: dependencies.map((d) => d.toString()),
+      agentTypes: agentTypes ?? null,
+    },
+  });
 
   const state = loadState();
   for (const dep of dependencies) {
@@ -75,6 +86,21 @@ export async function postJob(spec: PostJobSpec): Promise<{
   const graph = loadJobGraph();
   graph[jobId] = dependencies.map((d) => d.toString());
   saveJobGraph(graph);
+
+  auditLog('job.posted', {
+    jobId,
+    actor: wallet.address,
+    details: {
+      reward: reward.toString(),
+      deadline: deadline.toString(),
+      jsonUri,
+      markdownUri,
+      agentTypes: agentTypes ?? null,
+      specHash,
+      transaction: tx.hash,
+      dependencies: graph[jobId],
+    },
+  });
 
   return { jobId, jsonUri, markdownUri };
 }
