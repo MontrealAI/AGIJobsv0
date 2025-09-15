@@ -49,3 +49,9 @@ Honest execution minimises \(G\); any attempt to cheat requires additional “en
 ## Nash Equilibrium
 
 For Agents and Validators, expected loss from slashing outweighs any potential gain from collusion. Employers receive compensation when jobs fail, aligning incentives across roles. This configuration drives the system toward an equilibrium where cooperation is rational for all participants.
+
+## Monte Carlo Calibration
+
+A Monte Carlo sweep simulated agents and validators with efficiencies ranging from 50% to 90%. We varied burn percentages (0–20%) and fee percentages (0–10%) over 1,000 iterations per pair. Dissipation was measured as fees plus burned stake per 100 token job.
+
+The search showed dissipation grows with both parameters. The lowest non‑zero deterrent came at **burnPct = 5%** and **feePct = 2%**, averaging roughly 2.26 tokens dissipated per job. These values balance economic security with minimal loss and are set as governance defaults.
