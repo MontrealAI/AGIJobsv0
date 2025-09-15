@@ -8,6 +8,7 @@ export interface InstrumentationOptions {
   input?: unknown;
   metadata?: Record<string, unknown>;
   skipLogging?: boolean;
+  onMetrics?: (metrics: TaskMetrics) => void;
 }
 
 export interface TaskMetrics {
@@ -313,6 +314,14 @@ export async function instrumentTask<T>(
       metadata,
       errorMessage: error ? String(error) : undefined,
     };
+
+    if (typeof options.onMetrics === 'function') {
+      try {
+        options.onMetrics(metrics);
+      } catch (err) {
+        console.warn('instrumentTask onMetrics callback failed', err);
+      }
+    }
 
     if (!skipLogging) {
       persistMetrics(metrics);
