@@ -1,0 +1,15 @@
+[
+  {
+    "id": "baseline-quality",
+    "description": "Ensure recent executions maintain at least 60% success.",
+    "minSamples": 5,
+    "window": 10,
+    "minSuccessRate": 0.6
+  },
+  {
+    "id": "reward-floor",
+    "description": "Ensure the average posted reward meets the configured minimum.",
+    "minSamples": 3,
+    "minAverageReward": 1
+  }
+]
