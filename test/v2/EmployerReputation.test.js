@@ -174,9 +174,11 @@ describe('Employer reputation', function () {
       .submit(jobId, ethers.id('res'), 'res', '', []);
     await validation.finalize(jobId);
     await registry.connect(employer).finalize(jobId);
-    const repStats = await registry.getEmployerReputation(employer.address);
-    expect(repStats[0]).to.equal(1n);
-    expect(repStats[1]).to.equal(0n);
+    const [successful, failed] = await registry.getEmployerReputation(
+      employer.address
+    );
+    expect(successful).to.equal(1n);
+    expect(failed).to.equal(0n);
     const score = await registry.getEmployerScore(employer.address);
     expect(score).to.equal(ethers.parseEther('1'));
   });
@@ -202,9 +204,11 @@ describe('Employer reputation', function () {
     await dispute.connect(owner).setDisputeWindow(0);
     await dispute.connect(owner).resolve(jobId, true);
     await registry.connect(employer).finalize(jobId);
-    const repStats = await registry.getEmployerReputation(employer.address);
-    expect(repStats[0]).to.equal(0n);
-    expect(repStats[1]).to.equal(1n);
+    const [successful, failed] = await registry.getEmployerReputation(
+      employer.address
+    );
+    expect(successful).to.equal(0n);
+    expect(failed).to.equal(1n);
     const score = await registry.getEmployerScore(employer.address);
     expect(score).to.equal(0n);
   });
