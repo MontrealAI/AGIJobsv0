@@ -23,6 +23,7 @@ import { auditLog } from './audit';
 import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
+import { evaluateSubmission } from './validation';
 
 interface AppliedJobState {
   identity: AgentIdentity;
@@ -601,8 +602,53 @@ export class MetaOrchestrator {
   ): Promise<void> {
     if (!this.validationModule) return;
     const wallet = identity.wallet.connect(this.provider);
+    const jobKey = jobId.toString();
+    let approve = false;
+    try {
+      const applied = this.appliedJobs.get(jobKey);
+      const evaluation = await evaluateSubmission({
+        registry: this.registry,
+        provider: this.provider,
+        jobId,
+        classification: applied?.classification,
+        spec: applied?.spec ?? null,
+        ipfsGateway: this.config.ipfsGateway,
+      });
+      approve = evaluation.approve;
+      auditLog('validator.evaluation', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: {
+          approve: evaluation.approve,
+          confidence: evaluation.confidence,
+          notes: evaluation.notes,
+          resultUri: evaluation.resultUri,
+          resultHash: evaluation.resultHash,
+          payloadType: evaluation.payloadType,
+          contentLength: evaluation.contentLength,
+          worker: evaluation.worker,
+          subdomain: evaluation.subdomain,
+        },
+      });
+    } catch (err) {
+      console.error('evaluateSubmission failed', err);
+      auditLog('validator.evaluation', {
+        jobId: jobKey,
+        actor: identity.address,
+        details: {
+          approve: false,
+          confidence: 0,
+          notes: [
+            {
+              level: 'error',
+              message: err instanceof Error ? err.message : String(err),
+            },
+          ],
+        },
+      });
+      approve = false;
+    }
     const nonce: bigint = await this.validationModule.jobNonce(jobId);
-    const approve = true;
     const salt = ethers.hexlify(ethers.randomBytes(32));
     const commitHash = ethers.solidityPackedKeccak256(
       ['uint256', 'uint256', 'bool', 'bytes32'],
@@ -614,9 +660,9 @@ export class MetaOrchestrator {
     auditLog('validator.commit', {
       jobId: jobId.toString(),
       actor: identity.address,
-      details: { tx: tx.hash },
+      details: { tx: tx.hash, approve },
     });
-    const key = `${jobId.toString()}:${identity.address.toLowerCase()}`;
+    const key = `${jobKey}:${identity.address.toLowerCase()}`;
     this.commits.set(key, { wallet, salt, approve });
     const timer = setTimeout(() => {
       this.revealValidation(jobId, identity).catch((err) => {
