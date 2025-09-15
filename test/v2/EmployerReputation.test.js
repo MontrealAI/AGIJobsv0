@@ -173,7 +173,9 @@ describe('Employer reputation', function () {
       .connect(agent)
       .submit(jobId, ethers.id('res'), 'res', '', []);
     await validation.finalize(jobId);
-    await registry.connect(employer).finalize(jobId);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'EmployerReputationUpdated')
+      .withArgs(employer.address, 1n, 0n);
     const repStats = await registry.getEmployerReputation(employer.address);
     expect(repStats[0]).to.equal(1n);
     expect(repStats[1]).to.equal(0n);
@@ -201,7 +203,9 @@ describe('Employer reputation', function () {
     await dispute.connect(owner).setCommittee(owner.address);
     await dispute.connect(owner).setDisputeWindow(0);
     await dispute.connect(owner).resolve(jobId, true);
-    await registry.connect(employer).finalize(jobId);
+    await expect(registry.connect(employer).finalize(jobId))
+      .to.emit(registry, 'EmployerReputationUpdated')
+      .withArgs(employer.address, 0n, 1n);
     const repStats = await registry.getEmployerReputation(employer.address);
     expect(repStats[0]).to.equal(0n);
     expect(repStats[1]).to.equal(1n);
