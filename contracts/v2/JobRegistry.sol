@@ -107,6 +107,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     uint256 public nextJobId;
     mapping(uint256 => Job) public jobs;
 
+    struct PostJobParams {
+        uint64 deadline;
+        uint8 agentTypes;
+        bytes32 specHash;
+        string uri;
+    }
+
     struct BurnReceipt {
         uint256 amount;
         uint256 blockNumber;
@@ -344,6 +351,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 reward,
         uint256 stake,
         uint256 fee,
+        bytes32 specHash,
+        string uri
+    );
+    event JobPosted(
+        uint256 indexed jobId,
+        address indexed employer,
+        string description,
+        uint256 reward,
         bytes32 specHash,
         string uri
     );
@@ -910,6 +925,33 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     ) external returns (uint256 jobId) {
         _acknowledge(msg.sender);
         jobId = _createJob(reward, deadline, agentTypes, specHash, uri);
+    }
+
+    function postJob(
+        string calldata description,
+        uint256 reward,
+        bytes calldata params
+    ) external returns (uint256 jobId) {
+        PostJobParams memory decoded = abi.decode(params, (PostJobParams));
+        uint8 agentTypes = decoded.agentTypes;
+        if (agentTypes == 0) {
+            agentTypes = 3;
+        }
+        jobId = _createJob(
+            reward,
+            decoded.deadline,
+            agentTypes,
+            decoded.specHash,
+            decoded.uri
+        );
+        emit JobPosted(
+            jobId,
+            msg.sender,
+            description,
+            reward,
+            decoded.specHash,
+            decoded.uri
+        );
     }
 
     function _applyForJob(
