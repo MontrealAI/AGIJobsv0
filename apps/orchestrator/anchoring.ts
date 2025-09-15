@@ -190,9 +190,7 @@ export class AuditAnchoringService {
     });
     await tx.wait();
     const stats = await fs.stat(filePath);
-    console.log(
-      `Anchored audit log ${path.basename(filePath)} as ${tx.hash}`
-    );
+    console.log(`Anchored audit log ${path.basename(filePath)} as ${tx.hash}`);
     return {
       root,
       txHash: tx.hash,
@@ -223,10 +221,7 @@ export class AuditAnchoringService {
         const left = level[i];
         const right = level[i + 1] ?? level[i];
         next.push(
-          ethers.solidityPackedKeccak256(
-            ['bytes32', 'bytes32'],
-            [left, right]
-          )
+          ethers.solidityPackedKeccak256(['bytes32', 'bytes32'], [left, right])
         );
       }
       level = next;
