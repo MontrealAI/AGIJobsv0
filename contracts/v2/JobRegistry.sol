@@ -16,6 +16,7 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ThermoMath} from "./libraries/ThermoMath.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -38,6 +39,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error CannotExpire();
     error DeadlineNotReached();
     error InvalidPercentage();
+    error InvalidTemperature();
     error InvalidValidationModule();
     error InvalidStakeManager();
     error InvalidReputationModule();
@@ -223,6 +225,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     address public treasury;
     address public pauser;
 
+    bool public mbRewardsEnabled;
+    int256 public mbTemperature = 1e18; // default T=1 in fixed point
+    mapping(uint256 => int256) public agentEnergy;
+    mapping(uint256 => int256) public validatorEnergy;
+
 
     /// @notice Addresses allowed to acknowledge the tax policy for others.
     /// @dev Each acknowledger must be a valid contract or externally owned account.
@@ -282,6 +289,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event IdentityRegistryUpdated(address identityRegistry);
     event ValidatorRewardPctUpdated(uint256 pct);
     event PauserUpdated(address indexed pauser);
+    event BoltzmannParamsUpdated(bool enabled, int256 temperature);
+    event JobEnergyUpdated(uint256 indexed jobId, int256 agentEnergy, int256 validatorEnergy);
     /// @notice Emitted when the tax policy reference or version changes.
     /// @param policy Address of the TaxPolicy contract.
     /// @param version Incrementing version participants must acknowledge.
@@ -668,6 +677,19 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (feePct + pct > 100) revert InvalidPercentage();
         validatorRewardPct = pct;
         emit ValidatorRewardPctUpdated(pct);
+    }
+
+    function setBoltzmannParams(bool enabled, int256 temperature) external onlyGovernance {
+        if (temperature <= 0) revert InvalidTemperature();
+        mbRewardsEnabled = enabled;
+        mbTemperature = temperature;
+        emit BoltzmannParamsUpdated(enabled, temperature);
+    }
+
+    function setJobEnergy(uint256 jobId, int256 agentE, int256 validatorE) external onlyGovernance {
+        agentEnergy[jobId] = agentE;
+        validatorEnergy[jobId] = validatorE;
+        emit JobEnergyUpdated(jobId, agentE, validatorE);
     }
 
     /// @notice set the maximum allowed job reward
@@ -1368,15 +1390,29 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (job.success) {
             IFeePool pool = feePool;
             uint256 validatorReward;
-            if (validators.length > 0 && validatorRewardPct > 0) {
-                validatorReward =
-                    (uint256(job.reward) * validatorRewardPct) / 100;
+            uint256 rewardAfterValidator;
+            uint256 agentPct;
+            if (mbRewardsEnabled && validators.length > 0) {
+                int256[] memory E = new int256[](2);
+                E[0] = agentEnergy[jobId];
+                E[1] = validatorEnergy[jobId];
+                uint256[] memory g = new uint256[](2);
+                g[0] = 1;
+                g[1] = validators.length;
+                uint256[] memory w = ThermoMath.mbWeights(E, g, mbTemperature, 0);
+                validatorReward = (uint256(job.reward) * w[1]) / 1e18;
+                rewardAfterValidator = uint256(job.reward) - validatorReward;
+                agentPct = 100;
+            } else {
+                if (validators.length > 0 && validatorRewardPct > 0) {
+                    validatorReward =
+                        (uint256(job.reward) * validatorRewardPct) / 100;
+                }
+                rewardAfterValidator = uint256(job.reward) - validatorReward;
+                agentPct = job.agentPct == 0 ? 100 : job.agentPct;
             }
 
-            uint256 rewardAfterValidator =
-                uint256(job.reward) - validatorReward;
             uint256 fee;
-            uint256 agentPct = job.agentPct == 0 ? 100 : job.agentPct;
             if (address(stakeManager) != address(0)) {
                 if (address(pool) != address(0) && job.reward > 0) {
                     fee = (uint256(job.reward) * job.feePct) / 100;
