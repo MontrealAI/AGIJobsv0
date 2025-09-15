@@ -133,7 +133,7 @@ function normaliseString(value: unknown): { text: string; type: string } {
       type: Array.isArray(value) ? 'json-array' : 'json-object',
     };
   } catch {
-    return { text: String(value), type: typeof value }; 
+    return { text: String(value), type: typeof value };
   }
 }
 
@@ -288,7 +288,11 @@ export async function persistWorldModelSnapshot(
 ): Promise<void> {
   ensureDirectory(SNAPSHOT_DIR);
   const filePath = path.join(SNAPSHOT_DIR, `${snapshot.jobId}.json`);
-  await fs.promises.writeFile(filePath, JSON.stringify(snapshot, null, 2), 'utf8');
+  await fs.promises.writeFile(
+    filePath,
+    JSON.stringify(snapshot, null, 2),
+    'utf8'
+  );
 }
 
 export function worldModelRoot(): string {

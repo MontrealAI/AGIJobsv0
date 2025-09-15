@@ -341,7 +341,11 @@ export async function runJob(
     metadata: contextStage?.metadata,
     initialInput: initialInputSummary ?? undefined,
   };
-  const snapshot = buildWorldModelSnapshot(jobId, stageObservations, snapshotContext);
+  const snapshot = buildWorldModelSnapshot(
+    jobId,
+    stageObservations,
+    snapshotContext
+  );
   await persistWorldModelSnapshot(snapshot);
   const artifacts: JobArtifact[] = stageObservations.map((obs) => ({
     stage: obs.stage,
@@ -358,8 +362,7 @@ export async function runJob(
   }));
   const manifest: JobArtifactManifest = {
     jobId,
-    createdAt:
-      stageObservations[0]?.startedAt ?? new Date().toISOString(),
+    createdAt: stageObservations[0]?.startedAt ?? new Date().toISOString(),
     completedAt:
       stageObservations[stageObservations.length - 1]?.completedAt ??
       new Date().toISOString(),
