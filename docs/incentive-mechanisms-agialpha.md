@@ -11,18 +11,24 @@ This note details how $AGIALPHA (18 decimals) powers a tax‑neutral, reporting�
 
 Token burns may be configured on every fee so a portion of payouts is destroyed, creating a deflationary sink that increases scarcity without routing revenue to the owner.
 
-## 2. Algorithmic & Reputational Incentives
+## 2. Thermodynamic Reward Splitting
+
+- `JobRegistry` can allocate validator rewards using a Maxwell–Boltzmann weighting.
+- A governance-set temperature parameter biases payouts toward agents that complete work with lower "energy" (e.g. faster completion times).
+- When enabled via `setBoltzmannReward(true)`, the validator share of a job reward becomes proportional to `exp(-E/T)` rather than a fixed percentage, conserving the total reward while incentivizing efficiency.
+
+## 3. Algorithmic & Reputational Incentives
 
 - `JobRouter` favors platforms with higher stakes when routing unspecific jobs, giving committed operators more volume.
 - `DiscoveryModule` surfaces staked platforms earlier in search results and displays a stake badge as reputation.
 - Validators from well‑staked platforms receive extra validation slots, improving throughput.
 
-## 3. Governance‑Aligned Rewards
+## 4. Governance‑Aligned Rewards
 
 - Staked operators participate in token‑weighted votes that adjust module parameters and fee splits.
 - A dedicated `GovernanceReward` contract records voters and distributes owner‑funded bonuses after each poll, linking governance diligence to revenue.
 
-## 4. Sybil & Regulatory Mitigation
+## 5. Sybil & Regulatory Mitigation
 
 - Minimum stake gates every platform deployment; failure or misconduct can slash this collateral.
 - A configurable burn percentage on each payout permanently removes tokens, countering sybil farms and increasing scarcity.
@@ -32,7 +38,7 @@ Token burns may be configured on every fee so a portion of payouts is destroyed,
 
 All modules expose simple `Ownable` setters so the contract owner can retune fees, stakes and burn rates through Etherscan without redeploying contracts. Token rotation is considered legacy and is not part of normal operations.
 
-## 5. Owner Controls & User Experience
+## 6. Owner Controls & User Experience
 
 - The contract owner may update fees, burn rates and stake thresholds. The $AGIALPHA token address is immutable after deployment.
 - All interactions rely on simple data types, enabling non‑technical users to operate entirely through Etherscan.
