@@ -15,6 +15,7 @@ import {
   jobTimestamps,
 } from './utils';
 import { Job } from './types';
+import { handleJob } from './orchestrator';
 
 export function registerEvents(wss: WebSocketServer): void {
   registry.on(
@@ -44,6 +45,9 @@ export function registerEvents(wss: WebSocketServer): void {
       dispatch(wss, job);
       console.log('JobCreated', job);
       scheduleExpiration(job.jobId);
+      if (job.agent === ethers.ZeroAddress) {
+        handleJob(job).catch((err) => console.error('autoApply error', err));
+      }
     }
   );
 
