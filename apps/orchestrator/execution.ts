@@ -2,15 +2,24 @@ import fs from 'fs';
 import path from 'path';
 
 import { instrumentTask } from './metrics';
+import { auditLog } from './audit';
+import { getWatchdog } from './monitor';
+import { signAgentOutput } from './signing';
 
 export interface StageDefinition {
   name: string;
   agent: string | ((input: any) => Promise<any>);
+  signerId?: string;
 }
 
 interface JobStage {
   name: string;
   cid?: string;
+  signatureCid?: string;
+  signature?: string;
+  signer?: string;
+  digest?: string;
+  completedAt?: string;
 }
 
 interface JobState {
@@ -21,6 +30,7 @@ interface JobState {
 
 const STATE_FILE = path.resolve(__dirname, 'state.json');
 const GRAPH_FILE = path.resolve(__dirname, 'jobGraph.json');
+const watchdog = getWatchdog();
 
 export function loadState(): Record<string, JobState> {
   try {
@@ -101,6 +111,10 @@ export async function runJob(
   stages: StageDefinition[],
   initialInput?: any
 ): Promise<string[]> {
+  auditLog('job.start', {
+    jobId,
+    details: { stages: stages.map((stage) => stage.name) },
+  });
   const state = loadState();
   const graph = loadJobGraph();
   const deps = graph[jobId] || [];
@@ -122,28 +136,109 @@ export async function runJob(
 
   for (let i = jobState.currentStage; i < stages.length; i++) {
     const stage = stages[i];
-    const agentId =
+    const invocationTarget =
       typeof stage.agent === 'string'
         ? stage.agent
         : stage.name || `stage-${i}`;
-    const output = await instrumentTask(
-      {
+    const agentId = stage.signerId || invocationTarget;
+    const status = watchdog.getStatus(agentId);
+    if (status && watchdog.isQuarantined(agentId)) {
+      auditLog('stage.skipped_quarantined', {
         jobId,
         stageName: stage.name,
         agentId,
-        input,
-        metadata: { stageIndex: i },
-      },
-      () => invokeAgent(stage.agent, input)
-    );
-    const cid = await uploadToIPFS(output);
-    jobState.stages[i].cid = cid;
-    jobState.currentStage = i + 1;
-    state[jobId] = jobState;
-    saveState(state);
-    cids.push(cid);
-    input = output;
+        details: { invocationTarget, status },
+      });
+      throw new Error(`Agent ${agentId} is quarantined`);
+    }
+
+    auditLog('stage.start', {
+      jobId,
+      stageName: stage.name,
+      agentId,
+      details: { invocationTarget, stageIndex: i },
+    });
+
+    try {
+      const output = await instrumentTask(
+        {
+          jobId,
+          stageName: stage.name,
+          agentId,
+          input,
+          metadata: { stageIndex: i },
+        },
+        () => invokeAgent(stage.agent, input)
+      );
+      const signature = signAgentOutput(agentId, output);
+      const cid = await uploadToIPFS(output);
+      const signedAt = new Date().toISOString();
+      const signatureRecord = {
+        jobId,
+        stage: stage.name,
+        agentId,
+        invocationTarget,
+        digest: signature.digest,
+        signature: signature.signature,
+        signer: signature.signer,
+        algorithm: signature.algorithm,
+        canonicalPayload: signature.canonicalPayload,
+        outputCid: cid,
+        signedAt,
+      };
+      const signatureCid = await uploadToIPFS(signatureRecord);
+      jobState.stages[i] = {
+        name: stage.name,
+        cid,
+        signatureCid,
+        signature: signature.signature,
+        signer: signature.signer,
+        digest: signature.digest,
+        completedAt: signedAt,
+      };
+      jobState.currentStage = i + 1;
+      if (i + 1 === stages.length) {
+        jobState.completed = true;
+      }
+      state[jobId] = jobState;
+      saveState(state);
+      cids.push(cid);
+      input = output;
+      watchdog.recordSuccess(agentId);
+      auditLog('stage.complete', {
+        jobId,
+        stageName: stage.name,
+        agentId,
+        details: {
+          invocationTarget,
+          outputCid: cid,
+          signatureCid,
+          signer: signature.signer,
+          digest: signature.digest,
+        },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      watchdog.recordFailure(agentId, message);
+      auditLog('stage.error', {
+        jobId,
+        stageName: stage.name,
+        agentId,
+        details: { invocationTarget, error: message },
+      });
+      auditLog('job.error', {
+        jobId,
+        stageName: stage.name,
+        agentId,
+        details: { invocationTarget, error: message },
+      });
+      throw err;
+    }
   }
+  auditLog('job.complete', {
+    jobId,
+    details: { outputCids: cids },
+  });
   return cids;
 }
 
