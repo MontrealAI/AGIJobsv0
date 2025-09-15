@@ -1,0 +1,10 @@
+{
+  "ens": "sentinel.club.agi.eth",
+  "label": "sentinel",
+  "stakeTarget": "5000000000000000000",
+  "metadata": {
+    "description": "Deterministic validator persona with dedicated stake for commit-reveal rounds.",
+    "categories": ["compliance", "governance"],
+    "notes": "Uses deterministic random salts for each validation cycle."
+  }
+}
