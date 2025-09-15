@@ -105,11 +105,30 @@ export interface SelectAgentOptions {
   rewardDecimals?: number;
   minProfitMargin?: number;
   energyCostPerUnit?: number;
+  includeDiagnostics?: boolean;
+}
+
+export interface SelectionDiagnosticsEntry {
+  address: string;
+  reputation: string;
+  predictedEnergy: number;
+  efficiency: number;
+  skillMatches: number;
+  profitMargin: string;
+  profitable: boolean;
+  stakeSufficient: boolean;
+}
+
+export interface SelectionDiagnostics {
+  evaluated: SelectionDiagnosticsEntry[];
+  considered: SelectionDiagnosticsEntry[];
+  pool: SelectionDiagnosticsEntry[];
 }
 
 export interface SelectionResult {
   agent: AgentInfo | null;
   skipReason?: string;
+  diagnostics?: SelectionDiagnostics;
 }
 
 export async function fetchJobRequirements(
@@ -136,8 +155,12 @@ export async function selectAgent(
   options: SelectAgentOptions = {}
 ): Promise<SelectionResult> {
   const candidates = capabilityMatrix[category];
+  const includeDiagnostics = options.includeDiagnostics === true;
+  const emptyDiagnostics: SelectionDiagnostics | undefined = includeDiagnostics
+    ? { evaluated: [], considered: [], pool: [] }
+    : undefined;
   if (!candidates || candidates.length === 0) {
-    return { agent: null };
+    return { agent: null, diagnostics: emptyDiagnostics };
   }
   const provider = options.provider ?? new ethers.JsonRpcProvider(RPC_URL);
   const minEfficiency =
@@ -182,6 +205,22 @@ export async function selectAgent(
     profitable: boolean;
     stakeSufficient: boolean;
   }
+
+  const formatDiagnostics = (
+    entries: EvaluatedAgent[]
+  ): SelectionDiagnosticsEntry[] =>
+    entries.map((entry) => ({
+      address: entry.agent.address,
+      reputation: entry.reputation.toString(),
+      predictedEnergy: entry.predictedEnergy,
+      efficiency: entry.efficiency,
+      skillMatches: entry.skillMatches,
+      profitMargin: Number.isFinite(entry.profitMargin)
+        ? entry.profitMargin.toFixed(6)
+        : 'Infinity',
+      profitable: entry.profitable,
+      stakeSufficient: entry.stakeSufficient,
+    }));
 
   const evaluated: EvaluatedAgent[] = [];
 
@@ -243,7 +282,9 @@ export async function selectAgent(
 
     const energyCost = predictedEnergy * energyCostPerUnit;
     const profitValue =
-      rewardValue === null ? Number.POSITIVE_INFINITY : rewardValue - energyCost;
+      rewardValue === null
+        ? Number.POSITIVE_INFINITY
+        : rewardValue - energyCost;
     const profitMargin =
       rewardValue === null
         ? Number.POSITIVE_INFINITY
@@ -284,10 +325,12 @@ export async function selectAgent(
   }
 
   if (evaluated.length === 0) {
-    return { agent: null };
+    return { agent: null, diagnostics: emptyDiagnostics };
   }
 
-  const candidatesWithStake = evaluated.filter((entry) => entry.stakeSufficient);
+  const candidatesWithStake = evaluated.filter(
+    (entry) => entry.stakeSufficient
+  );
   const considered =
     candidatesWithStake.length > 0 ? candidatesWithStake : evaluated;
 
@@ -297,7 +340,14 @@ export async function selectAgent(
       : considered.filter((entry) => entry.profitable);
 
   if (rewardValue !== null && profitableCandidates.length === 0) {
-    return { agent: null, skipReason: 'unprofitable' };
+    const diagnostics = includeDiagnostics
+      ? {
+          evaluated: formatDiagnostics(evaluated),
+          considered: formatDiagnostics(considered),
+          pool: [],
+        }
+      : undefined;
+    return { agent: null, skipReason: 'unprofitable', diagnostics };
   }
 
   const pool =
@@ -318,6 +368,14 @@ export async function selectAgent(
     return a.reputation < b.reputation ? 1 : -1;
   });
 
+  const diagnostics = includeDiagnostics
+    ? {
+        evaluated: formatDiagnostics(evaluated),
+        considered: formatDiagnostics(considered),
+        pool: formatDiagnostics(pool),
+      }
+    : undefined;
+
   const winner = pool[0];
   return {
     agent: {
@@ -325,6 +383,7 @@ export async function selectAgent(
       energy: winner.predictedEnergy,
       efficiencyScore: winner.efficiency,
     },
+    diagnostics,
   };
 }
 
@@ -358,13 +417,18 @@ export async function applyForJob(
 ): Promise<void> {
   const requirements = await fetchJobRequirements(jobId, provider);
   const matrix = loadCapabilityMatrix(matrixPath);
-  const decision = await selectAgent(category, matrix, reputationEngineAddress, {
-    provider,
-    jobId,
-    reward: requirements.reward,
-    requiredStake: requirements.stake,
-    stakeManagerAddress: STAKE_MANAGER_ADDRESS || undefined,
-  });
+  const decision = await selectAgent(
+    category,
+    matrix,
+    reputationEngineAddress,
+    {
+      provider,
+      jobId,
+      reward: requirements.reward,
+      requiredStake: requirements.stake,
+      stakeManagerAddress: STAKE_MANAGER_ADDRESS || undefined,
+    }
+  );
   if (decision.skipReason) {
     throw new Error(`Job not eligible: ${decision.skipReason}`);
   }

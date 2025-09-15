@@ -398,22 +398,17 @@ export class MetaOrchestrator {
         );
         const requiredSkills =
           spec?.requiredSkills ?? classification.spec?.requiredSkills ?? [];
-        const decision = await selectAgent(
-          category,
-          matrix,
-          reputationEngine,
-          {
-            provider,
-            jobId: summary.jobId,
-            minEfficiencyScore:
-              classification.spec?.thermodynamics?.minEfficiency,
-            maxEnergyScore: classification.spec?.thermodynamics?.maxEnergy,
-            requiredSkills,
-            reward: requirements.reward,
-            requiredStake: requirements.stake,
-            stakeManagerAddress: this.config.stakeManagerAddress,
-          }
-        );
+        const decision = await selectAgent(category, matrix, reputationEngine, {
+          provider,
+          jobId: summary.jobId,
+          minEfficiencyScore:
+            classification.spec?.thermodynamics?.minEfficiency,
+          maxEnergyScore: classification.spec?.thermodynamics?.maxEnergy,
+          requiredSkills,
+          reward: requirements.reward,
+          requiredStake: requirements.stake,
+          stakeManagerAddress: this.config.stakeManagerAddress,
+        });
         if (decision.skipReason) {
           return { identity: null, skipReason: decision.skipReason };
         }
