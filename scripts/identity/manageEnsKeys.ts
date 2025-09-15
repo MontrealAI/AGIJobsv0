@@ -20,15 +20,61 @@ const REVERSE_ABI = [
 
 const AGENT_ROOT = ethers.namehash('agent.agi.eth');
 const CLUB_ROOT = ethers.namehash('club.agi.eth');
-const BUSINESS_ROOT = ethers.namehash('a.agi.eth');
 
-type Role = 'agent' | 'validator' | 'business';
+const IDENTITY_STORAGE_ROOT = path.join(
+  __dirname,
+  '..',
+  '..',
+  'storage',
+  'identity'
+);
+
+type Role = 'agent' | 'validator' | 'orchestrator';
+
+type RoleConfig = {
+  parentNode: string;
+  parentName: string;
+  storageDir: string;
+  fileName(label: string): string;
+};
+
+type StoredIdentity = {
+  address: string;
+  privateKey: string;
+  ens: string;
+  label: string;
+  role: Role;
+  createdAt: string;
+};
+
+const ROLE_VALUES: Role[] = ['agent', 'validator', 'orchestrator'];
+
+const ROLE_CONFIG: Record<Role, RoleConfig> = {
+  agent: {
+    parentNode: AGENT_ROOT,
+    parentName: 'agent.agi.eth',
+    storageDir: path.join(IDENTITY_STORAGE_ROOT, 'agents'),
+    fileName: (label: string) => `${label}.json`,
+  },
+  validator: {
+    parentNode: CLUB_ROOT,
+    parentName: 'club.agi.eth',
+    storageDir: path.join(IDENTITY_STORAGE_ROOT, 'validators'),
+    fileName: (label: string) => `${label}.json`,
+  },
+  orchestrator: {
+    parentNode: AGENT_ROOT,
+    parentName: 'agent.agi.eth',
+    storageDir: IDENTITY_STORAGE_ROOT,
+    fileName: () => 'orchestrator.json',
+  },
+};
 
 function parseArgs(): { name: string; role: Role } {
   const argv = process.argv.slice(2);
   if (!argv.length) {
     console.error(
-      'Usage: ts-node manageEnsKeys.ts <name> [--role=agent|validator|business]'
+      'Usage: ts-node manageEnsKeys.ts <name> [--role=agent|validator|orchestrator]'
     );
     process.exit(1);
   }
@@ -36,10 +82,10 @@ function parseArgs(): { name: string; role: Role } {
   let role: Role = 'agent';
   for (const arg of argv.slice(1)) {
     if (arg === '--validator') role = 'validator';
-    if (arg === '--business' || arg === '--orchestrator') role = 'business';
+    if (arg === '--business' || arg === '--orchestrator') role = 'orchestrator';
     if (arg.startsWith('--role=')) {
       const value = arg.split('=')[1] as Role;
-      if (value === 'agent' || value === 'validator' || value === 'business') {
+      if (ROLE_VALUES.includes(value)) {
         role = value;
       }
     }
@@ -47,36 +93,82 @@ function parseArgs(): { name: string; role: Role } {
   return { name, role };
 }
 
+function normalizeLabel(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    throw new Error('Name/label must be non-empty');
+  }
+  const normalized = trimmed.toLowerCase();
+  if (normalized.includes('/') || normalized.includes('\\')) {
+    throw new Error('Name/label cannot contain path separators');
+  }
+  return normalized;
+}
+
+function resolveStoragePath(role: Role, label: string): string {
+  const config = ROLE_CONFIG[role];
+  fs.mkdirSync(config.storageDir, { recursive: true });
+  const fileName = config.fileName(label);
+  return path.join(config.storageDir, fileName);
+}
+
+function persistWalletRecord(
+  role: Role,
+  label: string,
+  wallet: ethers.Wallet,
+  ensName: string
+): string {
+  const outputPath = resolveStoragePath(role, label);
+  const record: StoredIdentity = {
+    address: wallet.address,
+    privateKey: wallet.privateKey,
+    ens: ensName,
+    label,
+    role,
+    createdAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(outputPath, JSON.stringify(record, null, 2));
+  return outputPath;
+}
+
+async function verifyReverseResolution(
+  provider: ethers.JsonRpcProvider,
+  address: string,
+  expectedEns: string
+): Promise<void> {
+  const resolved = await provider.lookupAddress(address);
+  if (!resolved) {
+    throw new Error(
+      `ENS reverse lookup returned no result for ${address}; expected ${expectedEns}`
+    );
+  }
+  if (resolved.toLowerCase() !== expectedEns.toLowerCase()) {
+    throw new Error(
+      `ENS reverse lookup mismatch for ${address}: expected ${expectedEns}, got ${resolved}`
+    );
+  }
+}
+
 async function registerEnsSubdomain(
   provider: ethers.JsonRpcProvider,
   rootWallet: ethers.Wallet,
   subWallet: ethers.Wallet,
   label: string,
-  role: Role
-) {
+  config: RoleConfig
+): Promise<string> {
   const registry = new ethers.Contract(ENS_REGISTRY, REGISTRY_ABI, rootWallet);
-  const parentNode =
-    role === 'validator'
-      ? CLUB_ROOT
-      : role === 'business'
-      ? BUSINESS_ROOT
-      : AGENT_ROOT;
-  const parent =
-    role === 'validator'
-      ? 'club.agi.eth'
-      : role === 'business'
-      ? 'a.agi.eth'
-      : 'agent.agi.eth';
-  const resolverAddr = await registry.resolver(parentNode);
+  const resolverAddr = await registry.resolver(config.parentNode);
   if (resolverAddr === ethers.ZeroAddress) {
     throw new Error('Parent node has no resolver set');
   }
+
   const labelHash = ethers.id(label);
-  const node = ethers.namehash(`${label}.${parent}`);
+  const ensName = `${label}.${config.parentName}`;
+  const node = ethers.namehash(ensName);
 
   await (
     await registry.setSubnodeRecord(
-      parentNode,
+      config.parentNode,
       labelHash,
       subWallet.address,
       resolverAddr,
@@ -92,18 +184,17 @@ async function registerEnsSubdomain(
     REVERSE_ABI,
     subWallet
   );
-  await (await reverse.setName(`${label}.${parent}`)).wait();
+  await (await reverse.setName(ensName)).wait();
 
-  const lookup = await provider.lookupAddress(subWallet.address);
-  if (lookup !== `${label}.${parent}`) {
-    throw new Error('ENS reverse lookup failed');
-  }
+  await verifyReverseResolution(provider, subWallet.address, ensName);
 
-  return `${label}.${parent}`;
+  return ensName;
 }
 
 async function main() {
   const { name, role } = parseArgs();
+  const normalizedLabel = normalizeLabel(name);
+  const roleConfig = ROLE_CONFIG[role];
   const rpc = process.env.RPC_URL || 'http://localhost:8545';
   const provider = new ethers.JsonRpcProvider(rpc);
 
@@ -113,28 +204,25 @@ async function main() {
   }
 
   const rootWallet = new ethers.Wallet(rootKey, provider);
-  const agentWallet = ethers.Wallet.createRandom().connect(provider);
+  const participantWallet = ethers.Wallet.createRandom().connect(provider);
 
   const ensName = await registerEnsSubdomain(
     provider,
     rootWallet,
-    agentWallet,
-    name,
-    role
+    participantWallet,
+    normalizedLabel,
+    roleConfig
   );
 
-  const outDir = path.join(__dirname, '..', '..', 'config', 'agents');
-  fs.mkdirSync(outDir, { recursive: true });
-  const outFile = path.join(outDir, `${name}.json`);
-  const data = {
-    address: agentWallet.address,
-    privateKey: agentWallet.privateKey,
-    ens: ensName,
+  const outputPath = persistWalletRecord(
     role,
-  };
-  fs.writeFileSync(outFile, JSON.stringify(data, null, 2));
-  console.log(`Registered ${ensName} -> ${agentWallet.address}`);
-  console.log(`Keystore written to ${outFile}`);
+    normalizedLabel,
+    participantWallet,
+    ensName
+  );
+
+  console.log(`Registered ${ensName} -> ${participantWallet.address}`);
+  console.log(`Keystore written to ${outputPath}`);
 }
 
 main().catch((err) => {
