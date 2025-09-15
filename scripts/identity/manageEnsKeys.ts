@@ -14,7 +14,9 @@ const REGISTRY_ABI = [
 ];
 
 const RESOLVER_ABI = ['function setAddr(bytes32 node, address addr) external'];
-const REVERSE_ABI = ['function setName(string name) external returns (bytes32)'];
+const REVERSE_ABI = [
+  'function setName(string name) external returns (bytes32)',
+];
 
 const AGENT_ROOT = ethers.namehash('agent.agi.eth');
 const CLUB_ROOT = ethers.namehash('club.agi.eth');
@@ -26,7 +28,8 @@ function parseArgs() {
     process.exit(1);
   }
   const name = argv[0];
-  const validator = argv.includes('--validator') || argv.includes('--role=validator');
+  const validator =
+    argv.includes('--validator') || argv.includes('--role=validator');
   return { name, validator };
 }
 
@@ -60,7 +63,11 @@ async function registerEnsSubdomain(
   const resolver = new ethers.Contract(resolverAddr, RESOLVER_ABI, subWallet);
   await (await resolver.setAddr(node, subWallet.address)).wait();
 
-  const reverse = new ethers.Contract(REVERSE_REGISTRAR, REVERSE_ABI, subWallet);
+  const reverse = new ethers.Contract(
+    REVERSE_REGISTRAR,
+    REVERSE_ABI,
+    subWallet
+  );
   await (await reverse.setName(`${label}.${parent}`)).wait();
 
   const lookup = await provider.lookupAddress(subWallet.address);
@@ -110,4 +117,3 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
-
