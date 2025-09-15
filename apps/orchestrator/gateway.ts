@@ -80,7 +80,14 @@ export async function start(
     stakeManagerAbi,
     provider
   );
-  setupJobListener(jobRegistry, stakeManager, AGENT_ADDRESS, onJobDetected);
+  setupJobListener(
+    jobRegistry,
+    stakeManager as unknown as {
+      stakeOf(address: string, role: number): Promise<bigint>;
+    },
+    AGENT_ADDRESS,
+    onJobDetected
+  );
 }
 
 export async function defaultCallback(
