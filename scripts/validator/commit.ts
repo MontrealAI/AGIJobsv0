@@ -20,7 +20,11 @@ const REGISTRY_ABI = [
   'function getSpecHash(uint256 jobId) view returns (bytes32)',
 ];
 
-const validation = new Contract(VALIDATION_MODULE_ADDRESS, VALIDATION_ABI, provider);
+const validation = new Contract(
+  VALIDATION_MODULE_ADDRESS,
+  VALIDATION_ABI,
+  provider
+);
 const registry = new Contract(JOB_REGISTRY_ADDRESS, REGISTRY_ABI, provider);
 
 function storagePath(jobId: bigint | number): string {
@@ -37,7 +41,9 @@ async function getBurnTxHash(jobId: bigint): Promise<string> {
 async function main() {
   const [jobIdArg, approveArg] = process.argv.slice(2);
   if (!jobIdArg) {
-    console.error('Usage: ts-node scripts/validator/commit.ts <jobId> [approve]');
+    console.error(
+      'Usage: ts-node scripts/validator/commit.ts <jobId> [approve]'
+    );
     process.exit(1);
   }
   const jobId = BigInt(jobIdArg);

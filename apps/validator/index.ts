@@ -28,7 +28,11 @@ const DISPUTE_ABI = [
   'event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 evidenceHash)',
 ];
 
-const validation = new Contract(VALIDATION_MODULE_ADDRESS, VALIDATION_ABI, provider);
+const validation = new Contract(
+  VALIDATION_MODULE_ADDRESS,
+  VALIDATION_ABI,
+  provider
+);
 const registry = new Contract(JOB_REGISTRY_ADDRESS, REGISTRY_ABI, provider);
 const dispute = DISPUTE_MODULE_ADDRESS
   ? new Contract(DISPUTE_MODULE_ADDRESS, DISPUTE_ABI, provider)
@@ -53,7 +57,12 @@ async function getBurnTxHash(jobId: bigint): Promise<string> {
 
 async function handleValidatorsSelected(jobId: bigint, validators: string[]) {
   if (!wallet) return;
-  if (!validators.map((v) => v.toLowerCase()).includes(wallet.address.toLowerCase())) return;
+  if (
+    !validators
+      .map((v) => v.toLowerCase())
+      .includes(wallet.address.toLowerCase())
+  )
+    return;
   console.log(`Selected as validator for job ${jobId}`);
 
   const approve = await evaluateJob(jobId);

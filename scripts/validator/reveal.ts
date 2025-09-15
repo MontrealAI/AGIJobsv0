@@ -13,7 +13,11 @@ const VALIDATION_ABI = [
   'function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)',
 ];
 
-const validation = new Contract(VALIDATION_MODULE_ADDRESS, VALIDATION_ABI, provider);
+const validation = new Contract(
+  VALIDATION_MODULE_ADDRESS,
+  VALIDATION_ABI,
+  provider
+);
 
 function storagePath(jobId: bigint | number): string {
   return path.resolve(__dirname, '../../storage/validation', `${jobId}.json`);
