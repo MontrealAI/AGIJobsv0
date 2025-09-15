@@ -362,12 +362,13 @@ export class MetaOrchestrator {
         employer: summary.employer,
       },
     });
-    const agentIdentity = await this.selectAgent(classification);
+    const decision = await this.selectAgent(summary, classification, spec);
+    const agentIdentity = decision.identity;
     if (!agentIdentity) {
       auditLog('job.skipped', {
         jobId: summary.jobId,
         details: {
-          reason: 'no-eligible-agent',
+          reason: decision.skipReason ?? 'no-eligible-agent',
           category: classification.category,
         },
       });
@@ -377,38 +378,58 @@ export class MetaOrchestrator {
   }
 
   private async selectAgent(
-    classification: ClassificationResult
-  ): Promise<AgentIdentity | null> {
+    summary: ChainJobSummary,
+    classification: ClassificationResult,
+    spec: JobSpec | null
+  ): Promise<{ identity: AgentIdentity | null; skipReason?: string }> {
     const category = classification.category;
     if (this.config.reputationEngineAddress) {
       try {
         const matrix = this.capabilityMatrix;
         const candidates = matrix[category] ?? [];
         if (candidates.length === 0) {
-          return this.fallbackAgent(category);
+          return { identity: this.fallbackAgent(category) };
         }
         const provider: Provider = this.provider;
         const reputationEngine = this.config.reputationEngineAddress;
-        const agentInfo = await selectAgent(
+        const requirements = await fetchJobRequirements(
+          summary.jobId,
+          provider
+        );
+        const requiredSkills =
+          spec?.requiredSkills ?? classification.spec?.requiredSkills ?? [];
+        const decision = await selectAgent(
           category,
           matrix,
           reputationEngine,
           {
             provider,
+            jobId: summary.jobId,
             minEfficiencyScore:
               classification.spec?.thermodynamics?.minEfficiency,
             maxEnergyScore: classification.spec?.thermodynamics?.maxEnergy,
+            requiredSkills,
+            reward: requirements.reward,
+            requiredStake: requirements.stake,
+            stakeManagerAddress: this.config.stakeManagerAddress,
           }
         );
-        if (agentInfo) {
-          const identity = this.identityManager.getByAddress(agentInfo.address);
-          if (identity) return identity;
+        if (decision.skipReason) {
+          return { identity: null, skipReason: decision.skipReason };
+        }
+        if (decision.agent) {
+          const identity = this.identityManager.getByAddress(
+            decision.agent.address
+          );
+          if (identity) {
+            return { identity };
+          }
         }
       } catch (err) {
         console.warn('selectAgent failed, falling back', err);
       }
     }
-    return this.fallbackAgent(category);
+    return { identity: this.fallbackAgent(category) };
   }
 
   private fallbackAgent(category: string): AgentIdentity | null {
