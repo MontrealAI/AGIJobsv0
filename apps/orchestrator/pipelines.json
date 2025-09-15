@@ -1,0 +1,44 @@
+{
+  "default": {
+    "stages": [
+      { "name": "intake", "handler": "policy.analyze" },
+      { "name": "synthesis", "handler": "research.summarize" },
+      { "name": "package", "handler": "report.generate" }
+    ]
+  },
+  "smart-contract": {
+    "stages": [
+      { "name": "requirements", "handler": "policy.analyze" },
+      { "name": "architecture", "handler": "engineering.plan" },
+      { "name": "handoff", "handler": "report.generate" }
+    ]
+  },
+  "finance": {
+    "stages": [
+      { "name": "market-scan", "handler": "research.summarize" },
+      { "name": "valuation", "handler": "finance.evaluate" },
+      { "name": "recommendation", "handler": "report.generate" }
+    ]
+  },
+  "data-analysis": {
+    "stages": [
+      { "name": "data-review", "handler": "policy.analyze" },
+      { "name": "insight", "handler": "research.summarize" },
+      { "name": "delivery", "handler": "report.generate" }
+    ]
+  },
+  "governance": {
+    "stages": [
+      { "name": "proposal-audit", "handler": "policy.analyze" },
+      { "name": "governance-review", "handler": "governance.review" },
+      { "name": "decision", "handler": "report.generate" }
+    ]
+  },
+  "operations": {
+    "stages": [
+      { "name": "status", "handler": "research.summarize" },
+      { "name": "remediation", "handler": "engineering.plan" },
+      { "name": "ops-report", "handler": "report.generate" }
+    ]
+  }
+}
