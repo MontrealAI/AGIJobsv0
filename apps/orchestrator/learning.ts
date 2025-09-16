@@ -116,13 +116,17 @@ function deadlineToIso(value: unknown): string | undefined {
     }
     if (asNumber <= 0) return undefined;
     const date = new Date(asNumber * 1000);
-    return Number.isNaN(date.getTime()) ? parsed.toString() : date.toISOString();
+    return Number.isNaN(date.getTime())
+      ? parsed.toString()
+      : date.toISOString();
   } catch {
     return parsed.toString();
   }
 }
 
-function cloneEnergySummary(log: JobEnergyLog | null): Record<string, unknown> | undefined {
+function cloneEnergySummary(
+  log: JobEnergyLog | null
+): Record<string, unknown> | undefined {
   if (!log?.summary) return undefined;
   const summary = log.summary;
   return {
@@ -139,7 +143,9 @@ function cloneEnergySummary(log: JobEnergyLog | null): Record<string, unknown> |
   };
 }
 
-function cleanMetadata(input: Record<string, unknown>): Record<string, unknown> {
+function cleanMetadata(
+  input: Record<string, unknown>
+): Record<string, unknown> {
   const output: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input)) {
     if (value === undefined) continue;
@@ -180,15 +186,22 @@ export class LearningCoordinator {
         details: { category, reason: context.reason },
       });
     } catch (err) {
-      console.warn('Failed to record spawn request for job', context.jobId, err);
+      console.warn(
+        'Failed to record spawn request for job',
+        context.jobId,
+        err
+      );
     }
   }
 
   async recordJobOutcome(context: JobOutcomeContext): Promise<void> {
     try {
-      const { jobId, identity, classification, spec, summary, chainJob } = context;
+      const { jobId, identity, classification, spec, summary, chainJob } =
+        context;
       const employer =
-        (chainJob?.employer as string | undefined) || summary.employer || undefined;
+        (chainJob?.employer as string | undefined) ||
+        summary.employer ||
+        undefined;
       const reward = formatTokenValue(
         (chainJob && chainJob.reward) ?? summary.reward,
         this.decimals
@@ -199,8 +212,7 @@ export class LearningCoordinator {
       );
       const agentType =
         parseAgentType(chainJob?.agentTypes) ?? spec?.agentType ?? undefined;
-      const category =
-        classification.category || spec?.category || undefined;
+      const category = classification.category || spec?.category || undefined;
       const energyLog = getJobEnergyLog(identity.address, jobId);
       const energySummary = cloneEnergySummary(energyLog);
 
