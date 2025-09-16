@@ -11,6 +11,11 @@ import {
   spawnDefaults,
 } from '../shared/spawnManager';
 import { walletManager } from './utils';
+import {
+  registerEnsSubdomain,
+  verifyEnsRegistration,
+  type EnsRegistrationResult,
+} from './ensRegistrar';
 
 export interface SpawnCandidateReport extends SpawnCandidate {
   existingAgents: number;
@@ -408,7 +413,11 @@ async function persistIdentityRecord(
   template: AgentProfile | null,
   sandbox: SandboxReport,
   sandboxPath: string,
-  options: { identityDir?: string; notes?: string[] }
+  options: {
+    identityDir?: string;
+    notes?: string[];
+    ensRegistration?: EnsRegistrationResult;
+  }
 ): Promise<string> {
   const directory = options.identityDir ?? IDENTITY_DIR;
   ensureDir(directory);
@@ -422,6 +431,19 @@ async function persistIdentityRecord(
       : []),
     ...(options.notes ?? []),
   ];
+  const ensRegistration = options.ensRegistration;
+  const ensMetadata = ensRegistration
+    ? pruneUndefined({
+        parent: ensRegistration.parentName,
+        parentNode: ensRegistration.parentNode,
+        node: ensRegistration.node,
+        resolver: ensRegistration.resolver,
+        registryTx: ensRegistration.registryTxHash,
+        forwardTx: ensRegistration.forwardTxHash,
+        reverseTx: ensRegistration.reverseTxHash,
+        registrarOwner: ensRegistration.registrarOwner,
+      })
+    : undefined;
   const metadata = pruneUndefined({
     categories: [blueprint.category],
     skills: template?.skills,
@@ -445,6 +467,7 @@ async function persistIdentityRecord(
       runAt: sandbox.runAt,
       report: path.relative(process.cwd(), sandboxPath),
     },
+    ens: ensMetadata,
     notes: notes.length ? notes : undefined,
   });
   const record = {
@@ -452,7 +475,12 @@ async function persistIdentityRecord(
     label: blueprint.ensLabel,
     address: blueprint.wallet.address,
     privateKey: blueprint.wallet.privateKey,
-    role: 'agent',
+    role: ensRegistration?.role ?? 'agent',
+    parent: ensRegistration?.parentName,
+    resolver: ensRegistration?.resolver,
+    chainId: ensRegistration?.chainId,
+    network: ensRegistration?.network,
+    createdAt: ensRegistration ? new Date().toISOString() : undefined,
     metadata,
   };
   await fs.promises.writeFile(
@@ -519,6 +547,94 @@ async function cloneCandidate(
     return baseOutcome;
   }
 
+  let ensRegistration: EnsRegistrationResult | undefined;
+  try {
+    ensRegistration = await registerEnsSubdomain({
+      label: blueprint.ensLabel,
+      ensName: blueprint.ensName,
+      targetAddress: blueprint.wallet.address,
+      targetPrivateKey: blueprint.wallet.privateKey,
+    });
+
+    if (
+      ensRegistration.label !== blueprint.ensLabel ||
+      ensRegistration.ensName.toLowerCase() !== blueprint.ensName.toLowerCase()
+    ) {
+      blueprint.ensLabel = ensRegistration.label;
+      blueprint.ensName = ensRegistration.ensName;
+      if (blueprint.persistedTo) {
+        try {
+          await fs.promises.writeFile(
+            blueprint.persistedTo,
+            JSON.stringify(blueprint, null, 2),
+            'utf8'
+          );
+        } catch (err) {
+          console.warn(
+            'Failed to update persisted blueprint after ENS normalisation',
+            err
+          );
+        }
+      }
+    }
+
+    await secureLogAction({
+      component: 'agent-factory',
+      action: 'ens-register',
+      success: true,
+      metadata: {
+        blueprintId: blueprint.id,
+        label: ensRegistration.label,
+        ensName: ensRegistration.ensName,
+        wallet: ensRegistration.walletAddress,
+        parent: ensRegistration.parentName,
+        parentNode: ensRegistration.parentNode,
+        resolver: ensRegistration.resolver,
+        registryTx: ensRegistration.registryTxHash,
+        forwardTx: ensRegistration.forwardTxHash,
+        reverseTx: ensRegistration.reverseTxHash,
+      },
+    }).catch((err) => {
+      console.warn('Failed to record ENS registration audit log', err);
+    });
+
+    const verification = await verifyEnsRegistration({
+      address: ensRegistration.walletAddress,
+      ensName: ensRegistration.ensName,
+      component: 'agent-factory',
+      label: ensRegistration.label,
+      metadata: {
+        blueprintId: blueprint.id,
+        parent: ensRegistration.parentName,
+      },
+    });
+    if (!verification.matches) {
+      console.warn(
+        `ENS reverse lookup mismatch for ${ensRegistration.ensName}: resolved ${verification.resolved}`
+      );
+      return baseOutcome;
+    }
+  } catch (err) {
+    await secureLogAction({
+      component: 'agent-factory',
+      action: 'ens-register',
+      success: false,
+      metadata: {
+        blueprintId: blueprint.id,
+        label: blueprint.ensLabel,
+        ensName: blueprint.ensName,
+        wallet: blueprint.wallet.address,
+      },
+      extra: {
+        error: err instanceof Error ? err.message : String(err),
+      },
+    }).catch((auditErr) => {
+      console.warn('Failed to record ENS registration failure', auditErr);
+    });
+    console.warn('Failed to register ENS subdomain for new agent', err);
+    return baseOutcome;
+  }
+
   let identityPath: string | undefined;
   try {
     identityPath = await persistIdentityRecord(
@@ -529,6 +645,7 @@ async function cloneCandidate(
       {
         identityDir: options.identityDir,
         notes: options.notes,
+        ensRegistration,
       }
     );
     baseOutcome.identityPath = identityPath;
