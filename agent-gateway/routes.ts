@@ -17,7 +17,11 @@ import { postJob, listPostedJobs } from './employer';
 import { getRetrainingQueue, getSpawnRequests } from './learning';
 import { getSpawnPipelineReport, createSpawnBlueprint } from './agentFactory';
 import { quarantineReport, releaseAgent } from './security';
-import { telemetryQueueLength } from './telemetry';
+import {
+  telemetryQueueLength,
+  getEnergyAnomalyReport,
+  getEnergyAnomalyParameters,
+} from './telemetry';
 import { listValidatorAssignments } from './validator';
 import {
   getEfficiencyIndex,
@@ -102,6 +106,32 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
 });
+
+app.get(
+  '/telemetry/anomalies',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      let agentFilter = req.query.agent as string | undefined;
+      if (agentFilter && agentFilter.endsWith('.eth')) {
+        try {
+          const resolved = await provider.resolveName(agentFilter);
+          if (resolved) {
+            agentFilter = resolved;
+          }
+        } catch (err) {
+          console.warn('ENS resolve failed for anomaly lookup', err);
+        }
+      }
+      const anomalies = getEnergyAnomalyReport(agentFilter);
+      res.json({
+        config: getEnergyAnomalyParameters(),
+        anomalies,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 app.get(
   '/spawn/candidates',
