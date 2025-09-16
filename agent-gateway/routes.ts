@@ -311,14 +311,20 @@ app.post(
   '/jobs/:id/commit',
   authMiddleware,
   async (req: express.Request, res: express.Response) => {
-    const { address, approve } = req.body as {
+    const { address, approve, salt } = req.body as {
       address: string;
       approve: boolean;
+      salt?: string;
     };
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
-      const result = await commitHelper(req.params.id, wallet, approve);
+      const result = await commitHelper(
+        req.params.id,
+        wallet,
+        approve,
+        salt
+      );
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -331,11 +337,20 @@ app.post(
   '/jobs/:id/reveal',
   authMiddleware,
   async (req: express.Request, res: express.Response) => {
-    const { address } = req.body as { address: string };
+    const { address, approve, salt } = req.body as {
+      address: string;
+      approve?: boolean;
+      salt?: string;
+    };
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
-      const result = await revealHelper(req.params.id, wallet);
+      const result = await revealHelper(
+        req.params.id,
+        wallet,
+        approve,
+        salt
+      );
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err.message });

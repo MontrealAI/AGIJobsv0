@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import {
   registry,
   validation,
+  dispute,
   jobs,
   broadcast,
   dispatch,
@@ -19,8 +20,10 @@ import { Job, JobCreatedEvent } from './types';
 import { appendTrainingRecord, RewardPayout } from '../shared/trainingRecords';
 import {
   handleValidatorSelection,
-  handleJobSubmissionForValidators,
+  handleJobAwaitingValidation,
   handleJobCompletionForValidators,
+  handleDisputeRaised,
+  handleDisputeResolved,
 } from './validator';
 
 const rewardPayoutCache = new Map<string, RewardPayout[]>();
@@ -120,17 +123,18 @@ export function registerEvents(
       subdomain: string
     ) => {
       const id = jobId.toString();
-      broadcast(wss, {
-        type: 'JobSubmitted',
+      const submissionPayload = {
         jobId: id,
         worker,
         resultHash,
         resultURI,
         subdomain,
-      });
+      };
+      broadcast(wss, { type: 'JobSubmitted', ...submissionPayload });
+      broadcast(wss, { type: 'AwaitingValidation', ...submissionPayload });
       scheduleFinalize(id);
-      console.log('JobSubmitted', id);
-      handleJobSubmissionForValidators({
+      console.log('AwaitingValidation', id);
+      handleJobAwaitingValidation({
         jobId: id,
         worker,
         resultHash,
@@ -252,6 +256,33 @@ export function registerEvents(
         console.log('ValidationStarted', id);
         handleValidatorSelection(id, validators).catch((err) =>
           console.error('validator selection handling failed', err)
+        );
+      }
+    );
+  }
+
+  if (dispute) {
+    dispute.on(
+      'DisputeRaised',
+      (jobId: ethers.BigNumberish, claimant: string, evidenceHash: string) => {
+        const id = jobId.toString();
+        console.log('DisputeRaised', id, claimant, evidenceHash);
+        handleDisputeRaised(id, claimant, evidenceHash).catch((err) =>
+          console.error('validator dispute handling failed', err)
+        );
+      }
+    );
+    dispute.on(
+      'DisputeResolved',
+      (
+        jobId: ethers.BigNumberish,
+        resolver: string,
+        employerWins: boolean
+      ) => {
+        const id = jobId.toString();
+        console.log('DisputeResolved', id, resolver, employerWins);
+        handleDisputeResolved(id, resolver, employerWins).catch((err) =>
+          console.error('validator dispute resolution handling failed', err)
         );
       }
     );

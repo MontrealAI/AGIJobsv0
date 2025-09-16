@@ -1,39 +1,90 @@
-# Single Job Commit–Reveal–Finalize Flow
+# Job Validation Lifecycle
 
-This guide shows how a validator processes one job from commitment to finalization.
-Validators must own a `*.club.agi.eth` subdomain; see
-[ens-identity-setup.md](ens-identity-setup.md) for issuing and verifying names.
+Managed validators automatically participate in commit–reveal once a job moves
+into the *awaiting validation* state. Validators must own a
+`*.club.agi.eth` ENS subdomain; see [ens-identity-setup.md](ens-identity-setup.md)
+for issuing and verifying names.
 
-## Phases and Windows
+## Phase overview
 
-| Phase    | Validator state   | Allowed window                             | Function                                                                             |
-| -------- | ----------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Commit   | Commitment stored | `commitWindow` seconds after selection     | `ValidationModule.commitValidation(jobId, commitHash, subdomain, proof)`             |
-| Reveal   | Vote disclosed    | `revealWindow` seconds after commit window | `ValidationModule.revealValidation(jobId, approve, salt, subdomain, proof)`          |
-| Finalize | Job settled       | After `revealWindow` closes                | `ValidationModule.finalize(jobId)` then employer calls `JobRegistry.finalize(jobId)` |
+| Phase    | Gateway behaviour                                                                 | Validator call                                         |
+| -------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Awaiting | `JobRegistry.JobSubmitted` → `ValidationAwaiting` broadcast to the domain agent.    | — (agent inspects submission, optional heuristics).    |
+| Commit   | Stake checked, ENS identity verified, commit hash computed with `jobNonce`.        | `commitValidation(jobId, commitHash, subdomain, proof)`|
+| Reveal   | Reveal scheduled from `validation.rounds(jobId)` once commit window closes.         | `revealValidation(jobId, approve, salt, subdomain, proof)`|
+| Finalize | Gateway (or anyone) calls `ValidationModule.finalize`. Employer finalises registry. | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
 
-`commitWindow` and `revealWindow` are owner‑configurable via `ValidationModule.setCommitRevealWindows`.
+`commitWindow` and `revealWindow` are owner‑configurable via
+`ValidationModule.setCommitRevealWindows`.
 
-## Sample Solidity
+## Awaiting validation signal
 
-```solidity
-bytes32 salt = keccak256(abi.encodePacked(block.timestamp, msg.sender));
-bytes32 commitHash = keccak256(abi.encode(true, salt));
-validationModule.commitValidation(jobId, commitHash, '', new bytes32[](0));
-// ... wait for the commit window to close
-validationModule.revealValidation(jobId, true, salt, '', new bytes32[](0));
-// ... wait for the reveal window to close
-validationModule.finalize(jobId);
-jobRegistry.finalize(jobId); // employer only
-```
+* `JobRegistry.JobSubmitted` emits the canonical transition to the
+  *awaiting validation* state. The gateway rebroadcasts this as
+  `type: 'AwaitingValidation'` on the websocket feed.
+* Any managed validator that matches the `.club.agi.eth` wallet receives a
+  `ValidationAwaiting` payload (worker address, result hash/URI, ENS label).
+  This lets a domain‑specific agent perform additional checks before the
+  commit transaction is signed.
 
-## Script Example
+## Commit step and local storage
 
-For a runnable Node.js reference, see
-[examples/commit-reveal.js](../examples/commit-reveal.js) which computes the
-commit hash, calls `commitValidation`, and later invokes `revealValidation`.
+* The gateway ensures the validator wallet satisfies staking requirements via
+  the `stakeCoordinator` helper before evaluating the submission.
+* Commits use the on-chain job nonce:
 
-## CLI Example
+  ```ts
+  const nonce = await validation.jobNonce(jobId);
+  const commitHash = ethers.solidityPackedKeccak256(
+    ['uint256', 'uint256', 'bool', 'bytes32'],
+    [jobIdBigInt, nonce, approve, salt]
+  );
+  ```
+
+* The randomly generated (or operator supplied) salt and the resulting
+  evaluation summary are persisted to
+  `storage/validation/<jobId>-<validator>.json`. The file includes:
+
+  ```json
+  {
+    "jobId": "42",
+    "validator": "0x...",
+    "approve": true,
+    "salt": "0x…",
+    "commitHash": "0x…",
+    "commitTx": "0x…",
+    "evaluation": { "reasons": ["integrity-verified"], ... },
+    "metadata": { "notifiedAt": "2025-05-12T08:00:00Z" }
+  }
+  ```
+
+  This record is reused after restarts and forms the evidence bundle if a
+  dispute is raised later.
+
+## Reveal scheduling
+
+* When a commit succeeds the gateway reads `validation.rounds(jobId)` to compute
+  the remaining reveal window and arms a timer. A safety fallback fires shortly
+  before the deadline if the chain metadata cannot be queried.
+* The stored salt is read back from the JSON file when revealing, so operators
+  never need to paste secrets from logs.
+
+## Dispute defence
+
+* The gateway subscribes to `DisputeModule.DisputeRaised` and
+  `DisputeModule.DisputeResolved`. When triggered it appends the dispute
+  details to the same JSON record and notifies the validator agent over
+  WebSocket (`ValidationDispute` / `ValidationDisputeResolved`).
+* Audit entries are written via `secureLogAction`, providing a full timeline of
+  the commit, reveal, and dispute response.
+
+## Script example
+
+[`examples/commit-reveal.js`](../examples/commit-reveal.js) demonstrates the
+workflow end-to-end: it resolves the job nonce, computes the commit hash, stores
+the salt under `storage/validation/`, and later reuses that salt for the reveal.
+
+## CLI example
 
 ```bash
 # Commit during the commit window
@@ -47,41 +98,5 @@ cast send $VALIDATION_MODULE "finalize(uint256)" $JOB_ID --from $ANYONE
 cast send $JOB_REGISTRY "finalize(uint256)" $JOB_ID --from $ANYONE
 ```
 
-Validators that miss a window or reveal a vote inconsistent with their commit risk slashing and loss of reputation.
-
-## Governance Reward Epoch
-
-After each parameter poll, the owner rewards participating voters through the `GovernanceReward` contract.
-
-| Phase    | Caller | Description                                      | Function                                      |
-| -------- | ------ | ------------------------------------------------ | --------------------------------------------- |
-| Record   | Owner  | capture addresses that voted this epoch          | `GovernanceReward.recordVoters([v1,v2])`      |
-| Finalize | Owner  | withdraw reward from FeePool and close the epoch | `GovernanceReward.finalizeEpoch(totalReward)` |
-| Claim    | Voter  | withdraw an equal share for that epoch           | `GovernanceReward.claim(epoch)`               |
-
-`totalReward` uses 18‑decimal base units. `finalizeEpoch` increments `currentEpoch` so subsequent `recordVoters` calls start a new epoch.
-
-### Sample Solidity
-
-```solidity
-address[] memory voters = new address[](2);
-voters[0] = voter1;
-voters[1] = voter2;
-reward.recordVoters(voters);
-feePool.governanceWithdraw(address(reward), 200 * 1e18);
-reward.finalizeEpoch(200 * 1e18);
-// later
-reward.connect(voter1).claim(0);
-```
-
-### CLI Example
-
-```bash
-# record voters after a poll
-cast send $GOV_REWARD "recordVoters(address[])" "[$VOTER1,$VOTER2]" --from $OWNER
-# withdraw rewards from the FeePool and finalize the epoch
-cast send $FEE_POOL "governanceWithdraw(address,uint256)" $GOV_REWARD 200000000000000000000 --from $TIMELOCK
-cast send $GOV_REWARD "finalizeEpoch(uint256)" 200000000000000000000 --from $TIMELOCK
-# voter claims their share
-cast send $GOV_REWARD "claim(uint256)" 0 --from $VOTER1
-```
+Validators that miss a window or reveal a vote inconsistent with their commit
+risk slashing and loss of reputation.
