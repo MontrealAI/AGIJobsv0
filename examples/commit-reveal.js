@@ -39,7 +39,7 @@ const validation = new ethers.Contract(
 
 const STORAGE_ROOT = path.resolve(__dirname, '../storage/validation');
 
-function ensureStorage(): void {
+function ensureStorage() {
   if (!fs.existsSync(STORAGE_ROOT)) {
     fs.mkdirSync(STORAGE_ROOT, { recursive: true, mode: 0o700 });
   }
@@ -77,9 +77,7 @@ function saveRecord(jobId, address, update) {
 }
 
 function isHexSalt(value) {
-  return (
-    typeof value === 'string' && /^0x?[0-9a-fA-F]{64}$/.test(value.trim())
-  );
+  return typeof value === 'string' && /^0x?[0-9a-fA-F]{64}$/.test(value.trim());
 }
 
 function normaliseSalt(value) {
@@ -93,12 +91,19 @@ function normaliseSalt(value) {
 
 async function commit(jobId, approve, saltArg, subdomain, proof) {
   const nonce = await validation.jobNonce(jobId);
-  const salt = saltArg ? normaliseSalt(saltArg) : ethers.hexlify(ethers.randomBytes(32));
+  const salt = saltArg
+    ? normaliseSalt(saltArg)
+    : ethers.hexlify(ethers.randomBytes(32));
   const commitHash = ethers.solidityPackedKeccak256(
     ['uint256', 'uint256', 'bool', 'bytes32'],
     [ethers.getBigInt(jobId), ethers.getBigInt(nonce), approve, salt]
   );
-  const tx = await validation.commitValidation(jobId, commitHash, subdomain, proof);
+  const tx = await validation.commitValidation(
+    jobId,
+    commitHash,
+    subdomain,
+    proof
+  );
   await tx.wait();
   const record = saveRecord(jobId, wallet.address, {
     jobId: jobId.toString(),
@@ -116,8 +121,7 @@ async function commit(jobId, approve, saltArg, subdomain, proof) {
 
 async function reveal(jobId, approveArg, saltArg, subdomain, proof) {
   const record = loadRecord(jobId, wallet.address);
-  const approve =
-    typeof approveArg === 'boolean' ? approveArg : record.approve;
+  const approve = typeof approveArg === 'boolean' ? approveArg : record.approve;
   if (typeof approve !== 'boolean') {
     throw new Error('Approve flag missing. Provide it or commit first.');
   }
@@ -126,7 +130,13 @@ async function reveal(jobId, approveArg, saltArg, subdomain, proof) {
     throw new Error('Salt missing. Provide it or ensure commit record exists.');
   }
   const salt = normaliseSalt(saltSource);
-  const tx = await validation.revealValidation(jobId, approve, salt, subdomain, proof);
+  const tx = await validation.revealValidation(
+    jobId,
+    approve,
+    salt,
+    subdomain,
+    proof
+  );
   await tx.wait();
   const updated = saveRecord(jobId, wallet.address, {
     approve,

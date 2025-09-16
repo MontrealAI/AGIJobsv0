@@ -274,11 +274,7 @@ export function registerEvents(
     );
     dispute.on(
       'DisputeResolved',
-      (
-        jobId: ethers.BigNumberish,
-        resolver: string,
-        employerWins: boolean
-      ) => {
+      (jobId: ethers.BigNumberish, resolver: string, employerWins: boolean) => {
         const id = jobId.toString();
         console.log('DisputeResolved', id, resolver, employerWins);
         handleDisputeResolved(id, resolver, employerWins).catch((err) =>

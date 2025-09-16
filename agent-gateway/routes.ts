@@ -319,12 +319,7 @@ app.post(
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
-      const result = await commitHelper(
-        req.params.id,
-        wallet,
-        approve,
-        salt
-      );
+      const result = await commitHelper(req.params.id, wallet, approve, salt);
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -345,12 +340,7 @@ app.post(
     const wallet = walletManager.get(address);
     if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
-      const result = await revealHelper(
-        req.params.id,
-        wallet,
-        approve,
-        salt
-      );
+      const result = await revealHelper(req.params.id, wallet, approve, salt);
       res.json(result);
     } catch (err: any) {
       res.status(500).json({ error: err.message });

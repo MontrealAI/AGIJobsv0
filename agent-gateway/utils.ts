@@ -11,8 +11,7 @@ export const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
 export const STAKE_MANAGER_ADDRESS = process.env.STAKE_MANAGER_ADDRESS || '';
 export const VALIDATION_MODULE_ADDRESS =
   process.env.VALIDATION_MODULE_ADDRESS || '';
-export const DISPUTE_MODULE_ADDRESS =
-  process.env.DISPUTE_MODULE_ADDRESS || '';
+export const DISPUTE_MODULE_ADDRESS = process.env.DISPUTE_MODULE_ADDRESS || '';
 export const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
 export const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
 export const BOT_WALLET = process.env.BOT_WALLET || '';
@@ -476,9 +475,7 @@ export async function revealHelper(
     jobCommits[wallet.address.toLowerCase()] = { ...data };
   }
   const approve =
-    typeof approveOverride === 'boolean'
-      ? approveOverride
-      : data?.approve;
+    typeof approveOverride === 'boolean' ? approveOverride : data?.approve;
   const saltSource = saltOverride ?? data?.salt;
   if (approve === undefined || !saltSource) {
     throw new Error('no commit found');

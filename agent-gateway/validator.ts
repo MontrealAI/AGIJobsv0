@@ -257,7 +257,10 @@ async function notifyDomainAgent(
       categories: assignment.identity.manifestCategories,
     },
   };
-  const delivered = await sendToValidatorAgent(assignment.wallet.address, message);
+  const delivered = await sendToValidatorAgent(
+    assignment.wallet.address,
+    message
+  );
   assignment.notifiedAt = new Date().toISOString();
   assignment.notificationDelivered = delivered;
   if (!delivered) {
@@ -292,7 +295,10 @@ async function notifyDomainAgent(
     });
   } catch (err) {
     // commit record may not exist yet; ignore but log at debug level
-    if (err instanceof Error && /missing required base fields/.test(err.message)) {
+    if (
+      err instanceof Error &&
+      /missing required base fields/.test(err.message)
+    ) {
       return;
     }
     console.warn('failed to persist validator notification metadata', err);
@@ -309,8 +315,7 @@ function rehydrateAssignmentFromStore(
     | ValidationEvaluation
     | undefined;
   const storedSubmission = record.submission as SubmissionInfo | undefined;
-  const evaluation: ValidationEvaluation =
-    storedEvaluation ??
+  const evaluation: ValidationEvaluation = storedEvaluation ??
     assignment.commit?.evaluation ?? {
       approve: record.approve,
       reasons: ['restored-from-storage'],
@@ -583,11 +588,8 @@ async function revealValidation(
       const storedEvaluation = record.evaluation as
         | ValidationEvaluation
         | undefined;
-      const storedSubmission = record.submission as
-        | SubmissionInfo
-        | undefined;
-      const evaluation: ValidationEvaluation =
-        storedEvaluation ??
+      const storedSubmission = record.submission as SubmissionInfo | undefined;
+      const evaluation: ValidationEvaluation = storedEvaluation ??
         assignment.commit?.evaluation ?? {
           approve: record.approve,
           reasons: ['restored-from-storage'],
@@ -617,13 +619,7 @@ async function revealValidation(
   try {
     const tx = await (validation as any)
       .connect(assignment.wallet)
-      .revealValidation(
-        jobId,
-        commitInfo.approve,
-        commitInfo.salt,
-        label,
-        []
-      );
+      .revealValidation(jobId, commitInfo.approve, commitInfo.salt, label, []);
     await tx.wait();
     assignment.reveal = {
       txHash: tx.hash,
@@ -637,8 +633,7 @@ async function revealValidation(
         metadata: assignment.notifiedAt
           ? {
               notifiedAt: assignment.notifiedAt,
-              notificationDelivered:
-                assignment.notificationDelivered ?? false,
+              notificationDelivered: assignment.notificationDelivered ?? false,
             }
           : undefined,
       });
@@ -822,8 +817,7 @@ async function evaluateAndCommit(
         metadata: assignment.notifiedAt
           ? {
               notifiedAt: assignment.notifiedAt,
-              notificationDelivered:
-                assignment.notificationDelivered ?? false,
+              notificationDelivered: assignment.notificationDelivered ?? false,
             }
           : undefined,
       });
@@ -920,7 +914,10 @@ export async function handleValidatorSelection(
         try {
           await scheduleReveal(jobId, assignment);
         } catch (err) {
-          console.warn('Failed to reschedule reveal for restored validator', err);
+          console.warn(
+            'Failed to reschedule reveal for restored validator',
+            err
+          );
         }
       }
       const submission = submissions.get(jobId);
@@ -985,7 +982,10 @@ export function handleJobCompletionForValidators(jobId: string): void {
       updateCommitRecord(jobId, assignment.wallet.address, { metadata });
     } catch (err) {
       if (
-        !(err instanceof Error && /missing required base fields/.test(err.message))
+        !(
+          err instanceof Error &&
+          /missing required base fields/.test(err.message)
+        )
       ) {
         console.warn('failed to persist validator completion metadata', err);
       }

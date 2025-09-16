@@ -174,7 +174,7 @@ export function updateCommitRecord(
       );
     }
     const committedAt =
-      (typeof update.committedAt === 'string' && update.committedAt.length > 0)
+      typeof update.committedAt === 'string' && update.committedAt.length > 0
         ? update.committedAt
         : new Date().toISOString();
     const base: StoredCommitRecord = {
@@ -207,4 +207,3 @@ export function deleteCommitRecord(
     }
   }
 }
-
