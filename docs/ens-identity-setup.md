@@ -2,12 +2,94 @@
 
 Agents and validators must prove ownership of specific ENS subdomains before interacting with the AGIJobs platform. This guide walks through obtaining a name, configuring records, and optionally delegating access.
 
-## Required subdomains
+## Automated registration with `scripts/registerEns.ts`
+
+The repository ships with `scripts/registerEns.ts`, a utility that mints a
+fresh keypair, registers the ENS subdomain, updates the resolver, and writes a
+keystore entry that the agent gateway can consume. The script verifies the
+reverse record on-chain so the stored metadata always matches what
+`provider.lookupAddress` reports.
+
+### Prerequisites
+
+- Set `ENS_OWNER_KEY` to the private key that controls `agent.agi.eth` or
+  `club.agi.eth`.
+- Provide an RPC endpoint via `RPC_URL` (defaults to `http://localhost:8545`).
+- Install project dependencies so `ts-node` and `ethers` are available.
+
+### Register a new agent or validator
+
+```bash
+RPC_URL=https://mainnet.infura.io/v3/<key> \
+ENS_OWNER_KEY=0xYourOwnerKey \
+npx ts-node --compiler-options '{"module":"commonjs"}' scripts/registerEns.ts <label>
+```
+
+Add `--club` (or `--role=validator`) to create `<label>.club.agi.eth`. The
+script accepts `--rpc`, `--owner-key`, and `--force` to override defaults or
+overwrite an existing record.
+
+### Example session
+
+```bash
+$ npx ts-node --compiler-options '{"module":"commonjs"}' scripts/registerEns.ts demo
+Registering demo.agent.agi.eth for 0x0A1b2C3d4E5f6789012345678901234567890123
+setSubnodeRecord tx: 0xabc...123
+setAddr tx: 0xdef...456
+setName tx: 0x987...654
+Verified reverse record demo.agent.agi.eth
+Saved identity file to config/agents/demo.json
+```
+
+### Generated configuration file
+
+Each run creates `config/agents/<label>.json` with the registered address and
+private key:
+
+```json
+{
+  "label": "demo",
+  "ens": "demo.agent.agi.eth",
+  "address": "0x0A1b2C3d4E5f6789012345678901234567890123",
+  "privateKey": "0xabc123...",
+  "role": "agent",
+  "parent": "agent.agi.eth",
+  "resolver": "0x1234...beef",
+  "chainId": 1,
+  "network": "homestead",
+  "createdAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+The gateway loads every file in `config/agents/`, hydrates an `ethers.Wallet`
+when a private key is present, and verifies the reverse lookup matches the
+recorded ENS name. The orchestrator caches these wallets by ENS label so
+multiple agents can be managed simultaneously.
+
+### Verify ENS resolution
+
+After registration you can confirm both the forward and reverse lookups:
+
+```bash
+# Reverse lookup
+node -e "const { ethers } = require('ethers');(async () => { const provider = new ethers.JsonRpcProvider(process.env.RPC_URL); console.log(await provider.lookupAddress('0x0A1b2C3d4E5f6789012345678901234567890123')); })();"
+
+# Forward lookup
+node -e "const { ethers } = require('ethers');(async () => { const provider = new ethers.JsonRpcProvider(process.env.RPC_URL); console.log(await provider.resolveName('demo.agent.agi.eth')); })();"
+```
+
+You should see `demo.agent.agi.eth` from the reverse query and the agent
+address from the forward lookup. Any mismatch means the resolver has not been
+updated or the transaction has not yet been mined.
+
+## Manual workflow (advanced)
+
+### Required subdomains
 
 - **Agents:** `<name>.agent.agi.eth`
 - **Validators:** `<name>.club.agi.eth`
 
-## Register and configure
+### Register and configure
 
 1. **Request a subdomain** from the AGI operators or the provided registration dApp.
 2. **Point the name to your address** by either:
@@ -25,7 +107,7 @@ Such entries must be short‑lived and are tracked by the
 the claimed subdomain. Governance should remove the allowlisted address
 once a proper ENS name is registered.
 
-## Issuing subdomains
+### Issuing subdomains
 
 Project operators create subdomains under `agent.agi.eth` or `club.agi.eth` and assign them to participant addresses. Example using the Hardhat console:
 
@@ -38,7 +120,7 @@ npx hardhat console --network <network>
 > await wrapper.setSubnodeRecord(parent, label, '0xAgent', resolver, 0);
 ```
 
-### Setting resolver records
+#### Setting resolver records
 
 Once the subdomain token is minted, the owner must update the resolver so the name resolves to their wallet address. This can be done in the ENS Manager or directly from the command line.
 
@@ -87,7 +169,7 @@ verifyValidator("0xValidator", "alice", [])
 3: bool false   // viaMerkle
 ```
 
-## Delegating with attestations
+### Delegating with attestations
 
 An ENS name owner may authorize another address to act on their behalf through the `AttestationRegistry`:
 
@@ -100,6 +182,6 @@ npx hardhat console --network <network>
 
 The delegated address may then interact with `JobRegistry` or `ValidationModule` without holding the ENS name directly. See [docs/attestation.md](attestation.md) for detailed commands.
 
-## Keep records current
+### Keep records current
 
 If a subdomain is transferred or its resolver changes, the new owner must update the platform by re‑attesting or letting the cache expire. Otherwise subsequent actions will fail the identity check.
