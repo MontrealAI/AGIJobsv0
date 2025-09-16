@@ -92,9 +92,10 @@ export interface OrchestrationContextContribution {
 
 export type OrchestrationContextProvider = (
   context: TaskExecutionContext
-) => Promise<OrchestrationContextContribution | void> |
-  OrchestrationContextContribution |
-  void;
+) =>
+  | Promise<OrchestrationContextContribution | void>
+  | OrchestrationContextContribution
+  | void;
 
 export interface MemoryUpdate {
   cid?: string;
@@ -132,9 +133,10 @@ const agentMemory = new Map<string, AgentMemoryEntry[]>();
 
 let agentInvoker: AgentEndpointInvoker = invokeAgentEndpoint;
 let ipfsClient: IPFSHTTPClient | null = null;
-let ipfsFactory: () => IPFSHTTPClient = () => createIpfsClient({
-  url: IPFS_API_URL,
-});
+let ipfsFactory: () => IPFSHTTPClient = () =>
+  createIpfsClient({
+    url: IPFS_API_URL,
+  });
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -248,7 +250,6 @@ function mergeMemoryEntries(
   }
   const combined = [...existing];
   for (const entry of addition) {
-    const key = `${entry.jobId}:${entry.txHash ?? entry.resultURI ?? entry.cid ?? entry.timestamp}`;
     if (
       !combined.some(
         (item) =>
@@ -324,7 +325,9 @@ export function setAgentEndpointInvoker(
   agentInvoker = invoker ?? invokeAgentEndpoint;
 }
 
-export function setIpfsClientFactory(factory: (() => IPFSHTTPClient) | null): void {
+export function setIpfsClientFactory(
+  factory: (() => IPFSHTTPClient) | null
+): void {
   ipfsClient = null;
   ipfsFactory = factory ?? (() => createIpfsClient({ url: IPFS_API_URL }));
 }
@@ -336,9 +339,7 @@ export function registerContextProvider(
   return () => contextProviders.delete(provider);
 }
 
-export function registerMemoryHook(
-  hook: OrchestrationMemoryHook
-): () => void {
+export function registerMemoryHook(hook: OrchestrationMemoryHook): () => void {
   memoryHooks.add(hook);
   return () => memoryHooks.delete(hook);
 }
@@ -356,9 +357,7 @@ export function getAgentMemory(address: string): AgentMemoryEntry[] {
   return records.map((entry) => ({ ...entry }));
 }
 
-const defaultContextProvider: OrchestrationContextProvider = (
-  execution
-) => {
+const defaultContextProvider: OrchestrationContextProvider = (execution) => {
   const key = execution.profile.address.toLowerCase();
   const history = agentMemory.get(key) ?? [];
   const recent = history.slice(0, MAX_MEMORY_ENTRIES);
@@ -381,10 +380,7 @@ const defaultContextProvider: OrchestrationContextProvider = (
   };
 };
 
-const defaultMemoryHook: OrchestrationMemoryHook = (
-  execution,
-  update
-) => {
+const defaultMemoryHook: OrchestrationMemoryHook = (execution, update) => {
   const key = execution.profile.address.toLowerCase();
   const history = agentMemory.get(key) ?? [];
   const entry: AgentMemoryEntry = {
@@ -563,9 +559,11 @@ export async function executeJob(
 
     if (invocation) {
       await notifyMemoryConsumers(context, {
-        cid: resultCid || (resultURI.startsWith('ipfs://')
-          ? resultURI.slice('ipfs://'.length)
-          : undefined),
+        cid:
+          resultCid ||
+          (resultURI.startsWith('ipfs://')
+            ? resultURI.slice('ipfs://'.length)
+            : undefined),
         resultURI: resultURI || undefined,
         resultHash: resultHash || undefined,
         digest: payloadDigest || undefined,
