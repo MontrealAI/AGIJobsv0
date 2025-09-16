@@ -47,7 +47,9 @@ const ENERGY_SCALING = Number.isFinite(
 )
   ? Number(process.env.TELEMETRY_ENERGY_SCALING)
   : 1;
-const VALUE_SCALING = Number.isFinite(Number(process.env.TELEMETRY_VALUE_SCALING))
+const VALUE_SCALING = Number.isFinite(
+  Number(process.env.TELEMETRY_VALUE_SCALING)
+)
   ? Number(process.env.TELEMETRY_VALUE_SCALING)
   : 1_000_000;
 const ROLE_ID = clampUint8(Number(process.env.TELEMETRY_ROLE ?? '2'));
@@ -160,18 +162,22 @@ class EnergyOracleOperator {
   }
 
   private async submitWithRetry(base: BaseAttestation): Promise<void> {
-    await retry(async () => {
-      try {
-        await this.submitAttestation(base);
-      } catch (err) {
-        if (err instanceof SignatureValidationError) {
-          this.invalidateNonce(base.user);
-        } else if (isNetworkError(err)) {
-          this.refresh();
+    await retry(
+      async () => {
+        try {
+          await this.submitAttestation(base);
+        } catch (err) {
+          if (err instanceof SignatureValidationError) {
+            this.invalidateNonce(base.user);
+          } else if (isNetworkError(err)) {
+            this.refresh();
+          }
+          throw err;
         }
-        throw err;
-      }
-    }, this.config.maxRetries, this.config.retryDelayMs);
+      },
+      this.config.maxRetries,
+      this.config.retryDelayMs
+    );
   }
 
   private async submitAttestation(base: BaseAttestation): Promise<void> {
@@ -193,7 +199,9 @@ class EnergyOracleOperator {
       throw err;
     }
     if (!signer || signer === ethers.ZeroAddress) {
-      throw new SignatureValidationError('EnergyOracle signature validation failed');
+      throw new SignatureValidationError(
+        'EnergyOracle signature validation failed'
+      );
     }
     let tx: ethers.ContractTransactionResponse | undefined;
     try {
@@ -292,10 +300,16 @@ class EnergyOracleOperator {
     }
     const jobId = parseBigInt(sample.jobId);
     if (jobId === null) {
-      console.warn('Skipping energy sample with non-numeric jobId', sample.jobId);
+      console.warn(
+        'Skipping energy sample with non-numeric jobId',
+        sample.jobId
+      );
       return null;
     }
-    const energy = toScaledBigInt(sample.energyEstimate, this.config.energyScaling);
+    const energy = toScaledBigInt(
+      sample.energyEstimate,
+      this.config.energyScaling
+    );
     const degeneracy = resolveDegeneracy(sample);
     const epochId = resolveEpochId(sample, this.config.epochDurationSec);
     const deadline = BigInt(
@@ -415,11 +429,15 @@ function resolveEpochId(sample: EnergySample, epochDuration: number): bigint {
 }
 
 function resolveEfficiency(sample: EnergySample): number {
-  if (typeof sample.efficiencyScore === 'number' && isFinite(sample.efficiencyScore)) {
+  if (
+    typeof sample.efficiencyScore === 'number' &&
+    isFinite(sample.efficiencyScore)
+  ) {
     return sample.efficiencyScore;
   }
   if (typeof sample.rewardValue === 'number' && isFinite(sample.rewardValue)) {
-    const energy = typeof sample.energyEstimate === 'number' ? sample.energyEstimate : 0;
+    const energy =
+      typeof sample.energyEstimate === 'number' ? sample.energyEstimate : 0;
     if (energy > 0) {
       return sample.rewardValue / energy;
     }
@@ -431,7 +449,11 @@ function isNetworkError(err: unknown): boolean {
   if (!err || typeof err !== 'object') {
     return false;
   }
-  const error = err as { code?: unknown; message?: unknown; error?: { code?: unknown } };
+  const error = err as {
+    code?: unknown;
+    message?: unknown;
+    error?: { code?: unknown };
+  };
   const code =
     (typeof error.code === 'string' && error.code) ||
     (error.error && typeof error.error.code === 'string' && error.error.code) ||
@@ -488,7 +510,9 @@ async function retry<T>(
 
 function createWallet(): Wallet {
   if (!orchestratorWallet) {
-    throw new Error('Orchestrator wallet is not initialised; cannot submit telemetry');
+    throw new Error(
+      'Orchestrator wallet is not initialised; cannot submit telemetry'
+    );
   }
   if (ENERGY_ORACLE_RPC_URL) {
     const provider = new JsonRpcProvider(ENERGY_ORACLE_RPC_URL);
@@ -532,7 +556,11 @@ export async function submitEnergyAttestations(
   samples: EnergySample[]
 ): Promise<OperatorSubmissionResult> {
   if (!ENERGY_ORACLE_ADDRESS) {
-    return { processed: 0, success: false, error: new Error('ENERGY_ORACLE_ADDRESS is not set') };
+    return {
+      processed: 0,
+      success: false,
+      error: new Error('ENERGY_ORACLE_ADDRESS is not set'),
+    };
   }
   const operator = getOperator();
   return operator.submit(samples);
