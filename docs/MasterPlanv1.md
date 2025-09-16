@@ -39,7 +39,7 @@ Our protocol design is grounded in **thermodynamics and statistical physics**, r
   \Delta G = \Delta H - T\Delta S
   $$  
 
-  Where enthalpy (\(\Delta H\)) represents raw resource allocation, entropy (\(\Delta S\)) measures disorder, and \(\Delta G\) is the *usable economic output*.  
+  Where enthalpy \(\Delta H\) represents raw resource allocation, entropy \(\Delta S\) measures disorder, and \(\Delta G\) is the *usable economic output*.  
 
 - **Hamiltonian Dynamics**: Each agent’s trajectory in the market is defined by a Hamiltonian:  
 
@@ -47,9 +47,9 @@ Our protocol design is grounded in **thermodynamics and statistical physics**, r
   \mathcal{H}(q,p) = \sum_i \frac{p_i^2}{2m_i} + V(q)
   $$  
 
-  Encoding the balance of staked value (\(p\)), governance inertia (\(m\)), and potential economic payoff (\(V(q)\)).  
+  Encoding the balance of staked value \(p\), governance inertia \(m\), and potential economic payoff \(V(q)\).  
 
-- **Game Theory**: Commitment, staking, and slashing enforce Nash equilibria where cooperation is the only stable outcome.   
+- **Game Theory**: Commitment, staking, and slashing enforce Nash equilibria where cooperation is the only stable outcome.
 
 The result is a **physics-consistent economy** — every inefficiency increases entropy, every cooperative act reduces free energy, every reward aligns with the Pareto frontier.  
 
