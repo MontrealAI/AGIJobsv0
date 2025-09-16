@@ -1,179 +1,150 @@
 # Operator Telemetry Service
 
-The operator telemetry service aggregates per-job energy metrics from the
-orchestrator logs and submits attestations to the on-chain `EnergyOracle`
-contract or an HTTP ingestion API. It keeps the oracle informed about the
-energy efficiency of agents so the reward engine can settle payouts using
-accurate data.
+The operator telemetry service runs alongside the agent gateway to publish
+per-job energy metrics to the on-chain `EnergyOracle` contract. Metrics are
+sourced from `storage/telemetry/telemetry-queue.json`, formatted as EIP-712
+attestations, signed by the configured orchestrator wallet and submitted
+through `agent-gateway/operator.ts` using `ethers`.
 
 ## Features
 
-- Scans `logs/energy/<agent>/<jobId>.json` files produced by the orchestrator.
-- Computes attestation payloads with deterministic nonce handling.
-- Submits attestations to either the EnergyOracle contract (via ethers.js) or a
-  configurable API endpoint.
-- Retries transient failures with exponential backoff and automatically
-  recovers from RPC disconnects.
-- Persists progress in `storage/operator-telemetry-state.json` (or a custom
-  location) to avoid duplicate submissions.
-- Container image and PM2 configuration for production-grade supervision.
+- Converts raw `EnergySample` records into `EnergyOracle.Attestation` structs.
+- Uses deterministic nonce handling against the contract `nonces` mapping to
+  avoid duplicate submissions.
+- Applies exponential backoff when the RPC endpoint is unavailable and refreshes
+  the signer connection automatically on recoverable failures.
+- Validates signatures with a `staticCall` before broadcasting transactions to
+  prevent wasting gas on rejected payloads.
+- Persists queued samples to disk so work completed while the service is
+  offline is submitted once connectivity is restored.
+- Ships with a PM2 helper script and Docker/Compose configuration for
+  production use.
 
 ## Prerequisites
 
-- Node.js 20 or later.
-- Access to the orchestrator energy logs directory.
-- A signer key that is authorised on the EnergyOracle contract (for contract
-  mode) or recognised by the API (for API mode).
-- RPC endpoint for the target chain when submitting to the contract.
+- Node.js 20+
+- Access to the keystore service that returns orchestrator private keys.
+- RPC endpoint for the network hosting the `EnergyOracle` contract.
+- Deployed contract addresses for the gateway (JobRegistry, ValidationModule,
+  EnergyOracle).
 
 ## Configuration
 
-All behaviour is controlled with environment variables. Values shown below are
-defaults if the variable is omitted.
+All configuration is supplied via environment variables. Defaults are applied
+when omitted.
 
-| Variable                        | Description                                                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `TELEMETRY_MODE`                | `contract` or `api`. If omitted the service picks `contract` when `ENERGY_ORACLE_RPC_URL` is set, otherwise `api`. |
-| `ENERGY_LOG_DIR`                | Directory containing energy logs (default `logs/energy`).                                                          |
-| `ENERGY_ORACLE_ADDRESS`         | Deployed EnergyOracle contract address (required).                                                                 |
-| `ENERGY_ORACLE_SIGNER_KEY`      | Private key for the authorised oracle signer (required).                                                           |
-| `ENERGY_ORACLE_RPC_URL`         | JSON-RPC endpoint (required in `contract` mode).                                                                   |
-| `ENERGY_ORACLE_API_URL`         | HTTP endpoint (required in `api` mode).                                                                            |
-| `ENERGY_ORACLE_API_TOKEN`       | Optional bearer token for API mode.                                                                                |
-| `ENERGY_ORACLE_CHAIN_ID`        | Chain ID used for typed-data signatures. Required when RPC is not available (API mode).                            |
-| `TELEMETRY_POLL_INTERVAL_MS`    | Delay between scan cycles. Default `10000`.                                                                        |
-| `TELEMETRY_MAX_RETRIES`         | Submission attempts before surfacing an error. Default `5`.                                                        |
-| `TELEMETRY_RETRY_DELAY_MS`      | Base delay for exponential backoff (ms). Default `2000`.                                                           |
-| `TELEMETRY_DEADLINE_BUFFER_SEC` | Signature validity window in seconds. Default `3600`.                                                              |
-| `TELEMETRY_EPOCH_DURATION_SEC`  | Epoch length used to bucket attestations. Default `86400`.                                                         |
-| `TELEMETRY_ENERGY_SCALING`      | Multiplier applied to energy score before converting to integers. Default `1`.                                     |
-| `TELEMETRY_VALUE_SCALING`       | Multiplier applied to efficiency when populating `value`. Default `1_000_000`.                                     |
-| `TELEMETRY_ROLE`                | Role identifier supplied in attestations. Defaults to `2` (operators).                                             |
-| `TELEMETRY_STATE_FILE`          | Persistent state file. Default `storage/operator-telemetry-state.json`.                                            |
-| `TELEMETRY_MAX_BATCH`           | Maximum attestations per polling cycle. Default `20`.                                                              |
+| Variable | Description |
+| --- | --- |
+| `RPC_URL` | JSON-RPC endpoint used by the gateway (default `http://localhost:8545`). |
+| `ENERGY_ORACLE_RPC_URL` | Optional RPC override used when sending attestations. Falls back to `RPC_URL` when empty. |
+| `ENERGY_ORACLE_ADDRESS` | Address of the deployed `EnergyOracle` contract (required for contract submission). |
+| `JOB_REGISTRY_ADDRESS` | Address of the `JobRegistry` contract (required by the wallet loader). |
+| `VALIDATION_MODULE_ADDRESS` | Address of the `ValidationModule` contract (required). |
+| `DISPUTE_MODULE_ADDRESS` | Address of the dispute module (optional). |
+| `KEYSTORE_URL` | HTTPS endpoint returning a JSON payload `{ "keys": [...] }` with private keys used by the gateway. |
+| `KEYSTORE_TOKEN` | Optional bearer token sent to the keystore. |
+| `ORCHESTRATOR_WALLET` | Address of the wallet authorised to attest energy metrics. Defaults to the automation wallet when omitted. |
+| `TELEMETRY_FLUSH_INTERVAL_MS` | Interval between flush cycles (default `60000`). |
+| `TELEMETRY_MAX_RETRIES` | Retry attempts for contract submissions (default `5`). |
+| `TELEMETRY_RETRY_DELAY_MS` | Base delay for exponential backoff (default `2000`). |
+| `TELEMETRY_DEADLINE_BUFFER_SEC` | Additional signature validity window in seconds (default `3600`). |
+| `TELEMETRY_EPOCH_DURATION_SEC` | Epoch duration used to bucket attestations (default `86400`). |
+| `TELEMETRY_ENERGY_SCALING` | Multiplier applied to energy scores before conversion to integers (default `1`). |
+| `TELEMETRY_VALUE_SCALING` | Multiplier applied to efficiency scores before conversion to integers (default `1_000_000`). |
+| `TELEMETRY_ROLE` | Role identifier supplied in the attestation payload (default `2`). |
+| `ENERGY_ORACLE_URL` | Optional HTTP ingestion endpoint. Used only when the contract address is not configured. |
+| `ENERGY_ORACLE_TOKEN` | Bearer token for the HTTP endpoint (optional). |
 
-The service also honours any environment variables exported in the PM2 config
-or container runtime.
+The orchestrator wallet must be authorised on the EnergyOracle contract via
+`setSigner`. Private keys are loaded from the keystore at start-up and remain in
+memory only.
 
 ## Running locally
 
-Install dependencies and build the TypeScript output once:
+Compile the TypeScript sources and start the telemetry loop:
 
 ```bash
-npm ci
-npx tsc -p apps/operator/tsconfig.json
+npm run build:gateway
+node agent-gateway/dist/agent-gateway/operator.js
 ```
 
-Then launch the telemetry loop (contract mode example):
-
-```bash
-TELEMETRY_MODE=contract \
-ENERGY_LOG_DIR=/path/to/logs \
-ENERGY_ORACLE_ADDRESS=0xOracle \
-ENERGY_ORACLE_RPC_URL=https://rpc.example \
-ENERGY_ORACLE_SIGNER_KEY=0xabcdef... \
-node apps/operator/dist/telemetry.js
-```
-
-To run without compiling ahead of time you can use `ts-node`:
-
-```bash
-npx ts-node apps/operator/telemetry.ts
-```
-
-For long-running environments the repository also ships a lightweight daemon
-at `scripts/monitor/energy-telemetry-daemon.ts`. It wraps the telemetry service,
-watches the energy log directory for new jobs, and immediately triggers a
-submission cycle when fresh data lands so attestations go out after every job:
-
-```bash
-npx ts-node scripts/monitor/energy-telemetry-daemon.ts
-```
-
-## Docker deployment
-
-A production container is available via `apps/operator/Dockerfile`. Build and
-run it by mounting the log directory and persisting the telemetry state:
-
-```bash
-docker build -f apps/operator/Dockerfile -t agijobs/operator-telemetry .
-
-docker run -d --name operator-telemetry \
-  -v /srv/operator/logs:/data/logs \
-  -v /srv/operator/state:/data/state \
-  -e TELEMETRY_MODE=contract \
-  -e ENERGY_ORACLE_ADDRESS=0xOracle \
-  -e ENERGY_ORACLE_RPC_URL=https://rpc.example \
-  -e ENERGY_ORACLE_SIGNER_KEY=0xabcdef... \
-  agijobs/operator-telemetry
-```
-
-Container logs expose submission progress and retry attempts. Override
-`TELEMETRY_MODE` and related variables to switch to API submission.
+The service reads any queued telemetry samples, signs them and calls
+`EnergyOracle.verify`. Successful submissions log the job ID, signer address,
+nonce and transaction hash. Failures are retried with exponential backoff using
+`TELEMETRY_MAX_RETRIES` and `TELEMETRY_RETRY_DELAY_MS`. If the connection drops
+mid-transaction the operator checks the receipt before retrying, ensuring that
+already-mined attestations are not sent twice.
 
 ## PM2 supervision
 
-A ready-to-use configuration is provided at `apps/operator/pm2.config.js`. After
-building the TypeScript output run:
+`scripts/start-telemetry.sh` builds the gateway and manages a PM2 process named
+`operator-telemetry`:
 
 ```bash
-npx tsc -p apps/operator/tsconfig.json
-pm2 start apps/operator/pm2.config.js --env production \
-  --update-env -- \
-  TELEMETRY_MODE=contract \
-  ENERGY_ORACLE_ADDRESS=0xOracle \
-  ENERGY_ORACLE_RPC_URL=https://rpc.example \
-  ENERGY_ORACLE_SIGNER_KEY=0xabcdef...
+./scripts/start-telemetry.sh
+pm2 logs operator-telemetry
 ```
 
-PM2 will restart the process automatically on crash. Update environment
-variables with `pm2 restart operator-telemetry --update-env` when configuration
-changes.
+Running the script again issues `pm2 restart operator-telemetry --update-env`,
+so environment changes are picked up automatically. Use `pm2 save` if you want
+PM2 to relaunch the process on host reboot.
 
-## systemd (optional)
+## Docker deployment
 
-For environments using `systemd`, create a unit file similar to the example
-below (the repository includes `deployment-config/energy-telemetry-daemon.service`
-as a ready-to-adapt template):
-
-```ini
-[Unit]
-Description=AGIJobs Operator Telemetry
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/agijobs
-Environment=TELEMETRY_MODE=contract
-Environment=ENERGY_LOG_DIR=/opt/agijobs/logs/energy
-Environment=ENERGY_ORACLE_ADDRESS=0xOracle
-Environment=ENERGY_ORACLE_RPC_URL=https://rpc.example
-Environment=ENERGY_ORACLE_SIGNER_KEY=0xabcdef...
-ExecStart=/usr/bin/env npx ts-node --transpile-only scripts/monitor/energy-telemetry-daemon.ts
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Reload systemd and enable the service:
+A dedicated container definition is available in `agent-gateway/Dockerfile`. It
+installs dependencies, compiles the TypeScript output and sets the entrypoint to
+`node agent-gateway/dist/agent-gateway/operator.js`. Build the image with:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now agijobs-operator-telemetry.service
+docker build -f agent-gateway/Dockerfile -t agijobs/operator-telemetry .
 ```
+
+and run it by mounting persistent storage for the telemetry queue and energy
+logs:
+
+```bash
+docker run -d --name operator-telemetry \
+  -v /srv/agijobs/storage:/app/storage \
+  -v /srv/agijobs/logs:/app/logs:ro \
+  -e RPC_URL=https://rpc.example \
+  -e ENERGY_ORACLE_RPC_URL=https://rpc.example \
+  -e ENERGY_ORACLE_ADDRESS=0xOracle \
+  -e JOB_REGISTRY_ADDRESS=0xJobRegistry \
+  -e VALIDATION_MODULE_ADDRESS=0xValidationModule \
+  -e KEYSTORE_URL=https://keystore.example/keys \
+  -e KEYSTORE_TOKEN=changeme \
+  -e ORCHESTRATOR_WALLET=0xSigner \
+  agijobs/operator-telemetry
+```
+
+## Docker Compose
+
+`deployment-config/operator-telemetry.yml` provides a ready-to-adjust Compose
+service definition. Update the environment variables with the deployed contract
+addresses, keystore information and RPC URLs, then run:
+
+```bash
+cd deployment-config
+docker compose -f operator-telemetry.yml up -d --build
+```
+
+The service mounts `../storage` and `../logs` from the host by default; adjust
+these paths to match your deployment layout.
 
 ## Operational notes
 
-- The service persists the most recent attestation timestamp per job and the
-  nonce state (API mode) to avoid double submissions.
-- Retries are exponential: failures wait `TELEMETRY_RETRY_DELAY_MS * 2^(n-1)`
-  before the next attempt.
-- When the RPC endpoint is unavailable the nonce provider refreshes from the
-  contract on the next cycle, ensuring the service recovers cleanly.
-- In API mode, `TELEMETRY_STATE_FILE` must live on persistent storage so nonce
-  counters survive restarts.
-- Enable verbose logs by setting `DEBUG=operator-telemetry` (or use process
-  manager level logging).
+- Telemetry samples are persisted in `storage/telemetry/telemetry-queue.json`.
+  The queue is truncated only after the corresponding attestation has been
+  accepted on-chain.
+- `EnergySample` fields are converted to contract fields as follows:
+  `energyEstimate` → `energy`, `cpuTimeMs`/`gpuTimeMs` → `uPre`/`uPost`, and
+  `efficiencyScore` → `value` (after scaling). Degeneracy defaults to `1` unless
+  provided via sample metadata.
+- Nonces are fetched lazily from the contract and cached per agent; nonce
+  reservations survive retries until a signature failure occurs, preventing
+  races when the service restarts mid-flight.
+- When neither `ENERGY_ORACLE_ADDRESS` nor `ENERGY_ORACLE_URL` are set the
+  service persists telemetry locally and logs a warning every flush cycle. Set
+  at least one of these targets for production usage.
+- Use `DEBUG=agent-telemetry` (or a process manager specific setting) to enable
+  verbose logging while diagnosing connectivity issues.

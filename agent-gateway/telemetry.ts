@@ -4,6 +4,11 @@ import path from 'path';
 import { ethers } from 'ethers';
 import { EnergySample } from '../shared/energyMonitor';
 import { orchestratorWallet } from './utils';
+import {
+  isOracleContractConfigured,
+  submitEnergyAttestations,
+  OperatorSubmissionResult,
+} from './operator';
 import { getCachedIdentity, refreshIdentity } from './identity';
 
 export const ENERGY_ORACLE_URL = process.env.ENERGY_ORACLE_URL || '';
@@ -22,6 +27,7 @@ let loaded = false;
 let flushing = false;
 let flushTimer: NodeJS.Timeout | null = null;
 let warnedNoOracle = false;
+let warnedNoContract = false;
 let warnedMissingSigner = false;
 
 const ENERGY_METRICS_PATH = path.resolve(
@@ -622,31 +628,55 @@ async function buildTelemetryEnvelope(
   return envelope;
 }
 
-async function sendToOracle(samples: EnergySample[]): Promise<void> {
+async function sendToOracle(
+  samples: EnergySample[]
+): Promise<OperatorSubmissionResult> {
+  if (isOracleContractConfigured()) {
+    const result = await submitEnergyAttestations(samples);
+    if (!result.success && result.error) {
+      console.warn('EnergyOracle submission failed', result.error);
+    }
+    return result;
+  }
+
   if (!ENERGY_ORACLE_URL) {
-    if (!warnedNoOracle) {
+    if (!warnedNoContract && !warnedNoOracle) {
       console.warn(
-        'ENERGY_ORACLE_URL not set; telemetry will be persisted locally only'
+        'ENERGY_ORACLE_ADDRESS and ENERGY_ORACLE_URL are not set; telemetry will be persisted locally only'
       );
       warnedNoOracle = true;
+      warnedNoContract = true;
     }
-    return;
+    return {
+      processed: 0,
+      success: false,
+      error: new Error(
+        'No EnergyOracle target configured (set ENERGY_ORACLE_ADDRESS or ENERGY_ORACLE_URL)'
+      ),
+    };
   }
+
   const payload = await buildTelemetryEnvelope(samples);
-  const res = await fetch(ENERGY_ORACLE_URL, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(ENERGY_ORACLE_TOKEN
-        ? { Authorization: `Bearer ${ENERGY_ORACLE_TOKEN}` }
-        : {}),
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error(
-      `Energy oracle responded with ${res.status} ${res.statusText}`
-    );
+  try {
+    const res = await fetch(ENERGY_ORACLE_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(ENERGY_ORACLE_TOKEN
+          ? { Authorization: `Bearer ${ENERGY_ORACLE_TOKEN}` }
+          : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `Energy oracle responded with ${res.status} ${res.statusText}`
+      );
+    }
+    return { processed: samples.length, success: true };
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    return { processed: 0, success: false, error };
   }
 }
 
@@ -663,9 +693,14 @@ export async function flushTelemetry(): Promise<void> {
   flushing = true;
   const snapshot = [...queue];
   try {
-    await sendToOracle(snapshot);
-    queue = [];
-    await persistQueue();
+    const result = await sendToOracle(snapshot);
+    if (result.processed > 0) {
+      queue = queue.slice(result.processed);
+      await persistQueue();
+    }
+    if (!result.success) {
+      throw result.error ?? new Error('Telemetry submission incomplete');
+    }
   } catch (err) {
     console.warn('Failed to flush telemetry', err);
   } finally {
