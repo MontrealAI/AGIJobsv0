@@ -2,7 +2,32 @@
 
 Agents and validators must prove ownership of specific ENS subdomains before interacting with the AGIJobs platform. This guide walks through obtaining a name, configuring records, and optionally delegating access.
 
-## Automated registration with `scripts/registerEns.ts`
+## Agent gateway automation
+
+The agent gateway now provisions ENS identities automatically whenever the
+agent factory materialises a new blueprint. The helper in
+`agent-gateway/ensRegistrar.ts` claims a subdomain under `agent.agi.eth`,
+`club.agi.eth`, or `a.agi.eth`, sets the resolver `addr` record, updates the
+reverse registrar, and verifies the result with `provider.lookupAddress`. The
+verification result is appended to the structured audit log so auditors can
+confirm the chain of custody for every identity file.
+
+### Configuration
+
+- Set `ENS_REGISTRY_ADDRESS` and `ENS_REVERSE_REGISTRAR_ADDRESS` in
+  `agent-gateway/.env` so the registrar knows which contracts to call.
+- Provide `ENS_OWNER_KEY`, the private key that controls the parent ENS nodes.
+- Update `config/ens.json` with the resolver addresses for `agent.agi.eth`,
+  `club.agi.eth`, and `a.agi.eth`. The helper reads the node hashes and
+  resolver addresses from this file when claiming subdomains.
+
+When the gateway claims a label it normalises the name, updates the stored
+blueprint (and any persisted JSON file), and persists the resulting identity to
+`config/agents/<label>.json`. The identity file now includes the parent name,
+resolver, and registration transaction hashes so the provenance of the ENS
+record is auditable.
+
+## Manual registration with `scripts/registerEns.ts`
 
 The repository ships with `scripts/registerEns.ts`, a utility that mints a
 fresh keypair, registers the ENS subdomain, updates the resolver, and writes a

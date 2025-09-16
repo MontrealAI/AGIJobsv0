@@ -7,6 +7,9 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 ## Environment Variables
 
 - `RPC_URL` (default `http://localhost:8545`)
+- `ENS_REGISTRY_ADDRESS` ENS registry used for subdomain minting
+- `ENS_REVERSE_REGISTRAR_ADDRESS` reverse registrar contract used to set reverse lookups
+- `ENS_OWNER_KEY` private key that controls the parent ENS nodes listed in `config/ens.json`
 - `JOB_REGISTRY_ADDRESS`
 - `VALIDATION_MODULE_ADDRESS` (optional)
 - `KEYSTORE_URL` HTTPS endpoint returning private keys managed by the gateway
@@ -26,6 +29,12 @@ Copy `.env.example` to `.env` and adjust values for your network:
 ```
 cp agent-gateway/.env.example agent-gateway/.env
 ```
+
+`config/ens.json` defines the parent ENS nodes and resolver addresses for the
+registrar helper. The agent factory uses this file together with the
+environment variables above to claim `<label>.agent.agi.eth`,
+`<label>.club.agi.eth`, or `<label>.a.agi.eth` automatically and verifies the
+reverse lookup before persisting an identity file.
 
 ## Usage
 

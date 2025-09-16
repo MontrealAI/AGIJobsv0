@@ -1,0 +1,20 @@
+{
+  "agent": {
+    "name": "agent.agi.eth",
+    "node": "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d",
+    "resolver": "0x0000000000000000000000000000000000000000",
+    "role": "agent"
+  },
+  "club": {
+    "name": "club.agi.eth",
+    "node": "0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+    "resolver": "0x0000000000000000000000000000000000000000",
+    "role": "validator"
+  },
+  "business": {
+    "name": "a.agi.eth",
+    "node": "0x5b8fd43b9dbddd6cba9f03bbff224df24e6e592c54456f8e46c4a47433c44403",
+    "resolver": "0x0000000000000000000000000000000000000000",
+    "role": "business"
+  }
+}
