@@ -2,7 +2,13 @@ import { ethers, Wallet } from 'ethers';
 import { Job, JobCreatedEvent } from './types';
 import { walletManager, registry, TOKEN_DECIMALS } from './utils';
 import { ensureIdentity, getEnsIdentity } from './identity';
-import { selectAgentForJob, AgentProfile } from './agentRegistry';
+import {
+  analyseJob,
+  listAgentProfiles,
+  evaluateAgentMatches,
+  AgentProfile,
+  type MatchResult,
+} from './agentRegistry';
 import { ensureStake, ROLE_AGENT } from './stakeCoordinator';
 import { executeJob } from './taskExecution';
 import {
@@ -89,6 +95,99 @@ async function resolveWalletForProfile(
     cacheWallet(wallet, profile.label);
   }
   return wallet;
+}
+
+function normaliseSkillSet(values: string[] | undefined): Set<string> {
+  const result = new Set<string>();
+  if (!values) return result;
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim().toLowerCase();
+    if (trimmed) {
+      result.add(trimmed);
+    }
+  }
+  return result;
+}
+
+function normaliseJobSkills(skills: string[] | undefined): Set<string> {
+  if (!skills) {
+    return new Set<string>();
+  }
+  const required = new Set<string>();
+  for (const skill of skills) {
+    if (typeof skill !== 'string') continue;
+    const trimmed = skill.trim().toLowerCase();
+    if (trimmed) {
+      required.add(trimmed);
+    }
+  }
+  return required;
+}
+
+function buildSelectionPool(
+  analysisSkills: string[] | undefined,
+  profiles: AgentProfile[]
+): AgentProfile[] {
+  const requiredSkills = normaliseJobSkills(analysisSkills);
+  if (requiredSkills.size === 0) {
+    return profiles;
+  }
+  const filtered = profiles.filter((profile) => {
+    const skillSet = normaliseSkillSet(profile.skills);
+    if (skillSet.size === 0) {
+      return false;
+    }
+    for (const skill of requiredSkills) {
+      if (!skillSet.has(skill)) {
+        return false;
+      }
+    }
+    return true;
+  });
+  return filtered;
+}
+
+export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
+  const analysis = await analyseJob(job);
+  const profiles = await listAgentProfiles();
+  if (profiles.length === 0) {
+    console.warn('No agent profiles are available; skipping job', job.jobId);
+    return null;
+  }
+  const skillMatched = buildSelectionPool(analysis.skills, profiles);
+  if (
+    analysis.skills &&
+    analysis.skills.length > 0 &&
+    skillMatched.length === 0
+  ) {
+    console.warn(
+      'Job requires skills outside the available agent expertise',
+      job.jobId,
+      analysis.skills
+    );
+    return null;
+  }
+  const candidatePool = skillMatched.length > 0 ? skillMatched : profiles;
+  const availableStake = candidatePool.reduce<bigint>((max, profile) => {
+    const stake = profile.stakeBalance ?? 0n;
+    return stake > max ? stake : max;
+  }, 0n);
+  if (analysis.stake > availableStake) {
+    console.warn(
+      'Skipping job because stake requirement exceeds available collateral',
+      job.jobId,
+      analysis.stake.toString(),
+      availableStake.toString()
+    );
+    return null;
+  }
+  const matches = await evaluateAgentMatches(analysis, candidatePool);
+  if (matches.length === 0) {
+    console.warn('No viable agent match found for job', job.jobId);
+    return null;
+  }
+  return matches[0];
 }
 
 export async function handleJob(job: Job): Promise<void> {
