@@ -27,4 +27,14 @@ export default class WalletManager {
   list(): string[] {
     return Array.from(this.wallets.values()).map((w) => w.address);
   }
+
+  register(privateKey: string): Wallet {
+    const key = privateKey.trim();
+    if (!key) {
+      throw new Error('Private key is required to register a wallet');
+    }
+    const wallet = new ethers.Wallet(key, this.provider);
+    this.wallets.set(wallet.address.toLowerCase(), wallet);
+    return wallet;
+  }
 }

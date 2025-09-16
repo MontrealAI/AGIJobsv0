@@ -376,6 +376,24 @@ export async function getEnsIdentity(
   };
 }
 
+export async function registerIdentityFile(
+  filePath: string
+): Promise<AgentIdentity | null> {
+  try {
+    await ensureLocalFilesLoaded();
+    const record = await loadIdentityFile(filePath);
+    if (!record) {
+      return null;
+    }
+    registerIdentity(record);
+    identityCache.delete(record.address.toLowerCase());
+    return refreshIdentity(record.address);
+  } catch (err) {
+    console.warn('Failed to register identity file', filePath, err);
+    return null;
+  }
+}
+
 export async function ensureIdentity(
   wallet: Wallet,
   expectedRole: AgentRole = 'agent'
