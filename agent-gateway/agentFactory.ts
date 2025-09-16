@@ -10,7 +10,7 @@ import {
   type AgentBlueprint,
   spawnDefaults,
 } from '../shared/spawnManager';
-import { walletManager } from './utils';
+import { saveWalletKey, walletManager } from './utils';
 import {
   registerEnsSubdomain,
   verifyEnsRegistration,
@@ -509,6 +509,38 @@ async function cloneCandidate(
     blueprintDir: options.blueprintDir,
   });
 
+  let keystorePersisted = true;
+  if (!options.dryRun) {
+    try {
+      await saveWalletKey(blueprint.wallet.privateKey, {
+        address: blueprint.wallet.address,
+        label: blueprint.ensLabel,
+        metadata: {
+          blueprintId: blueprint.id,
+          category: blueprint.category,
+          ensName: blueprint.ensName,
+        },
+      });
+    } catch (err) {
+      keystorePersisted = false;
+      console.error('Failed to persist wallet key to keystore', err);
+      await secureLogAction({
+        component: 'agent-factory',
+        action: 'keystore-persist',
+        success: false,
+        metadata: {
+          blueprintId: blueprint.id,
+          wallet: blueprint.wallet.address,
+        },
+        extra: {
+          error: err instanceof Error ? err.message : String(err),
+        },
+      }).catch((auditErr) => {
+        console.warn('Failed to record keystore persistence failure', auditErr);
+      });
+    }
+  }
+
   const template = await selectTemplateProfile(candidate.categoryKey);
   const sandbox = runSandboxTrials(blueprint, template);
   const sandboxPath = await persistSandboxReport(
@@ -538,8 +570,13 @@ async function cloneCandidate(
     sandbox,
     enabled: false,
   };
+  baseOutcome.walletAddress = blueprint.wallet.address;
 
   if (!sandbox.passed && !options.allowSandboxFailure) {
+    return baseOutcome;
+  }
+
+  if (!keystorePersisted) {
     return baseOutcome;
   }
 
@@ -654,16 +691,19 @@ async function cloneCandidate(
     return baseOutcome;
   }
 
-  let walletAddress: string | undefined;
-  try {
-    if (!walletManager) {
-      throw new Error('Wallet manager is not initialised');
+  if (!options.dryRun) {
+    let walletAddress: string | undefined;
+    try {
+      if (!walletManager) {
+        throw new Error('Wallet manager is not initialised');
+      }
+      walletAddress = walletManager.register(blueprint.wallet.privateKey)
+        .address;
+      baseOutcome.walletAddress = walletAddress;
+    } catch (err) {
+      console.warn('Failed to register wallet for cloned agent', err);
+      baseOutcome.walletAddress = blueprint.wallet.address;
     }
-    walletAddress = walletManager.register(blueprint.wallet.privateKey).address;
-    baseOutcome.walletAddress = walletAddress;
-  } catch (err) {
-    console.warn('Failed to register wallet for cloned agent', err);
-    baseOutcome.walletAddress = blueprint.wallet.address;
   }
 
   try {
