@@ -204,9 +204,7 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
         stats && Number.isFinite(stats.successRate) ? stats.successRate : null;
 
       const energyPenalty =
-        averageEnergy !== null
-          ? Math.log1p(averageEnergy / 1000) * 0.2
-          : 0;
+        averageEnergy !== null ? Math.log1p(averageEnergy / 1000) * 0.2 : 0;
       const efficiencyBoost =
         averageEfficiency !== null ? Math.min(1, averageEfficiency) * 0.3 : 0;
       const reliabilityBoost =
@@ -240,9 +238,9 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
         const { averageEnergy, averageEfficiency, dominantComplexity } =
           selectedEntry.stats;
         selectedEntry.match.reasons.push(
-          `energy-metrics:${averageEnergy.toFixed(2)}:${averageEfficiency.toFixed(
-            3
-          )}:${dominantComplexity}`
+          `energy-metrics:${averageEnergy.toFixed(
+            2
+          )}:${averageEfficiency.toFixed(3)}:${dominantComplexity}`
         );
       }
       return selectedEntry.match;

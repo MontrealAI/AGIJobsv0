@@ -104,13 +104,16 @@ async function readMetricsFile(): Promise<EnergyMetricRecord[]> {
 }
 
 function summariseAgents(records: EnergyMetricRecord[]): AgentRow[] {
-  const aggregates = new Map<string, AgentRow & {
-    totalEnergy: number;
-    totalEfficiency: number;
-    totalCpuMs: number;
-    totalGpuMs: number;
-    successCount: number;
-  }>();
+  const aggregates = new Map<
+    string,
+    AgentRow & {
+      totalEnergy: number;
+      totalEfficiency: number;
+      totalCpuMs: number;
+      totalGpuMs: number;
+      successCount: number;
+    }
+  >();
   for (const record of records) {
     const key = record.agent.toLowerCase();
     if (!aggregates.has(key)) {
@@ -148,7 +151,10 @@ function summariseAgents(records: EnergyMetricRecord[]): AgentRow[] {
       aggregate.successCount += 1;
     }
     const timestamp = record.finishedAt || record.startedAt;
-    if (timestamp && (!aggregate.lastUpdated || timestamp > aggregate.lastUpdated)) {
+    if (
+      timestamp &&
+      (!aggregate.lastUpdated || timestamp > aggregate.lastUpdated)
+    ) {
       aggregate.lastUpdated = timestamp;
     }
   }
@@ -225,11 +231,15 @@ function printRecent(records: EnergyMetricRecord[], options: CliOptions): void {
       ? (record.efficiencyScore ?? 0).toFixed(3)
       : '0.000';
     console.log(
-      `- [${record.finishedAt}] job=${record.jobId} agent=${record.agent} energy=${formatEnergy(
+      `- [${record.finishedAt}] job=${record.jobId} agent=${
+        record.agent
+      } energy=${formatEnergy(
         record.energyEstimate
-      )} efficiency=${efficiency} complexity=${record.algorithmicComplexity} cpuMs=${record.cpuTimeMs.toFixed(
+      )} efficiency=${efficiency} complexity=${
+        record.algorithmicComplexity
+      } cpuMs=${record.cpuTimeMs.toFixed(1)} gpuMs=${record.gpuTimeMs.toFixed(
         1
-      )} gpuMs=${record.gpuTimeMs.toFixed(1)}`
+      )}`
     );
   }
 }

@@ -89,8 +89,10 @@ function estimateAlgorithmicComplexity(
   outputSizeBytes: number,
   cpuCount: number
 ): ComplexityEstimate {
-  const safeCpuTime = Number.isFinite(cpuTimeMs) && cpuTimeMs > 0 ? cpuTimeMs : 0;
-  const safeGpuTime = Number.isFinite(gpuTimeMs) && gpuTimeMs > 0 ? gpuTimeMs : 0;
+  const safeCpuTime =
+    Number.isFinite(cpuTimeMs) && cpuTimeMs > 0 ? cpuTimeMs : 0;
+  const safeGpuTime =
+    Number.isFinite(gpuTimeMs) && gpuTimeMs > 0 ? gpuTimeMs : 0;
   const threads = Number.isFinite(cpuCount) && cpuCount > 0 ? cpuCount : 1;
 
   const cpuOperations = safeCpuTime * CPU_OPERATION_WEIGHT * threads;
@@ -244,7 +246,8 @@ function updateAgentAggregate(record: EnergyMetricRecord): void {
   }
   aggregate.complexityTotal += complexityIndex(record.algorithmicComplexity);
   aggregate.complexitySamples += 1;
-  aggregate.lastUpdated = record.finishedAt || record.startedAt || aggregate.lastUpdated;
+  aggregate.lastUpdated =
+    record.finishedAt || record.startedAt || aggregate.lastUpdated;
 
   agentEfficiencyAggregates.set(key, aggregate);
 }
@@ -457,16 +460,14 @@ export async function getAgentEfficiencyStats(): Promise<
   const snapshot = new Map<string, AgentEfficiencyStats>();
   for (const [agent, aggregate] of agentEfficiencyAggregates.entries()) {
     const jobCount = aggregate.jobCount;
-    const averageEnergy =
-      jobCount > 0 ? aggregate.totalEnergy / jobCount : 0;
+    const averageEnergy = jobCount > 0 ? aggregate.totalEnergy / jobCount : 0;
     const averageEfficiency =
       jobCount > 0 ? aggregate.totalEfficiency / jobCount : 0;
     const averageCpuTimeMs =
       jobCount > 0 ? aggregate.totalCpuTime / jobCount : 0;
     const averageGpuTimeMs =
       jobCount > 0 ? aggregate.totalGpuTime / jobCount : 0;
-    const successRate =
-      jobCount > 0 ? aggregate.successCount / jobCount : 0;
+    const successRate = jobCount > 0 ? aggregate.successCount / jobCount : 0;
     const complexityAverageIndex =
       aggregate.complexitySamples > 0
         ? aggregate.complexityTotal / aggregate.complexitySamples
