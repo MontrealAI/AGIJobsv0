@@ -20,6 +20,9 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `ENERGY_ORACLE_URL` endpoint that accepts telemetry payloads (optional – required for operator rewards)
 - `ENERGY_ORACLE_TOKEN` bearer token when publishing telemetry to the oracle (optional)
 - `ENERGY_ORACLE_REQUIRE_SIGNATURE` set to `true` to require cryptographic signing of telemetry payloads; when enabled the orchestrator wallet must own an ENS name under `*.a.agi.eth`
+- `ORCHESTRATOR_MIN_EXPECTED_REWARD` minimum formatted reward required before bidding on a job (optional)
+- `ORCHESTRATOR_MIN_REWARD_PER_ENERGY` minimum reward-to-energy ratio allowed when auto-bidding (optional)
+- `ORCHESTRATOR_MAX_EXPECTED_ENERGY` maximum historical energy footprint tolerated for a candidate agent (optional)
 - `AUDIT_ANCHOR_INTERVAL_MS` cadence for Merkle anchoring the audit log (default `21600000`, i.e. 6 hours)
 - `AUDIT_ANCHOR_MIN_NEW_EVENTS` minimum number of new audit records required before an automated anchor is attempted (default `5`)
 - `AUDIT_ANCHOR_START_DELAY_MS` optional delay before the first anchoring cycle begins (default `0`)

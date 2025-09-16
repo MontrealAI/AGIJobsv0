@@ -14,7 +14,7 @@ import {
   clearEfficiencyCache,
   type EfficiencyBreakdown,
 } from '../shared/efficiencyMetrics';
-import { walletManager } from './utils';
+import { walletManager, TOKEN_DECIMALS } from './utils';
 import { getStakeBalance } from './stakeCoordinator';
 import capabilityMatrix from '../config/agents.json';
 
@@ -89,6 +89,83 @@ let statsCache: Map<string, AgentStats> | null = null;
 let jobMetadataCache: Map<string, JobAnalysis> = new Map();
 
 const loggedConfigWarnings = new Set<string>();
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  return null;
+}
+
+function resolveJobRewardValue(analysis: JobAnalysis): number | null {
+  try {
+    const value = Number.parseFloat(
+      ethers.formatUnits(analysis.reward, Number(TOKEN_DECIMALS))
+    );
+    return Number.isFinite(value) ? value : null;
+  } catch (err) {
+    console.warn('Failed to normalise job reward value', analysis.jobId, err);
+    return null;
+  }
+}
+
+function deriveEnergyEstimate(
+  profile: AgentProfile,
+  thermodynamics?: EfficiencyBreakdown
+): number | null {
+  if (thermodynamics) {
+    const thermoEnergy = toFiniteNumber(thermodynamics.averageEnergy);
+    if (thermoEnergy !== null && thermoEnergy >= 0) {
+      return thermoEnergy;
+    }
+  }
+  const averageEnergy = toFiniteNumber(profile.averageEnergy);
+  if (averageEnergy !== null && averageEnergy >= 0) {
+    return averageEnergy;
+  }
+  if (profile.configMetadata) {
+    const configEnergy = toFiniteNumber(profile.configMetadata.energy);
+    if (configEnergy !== null && configEnergy >= 0) {
+      return configEnergy;
+    }
+  }
+  if (profile.metadata) {
+    const metaEnergy = toFiniteNumber(profile.metadata.energy);
+    if (metaEnergy !== null && metaEnergy >= 0) {
+      return metaEnergy;
+    }
+  }
+  return null;
+}
+
+function deriveRewardPerEnergy(
+  rewardValue: number | null,
+  thermodynamics?: EfficiencyBreakdown,
+  estimatedEnergy?: number | null
+): number | null {
+  if (thermodynamics) {
+    const thermoRatio = toFiniteNumber(thermodynamics.rewardPerEnergy);
+    if (thermoRatio !== null && thermoRatio >= 0) {
+      return thermoRatio;
+    }
+  }
+  if (
+    rewardValue !== null &&
+    estimatedEnergy !== null &&
+    estimatedEnergy > 0
+  ) {
+    const ratio = rewardValue / estimatedEnergy;
+    return Number.isFinite(ratio) && ratio >= 0 ? ratio : null;
+  }
+  return null;
+}
 
 function normaliseString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -524,12 +601,26 @@ function energyPreferenceFromThermodynamics(
   return 1 / (1 + breakdown.averageEnergy / 1000);
 }
 
-function rewardEfficiencyScore(breakdown?: EfficiencyBreakdown): number {
-  if (!breakdown) {
-    return 0;
+function rewardEfficiencyScore(
+  breakdown?: EfficiencyBreakdown,
+  fallbackRatio?: number | null
+): number {
+  let rewardPerEnergy: number | null = null;
+  if (breakdown) {
+    const candidate = toFiniteNumber(breakdown.rewardPerEnergy);
+    if (candidate !== null && candidate > 0) {
+      rewardPerEnergy = candidate;
+    }
   }
-  const rewardPerEnergy = breakdown.rewardPerEnergy;
-  if (!Number.isFinite(rewardPerEnergy) || rewardPerEnergy <= 0) {
+  if (
+    rewardPerEnergy === null &&
+    fallbackRatio !== null &&
+    Number.isFinite(fallbackRatio) &&
+    fallbackRatio > 0
+  ) {
+    rewardPerEnergy = fallbackRatio;
+  }
+  if (rewardPerEnergy === null) {
     return 0;
   }
   return Math.min(1, Math.log10(1 + rewardPerEnergy) / 2);
@@ -559,6 +650,9 @@ export interface MatchResult {
   analysis: JobAnalysis;
   reasons: string[];
   thermodynamics?: EfficiencyBreakdown;
+  rewardValue?: number | null;
+  estimatedEnergy?: number | null;
+  rewardPerEnergy?: number | null;
 }
 
 export async function evaluateAgentMatches(
@@ -569,6 +663,7 @@ export async function evaluateAgentMatches(
     return [];
   }
   const efficiencyIndex = await getEfficiencyIndex();
+  const rewardValue = resolveJobRewardValue(analysis);
   const results: MatchResult[] = [];
   for (const profile of profiles) {
     const reasons: string[] = [];
@@ -594,23 +689,34 @@ export async function evaluateAgentMatches(
       ? findCategoryBreakdown(efficiencyReport, analysis.category)
       : undefined;
     const thermoScore = thermodynamicScore(thermodynamics);
+    const estimatedEnergy = deriveEnergyEstimate(profile, thermodynamics);
     const energyComponent =
       thermodynamics !== undefined && thermodynamics !== null
         ? energyPreferenceFromThermodynamics(thermodynamics)
         : baselineEnergy;
-    const rewardComponent = rewardEfficiencyScore(thermodynamics);
+    const rewardRatio = deriveRewardPerEnergy(
+      rewardValue,
+      thermodynamics,
+      estimatedEnergy
+    );
+    const rewardComponent = rewardEfficiencyScore(thermodynamics, rewardRatio);
     if (thermodynamics) {
       reasons.push(`thermo:${formatScore(thermodynamics.efficiencyScore)}`);
-      if (thermodynamics.rewardPerEnergy > 0) {
-        reasons.push(
-          `reward-per-energy:${formatScore(thermodynamics.rewardPerEnergy)}`
-        );
-      }
-      if (thermodynamics.averageEnergy > 0) {
-        reasons.push(`avg-energy:${formatScore(thermodynamics.averageEnergy)}`);
+      const thermoEnergy = toFiniteNumber(thermodynamics.averageEnergy);
+      if (thermoEnergy !== null && thermoEnergy > 0) {
+        reasons.push(`avg-energy:${formatScore(thermoEnergy)}`);
+      } else if (estimatedEnergy !== null) {
+        reasons.push(`energy-estimate:${formatScore(estimatedEnergy)}`);
       }
     } else {
-      reasons.push(`energy-baseline:${formatScore(baselineEnergy)}`);
+      if (estimatedEnergy !== null) {
+        reasons.push(`energy-estimate:${formatScore(estimatedEnergy)}`);
+      } else {
+        reasons.push(`energy-baseline:${formatScore(baselineEnergy)}`);
+      }
+    }
+    if (rewardRatio !== null) {
+      reasons.push(`reward-per-energy:${formatScore(rewardRatio)}`);
     }
     const aggregate =
       categoryScore * 0.3 +
@@ -625,6 +731,9 @@ export async function evaluateAgentMatches(
       analysis,
       reasons,
       thermodynamics,
+      rewardValue,
+      estimatedEnergy,
+      rewardPerEnergy: rewardRatio,
     });
   }
   results.sort((a, b) => b.score - a.score);
