@@ -4,7 +4,7 @@ import { ethers, Wallet } from 'ethers';
 import { Job } from './types';
 import { AgentProfile, JobAnalysis } from './agentRegistry';
 import { AgentIdentity } from './identity';
-import { registry, FETCH_TIMEOUT_MS } from './utils';
+import { registry, FETCH_TIMEOUT_MS, TOKEN_DECIMALS } from './utils';
 import {
   startEnergySpan,
   endEnergySpan,
@@ -39,6 +39,30 @@ function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+}
+
+function resolveRewardValue(job: Job): number {
+  if (job?.reward) {
+    const parsed = Number.parseFloat(job.reward);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  if (job?.rewardRaw) {
+    try {
+      const value = ethers.formatUnits(
+        BigInt(job.rewardRaw),
+        Number(TOKEN_DECIMALS)
+      );
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    } catch (err) {
+      console.warn('Failed to normalise reward value for job', job.jobId, err);
+    }
+  }
+  return 0;
 }
 
 async function acknowledgeTaxPolicy(wallet: Wallet): Promise<void> {
@@ -109,6 +133,7 @@ export async function executeJob(
   context: TaskExecutionContext
 ): Promise<TaskExecutionResult> {
   const { job, wallet, profile, identity, analysis } = context;
+  const rewardValue = resolveRewardValue(job);
   const span = startEnergySpan({
     jobId: job.jobId,
     agent: wallet.address,
@@ -205,6 +230,12 @@ export async function executeJob(
       agent: wallet.address,
       success: !error,
       resultURI,
+      rewardValue,
+      rewardRaw: job.rewardRaw,
+      rewardFormatted: job.reward,
+      tokenDecimals: TOKEN_DECIMALS,
+      stakeRaw: job.stakeRaw,
+      stakeFormatted: job.stake,
     });
     await publishEnergySample(energySample);
     await notifyTrainingOutcome({

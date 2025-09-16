@@ -9,6 +9,11 @@ import {
   getAgentEnergyStats,
   getJobEnergyLog,
 } from './metrics';
+import {
+  getEnergyInsightsSnapshot,
+  type AgentEnergyInsight,
+  type JobEnergyInsight,
+} from '../../shared/energyInsights';
 
 // Minimal ABIs for required contract interactions
 const JOB_REGISTRY_ABI = [
@@ -44,6 +49,16 @@ const DEFAULT_MIN_PROFIT_MARGIN = parseNumericEnv(
   0.05
 );
 
+const MAX_AGENT_ANOMALY_RATE = parseNumericEnv(
+  process.env.MAX_AGENT_ANOMALY_RATE,
+  0.5
+);
+
+const MAX_JOB_ANOMALY_RATE = parseNumericEnv(
+  process.env.MAX_JOB_ANOMALY_RATE,
+  0.7
+);
+
 const REPUTATION_ENGINE_ABI = [
   'function reputation(address user) view returns (uint256)',
 ];
@@ -69,6 +84,7 @@ export function loadCapabilityMatrix(
 ): CapabilityMatrix {
   const data = fs.readFileSync(matrixPath, 'utf8');
   const matrix = JSON.parse(data) as CapabilityMatrix;
+  const energyInsights = getEnergyInsightsSnapshot();
   for (const category of Object.keys(matrix)) {
     matrix[category] = matrix[category].map((agent) => {
       const normalizedSkills = Array.isArray(agent.skills)
@@ -82,11 +98,20 @@ export function loadCapabilityMatrix(
         ...(normalizedSkills ? { skills: normalizedSkills } : {}),
       };
       const stats = getAgentEnergyStats(agent.address);
-      if (!stats) return baseAgent;
+      const insight: AgentEnergyInsight | null =
+        energyInsights.agents[agent.address.toLowerCase()] ?? null;
+      const averageEnergy = insight?.averageEnergy ?? stats?.averageEnergyScore;
+      const averageEfficiency =
+        insight?.averageEfficiency ?? stats?.averageEfficiencyScore;
+      if (averageEnergy === undefined && averageEfficiency === undefined) {
+        return baseAgent;
+      }
       return {
         ...baseAgent,
-        energy: stats.averageEnergyScore,
-        efficiencyScore: stats.averageEfficiencyScore,
+        ...(averageEnergy !== undefined ? { energy: averageEnergy } : {}),
+        ...(averageEfficiency !== undefined
+          ? { efficiencyScore: averageEfficiency }
+          : {}),
       };
     });
   }
@@ -117,6 +142,9 @@ export interface SelectionDiagnosticsEntry {
   profitMargin: string;
   profitable: boolean;
   stakeSufficient: boolean;
+  anomalyRate: number;
+  energySource: string;
+  efficiencySource: string;
 }
 
 export interface SelectionDiagnostics {
@@ -204,6 +232,9 @@ export async function selectAgent(
     profitMargin: number;
     profitable: boolean;
     stakeSufficient: boolean;
+    anomalyRate: number;
+    energySource: string;
+    efficiencySource: string;
   }
 
   const formatDiagnostics = (
@@ -220,9 +251,13 @@ export async function selectAgent(
         : 'Infinity',
       profitable: entry.profitable,
       stakeSufficient: entry.stakeSufficient,
+      anomalyRate: entry.anomalyRate,
+      energySource: entry.energySource,
+      efficiencySource: entry.efficiencySource,
     }));
 
   const evaluated: EvaluatedAgent[] = [];
+  const energyInsights = getEnergyInsightsSnapshot();
 
   for (const agent of candidates) {
     const reputation = (await reputationEngine.reputation(
@@ -230,26 +265,72 @@ export async function selectAgent(
     )) as bigint;
     const stats = getAgentEnergyStats(agent.address);
     const jobLog = jobId ? getJobEnergyLog(agent.address, jobId) : null;
-    const predictedEnergyRaw =
-      jobLog?.summary.energyScore ??
-      stats?.averageEnergyScore ??
-      agent.energy ??
-      Number.MAX_SAFE_INTEGER;
+    const agentKey = agent.address.toLowerCase();
+    const insight: AgentEnergyInsight | null =
+      energyInsights.agents[agentKey] ?? null;
+    const jobInsightsByAgent = energyInsights.jobs[agentKey] ?? {};
+    const jobInsight: JobEnergyInsight | undefined = jobId
+      ? jobInsightsByAgent[String(jobId)]
+      : undefined;
+
+    let energySource = 'fallback';
+    let predictedEnergyRaw = Number.MAX_SAFE_INTEGER;
+    if (jobInsight && Number.isFinite(jobInsight.averageEnergy)) {
+      predictedEnergyRaw = jobInsight.averageEnergy;
+      energySource = 'insight-job';
+    } else if (jobLog?.summary.energyScore !== undefined) {
+      predictedEnergyRaw = jobLog.summary.energyScore;
+      energySource = 'job-log';
+    } else if (insight?.averageEnergy !== undefined) {
+      predictedEnergyRaw = insight.averageEnergy;
+      energySource = 'insight-agent';
+    } else if (stats?.averageEnergyScore !== undefined) {
+      predictedEnergyRaw = stats.averageEnergyScore;
+      energySource = 'legacy-stats';
+    } else if (agent.energy !== undefined) {
+      predictedEnergyRaw = agent.energy;
+      energySource = 'capability';
+    }
     const predictedEnergy = Number.isFinite(predictedEnergyRaw)
       ? predictedEnergyRaw
       : Number.MAX_SAFE_INTEGER;
     if (predictedEnergy > maxEnergy) {
       continue;
     }
-    const efficiencyRaw =
-      jobLog?.summary.efficiencyScore ??
-      stats?.averageEfficiencyScore ??
-      agent.efficiencyScore ??
-      (predictedEnergy > 0 ? 1 / (predictedEnergy + 1) : 1);
+    let efficiencySource = 'fallback';
+    let efficiencyRaw: number | undefined;
+    if (jobInsight && Number.isFinite(jobInsight.efficiencyScore)) {
+      efficiencyRaw = jobInsight.efficiencyScore;
+      efficiencySource = 'insight-job';
+    } else if (jobLog?.summary.efficiencyScore !== undefined) {
+      efficiencyRaw = jobLog.summary.efficiencyScore;
+      efficiencySource = 'job-log';
+    } else if (insight?.averageEfficiency !== undefined) {
+      efficiencyRaw = insight.averageEfficiency;
+      efficiencySource = 'insight-agent';
+    } else if (stats?.averageEfficiencyScore !== undefined) {
+      efficiencyRaw = stats.averageEfficiencyScore;
+      efficiencySource = 'legacy-stats';
+    } else if (agent.efficiencyScore !== undefined) {
+      efficiencyRaw = agent.efficiencyScore;
+      efficiencySource = 'capability';
+    } else if (predictedEnergy > 0 && Number.isFinite(predictedEnergy)) {
+      efficiencyRaw = 1 / (predictedEnergy + 1);
+    }
     const efficiency = Number.isFinite(efficiencyRaw) ? efficiencyRaw : 0;
     if (efficiency < minEfficiency) {
       continue;
     }
+
+    const jobAnomalyRate = jobInsight?.anomalyRate ?? 0;
+    const agentAnomalyRate = insight?.anomalyRate ?? 0;
+    if (agentAnomalyRate > MAX_AGENT_ANOMALY_RATE) {
+      continue;
+    }
+    if (jobAnomalyRate > MAX_JOB_ANOMALY_RATE) {
+      continue;
+    }
+    const anomalyRate = Math.max(jobAnomalyRate, agentAnomalyRate);
 
     const candidateSkills = new Set<string>();
     if (Array.isArray(agent.skills)) {
@@ -321,6 +402,9 @@ export async function selectAgent(
       profitMargin,
       profitable,
       stakeSufficient,
+      anomalyRate,
+      energySource,
+      efficiencySource,
     });
   }
 
