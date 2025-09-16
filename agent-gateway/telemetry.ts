@@ -3,13 +3,18 @@ import os from 'os';
 import path from 'path';
 import { ethers } from 'ethers';
 import { EnergySample } from '../shared/energyMonitor';
-import { orchestratorWallet } from './utils';
+import { orchestratorWallet, agents, FETCH_TIMEOUT_MS } from './utils';
 import {
   isOracleContractConfigured,
   submitEnergyAttestations,
   OperatorSubmissionResult,
 } from './operator';
 import { getCachedIdentity, refreshIdentity } from './identity';
+import {
+  recordAgentFailure,
+  secureLogAction,
+  quarantineManager,
+} from './security';
 
 export const ENERGY_ORACLE_URL = process.env.ENERGY_ORACLE_URL || '';
 export const ENERGY_ORACLE_TOKEN = process.env.ENERGY_ORACLE_TOKEN || '';
@@ -51,6 +56,39 @@ const CPU_OPERATION_WEIGHT = Number(
 const GPU_OPERATION_WEIGHT = Number(
   process.env.TELEMETRY_GPU_OPERATION_WEIGHT || '500'
 );
+
+function ensurePositiveInteger(value: number, fallback: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    return fallback;
+  }
+  return Math.floor(value);
+}
+
+const ENERGY_ANOMALY_FAILURE_THRESHOLD = ensurePositiveInteger(
+  Number(process.env.ENERGY_ANOMALY_FAILURE_THRESHOLD || '3'),
+  3
+);
+const ENERGY_ANOMALY_WINDOW_MS = ensurePositiveInteger(
+  Number(process.env.ENERGY_ANOMALY_WINDOW_MS || String(15 * 60 * 1000)),
+  15 * 60 * 1000
+);
+const ENERGY_ANOMALY_ALERT_COOLDOWN_MS = Math.max(
+  0,
+  Number(process.env.ENERGY_ANOMALY_ALERT_COOLDOWN_MS || String(10 * 60 * 1000))
+);
+
+interface AnomalyHistoryEntry {
+  address: string;
+  timestamps: number[];
+  firstDetected: number;
+  lastDetected: number;
+  lastTypes: string[];
+  lastJobId?: string;
+  lastAnomalyScore?: number;
+  lastAlert?: number;
+}
+
+const energyAnomalyHistory = new Map<string, AnomalyHistoryEntry>();
 
 type LoadAverages = [number, number, number];
 
@@ -127,6 +165,27 @@ function estimateAlgorithmicComplexity(
   }
 
   return { algorithmicComplexity, estimatedOperations };
+}
+
+function normaliseAgentAddress(value?: string): string | null {
+  if (!value) {
+    return null;
+  }
+  try {
+    return ethers.getAddress(value);
+  } catch {
+    return null;
+  }
+}
+
+function refreshAnomalyWindow(entry: AnomalyHistoryEntry, now: number): void {
+  entry.timestamps = entry.timestamps.filter(
+    (ts) => now - ts <= ENERGY_ANOMALY_WINDOW_MS
+  );
+  if (entry.timestamps.length > 0) {
+    entry.firstDetected = entry.timestamps[0];
+    entry.lastDetected = entry.timestamps[entry.timestamps.length - 1];
+  }
 }
 
 export interface JobInvocationSpan {
@@ -308,6 +367,148 @@ async function appendEnergyMetric(record: EnergyMetricRecord): Promise<void> {
   );
 }
 
+function notifyAgentOfAnomaly(
+  address: string,
+  payload: Record<string, unknown>
+): void {
+  const lower = address.toLowerCase();
+  let serialised: string | null = null;
+  for (const [, info] of agents.entries()) {
+    if (info.wallet.toLowerCase() !== lower) continue;
+    if (info.ws && info.ws.readyState === 1) {
+      try {
+        if (!serialised) serialised = JSON.stringify(payload);
+        info.ws.send(serialised);
+      } catch (err) {
+        console.warn('energy anomaly websocket notification failed', err);
+      }
+      continue;
+    }
+    if (info.url) {
+      try {
+        if (!serialised) serialised = JSON.stringify(payload);
+      } catch (err) {
+        console.warn('failed to serialise anomaly notification payload', err);
+        return;
+      }
+      if (typeof fetch !== 'function') {
+        continue;
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      fetch(info.url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: serialised,
+        signal: controller.signal,
+      })
+        .catch((err) =>
+          console.warn('energy anomaly webhook notification failed', err)
+        )
+        .finally(() => clearTimeout(timer));
+    }
+  }
+}
+
+async function handleEnergyAnomalies(
+  record: EnergyMetricRecord
+): Promise<void> {
+  const anomalies = Array.isArray(record.anomalies)
+    ? record.anomalies.filter(
+        (value): value is string => typeof value === 'string'
+      )
+    : [];
+  if (anomalies.length === 0) {
+    return;
+  }
+  const address = normaliseAgentAddress(record.agent);
+  if (!address) {
+    return;
+  }
+  const key = address.toLowerCase();
+  const now = Date.now();
+  const entry = energyAnomalyHistory.get(key) ?? {
+    address,
+    timestamps: [],
+    firstDetected: now,
+    lastDetected: now,
+    lastTypes: [],
+  };
+  if (entry.timestamps.length === 0) {
+    entry.firstDetected = now;
+  }
+  entry.address = address;
+  refreshAnomalyWindow(entry, now);
+  entry.timestamps.push(now);
+  entry.lastDetected = now;
+  entry.lastTypes = Array.from(new Set(anomalies));
+  entry.lastJobId = record.jobId;
+  entry.lastAnomalyScore = record.anomalyScore ?? anomalies.length;
+  energyAnomalyHistory.set(key, entry);
+
+  const anomalyCount = entry.timestamps.length;
+  const shouldEscalate =
+    anomalyCount >= ENERGY_ANOMALY_FAILURE_THRESHOLD &&
+    (!entry.lastAlert ||
+      now - entry.lastAlert >= ENERGY_ANOMALY_ALERT_COOLDOWN_MS);
+
+  if (!shouldEscalate) {
+    return;
+  }
+
+  entry.lastAlert = now;
+  energyAnomalyHistory.set(key, entry);
+
+  let health: ReturnType<typeof recordAgentFailure> | undefined;
+  try {
+    health = recordAgentFailure(address, 'energy-anomaly');
+  } catch (err) {
+    console.warn('energy anomaly failure tracking failed', err);
+  }
+
+  try {
+    await secureLogAction(
+      {
+        component: 'telemetry',
+        action: 'energy-anomaly-threshold',
+        agent: address,
+        jobId: record.jobId,
+        success: false,
+        metadata: {
+          anomalies: entry.lastTypes,
+          anomalyScore: entry.lastAnomalyScore,
+          count: anomalyCount,
+          windowMs: ENERGY_ANOMALY_WINDOW_MS,
+          threshold: ENERGY_ANOMALY_FAILURE_THRESHOLD,
+          energyEstimate: record.energyEstimate,
+          rewardValue: record.rewardValue,
+          jobSuccess: record.jobSuccess,
+          quarantined: health?.quarantined ?? false,
+          lastJobId: entry.lastJobId,
+        },
+      },
+      orchestratorWallet
+    );
+  } catch (err) {
+    console.warn('energy anomaly audit log failed', err);
+  }
+
+  try {
+    notifyAgentOfAnomaly(address, {
+      type: 'EnergyAnomaly',
+      agent: address,
+      jobId: record.jobId,
+      anomalies: entry.lastTypes,
+      anomalyScore: entry.lastAnomalyScore,
+      count: anomalyCount,
+      timestamp: new Date(now).toISOString(),
+      quarantined: health?.quarantined ?? false,
+    });
+  } catch (err) {
+    console.warn('energy anomaly notification failed', err);
+  }
+}
+
 function mergeMetadata(
   ...entries: Array<Record<string, unknown> | undefined>
 ): Record<string, unknown> | undefined {
@@ -456,6 +657,7 @@ export async function recordJobEnergyMetrics(params: {
   };
 
   await appendEnergyMetric(record);
+  await handleEnergyAnomalies(record);
   return record;
 }
 
@@ -499,6 +701,63 @@ export async function getAgentEfficiencyStats(): Promise<
     });
   }
   return snapshot;
+}
+
+export interface EnergyAnomalySnapshot {
+  agent: string;
+  count: number;
+  firstDetected: string;
+  lastDetected: string;
+  lastTypes: string[];
+  lastJobId?: string;
+  lastAnomalyScore?: number;
+  quarantined: boolean;
+}
+
+export function getEnergyAnomalyReport(
+  agent?: string
+): EnergyAnomalySnapshot[] {
+  const now = Date.now();
+  const filterAddress = agent ? normaliseAgentAddress(agent) : null;
+  const filterKey = filterAddress ? filterAddress.toLowerCase() : null;
+  const result: EnergyAnomalySnapshot[] = [];
+
+  for (const [key, entry] of energyAnomalyHistory.entries()) {
+    refreshAnomalyWindow(entry, now);
+    if (entry.timestamps.length === 0) {
+      energyAnomalyHistory.delete(key);
+      continue;
+    }
+    if (filterKey && key !== filterKey) {
+      continue;
+    }
+    const snapshot: EnergyAnomalySnapshot = {
+      agent: entry.address,
+      count: entry.timestamps.length,
+      firstDetected: new Date(entry.firstDetected).toISOString(),
+      lastDetected: new Date(entry.lastDetected).toISOString(),
+      lastTypes: [...entry.lastTypes],
+      lastJobId: entry.lastJobId,
+      lastAnomalyScore: entry.lastAnomalyScore,
+      quarantined: quarantineManager.isQuarantined(entry.address),
+    };
+    result.push(snapshot);
+  }
+
+  result.sort((a, b) => b.lastDetected.localeCompare(a.lastDetected));
+  return result;
+}
+
+export function getEnergyAnomalyParameters(): {
+  threshold: number;
+  windowMs: number;
+  cooldownMs: number;
+} {
+  return {
+    threshold: ENERGY_ANOMALY_FAILURE_THRESHOLD,
+    windowMs: ENERGY_ANOMALY_WINDOW_MS,
+    cooldownMs: ENERGY_ANOMALY_ALERT_COOLDOWN_MS,
+  };
 }
 
 export interface TelemetryEnvelope {
