@@ -26,6 +26,8 @@ export interface TaskExecutionResult {
   txHash: string;
   resultURI: string;
   resultHash: string;
+  payloadDigest: string;
+  resultSignature: string;
   outputPath: string;
   energy: EnergySample;
   rawOutput: unknown;
@@ -115,6 +117,8 @@ export async function executeJob(
   });
   let resultURI = '';
   let resultHash = '';
+  let payloadDigest = '';
+  let resultSignature = '';
   let txHash = '';
   let rawOutput: unknown;
   let outputPath = '';
@@ -151,38 +155,49 @@ export async function executeJob(
     const hashBytes = ethers.id(serialised);
     resultHash = hashBytes;
     resultURI = `ipfs://local/${hashBytes}`;
+    payloadDigest = ethers.keccak256(ethers.toUtf8Bytes(serialised));
+    resultSignature = await wallet.signMessage(ethers.getBytes(payloadDigest));
     await acknowledgeTaxPolicy(wallet);
     const tx = await (registry as any)
       .connect(wallet)
       .submit(job.jobId, hashBytes, resultURI, identity.label ?? '', []);
     await tx.wait();
     txHash = tx.hash;
-    await recordAuditEvent({
-      component: 'task-execution',
-      action: 'submit',
-      jobId: job.jobId,
-      agent: wallet.address,
-      metadata: {
-        resultURI,
-        resultHash,
-        txHash,
+    await recordAuditEvent(
+      {
+        component: 'task-execution',
+        action: 'submit',
+        jobId: job.jobId,
+        agent: wallet.address,
+        metadata: {
+          resultURI,
+          resultHash,
+          txHash,
+          payloadDigest,
+          resultSignature,
+        },
+        success: true,
       },
-      success: true,
-    });
+      wallet
+    );
   } catch (err: any) {
     error = err instanceof Error ? err : new Error(err?.message || String(err));
-    await recordAuditEvent({
-      component: 'task-execution',
-      action: 'submit-failed',
-      jobId: job.jobId,
-      agent: wallet.address,
-      metadata: {
-        error: error.message,
-        resultURI,
-        resultHash,
+    await recordAuditEvent(
+      {
+        component: 'task-execution',
+        action: 'submit-failed',
+        jobId: job.jobId,
+        agent: wallet.address,
+        metadata: {
+          error: error.message,
+          resultURI,
+          resultHash,
+          payloadDigest,
+        },
+        success: false,
       },
-      success: false,
-    });
+      wallet
+    );
     throw error;
   } finally {
     energySample = await endEnergySpan(span, {
@@ -211,6 +226,8 @@ export async function executeJob(
     txHash,
     resultURI,
     resultHash,
+    payloadDigest,
+    resultSignature,
     outputPath,
     energy: energySample,
     rawOutput,

@@ -2,20 +2,27 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
+import {
+  buildStructuredLogRecord,
+  type StructuredLogRecord,
+} from './structuredLogger';
 
 export interface AuditEvent {
   timestamp?: string;
   component: string;
   action: string;
+  level?: string;
+  actor?: string;
   jobId?: string;
   agent?: string;
   employer?: string;
+  stageName?: string;
   metadata?: Record<string, unknown>;
   success?: boolean;
+  extra?: Record<string, unknown>;
 }
 
-export interface SignedAuditEvent extends AuditEvent {
-  timestamp: string;
+export interface SignedAuditEvent extends StructuredLogRecord {
   hash: string;
   signature?: string;
 }
@@ -30,33 +37,40 @@ function ensureDirectory(dir: string): void {
   }
 }
 
-function normaliseEvent(event: AuditEvent): SignedAuditEvent {
-  const timestamp = event.timestamp || new Date().toISOString();
-  const base: SignedAuditEvent = {
-    ...event,
-    timestamp,
-    hash: '',
-  };
-  return base;
-}
-
-function hashEvent(event: SignedAuditEvent): string {
-  const payload = { ...event };
-  delete (payload as Partial<SignedAuditEvent>).hash;
-  delete (payload as Partial<SignedAuditEvent>).signature;
-  const json = JSON.stringify(payload);
-  return crypto.createHash('sha256').update(json).digest('hex');
-}
-
 export async function recordAuditEvent(
   event: AuditEvent,
   signer?: ethers.Wallet
 ): Promise<SignedAuditEvent> {
-  const entry = normaliseEvent(event);
-  entry.hash = hashEvent(entry);
+  const timestamp = event.timestamp ?? new Date().toISOString();
+  const baseRecord = buildStructuredLogRecord({
+    component: event.component,
+    action: event.action,
+    timestamp,
+    level: event.level,
+    actor: event.actor ?? event.agent ?? event.employer,
+    jobId: event.jobId,
+    agentId: event.agent,
+    stageName: event.stageName,
+    details: event.metadata,
+    extra: {
+      agent: event.agent,
+      employer: event.employer,
+      success: event.success,
+      ...event.extra,
+    },
+  });
+  const digest = baseRecord.integrity.eventHash.startsWith('sha256:')
+    ? baseRecord.integrity.eventHash.slice('sha256:'.length)
+    : baseRecord.integrity.eventHash.replace(/^0x/, '');
+  let signature: string | undefined;
   if (signer) {
-    entry.signature = await signer.signMessage(entry.hash);
+    signature = await signer.signMessage(baseRecord.integrity.eventHash);
   }
+  const entry: SignedAuditEvent = {
+    ...baseRecord,
+    hash: digest,
+    signature,
+  };
   ensureDirectory(path.dirname(AUDIT_LOG_PATH));
   await fs.promises.appendFile(
     AUDIT_LOG_PATH,
@@ -75,7 +89,29 @@ export async function readAuditEvents(
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
-    const events = lines.map((line) => JSON.parse(line) as SignedAuditEvent);
+    const events = lines.map((line) => {
+      const parsed = JSON.parse(line) as SignedAuditEvent & {
+        integrity?: StructuredLogRecord['integrity'];
+        hash?: string;
+      };
+      if (!parsed.integrity || !parsed.integrity.eventHash) {
+        const fallback = parsed.hash
+          ? parsed.hash.replace(/^0x/, '')
+          : crypto.createHash('sha256').update(line).digest('hex');
+        parsed.integrity = {
+          version: 0,
+          eventHash: `sha256:${fallback}`,
+          hashedFields: {},
+        };
+        parsed.hash = fallback;
+      } else if (!parsed.hash) {
+        const normalized = parsed.integrity.eventHash.startsWith('sha256:')
+          ? parsed.integrity.eventHash.slice('sha256:'.length)
+          : parsed.integrity.eventHash.replace(/^0x/, '');
+        parsed.hash = normalized;
+      }
+      return parsed as SignedAuditEvent;
+    });
     if (!limit || events.length <= limit) {
       return events;
     }
@@ -119,7 +155,15 @@ export async function anchorAuditTrail(
   events?: SignedAuditEvent[]
 ): Promise<{ merkleRoot: string; count: number }> {
   const entries = events ?? (await readAuditEvents());
-  const hashes = entries.map((entry) => `0x${entry.hash}`);
+  const hashes = entries.map((entry) => {
+    if (entry.integrity?.eventHash?.startsWith('sha256:')) {
+      return `0x${entry.integrity.eventHash.slice('sha256:'.length)}`;
+    }
+    const normalized = entry.hash.startsWith('0x')
+      ? entry.hash
+      : `0x${entry.hash}`;
+    return normalized;
+  });
   const merkleRoot = computeMerkleRoot(hashes);
   ensureDirectory(path.dirname(AUDIT_ANCHOR_PATH));
   const record = {
