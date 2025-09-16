@@ -28,6 +28,11 @@ import {
   getAgentEfficiency,
   findCategoryBreakdown,
 } from '../shared/efficiencyMetrics';
+import {
+  listAuditAnchors,
+  triggerAuditAnchor,
+  getAuditAnchoringState,
+} from './auditAnchoring';
 
 const app = express();
 app.use(express.json());
@@ -106,6 +111,59 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
 });
+
+app.get(
+  '/audit/anchors',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const limitParam = req.query.limit;
+      let limit: number | undefined;
+      if (typeof limitParam === 'string' && limitParam.trim().length > 0) {
+        const parsed = Number.parseInt(limitParam, 10);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          limit = parsed;
+        }
+      }
+      const anchors = await listAuditAnchors(limit);
+      res.json({ anchors, state: getAuditAnchoringState() });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.post(
+  '/audit/anchors',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const { force, minNewEvents } =
+      (req.body as { force?: boolean; minNewEvents?: number }) || {};
+    try {
+      const anchor = await triggerAuditAnchor({
+        force: Boolean(force),
+        minNewEvents:
+          typeof minNewEvents === 'number' && Number.isFinite(minNewEvents)
+            ? minNewEvents
+            : undefined,
+      });
+      const state = getAuditAnchoringState();
+      if (!anchor) {
+        res.status(202).json({
+          status: 'skipped',
+          reason: state.lastSkipReason,
+          state,
+        });
+        return;
+      }
+      res.json({ status: 'anchored', anchor, state });
+    } catch (err: any) {
+      res.status(500).json({
+        error: err.message,
+        state: getAuditAnchoringState(),
+      });
+    }
+  }
+);
 
 app.get(
   '/telemetry/anomalies',

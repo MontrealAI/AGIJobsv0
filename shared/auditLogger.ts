@@ -27,6 +27,15 @@ export interface SignedAuditEvent extends StructuredLogRecord {
   signature?: string;
 }
 
+export interface AuditAnchorRecord {
+  timestamp: string;
+  merkleRoot: string;
+  count: number;
+  anchor: string;
+  digest: string;
+  signature?: string;
+}
+
 const AUDIT_DIR = path.resolve(__dirname, '../storage/audit');
 const AUDIT_LOG_PATH = path.join(AUDIT_DIR, 'events.jsonl');
 const AUDIT_ANCHOR_PATH = path.join(AUDIT_DIR, 'anchors.jsonl');
@@ -150,10 +159,59 @@ export function computeMerkleRoot(hashes: string[]): string {
   return layer[0];
 }
 
+function normaliseHex(value: string | undefined, fallback: string): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    return fallback;
+  }
+  const trimmed = value.trim();
+  const prefixed = trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`;
+  try {
+    const bytes = ethers.getBytes(prefixed);
+    return ethers.hexlify(bytes);
+  } catch {
+    return fallback;
+  }
+}
+
+function normaliseAnchorAddress(value: string | undefined): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    return ethers.ZeroAddress;
+  }
+  try {
+    return ethers.getAddress(value);
+  } catch {
+    return value;
+  }
+}
+
+function canonicaliseAnchorPayload(record: {
+  timestamp: string;
+  merkleRoot: string;
+  count: number;
+  anchor: string;
+}): string {
+  return JSON.stringify({
+    timestamp: record.timestamp,
+    merkleRoot: normaliseHex(record.merkleRoot, ethers.ZeroHash),
+    count: record.count,
+    anchor: record.anchor,
+  });
+}
+
+function computeAnchorDigest(record: {
+  timestamp: string;
+  merkleRoot: string;
+  count: number;
+  anchor: string;
+}): string {
+  const payload = canonicaliseAnchorPayload(record);
+  return ethers.keccak256(ethers.toUtf8Bytes(payload));
+}
+
 export async function anchorAuditTrail(
   signer: ethers.Wallet,
   events?: SignedAuditEvent[]
-): Promise<{ merkleRoot: string; count: number }> {
+): Promise<AuditAnchorRecord> {
   const entries = events ?? (await readAuditEvents());
   const hashes = entries.map((entry) => {
     if (entry.integrity?.eventHash?.startsWith('sha256:')) {
@@ -165,19 +223,35 @@ export async function anchorAuditTrail(
     return normalized;
   });
   const merkleRoot = computeMerkleRoot(hashes);
-  ensureDirectory(path.dirname(AUDIT_ANCHOR_PATH));
-  const record = {
-    timestamp: new Date().toISOString(),
+  const timestamp = new Date().toISOString();
+  const anchor = signer.address;
+  const baseRecord = {
+    timestamp,
     merkleRoot,
     count: entries.length,
-    anchor: signer.address,
+    anchor,
   };
+  const digest = computeAnchorDigest(baseRecord);
+  let signature: string | undefined;
+  try {
+    const payload = canonicaliseAnchorPayload(baseRecord);
+    signature = await signer.signMessage(payload);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to sign audit anchor: ${message}`);
+  }
+  const record: AuditAnchorRecord = {
+    ...baseRecord,
+    digest,
+    signature,
+  };
+  ensureDirectory(path.dirname(AUDIT_ANCHOR_PATH));
   await fs.promises.appendFile(
     AUDIT_ANCHOR_PATH,
     `${JSON.stringify(record)}\n`,
     'utf8'
   );
-  return { merkleRoot, count: entries.length };
+  return record;
 }
 
 export function auditLogPath(): string {
@@ -186,4 +260,88 @@ export function auditLogPath(): string {
 
 export function auditAnchorPath(): string {
   return AUDIT_ANCHOR_PATH;
+}
+
+function parseAnchorRecord(raw: string): AuditAnchorRecord | null {
+  if (!raw) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw) as {
+      timestamp?: unknown;
+      merkleRoot?: unknown;
+      count?: unknown;
+      anchor?: unknown;
+      digest?: unknown;
+      signature?: unknown;
+    };
+    const timestamp =
+      typeof parsed.timestamp === 'string' && parsed.timestamp.length > 0
+        ? parsed.timestamp
+        : null;
+    if (!timestamp) {
+      return null;
+    }
+    const countValue = Number(parsed.count ?? 0);
+    const count = Number.isFinite(countValue)
+      ? Math.max(0, Math.floor(countValue))
+      : 0;
+    const merkleRoot = normaliseHex(
+      typeof parsed.merkleRoot === 'string' ? parsed.merkleRoot : undefined,
+      ethers.ZeroHash
+    );
+    const anchor = normaliseAnchorAddress(
+      typeof parsed.anchor === 'string' ? parsed.anchor : undefined
+    );
+    const base = {
+      timestamp,
+      merkleRoot,
+      count,
+      anchor,
+    };
+    const digest = normaliseHex(
+      typeof parsed.digest === 'string' ? parsed.digest : undefined,
+      computeAnchorDigest(base)
+    );
+    const signature =
+      typeof parsed.signature === 'string' && parsed.signature.length > 0
+        ? parsed.signature
+        : undefined;
+    return {
+      ...base,
+      digest,
+      signature,
+    };
+  } catch (err) {
+    console.warn('Failed to parse audit anchor record', err);
+    return null;
+  }
+}
+
+export async function readAuditAnchors(
+  limit?: number
+): Promise<AuditAnchorRecord[]> {
+  try {
+    const raw = await fs.promises.readFile(AUDIT_ANCHOR_PATH, 'utf8');
+    const lines = raw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    const records: AuditAnchorRecord[] = [];
+    for (const line of lines) {
+      const record = parseAnchorRecord(line);
+      if (record) {
+        records.push(record);
+      }
+    }
+    if (!limit || records.length <= limit) {
+      return records;
+    }
+    return records.slice(-limit);
+  } catch (err: any) {
+    if (err.code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
 }

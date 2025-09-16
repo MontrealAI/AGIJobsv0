@@ -12,6 +12,10 @@ import {
 import { registerEvents } from './events';
 import { handleJobCreatedEvent } from './orchestrator';
 import { startTelemetryService, stopTelemetryService } from './telemetry';
+import {
+  startAuditAnchoringService,
+  stopAuditAnchoringService,
+} from './auditAnchoring';
 
 let server: http.Server;
 let wss: WebSocketServer;
@@ -20,6 +24,7 @@ async function startGateway(): Promise<void> {
   await verifyTokenDecimals();
   await initWallets();
   await startTelemetryService();
+  await startAuditAnchoringService();
 
   server = http.createServer(app);
   wss = new WebSocketServer({ server });
@@ -44,6 +49,7 @@ function shutdown(): void {
   if (wss) wss.close();
   stopSweeper();
   stopTelemetryService();
+  stopAuditAnchoringService();
   if (server) {
     server.close(() => process.exit(0));
   } else {
