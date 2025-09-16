@@ -16,6 +16,7 @@ import {
 } from '../shared/efficiencyMetrics';
 import { walletManager } from './utils';
 import { getStakeBalance } from './stakeCoordinator';
+import capabilityMatrix from '../config/agents.json';
 
 export interface AgentProfile extends AgentIdentity {
   categories: string[];
@@ -28,6 +29,7 @@ export interface AgentProfile extends AgentIdentity {
   stakeBalance?: bigint;
   endpoint?: string;
   metadata?: AgentIdentityMetadata;
+  configMetadata?: AgentConfigMetadata;
 }
 
 export interface JobAnalysis {
@@ -53,9 +55,150 @@ interface AgentStats {
   totalEnergy: number;
 }
 
+interface AgentMatrixEntry {
+  address?: string;
+  energy?: unknown;
+  reputation?: unknown;
+  skills?: unknown;
+  [key: string]: unknown;
+}
+
+type CapabilityMatrix = Record<string, AgentMatrixEntry[]>;
+
+export interface AgentConfigMetadata {
+  categories: string[];
+  skills: string[];
+  reputation?: number;
+  energy?: number;
+}
+
+interface AgentConfigAccumulator {
+  categories: Set<string>;
+  skills: Set<string>;
+  energyTotal: number;
+  energyCount: number;
+  reputationTotal: number;
+  reputationCount: number;
+}
+
+const capabilityData = capabilityMatrix as CapabilityMatrix;
+const configMetadataByAddress = buildConfigMetadata(capabilityData);
+
 const profileCache = new Map<string, AgentProfile>();
 let statsCache: Map<string, AgentStats> | null = null;
 let jobMetadataCache: Map<string, JobAnalysis> = new Map();
+
+const loggedConfigWarnings = new Set<string>();
+
+function normaliseString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normaliseAddress(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    return ethers.getAddress(value);
+  } catch (err) {
+    const key = value.toLowerCase();
+    if (!loggedConfigWarnings.has(key)) {
+      console.warn('Invalid agent address in config/agents.json', value, err);
+      loggedConfigWarnings.add(key);
+    }
+    return null;
+  }
+}
+
+function normaliseNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function extractSkills(value: unknown): string[] {
+  if (!value) return [];
+  const addSkill = (skillValue: unknown, target: Set<string>): void => {
+    const skill = normaliseString(skillValue);
+    if (skill) target.add(skill);
+  };
+  const result = new Set<string>();
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      addSkill(entry, result);
+    }
+  } else {
+    addSkill(value, result);
+  }
+  return Array.from(result);
+}
+
+function buildConfigMetadata(
+  matrix: CapabilityMatrix
+): Map<string, AgentConfigMetadata> {
+  const accumulators = new Map<string, AgentConfigAccumulator>();
+  for (const [rawCategory, entries] of Object.entries(matrix || {})) {
+    if (!Array.isArray(entries)) continue;
+    const category = normaliseString(rawCategory);
+    for (const entry of entries) {
+      if (!entry || typeof entry !== 'object') continue;
+      const address = normaliseAddress(entry.address);
+      if (!address) continue;
+      const key = address.toLowerCase();
+      if (!accumulators.has(key)) {
+        accumulators.set(key, {
+          categories: new Set<string>(),
+          skills: new Set<string>(),
+          energyTotal: 0,
+          energyCount: 0,
+          reputationTotal: 0,
+          reputationCount: 0,
+        });
+      }
+      const accumulator = accumulators.get(key)!;
+      if (category) accumulator.categories.add(category);
+      for (const skill of extractSkills(entry.skills)) {
+        accumulator.skills.add(skill);
+      }
+      const energy = normaliseNumber(entry.energy);
+      if (energy !== null) {
+        accumulator.energyTotal += energy;
+        accumulator.energyCount += 1;
+      }
+      const reputation = normaliseNumber(entry.reputation);
+      if (reputation !== null) {
+        accumulator.reputationTotal += reputation;
+        accumulator.reputationCount += 1;
+      }
+    }
+  }
+
+  const metadata = new Map<string, AgentConfigMetadata>();
+  for (const [address, accumulator] of accumulators.entries()) {
+    metadata.set(address, {
+      categories: Array.from(accumulator.categories),
+      skills: Array.from(accumulator.skills),
+      energy:
+        accumulator.energyCount > 0
+          ? accumulator.energyTotal / accumulator.energyCount
+          : undefined,
+      reputation:
+        accumulator.reputationCount > 0
+          ? accumulator.reputationTotal / accumulator.reputationCount
+          : undefined,
+    });
+  }
+  return metadata;
+}
+
+function getConfigMetadata(address: string): AgentConfigMetadata | undefined {
+  return configMetadataByAddress.get(address.toLowerCase());
+}
 
 async function getIdentity(address: string): Promise<AgentIdentity> {
   const cached = getCachedIdentity(address);
@@ -107,6 +250,62 @@ async function loadStats(): Promise<Map<string, AgentStats>> {
   return stats;
 }
 
+function mergeIdentityMetadata(
+  metadata: AgentIdentityMetadata | undefined,
+  configMeta?: AgentConfigMetadata
+): AgentIdentityMetadata | undefined {
+  if (!metadata && !configMeta) {
+    return metadata;
+  }
+  const merged: AgentIdentityMetadata = metadata ? { ...metadata } : {};
+  if (configMeta) {
+    const categorySet = new Set<string>();
+    if (Array.isArray(merged.categories)) {
+      for (const value of merged.categories) {
+        const category = normaliseString(value);
+        if (category) categorySet.add(category);
+      }
+    }
+    for (const value of configMeta.categories) {
+      const category = normaliseString(value);
+      if (category) categorySet.add(category);
+    }
+    if (categorySet.size > 0) {
+      merged.categories = Array.from(categorySet);
+    }
+
+    const skillSet = new Set<string>();
+    if (Array.isArray(merged.skills)) {
+      for (const value of merged.skills) {
+        const skill = normaliseString(value);
+        if (skill) skillSet.add(skill);
+      }
+    }
+    for (const value of configMeta.skills) {
+      const skill = normaliseString(value);
+      if (skill) skillSet.add(skill);
+    }
+    if (skillSet.size > 0) {
+      merged.skills = Array.from(skillSet);
+    }
+
+    if (
+      configMeta.energy !== undefined &&
+      (merged.energy === undefined || !Number.isFinite(merged.energy))
+    ) {
+      merged.energy = configMeta.energy;
+    }
+
+    if (
+      configMeta.reputation !== undefined &&
+      (merged.reputation === undefined || !Number.isFinite(merged.reputation))
+    ) {
+      merged.reputation = configMeta.reputation;
+    }
+  }
+  return merged;
+}
+
 function buildCategories(
   identity: AgentIdentity,
   metadata?: AgentIdentityMetadata
@@ -114,14 +313,23 @@ function buildCategories(
   const categories = new Set<string>();
   const skills = new Set<string>();
   if (identity.manifestCategories) {
-    identity.manifestCategories.forEach((cat) => categories.add(cat));
+    identity.manifestCategories.forEach((cat) => {
+      const normalised = normaliseString(cat);
+      if (normalised) categories.add(normalised);
+    });
   }
   const meta = metadata || identity.metadata;
   if (meta?.categories) {
-    meta.categories.forEach((cat) => categories.add(cat));
+    meta.categories.forEach((cat) => {
+      const normalised = normaliseString(cat);
+      if (normalised) categories.add(normalised);
+    });
   }
   if (meta?.skills) {
-    meta.skills.forEach((skill) => skills.add(skill));
+    meta.skills.forEach((skill) => {
+      const normalised = normaliseString(skill);
+      if (normalised) skills.add(normalised);
+    });
   }
   const endpoint = meta?.url || identity.metadata?.url;
   return {
@@ -146,13 +354,34 @@ export async function buildAgentProfile(
     totalDuration: 0,
     totalEnergy: 0,
   };
-  const metadata = identity.metadata;
+  const configMetadata = getConfigMetadata(lower);
+  const metadata = mergeIdentityMetadata(identity.metadata, configMetadata);
   const { categories, skills, endpoint } = buildCategories(identity, metadata);
   const successRate = stat.total === 0 ? 0 : stat.success / stat.total;
   const averageDurationMs =
     stat.total === 0 ? 0 : stat.totalDuration / stat.total;
-  const averageEnergy = stat.total === 0 ? 0 : stat.totalEnergy / stat.total;
-  const reputationScore = successRate;
+  const telemetryEnergy =
+    stat.total === 0 ? undefined : stat.totalEnergy / stat.total;
+  const metadataEnergy =
+    metadata?.energy !== undefined && Number.isFinite(metadata.energy)
+      ? Number(metadata.energy)
+      : undefined;
+  let averageEnergy: number;
+  if (telemetryEnergy !== undefined && metadataEnergy !== undefined) {
+    averageEnergy = (telemetryEnergy + metadataEnergy) / 2;
+  } else if (telemetryEnergy !== undefined) {
+    averageEnergy = telemetryEnergy;
+  } else if (metadataEnergy !== undefined) {
+    averageEnergy = metadataEnergy;
+  } else {
+    averageEnergy = 0;
+  }
+  const metadataReputation =
+    metadata?.reputation !== undefined && Number.isFinite(metadata.reputation)
+      ? Number(metadata.reputation)
+      : undefined;
+  const reputationScore =
+    metadataReputation !== undefined ? metadataReputation : successRate;
   let stakeBalance: bigint | undefined;
   try {
     stakeBalance = await getStakeBalance(address);
@@ -171,6 +400,7 @@ export async function buildAgentProfile(
     stakeBalance,
     endpoint,
     metadata,
+    configMetadata,
   };
   profileCache.set(lower, profile);
   return profile;
@@ -331,11 +561,15 @@ export interface MatchResult {
   thermodynamics?: EfficiencyBreakdown;
 }
 
-export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
-  const analysis = await analyseJob(job);
-  const profiles = await listAgentProfiles();
+export async function evaluateAgentMatches(
+  analysis: JobAnalysis,
+  profiles: AgentProfile[]
+): Promise<MatchResult[]> {
+  if (profiles.length === 0) {
+    return [];
+  }
   const efficiencyIndex = await getEfficiencyIndex();
-  let best: MatchResult | null = null;
+  const results: MatchResult[] = [];
   for (const profile of profiles) {
     const reasons: string[] = [];
     const categoryScore = categoryMatchScore(profile, analysis.category);
@@ -343,7 +577,17 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
       reasons.push(`category-match:${analysis.category}`);
     }
     const reputationScore = profile.reputationScore;
+    if (profile.configMetadata?.reputation !== undefined) {
+      reasons.push(
+        `config-reputation:${formatScore(profile.configMetadata.reputation)}`
+      );
+    }
     const baselineEnergy = energyScore(profile);
+    if (profile.configMetadata?.energy !== undefined) {
+      reasons.push(
+        `config-energy:${formatScore(profile.configMetadata.energy)}`
+      );
+    }
     const stakeScore = stakeAdequacyScore(profile, analysis.stake);
     const efficiencyReport = efficiencyIndex.get(profile.address.toLowerCase());
     const thermodynamics = efficiencyReport
@@ -375,17 +619,23 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
       stakeScore * 0.1 +
       thermoScore * 0.2 +
       rewardComponent * 0.05;
-    if (!best || aggregate > best.score) {
-      best = {
-        profile,
-        score: aggregate,
-        analysis,
-        reasons,
-        thermodynamics,
-      };
-    }
+    results.push({
+      profile,
+      score: aggregate,
+      analysis,
+      reasons,
+      thermodynamics,
+    });
   }
-  return best;
+  results.sort((a, b) => b.score - a.score);
+  return results;
+}
+
+export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
+  const analysis = await analyseJob(job);
+  const profiles = await listAgentProfiles();
+  const matches = await evaluateAgentMatches(analysis, profiles);
+  return matches.length > 0 ? matches[0] : null;
 }
 
 export function clearProfileCache(): void {

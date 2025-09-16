@@ -4,16 +4,31 @@ This module provides helper utilities for selecting the most suitable agent to a
 
 ## Configuration
 
-Create `config/agents.json` to map job categories to candidate agents. Each entry may optionally include a historical energy usage metric used as a tie‑breaker when reputation scores are equal.
+Create `config/agents.json` to map job categories to candidate agents. Each agent entry may include historical metadata used by the selector: `skills` enumerates the tasks the agent is trained for, `reputation` provides an off-chain score when no on-chain history is available, and `energy` represents the predicted energy cost for a unit of work.
 
 ```json
 {
   "data-entry": [
-    { "address": "0x1111111111111111111111111111111111111111", "energy": 100 },
-    { "address": "0x2222222222222222222222222222222222222222", "energy": 80 }
+    {
+      "address": "0x1111111111111111111111111111111111111111",
+      "skills": ["ocr", "transcription"],
+      "reputation": 0.92,
+      "energy": 100
+    },
+    {
+      "address": "0x2222222222222222222222222222222222222222",
+      "skills": ["classification"],
+      "reputation": 0.88,
+      "energy": 80
+    }
   ],
   "image-labeling": [
-    { "address": "0x3333333333333333333333333333333333333333", "energy": 90 }
+    {
+      "address": "0x3333333333333333333333333333333333333333",
+      "skills": ["annotation", "segmentation"],
+      "reputation": 0.95,
+      "energy": 90
+    }
   ]
 }
 ```
@@ -37,10 +52,11 @@ await applyForJob(1, 'data-entry', wallet, REPUTATION_ENGINE_ADDRESS);
 `applyForJob` will:
 
 1. Read job requirements from `JobRegistry`.
-2. Analyse job metadata (skills, thermodynamic hints and historical energy telemetry) to rank agents. Candidates with matching skills are preferred; ties are broken by highest on-chain reputation and then by the lowest predicted energy usage.
-3. Skip the job altogether when the offered reward cannot cover the projected energy cost plus the configured profit margin.
-4. Ensure the chosen agent has sufficient stake, topping up via `StakeManager.depositStake` when their locked $AGIALPHA balance is below the job requirement.
-5. Submit the job application on behalf of the selected agent.
+2. Merge ENS identity metadata, telemetry, and `config/agents.json` to build a profile for every locally managed agent. Configured skills, reputation baselines, and energy predictions are persisted alongside on-chain metrics.
+3. Analyse job metadata (category, skills, thermodynamic hints and historical energy telemetry) to rank agents. The orchestrator first filters out jobs whose required skills are not advertised by any agent. It then ignores jobs where the required stake exceeds the available collateral across the matching pool.
+4. Score the remaining agents by combining category alignment, configured/off-chain reputation, measured success rate, predicted energy usage, stake adequacy and efficiency metrics. The highest scoring agent becomes the candidate.
+5. Ensure the chosen agent has sufficient stake, first attempting to top up via `StakeManager.stake`. If the contract does not expose the new entry point the coordinator falls back to `depositStake`. Jobs that cannot satisfy the requirement after this step are skipped.
+6. Submit the job application on behalf of the selected agent.
 
 ## Offline analysis CLI
 

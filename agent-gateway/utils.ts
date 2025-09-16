@@ -74,6 +74,7 @@ const JOB_REGISTRY_ABI = [
 
 const STAKE_MANAGER_ABI = [
   'event RewardPaid(bytes32 indexed jobId,address indexed to,uint256 amount)',
+  'function stake(uint8 role, uint256 amount)',
   'function depositStake(uint8 role, uint256 amount)',
   'function stakeOf(address user, uint8 role) view returns (uint256)',
   'function minStake() view returns (uint256)',

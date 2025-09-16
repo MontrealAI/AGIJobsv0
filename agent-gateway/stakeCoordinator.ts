@@ -51,18 +51,45 @@ export async function ensureStake(
     return;
   }
   const delta = target - current;
+  const contract = (stakeManager as any).connect(wallet);
+  if (typeof contract.stake === 'function') {
+    try {
+      const tx = await contract.stake(role, delta);
+      await tx.wait();
+      await recordAuditEvent(
+        {
+          component: 'stake-coordinator',
+          action: 'stake',
+          agent: wallet.address,
+          metadata: {
+            role,
+            method: 'stake',
+            delta: ethers.formatUnits(delta, TOKEN_DECIMALS),
+            target: ethers.formatUnits(target, TOKEN_DECIMALS),
+          },
+          success: true,
+        },
+        wallet
+      );
+      return;
+    } catch (err) {
+      console.warn(
+        'StakeManager.stake failed; attempting depositStake fallback',
+        err
+      );
+    }
+  }
   try {
-    const tx = await (stakeManager as any)
-      .connect(wallet)
-      .depositStake(role, delta);
+    const tx = await contract.depositStake(role, delta);
     await tx.wait();
     await recordAuditEvent(
       {
         component: 'stake-coordinator',
-        action: 'deposit',
+        action: 'stake',
         agent: wallet.address,
         metadata: {
           role,
+          method: 'depositStake',
           delta: ethers.formatUnits(delta, TOKEN_DECIMALS),
           target: ethers.formatUnits(target, TOKEN_DECIMALS),
         },
@@ -74,12 +101,13 @@ export async function ensureStake(
     await recordAuditEvent(
       {
         component: 'stake-coordinator',
-        action: 'deposit-failed',
+        action: 'stake-failed',
         agent: wallet.address,
         metadata: {
           role,
           required: target.toString(),
           error: err?.message,
+          method: 'depositStake',
         },
         success: false,
       },
