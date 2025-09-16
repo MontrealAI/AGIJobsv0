@@ -24,6 +24,7 @@ import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
 import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission } from './validation';
+import { LearningCoordinator } from './learning';
 
 interface AppliedJobState {
   identity: AgentIdentity;
@@ -140,6 +141,7 @@ export class MetaOrchestrator {
   private readonly commitTimers = new Map<string, NodeJS.Timeout>();
   private readonly commits = new Map<string, CommitData>();
   private readonly watchdog = getWatchdog();
+  private readonly learning = new LearningCoordinator();
   private running = false;
 
   constructor(config?: Partial<MetaOrchestratorConfig>) {
@@ -372,6 +374,12 @@ export class MetaOrchestrator {
           category: classification.category,
         },
       });
+      await this.learning.recordJobSkipped({
+        jobId: summary.jobId,
+        classification,
+        spec,
+        reason: decision.skipReason ?? 'no-eligible-agent',
+      });
       return;
     }
     await this.applyForJob(summary, classification, spec, agentIdentity);
@@ -559,6 +567,17 @@ export class MetaOrchestrator {
           keywords: runResult.snapshot.keywords.slice(0, 12),
         },
       });
+      await this.learning.recordJobOutcome({
+        jobId,
+        identity: state.identity,
+        classification: state.classification,
+        spec: state.spec,
+        summary: state.summary,
+        chainJob,
+        runResult,
+        resultRef,
+        success: true,
+      });
       await this.spawnSubtasks(jobId, state.spec);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -567,6 +586,16 @@ export class MetaOrchestrator {
         jobId,
         actor: state.identity.address,
         details: { error: message },
+      });
+      await this.learning.recordJobOutcome({
+        jobId,
+        identity: state.identity,
+        classification: state.classification,
+        spec: state.spec,
+        summary: state.summary,
+        chainJob,
+        success: false,
+        errorMessage: message,
       });
       throw err;
     }
