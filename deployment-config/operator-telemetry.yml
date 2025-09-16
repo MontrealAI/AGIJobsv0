@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  operator-telemetry:
+    image: agijobs/operator-telemetry:latest
+    build:
+      context: ..
+      dockerfile: agent-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      ENERGY_ORACLE_ADDRESS: "0xYourOracleAddress"
+      ENERGY_ORACLE_RPC_URL: "https://rpc.example"
+      TELEMETRY_FLUSH_INTERVAL_MS: "60000"
+      TELEMETRY_MAX_RETRIES: "5"
+      TELEMETRY_RETRY_DELAY_MS: "2000"
+      TELEMETRY_DEADLINE_BUFFER_SEC: "3600"
+      TELEMETRY_EPOCH_DURATION_SEC: "86400"
+      TELEMETRY_ENERGY_SCALING: "1"
+      TELEMETRY_VALUE_SCALING: "1000000"
+      TELEMETRY_ROLE: "2"
+      KEYSTORE_URL: "https://keystore.example/keys"
+      KEYSTORE_TOKEN: "changeme"
+      JOB_REGISTRY_ADDRESS: "0xJobRegistry"
+      VALIDATION_MODULE_ADDRESS: "0xValidationModule"
+      ORCHESTRATOR_WALLET: "0xSignerAddress"
+    volumes:
+      - ../storage:/app/storage
+      - ../logs:/app/logs:ro
+    command: ["node", "agent-gateway/dist/agent-gateway/operator.js"]
