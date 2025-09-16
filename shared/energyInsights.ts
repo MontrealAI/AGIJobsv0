@@ -343,11 +343,28 @@ async function appendAnomalies(records: EnergyAnomalyRecord[]): Promise<void> {
 export async function updateEnergyInsights(
   sample: EnergySample
 ): Promise<void> {
-  const jobId = sanitiseJobId(sample.jobId ?? sample.metadata?.jobId);
+  let rawJobId: string | number | undefined = sample.jobId;
+  if (rawJobId === undefined || rawJobId === null) {
+    const metadataJobId = sample.metadata?.jobId;
+    if (
+      typeof metadataJobId === 'string' ||
+      typeof metadataJobId === 'number'
+    ) {
+      rawJobId = metadataJobId;
+    }
+  }
+  const jobId = sanitiseJobId(rawJobId);
   if (!jobId) {
     return;
   }
-  const agentKey = normaliseAgent(sample.agent ?? sample.metadata?.agent);
+  let agentSource: string | null = sample.agent ?? null;
+  if (!agentSource) {
+    const metadataAgent = sample.metadata?.agent;
+    if (typeof metadataAgent === 'string') {
+      agentSource = metadataAgent;
+    }
+  }
+  const agentKey = normaliseAgent(agentSource);
   const jobKey = composeJobKey(agentKey, jobId);
   const rewardValue = extractRewardValue(sample);
   const anomalies = sample.anomalies ?? [];

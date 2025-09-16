@@ -1,8 +1,8 @@
-import { ethers } from 'ethers';
+import { ethers, Wallet } from 'ethers';
 import { Job } from './types';
 import { walletManager, registry } from './utils';
-import { ensureIdentity } from './identity';
-import { selectAgentForJob } from './agentRegistry';
+import { ensureIdentity, getEnsIdentity } from './identity';
+import { selectAgentForJob, AgentProfile } from './agentRegistry';
 import { ensureStake, ROLE_AGENT } from './stakeCoordinator';
 import { executeJob } from './taskExecution';
 import {
@@ -12,6 +12,85 @@ import {
   secureLogAction,
 } from './security';
 
+const walletByLabel = new Map<string, Wallet>();
+const walletByAddress = new Map<string, Wallet>();
+const mismatchWarningKeys = new Set<string>();
+const unverifiedWarningKeys = new Set<string>();
+
+function cacheWallet(wallet: Wallet, ...labels: (string | undefined)[]): void {
+  walletByAddress.set(wallet.address.toLowerCase(), wallet);
+  for (const label of labels) {
+    if (!label) continue;
+    walletByLabel.set(label.toLowerCase(), wallet);
+  }
+}
+
+export function getWalletByLabel(label: string): Wallet | undefined {
+  if (!label) return undefined;
+  return walletByLabel.get(label.toLowerCase());
+}
+
+async function resolveWalletForProfile(
+  profile: AgentProfile
+): Promise<Wallet | undefined> {
+  const addressKey = profile.address.toLowerCase();
+  if (walletByAddress.has(addressKey)) {
+    return walletByAddress.get(addressKey)!;
+  }
+  const labelKey = profile.label?.toLowerCase();
+  if (labelKey && walletByLabel.has(labelKey)) {
+    const cached = walletByLabel.get(labelKey)!;
+    walletByAddress.set(addressKey, cached);
+    return cached;
+  }
+
+  const sources = [profile.label, profile.ensName, profile.address];
+  for (const source of sources) {
+    if (!source) continue;
+    const identity = await getEnsIdentity(source);
+    if (!identity) continue;
+    if (identity.address.toLowerCase() !== addressKey) {
+      const key = `${
+        identity.label
+      }:${identity.address.toLowerCase()}:${addressKey}`;
+      if (!mismatchWarningKeys.has(key)) {
+        console.warn(
+          'ENS identity address mismatch for label',
+          identity.label,
+          'expected',
+          profile.address,
+          'got',
+          identity.address
+        );
+        mismatchWarningKeys.add(key);
+      }
+      continue;
+    }
+    if (!identity.wallet) {
+      continue;
+    }
+    if (!identity.verified) {
+      const key = identity.ensName.toLowerCase();
+      if (!unverifiedWarningKeys.has(key)) {
+        console.warn(
+          'ENS identity is not verified on-chain; skipping wallet for',
+          identity.ensName
+        );
+        unverifiedWarningKeys.add(key);
+      }
+      continue;
+    }
+    cacheWallet(identity.wallet, profile.label, identity.label);
+    return identity.wallet;
+  }
+
+  const wallet = walletManager.get(profile.address);
+  if (wallet) {
+    cacheWallet(wallet, profile.label);
+  }
+  return wallet;
+}
+
 export async function handleJob(job: Job): Promise<void> {
   if (job.agent !== ethers.ZeroAddress) return; // already assigned
   const decision = await selectAgentForJob(job);
@@ -20,7 +99,7 @@ export async function handleJob(job: Job): Promise<void> {
     return;
   }
   const { profile, analysis } = decision;
-  const wallet = walletManager.get(profile.address);
+  const wallet = await resolveWalletForProfile(profile);
   if (!wallet) {
     console.warn('Wallet not found for selected agent', profile.address);
     return;
