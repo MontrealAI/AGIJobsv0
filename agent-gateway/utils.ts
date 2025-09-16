@@ -64,6 +64,7 @@ const JOB_REGISTRY_ABI = [
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
   'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) external returns (uint256)',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',
+  'function finalizeJob(uint256 jobId, string resultRef) external',
   'function acknowledgeTaxPolicy() external returns (string)',
   'function cancelExpiredJob(uint256 jobId) external',
   'function taxPolicy() view returns (address)',
