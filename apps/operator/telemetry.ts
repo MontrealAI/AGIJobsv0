@@ -41,6 +41,245 @@ interface JobEnergyLog {
   summary: JobEnergySummary;
 }
 
+function parseFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function sanitizeTaskMetrics(raw: unknown): TaskMetrics | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const stage = raw as Partial<TaskMetrics> & Record<string, unknown>;
+  const stageName = typeof stage.stageName === 'string' ? stage.stageName : '';
+  const agent = typeof stage.agent === 'string' ? stage.agent : '';
+  const timestamp = typeof stage.timestamp === 'string' ? stage.timestamp : '';
+  if (!stageName || !agent || !timestamp) {
+    return null;
+  }
+
+  const numericFields: Array<
+    keyof Pick<
+      TaskMetrics,
+      | 'cpuTimeMs'
+      | 'gpuTimeMs'
+      | 'wallTimeMs'
+      | 'energyScore'
+      | 'efficiencyScore'
+      | 'estimatedOperations'
+      | 'inputSize'
+      | 'outputSize'
+    >
+  > = [
+    'cpuTimeMs',
+    'gpuTimeMs',
+    'wallTimeMs',
+    'energyScore',
+    'efficiencyScore',
+    'estimatedOperations',
+    'inputSize',
+    'outputSize',
+  ];
+
+  const sanitized: TaskMetrics = {
+    jobId:
+      typeof stage.jobId === 'string' ? stage.jobId : String(stage.jobId ?? ''),
+    stageName,
+    agent,
+    timestamp,
+    cpuTimeMs: 0,
+    gpuTimeMs: 0,
+    wallTimeMs: 0,
+    energyScore: 0,
+    efficiencyScore: 0,
+    algorithmicComplexity:
+      typeof stage.algorithmicComplexity === 'string'
+        ? stage.algorithmicComplexity
+        : 'O(1)',
+    estimatedOperations: 0,
+    inputSize: 0,
+    outputSize: 0,
+    success: Boolean(stage.success),
+    metadata:
+      stage.metadata && typeof stage.metadata === 'object'
+        ? (stage.metadata as Record<string, unknown>)
+        : undefined,
+    errorMessage:
+      typeof stage.errorMessage === 'string' ? stage.errorMessage : undefined,
+  };
+
+  for (const field of numericFields) {
+    const parsed = parseFiniteNumber(stage[field]);
+    if (parsed === null) {
+      return null;
+    }
+    sanitized[field] = parsed;
+  }
+
+  return sanitized;
+}
+
+const COMPLEXITY_ORDER = [
+  'O(1)',
+  'O(log n)',
+  'O(n)',
+  'O(n log n)',
+  'O(n^2)',
+  'O(n^3)',
+  'O(2^n)',
+];
+
+function computeSummaryFromStages(stages: TaskMetrics[]): JobEnergySummary {
+  const totalCpuTimeMs = stages.reduce(
+    (acc, stage) => acc + stage.cpuTimeMs,
+    0
+  );
+  const totalGpuTimeMs = stages.reduce(
+    (acc, stage) => acc + stage.gpuTimeMs,
+    0
+  );
+  const totalWallTimeMs = stages.reduce(
+    (acc, stage) => acc + stage.wallTimeMs,
+    0
+  );
+  const totalEfficiency = stages.reduce(
+    (acc, stage) => acc + stage.efficiencyScore,
+    0
+  );
+  const runs = stages.length;
+  const successRate = runs
+    ? stages.filter((stage) => stage.success).length / runs
+    : 0;
+  const complexityIndex = stages.reduce((maxIndex, stage) => {
+    const idx = COMPLEXITY_ORDER.indexOf(stage.algorithmicComplexity);
+    return idx > maxIndex ? idx : maxIndex;
+  }, 0);
+  const lastUpdated = runs
+    ? stages[stages.length - 1].timestamp
+    : new Date().toISOString();
+  const averageEfficiency = runs ? totalEfficiency / runs : 0;
+
+  return {
+    totalCpuTimeMs,
+    totalGpuTimeMs,
+    totalWallTimeMs,
+    energyScore: totalCpuTimeMs + totalGpuTimeMs,
+    efficiencyScore: averageEfficiency,
+    averageEfficiency,
+    complexity: COMPLEXITY_ORDER[complexityIndex] || 'O(1)',
+    successRate,
+    runs,
+    lastUpdated,
+  };
+}
+
+function sanitizeSummary(raw: unknown): JobEnergySummary | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const summary = raw as Partial<JobEnergySummary> & Record<string, unknown>;
+  const numberFields: Array<
+    keyof Pick<
+      JobEnergySummary,
+      | 'totalCpuTimeMs'
+      | 'totalGpuTimeMs'
+      | 'totalWallTimeMs'
+      | 'energyScore'
+      | 'efficiencyScore'
+      | 'averageEfficiency'
+      | 'successRate'
+    >
+  > = [
+    'totalCpuTimeMs',
+    'totalGpuTimeMs',
+    'totalWallTimeMs',
+    'energyScore',
+    'efficiencyScore',
+    'averageEfficiency',
+    'successRate',
+  ];
+
+  const runsParsed = parseFiniteNumber(summary.runs);
+  const sanitized: JobEnergySummary = {
+    totalCpuTimeMs: 0,
+    totalGpuTimeMs: 0,
+    totalWallTimeMs: 0,
+    energyScore: 0,
+    efficiencyScore: 0,
+    averageEfficiency: 0,
+    complexity:
+      typeof summary.complexity === 'string' && summary.complexity
+        ? summary.complexity
+        : 'O(1)',
+    successRate: 0,
+    runs: runsParsed ?? 0,
+    lastUpdated:
+      typeof summary.lastUpdated === 'string'
+        ? summary.lastUpdated
+        : new Date().toISOString(),
+  };
+
+  for (const field of numberFields) {
+    const parsed = parseFiniteNumber(summary[field]);
+    if (parsed === null) {
+      return null;
+    }
+    sanitized[field] = parsed;
+  }
+
+  sanitized.runs = Math.max(0, Math.round(sanitized.runs));
+  return sanitized;
+}
+
+function normaliseEnergyLog(raw: unknown): JobEnergyLog | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const record = raw as Record<string, unknown>;
+  const jobIdValue = record['jobId'];
+  const jobId =
+    typeof jobIdValue === 'string'
+      ? jobIdValue
+      : typeof jobIdValue === 'number'
+      ? jobIdValue.toString()
+      : '';
+  const agentValue = record['agent'];
+  const agent = typeof agentValue === 'string' ? agentValue : '';
+  if (!jobId || !agent) {
+    return null;
+  }
+
+  const rawStages = Array.isArray(record['stages']) ? record['stages'] : [];
+  const stages: TaskMetrics[] = rawStages
+    .map((stage) => sanitizeTaskMetrics(stage))
+    .filter((stage): stage is TaskMetrics => stage !== null);
+
+  let summary = sanitizeSummary(record['summary']);
+  if (!summary) {
+    if (!stages.length) {
+      return null;
+    }
+    summary = sanitizeSummary(computeSummaryFromStages(stages));
+  }
+
+  if (!summary) {
+    return null;
+  }
+
+  return {
+    jobId,
+    agent,
+    stages,
+    summary,
+  };
+}
+
 interface TelemetryConfig {
   energyLogDir: string;
   pollIntervalMs: number;
@@ -393,16 +632,21 @@ class ContractNonceProvider implements NonceProvider {
   private cache = new Map<string, bigint>();
   private pending = new Map<string, bigint>();
 
-  constructor(private readonly contract: ethers.Contract) {}
+  constructor(private readonly connection: OracleConnectionManager) {}
 
   async reserve(address: string): Promise<NonceReservation | null> {
     const key = address.toLowerCase();
     let current = this.pending.get(key) ?? this.cache.get(key);
     if (current === undefined) {
       try {
-        const onchain = await this.contract.nonces(address);
+        const contract = this.connection.getContract();
+        const onchain = await contract.nonces(address);
         current = BigInt(onchain);
       } catch (err) {
+        if (isNetworkError(err)) {
+          console.warn('Nonce read failed due to RPC error, reconnecting');
+          this.connection.refresh();
+        }
         console.error('Failed to read nonce from EnergyOracle', err);
         return null;
       }
@@ -444,18 +688,100 @@ const ENERGY_ORACLE_ABI = [
   'function nonces(address) view returns (uint256)',
 ];
 
+function isNetworkError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+  const error = err as { code?: unknown; message?: unknown };
+  const code = typeof error.code === 'string' ? error.code.toUpperCase() : '';
+  if (
+    code === 'NETWORK_ERROR' ||
+    code === 'SERVER_ERROR' ||
+    code === 'TIMEOUT' ||
+    code === 'OFFCHAIN_FAULT'
+  ) {
+    return true;
+  }
+  const message =
+    typeof error.message === 'string'
+      ? error.message
+      : String(error.message ?? '');
+  return /network|timeout|ECONN|socket|disconnected/i.test(message);
+}
+
+class OracleConnectionManager {
+  private provider: ethers.JsonRpcProvider;
+  private wallet: ethers.Wallet;
+  private contract: ethers.Contract;
+
+  constructor(
+    private readonly rpcUrl: string,
+    private readonly oracleAddress: string,
+    private readonly signer: ethers.Wallet
+  ) {
+    const { provider, wallet, contract } = this.createConnection();
+    this.provider = provider;
+    this.wallet = wallet;
+    this.contract = contract;
+  }
+
+  private createConnection(): {
+    provider: ethers.JsonRpcProvider;
+    wallet: ethers.Wallet;
+    contract: ethers.Contract;
+  } {
+    const provider = new ethers.JsonRpcProvider(this.rpcUrl);
+    const wallet = this.signer.connect(provider);
+    const contract = new ethers.Contract(
+      this.oracleAddress,
+      ENERGY_ORACLE_ABI,
+      wallet
+    );
+    return { provider, wallet, contract };
+  }
+
+  getContract(): ethers.Contract {
+    return this.contract;
+  }
+
+  getWallet(): ethers.Wallet {
+    return this.wallet;
+  }
+
+  getProvider(): ethers.JsonRpcProvider {
+    return this.provider;
+  }
+
+  refresh(): void {
+    console.warn('Refreshing EnergyOracle connection');
+    const { provider, wallet, contract } = this.createConnection();
+    this.provider = provider;
+    this.wallet = wallet;
+    this.contract = contract;
+  }
+}
+
 class ContractOracleSender implements OracleSender {
   readonly type = 'contract' as const;
-  constructor(private readonly contract: ethers.Contract) {}
+  constructor(private readonly connection: OracleConnectionManager) {}
 
   async send(
     attestation: EnergyOracleAttestation,
     signature: string
   ): Promise<SubmissionReceipt> {
-    const tx = await this.contract.verify(attestation, signature);
-    const receipt = await tx.wait();
-    const reference = receipt?.hash || tx.hash;
-    return { type: this.type, reference };
+    const contract = this.connection.getContract();
+    try {
+      const tx = await contract.verify(attestation, signature);
+      const receipt = await tx.wait();
+      const reference = receipt?.hash || tx.hash;
+      return { type: this.type, reference };
+    } catch (err) {
+      if (isNetworkError(err)) {
+        console.warn('EnergyOracle RPC failure, attempting reconnect');
+        this.connection.refresh();
+      }
+      throw err;
+    }
   }
 }
 
@@ -560,6 +886,7 @@ interface LocalJobLog {
 
 class TelemetryService {
   private running = false;
+  private immediateRunRequested = false;
 
   constructor(
     private readonly config: TelemetryConfig,
@@ -581,12 +908,25 @@ class TelemetryService {
       } catch (err) {
         console.error('Telemetry cycle failed', err);
       }
-      await delay(this.config.pollIntervalMs);
+      if (!this.running) {
+        break;
+      }
+      const waitMs = this.immediateRunRequested
+        ? 0
+        : this.config.pollIntervalMs;
+      this.immediateRunRequested = false;
+      if (waitMs > 0) {
+        await delay(waitMs);
+      }
     }
   }
 
   stop(): void {
     this.running = false;
+  }
+
+  requestImmediateCycle(): void {
+    this.immediateRunRequested = true;
   }
 
   private async executeCycle(): Promise<void> {
@@ -704,8 +1044,12 @@ class TelemetryService {
           const raw = await fs.readFile(filePath, 'utf8');
           if (!raw.trim()) continue;
           const parsed = JSON.parse(raw) as JobEnergyLog;
-          if (!parsed?.summary) continue;
-          logs.push({ filePath, log: parsed });
+          const normalised = normaliseEnergyLog(parsed);
+          if (!normalised) {
+            console.warn('Skipping malformed energy log', filePath);
+            continue;
+          }
+          logs.push({ filePath, log: normalised });
         } catch (err) {
           console.warn('Failed to parse energy log', filePath, err);
         }
@@ -778,84 +1122,76 @@ class TelemetryService {
   }
 }
 
+async function instantiateTelemetryService(
+  config: TelemetryConfig
+): Promise<TelemetryService> {
+  const baseSigner = new ethers.Wallet(config.signerKey);
+  let chainId = config.chainId;
+  const state = new TelemetryState(config.stateFile);
+  let sender: OracleSender;
+  let nonceProvider: NonceProvider;
+
+  if (config.mode === 'contract') {
+    if (!config.rpcUrl) {
+      throw new Error(
+        'ENERGY_ORACLE_RPC_URL must be provided in contract mode'
+      );
+    }
+    const connection = new OracleConnectionManager(
+      config.rpcUrl,
+      config.energyOracleAddress,
+      baseSigner
+    );
+    if (!chainId) {
+      const network = await connection.getProvider().getNetwork();
+      chainId = Number(network.chainId);
+    }
+    sender = new ContractOracleSender(connection);
+    nonceProvider = new ContractNonceProvider(connection);
+  } else {
+    if (!config.apiUrl) {
+      throw new Error('ENERGY_ORACLE_API_URL must be provided in API mode');
+    }
+    if (!chainId) {
+      throw new Error('ENERGY_ORACLE_CHAIN_ID is required when using API mode');
+    }
+    sender = new ApiOracleSender(config.apiUrl, config.apiToken);
+    nonceProvider = new ApiNonceProvider(state);
+  }
+
+  if (!chainId) {
+    throw new Error('Unable to determine chain ID for typed data domain');
+  }
+
+  const domain: ethers.TypedDataDomain = {
+    name: 'EnergyOracle',
+    version: '1',
+    chainId,
+    verifyingContract: config.energyOracleAddress,
+  };
+
+  const runtimeConfig: TelemetryConfig = { ...config, chainId };
+  return new TelemetryService(
+    runtimeConfig,
+    state,
+    baseSigner,
+    domain,
+    nonceProvider,
+    sender
+  );
+}
+
+export async function createTelemetryService(
+  override?: Partial<TelemetryConfig>
+): Promise<TelemetryService> {
+  const base = await loadConfig();
+  const merged = override ? { ...base, ...override } : base;
+  return instantiateTelemetryService(merged);
+}
+
 async function main(): Promise<void> {
   try {
-    const config = await loadConfig();
-    const baseSigner = new ethers.Wallet(config.signerKey);
-
-    let wallet = baseSigner;
-    let chainId = config.chainId;
-    const state = new TelemetryState(config.stateFile);
-    let sender: OracleSender;
-    let nonceProvider: NonceProvider;
-
-    if (config.mode === 'contract') {
-      const provider = new ethers.JsonRpcProvider(config.rpcUrl);
-      wallet = baseSigner.connect(provider);
-      if (!chainId) {
-        const network = await provider.getNetwork();
-        chainId = Number(network.chainId);
-      }
-      const contract = new ethers.Contract(
-        config.energyOracleAddress,
-        ENERGY_ORACLE_ABI,
-        wallet
-      );
-      sender = new ContractOracleSender(contract);
-      nonceProvider = new ContractNonceProvider(contract);
-    } else {
-      if (!chainId) {
-        throw new Error(
-          'ENERGY_ORACLE_CHAIN_ID is required when using API mode'
-        );
-      }
-      sender = new ApiOracleSender(config.apiUrl!, config.apiToken);
-      nonceProvider = new ApiNonceProvider(state);
-      const domain: ethers.TypedDataDomain = {
-        name: 'EnergyOracle',
-        version: '1',
-        chainId,
-        verifyingContract: config.energyOracleAddress,
-      };
-      const service = new TelemetryService(
-        config,
-        state,
-        wallet,
-        domain,
-        nonceProvider,
-        sender
-      );
-      process.on('SIGINT', () => {
-        console.info('Received SIGINT, shutting down telemetry service');
-        service.stop();
-      });
-      process.on('SIGTERM', () => {
-        console.info('Received SIGTERM, shutting down telemetry service');
-        service.stop();
-      });
-      await service.start();
-      return;
-    }
-
-    if (!chainId) {
-      throw new Error('Unable to determine chain ID for typed data domain');
-    }
-
-    const domain: ethers.TypedDataDomain = {
-      name: 'EnergyOracle',
-      version: '1',
-      chainId,
-      verifyingContract: config.energyOracleAddress,
-    };
-
-    const service = new TelemetryService(
-      config,
-      state,
-      wallet,
-      domain,
-      nonceProvider,
-      sender
-    );
+    const service = await instantiateTelemetryService(await loadConfig());
 
     process.on('SIGINT', () => {
       console.info('Received SIGINT, shutting down telemetry service');
@@ -877,4 +1213,5 @@ if (require.main === module) {
   void main();
 }
 
+export { TelemetryService, loadConfig as loadTelemetryConfig };
 export type { TelemetryConfig, EnergyOracleAttestation };

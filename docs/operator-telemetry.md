@@ -81,6 +81,15 @@ To run without compiling ahead of time you can use `ts-node`:
 npx ts-node apps/operator/telemetry.ts
 ```
 
+For long-running environments the repository also ships a lightweight daemon
+at `scripts/monitor/energy-telemetry-daemon.ts`. It wraps the telemetry service,
+watches the energy log directory for new jobs, and immediately triggers a
+submission cycle when fresh data lands so attestations go out after every job:
+
+```bash
+npx ts-node scripts/monitor/energy-telemetry-daemon.ts
+```
+
 ## Docker deployment
 
 A production container is available via `apps/operator/Dockerfile`. Build and
@@ -124,7 +133,8 @@ changes.
 ## systemd (optional)
 
 For environments using `systemd`, create a unit file similar to the example
-below:
+below (the repository includes `deployment-config/energy-telemetry-daemon.service`
+as a ready-to-adapt template):
 
 ```ini
 [Unit]
@@ -140,7 +150,7 @@ Environment=ENERGY_LOG_DIR=/opt/agijobs/logs/energy
 Environment=ENERGY_ORACLE_ADDRESS=0xOracle
 Environment=ENERGY_ORACLE_RPC_URL=https://rpc.example
 Environment=ENERGY_ORACLE_SIGNER_KEY=0xabcdef...
-ExecStart=/usr/bin/node apps/operator/dist/telemetry.js
+ExecStart=/usr/bin/env npx ts-node --transpile-only scripts/monitor/energy-telemetry-daemon.ts
 Restart=on-failure
 RestartSec=10
 
