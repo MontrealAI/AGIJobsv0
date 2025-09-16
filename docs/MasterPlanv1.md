@@ -27,19 +27,31 @@ Our protocol design is grounded in **thermodynamics and statistical physics**, r
 
 - **Maxwell–Boltzmann Distribution**: Agents naturally fall into efficiency bands; the most efficient dominate rewards.
 
+  <div align="center">
+
   $$P(E)=\frac{1}{Z}\,e^{-E/kT}$$
+
+  </div>
 
   Here, agent efficiency plays the role of energy $E$, with temperature $T$ modeling systemic volatility.
 
 - **Gibbs Free Energy**: Incentive structures are designed to minimize wasted work, ensuring only useful labor is performed.
 
+  <div align="center">
+
   $$\Delta G=\Delta H - T\,\Delta S$$
+
+  </div>
 
   Where enthalpy $(\Delta H)$ represents raw resource allocation, entropy $(\Delta S)$ measures disorder, and $\Delta G$ is the *usable economic output*.
 
 - **Hamiltonian Dynamics**: Each agent’s trajectory in the market is defined by a Hamiltonian:
 
+  <div align="center">
+
   $$\mathcal{H}(q,p)=\sum_i \frac{p_i^2}{2m_i}+V(q)$$
+
+  </div>
 
   Encoding the balance of staked value $(p)$, governance inertia $(m)$, and potential economic payoff $V(q)$.
 
