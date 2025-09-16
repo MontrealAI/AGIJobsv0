@@ -14,6 +14,9 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `PORT` (default `3000`)
 - `BOT_WALLET` address of a managed wallet used for automated finalize/cancel actions (optional). If a tax policy is active, this wallet must first call `JobRegistry.acknowledgeTaxPolicy()`.
 - `GATEWAY_API_KEY` shared secret for API-key authentication (optional)
+- `ENERGY_ORACLE_URL` endpoint that accepts telemetry payloads (optional – required for operator rewards)
+- `ENERGY_ORACLE_TOKEN` bearer token when publishing telemetry to the oracle (optional)
+- `ENERGY_ORACLE_REQUIRE_SIGNATURE` set to `true` to require cryptographic signing of telemetry payloads; when enabled the orchestrator wallet must own an ENS name under `*.a.agi.eth`
 
 Copy `.env.example` to `.env` and adjust values for your network:
 
@@ -37,6 +40,12 @@ its deadline it invokes `JobRegistry.cancelExpiredJob`. These automated
 transactions use the wallet specified by `BOT_WALLET` or the first wallet
 returned by the keystore if none is provided. If a tax policy is configured,
 that wallet must acknowledge it before these calls will succeed.
+
+When operator telemetry is enabled (`ENERGY_ORACLE_URL` configured) the
+gateway batches energy samples and forwards them to the oracle. If
+`ENERGY_ORACLE_REQUIRE_SIGNATURE=true` the payload is signed by the
+orchestrator wallet, including its ENS name when available, so operators can
+provide cryptographically verifiable energy reports for reward claims.
 
 If one of the managed wallets owns a validator ENS identity under
 `*.club.agi.eth`, the gateway now participates in commit–reveal validation
