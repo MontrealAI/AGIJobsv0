@@ -15,6 +15,7 @@ import {
 } from './utils';
 import { postJob, listPostedJobs } from './employer';
 import { getRetrainingQueue, getSpawnRequests } from './learning';
+import { getSpawnPipelineReport, createSpawnBlueprint } from './agentFactory';
 import { quarantineReport, releaseAgent } from './security';
 import { telemetryQueueLength } from './telemetry';
 import { listValidatorAssignments } from './validator';
@@ -101,6 +102,51 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
 });
+
+app.get(
+  '/spawn/candidates',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const report = await getSpawnPipelineReport();
+      res.json(report);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.post(
+  '/spawn/blueprints',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const { category, minPriority, dryRun, persist, markConsumed } =
+      (req.body as {
+        category?: string;
+        minPriority?: number;
+        dryRun?: boolean;
+        persist?: boolean;
+        markConsumed?: boolean;
+      }) || {};
+    try {
+      const blueprint = await createSpawnBlueprint({
+        category,
+        minPriority,
+        dryRun,
+        persist,
+        markConsumed,
+      });
+      if (!blueprint) {
+        res
+          .status(404)
+          .json({ error: 'no spawn candidates satisfied the constraints' });
+        return;
+      }
+      res.json(blueprint);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 app.get(
   '/validator/assignments',
