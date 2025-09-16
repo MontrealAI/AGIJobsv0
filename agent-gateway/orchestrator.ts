@@ -42,14 +42,17 @@ export async function handleJob(job: Job): Promise<void> {
   } catch (err: any) {
     console.error('Identity verification failed', err);
     recordAgentFailure(wallet.address, 'identity-verification');
-    await secureLogAction({
-      component: 'orchestrator',
-      action: 'identity-failed',
-      agent: wallet.address,
-      jobId: job.jobId,
-      metadata: { error: err?.message },
-      success: false,
-    });
+    await secureLogAction(
+      {
+        component: 'orchestrator',
+        action: 'identity-failed',
+        agent: wallet.address,
+        jobId: job.jobId,
+        metadata: { error: err?.message },
+        success: false,
+      },
+      wallet
+    );
     return;
   }
 
@@ -59,17 +62,20 @@ export async function handleJob(job: Job): Promise<void> {
   } catch (err: any) {
     console.error('Failed to ensure stake', err);
     recordAgentFailure(wallet.address, 'stake-insufficient');
-    await secureLogAction({
-      component: 'orchestrator',
-      action: 'stake-failed',
-      agent: wallet.address,
-      jobId: job.jobId,
-      metadata: {
-        error: err?.message,
-        requiredStake: requiredStake.toString(),
+    await secureLogAction(
+      {
+        component: 'orchestrator',
+        action: 'stake-failed',
+        agent: wallet.address,
+        jobId: job.jobId,
+        metadata: {
+          error: err?.message,
+          requiredStake: requiredStake.toString(),
+        },
+        success: false,
       },
-      success: false,
-    });
+      wallet
+    );
     return;
   }
 
@@ -78,25 +84,31 @@ export async function handleJob(job: Job): Promise<void> {
       .connect(wallet)
       .applyForJob(job.jobId, identity.label ?? '', '0x');
     await tx.wait();
-    await secureLogAction({
-      component: 'orchestrator',
-      action: 'apply',
-      agent: wallet.address,
-      jobId: job.jobId,
-      metadata: { txHash: tx.hash },
-      success: true,
-    });
+    await secureLogAction(
+      {
+        component: 'orchestrator',
+        action: 'apply',
+        agent: wallet.address,
+        jobId: job.jobId,
+        metadata: { txHash: tx.hash },
+        success: true,
+      },
+      wallet
+    );
   } catch (err: any) {
     console.error('Failed to apply for job', err);
     recordAgentFailure(wallet.address, 'apply-failed');
-    await secureLogAction({
-      component: 'orchestrator',
-      action: 'apply-failed',
-      agent: wallet.address,
-      jobId: job.jobId,
-      metadata: { error: err?.message },
-      success: false,
-    });
+    await secureLogAction(
+      {
+        component: 'orchestrator',
+        action: 'apply-failed',
+        agent: wallet.address,
+        jobId: job.jobId,
+        metadata: { error: err?.message },
+        success: false,
+      },
+      wallet
+    );
     return;
   }
 
@@ -114,23 +126,29 @@ export async function handleJob(job: Job): Promise<void> {
   try {
     await executeJob({ job, wallet, profile, identity, analysis });
     recordAgentSuccess(wallet.address);
-    await secureLogAction({
-      component: 'orchestrator',
-      action: 'execute',
-      agent: wallet.address,
-      jobId: job.jobId,
-      success: true,
-    });
+    await secureLogAction(
+      {
+        component: 'orchestrator',
+        action: 'execute',
+        agent: wallet.address,
+        jobId: job.jobId,
+        success: true,
+      },
+      wallet
+    );
   } catch (err: any) {
     console.error('Task execution failed', err);
     recordAgentFailure(wallet.address, 'execution-error');
-    await secureLogAction({
-      component: 'orchestrator',
-      action: 'execute-failed',
-      agent: wallet.address,
-      jobId: job.jobId,
-      metadata: { error: err?.message },
-      success: false,
-    });
+    await secureLogAction(
+      {
+        component: 'orchestrator',
+        action: 'execute-failed',
+        agent: wallet.address,
+        jobId: job.jobId,
+        metadata: { error: err?.message },
+        success: false,
+      },
+      wallet
+    );
   }
 }

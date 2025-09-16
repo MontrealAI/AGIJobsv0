@@ -56,29 +56,35 @@ export async function ensureStake(
       .connect(wallet)
       .depositStake(role, delta);
     await tx.wait();
-    await recordAuditEvent({
-      component: 'stake-coordinator',
-      action: 'deposit',
-      agent: wallet.address,
-      metadata: {
-        role,
-        delta: ethers.formatUnits(delta, TOKEN_DECIMALS),
-        target: ethers.formatUnits(target, TOKEN_DECIMALS),
+    await recordAuditEvent(
+      {
+        component: 'stake-coordinator',
+        action: 'deposit',
+        agent: wallet.address,
+        metadata: {
+          role,
+          delta: ethers.formatUnits(delta, TOKEN_DECIMALS),
+          target: ethers.formatUnits(target, TOKEN_DECIMALS),
+        },
+        success: true,
       },
-      success: true,
-    });
+      wallet
+    );
   } catch (err: any) {
-    await recordAuditEvent({
-      component: 'stake-coordinator',
-      action: 'deposit-failed',
-      agent: wallet.address,
-      metadata: {
-        role,
-        required: target.toString(),
-        error: err?.message,
+    await recordAuditEvent(
+      {
+        component: 'stake-coordinator',
+        action: 'deposit-failed',
+        agent: wallet.address,
+        metadata: {
+          role,
+          required: target.toString(),
+          error: err?.message,
+        },
+        success: false,
       },
-      success: false,
-    });
+      wallet
+    );
     throw err;
   }
 }

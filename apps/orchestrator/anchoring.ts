@@ -200,6 +200,37 @@ export class AuditAnchoringService {
     };
   }
 
+  private parseLeaf(line: string): string {
+    try {
+      const parsed = JSON.parse(line) as {
+        integrity?: { eventHash?: string };
+        hash?: string;
+      };
+      const eventHash = parsed.integrity?.eventHash;
+      if (typeof eventHash === 'string') {
+        if (eventHash.startsWith('sha256:')) {
+          const digest = eventHash.slice('sha256:'.length);
+          if (/^[0-9a-fA-F]{64}$/.test(digest)) {
+            return `0x${digest}`;
+          }
+        } else if (ethers.isHexString(eventHash, 32)) {
+          return ethers.hexlify(ethers.getBytes(eventHash));
+        }
+      }
+      if (typeof parsed.hash === 'string') {
+        const normalized = parsed.hash.startsWith('0x')
+          ? parsed.hash
+          : `0x${parsed.hash}`;
+        if (ethers.isHexString(normalized, 32)) {
+          return normalized;
+        }
+      }
+    } catch {
+      // ignore malformed JSON
+    }
+    return ethers.keccak256(ethers.toUtf8Bytes(line));
+  }
+
   private async computeRoot(
     filePath: string
   ): Promise<{ root: string; leaves: string[] }> {
@@ -211,9 +242,7 @@ export class AuditAnchoringService {
     if (!lines.length) {
       return { root: ethers.ZeroHash, leaves: [] };
     }
-    const leaves = lines.map((line) =>
-      ethers.keccak256(ethers.toUtf8Bytes(line))
-    );
+    const leaves = lines.map((line) => this.parseLeaf(line));
     let level = [...leaves];
     while (level.length > 1) {
       const next: string[] = [];
