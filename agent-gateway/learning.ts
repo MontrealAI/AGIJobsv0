@@ -5,6 +5,10 @@ import { AgentProfile, JobAnalysis } from './agentRegistry';
 import { EnergySample } from '../shared/energyMonitor';
 import { appendTrainingRecord } from '../shared/trainingRecords';
 import { TOKEN_DECIMALS } from './utils';
+import {
+  recordSpawnRequest as storeSpawnRequest,
+  getSpawnRequests as loadSpawnRequests,
+} from '../shared/spawnManager';
 
 interface RetrainingTask {
   agent: string;
@@ -14,16 +18,8 @@ interface RetrainingTask {
   failureCount: number;
 }
 
-interface SpawnRequest {
-  category: string;
-  observed: number;
-  jobs: string[];
-  lastSeen: string;
-}
-
 const TRAINING_DIR = path.resolve(__dirname, '../storage/training');
 const RETRAINING_PATH = path.join(TRAINING_DIR, 'retraining-queue.json');
-const SPAWN_REQUEST_PATH = path.join(TRAINING_DIR, 'spawn-requests.json');
 
 function ensureDir(dir: string): void {
   if (!fs.existsSync(dir)) {
@@ -62,28 +58,6 @@ async function queueRetrainingTask(task: RetrainingTask): Promise<void> {
     queue.push(task);
   }
   await writeJsonFile(RETRAINING_PATH, queue);
-}
-
-async function recordSpawnRequest(
-  category: string,
-  jobId: string
-): Promise<void> {
-  if (!category) return;
-  const requests = await readJsonFile<SpawnRequest[]>(SPAWN_REQUEST_PATH, []);
-  const existing = requests.find((req) => req.category === category);
-  if (existing) {
-    existing.observed += 1;
-    if (!existing.jobs.includes(jobId)) existing.jobs.push(jobId);
-    existing.lastSeen = new Date().toISOString();
-  } else {
-    requests.push({
-      category,
-      observed: 1,
-      jobs: [jobId],
-      lastSeen: new Date().toISOString(),
-    });
-  }
-  await writeJsonFile(SPAWN_REQUEST_PATH, requests);
 }
 
 export interface TrainingOutcome {
@@ -168,7 +142,7 @@ export async function notifyTrainingOutcome(
       (cat) => cat.toLowerCase() === analysis.category?.toLowerCase()
     )
   ) {
-    await recordSpawnRequest(analysis.category, job.jobId);
+    await storeSpawnRequest(analysis.category, job.jobId);
   }
 }
 
@@ -176,6 +150,4 @@ export async function getRetrainingQueue(): Promise<RetrainingTask[]> {
   return readJsonFile(RETRAINING_PATH, [] as RetrainingTask[]);
 }
 
-export async function getSpawnRequests(): Promise<SpawnRequest[]> {
-  return readJsonFile(SPAWN_REQUEST_PATH, [] as SpawnRequest[]);
-}
+export const getSpawnRequests = loadSpawnRequests;

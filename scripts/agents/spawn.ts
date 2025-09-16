@@ -12,6 +12,10 @@ import {
   loadSandboxTests,
   SandboxResult,
 } from '../utils/sandbox';
+import {
+  getSpawnRequests as loadSpawnRequests,
+  consumeSpawnRequest,
+} from '../../shared/spawnManager';
 
 interface AgentDefinition {
   address: string;
@@ -136,6 +140,11 @@ async function main(): Promise<void> {
     return;
   }
 
+  const pendingRequests = await loadSpawnRequests();
+  const pendingCategories = new Set(
+    pendingRequests.map((request) => request.category.toLowerCase())
+  );
+
   const config = loadAgentsConfig();
   const demand = computeCategoryDemand(jobRecords);
   const sandboxTests = loadSandboxTests();
@@ -196,6 +205,17 @@ async function main(): Promise<void> {
         successRate * 100
       ).toFixed(1)}% avg reward ${averageReward.toFixed(2)})`
     );
+
+    if (!DRY_RUN && pendingCategories.has(category.toLowerCase())) {
+      await consumeSpawnRequest(category).catch((err) =>
+        console.warn(
+          'Failed to clear spawn request for category',
+          category,
+          err
+        )
+      );
+      pendingCategories.delete(category.toLowerCase());
+    }
   }
 
   if (createdAgents.length === 0) {
