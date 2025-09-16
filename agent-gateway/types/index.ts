@@ -12,6 +12,17 @@ export interface Job {
   uri?: string;
 }
 
+export interface JobCreatedEvent {
+  jobId: bigint;
+  employer: string;
+  agent: string;
+  reward: bigint;
+  stake: bigint;
+  fee: bigint;
+  specHash: string;
+  uri: string;
+}
+
 import type { WebSocket } from 'ws';
 
 export interface AgentInfo {

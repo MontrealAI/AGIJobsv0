@@ -1,6 +1,6 @@
 import { ethers, Wallet } from 'ethers';
-import { Job } from './types';
-import { walletManager, registry } from './utils';
+import { Job, JobCreatedEvent } from './types';
+import { walletManager, registry, TOKEN_DECIMALS } from './utils';
 import { ensureIdentity, getEnsIdentity } from './identity';
 import { selectAgentForJob, AgentProfile } from './agentRegistry';
 import { ensureStake, ROLE_AGENT } from './stakeCoordinator';
@@ -230,4 +230,26 @@ export async function handleJob(job: Job): Promise<void> {
       wallet
     );
   }
+}
+
+export async function handleJobCreatedEvent(
+  event: JobCreatedEvent
+): Promise<void> {
+  if (event.agent !== ethers.ZeroAddress) {
+    return;
+  }
+  const job: Job = {
+    jobId: event.jobId.toString(),
+    employer: event.employer,
+    agent: event.agent,
+    rewardRaw: event.reward.toString(),
+    reward: ethers.formatUnits(event.reward, TOKEN_DECIMALS),
+    stakeRaw: event.stake.toString(),
+    stake: ethers.formatUnits(event.stake, TOKEN_DECIMALS),
+    feeRaw: event.fee.toString(),
+    fee: ethers.formatUnits(event.fee, TOKEN_DECIMALS),
+    specHash: event.specHash,
+    uri: event.uri,
+  };
+  await handleJob(job);
 }

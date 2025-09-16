@@ -15,8 +15,7 @@ import {
   jobTimestamps,
   stakeManager,
 } from './utils';
-import { Job } from './types';
-import { handleJob } from './orchestrator';
+import { Job, JobCreatedEvent } from './types';
 import { appendTrainingRecord, RewardPayout } from '../shared/trainingRecords';
 import {
   handleValidatorSelection,
@@ -26,7 +25,17 @@ import {
 
 const rewardPayoutCache = new Map<string, RewardPayout[]>();
 
-export function registerEvents(wss: WebSocketServer): void {
+type JobCreatedCallback = (event: JobCreatedEvent) => void | Promise<void>;
+
+interface EventCallbacks {
+  onUnassignedJobCreated?: JobCreatedCallback;
+}
+
+export function registerEvents(
+  wss: WebSocketServer,
+  callbacks: EventCallbacks = {}
+): void {
+  const { onUnassignedJobCreated } = callbacks;
   registry.on(
     'JobCreated',
     (
@@ -39,8 +48,9 @@ export function registerEvents(wss: WebSocketServer): void {
       specHash: string,
       uri: string
     ) => {
+      const jobIdBigInt = ethers.getBigInt(jobId);
       const job: Job = {
-        jobId: jobId.toString(),
+        jobId: jobIdBigInt.toString(),
         employer,
         agent: agentAddr,
         rewardRaw: reward.toString(),
@@ -58,8 +68,20 @@ export function registerEvents(wss: WebSocketServer): void {
       dispatch(wss, job);
       console.log('JobCreated', job);
       scheduleExpiration(job.jobId);
-      if (job.agent === ethers.ZeroAddress) {
-        handleJob(job).catch((err) => console.error('autoApply error', err));
+      if (job.agent === ethers.ZeroAddress && onUnassignedJobCreated) {
+        const payload: JobCreatedEvent = {
+          jobId: jobIdBigInt,
+          employer,
+          agent: agentAddr,
+          reward,
+          stake,
+          fee,
+          specHash,
+          uri,
+        };
+        Promise.resolve(onUnassignedJobCreated(payload)).catch((err) =>
+          console.error('autoApply error', err)
+        );
       }
     }
   );
