@@ -17,6 +17,9 @@ Job financial fields (`reward`, `stake`, and `fee`) are broadcast using `ethers.
 - `ENERGY_ORACLE_URL` endpoint that accepts telemetry payloads (optional – required for operator rewards)
 - `ENERGY_ORACLE_TOKEN` bearer token when publishing telemetry to the oracle (optional)
 - `ENERGY_ORACLE_REQUIRE_SIGNATURE` set to `true` to require cryptographic signing of telemetry payloads; when enabled the orchestrator wallet must own an ENS name under `*.a.agi.eth`
+- `AUDIT_ANCHOR_INTERVAL_MS` cadence for Merkle anchoring the audit log (default `21600000`, i.e. 6 hours)
+- `AUDIT_ANCHOR_MIN_NEW_EVENTS` minimum number of new audit records required before an automated anchor is attempted (default `5`)
+- `AUDIT_ANCHOR_START_DELAY_MS` optional delay before the first anchoring cycle begins (default `0`)
 
 Copy `.env.example` to `.env` and adjust values for your network:
 
@@ -94,6 +97,8 @@ POST /jobs/:id/reveal { address }
 GET  /health
 GET  /efficiency
 GET  /efficiency/:agent[?category=categoryKey]
+GET  /audit/anchors[?limit=25]
+POST /audit/anchors { force?, minNewEvents? }
 ```
 
 The `/efficiency` endpoints expose thermodynamic efficiency analytics derived
@@ -103,5 +108,13 @@ provides an individual breakdown. When a `category` query parameter is
 present, the gateway responds with the metrics for that specialised domain –
 for example, `validation` or a custom agent discipline. ENS names can be used
 in place of raw addresses and are resolved automatically before lookup.
+
+The `/audit/anchors` endpoints manage the Merkle anchoring cadence for the
+gateway's structured audit log. `GET /audit/anchors` returns the recorded
+anchors (newest last) alongside scheduler telemetry, while the authenticated
+`POST /audit/anchors` route forces an anchor cycle or adjusts the minimum
+number of new events required for that cycle. Anchoring requests sign the
+Merkle root with the orchestrator wallet so downstream auditors can verify
+lineage without trusting the gateway.
 
 See `../examples` for SDK usage in Python and TypeScript.
