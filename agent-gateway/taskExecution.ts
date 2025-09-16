@@ -12,7 +12,13 @@ import {
   EnergySample,
 } from '../shared/energyMonitor';
 import { recordAuditEvent } from '../shared/auditLogger';
-import { publishEnergySample } from './telemetry';
+import {
+  publishEnergySample,
+  recordJobEnergyMetrics,
+  startJobInvocationMetrics,
+  finishJobInvocationMetrics,
+  type JobInvocationMetrics,
+} from './telemetry';
 import { notifyTrainingOutcome } from './learning';
 
 export interface TaskExecutionContext {
@@ -34,6 +40,7 @@ export interface TaskExecutionResult {
   energy: EnergySample;
   rawOutput: unknown;
   submissionMethod: 'finalizeJob' | 'submit';
+  invocationMetrics?: JobInvocationMetrics;
 }
 
 export interface AgentMemoryEntry {
@@ -82,6 +89,7 @@ export interface AgentTaskRunResult {
   output: unknown;
   payload: AgentInvocationPayload;
   orchestration: OrchestrationSnapshot;
+  metrics: JobInvocationMetrics;
   error?: Error;
 }
 
@@ -437,8 +445,20 @@ export async function runAgentTask(
 
   let output: unknown;
   let error: Error | undefined;
+  const invocationSpan = startJobInvocationMetrics({
+    jobId: jobSpec.job.jobId,
+    agent: agent.address,
+    payload,
+    metadata: {
+      category: jobSpec.analysis.category,
+      agentLabel: jobSpec.identity.label,
+      endpoint: agent.endpoint,
+    },
+  });
+  let endpointInvoked = false;
   if (agent.endpoint) {
     try {
+      endpointInvoked = true;
       output = await agentInvoker(agent.endpoint, payload, FETCH_TIMEOUT_MS);
     } catch (err) {
       error = err instanceof Error ? err : new Error(String(err));
@@ -449,7 +469,17 @@ export async function runAgentTask(
     output = fallbackSolveJob(jobSpec);
   }
 
-  return { output, payload, orchestration, error };
+  const metrics = finishJobInvocationMetrics(invocationSpan, {
+    output,
+    success: !error,
+    error,
+    metadata: {
+      fallbackUsed: !agent.endpoint || Boolean(error),
+      endpointInvoked,
+    },
+  });
+
+  return { output, payload, orchestration, error, metrics };
 }
 
 export async function executeJob(
@@ -619,6 +649,23 @@ export async function executeJob(
       stakeFormatted: job.stake,
     });
     await publishEnergySample(energySample);
+    if (invocation?.metrics) {
+      const telemetryMetadata: Record<string, unknown> = {
+        category: analysis.category,
+        agentLabel: identity.label,
+        submissionMethod,
+        txHash: txHash || undefined,
+        resultURI: resultURI || undefined,
+        resultCid: resultCid || undefined,
+      };
+      await recordJobEnergyMetrics({
+        invocation: invocation.metrics,
+        energy: energySample,
+        rewardValue,
+        jobSuccess: !error,
+        metadata: telemetryMetadata,
+      });
+    }
     await notifyTrainingOutcome({
       job,
       profile,
@@ -645,5 +692,6 @@ export async function executeJob(
     energy: energySample,
     rawOutput,
     submissionMethod,
+    invocationMetrics: invocation?.metrics,
   };
 }

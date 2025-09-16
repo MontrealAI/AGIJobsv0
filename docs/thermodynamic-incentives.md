@@ -1,93 +1,84 @@
 # Thermodynamic Incentives
 
-AGIJobsv0 distributes `$AGIALPHA` using a physics inspired free–energy model.
-This document summarises how the on–chain modules interact and how parameters
-can be tuned in production.
+The gateway now instruments every agent execution with low-level CPU, GPU, and
+algorithmic-complexity telemetry. The goal is to make energy efficiency a
+first-class signal in both reporting and scheduling, so that the network
+prefers agents that solve jobs with minimal free energy expenditure.
 
-## Free–Energy Budget
+## Metrics collection pipeline
 
-Each epoch `RewardEngineMB` aggregates attested energy metrics from
-`EnergyOracle` and computes the Gibbs free energy of the system
+1. **Invocation spans** – `taskExecution.runAgentTask` wraps every call to an
+   agent endpoint in `startJobInvocationMetrics` /
+   `finishJobInvocationMetrics`. These helpers sample `process.cpuUsage`,
+   `process.hrtime`, and `os.loadavg` to capture CPU time, wall-clock time,
+   input/output sizes, and a heuristic algorithmic complexity classification.
+2. **Energy spans** – Once the job finishes, the existing energy span from
+   `shared/energyMonitor` produces GPU time, memory pressure, and entropy
+   estimates. The telemetry bridge merges invocation data with the energy span
+   so every record has both runtime and energy metrics.
+3. **Persistence** – Combined records are appended to
+   `data/energy-metrics.jsonl`. Each line captures:
+   - CPU/GPU milliseconds and load average deltas.
+   - Estimated operations and algorithmic complexity band (`O(1)` … `O(2^n)`).
+   - Reward value, energy estimate, and an **efficiency score**
+     `reward / energy`.
+   - Success flags, anomalies, and contextual metadata (agent label, category,
+     submission method, tx hash, etc.).
 
+Environment variables `TELEMETRY_CPU_OPERATION_WEIGHT` and
+`TELEMETRY_GPU_OPERATION_WEIGHT` can be used to tune the complexity heuristic
+if your hardware characteristics differ from the defaults.
+
+## Scheduler integration
+
+`orchestrator.selectAgentForJob` now ingests the aggregated efficiency map from
+`telemetry.getAgentEfficiencyStats()`. Candidate matches are re-ranked by:
+
+- **Efficiency bonus** – higher average `reward / energy` yields a positive
+  adjustment.
+- **Energy penalty** – agents with high mean energy draw receive a logarithmic
+  penalty.
+- **Reliability bonus** – historically successful agents get a small boost.
+
+The selected match records the energy reason in its `reasons` array so audit
+logs explain why a low-energy agent was chosen.
+
+## Energy metrics log
+
+`data/energy-metrics.jsonl` is append-only and safe to process with standard
+Unix tools. Each record mirrors the `EnergyMetricRecord` interface in
+`agent-gateway/telemetry.ts`. Because the log is JSONL you can tail and filter
+it without parsing the entire file.
+
+The file is automatically created on first write. To clear history, remove the
+file and restart the gateway; aggregates will rebuild from the remaining log
+entries.
+
+## Dashboard / log viewer
+
+An optional CLI dashboard lives at `scripts/energy-dashboard.ts`. Run it with
+`ts-node` to inspect recent activity:
+
+```bash
+npx ts-node --compiler-options '{"module":"commonjs"}' scripts/energy-dashboard.ts --tail 20
 ```
-ΔG = (Value − Costs) − Tₛ · ΔS
-budget = κ · max(0, −ΔG)
-```
 
-- **Value** – estimated economic value of completed work
-- **Costs** – total token payouts during the epoch
-- **ΔS** – change in system entropy reported by the oracle
-- **Tₛ** – system temperature from `Thermostat`
-- **κ** – scaling factor converting energy units to tokens
+Key features:
 
-If `ΔG` is positive the epoch mints no additional tokens. Otherwise the negative
-free energy determines the reward budget for all roles.
+- Agent table sorted by average energy use with average efficiency, CPU/GPU
+  time, and success rate.
+- Recent job list highlighting energy estimate, efficiency score, and
+  complexity classification. Use `--agent <address>` to filter to a single
+  agent and `--tail <n>` to control the window size.
 
-## Maxwell–Boltzmann Allocation
+This lightweight viewer doubles as a log file, so you can pipe it into other
+analysis tools or dashboards if desired.
 
-Participants are grouped by role.  Each role receives a percentage of the budget
-(`65%` agents, `15%` validators, `15%` operators, `5%` employers by default).
-Within a role, user weights follow the Maxwell–Boltzmann distribution
+## Extending the incentives layer
 
-```
-wᵢ ∝ gᵢ · exp((μᵣ − Eᵢ) / Tᵣ)
-```
-
-where `Eᵢ` is the total energy attributed to the user, `gᵢ` is the degeneracy
-(number of contributions), `μᵣ` the role–specific chemical potential and `Tᵣ`
-the effective temperature for that role.  The weights are normalised so rewards
-sum to the role’s budget share.
-
-## Reputation Feedback
-
-After transferring rewards via `FeePool`, the engine calls
-`ReputationEngine.update(user, -energy)` to penalise inefficient work.  Efficient
-participants therefore gain more reputation per token than wasteful ones.  The
-reputation system can blacklist users whose score falls below the configured
-threshold, ensuring that repeated bad actors are removed from the market.
-
-## Temperature Control
-
-`Thermostat.tick` adjusts the global temperature based on three KPI inputs:
-reward emission error, job backlog error and SLA error. Each KPI is multiplied
-by a configurable weight set via `setKPIWeights`, allowing governance to
-emphasise particular metrics when tuning the controller. Governance can also set
-role‑specific temperatures with `setRoleTemperature` (and later remove them with
-`unsetRoleTemperature`) to encourage or dampen participation in a given role.
-When no override exists, `getRoleTemperature` falls back to the global system
-temperature.  All temperature changes are constrained within the `[minTemp,
-maxTemp]` bounds to prevent extreme rewards.
-Higher temperatures flatten the Maxwell–Boltzmann curve so rewards are spread
-more evenly across participants.  Lower temperatures sharpen the distribution,
-concentrating rewards on low‑energy, highly efficient contributors.
-
-## Governance Controls
-
-All critical knobs in the incentive system are gated behind the governance
-timelock. Through on‑chain proposals the community may adjust role reward
-percentages, per‑role chemical potentials `μᵣ`, the scaling constant `κ`,
-authorized epoch settlers and thermostat bounds such as `minTemp` and
-`maxTemp`. These levers let governance cool a system that is issuing rewards too
-rapidly or raise temperatures when participation stalls.
-
-## Governance Delay and Exit
-
-Parameter changes for the reward engine and thermostat are queued through the
-governance timelock, which is configured with a **7 day** delay. Agents and
-validators who disagree with a proposed change may leave during this period by
-calling `StakeManager.requestWithdraw` and, after the `unbondingPeriod`
-expires, `StakeManager.finalizeWithdraw` to recover their stake before the new
-settings take effect.
-
-## Events and Monitoring
-
-`RewardEngineMB` emits a `RewardBudget` event every epoch with the total budget
-and distribution ratio, allowing off–chain services to monitor reward issuance
-and verify that minted tokens track productive work.
-
-## Further Reading
-
-- [Reward settlement walkthrough](reward-settlement-process.md)
-- [Universal platform incentive architecture](universal-platform-incentive-architecture.md)
-- [Thermostat PID controller](../contracts/v2/Thermostat.sol)
-- [Maxwell–Boltzmann weighting](../contracts/v2/libraries/ThermoMath.sol)
+The telemetry pipeline intentionally keeps raw records in JSONL and aggregated
+statistics in-memory. Additional services can subscribe by reading the log or
+by importing `getAgentEfficiencyStats()` to drive dashboards, leaderboards, or
+automated stake adjustments. When adding new metrics remember to update the
+telemetry record interface and documentation so downstream consumers stay in
+sync.

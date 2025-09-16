@@ -11,6 +11,7 @@ import {
 } from './agentRegistry';
 import { ensureStake, ROLE_AGENT } from './stakeCoordinator';
 import { executeJob } from './taskExecution';
+import { getAgentEfficiencyStats } from './telemetry';
 import {
   recordAgentFailure,
   recordAgentSuccess,
@@ -186,6 +187,64 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
   if (matches.length === 0) {
     console.warn('No viable agent match found for job', job.jobId);
     return null;
+  }
+  const efficiencyStats = await getAgentEfficiencyStats();
+  if (efficiencyStats.size > 0) {
+    const decorated = matches.map((match) => {
+      const stats = efficiencyStats.get(match.profile.address.toLowerCase());
+      const averageEnergy =
+        stats && Number.isFinite(stats.averageEnergy)
+          ? Math.max(0, stats.averageEnergy)
+          : null;
+      const averageEfficiency =
+        stats && Number.isFinite(stats.averageEfficiency)
+          ? Math.max(0, stats.averageEfficiency)
+          : null;
+      const successRate =
+        stats && Number.isFinite(stats.successRate) ? stats.successRate : null;
+
+      const energyPenalty =
+        averageEnergy !== null ? Math.log1p(averageEnergy / 1000) * 0.2 : 0;
+      const efficiencyBoost =
+        averageEfficiency !== null ? Math.min(1, averageEfficiency) * 0.3 : 0;
+      const reliabilityBoost =
+        successRate !== null ? Math.max(0, successRate) * 0.05 : 0;
+
+      const finalScore =
+        match.score + efficiencyBoost + reliabilityBoost - energyPenalty;
+
+      return {
+        match,
+        stats,
+        finalScore,
+        averageEnergy:
+          averageEnergy !== null ? averageEnergy : Number.POSITIVE_INFINITY,
+      };
+    });
+
+    decorated.sort((a, b) => {
+      if (b.finalScore !== a.finalScore) {
+        return b.finalScore - a.finalScore;
+      }
+      if (a.averageEnergy !== b.averageEnergy) {
+        return a.averageEnergy - b.averageEnergy;
+      }
+      return b.match.score - a.match.score;
+    });
+
+    const selectedEntry = decorated[0];
+    if (selectedEntry) {
+      if (selectedEntry.stats) {
+        const { averageEnergy, averageEfficiency, dominantComplexity } =
+          selectedEntry.stats;
+        selectedEntry.match.reasons.push(
+          `energy-metrics:${averageEnergy.toFixed(
+            2
+          )}:${averageEfficiency.toFixed(3)}:${dominantComplexity}`
+        );
+      }
+      return selectedEntry.match;
+    }
   }
   return matches[0];
 }
