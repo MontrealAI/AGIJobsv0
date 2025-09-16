@@ -3,7 +3,8 @@ import path from 'path';
 import { ethers } from 'ethers';
 import {
   appendTrainingRecord,
-  readTrainingRecords,
+  collectJobOutcomeDataset,
+  JobOutcomeEntry,
   resolveCategory,
   TrainingRecord,
 } from '../../shared/trainingRecords';
@@ -26,6 +27,10 @@ interface CategoryStats {
   total: number;
   successRate: number;
   averageReward: string;
+  averageRewardValue: number;
+  averageEnergy: number;
+  rewardPerEnergy: number;
+  efficiencyScore: number;
 }
 
 interface ModelRegistryEntry {
@@ -39,6 +44,11 @@ interface ModelRegistryEntry {
     total: number;
     successRate: number;
     averageReward: string;
+    averageRewardValue: number;
+    averageEnergy: number;
+    rewardPerEnergy: number;
+    efficiencyScore: number;
+    energySamples: number;
     rewardDecimals: number;
     categoryBreakdown: Record<string, CategoryStats>;
   };
@@ -86,66 +96,186 @@ function saveActiveState(registry: ModelRegistry): void {
   fs.writeFileSync(ACTIVE_PATH, JSON.stringify(active, null, 2));
 }
 
-function groupRecordsByAgent(
-  records: TrainingRecord[]
-): Map<string, TrainingRecord[]> {
-  const map = new Map<string, TrainingRecord[]>();
-  for (const record of records) {
-    if (record.kind !== 'job') continue;
-    if (!record.agent) continue;
-    const key = record.agent.toLowerCase();
+function groupEntriesByAgent(
+  entries: JobOutcomeEntry[]
+): Map<string, JobOutcomeEntry[]> {
+  const map = new Map<string, JobOutcomeEntry[]>();
+  for (const entry of entries) {
+    const agent = entry.record.agent;
+    if (!agent) continue;
+    const key = agent.toLowerCase();
     if (!map.has(key)) {
       map.set(key, []);
     }
-    map.get(key)!.push(record);
+    map.get(key)!.push(entry);
   }
   return map;
 }
 
-function computeAgentStats(records: TrainingRecord[]) {
-  const jobRecords = records.filter((record) => record.kind === 'job');
-  const total = jobRecords.length;
-  const successCount = jobRecords.filter((record) => record.success).length;
-  const decimals = jobRecords[0]?.reward?.decimals ?? 18;
-  let rewardSum = 0n;
-  const categories = new Map<
-    string,
-    { total: number; success: number; rewardSum: bigint }
-  >();
+function round(value: number, places = 6): number {
+  if (!Number.isFinite(value)) return 0;
+  const factor = Math.pow(10, places);
+  return Math.round(value * factor) / factor;
+}
 
-  for (const record of jobRecords) {
-    const reward = record.reward;
-    if (reward) {
-      rewardSum += BigInt(reward.posted.raw || '0');
-    }
-    const category = resolveCategory(record);
-    if (!category) continue;
-    if (!categories.has(category)) {
-      categories.set(category, { total: 0, success: 0, rewardSum: 0n });
-    }
-    const entry = categories.get(category)!;
-    entry.total += 1;
-    if (record.success) entry.success += 1;
-    if (reward) entry.rewardSum += BigInt(reward.posted.raw || '0');
+function computeAgentStats(entries: JobOutcomeEntry[]) {
+  const total = entries.length;
+  if (total === 0) {
+    return {
+      total,
+      successRate: 0,
+      averageReward: '0',
+      averageRewardValue: 0,
+      averageEnergy: 0,
+      rewardPerEnergy: 0,
+      efficiencyScore: 0,
+      energySamples: 0,
+      rewardDecimals: 18,
+      categoryBreakdown: {},
+    };
   }
 
-  const averageRaw = total > 0 ? rewardSum / BigInt(total) : 0n;
+  const decimals = entries[0].record.reward?.decimals ?? 18;
+  let successCount = 0;
+  let rewardSumRaw = 0n;
+  let rewardSumValue = 0;
+  let energySum = 0;
+  let energySamples = 0;
+  let rewardPerEnergySum = 0;
+  let rewardPerEnergySamples = 0;
+
+  interface CategoryData {
+    label: string;
+    total: number;
+    success: number;
+    rewardSumRaw: bigint;
+    rewardSumValue: number;
+    energySum: number;
+    energySamples: number;
+    rewardPerEnergySum: number;
+    rewardPerEnergySamples: number;
+  }
+
+  const categories = new Map<string, CategoryData>();
+
+  for (const entry of entries) {
+    const record = entry.record;
+    if (record.success) {
+      successCount += 1;
+    }
+    const rawReward = record.reward?.posted?.raw;
+    if (rawReward) {
+      rewardSumRaw += BigInt(rawReward);
+    }
+    rewardSumValue += entry.rewardValue;
+
+    const energy = entry.efficiency.energyEstimate;
+    if (typeof energy === 'number' && Number.isFinite(energy)) {
+      energySum += energy;
+      energySamples += 1;
+    }
+
+    const rewardPerEnergy = entry.efficiency.rewardPerEnergy;
+    if (
+      typeof rewardPerEnergy === 'number' &&
+      Number.isFinite(rewardPerEnergy)
+    ) {
+      rewardPerEnergySum += rewardPerEnergy;
+      rewardPerEnergySamples += 1;
+    }
+
+    const categoryLabel =
+      entry.category ?? resolveCategory(record) ?? 'uncategorized';
+    const categoryKey = categoryLabel.toLowerCase();
+    if (!categories.has(categoryKey)) {
+      categories.set(categoryKey, {
+        label: categoryLabel,
+        total: 0,
+        success: 0,
+        rewardSumRaw: 0n,
+        rewardSumValue: 0,
+        energySum: 0,
+        energySamples: 0,
+        rewardPerEnergySum: 0,
+        rewardPerEnergySamples: 0,
+      });
+    }
+    const categoryData = categories.get(categoryKey)!;
+    categoryData.total += 1;
+    if (record.success) {
+      categoryData.success += 1;
+    }
+    if (rawReward) {
+      categoryData.rewardSumRaw += BigInt(rawReward);
+    }
+    categoryData.rewardSumValue += entry.rewardValue;
+    if (typeof energy === 'number' && Number.isFinite(energy)) {
+      categoryData.energySum += energy;
+      categoryData.energySamples += 1;
+    }
+    if (
+      typeof rewardPerEnergy === 'number' &&
+      Number.isFinite(rewardPerEnergy)
+    ) {
+      categoryData.rewardPerEnergySum += rewardPerEnergy;
+      categoryData.rewardPerEnergySamples += 1;
+    }
+  }
+
+  const averageRaw = rewardSumRaw / BigInt(total);
   const averageReward = ethers.formatUnits(averageRaw, decimals);
+  const averageRewardValue = rewardSumValue / total;
+  const averageEnergy = energySamples > 0 ? energySum / energySamples : 0;
+  const rewardPerEnergy =
+    rewardPerEnergySamples > 0
+      ? rewardPerEnergySum / rewardPerEnergySamples
+      : 0;
+  const successRate = successCount / total;
+  const energyFactor = energySamples > 0 ? 1 / (1 + averageEnergy / 1000) : 1;
+  const rewardFactor =
+    rewardPerEnergy > 0 ? Math.log10(1 + rewardPerEnergy) : 0;
+  const efficiencyScore = successRate * energyFactor * rewardFactor;
 
   const categoryBreakdown: Record<string, CategoryStats> = {};
-  for (const [category, data] of categories.entries()) {
-    const avg = data.total > 0 ? data.rewardSum / BigInt(data.total) : 0n;
-    categoryBreakdown[category] = {
+  for (const data of categories.values()) {
+    const categoryAvgRaw =
+      data.total > 0 ? data.rewardSumRaw / BigInt(data.total) : 0n;
+    const categoryAverageReward = ethers.formatUnits(categoryAvgRaw, decimals);
+    const categoryAverageRewardValue =
+      data.total > 0 ? data.rewardSumValue / data.total : 0;
+    const categoryAverageEnergy =
+      data.energySamples > 0 ? data.energySum / data.energySamples : 0;
+    const categoryRewardPerEnergy =
+      data.rewardPerEnergySamples > 0
+        ? data.rewardPerEnergySum / data.rewardPerEnergySamples
+        : 0;
+    const categorySuccessRate = data.total > 0 ? data.success / data.total : 0;
+    const categoryEnergyFactor =
+      data.energySamples > 0 ? 1 / (1 + categoryAverageEnergy / 1000) : 1;
+    const categoryRewardFactor =
+      categoryRewardPerEnergy > 0 ? Math.log10(1 + categoryRewardPerEnergy) : 0;
+    const categoryEfficiency =
+      categorySuccessRate * categoryEnergyFactor * categoryRewardFactor;
+    categoryBreakdown[data.label] = {
       total: data.total,
-      successRate: data.total > 0 ? data.success / data.total : 0,
-      averageReward: ethers.formatUnits(avg, decimals),
+      successRate: round(categorySuccessRate),
+      averageReward: categoryAverageReward,
+      averageRewardValue: round(categoryAverageRewardValue),
+      averageEnergy: round(categoryAverageEnergy),
+      rewardPerEnergy: round(categoryRewardPerEnergy),
+      efficiencyScore: round(categoryEfficiency),
     };
   }
 
   return {
     total,
-    successRate: total > 0 ? successCount / total : 0,
+    successRate: round(successRate),
     averageReward,
+    averageRewardValue: round(averageRewardValue),
+    averageEnergy: round(averageEnergy),
+    rewardPerEnergy: round(rewardPerEnergy),
+    efficiencyScore: round(efficiencyScore),
+    energySamples,
     rewardDecimals: decimals,
     categoryBreakdown,
   };
@@ -189,11 +319,12 @@ async function logSandboxEvaluations(
 
 async function processAgent(
   agentId: string,
-  records: TrainingRecord[],
+  entries: JobOutcomeEntry[],
+  jobRecords: TrainingRecord[],
   entry: ModelRegistryEntry | undefined,
   registry: ModelRegistry
 ): Promise<boolean> {
-  const stats = computeAgentStats(records);
+  const stats = computeAgentStats(entries);
   if (stats.total === 0) {
     console.log(`Skipping ${agentId}: no completed jobs recorded.`);
     return false;
@@ -203,18 +334,37 @@ async function processAgent(
   const timestamp = new Date().toISOString();
   const modelPath = path.join(MODELS_DIR, `${agentId}-${version}.json`);
 
+  const rewardPerEnergySamples = entries.filter(
+    (entry) => typeof entry.efficiency.rewardPerEnergy === 'number'
+  ).length;
+
+  const weights = {
+    successBias: stats.successRate,
+    rewardWeight: stats.averageRewardValue,
+    energyPenalty: stats.averageEnergy,
+    efficiencyWeight: stats.rewardPerEnergy,
+    baseline: round(stats.successRate * stats.rewardPerEnergy),
+  };
+
+  const featureSummary = {
+    samples: stats.total,
+    energySamples: stats.energySamples,
+    rewardPerEnergySamples,
+  };
+
   const modelPayload = {
     agent: agentId,
     version,
     trainedAt: timestamp,
     metrics: stats,
-    samples: stats.total,
+    weights,
+    featureSummary,
   };
 
   await fs.promises.writeFile(modelPath, JSON.stringify(modelPayload, null, 2));
 
   const sandboxTests = loadSandboxTests();
-  const sandboxResults = evaluateSandbox(records, sandboxTests, {
+  const sandboxResults = evaluateSandbox(jobRecords, sandboxTests, {
     agentId,
   });
   await logSandboxEvaluations(agentId, sandboxResults);
@@ -249,23 +399,32 @@ async function processAgent(
 
 async function runCycle(): Promise<void> {
   ensureDirectory(MODELS_DIR);
-  const records = await readTrainingRecords();
-  if (records.length === 0) {
+  const dataset = await collectJobOutcomeDataset();
+  if (dataset.records.length === 0) {
     console.log('No training records available.');
     return;
   }
 
   const registry = loadRegistry();
-  const grouped = groupRecordsByAgent(records);
+  const grouped = groupEntriesByAgent(dataset.records);
   let updated = false;
 
-  for (const [agentId, agentRecords] of grouped.entries()) {
+  for (const [agentId, agentEntries] of grouped.entries()) {
     const entry = registry[agentId];
-    const newCount = getNewRecordCount(entry, agentRecords.length);
+    const newCount = getNewRecordCount(entry, agentEntries.length);
     if (newCount < MIN_NEW_RECORDS) {
       continue;
     }
-    const changed = await processAgent(agentId, agentRecords, entry, registry);
+    const agentJobRecords = agentEntries.map(
+      (entry) => entry.record as TrainingRecord
+    );
+    const changed = await processAgent(
+      agentId,
+      agentEntries,
+      agentJobRecords,
+      entry,
+      registry
+    );
     updated = updated || changed;
   }
 
