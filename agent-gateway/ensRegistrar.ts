@@ -34,7 +34,9 @@ const RESOLVER_ABI = [
   'function addr(bytes32 node) view returns (address)',
 ];
 
-const REVERSE_ABI = ['function setName(string name) external returns (bytes32)'];
+const REVERSE_ABI = [
+  'function setName(string name) external returns (bytes32)',
+];
 
 function normaliseLabel(label: string): string {
   const trimmed = label.trim().toLowerCase();
@@ -55,7 +57,10 @@ function normaliseLabel(label: string): string {
   return trimmed;
 }
 
-function ensureConfiguredAddress(value: string | undefined, name: string): string {
+function ensureConfiguredAddress(
+  value: string | undefined,
+  name: string
+): string {
   if (!value) {
     throw new Error(`${name} is not configured`);
   }
@@ -100,7 +105,12 @@ function readParentConfig(space: EnsSpace): ResolvedParentConfig {
     ? ethers.hexlify(ethers.getBytes(raw.node))
     : ethers.namehash(name);
   const role: 'agent' | 'validator' | 'business' =
-    raw.role ?? (space === 'club' ? 'validator' : space === 'business' ? 'business' : 'agent');
+    raw.role ??
+    (space === 'club'
+      ? 'validator'
+      : space === 'business'
+      ? 'business'
+      : 'agent');
   return {
     name,
     node,
@@ -247,7 +257,11 @@ export async function registerEnsSubdomain(
     0
   );
   const setRecordReceipt = await setRecordTx.wait();
-  const resolver = new Contract(prepared.parent.resolver, RESOLVER_ABI, targetWallet);
+  const resolver = new Contract(
+    prepared.parent.resolver,
+    RESOLVER_ABI,
+    targetWallet
+  );
   const setAddrTx = await resolver.setAddr(childNode, targetWallet.address);
   const setAddrReceipt = await setAddrTx.wait();
   const reverse = new Contract(reverseRegistrar, REVERSE_ABI, targetWallet);
