@@ -7,6 +7,7 @@ import {
   walletManager,
   FETCH_TIMEOUT_MS,
   TOKEN_DECIMALS,
+  agents,
 } from './utils';
 import { ensureIdentity, AgentIdentity } from './identity';
 import { ROLE_VALIDATOR, ensureStake } from './stakeCoordinator';
@@ -19,6 +20,7 @@ import { publishEnergySample } from './telemetry';
 import { appendTrainingRecord } from '../shared/trainingRecords';
 import { secureLogAction } from './security';
 import { summarizeContent } from '../shared/worldModel';
+import { loadCommitRecord, updateCommitRecord } from './validationStore';
 
 interface SubmissionInfo {
   jobId: string;
@@ -74,6 +76,8 @@ interface ValidationAssignment {
   processing?: boolean;
   scheduledReveal?: NodeJS.Timeout | null;
   energySample?: EnergySample;
+  notifiedAt?: string;
+  notificationDelivered?: boolean;
 }
 
 interface RoundMetadata {
@@ -105,6 +109,8 @@ interface ValidatorAssignmentSnapshot {
   energy?: EnergySample | undefined;
   round?: RoundMetadata;
   archived?: boolean;
+  notifiedAt?: string;
+  notificationDelivered?: boolean;
 }
 
 const assignments = new Map<string, Map<string, ValidationAssignment>>();
@@ -167,7 +173,180 @@ function toSnapshot(
     revealedAt: assignment.reveal?.revealedAt,
     energy: assignment.energySample,
     round: assignment.round,
+    notifiedAt: assignment.notifiedAt,
+    notificationDelivered: assignment.notificationDelivered,
   };
+}
+
+async function sendToValidatorAgent(
+  walletAddress: string,
+  message: Record<string, unknown>
+): Promise<boolean> {
+  const lower = walletAddress.toLowerCase();
+  const payload = JSON.stringify(message);
+  const matches = Array.from(agents.entries()).filter(
+    ([, info]) => info.wallet.toLowerCase() === lower
+  );
+  if (matches.length === 0) {
+    return false;
+  }
+  let delivered = false;
+  for (const [, info] of matches) {
+    try {
+      if (info.ws && info.ws.readyState === 1) {
+        info.ws.send(payload);
+        delivered = true;
+        continue;
+      }
+      if (info.url) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        try {
+          const res = await fetch(info.url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: payload,
+            signal: controller.signal,
+          });
+          if (res.ok) {
+            delivered = true;
+          } else {
+            console.warn(
+              'validator HTTP dispatch failed',
+              info.url,
+              res.status,
+              res.statusText
+            );
+          }
+        } catch (err: any) {
+          if (err?.name === 'AbortError') {
+            console.warn('validator HTTP dispatch timed out', info.url);
+          } else {
+            console.warn('validator HTTP dispatch error', info.url, err);
+          }
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+    } catch (err) {
+      console.warn('validator message dispatch error', err);
+    }
+  }
+  return delivered;
+}
+
+async function notifyDomainAgent(
+  submission: SubmissionInfo,
+  assignment: ValidationAssignment
+): Promise<void> {
+  if (assignment.notifiedAt) {
+    return;
+  }
+  const message = {
+    type: 'ValidationAwaiting',
+    jobId: submission.jobId,
+    worker: submission.worker,
+    resultHash: submission.resultHash,
+    resultURI: submission.resultURI,
+    subdomain: submission.subdomain,
+    receivedAt: submission.receivedAt,
+    validator: {
+      address: assignment.wallet.address,
+      ens: assignment.identity.ensName,
+      label: assignment.identity.label,
+      categories: assignment.identity.manifestCategories,
+    },
+  };
+  const delivered = await sendToValidatorAgent(
+    assignment.wallet.address,
+    message
+  );
+  assignment.notifiedAt = new Date().toISOString();
+  assignment.notificationDelivered = delivered;
+  if (!delivered) {
+    console.warn(
+      'No online domain agent registered for validator',
+      assignment.wallet.address
+    );
+  }
+  try {
+    await secureLogAction({
+      component: 'validator',
+      action: 'awaiting-validation',
+      jobId: submission.jobId,
+      agent: assignment.wallet.address,
+      metadata: {
+        delivered,
+        worker: submission.worker,
+        resultURI: submission.resultURI,
+        subdomain: submission.subdomain,
+      },
+      success: delivered,
+    });
+  } catch (err) {
+    console.warn('validator notification logging failed', err);
+  }
+  try {
+    updateCommitRecord(submission.jobId, assignment.wallet.address, {
+      metadata: {
+        notifiedAt: assignment.notifiedAt,
+        notificationDelivered: delivered,
+      },
+    });
+  } catch (err) {
+    // commit record may not exist yet; ignore but log at debug level
+    if (
+      err instanceof Error &&
+      /missing required base fields/.test(err.message)
+    ) {
+      return;
+    }
+    console.warn('failed to persist validator notification metadata', err);
+  }
+}
+
+function rehydrateAssignmentFromStore(
+  jobId: string,
+  assignment: ValidationAssignment
+): void {
+  const record = loadCommitRecord(jobId, assignment.wallet.address);
+  if (!record) return;
+  const storedEvaluation = record.evaluation as
+    | ValidationEvaluation
+    | undefined;
+  const storedSubmission = record.submission as SubmissionInfo | undefined;
+  const evaluation: ValidationEvaluation = storedEvaluation ??
+    assignment.commit?.evaluation ?? {
+      approve: record.approve,
+      reasons: ['restored-from-storage'],
+      hashMatches: false,
+      resultAvailable: Boolean(storedSubmission?.resultURI),
+      worker: storedSubmission?.worker ?? '',
+      resultURI: storedSubmission?.resultURI ?? '',
+    };
+  assignment.commit = {
+    txHash: record.commitTx || assignment.commit?.txHash || '',
+    salt: record.salt,
+    approve: record.approve,
+    committedAt: record.committedAt,
+    evaluation,
+  };
+  if (record.revealTx) {
+    assignment.reveal = {
+      txHash: record.revealTx,
+      revealedAt: record.revealedAt || new Date().toISOString(),
+    };
+    assignment.status = 'revealed';
+  } else {
+    assignment.status = 'committed';
+  }
+  const metadata = record.metadata ?? {};
+  if (typeof metadata.notifiedAt === 'string') {
+    assignment.notifiedAt = metadata.notifiedAt;
+  }
+  if (typeof metadata.notificationDelivered === 'boolean') {
+    assignment.notificationDelivered = metadata.notificationDelivered;
+  }
 }
 
 async function loadLocalResult(
@@ -401,8 +580,38 @@ async function revealValidation(
   assignment: ValidationAssignment
 ): Promise<void> {
   if (!validation) return;
-  if (!assignment.commit) return;
   if (assignment.status === 'revealed') return;
+  let commitInfo = assignment.commit;
+  if (!commitInfo) {
+    const record = loadCommitRecord(jobId, assignment.wallet.address);
+    if (record) {
+      const storedEvaluation = record.evaluation as
+        | ValidationEvaluation
+        | undefined;
+      const storedSubmission = record.submission as SubmissionInfo | undefined;
+      const evaluation: ValidationEvaluation = storedEvaluation ??
+        assignment.commit?.evaluation ?? {
+          approve: record.approve,
+          reasons: ['restored-from-storage'],
+          hashMatches: false,
+          resultAvailable: Boolean(storedSubmission?.resultURI),
+          worker: storedSubmission?.worker ?? '',
+          resultURI: storedSubmission?.resultURI ?? '',
+        };
+      commitInfo = {
+        txHash: record.commitTx || assignment.commit?.txHash || '',
+        salt: record.salt,
+        approve: record.approve,
+        committedAt: record.committedAt,
+        evaluation,
+      };
+      assignment.commit = commitInfo;
+    }
+  }
+  if (!commitInfo) {
+    console.warn('Validator assignment missing commit data for reveal', jobId);
+    return;
+  }
   const label = assignment.identity.label || assignment.identity.ensName;
   if (!label) {
     throw new Error('Validator identity missing label');
@@ -410,25 +619,33 @@ async function revealValidation(
   try {
     const tx = await (validation as any)
       .connect(assignment.wallet)
-      .revealValidation(
-        jobId,
-        assignment.commit.approve,
-        assignment.commit.salt,
-        label,
-        []
-      );
+      .revealValidation(jobId, commitInfo.approve, commitInfo.salt, label, []);
     await tx.wait();
     assignment.reveal = {
       txHash: tx.hash,
       revealedAt: new Date().toISOString(),
     };
     assignment.status = 'revealed';
+    try {
+      updateCommitRecord(jobId, assignment.wallet.address, {
+        revealTx: tx.hash,
+        revealedAt: assignment.reveal.revealedAt,
+        metadata: assignment.notifiedAt
+          ? {
+              notifiedAt: assignment.notifiedAt,
+              notificationDelivered: assignment.notificationDelivered ?? false,
+            }
+          : undefined,
+      });
+    } catch (err) {
+      console.warn('failed to persist validator reveal metadata', err);
+    }
     await secureLogAction({
       component: 'validator',
       action: 'reveal',
       jobId,
       agent: assignment.wallet.address,
-      metadata: { txHash: tx.hash, approve: assignment.commit.approve },
+      metadata: { txHash: tx.hash, approve: commitInfo.approve },
       success: true,
     });
   } catch (err: any) {
@@ -506,6 +723,13 @@ async function evaluateAndCommit(
   assignment.processing = true;
   assignment.attempts += 1;
   assignment.status = 'evaluating';
+  if (!assignment.notifiedAt) {
+    try {
+      await notifyDomainAgent(submission, assignment);
+    } catch (err) {
+      console.warn('validator notification failed', err);
+    }
+  }
   const span = startEnergySpan({
     jobId: submission.jobId,
     agent: assignment.wallet.address,
@@ -579,6 +803,27 @@ async function evaluateAndCommit(
       evaluation,
     };
     assignment.status = 'committed';
+    try {
+      updateCommitRecord(submission.jobId, assignment.wallet.address, {
+        approve: evaluation.approve,
+        salt,
+        commitHash,
+        commitTx: tx.hash,
+        committedAt: assignment.commit.committedAt,
+        evaluation,
+        submission,
+        validatorEns: assignment.identity.ensName,
+        validatorLabel: assignment.identity.label,
+        metadata: assignment.notifiedAt
+          ? {
+              notifiedAt: assignment.notifiedAt,
+              notificationDelivered: assignment.notificationDelivered ?? false,
+            }
+          : undefined,
+      });
+    } catch (err) {
+      console.warn('failed to persist validator commit state', err);
+    }
     await secureLogAction({
       component: 'validator',
       action: 'commit',
@@ -655,6 +900,7 @@ export async function handleValidatorSelection(
         createdAt: new Date().toISOString(),
         attempts: 0,
       };
+      rehydrateAssignmentFromStore(jobId, assignment);
       bucket.set(lower, assignment);
       await secureLogAction({
         component: 'validator',
@@ -664,8 +910,23 @@ export async function handleValidatorSelection(
         metadata: { validators },
         success: true,
       });
+      if (assignment.status === 'committed' && !assignment.scheduledReveal) {
+        try {
+          await scheduleReveal(jobId, assignment);
+        } catch (err) {
+          console.warn(
+            'Failed to reschedule reveal for restored validator',
+            err
+          );
+        }
+      }
       const submission = submissions.get(jobId);
       if (submission) {
+        try {
+          await notifyDomainAgent(submission, assignment);
+        } catch (err) {
+          console.warn('validator notification during selection failed', err);
+        }
         await evaluateAndCommit(submission, assignment);
       }
     } catch (err: any) {
@@ -682,16 +943,23 @@ export async function handleValidatorSelection(
   }
 }
 
-export async function handleJobSubmissionForValidators(
+export async function handleJobAwaitingValidation(
   submission: SubmissionInfo
 ): Promise<void> {
   submissions.set(submission.jobId, submission);
   const bucket = assignments.get(submission.jobId);
   if (!bucket) return;
   for (const assignment of bucket.values()) {
+    try {
+      await notifyDomainAgent(submission, assignment);
+    } catch (err) {
+      console.warn('validator notification failed', err);
+    }
     await evaluateAndCommit(submission, assignment);
   }
 }
+
+export const handleJobSubmissionForValidators = handleJobAwaitingValidation;
 
 export function handleJobCompletionForValidators(jobId: string): void {
   submissions.delete(jobId);
@@ -702,12 +970,127 @@ export function handleJobCompletionForValidators(jobId: string): void {
       clearTimeout(assignment.scheduledReveal);
       assignment.scheduledReveal = null;
     }
+    try {
+      const metadata: Record<string, unknown> = {
+        completedAt: new Date().toISOString(),
+      };
+      if (assignment.notifiedAt) {
+        metadata.notifiedAt = assignment.notifiedAt;
+        metadata.notificationDelivered =
+          assignment.notificationDelivered ?? false;
+      }
+      updateCommitRecord(jobId, assignment.wallet.address, { metadata });
+    } catch (err) {
+      if (
+        !(
+          err instanceof Error &&
+          /missing required base fields/.test(err.message)
+        )
+      ) {
+        console.warn('failed to persist validator completion metadata', err);
+      }
+    }
     assignment.status =
       assignment.status === 'revealed' ? 'revealed' : 'completed';
     storeHistory(toSnapshot(assignment));
     bucket.delete(address);
   }
   assignments.delete(jobId);
+}
+
+export async function handleDisputeRaised(
+  jobId: string,
+  claimant: string,
+  evidenceHash: string
+): Promise<void> {
+  const timestamp = new Date().toISOString();
+  for (const address of walletManager.list()) {
+    const record = loadCommitRecord(jobId, address);
+    if (!record) continue;
+    try {
+      updateCommitRecord(jobId, address, {
+        dispute: { claimant, evidenceHash, recordedAt: timestamp },
+      });
+    } catch (err) {
+      console.warn('failed to persist validator dispute record', err);
+    }
+    try {
+      await secureLogAction({
+        component: 'validator',
+        action: 'dispute-raised',
+        jobId,
+        agent: address,
+        metadata: { claimant, evidenceHash },
+        success: true,
+      });
+    } catch (err) {
+      console.warn('validator dispute logging failed', err);
+    }
+    const assignment = assignments.get(jobId)?.get(address.toLowerCase());
+    const message = {
+      type: 'ValidationDispute',
+      jobId,
+      claimant,
+      evidenceHash,
+      validator: {
+        address,
+        ens: assignment?.identity.ensName ?? record.validatorEns,
+        label: assignment?.identity.label ?? record.validatorLabel,
+      },
+    };
+    try {
+      await sendToValidatorAgent(address, message);
+    } catch (err) {
+      console.warn('validator dispute notification failed', err);
+    }
+  }
+}
+
+export async function handleDisputeResolved(
+  jobId: string,
+  resolver: string,
+  employerWins: boolean
+): Promise<void> {
+  const timestamp = new Date().toISOString();
+  for (const address of walletManager.list()) {
+    const record = loadCommitRecord(jobId, address);
+    if (!record) continue;
+    try {
+      updateCommitRecord(jobId, address, {
+        resolution: { resolver, employerWins, resolvedAt: timestamp },
+      });
+    } catch (err) {
+      console.warn('failed to persist validator dispute resolution', err);
+    }
+    try {
+      await secureLogAction({
+        component: 'validator',
+        action: 'dispute-resolved',
+        jobId,
+        agent: address,
+        metadata: { resolver, employerWins },
+        success: true,
+      });
+    } catch (err) {
+      console.warn('validator dispute resolution logging failed', err);
+    }
+    const message = {
+      type: 'ValidationDisputeResolved',
+      jobId,
+      resolver,
+      employerWins,
+      validator: {
+        address,
+        ens: record.validatorEns,
+        label: record.validatorLabel,
+      },
+    };
+    try {
+      await sendToValidatorAgent(address, message);
+    } catch (err) {
+      console.warn('validator dispute resolution notification failed', err);
+    }
+  }
 }
 
 export function listValidatorAssignments(): {

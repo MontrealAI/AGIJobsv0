@@ -490,7 +490,12 @@ export async function executeJob(
     await acknowledgeTaxPolicy(wallet);
 
     const contract = (registry as any).connect(wallet);
-    let tx: { hash: string; wait: () => Promise<unknown> } | null = null;
+    let tx:
+      | {
+          hash: string;
+          wait: () => Promise<unknown>;
+        }
+      | undefined;
 
     if (typeof contract?.finalizeJob === 'function') {
       try {
@@ -502,7 +507,6 @@ export async function executeJob(
           'finalizeJob invocation failed, falling back to submit',
           finalizeError
         );
-        tx = null;
       }
     }
 
@@ -515,6 +519,10 @@ export async function executeJob(
         []
       );
       submissionMethod = 'submit';
+    }
+
+    if (!tx) {
+      throw new Error('Failed to submit job result transaction');
     }
 
     await tx.wait();

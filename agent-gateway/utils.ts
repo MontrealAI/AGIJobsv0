@@ -3,6 +3,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import agialpha from '../config/agialpha.json';
 import WalletManager from './wallet';
 import { Job, AgentInfo, CommitData } from './types';
+import { loadCommitRecord, updateCommitRecord } from './validationStore';
 
 // Environment configuration
 export const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
@@ -10,6 +11,7 @@ export const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
 export const STAKE_MANAGER_ADDRESS = process.env.STAKE_MANAGER_ADDRESS || '';
 export const VALIDATION_MODULE_ADDRESS =
   process.env.VALIDATION_MODULE_ADDRESS || '';
+export const DISPUTE_MODULE_ADDRESS = process.env.DISPUTE_MODULE_ADDRESS || '';
 export const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
 export const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
 export const BOT_WALLET = process.env.BOT_WALLET || '';
@@ -35,6 +37,9 @@ function validateEnvConfig(): void {
     );
   }
   checkAddress(VALIDATION_MODULE_ADDRESS, 'VALIDATION_MODULE_ADDRESS');
+  if (DISPUTE_MODULE_ADDRESS) {
+    checkAddress(DISPUTE_MODULE_ADDRESS, 'DISPUTE_MODULE_ADDRESS');
+  }
   if (!KEYSTORE_URL) {
     throw new Error('KEYSTORE_URL is required');
   }
@@ -91,6 +96,12 @@ const VALIDATION_MODULE_ABI = [
   'event ValidatorsSelected(uint256 indexed jobId, address[] validators)',
 ];
 
+const DISPUTE_MODULE_ABI = [
+  'event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 indexed evidenceHash)',
+  'event DisputeResolved(uint256 indexed jobId, address indexed resolver, bool employerWins)',
+  'function disputes(uint256 jobId) view returns (tuple(address claimant,uint256 raisedAt,bool resolved,uint256 fee,bytes32 evidenceHash))',
+];
+
 export const registry = new Contract(
   JOB_REGISTRY_ADDRESS,
   JOB_REGISTRY_ABI,
@@ -101,6 +112,9 @@ export const validation = VALIDATION_MODULE_ADDRESS
   : null;
 export const stakeManager = STAKE_MANAGER_ADDRESS
   ? new Contract(STAKE_MANAGER_ADDRESS, STAKE_MANAGER_ABI, provider)
+  : null;
+export const dispute = DISPUTE_MODULE_ADDRESS
+  ? new Contract(DISPUTE_MODULE_ADDRESS, DISPUTE_MODULE_ABI, provider)
   : null;
 
 // In-memory stores
@@ -368,18 +382,39 @@ export function dispatch(wss: WebSocketServer | undefined, job: Job): void {
   });
 }
 
+function normaliseSalt(value: string): string {
+  const candidate = value.startsWith('0x') ? value : `0x${value}`;
+  const bytes = ethers.getBytes(candidate);
+  if (bytes.length !== 32) {
+    throw new Error('salt must be a 32-byte hex string');
+  }
+  return ethers.hexlify(bytes);
+}
+
 export async function commitHelper(
   jobId: string,
   wallet: Wallet,
-  approve: boolean
-): Promise<{ tx: string; salt: string }> {
+  approve: boolean,
+  saltOverride?: string
+): Promise<{ tx: string; salt: string; commitHash: string }> {
   if (!validation) throw new Error('validation module not configured');
   await checkEnsSubdomain(wallet.address);
   const nonce = await validation.jobNonce(jobId);
-  const salt = ethers.hexlify(ethers.randomBytes(32));
+  let salt: string;
+  if (saltOverride) {
+    try {
+      salt = normaliseSalt(saltOverride);
+    } catch (err: any) {
+      throw new Error(`invalid salt provided: ${err?.message || err}`);
+    }
+  } else {
+    salt = ethers.hexlify(ethers.randomBytes(32));
+  }
+  const jobBigInt = ethers.getBigInt(jobId);
+  const nonceBigInt = ethers.getBigInt(nonce);
   const commitHash = ethers.solidityPackedKeccak256(
     ['uint256', 'uint256', 'bool', 'bytes32'],
-    [BigInt(jobId), nonce, approve, salt]
+    [jobBigInt, nonceBigInt, approve, salt]
   );
   const tx = await (validation as any)
     .connect(wallet)
@@ -388,22 +423,84 @@ export async function commitHelper(
   if (!commits.has(jobId)) commits.set(jobId, {});
   const jobCommits = commits.get(jobId)!;
   jobCommits[wallet.address.toLowerCase()] = { approve, salt };
-  return { tx: tx.hash, salt };
+
+  let validatorEns: string | undefined;
+  let validatorLabel: string | undefined;
+  try {
+    const lookup = await provider.lookupAddress(wallet.address);
+    if (lookup) {
+      validatorEns = lookup;
+      validatorLabel = lookup.split('.')[0];
+    }
+  } catch (err) {
+    console.warn('ENS lookup failed during commitHelper', err);
+  }
+
+  try {
+    updateCommitRecord(jobId, wallet.address, {
+      approve,
+      salt,
+      commitHash,
+      commitTx: tx.hash,
+      committedAt: new Date().toISOString(),
+      validatorEns,
+      validatorLabel,
+    });
+  } catch (err) {
+    console.warn('failed to persist validator commit record', err);
+  }
+
+  return { tx: tx.hash, salt, commitHash };
 }
 
 export async function revealHelper(
   jobId: string,
-  wallet: Wallet
+  wallet: Wallet,
+  approveOverride?: boolean,
+  saltOverride?: string
 ): Promise<{ tx: string }> {
   if (!validation) throw new Error('validation module not configured');
-  const jobCommits = commits.get(jobId) || {};
-  const data = jobCommits[wallet.address.toLowerCase()];
-  if (!data) throw new Error('no commit found');
+  let jobCommits = commits.get(jobId);
+  if (!jobCommits) {
+    jobCommits = {};
+    commits.set(jobId, jobCommits);
+  }
+  let data = jobCommits[wallet.address.toLowerCase()];
+  let storedRecord = loadCommitRecord(jobId, wallet.address);
+  if (!data && storedRecord) {
+    data = {
+      approve: storedRecord.approve,
+      salt: storedRecord.salt,
+    };
+    jobCommits[wallet.address.toLowerCase()] = { ...data };
+  }
+  const approve =
+    typeof approveOverride === 'boolean' ? approveOverride : data?.approve;
+  const saltSource = saltOverride ?? data?.salt;
+  if (approve === undefined || !saltSource) {
+    throw new Error('no commit found');
+  }
+  let salt: string;
+  try {
+    salt = normaliseSalt(saltSource);
+  } catch (err: any) {
+    throw new Error(`invalid salt provided: ${err?.message || err}`);
+  }
   await checkEnsSubdomain(wallet.address);
   const tx = await (validation as any)
     .connect(wallet)
-    .revealValidation(jobId, data.approve, data.salt, '', []);
+    .revealValidation(jobId, approve, salt, '', []);
   await tx.wait();
   delete jobCommits[wallet.address.toLowerCase()];
+
+  try {
+    updateCommitRecord(jobId, wallet.address, {
+      revealTx: tx.hash,
+      revealedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('failed to update validator commit record on reveal', err);
+  }
+
   return { tx: tx.hash };
 }
