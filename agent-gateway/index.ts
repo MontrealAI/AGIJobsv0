@@ -10,6 +10,7 @@ import {
   stopSweeper,
 } from './utils';
 import { registerEvents } from './events';
+import { handleJobCreatedEvent } from './orchestrator';
 import { startTelemetryService, stopTelemetryService } from './telemetry';
 
 let server: http.Server;
@@ -22,7 +23,9 @@ async function startGateway(): Promise<void> {
 
   server = http.createServer(app);
   wss = new WebSocketServer({ server });
-  registerEvents(wss);
+  registerEvents(wss, {
+    onUnassignedJobCreated: handleJobCreatedEvent,
+  });
   startSweeper();
 
   server.listen(PORT, () => {
