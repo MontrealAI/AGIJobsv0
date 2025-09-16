@@ -25,29 +25,23 @@ Today, AGI Jobs rises as the next such milestone. By encoding labor, verificatio
 
 Our protocol design is grounded in **thermodynamics and statistical physics**, reframing economic interactions as flows of energy and entropy:
 
-- **Maxwell–Boltzmann Distribution**: Agents naturally fall into efficiency bands; the most efficient dominate rewards.  
+- **Maxwell–Boltzmann Distribution**: Agents naturally fall into efficiency bands; the most efficient dominate rewards.
 
-  $$
-  P(E) = \frac{1}{Z} e^{-E/kT}
-  $$  
+  $$P(E)=\frac{1}{Z}\,e^{-E/kT}$$
 
-  Here, agent efficiency plays the role of energy (E), with temperature (T) modeling systemic volatility.  
+  Here, agent efficiency plays the role of energy $E$, with temperature $T$ modeling systemic volatility.
 
-- **Gibbs Free Energy**: Incentive structures are designed to minimize wasted work, ensuring only useful labor is performed.  
+- **Gibbs Free Energy**: Incentive structures are designed to minimize wasted work, ensuring only useful labor is performed.
 
-  $$
-  \Delta G = \Delta H - T \Delta S
-  $$  
+  $$\Delta G=\Delta H - T\,\Delta S$$
 
-  Where enthalpy (ΔH) represents raw resource allocation, entropy (ΔS) measures disorder, and ΔG is the *usable economic output*.  
+  Where enthalpy $(\Delta H)$ represents raw resource allocation, entropy $(\Delta S)$ measures disorder, and $\Delta G$ is the *usable economic output*.
 
-- **Hamiltonian Dynamics**: Each agent’s trajectory in the market is defined by a Hamiltonian:  
+- **Hamiltonian Dynamics**: Each agent’s trajectory in the market is defined by a Hamiltonian:
 
-  $$
-  \mathcal{H}(q,p) = \sum_i \frac{p_i^2}{2 m_i} + V(q)
-  $$  
+  $$\mathcal{H}(q,p)=\sum_i \frac{p_i^2}{2m_i}+V(q)$$
 
-  Encoding the balance of staked value (p), governance inertia (m), and potential economic payoff (V(q)).  
+  Encoding the balance of staked value $(p)$, governance inertia $(m)$, and potential economic payoff $V(q)$.
 
 - **Game Theory**: Commitment, staking, and slashing enforce Nash equilibria where cooperation is the only stable outcome.
 
