@@ -24,6 +24,7 @@ import {
   type OpportunityJobContext,
 } from '../shared/opportunityModel';
 import { recordOpportunityForecast } from './opportunities';
+import { getEnergyTrendMap } from '../shared/energyTrends';
 
 const walletByLabel = new Map<string, Wallet>();
 const walletByAddress = new Map<string, Wallet>();
@@ -190,6 +191,7 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
     return null;
   }
   const matches = await evaluateAgentMatches(analysis, candidatePool);
+  const energyTrends = getEnergyTrendMap();
   if (matches.length === 0) {
     console.warn('No viable agent match found for job', job.jobId);
     return null;
@@ -300,6 +302,34 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
 
       let finalScore =
         match.score + efficiencyBoost + reliabilityBoost - energyPenalty;
+      const trend = energyTrends.get(match.profile.address.toLowerCase());
+      if (trend) {
+        const momentumPenalty = Math.max(0, trend.energyMomentumRatio) * 0.5;
+        const efficiencyAdjustment =
+          trend.efficiencyMomentum > 0
+            ? Math.min(0.3, trend.efficiencyMomentum * 0.3)
+            : Math.max(-0.3, trend.efficiencyMomentum * 0.2);
+        const statusAdjustment =
+          trend.status === 'overheating'
+            ? -0.4
+            : trend.status === 'warming'
+            ? -0.15
+            : trend.status === 'cooling'
+            ? 0.12
+            : 0;
+        finalScore += efficiencyAdjustment - momentumPenalty + statusAdjustment;
+        match.reasons.push(
+          `trend:${trend.status}:${trend.energyMomentumRatio.toFixed(3)}`
+        );
+        if (trend.notes.length) {
+          match.reasons.push(
+            `trend-notes:${trend.notes.slice(0, 2).join('|')}`
+          );
+        }
+        if (trend.anomalyRate > 0.1 && trend.status === 'overheating') {
+          match.reasons.push('trend-anomaly');
+        }
+      }
       const projection = projectionByAgent.get(
         match.profile.address.toLowerCase()
       );
@@ -320,6 +350,7 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
       return {
         match,
         stats,
+        trend,
         finalScore,
         averageEnergy:
           averageEnergy !== null ? averageEnergy : Number.POSITIVE_INFINITY,
@@ -345,6 +376,13 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
           `energy-metrics:${averageEnergy.toFixed(
             2
           )}:${averageEfficiency.toFixed(3)}:${dominantComplexity}`
+        );
+      }
+      if (selectedEntry.trend) {
+        selectedEntry.match.reasons.push(
+          `energy-trend:${
+            selectedEntry.trend.status
+          }:${selectedEntry.trend.energyMomentumRatio.toFixed(3)}`
         );
       }
       return selectedEntry.match;
