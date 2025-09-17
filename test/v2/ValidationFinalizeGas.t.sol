@@ -70,7 +70,7 @@ contract ValidationFinalizeGas is Test {
 
     function _prepareJob() internal returns (uint256 jobId) {
         jobId = 1;
-        IJobRegistry.Job memory job;
+        MockJobRegistry.LegacyJob memory job;
         job.employer = employer;
         job.agent = agent;
         job.status = IJobRegistry.Status.Submitted;
@@ -90,8 +90,18 @@ contract ValidationFinalizeGas is Test {
             address val = validators[i];
             bytes32 salt = bytes32(uint256(i + 1));
             uint256 nonce = validation.jobNonce(jobId);
+            bytes32 outcomeHash = keccak256(
+                abi.encode(jobId, nonce, true, burnTxHash, bytes32(0))
+            );
             bytes32 commitHash = keccak256(
-                abi.encodePacked(jobId, nonce, true, burnTxHash, salt, bytes32(0))
+                abi.encode(
+                    jobId,
+                    outcomeHash,
+                    salt,
+                    val,
+                    block.chainid,
+                    validation.DOMAIN_SEPARATOR()
+                )
             );
             vm.prank(val);
             validation.commitValidation(jobId, commitHash, "", new bytes32[](0));
