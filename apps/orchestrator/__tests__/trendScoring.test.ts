@@ -41,7 +41,10 @@ const defaultFloor = 0.05;
 
 const warmTrend = makeTrend({ status: 'warming', energyMomentumRatio: 0.18 });
 const hotTrend = makeTrend({ status: 'overheating', energyMomentumRatio: 0.6 });
-const coolingTrend = makeTrend({ status: 'cooling', energyMomentumRatio: -0.12 });
+const coolingTrend = makeTrend({
+  status: 'cooling',
+  energyMomentumRatio: -0.12,
+});
 
 // parseTrendStatuses should default to blocking overheating
 const defaultStatuses = parseTrendStatuses(undefined);
@@ -65,14 +68,23 @@ assert.equal(overheating.reason, 'status:overheating');
 // Warming trend within momentum threshold should increase profit floor
 const warm = evaluateTrendForAgent(warmTrend, defaultFloor, baseOptions);
 assert(!warm.blocked, 'warming trend within limit should not block');
-assert(warm.profitFloor > defaultFloor, 'warming trend should raise profit floor');
+assert(
+  warm.profitFloor > defaultFloor,
+  'warming trend should raise profit floor'
+);
 assert(warm.penalty > 0, 'warming trend should apply penalty');
 
 // Cooling trend should lower profit floor but respect minimum bound
 const cooling = evaluateTrendForAgent(coolingTrend, defaultFloor, baseOptions);
 assert(!cooling.blocked, 'cooling trend should not block');
-assert(cooling.profitFloor <= defaultFloor, 'cooling trend should reduce floor');
-assert(cooling.profitFloor >= baseOptions.minProfitFloor, 'floor should respect minimum');
+assert(
+  cooling.profitFloor <= defaultFloor,
+  'cooling trend should reduce floor'
+);
+assert(
+  cooling.profitFloor >= baseOptions.minProfitFloor,
+  'floor should respect minimum'
+);
 assert(cooling.bonus > 0, 'cooling trend should earn bonus');
 
 // Excessive momentum should block even if status allowed

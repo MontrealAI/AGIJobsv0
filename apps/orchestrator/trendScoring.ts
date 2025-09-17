@@ -142,7 +142,8 @@ export function evaluateTrendForAgent(
     penalty = momentumRatio * Math.max(0, options.profitWeight);
     profitFloor += penalty;
   } else if (momentumRatio < 0 && isFiniteNumber(options.coolingBonusWeight)) {
-    const rawBonus = Math.abs(momentumRatio) * Math.max(0, options.coolingBonusWeight);
+    const rawBonus =
+      Math.abs(momentumRatio) * Math.max(0, options.coolingBonusWeight);
     const maxReduction = profitFloor - minProfitFloor;
     if (maxReduction > 0) {
       bonus = Math.min(rawBonus, maxReduction);

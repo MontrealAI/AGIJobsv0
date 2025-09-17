@@ -277,58 +277,58 @@ export async function selectAgent(
     }
   }
 
-interface EvaluatedAgent {
-  agent: AgentInfo;
-  reputation: bigint;
-  predictedEnergy: number;
-  efficiency: number;
-  skillMatches: number;
-  profitMargin: number;
-  profitable: boolean;
-  stakeSufficient: boolean;
-  anomalyRate: number;
-  energySource: string;
-  efficiencySource: string;
-  trendStatus: string;
-  energyMomentumRatio: number;
-  profitThreshold: number;
-  trendPenalty: number;
-  trendBonus: number;
-}
+  interface EvaluatedAgent {
+    agent: AgentInfo;
+    reputation: bigint;
+    predictedEnergy: number;
+    efficiency: number;
+    skillMatches: number;
+    profitMargin: number;
+    profitable: boolean;
+    stakeSufficient: boolean;
+    anomalyRate: number;
+    energySource: string;
+    efficiencySource: string;
+    trendStatus: string;
+    energyMomentumRatio: number;
+    profitThreshold: number;
+    trendPenalty: number;
+    trendBonus: number;
+  }
 
-const formatDiagnostics = (
-  entries: EvaluatedAgent[]
-): SelectionDiagnosticsEntry[] =>
-  entries.map((entry) => ({
-    address: entry.agent.address,
-    reputation: entry.reputation.toString(),
-    predictedEnergy: entry.predictedEnergy,
-    efficiency: entry.efficiency,
-    skillMatches: entry.skillMatches,
-    profitMargin: Number.isFinite(entry.profitMargin)
-      ? entry.profitMargin.toFixed(6)
-      : 'Infinity',
-    profitable: entry.profitable,
-    stakeSufficient: entry.stakeSufficient,
-    anomalyRate: entry.anomalyRate,
-    energySource: entry.energySource,
-    efficiencySource: entry.efficiencySource,
-    trendStatus: entry.trendStatus,
-    energyMomentumRatio: Number.isFinite(entry.energyMomentumRatio)
-      ? entry.energyMomentumRatio.toFixed(4)
-      : undefined,
-    profitThreshold: Number.isFinite(entry.profitThreshold)
-      ? entry.profitThreshold.toFixed(6)
-      : undefined,
-    trendPenalty:
-      entry.trendPenalty > 0 && Number.isFinite(entry.trendPenalty)
-        ? entry.trendPenalty.toFixed(6)
+  const formatDiagnostics = (
+    entries: EvaluatedAgent[]
+  ): SelectionDiagnosticsEntry[] =>
+    entries.map((entry) => ({
+      address: entry.agent.address,
+      reputation: entry.reputation.toString(),
+      predictedEnergy: entry.predictedEnergy,
+      efficiency: entry.efficiency,
+      skillMatches: entry.skillMatches,
+      profitMargin: Number.isFinite(entry.profitMargin)
+        ? entry.profitMargin.toFixed(6)
+        : 'Infinity',
+      profitable: entry.profitable,
+      stakeSufficient: entry.stakeSufficient,
+      anomalyRate: entry.anomalyRate,
+      energySource: entry.energySource,
+      efficiencySource: entry.efficiencySource,
+      trendStatus: entry.trendStatus,
+      energyMomentumRatio: Number.isFinite(entry.energyMomentumRatio)
+        ? entry.energyMomentumRatio.toFixed(4)
         : undefined,
-    trendBonus:
-      entry.trendBonus > 0 && Number.isFinite(entry.trendBonus)
-        ? entry.trendBonus.toFixed(6)
+      profitThreshold: Number.isFinite(entry.profitThreshold)
+        ? entry.profitThreshold.toFixed(6)
         : undefined,
-  }));
+      trendPenalty:
+        entry.trendPenalty > 0 && Number.isFinite(entry.trendPenalty)
+          ? entry.trendPenalty.toFixed(6)
+          : undefined,
+      trendBonus:
+        entry.trendBonus > 0 && Number.isFinite(entry.trendBonus)
+          ? entry.trendBonus.toFixed(6)
+          : undefined,
+    }));
 
   const evaluated: EvaluatedAgent[] = [];
   const energyInsights = getEnergyInsightsSnapshot();
@@ -610,8 +610,7 @@ function resolveTrendOptions(
     profitWeight: overrides?.profitWeight ?? DEFAULT_TREND_PROFIT_WEIGHT,
     coolingBonusWeight:
       overrides?.coolingBonusWeight ?? DEFAULT_TREND_COOLING_WEIGHT,
-    minProfitFloor:
-      overrides?.minProfitFloor ?? DEFAULT_TREND_MIN_PROFIT_FLOOR,
+    minProfitFloor: overrides?.minProfitFloor ?? DEFAULT_TREND_MIN_PROFIT_FLOOR,
     blockedStatuses: overrides?.blockedStatuses
       ? new Set(overrides.blockedStatuses)
       : new Set(DEFAULT_BLOCKED_TREND_STATUSES),
