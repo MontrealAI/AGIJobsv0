@@ -264,7 +264,7 @@ To generate proofs:
 | `JobCreated(uint256 jobId, address employer, uint256 reward)`                                 | `JobRegistry`      | Employer posted a job and escrowed funds. |
 | `JobApplied(uint256 jobId, address agent)`                                                    | `JobRegistry`      | Agent applied for a job.                  |
 | `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)` | `ValidationModule` | Validator submitted hashed vote.          |
-| `ValidationRevealed(uint256 jobId, address validator, bool approve, string subdomain)`        | `ValidationModule` | Validator revealed vote.                  |
+| `ValidationRevealed(uint256 jobId, address validator, bool approve, bytes32 burnTxHash, string subdomain)` | `ValidationModule` | Validator revealed vote.                  |
 | `DisputeRaised(uint256 jobId, address claimant, bytes32 evidenceHash, string evidence)`       | `DisputeModule`    | A job result was contested.               |
 | `DisputeResolved(uint256 jobId, bool employerWins)`                                           | `DisputeModule`    | Moderator issued final ruling.            |
 | `CertificateMinted(address to, uint256 jobId)`                                                | `CertificateNFT`   | NFT minted for a completed job.           |
