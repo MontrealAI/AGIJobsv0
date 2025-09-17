@@ -46,7 +46,9 @@ import { Wallet } from 'ethers';
 import { applyForJob } from '../apps/orchestrator/bidding';
 
 const wallet = new Wallet(PRIVATE_KEY, provider);
-await applyForJob(1, 'data-entry', wallet, REPUTATION_ENGINE_ADDRESS);
+await applyForJob(1, 'data-entry', wallet, REPUTATION_ENGINE_ADDRESS, {
+  subdomain: 'alice', // alice.agent.agi.eth
+});
 ```
 
 `applyForJob` will:
@@ -56,7 +58,9 @@ await applyForJob(1, 'data-entry', wallet, REPUTATION_ENGINE_ADDRESS);
 3. Analyse job metadata (category, skills, thermodynamic hints and historical energy telemetry) to rank agents. The orchestrator first filters out jobs whose required skills are not advertised by any agent. It then ignores jobs where the required stake exceeds the available collateral across the matching pool.
 4. Score the remaining agents by combining category alignment, configured/off-chain reputation, measured success rate, predicted energy usage, stake adequacy and efficiency metrics. The highest scoring agent becomes the candidate.
 5. Ensure the chosen agent has sufficient stake, first attempting to top up via `StakeManager.stake`. If the contract does not expose the new entry point the coordinator falls back to `depositStake`. Jobs that cannot satisfy the requirement after this step are skipped.
-6. Submit the job application on behalf of the selected agent.
+6. Resolve the agent’s ENS label from orchestrator identity files (or from the
+   supplied `subdomain` option) and submit the job application on behalf of the
+   selected agent.
 
 ## Offline analysis CLI
 

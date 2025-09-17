@@ -1,4 +1,4 @@
-import { ethers, Contract, Provider, Wallet } from 'ethers';
+import { ethers, Contract, Provider, Wallet, JsonRpcProvider } from 'ethers';
 import fs from 'fs';
 import path from 'path';
 import agialphaConfig from '../../config/agialpha.json';
@@ -24,6 +24,7 @@ import {
   type TrendEvaluationOptions,
 } from './trendScoring';
 import { EnergyPolicy, type CategoryEnergyThresholds } from './energyPolicy';
+import { IdentityManager } from './identity';
 
 // Minimal ABIs for required contract interactions
 const JOB_REGISTRY_ABI = [
@@ -88,6 +89,14 @@ export interface AgentInfo {
 }
 
 export type CapabilityMatrix = Record<string, AgentInfo[]>;
+
+export interface ApplyForJobOptions {
+  matrixPath?: string;
+  provider?: Provider;
+  subdomain?: string;
+  identityDirectory?: string;
+  skipEnsVerification?: boolean;
+}
 
 export function loadCapabilityMatrix(
   matrixPath = path.resolve(__dirname, '../../config/agents.json')
@@ -642,17 +651,46 @@ export async function applyForJob(
   category: string,
   wallet: Wallet,
   reputationEngineAddress: string,
-  matrixPath = path.resolve(__dirname, '../../config/agents.json'),
-  provider: Provider = new ethers.JsonRpcProvider(RPC_URL)
+  matrixPathOrOptions?: string | ApplyForJobOptions,
+  providerOverride?: Provider
 ): Promise<void> {
-  const requirements = await fetchJobRequirements(jobId, provider);
+  const defaultMatrixPath = path.resolve(__dirname, '../../config/agents.json');
+  let matrixPath = defaultMatrixPath;
+  let provider: Provider | undefined = providerOverride;
+  let subdomain: string | undefined;
+  let identityDirectory: string | undefined;
+  let skipEnsVerification = true;
+
+  if (
+    typeof matrixPathOrOptions === 'string' ||
+    matrixPathOrOptions === undefined
+  ) {
+    if (matrixPathOrOptions) {
+      matrixPath = path.resolve(matrixPathOrOptions);
+    }
+  } else {
+    if (matrixPathOrOptions.matrixPath) {
+      matrixPath = path.resolve(matrixPathOrOptions.matrixPath);
+    }
+    if (matrixPathOrOptions.provider) {
+      provider = matrixPathOrOptions.provider;
+    }
+    subdomain = matrixPathOrOptions.subdomain;
+    identityDirectory = matrixPathOrOptions.identityDirectory;
+    if (typeof matrixPathOrOptions.skipEnsVerification === 'boolean') {
+      skipEnsVerification = matrixPathOrOptions.skipEnsVerification;
+    }
+  }
+
+  const resolvedProvider = provider ?? new ethers.JsonRpcProvider(RPC_URL);
+  const requirements = await fetchJobRequirements(jobId, resolvedProvider);
   const matrix = loadCapabilityMatrix(matrixPath);
   const decision = await selectAgent(
     category,
     matrix,
     reputationEngineAddress,
     {
-      provider,
+      provider: resolvedProvider,
       jobId,
       reward: requirements.reward,
       requiredStake: requirements.stake,
@@ -669,12 +707,78 @@ export async function applyForJob(
   if (chosen.address.toLowerCase() !== wallet.address.toLowerCase()) {
     throw new Error('Wallet not selected for this category');
   }
-  await ensureStake(wallet, requirements.stake, provider);
+  await ensureStake(wallet, requirements.stake, resolvedProvider);
+  const agentSubdomain = await resolveAgentSubdomain(wallet, resolvedProvider, {
+    providedSubdomain: subdomain,
+    identityDirectory,
+    skipEnsVerification,
+  });
   const registry = new Contract(
     JOB_REGISTRY_ADDRESS,
     JOB_REGISTRY_ABI,
-    wallet.connect(provider)
+    wallet.connect(resolvedProvider)
   );
-  const tx = await registry.applyForJob(jobId, '', []);
+  const tx = await registry.applyForJob(jobId, agentSubdomain, []);
   await tx.wait();
+}
+
+interface ResolveAgentSubdomainOptions {
+  providedSubdomain?: string;
+  identityDirectory?: string;
+  skipEnsVerification?: boolean;
+}
+
+async function resolveAgentSubdomain(
+  wallet: Wallet,
+  provider: Provider,
+  options: ResolveAgentSubdomainOptions
+): Promise<string> {
+  if (options.providedSubdomain) {
+    return options.providedSubdomain;
+  }
+  const jsonProvider = asJsonRpcProvider(provider);
+  const manager = new IdentityManager(jsonProvider, {
+    skipEnsVerification: options.skipEnsVerification !== false,
+  });
+  try {
+    await manager.load({
+      directory: options.identityDirectory,
+      skipEnsVerification: options.skipEnsVerification !== false,
+    });
+  } catch (err) {
+    throw new Error(
+      `Failed to load agent identities to determine ENS subdomain: ${String(
+        err
+      )}`
+    );
+  }
+  const identity = manager.getByAddress(wallet.address);
+  if (identity) {
+    const label =
+      extractEnsLabel(identity.ens) ?? sanitizeLabel(identity.label);
+    if (label) {
+      return label;
+    }
+  }
+  throw new Error(
+    'Unable to determine ENS subdomain for wallet. Provide it via options.subdomain or include identity metadata.'
+  );
+}
+
+function asJsonRpcProvider(provider: Provider): JsonRpcProvider {
+  return provider instanceof ethers.JsonRpcProvider
+    ? provider
+    : new ethers.JsonRpcProvider(RPC_URL);
+}
+
+function extractEnsLabel(ens?: string): string | undefined {
+  if (!ens) return undefined;
+  const [label] = ens.split('.');
+  return label?.trim() || undefined;
+}
+
+function sanitizeLabel(label?: string): string | undefined {
+  if (!label) return undefined;
+  const trimmed = label.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
