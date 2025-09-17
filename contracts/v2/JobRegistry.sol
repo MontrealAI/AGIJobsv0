@@ -273,7 +273,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     uint256 public expirationGracePeriod;
 
     // module configuration events
-    event ModuleUpdated(string module, address newAddress);
+    event ModuleUpdated(string module, address indexed newAddress);
     event ValidationModuleUpdated(address module);
     event StakeManagerUpdated(address manager);
     event ReputationEngineUpdated(address engine);

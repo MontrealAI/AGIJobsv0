@@ -55,7 +55,7 @@ interface IJobRegistry {
     error BurnNotConfirmed();
 
     // module configuration
-    event ModuleUpdated(string module, address newAddress);
+    event ModuleUpdated(string module, address indexed newAddress);
     event ValidationModuleUpdated(address module);
     event ReputationEngineUpdated(address engine);
     event StakeManagerUpdated(address manager);
