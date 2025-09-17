@@ -332,9 +332,7 @@ describe('job finalization integration', function () {
 
   it('allows employers to claim timeout for applied jobs', async () => {
     const grace = 300;
-    await registry
-      .connect(owner)
-      .setExpirationGracePeriod(BigInt(grace));
+    await registry.connect(owner).setExpirationGracePeriod(BigInt(grace));
 
     const employerInitial = await token.balanceOf(employer.address);
 
@@ -358,8 +356,9 @@ describe('job finalization integration', function () {
     const jobId = 1;
     await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
 
-    await expect(registry.connect(employer).claimTimeout(jobId))
-      .to.be.revertedWithCustomError(registry, 'CannotExpire');
+    await expect(
+      registry.connect(employer).claimTimeout(jobId)
+    ).to.be.revertedWithCustomError(registry, 'CannotExpire');
 
     const expiration = deadline + BigInt(grace);
     await time.increaseTo(expiration + 1n);
@@ -383,8 +382,9 @@ describe('job finalization integration', function () {
     const stats = await registry.employerStats(employer.address);
     expect(stats.failed).to.equal(1n);
 
-    await expect(registry.connect(employer).claimTimeout(jobId))
-      .to.be.revertedWithCustomError(registry, 'InvalidJobState');
+    await expect(
+      registry.connect(employer).claimTimeout(jobId)
+    ).to.be.revertedWithCustomError(registry, 'InvalidJobState');
   });
 
   it('keeps modules tax exempt with zero balances after finalization', async () => {
