@@ -694,6 +694,32 @@ describe('StakeManager', function () {
     ).to.be.revertedWithCustomError(stakeManager, 'InvalidTreasury');
   });
 
+  it('emits ModulesUpdated when updating modules individually', async () => {
+    const VersionMock = await ethers.getContractFactory(
+      'contracts/v2/mocks/VersionMock.sol:VersionMock'
+    );
+    const jobRegistryMock = await VersionMock.deploy(2);
+    const disputeModuleMock = await VersionMock.deploy(2);
+    const jobRegistryAddress = await jobRegistryMock.getAddress();
+    const disputeModuleAddress = await disputeModuleMock.getAddress();
+
+    await expect(
+      stakeManager.connect(owner).setJobRegistry(jobRegistryAddress)
+    )
+      .to.emit(stakeManager, 'JobRegistryUpdated')
+      .withArgs(jobRegistryAddress)
+      .and.to.emit(stakeManager, 'ModulesUpdated')
+      .withArgs(jobRegistryAddress, ethers.ZeroAddress);
+
+    await expect(
+      stakeManager.connect(owner).setDisputeModule(disputeModuleAddress)
+    )
+      .to.emit(stakeManager, 'DisputeModuleUpdated')
+      .withArgs(disputeModuleAddress)
+      .and.to.emit(stakeManager, 'ModulesUpdated')
+      .withArgs(jobRegistryAddress, disputeModuleAddress);
+  });
+
   it('reverts slashing when treasury removed from allowlist', async () => {
     const JobRegistry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'

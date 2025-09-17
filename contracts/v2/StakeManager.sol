@@ -554,6 +554,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         jobRegistry = _jobRegistry;
         emit JobRegistryUpdated(_jobRegistry);
+        emit ModulesUpdated(jobRegistry, disputeModule);
     }
 
     /// @notice set the dispute module authorized to manage dispute fees
@@ -564,6 +565,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
         disputeModule = module;
         emit DisputeModuleUpdated(module);
+        emit ModulesUpdated(jobRegistry, disputeModule);
     }
 
     /// @notice set the validation module used to source validator lists
