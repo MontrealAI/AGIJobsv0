@@ -141,6 +141,12 @@ interface IValidationModule {
     /// @notice Update percentage of stake slashed for incorrect validator votes
     function setValidatorSlashingPct(uint256 pct) external;
 
+    /// @notice Configure the penalty applied when validators fail to reveal.
+    function setNonRevealPenalty(uint256 penaltyBps, uint256 banBlocks) external;
+
+    /// @notice Update the cool-off delay before early finalization is permitted.
+    function setEarlyFinalizeDelay(uint256 delay) external;
+
     /// @notice Map validators to ENS subdomains for selection
     function setValidatorSubdomains(
         address[] calldata accounts,
