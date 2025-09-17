@@ -14,6 +14,7 @@ import {
   type AgentEnergyInsight,
   type JobEnergyInsight,
 } from '../../shared/energyInsights';
+import { EnergyPolicy, type CategoryEnergyThresholds } from './energyPolicy';
 
 // Minimal ABIs for required contract interactions
 const JOB_REGISTRY_ABI = [
@@ -44,7 +45,7 @@ const DEFAULT_ENERGY_COST_PER_UNIT = parseNumericEnv(
   1
 );
 
-const DEFAULT_MIN_PROFIT_MARGIN = parseNumericEnv(
+export const DEFAULT_MIN_PROFIT_MARGIN = parseNumericEnv(
   process.env.MIN_PROFIT_MARGIN,
   0.05
 );
@@ -131,6 +132,7 @@ export interface SelectAgentOptions {
   minProfitMargin?: number;
   energyCostPerUnit?: number;
   includeDiagnostics?: boolean;
+  energyPolicy?: EnergyPolicy;
 }
 
 export interface SelectionDiagnosticsEntry {
@@ -151,6 +153,7 @@ export interface SelectionDiagnostics {
   evaluated: SelectionDiagnosticsEntry[];
   considered: SelectionDiagnosticsEntry[];
   pool: SelectionDiagnosticsEntry[];
+  policy?: CategoryEnergyThresholds;
 }
 
 export interface SelectionResult {
@@ -184,16 +187,27 @@ export async function selectAgent(
 ): Promise<SelectionResult> {
   const candidates = capabilityMatrix[category];
   const includeDiagnostics = options.includeDiagnostics === true;
+  const policyThresholds =
+    options.energyPolicy?.getThresholds(category) ?? null;
   const emptyDiagnostics: SelectionDiagnostics | undefined = includeDiagnostics
-    ? { evaluated: [], considered: [], pool: [] }
+    ? {
+        evaluated: [],
+        considered: [],
+        pool: [],
+        ...(policyThresholds ? { policy: policyThresholds } : {}),
+      }
     : undefined;
   if (!candidates || candidates.length === 0) {
-    return { agent: null, diagnostics: emptyDiagnostics };
+    return {
+      agent: null,
+      skipReason: 'no-candidates',
+      diagnostics: emptyDiagnostics,
+    };
   }
   const provider = options.provider ?? new ethers.JsonRpcProvider(RPC_URL);
-  const minEfficiency =
+  let minEfficiency =
     options.minEfficiencyScore ?? DEFAULT_MIN_EFFICIENCY_SCORE;
-  const maxEnergy = options.maxEnergyScore ?? DEFAULT_MAX_ENERGY_SCORE;
+  let maxEnergy = options.maxEnergyScore ?? DEFAULT_MAX_ENERGY_SCORE;
   const jobId = options.jobId;
   const requiredSkills = new Set(
     (options.requiredSkills ?? [])
@@ -221,7 +235,31 @@ export async function selectAgent(
     : null;
   const energyCostPerUnit =
     options.energyCostPerUnit ?? DEFAULT_ENERGY_COST_PER_UNIT;
-  const minProfitMargin = options.minProfitMargin ?? DEFAULT_MIN_PROFIT_MARGIN;
+  let minProfitMargin = options.minProfitMargin ?? DEFAULT_MIN_PROFIT_MARGIN;
+
+  if (policyThresholds) {
+    if (Number.isFinite(policyThresholds.minEfficiencyScore)) {
+      minEfficiency = Math.max(
+        minEfficiency,
+        policyThresholds.minEfficiencyScore
+      );
+    }
+    if (
+      Number.isFinite(policyThresholds.maxEnergyScore) &&
+      policyThresholds.maxEnergyScore > 0
+    ) {
+      maxEnergy = Math.min(maxEnergy, policyThresholds.maxEnergyScore);
+    }
+    if (
+      Number.isFinite(policyThresholds.recommendedProfitMargin) &&
+      policyThresholds.recommendedProfitMargin > 0
+    ) {
+      minProfitMargin = Math.max(
+        minProfitMargin,
+        policyThresholds.recommendedProfitMargin
+      );
+    }
+  }
 
   interface EvaluatedAgent {
     agent: AgentInfo;
@@ -409,7 +447,11 @@ export async function selectAgent(
   }
 
   if (evaluated.length === 0) {
-    return { agent: null, diagnostics: emptyDiagnostics };
+    return {
+      agent: null,
+      skipReason: 'filtered-out',
+      diagnostics: emptyDiagnostics,
+    };
   }
 
   const candidatesWithStake = evaluated.filter(
@@ -429,6 +471,7 @@ export async function selectAgent(
           evaluated: formatDiagnostics(evaluated),
           considered: formatDiagnostics(considered),
           pool: [],
+          ...(policyThresholds ? { policy: policyThresholds } : {}),
         }
       : undefined;
     return { agent: null, skipReason: 'unprofitable', diagnostics };
@@ -457,6 +500,7 @@ export async function selectAgent(
         evaluated: formatDiagnostics(evaluated),
         considered: formatDiagnostics(considered),
         pool: formatDiagnostics(pool),
+        ...(policyThresholds ? { policy: policyThresholds } : {}),
       }
     : undefined;
 

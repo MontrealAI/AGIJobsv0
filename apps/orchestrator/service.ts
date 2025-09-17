@@ -18,6 +18,8 @@ import {
   fetchJobRequirements,
   ensureStake,
   selectAgent,
+  DEFAULT_MIN_PROFIT_MARGIN,
+  type SelectAgentOptions,
 } from './bidding';
 import { auditLog } from './audit';
 import { AuditAnchoringService, AuditAnchoringOptions } from './anchoring';
@@ -36,6 +38,7 @@ import {
   OnChainJobSnapshot,
 } from './disputes';
 import { getJobEnergyLog } from './metrics';
+import { EnergyPolicy, type EnergyPolicyOptions } from './energyPolicy';
 
 interface AppliedJobState {
   identity: AgentIdentity;
@@ -156,6 +159,7 @@ export class MetaOrchestrator {
   private orchestratorIdentity: AgentIdentity | undefined;
   private validatorIdentities: AgentIdentity[] = [];
   private auditAnchor: AuditAnchoringService | null = null;
+  private energyPolicy: EnergyPolicy | null = null;
   private readonly appliedJobs = new Map<string, AppliedJobState>();
   private readonly assignmentTimers = new Map<string, NodeJS.Timeout>();
   private readonly commitTimers = new Map<string, NodeJS.Timeout>();
@@ -188,6 +192,7 @@ export class MetaOrchestrator {
     );
     await this.instantiateContracts();
     await this.initializeAuditAnchoring();
+    this.initializeEnergyPolicy();
     this.loadCompletedEvidenceCache();
   }
 
@@ -277,6 +282,115 @@ export class MetaOrchestrator {
 
     this.auditAnchor = new AuditAnchoringService(options);
     await this.auditAnchor.initialize();
+  }
+
+  private initializeEnergyPolicy(): void {
+    const disabled = process.env.DISABLE_DYNAMIC_ENERGY_POLICY;
+    if (disabled && disabled.trim().toLowerCase() !== '' && disabled !== '0') {
+      const normalized = disabled.trim().toLowerCase();
+      if (normalized === '1' || normalized === 'true' || normalized === 'yes') {
+        this.energyPolicy = null;
+        auditLog('energyPolicy.disabled', {
+          actor: this.orchestratorIdentity?.address,
+          details: {},
+        });
+        return;
+      }
+    }
+
+    const parseNumeric = (value: string | undefined): number | undefined => {
+      if (value === undefined) return undefined;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
+    const options: EnergyPolicyOptions = {};
+    const efficiencyFloor = parseNumeric(
+      process.env.ENERGY_POLICY_MIN_EFFICIENCY
+    );
+    if (efficiencyFloor !== undefined) {
+      options.efficiencyFloor = efficiencyFloor;
+    }
+    const maxEnergy = parseNumeric(process.env.ENERGY_POLICY_MAX_ENERGY);
+    if (maxEnergy !== undefined) {
+      options.energyCeiling = maxEnergy;
+    }
+    const efficiencySigma = parseNumeric(
+      process.env.ENERGY_POLICY_EFFICIENCY_SIGMA
+    );
+    if (efficiencySigma !== undefined) {
+      options.efficiencyStdMultiplier = efficiencySigma;
+    }
+    const energySigma = parseNumeric(process.env.ENERGY_POLICY_ENERGY_SIGMA);
+    if (energySigma !== undefined) {
+      options.energyStdMultiplier = energySigma;
+    }
+    const efficiencyBias = parseNumeric(
+      process.env.ENERGY_POLICY_EFFICIENCY_BIAS
+    );
+    if (efficiencyBias !== undefined) {
+      options.efficiencyBias = efficiencyBias;
+    }
+    const energyBias = parseNumeric(process.env.ENERGY_POLICY_ENERGY_BIAS);
+    if (energyBias !== undefined) {
+      options.energyBias = energyBias;
+    }
+    const lookback = parseNumeric(process.env.ENERGY_POLICY_LOOKBACK);
+    if (lookback !== undefined) {
+      options.lookbackJobs = Math.trunc(lookback);
+    }
+    const refreshMs = parseNumeric(process.env.ENERGY_POLICY_REFRESH_MS);
+    if (refreshMs !== undefined) {
+      options.refreshIntervalMs = Math.trunc(refreshMs);
+    }
+    const fallback = process.env.ENERGY_POLICY_FALLBACK_GLOBAL;
+    if (fallback !== undefined) {
+      const normalized = fallback.trim().toLowerCase();
+      options.fallbackToGlobal = !['0', 'false', 'no'].includes(normalized);
+    }
+    const anomalyWeight = parseNumeric(
+      process.env.ENERGY_POLICY_ANOMALY_WEIGHT
+    );
+    if (anomalyWeight !== undefined) {
+      options.anomalyProfitWeight = anomalyWeight;
+    }
+    const volatilityWeight = parseNumeric(
+      process.env.ENERGY_POLICY_VOLATILITY_WEIGHT
+    );
+    if (volatilityWeight !== undefined) {
+      options.volatilityProfitWeight = volatilityWeight;
+    }
+    const maxProfitMargin = parseNumeric(
+      process.env.ENERGY_POLICY_MAX_PROFIT_MARGIN
+    );
+    if (maxProfitMargin !== undefined) {
+      options.maxProfitMargin = maxProfitMargin;
+    }
+
+    const baseProfit = parseNumeric(
+      process.env.ENERGY_POLICY_BASE_PROFIT_MARGIN
+    );
+    options.baseProfitMargin =
+      baseProfit !== undefined ? baseProfit : DEFAULT_MIN_PROFIT_MARGIN;
+
+    try {
+      this.energyPolicy = new EnergyPolicy(options);
+      this.energyPolicy.refresh();
+      auditLog('energyPolicy.initialized', {
+        actor: this.orchestratorIdentity?.address,
+        details: {
+          baseProfitMargin: this.energyPolicy.getBaseProfitMargin(),
+          efficiencyFloor: options.efficiencyFloor,
+          energyCeiling: options.energyCeiling,
+          lookbackJobs: options.lookbackJobs,
+          refreshIntervalMs: options.refreshIntervalMs,
+          fallbackToGlobal: options.fallbackToGlobal,
+        },
+      });
+    } catch (err) {
+      console.warn('Failed to initialize energy policy', err);
+      this.energyPolicy = null;
+    }
   }
 
   private loadCompletedEvidenceCache(): void {
@@ -482,7 +596,11 @@ export class MetaOrchestrator {
         );
         const requiredSkills =
           spec?.requiredSkills ?? classification.spec?.requiredSkills ?? [];
-        const decision = await selectAgent(category, matrix, reputationEngine, {
+        const baseProfitMargin =
+          spec?.thermodynamics?.minProfitMargin ??
+          classification.spec?.thermodynamics?.minProfitMargin ??
+          this.energyPolicy?.getBaseProfitMargin();
+        const selectionOptions = {
           provider,
           jobId: summary.jobId,
           minEfficiencyScore:
@@ -492,7 +610,17 @@ export class MetaOrchestrator {
           reward: requirements.reward,
           requiredStake: requirements.stake,
           stakeManagerAddress: this.config.stakeManagerAddress,
-        });
+          energyPolicy: this.energyPolicy ?? undefined,
+        } satisfies SelectAgentOptions;
+        if (baseProfitMargin !== undefined) {
+          selectionOptions.minProfitMargin = baseProfitMargin;
+        }
+        const decision = await selectAgent(
+          category,
+          matrix,
+          reputationEngine,
+          selectionOptions
+        );
         if (decision.skipReason) {
           return { identity: null, skipReason: decision.skipReason };
         }

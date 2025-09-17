@@ -32,6 +32,7 @@ export interface JobSpec {
   thermodynamics?: {
     maxEnergy?: number;
     minEfficiency?: number;
+    minProfitMargin?: number;
   };
   pipeline?: { stages: JobStageSpec[] } | JobStageSpec[];
   subtasks?: Array<{ description: string; reward: string | number }>;
