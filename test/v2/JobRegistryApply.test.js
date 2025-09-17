@@ -4,7 +4,7 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('JobRegistry agent gating', function () {
   let owner, employer, agent;
-  let registry, rep, verifier, policy;
+  let registry, rep, verifier, policy, stakeManager;
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
@@ -12,7 +12,7 @@ describe('JobRegistry agent gating', function () {
     const Stake = await ethers.getContractFactory(
       'contracts/legacy/MockV2.sol:MockStakeManager'
     );
-    const stakeManager = await Stake.deploy();
+    stakeManager = await Stake.deploy();
 
     const Rep = await ethers.getContractFactory(
       'contracts/v2/ReputationEngine.sol:ReputationEngine'
@@ -121,5 +121,22 @@ describe('JobRegistry agent gating', function () {
     await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
       .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
       .withArgs(agent.address);
+  });
+
+  it('requires agents to meet the minimum stake', async () => {
+    await verifier.addAdditionalAgent(agent.address);
+    await stakeManager.setMinStake(1);
+
+    const jobId = await createJob();
+
+    await expect(
+      registry.connect(agent).applyForJob(jobId, 'a', [])
+    ).to.be.revertedWithCustomError(registry, 'AgentStakeTooLow');
+
+    await stakeManager.setStake(agent.address, 0, 1);
+
+    await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
+      .to.emit(registry, 'JobApplied')
+      .withArgs(jobId, agent.address, 'a');
   });
 });

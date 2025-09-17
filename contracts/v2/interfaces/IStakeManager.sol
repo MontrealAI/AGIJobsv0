@@ -177,6 +177,9 @@ interface IStakeManager {
     /// @notice Cap on total payout percentage across AGI types
     function maxTotalPayoutPct() external view returns (uint256);
 
+    /// @notice Minimum stake required for agents and validators
+    function minStake() external view returns (uint256);
+
     /// @notice ERC20 token used for staking operations
     function token() external view returns (IERC20);
 
