@@ -54,6 +54,8 @@ error InvalidBurnReceipt();
 error AlreadyTallied();
 error RevealPending();
 error UnauthorizedCaller();
+error EmptyCommitHash();
+error NotOwnerOrPauser();
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -65,6 +67,12 @@ error UnauthorizedCaller();
 contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+
+    /// @notice Domain separator used to bind commit hashes to this deployment.
+    bytes32 public immutable DOMAIN_SEPARATOR;
+
+    bytes32 private constant _DOMAIN_TYPEHASH =
+        keccak256("ValidationModuleDomain(uint256 chainId,address module)");
 
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
@@ -187,10 +195,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     );
 
     modifier onlyOwnerOrPauser() {
-        require(
-            msg.sender == owner() || msg.sender == pauser,
-            "owner or pauser only"
-        );
+        if (msg.sender != owner() && msg.sender != pauser) revert NotOwnerOrPauser();
         _;
     }
 
@@ -216,6 +221,10 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 _maxValidators,
         address[] memory _validatorPool
     ) Ownable(msg.sender) {
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(_DOMAIN_TYPEHASH, block.chainid, address(this))
+        );
+
         if (address(_jobRegistry) != address(0)) {
             jobRegistry = _jobRegistry;
             emit JobRegistryUpdated(address(_jobRegistry));
@@ -1019,6 +1028,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             block.timestamp + validatorAuthCacheDuration;
         if (validatorStakes[jobId][msg.sender] == 0) revert NoStake();
         uint256 nonce = jobNonce[jobId];
+        if (commitHash == bytes32(0)) revert EmptyCommitHash();
         if (commitments[jobId][msg.sender][nonce] != bytes32(0))
             revert AlreadyCommitted();
 
@@ -1098,18 +1108,20 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
             revert InvalidBurnReceipt();
         bytes32 specHash = jobRegistry.getSpecHash(jobId);
-        if (
-            keccak256(
-                abi.encodePacked(
-                    jobId,
-                    nonce,
-                    approve,
-                    burnTxHash,
-                    salt,
-                    specHash
-                )
-            ) != commitHash
-        ) revert InvalidReveal();
+        bytes32 outcomeHash = keccak256(
+            abi.encode(jobId, nonce, approve, burnTxHash, specHash)
+        );
+        bytes32 expectedCommit = keccak256(
+            abi.encode(
+                jobId,
+                outcomeHash,
+                salt,
+                msg.sender,
+                block.chainid,
+                DOMAIN_SEPARATOR
+            )
+        );
+        if (expectedCommit != commitHash) revert InvalidReveal();
 
         uint256 stake = validatorStakes[jobId][msg.sender];
         if (stake == 0) revert NoStake();
