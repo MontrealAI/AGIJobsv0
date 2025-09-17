@@ -1352,24 +1352,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 burnRate = address(stakeManager) != address(0)
             ? stakeManager.burnPct()
             : 0;
-        if (!isGov && (job.feePct > 0 || burnRate > 0)) {
-            if (!job.burnConfirmed) revert BurnNotConfirmed();
-            uint256 feeDue = (uint256(job.reward) * job.feePct) / 100;
-            uint256 validatorReward = validatorRewardPct > 0
-                ? (uint256(job.reward) * validatorRewardPct) / 100
-                : 0;
-            uint256 burnDue =
-                ((uint256(job.reward) - validatorReward) * burnRate) / 100;
-            uint256 expectedBurn = feeDue + burnDue;
-            if (uint256(job.burnReceiptAmount) < expectedBurn) {
-                emit BurnDiscrepancy(
-                    jobId,
-                    job.burnReceiptAmount,
-                    expectedBurn
-                );
-                revert BurnAmountTooLow();
-            }
-        }
         bool agentBlacklisted;
         bool employerBlacklisted;
         if (address(reputationEngine) != address(0)) {
@@ -1452,6 +1434,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                         );
                     } else {
                         stakeManager.releaseStake(job.agent, uint256(job.stake));
+                    }
+                }
+                if (job.burnConfirmed && burnRate > 0) {
+                    uint256 expectedBurn = (agentAmount * burnRate) / 100;
+                    if (uint256(job.burnReceiptAmount) != expectedBurn) {
+                        emit BurnDiscrepancy(
+                            jobId,
+                            job.burnReceiptAmount,
+                            expectedBurn
+                        );
                     }
                 }
             }

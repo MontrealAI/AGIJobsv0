@@ -6,8 +6,9 @@ const { address: AGIALPHA } = require('../../config/agialpha.json');
 
 describe('JobRegistry burn receipt validation', function () {
   let owner, employer, agent;
-  let token, stakeManager, validation, registry, identity;
+  let token, stakeManager, validation, registry, identity, registrySigner;
   const reward = 100n;
+  const mintAmount = 1000n;
 
   beforeEach(async () => {
     [owner, employer, agent] = await ethers.getSigners();
@@ -54,6 +55,13 @@ describe('JobRegistry burn receipt validation', function () {
       [],
       owner.address
     );
+    const registryAddress = await registry.getAddress();
+    await network.provider.send('hardhat_setBalance', [
+      registryAddress,
+      '0x56BC75E2D63100000',
+    ]);
+    registrySigner = await ethers.getImpersonatedSigner(registryAddress);
+
     const Identity = await ethers.getContractFactory(
       'contracts/v2/mocks/IdentityRegistryMock.sol:IdentityRegistryMock'
     );
@@ -74,16 +82,18 @@ describe('JobRegistry burn receipt validation', function () {
     await stakeManager.connect(owner).setBurnPct(5);
     await validation.setJobRegistry(await registry.getAddress());
 
-    await token.mint(employer.address, 1000n);
+    await token.mint(employer.address, mintAmount);
     await token
       .connect(employer)
-      .approve(await stakeManager.getAddress(), 1000n);
+      .approve(await stakeManager.getAddress(), mintAmount);
   });
 
-  async function runLifecycle(
-    burnAmount,
-    { submitReceipt = true, confirmBurn = true } = {}
-  ) {
+  async function runLifecycle({
+    topUpBurn = false,
+    submitReceipt = false,
+    confirmBurn = false,
+    burnReceiptAmount,
+  } = {}) {
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.keccak256(ethers.toUtf8Bytes('spec'));
     await registry
@@ -97,48 +107,86 @@ describe('JobRegistry burn receipt validation', function () {
     await validation.setResult(true);
     await validation.finalize(jobId);
 
+    const jobKey = ethers.zeroPadValue(ethers.toBeHex(jobId), 32);
+    const jobData = await registry.jobs(jobId);
+    const rewardValue = BigInt(jobData.reward.toString());
+    const agentPctValue = BigInt(jobData.agentPct.toString());
+    const agentPct = agentPctValue === 0n ? 100n : agentPctValue;
+    const validatorPctValue = BigInt(
+      (await registry.validatorRewardPct()).toString()
+    );
+    const burnPctValue = BigInt((await stakeManager.burnPct()).toString());
+    const rewardAfterValidator =
+      rewardValue - (rewardValue * validatorPctValue) / 100n;
+    const expectedBurn =
+      (rewardAfterValidator * agentPct * burnPctValue) / (100n * 100n);
+
+    if (topUpBurn && expectedBurn > 0n) {
+      await stakeManager
+        .connect(registrySigner)
+        .lockReward(jobKey, employer.address, expectedBurn);
+    }
+
     const burnTx = ethers.keccak256(ethers.toUtf8Bytes('burn'));
     if (submitReceipt) {
+      const receiptAmount =
+        burnReceiptAmount !== undefined ? burnReceiptAmount : expectedBurn;
       await registry
         .connect(employer)
-        .submitBurnReceipt(jobId, burnTx, burnAmount, 0);
+        .submitBurnReceipt(jobId, burnTx, receiptAmount, 0);
       if (confirmBurn) {
         await registry.connect(employer).confirmEmployerBurn(jobId, burnTx);
       }
     }
-    return { jobId, burnTx };
+    return { jobId, jobKey, burnTx, expectedBurn };
   }
 
-  it('finalizes with sufficient burn receipt', async () => {
-    const expectedBurn = 10n; // reward 100, fee 5% + burn 5% => 10
-    const { jobId } = await runLifecycle(expectedBurn);
-    await expect(registry.connect(employer).finalize(jobId)).to.emit(
-      registry,
-      'JobFinalized'
-    );
-  });
-
-  it('reverts when burn receipt not confirmed', async () => {
-    const expectedBurn = 10n;
-    const { jobId, burnTx } = await runLifecycle(expectedBurn, {
-      confirmBurn: false,
+  it('burns escrowed tokens and charges the employer on finalize', async () => {
+    const { jobId, jobKey, expectedBurn } = await runLifecycle({
+      topUpBurn: true,
     });
 
-    await expect(
-      registry.connect(employer).finalize(jobId)
-    ).to.be.revertedWithCustomError(registry, 'BurnNotConfirmed');
+    expect(expectedBurn).to.be.gt(0n);
+    const supplyBefore = await token.totalSupply();
 
-    await registry.connect(employer).confirmEmployerBurn(jobId, burnTx);
-    await expect(registry.connect(employer).finalize(jobId)).to.emit(
-      registry,
-      'JobFinalized'
+    const finalizeTx = registry.connect(employer).finalize(jobId);
+    await expect(finalizeTx)
+      .to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobKey, expectedBurn)
+      .and.to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, agent.address);
+
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(expectedBurn);
+
+    const jobData = await registry.jobs(jobId);
+    const rewardValue = BigInt(jobData.reward.toString());
+    const feePct = BigInt(jobData.feePct.toString());
+    const fee = (rewardValue * feePct) / 100n;
+    const employerBalance = await token.balanceOf(employer.address);
+    expect(employerBalance).to.equal(
+      mintAmount - rewardValue - fee - expectedBurn
     );
   });
 
-  it('reverts when burn receipt amount is too low', async () => {
-    const { jobId } = await runLifecycle(5n); // below expected 10
-    await expect(
-      registry.connect(employer).finalize(jobId)
-    ).to.be.revertedWithCustomError(registry, 'BurnAmountTooLow');
+  it('flags mismatched burn receipts without blocking finalize', async () => {
+    const { jobId, jobKey, burnTx, expectedBurn } = await runLifecycle({
+      topUpBurn: true,
+    });
+
+    expect(expectedBurn).to.be.gt(0n);
+    const fakeAmount = expectedBurn - 1n;
+    await registry
+      .connect(employer)
+      .submitBurnReceipt(jobId, burnTx, fakeAmount, 0);
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTx);
+    const finalizeTx = registry.connect(employer).finalize(jobId);
+    await expect(finalizeTx)
+      .to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobKey, expectedBurn)
+      .and.to.emit(registry, 'BurnDiscrepancy')
+      .withArgs(jobId, fakeAmount, expectedBurn)
+      .and.to.emit(registry, 'JobFinalized')
+      .withArgs(jobId, agent.address);
   });
 });
