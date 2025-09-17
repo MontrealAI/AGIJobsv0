@@ -170,7 +170,7 @@ export async function buildPerformanceDashboard(
 
   const trends = await safeExecute(
     'energy-trends',
-    () => getEnergyTrendsSnapshot(),
+    async () => getEnergyTrendsSnapshot(),
     () => null,
     notes
   );

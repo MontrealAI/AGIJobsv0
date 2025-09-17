@@ -61,6 +61,7 @@ import {
   type ThermodynamicSummarySortKey,
 } from './thermodynamics';
 import { buildPerformanceDashboard } from './performanceDashboard';
+import { evaluateSystemHealth } from './systemHealth';
 
 const app = express();
 app.use(express.json());
@@ -327,9 +328,10 @@ function collectAgentJobs(
   return entries;
 }
 
-// Basic health check for service monitoring
+// Health check for orchestrator subsystems
 app.get('/health', (req: express.Request, res: express.Response) => {
-  res.json({ status: 'ok' });
+  const report = evaluateSystemHealth();
+  res.json(report);
 });
 
 app.get('/nonce', (req: express.Request, res: express.Response) => {
