@@ -60,6 +60,7 @@ import {
   buildThermodynamicSummary,
   type ThermodynamicSummarySortKey,
 } from './thermodynamics';
+import { buildPerformanceDashboard } from './performanceDashboard';
 
 const app = express();
 app.use(express.json());
@@ -773,6 +774,56 @@ app.get(
       });
 
       res.json(summary);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/dashboard/performance',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const limit = parsePositiveInteger(req.query.limit);
+      const includeAnomaliesParam = req.query.includeAnomalies;
+      const includeAnomalies =
+        includeAnomaliesParam === undefined
+          ? true
+          : parseBooleanFlag(includeAnomaliesParam);
+
+      const includeOpportunityHistory = parseBooleanFlag(
+        req.query.includeOpportunityHistory ?? req.query.includeOpportunities
+      );
+      const includeBacktest =
+        includeOpportunityHistory &&
+        parseBooleanFlag(req.query.includeBacktest);
+      const includeSpawnPipeline = parseBooleanFlag(
+        req.query.includeSpawnPipeline ?? req.query.includeSpawn
+      );
+      const includeEfficiencyStats =
+        req.query.includeEfficiencyStats === undefined
+          ? true
+          : parseBooleanFlag(req.query.includeEfficiencyStats);
+
+      const opportunityLimit = parsePositiveInteger(
+        req.query.opportunityLimit ?? req.query.opportunitiesLimit
+      );
+      const backtestLimit = parsePositiveInteger(
+        req.query.backtestLimit ?? req.query.historyLimit
+      );
+
+      const dashboard = await buildPerformanceDashboard({
+        agentLimit: limit,
+        includeAnomalies,
+        includeOpportunityHistory,
+        opportunityLimit,
+        includeBacktest,
+        backtestLimit,
+        includeSpawnPipeline,
+        includeEfficiencyStats,
+      });
+
+      res.json(dashboard);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
