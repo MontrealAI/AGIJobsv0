@@ -36,7 +36,7 @@ Coordinates job posting, assignment and dispute resolution.
 - `BurnConfirmed(uint256 indexed jobId, bytes32 indexed burnTxHash)`
 - `BurnDiscrepancy(uint256 indexed jobId, uint256 receiptAmount, uint256 expectedAmount)`
 - `GovernanceFinalized(uint256 indexed jobId, address indexed caller, bool fundsRedirected)`
-- `ModuleUpdated(string module, address newAddress)`
+- `ModuleUpdated(string module, address indexed newAddress)`
 - `ValidationModuleUpdated(address module)`
 - `StakeManagerUpdated(address manager)`
 - `ReputationEngineUpdated(address engine)`
