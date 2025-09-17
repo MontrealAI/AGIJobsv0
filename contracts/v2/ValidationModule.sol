@@ -54,6 +54,9 @@ error InvalidBurnReceipt();
 error AlreadyTallied();
 error RevealPending();
 error UnauthorizedCaller();
+error ValidatorBanned();
+error InvalidPenalty();
+error InvalidForceFinalizeGrace();
 
 /// @title ValidationModule
 /// @notice Handles validator selection and commit–reveal voting for jobs.
@@ -65,6 +68,9 @@ error UnauthorizedCaller();
 contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pausable, ReentrancyGuard {
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+
+    /// @notice Domain separator used for typed commit hashes.
+    bytes32 public immutable DOMAIN_SEPARATOR;
 
     IJobRegistry public jobRegistry;
     IStakeManager public stakeManager;
@@ -89,7 +95,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     uint256 public constant DEFAULT_REVEAL_WINDOW = 1 days;
     uint256 public constant DEFAULT_MIN_VALIDATORS = 3;
     uint256 public constant DEFAULT_MAX_VALIDATORS = 3;
-    uint256 public constant FORCE_FINALIZE_GRACE = 1 hours;
+    uint256 public constant DEFAULT_FORCE_FINALIZE_GRACE = 1 hours;
+    uint256 public forceFinalizeGrace = DEFAULT_FORCE_FINALIZE_GRACE;
 
     // slashing percentage applied to validator stake for incorrect votes
     uint256 public validatorSlashingPercentage = 50;
@@ -133,6 +140,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 revealedCount;
         bool tallied;
         uint256 committeeSize;
+        uint64 earlyFinalizeEligibleAt;
+        bool earlyFinalized;
     }
 
     mapping(uint256 => Round) public rounds;
@@ -156,6 +165,21 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         private entropyContributed;
     uint256 public constant MIN_ENTROPY_CONTRIBUTORS = 2;
 
+    /// @notice Selection seed captured for each job to prevent post-selection manipulation.
+    mapping(uint256 => bytes32) public selectionSeeds;
+
+    /// @notice Basis points slashed from validator stake when they fail to reveal.
+    uint256 public nonRevealPenaltyBps = 50; // 0.5%
+
+    /// @notice Number of blocks a validator is banned from new committees after failing to reveal.
+    uint256 public nonRevealBanBlocks = 7_200; // ~1 day assuming 12s blocks
+
+    /// @notice Cool-off delay before an early finalize may be triggered once quorum is met.
+    uint256 public earlyFinalizeDelay = 5 minutes;
+
+    /// @notice Block number until which a validator is banned from committee selection.
+    mapping(address => uint256) public validatorBanUntil;
+
     event ValidatorsUpdated(address[] validators);
     event ReputationEngineUpdated(address engine);
     event TimingUpdated(uint256 commitWindow, uint256 revealWindow);
@@ -177,6 +201,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     event ValidatorAuthCacheVersionBumped(uint256 version);
     event SelectionReset(uint256 indexed jobId);
     event PauserUpdated(address indexed pauser);
+    event NonRevealPenaltyUpdated(uint256 penaltyBps, uint256 banBlocks);
+    event EarlyFinalizeDelayUpdated(uint256 delay);
+    event ForceFinalizeGraceUpdated(uint256 grace);
+    event ValidatorBanApplied(address indexed validator, uint256 untilBlock);
+    event SelectionSeedRecorded(uint256 indexed jobId, bytes32 seed);
     /// @notice Emitted when a validator's ENS identity is verified.
     event ValidatorIdentityVerified(
         address indexed validator,
@@ -198,6 +227,34 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         pauser = _pauser;
         emit PauserUpdated(_pauser);
     }
+
+    /// @notice Update non-reveal penalty parameters.
+    /// @param penaltyBps Slash applied in basis points of validator stake.
+    /// @param banBlocks Number of blocks a validator is banned from new committees.
+    function setNonRevealPenalty(uint256 penaltyBps, uint256 banBlocks)
+        external
+        onlyOwner
+    {
+        if (penaltyBps > 1_000) revert InvalidPenalty();
+        nonRevealPenaltyBps = penaltyBps;
+        nonRevealBanBlocks = banBlocks;
+        emit NonRevealPenaltyUpdated(penaltyBps, banBlocks);
+    }
+
+    /// @notice Update the cool-off delay before early finalization is permitted.
+    /// @param delay Seconds to wait after quorum is met before allowing finalize.
+    function setEarlyFinalizeDelay(uint256 delay) external onlyOwner {
+        earlyFinalizeDelay = delay;
+        emit EarlyFinalizeDelayUpdated(delay);
+    }
+
+    /// @notice Update the grace period before force finalize can be triggered.
+    /// @param grace Additional seconds allowed after the reveal window closes.
+    function setForceFinalizeGrace(uint256 grace) external onlyOwner {
+        if (grace == 0) revert InvalidForceFinalizeGrace();
+        forceFinalizeGrace = grace;
+        emit ForceFinalizeGraceUpdated(grace);
+    }
     event ValidatorPoolRotationUpdated(uint256 newRotation);
     event RandaoCoordinatorUpdated(address coordinator);
     event MaxValidatorsPerJobUpdated(uint256 maxValidators);
@@ -216,6 +273,17 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 _maxValidators,
         address[] memory _validatorPool
     ) Ownable(msg.sender) {
+        DOMAIN_SEPARATOR =
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        "ValidationModule(string version,address verifyingContract,uint256 chainId)"
+                    ),
+                    keccak256(bytes("1")),
+                    address(this),
+                    block.chainid
+                )
+            );
         if (address(_jobRegistry) != address(0)) {
             jobRegistry = _jobRegistry;
             emit JobRegistryUpdated(address(_jobRegistry));
@@ -712,19 +780,20 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             rcRand = randaoCoordinator.random(bytes32(jobId));
         }
 
-        uint256 seed = uint256(
-            keccak256(
-                abi.encodePacked(
-                    jobId,
-                    jobNonce[jobId],
-                    pendingEntropy[jobId],
-                    randaoValue,
-                    bhash,
-                    address(this),
-                    rcRand
-                )
+        bytes32 seed = keccak256(
+            abi.encode(
+                jobId,
+                jobNonce[jobId],
+                pendingEntropy[jobId],
+                randaoValue,
+                bhash,
+                address(this),
+                rcRand
             )
         );
+        selectionSeeds[jobId] = seed;
+        emit SelectionSeedRecorded(jobId, seed);
+        uint256 randomSeed = uint256(seed);
 
         uint256 n = validatorPool.length;
         if (n == 0) revert InsufficientValidators();
@@ -760,6 +829,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             for (; i < n && candidateCount < sample;) {
                 uint256 idx = (rotationStart + i) % n;
                 address candidate = validatorPool[idx];
+
+                if (validatorBanUntil[candidate] > block.number) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
 
                 uint256 stake = stakeManager.stakeOf(
                     candidate,
@@ -824,6 +900,13 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             for (uint256 i; i < n;) {
                 address candidate = validatorPool[i];
 
+                if (validatorBanUntil[candidate] > block.number) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+
                 uint256 stake = stakeManager.stakeOf(
                     candidate,
                     IStakeManager.Role.Validator
@@ -884,8 +967,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         ++candidateCount;
                     }
                 } else {
-                    seed = uint256(keccak256(abi.encodePacked(seed, i)));
-                    uint256 j = seed % eligible;
+                    randomSeed = uint256(keccak256(abi.encode(randomSeed, i)));
+                    uint256 j = randomSeed % eligible;
                     if (j < sample) {
                         totalStake =
                             totalStake - candidateStakes[j] + stake;
@@ -903,8 +986,8 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (candidateCount < size) revert InsufficientValidators();
 
         for (uint256 i; i < size;) {
-            seed = uint256(keccak256(abi.encodePacked(seed, i)));
-            uint256 pick = seed % totalStake;
+            randomSeed = uint256(keccak256(abi.encode(randomSeed, i)));
+            uint256 pick = randomSeed % totalStake;
             uint256 cumulative;
             uint256 chosen;
             for (uint256 j; j < candidateCount;) {
@@ -993,6 +1076,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             revert JobNotSubmitted();
         if (r.commitDeadline == 0 || block.timestamp > r.commitDeadline)
             revert CommitPhaseClosed();
+        if (validatorBanUntil[msg.sender] > block.number) revert ValidatorBanned();
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender))
                 revert BlacklistedValidator();
@@ -1068,6 +1152,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (block.timestamp <= r.commitDeadline) revert CommitPhaseActive();
         if (block.timestamp > r.revealDeadline) revert RevealPhaseClosed();
         if (!_isValidator(jobId, msg.sender)) revert NotValidator();
+        if (validatorBanUntil[msg.sender] > block.number) revert ValidatorBanned();
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender))
                 revert BlacklistedValidator();
@@ -1098,8 +1183,21 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
             revert InvalidBurnReceipt();
         bytes32 specHash = jobRegistry.getSpecHash(jobId);
-        if (
-            keccak256(
+        bytes32 outcomeHash = keccak256(
+            abi.encode(nonce, specHash, approve, burnTxHash)
+        );
+        bytes32 expected = keccak256(
+            abi.encode(
+                jobId,
+                outcomeHash,
+                salt,
+                msg.sender,
+                block.chainid,
+                DOMAIN_SEPARATOR
+            )
+        );
+        if (commitHash != expected) {
+            bytes32 legacy = keccak256(
                 abi.encodePacked(
                     jobId,
                     nonce,
@@ -1108,8 +1206,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     salt,
                     specHash
                 )
-            ) != commitHash
-        ) revert InvalidReveal();
+            );
+            if (commitHash != legacy) revert InvalidReveal();
+        }
 
         uint256 stake = validatorStakes[jobId][msg.sender];
         if (stake == 0) revert NoStake();
@@ -1118,6 +1217,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.participants.push(msg.sender);
         r.revealedCount += 1;
         if (approve) r.approvals += stake; else r.rejections += stake;
+        uint256 committee = r.committeeSize == 0
+            ? validatorsPerJob
+            : r.committeeSize;
+        if (committee > maxValidatorsPerJob) committee = maxValidatorsPerJob;
+        if (
+            r.earlyFinalizeEligibleAt == 0 &&
+            r.revealedCount >= committee
+        ) {
+            r.earlyFinalizeEligibleAt = uint64(
+                block.timestamp + earlyFinalizeDelay
+            );
+        }
 
         emit ValidationRevealed(jobId, msg.sender, approve, burnTxHash, subdomain);
     }
@@ -1225,13 +1336,15 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
-        if (block.timestamp <= r.revealDeadline + FORCE_FINALIZE_GRACE)
+        if (block.timestamp <= r.revealDeadline + forceFinalizeGrace)
             revert RevealPending();
         uint256 size = r.committeeSize == 0 ? validatorsPerJob : r.committeeSize;
         if (size > maxValidatorsPerJob) size = maxValidatorsPerJob;
         if (r.revealedCount >= size) {
             return _finalize(jobId);
         }
+        r.earlyFinalizeEligibleAt = 0;
+
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 vlen = r.validators.length;
         if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
@@ -1239,14 +1352,19 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address val = r.validators[i];
             if (!revealed[jobId][val]) {
                 uint256 stake = validatorStakes[jobId][val];
-                uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
-                if (slashAmount > 0) {
+                uint256 penalty = (stake * nonRevealPenaltyBps) / 10_000;
+                if (penalty > 0) {
                     stakeManager.slash(
                         val,
                         IStakeManager.Role.Validator,
-                        slashAmount,
+                        penalty,
                         job.employer
                     );
+                }
+                if (nonRevealBanBlocks != 0) {
+                    uint256 untilBlock = block.number + nonRevealBanBlocks;
+                    validatorBanUntil[val] = untilBlock;
+                    emit ValidatorBanApplied(val, untilBlock);
                 }
                 if (address(reputationEngine) != address(0)) {
                     reputationEngine.subtract(val, 1);
@@ -1267,8 +1385,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     function _finalize(uint256 jobId) internal returns (bool success) {
         Round storage r = rounds[jobId];
         if (r.tallied) revert AlreadyTallied();
+        bool earlyWindowReached =
+            r.earlyFinalizeEligibleAt != 0 &&
+            block.timestamp >= r.earlyFinalizeEligibleAt;
         if (r.revealedCount != r.validators.length) {
-            if (block.timestamp <= r.revealDeadline) revert RevealPending();
+            if (!earlyWindowReached && block.timestamp <= r.revealDeadline)
+                revert RevealPending();
         }
 
         uint256 total = r.approvals + r.rejections;
@@ -1314,7 +1436,25 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             address val = r.validators[i];
             uint256 stake = validatorStakes[jobId][val];
             uint256 slashAmount = (stake * validatorSlashingPercentage) / 100;
-            if (!revealed[jobId][val] || votes[jobId][val] != success) {
+            if (!revealed[jobId][val]) {
+                uint256 penalty = (stake * nonRevealPenaltyBps) / 10_000;
+                if (penalty > 0) {
+                    stakeManager.slash(
+                        val,
+                        IStakeManager.Role.Validator,
+                        penalty,
+                        job.employer
+                    );
+                }
+                if (nonRevealBanBlocks != 0) {
+                    uint256 untilBlock = block.number + nonRevealBanBlocks;
+                    validatorBanUntil[val] = untilBlock;
+                    emit ValidatorBanApplied(val, untilBlock);
+                }
+                if (address(reputationEngine) != address(0)) {
+                    reputationEngine.subtract(val, 1);
+                }
+            } else if (votes[jobId][val] != success) {
                 if (slashAmount > 0) {
                     stakeManager.slash(
                         val,
@@ -1361,6 +1501,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         r.revealedCount = 0;
         delete rounds[jobId];
         delete jobNonce[jobId];
+        delete selectionSeeds[jobId];
     }
 
     /// @notice Reset the validation nonce for a job after finalization or dispute resolution.

@@ -112,7 +112,7 @@ contract ValidationFinalizeGas is Test {
     function testForceFinalizeGas() public {
         uint256 jobId = _prepareJob();
         // skip reveals
-        vm.warp(block.timestamp + 1 + 1 + validation.FORCE_FINALIZE_GRACE() + 1);
+        vm.warp(block.timestamp + 1 + 1 + validation.forceFinalizeGrace() + 1);
         vm.pauseGasMetering();
         vm.resumeGasMetering();
         validation.forceFinalize(jobId);
