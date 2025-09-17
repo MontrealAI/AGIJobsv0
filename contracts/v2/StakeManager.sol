@@ -904,6 +904,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _deposit(msg.sender, role, amount);
     }
 
+    function _acknowledgedDepositFor(address user, Role role, uint256 amount)
+        internal
+        requiresTaxAcknowledgement(_policyFor(user), user, owner(), address(0), address(0))
+    {
+        if (role > Role.Platform) revert InvalidRole();
+        if (amount == 0) revert InvalidAmount();
+        _deposit(user, role, amount);
+    }
+
     /**
      * @notice Acknowledge the tax policy and deposit $AGIALPHA stake on behalf of
      *         a user.
@@ -919,9 +928,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         address registry = jobRegistry;
         if (registry == address(0)) revert JobRegistryNotSet();
         IJobRegistryAck(registry).acknowledgeFor(user);
-        if (role > Role.Platform) revert InvalidRole();
-        if (amount == 0) revert InvalidAmount();
-        _deposit(user, role, amount);
+        _acknowledgedDepositFor(user, role, amount);
     }
 
     /// @notice request withdrawal of staked tokens subject to unbonding period
