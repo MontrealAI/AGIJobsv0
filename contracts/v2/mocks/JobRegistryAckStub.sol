@@ -29,4 +29,25 @@ contract JobRegistryAckStub is IJobRegistryAck, IJobRegistryTax {
     function version() external pure returns (uint256) {
         return 2;
     }
+
+    function burnEvidenceStatus(uint256)
+        external
+        pure
+        returns (bool burnRequired, bool burnSatisfied)
+    {
+        return (false, true);
+    }
+
+    function submitBurnReceipt(
+        uint256,
+        bytes32,
+        uint256,
+        uint256
+    ) external pure {}
+
+    function hasBurnReceipt(uint256, bytes32) external pure returns (bool) {
+        return false;
+    }
+
+    function confirmEmployerBurn(uint256, bytes32) external pure {}
 }

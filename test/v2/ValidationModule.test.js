@@ -17,6 +17,7 @@ describe('ValidationModule V2', function () {
     const JobMock = await ethers.getContractFactory('MockJobRegistry');
     jobRegistry = await JobMock.deploy();
     await jobRegistry.waitForDeployment();
+    await jobRegistry.setStakeManager(await stakeManager.getAddress());
 
     const RepMock = await ethers.getContractFactory('MockReputationEngine');
     reputation = await RepMock.deploy();
@@ -119,6 +120,19 @@ describe('ValidationModule V2', function () {
       (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     );
     expect(event.args[1].length).to.equal(3);
+  });
+
+  it('skips non-reveal penalties when burn evidence missing', async () => {
+    await stakeManager.setBurnPct(5);
+    await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
+    await start(1, 0);
+    await jobRegistry.setBurnConfirmed(1, false);
+    const before = await stakeManager.stakeOf(v1.address, 1);
+    await advance(4000);
+    await validation.forceFinalize(1);
+    expect(await stakeManager.stakeOf(v1.address, 1)).to.equal(before);
+    expect(await validation.validatorBanUntil(v1.address)).to.equal(0);
+    expect(await reputation.reputation(v1.address)).to.equal(0);
   });
 
   it('reverts when called by non-registry', async () => {

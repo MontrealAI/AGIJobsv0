@@ -126,6 +126,8 @@ interface IJobRegistry {
         uint256 receiptAmount,
         uint256 expectedAmount
     );
+    event ValidationStartPending(uint256 indexed jobId);
+    event ValidationStartTriggered(uint256 indexed jobId);
 
     // owner wiring of modules
 
@@ -216,6 +218,11 @@ interface IJobRegistry {
     ) external;
 
     function getSpecHash(uint256 jobId) external view returns (bytes32);
+
+    function burnEvidenceStatus(uint256 jobId)
+        external
+        view
+        returns (bool burnRequired, bool burnSatisfied);
 
     function submitBurnReceipt(
         uint256 jobId,

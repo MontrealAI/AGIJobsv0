@@ -22,6 +22,7 @@ contract MockStakeManager is IStakeManager {
     mapping(Role => uint256) public totalStakes;
     address public disputeModule;
     address public override jobRegistry;
+    uint256 public burnPctValue;
 
     function setJobRegistry(address j) external { jobRegistry = j; }
 
@@ -82,7 +83,9 @@ contract MockStakeManager is IStakeManager {
     function setMaxAGITypes(uint256) external override {}
     function setFeePct(uint256) external override {}
     function setFeePool(IFeePool) external override {}
-    function setBurnPct(uint256) external override {}
+    function setBurnPct(uint256 pct) external override {
+        burnPctValue = pct;
+    }
     function setValidatorRewardPct(uint256) external override {}
     function autoTuneStakes(bool) external override {}
     function configureAutoStake(
@@ -167,8 +170,8 @@ contract MockStakeManager is IStakeManager {
         return 100;
     }
 
-    function burnPct() external pure override returns (uint256) {
-        return 0;
+    function burnPct() external view override returns (uint256) {
+        return burnPctValue;
     }
 
     function token() external pure override returns (IERC20) {
@@ -277,6 +280,21 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         returns (bool)
     {
         return burnReceiptMap[jobId][burnTxHash];
+    }
+
+    function burnEvidenceStatus(uint256 jobId)
+        external
+        view
+        override
+        returns (bool burnRequired, bool burnSatisfied)
+    {
+        burnRequired =
+            address(_stakeManager) != address(0) &&
+            _stakeManager.burnPct() > 0;
+        if (!burnRequired) {
+            return (false, true);
+        }
+        burnSatisfied = _jobs[jobId].burnConfirmed;
     }
 
     function acknowledgeTaxPolicy() external {
@@ -565,7 +583,13 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         cancelJob(jobId);
     }
 
-    function confirmEmployerBurn(uint256, bytes32) external override {}
+    function confirmEmployerBurn(uint256 jobId, bytes32) external override {
+        _jobs[jobId].burnConfirmed = true;
+    }
+
+    function setBurnConfirmed(uint256 jobId, bool confirmed) external {
+        _jobs[jobId].burnConfirmed = confirmed;
+    }
 
     function getEmployerReputation(address)
         external
