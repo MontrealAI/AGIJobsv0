@@ -11,7 +11,7 @@ import {
 } from './agentRegistry';
 import { ensureStake, ROLE_AGENT } from './stakeCoordinator';
 import { executeJob } from './taskExecution';
-import { getAgentEfficiencyStats } from './telemetry';
+import { getAgentEfficiencyStats, getAgentAnomalyScores } from './telemetry';
 import {
   recordAgentFailure,
   recordAgentSuccess,
@@ -277,92 +277,137 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
   );
 
   const efficiencyStats = await getAgentEfficiencyStats();
-  if (efficiencyStats.size > 0) {
-    const decorated = matches.map((match) => {
-      const stats = efficiencyStats.get(match.profile.address.toLowerCase());
-      const averageEnergy =
-        stats && Number.isFinite(stats.averageEnergy)
-          ? Math.max(0, stats.averageEnergy)
-          : null;
-      const averageEfficiency =
-        stats && Number.isFinite(stats.averageEfficiency)
-          ? Math.max(0, stats.averageEfficiency)
-          : null;
-      const successRate =
-        stats && Number.isFinite(stats.successRate) ? stats.successRate : null;
+  const anomalyScores = getAgentAnomalyScores();
 
-      const energyPenalty =
-        averageEnergy !== null ? Math.log1p(averageEnergy / 1000) * 0.2 : 0;
-      const efficiencyBoost =
-        averageEfficiency !== null ? Math.min(1, averageEfficiency) * 0.3 : 0;
-      const reliabilityBoost =
-        successRate !== null ? Math.max(0, successRate) * 0.05 : 0;
+  const scoredMatches = matches.map((match) => {
+    const lowerAddress = match.profile.address.toLowerCase();
+    const stats = efficiencyStats.get(lowerAddress);
 
-      let finalScore =
-        match.score + efficiencyBoost + reliabilityBoost - energyPenalty;
-      const projection = projectionByAgent.get(
-        match.profile.address.toLowerCase()
+    let finalScore = match.score;
+    let averageEnergy = Number.POSITIVE_INFINITY;
+
+    if (stats) {
+      const statsAverageEnergy = Number.isFinite(stats.averageEnergy)
+        ? Math.max(0, stats.averageEnergy)
+        : Number.POSITIVE_INFINITY;
+      const statsAverageEfficiency = Number.isFinite(stats.averageEfficiency)
+        ? Math.max(0, stats.averageEfficiency)
+        : null;
+      const statsSuccessRate = Number.isFinite(stats.successRate)
+        ? Math.max(0, stats.successRate)
+        : null;
+
+      averageEnergy = statsAverageEnergy;
+
+      if (statsAverageEfficiency !== null) {
+        finalScore += Math.min(1, statsAverageEfficiency) * 0.3;
+      }
+      if (statsSuccessRate !== null) {
+        finalScore += statsSuccessRate * 0.05;
+      }
+      if (Number.isFinite(statsAverageEnergy)) {
+        finalScore -= Math.log1p(statsAverageEnergy / 1000) * 0.2;
+      }
+    }
+
+    const projection = projectionByAgent.get(lowerAddress);
+    if (projection) {
+      const opportunityBoost =
+        projection.opportunityScore * 0.2 +
+        projection.confidence * 0.1 +
+        projection.stakeCoverage * 0.05;
+      finalScore += opportunityBoost;
+      match.reasons.push(
+        `opportunity:${projection.opportunityScore.toFixed(3)}`
       );
-      if (projection) {
-        const opportunityBoost =
-          projection.opportunityScore * 0.2 +
-          projection.confidence * 0.1 +
-          projection.stakeCoverage * 0.05;
-        finalScore += opportunityBoost;
-        match.reasons.push(
-          `opportunity:${projection.opportunityScore.toFixed(3)}`
-        );
-        if (!projection.stakeAdequate) {
-          match.reasons.push('stake-shortfall');
-        }
+      if (!projection.stakeAdequate) {
+        match.reasons.push('stake-shortfall');
       }
-
-      return {
-        match,
-        stats,
-        finalScore,
-        averageEnergy:
-          averageEnergy !== null ? averageEnergy : Number.POSITIVE_INFINITY,
-      };
-    });
-
-    decorated.sort((a, b) => {
-      if (b.finalScore !== a.finalScore) {
-        return b.finalScore - a.finalScore;
-      }
-      if (a.averageEnergy !== b.averageEnergy) {
-        return a.averageEnergy - b.averageEnergy;
-      }
-      return b.match.score - a.match.score;
-    });
-
-    const selectedEntry = decorated[0];
-    if (selectedEntry) {
-      if (selectedEntry.stats) {
-        const { averageEnergy, averageEfficiency, dominantComplexity } =
-          selectedEntry.stats;
-        selectedEntry.match.reasons.push(
-          `energy-metrics:${averageEnergy.toFixed(
-            2
-          )}:${averageEfficiency.toFixed(3)}:${dominantComplexity}`
-        );
-      }
-      return selectedEntry.match;
     }
-  }
 
-  const fallbackProjection = opportunityForecast.bestCandidate
-    ? projectionByAgent.get(opportunityForecast.bestCandidate.agent)
-    : undefined;
-  if (fallbackProjection) {
-    matches[0].reasons.push(
-      `opportunity:${fallbackProjection.opportunityScore.toFixed(3)}`
+    const anomaly = anomalyScores.get(lowerAddress);
+    let blocked = false;
+    if (anomaly) {
+      const penalty =
+        anomaly.riskScore * 0.6 +
+        anomaly.normalizedCount * 0.25 +
+        anomaly.cooldownRatio * 0.15;
+      match.reasons.push(
+        `anomaly-risk:${anomaly.riskScore.toFixed(3)}`
+      );
+      if (penalty > 0) {
+        finalScore -= penalty;
+        match.reasons.push(`anomaly-penalty:${penalty.toFixed(3)}`);
+      }
+      if (anomaly.cooldownRemainingMs > 0) {
+        const seconds = Math.ceil(anomaly.cooldownRemainingMs / 1000);
+        match.reasons.push(`anomaly-cooldown:${seconds}s`);
+      }
+      if (anomaly.quarantined || anomaly.riskScore >= 0.9) {
+        blocked = true;
+        match.reasons.push('anomaly-blocked');
+        console.warn('Agent excluded by anomaly risk', match.profile.address, {
+          risk: anomaly.riskScore,
+          count: anomaly.count,
+          cooldownMs: anomaly.cooldownRemainingMs,
+          quarantined: anomaly.quarantined,
+        });
+      }
+    }
+
+    if (!Number.isFinite(finalScore)) {
+      finalScore = match.score;
+    }
+
+    return {
+      match,
+      stats,
+      finalScore,
+      averageEnergy,
+      blocked,
+    };
+  });
+
+  const viableMatches = scoredMatches.filter((entry) => !entry.blocked);
+  if (viableMatches.length === 0) {
+    console.warn(
+      'All candidate agents excluded after anomaly assessment',
+      job.jobId
     );
-    if (!fallbackProjection.stakeAdequate) {
-      matches[0].reasons.push('stake-shortfall');
+    return null;
+  }
+
+  viableMatches.sort((a, b) => {
+    if (b.finalScore !== a.finalScore) {
+      return b.finalScore - a.finalScore;
+    }
+    if (a.averageEnergy !== b.averageEnergy) {
+      return a.averageEnergy - b.averageEnergy;
+    }
+    return b.match.score - a.match.score;
+  });
+
+  const selectedEntry = viableMatches[0];
+  if (selectedEntry?.stats) {
+    const { averageEnergy, averageEfficiency, dominantComplexity } =
+      selectedEntry.stats;
+    if (
+      Number.isFinite(averageEnergy) &&
+      Number.isFinite(averageEfficiency)
+    ) {
+      selectedEntry.match.reasons.push(
+        `energy-metrics:${averageEnergy.toFixed(2)}:${averageEfficiency.toFixed(
+          3
+        )}:${dominantComplexity}`
+      );
+    } else {
+      selectedEntry.match.reasons.push(
+        `energy-metrics:${dominantComplexity}`
+      );
     }
   }
-  return matches[0];
+
+  return selectedEntry.match;
 }
 
 export async function handleJob(job: Job): Promise<void> {

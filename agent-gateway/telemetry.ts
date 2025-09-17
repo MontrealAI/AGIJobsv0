@@ -76,6 +76,17 @@ const ENERGY_ANOMALY_ALERT_COOLDOWN_MS = Math.max(
   0,
   Number(process.env.ENERGY_ANOMALY_ALERT_COOLDOWN_MS || String(10 * 60 * 1000))
 );
+const ENERGY_ANOMALY_DECAY_DEFAULT_MS = Math.max(
+  ENERGY_ANOMALY_WINDOW_MS,
+  15 * 60 * 1000
+);
+const ENERGY_ANOMALY_PENALTY_DECAY_MS = ensurePositiveInteger(
+  Number(
+    process.env.ENERGY_ANOMALY_PENALTY_DECAY_MS ||
+      String(ENERGY_ANOMALY_DECAY_DEFAULT_MS)
+  ),
+  ENERGY_ANOMALY_DECAY_DEFAULT_MS
+);
 
 interface AnomalyHistoryEntry {
   address: string;
@@ -89,6 +100,19 @@ interface AnomalyHistoryEntry {
 }
 
 const energyAnomalyHistory = new Map<string, AnomalyHistoryEntry>();
+
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  if (value <= 0) {
+    return 0;
+  }
+  if (value >= 1) {
+    return 1;
+  }
+  return value;
+}
 
 type LoadAverages = [number, number, number];
 
@@ -186,6 +210,64 @@ function refreshAnomalyWindow(entry: AnomalyHistoryEntry, now: number): void {
     entry.firstDetected = entry.timestamps[0];
     entry.lastDetected = entry.timestamps[entry.timestamps.length - 1];
   }
+}
+
+function computeAnomalySnapshot(
+  entry: AnomalyHistoryEntry,
+  now: number
+): EnergyAnomalySnapshot | null {
+  refreshAnomalyWindow(entry, now);
+  if (entry.timestamps.length === 0) {
+    return null;
+  }
+
+  const firstDetectedTs = entry.firstDetected ?? entry.timestamps[0];
+  const lastDetectedTs = entry.lastDetected ?? entry.timestamps[entry.timestamps.length - 1];
+
+  const normalisedCount = clamp01(
+    ENERGY_ANOMALY_FAILURE_THRESHOLD > 0
+      ? entry.timestamps.length / ENERGY_ANOMALY_FAILURE_THRESHOLD
+      : entry.timestamps.length > 0
+      ? 1
+      : 0
+  );
+
+  const rawSeverity = Number(entry.lastAnomalyScore ?? normalisedCount);
+  const severity = clamp01(Math.max(0, rawSeverity) / 10 || normalisedCount);
+
+  const sinceLast = lastDetectedTs ? now - lastDetectedTs : Number.POSITIVE_INFINITY;
+  const recency = ENERGY_ANOMALY_PENALTY_DECAY_MS
+    ? clamp01(1 - sinceLast / ENERGY_ANOMALY_PENALTY_DECAY_MS)
+    : 0;
+
+  const cooldownRemainingMs =
+    entry.lastAlert && ENERGY_ANOMALY_ALERT_COOLDOWN_MS
+      ? Math.max(0, ENERGY_ANOMALY_ALERT_COOLDOWN_MS - (now - entry.lastAlert))
+      : 0;
+  const cooldownRatio = ENERGY_ANOMALY_ALERT_COOLDOWN_MS
+    ? clamp01(cooldownRemainingMs / ENERGY_ANOMALY_ALERT_COOLDOWN_MS)
+    : 0;
+
+  const riskScore = clamp01(
+    normalisedCount * 0.45 + recency * 0.35 + severity * 0.2 + cooldownRatio * 0.1
+  );
+
+  return {
+    agent: entry.address,
+    count: entry.timestamps.length,
+    firstDetected: new Date(firstDetectedTs).toISOString(),
+    lastDetected: new Date(lastDetectedTs).toISOString(),
+    lastTypes: [...entry.lastTypes],
+    lastJobId: entry.lastJobId,
+    lastAnomalyScore: entry.lastAnomalyScore,
+    quarantined: quarantineManager.isQuarantined(entry.address),
+    normalizedCount: normalisedCount,
+    recency,
+    severity,
+    cooldownRemainingMs,
+    cooldownRatio,
+    riskScore,
+  };
 }
 
 export interface JobInvocationSpan {
@@ -712,6 +794,12 @@ export interface EnergyAnomalySnapshot {
   lastJobId?: string;
   lastAnomalyScore?: number;
   quarantined: boolean;
+  normalizedCount: number;
+  recency: number;
+  severity: number;
+  cooldownRemainingMs: number;
+  cooldownRatio: number;
+  riskScore: number;
 }
 
 export function getEnergyAnomalyReport(
@@ -723,24 +811,14 @@ export function getEnergyAnomalyReport(
   const result: EnergyAnomalySnapshot[] = [];
 
   for (const [key, entry] of energyAnomalyHistory.entries()) {
-    refreshAnomalyWindow(entry, now);
-    if (entry.timestamps.length === 0) {
+    const snapshot = computeAnomalySnapshot(entry, now);
+    if (!snapshot) {
       energyAnomalyHistory.delete(key);
       continue;
     }
     if (filterKey && key !== filterKey) {
       continue;
     }
-    const snapshot: EnergyAnomalySnapshot = {
-      agent: entry.address,
-      count: entry.timestamps.length,
-      firstDetected: new Date(entry.firstDetected).toISOString(),
-      lastDetected: new Date(entry.lastDetected).toISOString(),
-      lastTypes: [...entry.lastTypes],
-      lastJobId: entry.lastJobId,
-      lastAnomalyScore: entry.lastAnomalyScore,
-      quarantined: quarantineManager.isQuarantined(entry.address),
-    };
     result.push(snapshot);
   }
 
@@ -758,6 +836,43 @@ export function getEnergyAnomalyParameters(): {
     windowMs: ENERGY_ANOMALY_WINDOW_MS,
     cooldownMs: ENERGY_ANOMALY_ALERT_COOLDOWN_MS,
   };
+}
+
+export interface AgentAnomalyScore {
+  agent: string;
+  riskScore: number;
+  normalizedCount: number;
+  recency: number;
+  severity: number;
+  cooldownRatio: number;
+  cooldownRemainingMs: number;
+  lastDetected?: string;
+  count: number;
+  quarantined: boolean;
+}
+
+export function getAgentAnomalyScores(): Map<string, AgentAnomalyScore> {
+  const now = Date.now();
+  const scores = new Map<string, AgentAnomalyScore>();
+  for (const entry of energyAnomalyHistory.values()) {
+    const snapshot = computeAnomalySnapshot(entry, now);
+    if (!snapshot) {
+      continue;
+    }
+    scores.set(snapshot.agent.toLowerCase(), {
+      agent: snapshot.agent,
+      riskScore: snapshot.riskScore,
+      normalizedCount: snapshot.normalizedCount,
+      recency: snapshot.recency,
+      severity: snapshot.severity,
+      cooldownRatio: snapshot.cooldownRatio,
+      cooldownRemainingMs: snapshot.cooldownRemainingMs,
+      lastDetected: snapshot.lastDetected,
+      count: snapshot.count,
+      quarantined: snapshot.quarantined,
+    });
+  }
+  return scores;
 }
 
 export interface TelemetryEnvelope {
