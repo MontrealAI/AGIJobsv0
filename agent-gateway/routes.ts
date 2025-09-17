@@ -50,6 +50,10 @@ import {
   type AgentEnergyInsight,
   type JobEnergyInsight,
 } from '../shared/energyInsights';
+import {
+  buildThermodynamicSummary,
+  type ThermodynamicSummarySortKey,
+} from './thermodynamics';
 
 const app = express();
 app.use(express.json());
@@ -136,6 +140,43 @@ function parsePositiveInteger(value: unknown): number | undefined {
   return undefined;
 }
 
+function parseThermodynamicSortKey(
+  value: unknown
+): ThermodynamicSummarySortKey | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (!normalised) {
+    return undefined;
+  }
+  const compact = normalised.replace(/[-_\s]+/g, '');
+  switch (compact) {
+    case 'score':
+      return 'score';
+    case 'energy':
+    case 'avgenergy':
+    case 'averageenergy':
+      return 'energy';
+    case 'rewarddensity':
+    case 'rewardperenergy':
+    case 'density':
+    case 'thermodensity':
+      return 'rewardDensity';
+    case 'anomaly':
+    case 'anomalyrate':
+    case 'stability':
+      return 'anomaly';
+    case 'success':
+    case 'successrate':
+      return 'success';
+    case 'efficiency':
+      return 'efficiency';
+    default:
+      return undefined;
+  }
+}
+
 async function normaliseAgentIdentifier(
   identifier: string
 ): Promise<string | null> {
@@ -188,8 +229,8 @@ function collectAgentJobs(
     if (b.totalEnergy !== a.totalEnergy) {
       return b.totalEnergy - a.totalEnergy;
     }
-    if (b.averageEfficiency !== a.averageEfficiency) {
-      return b.averageEfficiency - a.averageEfficiency;
+    if (b.efficiencyScore !== a.efficiencyScore) {
+      return b.efficiencyScore - a.efficiencyScore;
     }
     if (b.samples !== a.samples) {
       return b.samples - a.samples;
@@ -490,6 +531,51 @@ app.get(
         config: getEnergyAnomalyParameters(),
         anomalies,
       });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/thermodynamics/summary',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const limit = parsePositiveInteger(req.query.limit);
+      const includeAnomaliesParam = req.query.includeAnomalies;
+      const includeAnomalies =
+        includeAnomaliesParam === undefined
+          ? true
+          : parseBooleanFlag(includeAnomaliesParam);
+      const refreshIdentities = parseBooleanFlag(req.query.refreshIdentities);
+
+      const sortParam =
+        (typeof req.query.sort === 'string' && req.query.sort) ||
+        (typeof req.query.sortBy === 'string' && req.query.sortBy) ||
+        (typeof req.query.orderBy === 'string' && req.query.orderBy) ||
+        undefined;
+      const sortKey = parseThermodynamicSortKey(sortParam);
+
+      const orderParam =
+        (typeof req.query.order === 'string' &&
+          req.query.order.toLowerCase()) ||
+        (typeof req.query.sortOrder === 'string' &&
+          req.query.sortOrder.toLowerCase()) ||
+        undefined;
+      const order =
+        orderParam === 'asc' || orderParam === 'desc'
+          ? (orderParam as 'asc' | 'desc')
+          : undefined;
+
+      const summary = await buildThermodynamicSummary({
+        limit,
+        includeAnomalies,
+        refreshIdentities,
+        sortBy: sortKey,
+        order,
+      });
+
+      res.json(summary);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
