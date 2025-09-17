@@ -330,6 +330,63 @@ describe('job finalization integration', function () {
       .withArgs(jobKey, agent.address, agentReward);
   });
 
+  it('allows employers to claim timeout for applied jobs', async () => {
+    const grace = 300;
+    await registry
+      .connect(owner)
+      .setExpirationGracePeriod(BigInt(grace));
+
+    const employerInitial = await token.balanceOf(employer.address);
+
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), stakeRequired);
+    await stakeManager.connect(agent).depositStake(0, stakeRequired);
+
+    const fee = (reward * BigInt(feePct)) / 100n;
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward + fee);
+
+    const now = BigInt(await time.latest());
+    const deadline = now + 1000n;
+    const specHash = ethers.id('timeout-spec');
+    await registry
+      .connect(employer)
+      .createJob(reward, deadline, specHash, 'timeout://job');
+
+    const jobId = 1;
+    await registry.connect(agent).acknowledgeAndApply(jobId, '', []);
+
+    await expect(registry.connect(employer).claimTimeout(jobId))
+      .to.be.revertedWithCustomError(registry, 'CannotExpire');
+
+    const expiration = deadline + BigInt(grace);
+    await time.increaseTo(expiration + 1n);
+
+    const agentStakeBefore = await stakeManager.stakeOf(agent.address, 0);
+    const employerBeforeClaim = await token.balanceOf(employer.address);
+
+    await expect(registry.connect(employer).claimTimeout(jobId))
+      .to.emit(registry, 'JobTimedOut')
+      .withArgs(jobId, employer.address);
+
+    const employerAfter = await token.balanceOf(employer.address);
+    expect(employerAfter - employerBeforeClaim).to.equal(
+      reward + fee + stakeRequired
+    );
+    expect(employerAfter - employerInitial).to.equal(stakeRequired);
+
+    const agentStakeAfter = await stakeManager.stakeOf(agent.address, 0);
+    expect(agentStakeAfter).to.equal(agentStakeBefore - stakeRequired);
+
+    const stats = await registry.employerStats(employer.address);
+    expect(stats.failed).to.equal(1n);
+
+    await expect(registry.connect(employer).claimTimeout(jobId))
+      .to.be.revertedWithCustomError(registry, 'InvalidJobState');
+  });
+
   it('keeps modules tax exempt with zero balances after finalization', async () => {
     // eliminate fees and validator rewards so modules hold no residual funds
     await registry.setFeePct(0);
