@@ -85,18 +85,11 @@ describe('StakeManager acknowledgeAndDeposit', function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await token
-      .connect(user)
-      .approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
 
     await expect(
-      stakeManager
-        .connect(owner)
-        .acknowledgeAndDepositFor(user.address, 0, 100)
-    ).to.be.revertedWithCustomError(
-      stakeManager,
-      'TaxPolicyNotAcknowledged'
-    );
+      stakeManager.connect(owner).acknowledgeAndDepositFor(user.address, 0, 100)
+    ).to.be.revertedWithCustomError(stakeManager, 'TaxPolicyNotAcknowledged');
   });
 
   it('acknowledges through the registry before depositing for another user', async () => {
@@ -119,14 +112,10 @@ describe('StakeManager acknowledgeAndDeposit', function () {
       .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
-    await token
-      .connect(user)
-      .approve(await stakeManager.getAddress(), 100);
+    await token.connect(user).approve(await stakeManager.getAddress(), 100);
 
     await expect(
-      stakeManager
-        .connect(owner)
-        .acknowledgeAndDepositFor(user.address, 0, 100)
+      stakeManager.connect(owner).acknowledgeAndDepositFor(user.address, 0, 100)
     )
       .to.emit(stakeManager, 'StakeDeposited')
       .withArgs(user.address, 0, 100);
