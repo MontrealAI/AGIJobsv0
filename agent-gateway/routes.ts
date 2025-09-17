@@ -51,6 +51,11 @@ import {
   type JobEnergyInsight,
 } from '../shared/energyInsights';
 import {
+  getEnergyTrendsSnapshot,
+  getAgentEnergyTrend,
+  type AgentEnergyTrend,
+} from '../shared/energyTrends';
+import {
   buildThermodynamicSummary,
   type ThermodynamicSummarySortKey,
 } from './thermodynamics';
@@ -172,6 +177,49 @@ function parseThermodynamicSortKey(
       return 'success';
     case 'efficiency':
       return 'efficiency';
+    default:
+      return undefined;
+  }
+}
+
+type EnergyTrendSortKey =
+  | 'momentum'
+  | 'efficiency'
+  | 'anomaly'
+  | 'reward'
+  | 'energy';
+
+function parseEnergyTrendSortKey(
+  value: unknown
+): EnergyTrendSortKey | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalised = value.trim().toLowerCase();
+  if (!normalised) {
+    return undefined;
+  }
+  const compact = normalised.replace(/[-_\s]+/g, '');
+  switch (compact) {
+    case 'momentum':
+    case 'trend':
+    case 'energytrend':
+      return 'momentum';
+    case 'efficiency':
+    case 'efficiencymomentum':
+      return 'efficiency';
+    case 'anomaly':
+    case 'anomalyrate':
+    case 'stability':
+      return 'anomaly';
+    case 'reward':
+    case 'value':
+    case 'avgreward':
+      return 'reward';
+    case 'energy':
+    case 'baselineenergy':
+    case 'longenergy':
+      return 'energy';
     default:
       return undefined;
   }
@@ -530,6 +578,82 @@ app.get(
       res.json({
         config: getEnergyAnomalyParameters(),
         anomalies,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/telemetry/energy-trends',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const snapshot = getEnergyTrendsSnapshot();
+      const agentFilter =
+        typeof req.query.agent === 'string' ? req.query.agent : undefined;
+      const sortKey =
+        parseEnergyTrendSortKey(req.query.sort) ??
+        parseEnergyTrendSortKey(req.query.orderBy) ??
+        'momentum';
+      const orderParam =
+        (typeof req.query.order === 'string' &&
+          req.query.order.toLowerCase()) ||
+        (typeof req.query.sortOrder === 'string' &&
+          req.query.sortOrder.toLowerCase()) ||
+        undefined;
+      const order: 'asc' | 'desc' = orderParam === 'asc' ? 'asc' : 'desc';
+      const limit = parsePositiveInteger(req.query.limit);
+
+      if (agentFilter) {
+        const resolved = await normaliseAgentIdentifier(agentFilter);
+        const trend =
+          (resolved && getAgentEnergyTrend(resolved, snapshot)) ||
+          getAgentEnergyTrend(agentFilter, snapshot);
+        if (!trend) {
+          res.status(404).json({ error: 'agent trend not found' });
+          return;
+        }
+        res.json({
+          updatedAt: snapshot.updatedAt,
+          totals: snapshot.totals,
+          agents: [trend],
+        });
+        return;
+      }
+
+      const trends: AgentEnergyTrend[] = Object.values(snapshot.agents);
+
+      const sortValue = (trend: AgentEnergyTrend): number => {
+        switch (sortKey) {
+          case 'efficiency':
+            return trend.efficiencyMomentum;
+          case 'anomaly':
+            return trend.anomalyRate;
+          case 'reward':
+            return trend.averageReward;
+          case 'energy':
+            return trend.longTermEnergy;
+          case 'momentum':
+          default:
+            return trend.energyMomentumRatio;
+        }
+      };
+
+      trends.sort((a, b) => {
+        const diff = sortValue(a) - sortValue(b);
+        if (diff === 0) {
+          return b.sampleCount - a.sampleCount;
+        }
+        return order === 'asc' ? diff : -diff;
+      });
+
+      const limited = limit ? trends.slice(0, limit) : trends;
+
+      res.json({
+        updatedAt: snapshot.updatedAt,
+        totals: snapshot.totals,
+        agents: limited,
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

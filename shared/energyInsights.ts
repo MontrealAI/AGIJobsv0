@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { EnergySample } from './energyMonitor';
+import { updateEnergyTrends } from './energyTrends';
 
 const TELEMETRY_DIR = path.resolve(__dirname, '../storage/telemetry');
 const INSIGHTS_PATH = path.join(TELEMETRY_DIR, 'energy-insights.json');
@@ -436,6 +437,12 @@ export async function updateEnergyInsights(
   insights.updatedAt = timestamp;
 
   await writeInsights(insights);
+
+  try {
+    await updateEnergyTrends(sample);
+  } catch (err) {
+    console.warn('Failed to update energy trends', err);
+  }
 
   if (anomalies.length) {
     const record: EnergyAnomalyRecord = {
