@@ -43,6 +43,13 @@ import {
   listOpportunityForecasts,
   getOpportunityForecast as fetchOpportunityForecast,
 } from './opportunities';
+import {
+  getEnergyInsightsSnapshot,
+  getAgentEnergyInsight,
+  getJobEnergyInsight,
+  type AgentEnergyInsight,
+  type JobEnergyInsight,
+} from '../shared/energyInsights';
 
 const app = express();
 app.use(express.json());
@@ -98,6 +105,103 @@ function plannerErrorStatus(err: unknown): number {
   return 500;
 }
 
+function parseBooleanFlag(value: unknown): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return value === 1;
+  }
+  if (typeof value === 'string') {
+    const normalised = value.trim().toLowerCase();
+    return ['true', '1', 'yes', 'y', 'on', 'enabled'].includes(normalised);
+  }
+  return false;
+}
+
+function parsePositiveInteger(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Math.floor(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const parsed = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
+async function normaliseAgentIdentifier(
+  identifier: string
+): Promise<string | null> {
+  if (!identifier) {
+    return null;
+  }
+  const trimmed = identifier.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.endsWith('.eth')) {
+    try {
+      const resolved = await provider.resolveName(trimmed);
+      if (resolved) {
+        return resolved.toLowerCase();
+      }
+    } catch (err) {
+      console.warn('ENS resolve failed for energy insight lookup', err);
+    }
+  }
+  try {
+    return ethers.getAddress(trimmed).toLowerCase();
+  } catch {
+    return trimmed.toLowerCase();
+  }
+}
+
+function countTotalJobs(
+  jobs: Record<string, Record<string, JobEnergyInsight>>
+): number {
+  let total = 0;
+  for (const bucket of Object.values(jobs)) {
+    total += Object.keys(bucket ?? {}).length;
+  }
+  return total;
+}
+
+function collectAgentJobs(
+  agentId: string,
+  jobs: Record<string, Record<string, JobEnergyInsight>>,
+  limit?: number
+): JobEnergyInsight[] {
+  const key = agentId ? agentId.toLowerCase() : 'unknown';
+  const bucket = jobs[key];
+  if (!bucket) {
+    return [];
+  }
+  const entries = Object.values(bucket);
+  entries.sort((a, b) => {
+    if (b.totalEnergy !== a.totalEnergy) {
+      return b.totalEnergy - a.totalEnergy;
+    }
+    if (b.averageEfficiency !== a.averageEfficiency) {
+      return b.averageEfficiency - a.averageEfficiency;
+    }
+    if (b.samples !== a.samples) {
+      return b.samples - a.samples;
+    }
+    return b.averageEnergy - a.averageEnergy;
+  });
+  if (typeof limit === 'number' && Number.isFinite(limit) && limit >= 0) {
+    return entries.slice(0, limit);
+  }
+  return entries;
+}
+
 // Basic health check for service monitoring
 app.get('/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'ok' });
@@ -140,6 +244,142 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
 });
+
+app.get(
+  '/telemetry/insights',
+  (req: express.Request, res: express.Response) => {
+    try {
+      const snapshot = getEnergyInsightsSnapshot();
+      const limit = parsePositiveInteger(req.query.limit);
+      const includeJobs = parseBooleanFlag(req.query.includeJobs);
+      const jobsPerAgent = includeJobs
+        ? parsePositiveInteger(req.query.jobsPerAgent)
+        : undefined;
+
+      const agentsAll = Object.values(snapshot.agents);
+      const totalAgents = agentsAll.length;
+      const totalJobs = countTotalJobs(snapshot.jobs);
+      const sortedAgents = [...agentsAll].sort((a, b) => {
+        if (b.totalEnergy !== a.totalEnergy) {
+          return b.totalEnergy - a.totalEnergy;
+        }
+        if (b.averageEfficiency !== a.averageEfficiency) {
+          return b.averageEfficiency - a.averageEfficiency;
+        }
+        return b.jobCount - a.jobCount;
+      });
+      const selectedAgents =
+        typeof limit === 'number' ? sortedAgents.slice(0, limit) : sortedAgents;
+
+      const response: Record<string, unknown> = {
+        updatedAt: snapshot.updatedAt,
+        totalAgents,
+        totalJobs,
+        returnedAgents: selectedAgents.length,
+        agents: selectedAgents,
+      };
+
+      let returnedJobs = 0;
+      if (includeJobs) {
+        const jobsByAgent: Record<string, JobEnergyInsight[]> = {};
+        for (const agent of selectedAgents) {
+          const jobs = collectAgentJobs(
+            agent.agent,
+            snapshot.jobs,
+            jobsPerAgent
+          );
+          jobsByAgent[agent.agent] = jobs;
+          returnedJobs += jobs.length;
+        }
+        response.jobs = jobsByAgent;
+      } else {
+        returnedJobs = selectedAgents.reduce((sum, agent) => {
+          const key = agent.agent ? agent.agent.toLowerCase() : 'unknown';
+          const bucket = snapshot.jobs[key];
+          return sum + (bucket ? Object.keys(bucket).length : 0);
+        }, 0);
+      }
+      response.returnedJobs = returnedJobs;
+
+      res.json(response);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/telemetry/insights/:agent',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const agentKey = await normaliseAgentIdentifier(req.params.agent);
+      if (!agentKey) {
+        res.status(400).json({ error: 'invalid-agent' });
+        return;
+      }
+      const snapshot = getEnergyInsightsSnapshot();
+      const insight = getAgentEnergyInsight(agentKey, snapshot);
+      if (!insight) {
+        res.status(404).json({ error: 'agent-not-found' });
+        return;
+      }
+      const includeJobs = parseBooleanFlag(req.query.includeJobs);
+      const jobLimit = includeJobs
+        ? parsePositiveInteger(req.query.jobLimit ?? req.query.jobsPerAgent)
+        : undefined;
+
+      const payload: Record<string, unknown> = {
+        updatedAt: snapshot.updatedAt,
+        agent: insight,
+      };
+
+      if (includeJobs) {
+        const jobs = collectAgentJobs(agentKey, snapshot.jobs, jobLimit);
+        payload.jobs = jobs;
+        payload.jobCount = jobs.length;
+      } else {
+        const bucket = snapshot.jobs[agentKey.toLowerCase()];
+        payload.jobCount = bucket ? Object.keys(bucket).length : 0;
+      }
+
+      res.json(payload);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/telemetry/insights/:agent/jobs/:jobId',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const agentKey = await normaliseAgentIdentifier(req.params.agent);
+      if (!agentKey) {
+        res.status(400).json({ error: 'invalid-agent' });
+        return;
+      }
+      const snapshot = getEnergyInsightsSnapshot();
+      const job = getJobEnergyInsight(agentKey, req.params.jobId, snapshot);
+      if (!job) {
+        res.status(404).json({ error: 'job-not-found' });
+        return;
+      }
+      const agentInsight = getAgentEnergyInsight(agentKey, snapshot);
+      const payload: Record<string, unknown> = {
+        updatedAt: snapshot.updatedAt,
+        job,
+      };
+      if (agentInsight) {
+        payload.agent = agentInsight;
+      } else {
+        payload.agent = { agent: agentKey } as Partial<AgentEnergyInsight>;
+      }
+      res.json(payload);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 app.get(
   '/opportunities',
