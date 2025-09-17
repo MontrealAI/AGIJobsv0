@@ -703,9 +703,7 @@ describe('StakeManager', function () {
     const jobRegistryAddress = await jobRegistryMock.getAddress();
     const disputeModuleAddress = await disputeModuleMock.getAddress();
 
-    await expect(
-      stakeManager.connect(owner).setJobRegistry(jobRegistryAddress)
-    )
+    await expect(stakeManager.connect(owner).setJobRegistry(jobRegistryAddress))
       .to.emit(stakeManager, 'JobRegistryUpdated')
       .withArgs(jobRegistryAddress)
       .and.to.emit(stakeManager, 'ModulesUpdated')
