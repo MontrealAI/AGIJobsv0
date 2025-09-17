@@ -43,6 +43,7 @@ import {
   listOpportunityForecasts,
   getOpportunityForecast as fetchOpportunityForecast,
 } from './opportunities';
+import { buildOpportunityBacktest } from './opportunityBacktest';
 import {
   getEnergyInsightsSnapshot,
   getAgentEnergyInsight,
@@ -141,6 +142,40 @@ function parsePositiveInteger(value: unknown): number | undefined {
     if (Number.isFinite(parsed) && parsed > 0) {
       return parsed;
     }
+  }
+  return undefined;
+}
+
+function pickQueryValue(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      if (typeof entry !== 'string') {
+        continue;
+      }
+      const trimmed = entry.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+  }
+  return undefined;
+}
+
+function parseFloatParam(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const parsed = Number.parseFloat(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
 }
@@ -466,6 +501,44 @@ app.get(
       res.json(payload);
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/opportunities/backtest',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const limit = parsePositiveInteger(pickQueryValue(req.query.limit));
+      const minConfidence = parseFloatParam(
+        pickQueryValue(req.query.minConfidence)
+      );
+      const maxAgeHours = parseFloatParam(
+        pickQueryValue(req.query.maxAgeHours)
+      );
+      const successThreshold = parseFloatParam(
+        pickQueryValue(req.query.successThreshold)
+      );
+      const includeFailedQuery = req.query.includeFailed;
+      const includeFailed =
+        includeFailedQuery === undefined
+          ? undefined
+          : parseBooleanFlag(includeFailedQuery);
+      const since = pickQueryValue(req.query.since);
+
+      const report = await buildOpportunityBacktest({
+        limit,
+        since,
+        minConfidence,
+        maxAgeHours,
+        includeFailed,
+        successThreshold,
+      });
+      res.json(report);
+    } catch (err) {
+      console.error('Failed to build opportunity backtest', err);
+      res.status(500).json({ error: 'failed-to-build-backtest' });
     }
   }
 );

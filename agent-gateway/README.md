@@ -109,6 +109,7 @@ GET  /efficiency/:agent[?category=categoryKey]
 GET  /telemetry/insights[?limit=10&includeJobs=true&jobsPerAgent=5]
 GET  /telemetry/insights/:agent[?includeJobs=true&jobLimit=5]
 GET  /telemetry/insights/:agent/jobs/:jobId
+GET  /opportunities/backtest[?limit=200&minConfidence=0.3&maxAgeHours=48]
 GET  /opportunities[?limit=25]
 GET  /opportunities/:jobId
 GET  /audit/anchors[?limit=25]
@@ -139,6 +140,12 @@ specific job identifier. Forecasts include the orchestrator's recommended
 agent, projected thermodynamic efficiency, expected net reward, and any
 actions—such as staking adjustments—that were suggested when the job was
 evaluated.
+
+`GET /opportunities/backtest` analyses those forecasts against the recorded job
+outcomes and telemetry to produce calibration metrics. The report surfaces
+agent-level accuracy, reward and energy error distributions, and coverage
+statistics so the orchestrator can refine bidding heuristics and continuous
+learning routines.
 
 The `/audit/anchors` endpoints manage the Merkle anchoring cadence for the
 gateway's structured audit log. `GET /audit/anchors` returns the recorded
