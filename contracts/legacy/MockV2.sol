@@ -206,6 +206,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public jobStake;
     uint256 public maxJobReward;
     uint256 public maxJobDuration;
+    uint256 public minAgentStake;
     uint256 public feePct;
     uint256 public validatorRewardPct;
     uint256 public nextJobId;
@@ -330,6 +331,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function setJobStake(uint96 stake) external override {
         jobStake = stake;
+    }
+
+    function setMinAgentStake(uint256 stake) external override {
+        minAgentStake = stake;
     }
 
     function setMaxJobReward(uint256 maxReward) external override {

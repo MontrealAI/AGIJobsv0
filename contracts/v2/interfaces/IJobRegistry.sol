@@ -68,7 +68,8 @@ interface IJobRegistry {
         uint256 reward,
         uint256 stake,
         uint256 maxJobReward,
-        uint256 maxJobDuration
+        uint256 maxJobDuration,
+        uint256 minAgentStake
     );
 
     // job lifecycle
@@ -173,6 +174,9 @@ interface IJobRegistry {
 
     /// @notice set the required agent stake for each job
     function setJobStake(uint96 stake) external;
+
+    /// @notice set the minimum unstaked balance agents must maintain to apply
+    function setMinAgentStake(uint256 stake) external;
 
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external;
