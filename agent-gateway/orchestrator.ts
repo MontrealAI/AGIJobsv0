@@ -149,6 +149,206 @@ function buildSelectionPool(
   return filtered;
 }
 
+interface ProfitabilityThresholds {
+  minRewardValue: number | null;
+  minRewardPerEnergy: number | null;
+  maxEnergy: number | null;
+}
+
+interface ProfitabilityMetrics {
+  rewardValue: number | null;
+  rewardPerEnergy: number | null;
+  estimatedEnergy: number | null;
+}
+
+interface ProfitabilityDecision {
+  allowed: boolean;
+  reason?: string;
+  metrics: ProfitabilityMetrics;
+}
+
+function parseThreshold(value: string | undefined): number | null {
+  if (!value) {
+    return null;
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+  return numeric;
+}
+
+function getProfitabilityThresholds(): ProfitabilityThresholds {
+  return {
+    minRewardValue: parseThreshold(
+      process.env.ORCHESTRATOR_MIN_EXPECTED_REWARD
+    ),
+    minRewardPerEnergy: parseThreshold(
+      process.env.ORCHESTRATOR_MIN_REWARD_PER_ENERGY
+    ),
+    maxEnergy: parseThreshold(process.env.ORCHESTRATOR_MAX_EXPECTED_ENERGY),
+  };
+}
+
+function normaliseMetric(value: number | null | undefined): number | null {
+  if (typeof value !== 'number') {
+    return null;
+  }
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  return value;
+}
+
+function resolveMatchRewardValue(match: MatchResult): number | null {
+  const direct = normaliseMetric(match.rewardValue);
+  if (direct !== null) {
+    return Math.max(0, direct);
+  }
+  try {
+    const formatted = Number.parseFloat(
+      ethers.formatUnits(match.analysis.reward, Number(TOKEN_DECIMALS))
+    );
+    return Number.isFinite(formatted) ? Math.max(0, formatted) : null;
+  } catch (err) {
+    console.warn(
+      'Failed to derive reward value for profitability check',
+      match.analysis.jobId,
+      err
+    );
+    return null;
+  }
+}
+
+function resolveMatchEnergy(match: MatchResult): number | null {
+  const candidates: Array<number | null | undefined> = [
+    match.estimatedEnergy,
+    match.thermodynamics?.averageEnergy,
+    match.profile.averageEnergy,
+    match.profile.configMetadata?.energy,
+    match.profile.metadata?.energy,
+  ];
+  for (const value of candidates) {
+    const numeric = normaliseMetric(value);
+    if (numeric !== null) {
+      return numeric < 0 ? 0 : numeric;
+    }
+  }
+  return null;
+}
+
+function resolveMatchRewardPerEnergy(
+  match: MatchResult,
+  rewardValue: number | null,
+  estimatedEnergy: number | null
+): number | null {
+  const candidates: Array<number | null | undefined> = [
+    match.rewardPerEnergy,
+    match.thermodynamics?.rewardPerEnergy,
+  ];
+  for (const value of candidates) {
+    const numeric = normaliseMetric(value);
+    if (numeric !== null && numeric >= 0) {
+      return numeric;
+    }
+  }
+  if (
+    rewardValue !== null &&
+    estimatedEnergy !== null &&
+    estimatedEnergy > 0
+  ) {
+    const ratio = rewardValue / estimatedEnergy;
+    if (Number.isFinite(ratio)) {
+      return ratio;
+    }
+  }
+  return null;
+}
+
+function evaluateMatchAgainstThresholds(
+  match: MatchResult,
+  thresholds: ProfitabilityThresholds
+): ProfitabilityDecision {
+  const rewardValue = resolveMatchRewardValue(match);
+  const estimatedEnergy = resolveMatchEnergy(match);
+  const rewardPerEnergy = resolveMatchRewardPerEnergy(
+    match,
+    rewardValue,
+    estimatedEnergy
+  );
+  const metrics: ProfitabilityMetrics = {
+    rewardValue,
+    rewardPerEnergy,
+    estimatedEnergy,
+  };
+
+  if (
+    thresholds.minRewardValue !== null &&
+    rewardValue !== null &&
+    rewardValue < thresholds.minRewardValue
+  ) {
+    return { allowed: false, reason: 'reward', metrics };
+  }
+  if (
+    thresholds.maxEnergy !== null &&
+    estimatedEnergy !== null &&
+    estimatedEnergy > thresholds.maxEnergy
+  ) {
+    return { allowed: false, reason: 'energy', metrics };
+  }
+  if (
+    thresholds.minRewardPerEnergy !== null &&
+    rewardPerEnergy !== null &&
+    rewardPerEnergy < thresholds.minRewardPerEnergy
+  ) {
+    return { allowed: false, reason: 'reward-per-energy', metrics };
+  }
+
+  return { allowed: true, metrics };
+}
+
+export function filterMatchesByProfitability(
+  job: Job,
+  matches: MatchResult[]
+): MatchResult[] {
+  const thresholds = getProfitabilityThresholds();
+  if (
+    thresholds.minRewardValue === null &&
+    thresholds.minRewardPerEnergy === null &&
+    thresholds.maxEnergy === null
+  ) {
+    return matches;
+  }
+  const accepted: MatchResult[] = [];
+  for (const match of matches) {
+    const decision = evaluateMatchAgainstThresholds(match, thresholds);
+    if (decision.metrics.rewardValue !== null) {
+      match.rewardValue = decision.metrics.rewardValue;
+    }
+    if (decision.metrics.estimatedEnergy !== null) {
+      match.estimatedEnergy = decision.metrics.estimatedEnergy;
+    }
+    if (decision.metrics.rewardPerEnergy !== null) {
+      match.rewardPerEnergy = decision.metrics.rewardPerEnergy;
+    }
+    if (decision.allowed) {
+      accepted.push(match);
+      continue;
+    }
+    match.reasons.push(
+      `filtered:profitability:${decision.reason ?? 'unknown'}`
+    );
+    console.warn('Skipping candidate due to profitability threshold', {
+      jobId: job.jobId,
+      agent: match.profile.address,
+      reason: decision.reason ?? 'unknown',
+      thresholds,
+      metrics: decision.metrics,
+    });
+  }
+  return accepted;
+}
+
 export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
   const analysis = await analyseJob(job);
   const profiles = await listAgentProfiles();
@@ -183,11 +383,20 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
     );
     return null;
   }
-  const matches = await evaluateAgentMatches(analysis, candidatePool);
+  let matches = await evaluateAgentMatches(analysis, candidatePool);
   if (matches.length === 0) {
     console.warn('No viable agent match found for job', job.jobId);
     return null;
   }
+  const profitabilityFiltered = filterMatchesByProfitability(job, matches);
+  if (profitabilityFiltered.length === 0) {
+    console.warn(
+      'All candidate agents filtered by profitability thresholds',
+      job.jobId
+    );
+    return null;
+  }
+  matches = profitabilityFiltered;
   const efficiencyStats = await getAgentEfficiencyStats();
   if (efficiencyStats.size > 0) {
     const decorated = matches.map((match) => {

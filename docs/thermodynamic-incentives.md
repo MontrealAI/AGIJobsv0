@@ -43,6 +43,26 @@ if your hardware characteristics differ from the defaults.
 The selected match records the energy reason in its `reasons` array so audit
 logs explain why a low-energy agent was chosen.
 
+### Profitability thresholds
+
+When the gateway runs in production it should ignore jobs that cannot meet
+thermodynamic or financial targets. The orchestrator now honours three optional
+environment variables before bidding on a job:
+
+- `ORCHESTRATOR_MIN_EXPECTED_REWARD` – minimum reward (in formatted token units)
+  required before any agent will engage with the job.
+- `ORCHESTRATOR_MIN_REWARD_PER_ENERGY` – minimum reward-to-energy ratio. If the
+  best candidate is predicted to earn fewer tokens per energy unit than this
+  threshold, the job is skipped.
+- `ORCHESTRATOR_MAX_EXPECTED_ENERGY` – ceiling on the expected energy cost of a
+  job. Any agent whose historical telemetry exceeds this ceiling is ignored.
+
+Thresholds are evaluated using the thermodynamic leaderboard when available and
+fall back to the agent profile metadata otherwise. Jobs that fail a threshold
+are logged and recorded in the match `reasons` field as
+`filtered:profitability:<category>` so operators can audit why a job was
+rejected.
+
 ## Energy metrics log
 
 `data/energy-metrics.jsonl` is append-only and safe to process with standard
