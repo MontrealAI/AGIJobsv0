@@ -67,4 +67,70 @@ describe('StakeManager acknowledgeAndDeposit', function () {
       .to.emit(stakeManager, 'StakeDeposited')
       .withArgs(user.address, 0, 100);
   });
+
+  it('enforces acknowledgement when depositing for another user', async () => {
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+
+    const JobRegistryAckStub = await ethers.getContractFactory(
+      'contracts/v2/mocks/JobRegistryAckStub.sol:JobRegistryAckStub'
+    );
+    const jobRegistry = await JobRegistryAckStub.deploy(
+      await policy.getAddress()
+    );
+
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), 100);
+
+    await expect(
+      stakeManager
+        .connect(owner)
+        .acknowledgeAndDepositFor(user.address, 0, 100)
+    ).to.be.revertedWithCustomError(
+      stakeManager,
+      'TaxPolicyNotAcknowledged'
+    );
+  });
+
+  it('acknowledges through the registry before depositing for another user', async () => {
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+
+    const JobRegistryAckRecorder = await ethers.getContractFactory(
+      'contracts/v2/mocks/JobRegistryAckRecorder.sol:JobRegistryAckRecorder'
+    );
+    const jobRegistry = await JobRegistryAckRecorder.deploy(
+      await policy.getAddress()
+    );
+
+    await policy.setAcknowledger(await jobRegistry.getAddress(), true);
+    await jobRegistry.setAcknowledger(await stakeManager.getAddress(), true);
+
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+
+    await token
+      .connect(user)
+      .approve(await stakeManager.getAddress(), 100);
+
+    await expect(
+      stakeManager
+        .connect(owner)
+        .acknowledgeAndDepositFor(user.address, 0, 100)
+    )
+      .to.emit(stakeManager, 'StakeDeposited')
+      .withArgs(user.address, 0, 100);
+
+    expect(await policy.hasAcknowledged(user.address)).to.equal(true);
+  });
 });
