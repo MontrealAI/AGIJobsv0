@@ -16,6 +16,7 @@ import {
   startAuditAnchoringService,
   stopAuditAnchoringService,
 } from './auditAnchoring';
+import { initJobPlanner, resumeActivePlans } from './jobPlanner';
 
 let server: http.Server;
 let wss: WebSocketServer;
@@ -23,6 +24,7 @@ let wss: WebSocketServer;
 async function startGateway(): Promise<void> {
   await verifyTokenDecimals();
   await initWallets();
+  await initJobPlanner();
   await startTelemetryService();
   await startAuditAnchoringService();
 
@@ -31,6 +33,11 @@ async function startGateway(): Promise<void> {
   registerEvents(wss, {
     onUnassignedJobCreated: handleJobCreatedEvent,
   });
+  try {
+    await resumeActivePlans();
+  } catch (err) {
+    console.error('Failed to resume job plans on startup', err);
+  }
   startSweeper();
 
   server.listen(PORT, () => {

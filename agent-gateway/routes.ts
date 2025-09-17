@@ -33,6 +33,12 @@ import {
   triggerAuditAnchor,
   getAuditAnchoringState,
 } from './auditAnchoring';
+import {
+  listJobPlans,
+  getJobPlan as fetchJobPlan,
+  createJobPlan,
+  launchJobPlan,
+} from './jobPlanner';
 
 const app = express();
 app.use(express.json());
@@ -67,6 +73,25 @@ function authMiddleware(
   }
 
   res.status(401).json({ error: 'unauthorized' });
+}
+
+function plannerErrorStatus(err: unknown): number {
+  if (!err || typeof err !== 'object') {
+    return 500;
+  }
+  const message = String((err as any).message || '');
+  if (message.includes('no orchestrator wallet')) {
+    return 503;
+  }
+  if (
+    message.includes('plan ') ||
+    message.includes('task ') ||
+    message.includes('job plan') ||
+    message.includes('identifier')
+  ) {
+    return 400;
+  }
+  return 500;
 }
 
 // Basic health check for service monitoring
@@ -336,6 +361,80 @@ app.post(
       res.json({ tx: tx.hash });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/employer/plans',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const plans = await listJobPlans();
+      res.json(plans);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/employer/plans/:planId',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const plan = await fetchJobPlan(req.params.planId);
+      if (!plan) {
+        res.status(404).json({ error: 'plan not found' });
+        return;
+      }
+      res.json(plan);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.post(
+  '/employer/plans',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const plan = await createJobPlan(req.body);
+      res.json(plan);
+    } catch (err: any) {
+      const status = plannerErrorStatus(err);
+      res.status(status).json({ error: err.message });
+    }
+  }
+);
+
+app.post(
+  '/employer/plans/:planId/launch',
+  authMiddleware,
+  async (req: express.Request, res: express.Response) => {
+    const { taskIds, maxTasks } =
+      (req.body as { taskIds?: string[] | string; maxTasks?: number }) || {};
+    let tasks: string[] | undefined;
+    if (Array.isArray(taskIds)) {
+      tasks = taskIds.map((value) => String(value).trim()).filter(Boolean);
+    } else if (typeof taskIds === 'string' && taskIds.trim().length > 0) {
+      tasks = taskIds
+        .split(',')
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0);
+    }
+    const max =
+      typeof maxTasks === 'number' && Number.isFinite(maxTasks)
+        ? Number(maxTasks)
+        : undefined;
+    try {
+      const result = await launchJobPlan(req.params.planId, {
+        taskIds: tasks,
+        maxTasks: max,
+      });
+      res.json(result);
+    } catch (err: any) {
+      const status = plannerErrorStatus(err);
+      res.status(status).json({ error: err.message });
     }
   }
 );

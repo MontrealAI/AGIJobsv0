@@ -25,6 +25,7 @@ import {
   handleDisputeRaised,
   handleDisputeResolved,
 } from './validator';
+import { handleJobCompletion as handlePlanJobCompletion } from './jobPlanner';
 
 const rewardPayoutCache = new Map<string, RewardPayout[]>();
 
@@ -237,6 +238,10 @@ export function registerEvents(
       } catch (err) {
         console.error('Failed to append training record', err);
       }
+
+      handlePlanJobCompletion(id, success).catch((err) =>
+        console.error('job plan completion handling failed', id, err)
+      );
 
       rewardPayoutCache.delete(id);
       cleanupJob(id);
