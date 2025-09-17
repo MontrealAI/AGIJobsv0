@@ -1291,7 +1291,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             }
         }
         if (burnAmount > 0) {
-            token.safeTransfer(employer, burnAmount);
+            _burnToken(jobId, burnAmount);
         }
     }
 
