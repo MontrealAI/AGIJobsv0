@@ -80,7 +80,10 @@ describe('JobRegistry burn receipt validation', function () {
       .approve(await stakeManager.getAddress(), 1000n);
   });
 
-  async function runLifecycle(burnAmount) {
+  async function runLifecycle(
+    burnAmount,
+    { submitReceipt = true, confirmBurn = true } = {}
+  ) {
     const deadline = (await time.latest()) + 1000;
     const specHash = ethers.keccak256(ethers.toUtf8Bytes('spec'));
     await registry
@@ -95,16 +98,37 @@ describe('JobRegistry burn receipt validation', function () {
     await validation.finalize(jobId);
 
     const burnTx = ethers.keccak256(ethers.toUtf8Bytes('burn'));
-    await registry
-      .connect(employer)
-      .submitBurnReceipt(jobId, burnTx, burnAmount, 0);
-    await registry.connect(employer).confirmEmployerBurn(jobId, burnTx);
-    return jobId;
+    if (submitReceipt) {
+      await registry
+        .connect(employer)
+        .submitBurnReceipt(jobId, burnTx, burnAmount, 0);
+      if (confirmBurn) {
+        await registry.connect(employer).confirmEmployerBurn(jobId, burnTx);
+      }
+    }
+    return { jobId, burnTx };
   }
 
   it('finalizes with sufficient burn receipt', async () => {
     const expectedBurn = 10n; // reward 100, fee 5% + burn 5% => 10
-    const jobId = await runLifecycle(expectedBurn);
+    const { jobId } = await runLifecycle(expectedBurn);
+    await expect(registry.connect(employer).finalize(jobId)).to.emit(
+      registry,
+      'JobFinalized'
+    );
+  });
+
+  it('reverts when burn receipt not confirmed', async () => {
+    const expectedBurn = 10n;
+    const { jobId, burnTx } = await runLifecycle(expectedBurn, {
+      confirmBurn: false,
+    });
+
+    await expect(
+      registry.connect(employer).finalize(jobId)
+    ).to.be.revertedWithCustomError(registry, 'BurnNotConfirmed');
+
+    await registry.connect(employer).confirmEmployerBurn(jobId, burnTx);
     await expect(registry.connect(employer).finalize(jobId)).to.emit(
       registry,
       'JobFinalized'
@@ -112,7 +136,7 @@ describe('JobRegistry burn receipt validation', function () {
   });
 
   it('reverts when burn receipt amount is too low', async () => {
-    const jobId = await runLifecycle(5n); // below expected 10
+    const { jobId } = await runLifecycle(5n); // below expected 10
     await expect(
       registry.connect(employer).finalize(jobId)
     ).to.be.revertedWithCustomError(registry, 'BurnAmountTooLow');
