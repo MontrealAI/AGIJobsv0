@@ -250,9 +250,7 @@ describe('ValidationModule finalize flows', function () {
     await advance(61); // end commit
     await advance(61); // end reveal
     await expect(
-      validation
-        .connect(v1)
-        .revealValidation(1, true, burnTxHash, salt, '', [])
+      validation.connect(v1).revealValidation(1, true, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'RevealPhaseClosed');
   });
 
