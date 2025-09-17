@@ -39,6 +39,10 @@ import {
   createJobPlan,
   launchJobPlan,
 } from './jobPlanner';
+import {
+  listOpportunityForecasts,
+  getOpportunityForecast as fetchOpportunityForecast,
+} from './opportunities';
 
 const app = express();
 app.use(express.json());
@@ -136,6 +140,42 @@ app.get('/jobs', (req: express.Request, res: express.Response) => {
 app.get('/telemetry', (req: express.Request, res: express.Response) => {
   res.json({ pending: telemetryQueueLength() });
 });
+
+app.get(
+  '/opportunities',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const limitParam = req.query.limit;
+      let limit: number | undefined;
+      if (typeof limitParam === 'string' && limitParam.trim().length > 0) {
+        const parsed = Number.parseInt(limitParam, 10);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          limit = parsed;
+        }
+      }
+      const forecasts = await listOpportunityForecasts(limit);
+      res.json({ forecasts });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get(
+  '/opportunities/:jobId',
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const record = await fetchOpportunityForecast(req.params.jobId);
+      if (!record) {
+        res.status(404).json({ error: 'not-found' });
+        return;
+      }
+      res.json(record);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
 
 app.get(
   '/audit/anchors',
