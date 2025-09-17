@@ -397,6 +397,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param jobId Identifier of the expired job
     /// @param caller Address that triggered the expiration
     event JobExpired(uint256 indexed jobId, address indexed caller);
+    event JobTimedOut(uint256 indexed jobId, address indexed caller);
     event JobDisputed(uint256 indexed jobId, address indexed caller);
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
     event FeePoolUpdated(address pool);
@@ -1589,6 +1590,69 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param jobId Identifier of the job to delist.
     function delistJob(uint256 jobId) external onlyGovernance {
         _cancelJob(jobId);
+    }
+
+    /// @notice Mark an applied job as timed out and settle funds directly.
+    /// @param jobId Identifier of the job to mark as timed out.
+    function claimTimeout(uint256 jobId)
+        external
+        whenNotPaused
+        nonReentrant
+        requiresTaxAcknowledgement(
+            taxPolicy,
+            msg.sender,
+            owner(),
+            address(disputeModule),
+            address(validationModule)
+        )
+    {
+        Job storage job = jobs[jobId];
+        address gov = address(governance);
+        if (msg.sender != job.employer && msg.sender != gov) {
+            revert OnlyEmployer();
+        }
+        if (job.state != State.Applied) revert InvalidJobState();
+        uint256 expiry = uint256(job.deadline) + expirationGracePeriod;
+        if (block.timestamp <= expiry) revert CannotExpire();
+
+        address employer = job.employer;
+        address agent = job.agent;
+        uint128 reward = job.reward;
+        uint96 stakeAmount = job.stake;
+        uint32 feePctSnapshot = job.feePct;
+
+        job.success = false;
+        job.state = State.Finalized;
+
+        if (address(stakeManager) != address(0)) {
+            bytes32 jobKey = bytes32(jobId);
+            uint256 fee = (uint256(reward) * feePctSnapshot) / 100;
+            uint256 totalRefund = uint256(reward) + fee;
+            if (totalRefund > 0) {
+                stakeManager.releaseReward(jobKey, employer, employer, totalRefund);
+            }
+            if (stakeAmount > 0 && agent != address(0)) {
+                stakeManager.slash(
+                    agent,
+                    IStakeManager.Role.Agent,
+                    uint256(stakeAmount),
+                    employer
+                );
+            }
+        }
+
+        employerStats[employer].failed++;
+
+        job.agent = address(0);
+        job.agentPct = 0;
+        job.assignedAt = 0;
+        job.reward = 0;
+        job.stake = 0;
+        job.burnConfirmed = false;
+        job.burnReceiptAmount = 0;
+        job.resultHash = bytes32(0);
+
+        emit JobTimedOut(jobId, msg.sender);
     }
 
     /// @notice Cancel an assigned job that failed to submit before its deadline.
