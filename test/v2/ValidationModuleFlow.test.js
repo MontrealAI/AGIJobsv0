@@ -173,6 +173,21 @@ describe('ValidationModule finalize flows', function () {
     );
   });
 
+  it('reverts commit after the commit deadline', async () => {
+    const { v1, validation, select, burnTxHash } = await setup();
+    await select(1);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('late'));
+    const nonce = await validation.jobNonce(1);
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
+    );
+    await advance(61);
+    await expect(
+      validation.connect(v1).commitValidation(1, commit, '', [])
+    ).to.be.revertedWithCustomError(validation, 'CommitPhaseClosed');
+  });
+
   it('records majority rejection as dispute', async () => {
     const { v1, v2, v3, validation, jobRegistry, select, burnTxHash } =
       await setup();
@@ -220,6 +235,25 @@ describe('ValidationModule finalize flows', function () {
     await validation.finalize(1);
     const job = await jobRegistry.jobs(1);
     expect(job.status).to.equal(5); // Disputed
+  });
+
+  it('reverts reveal after the reveal deadline', async () => {
+    const { v1, validation, select, burnTxHash } = await setup();
+    await select(1);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('late'));
+    const nonce = await validation.jobNonce(1);
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
+    );
+    await validation.connect(v1).commitValidation(1, commit, '', []);
+    await advance(61); // end commit
+    await advance(61); // end reveal
+    await expect(
+      validation
+        .connect(v1)
+        .revealValidation(1, true, burnTxHash, salt, '', [])
+    ).to.be.revertedWithCustomError(validation, 'RevealPhaseClosed');
   });
 
   it('slashes validators that do not all reveal', async () => {
