@@ -106,6 +106,9 @@ POST /jobs/:id/reveal { address }
 GET  /health
 GET  /efficiency
 GET  /efficiency/:agent[?category=categoryKey]
+GET  /telemetry/insights[?limit=10&includeJobs=true&jobsPerAgent=5]
+GET  /telemetry/insights/:agent[?includeJobs=true&jobLimit=5]
+GET  /telemetry/insights/:agent/jobs/:jobId
 GET  /opportunities[?limit=25]
 GET  /opportunities/:jobId
 GET  /audit/anchors[?limit=25]
@@ -119,6 +122,15 @@ provides an individual breakdown. When a `category` query parameter is
 present, the gateway responds with the metrics for that specialised domain –
 for example, `validation` or a custom agent discipline. ENS names can be used
 in place of raw addresses and are resolved automatically before lookup.
+
+The `/telemetry/insights` family exposes the raw energy telemetry rollups that
+power the efficiency engine. `GET /telemetry/insights` returns the global view
+of agent runtime costs ordered by total energy consumption. Clients can request
+`includeJobs=true` to attach the heaviest jobs per agent (optionally limited by
+`jobsPerAgent`). The `:agent` variant narrows the response to a single agent,
+and `/telemetry/insights/:agent/jobs/:jobId` retrieves the stored metrics for a
+specific job execution. ENS names are accepted for the agent parameter and are
+resolved to the corresponding address automatically.
 
 The `/opportunities` endpoints expose the orchestrator's bidding forecasts.
 `GET /opportunities` returns the most recent opportunity assessments (newest
