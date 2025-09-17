@@ -22,6 +22,7 @@ contract MockStakeManager is IStakeManager {
     mapping(Role => uint256) public totalStakes;
     address public disputeModule;
     address public override jobRegistry;
+    uint256 public minStake;
 
     function setJobRegistry(address j) external { jobRegistry = j; }
 
@@ -73,7 +74,9 @@ contract MockStakeManager is IStakeManager {
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
 
-    function setMinStake(uint256) external override {}
+    function setMinStake(uint256 value) external override {
+        minStake = value;
+    }
     function setSlashingPercentages(uint256, uint256) external override {}
     function setSlashingParameters(uint256, uint256) external override {}
     function setTreasury(address) external override {}

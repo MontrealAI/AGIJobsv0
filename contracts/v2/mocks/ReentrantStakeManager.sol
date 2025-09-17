@@ -14,6 +14,7 @@ contract ReentrantStakeManager is IStakeManager {
     mapping(Role => uint256) public totalStakes;
     address public override jobRegistry;
     IValidationModule public validation;
+    uint256 public minStake;
 
     bool public attackSlash;
     uint256 public attackJobId;
@@ -71,7 +72,7 @@ contract ReentrantStakeManager is IStakeManager {
     function setModules(address, address) external override {}
     function lockDisputeFee(address, uint256) external override {}
     function payDisputeFee(address, uint256) external override {}
-    function setMinStake(uint256) external override {}
+    function setMinStake(uint256 value) external override { minStake = value; }
     function setSlashingPercentages(uint256, uint256) external override {}
     function setSlashingParameters(uint256, uint256) external override {}
     function setTreasury(address) external override {}

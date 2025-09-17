@@ -235,6 +235,14 @@ describe('JobRegistry integration', function () {
         specHash,
         'uri'
       );
+    const minStake = await stakeManager.minStake();
+    await token.mint(newAgent.address, minStake);
+    await token
+      .connect(newAgent)
+      .approve(await stakeManager.getAddress(), minStake);
+    await stakeManager
+      .connect(newAgent)
+      .acknowledgeAndDeposit(0, minStake);
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, '', []))
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(newAgent.address, ethers.ZeroHash, '', false, false)

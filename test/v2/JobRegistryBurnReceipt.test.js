@@ -71,6 +71,7 @@ describe('JobRegistry burn receipt validation', function () {
     await stakeManager
       .connect(owner)
       .setValidationModule(await validation.getAddress());
+    await stakeManager.connect(owner).setMinStake(1);
     await stakeManager.connect(owner).setBurnPct(5);
     await validation.setJobRegistry(await registry.getAddress());
 
@@ -78,6 +79,11 @@ describe('JobRegistry burn receipt validation', function () {
     await token
       .connect(employer)
       .approve(await stakeManager.getAddress(), 1000n);
+    await token.mint(agent.address, 1000n);
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), 1000n);
+    await stakeManager.connect(agent).depositStake(0, 1n);
   });
 
   async function runLifecycle(

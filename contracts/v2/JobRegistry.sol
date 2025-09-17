@@ -56,6 +56,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error BlacklistedAgent();
     error NotAuthorizedAgent();
     error AgentTypeNotAllowed();
+    error AgentStakeTooLow();
     error InvalidJobState();
     error OnlyAgent();
     error DeadlinePassed();
@@ -969,6 +970,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
         if (!authorized) revert NotAuthorizedAgent();
+        if (address(stakeManager) != address(0)) {
+            uint256 currentStake = stakeManager.stakeOf(
+                msg.sender,
+                IStakeManager.Role.Agent
+            );
+            if (currentStake < stakeManager.minStake()) revert AgentStakeTooLow();
+        }
         if (job.agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender
