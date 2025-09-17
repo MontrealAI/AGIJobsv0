@@ -92,6 +92,12 @@ contract ValidationStub is IValidationModule {
 
     function setValidatorSlashingPct(uint256) external override {}
 
+    function setNonRevealPenalty(uint256, uint256) external override {}
+
+    function setEarlyFinalizeDelay(uint256) external override {}
+
+    function setForceFinalizeGrace(uint256) external override {}
+
     function setValidatorSubdomains(
         address[] calldata,
         string[] calldata

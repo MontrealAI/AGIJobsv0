@@ -129,6 +129,14 @@ contract NoValidationModule is IValidationModule, Ownable {
     function setValidatorSlashingPct(uint256) external pure override {}
 
     /// @inheritdoc IValidationModule
+    function setNonRevealPenalty(uint256, uint256) external pure override {}
+
+    /// @inheritdoc IValidationModule
+    function setEarlyFinalizeDelay(uint256) external pure override {}
+
+    function setForceFinalizeGrace(uint256) external pure override {}
+
+    /// @inheritdoc IValidationModule
     function setValidatorSubdomains(
         address[] calldata,
         string[] calldata
