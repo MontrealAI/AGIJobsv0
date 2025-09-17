@@ -14,6 +14,15 @@ import {
   type AgentEnergyInsight,
   type JobEnergyInsight,
 } from '../../shared/energyInsights';
+import {
+  getEnergyTrendsSnapshot,
+  type EnergyTrendSnapshot,
+} from '../../shared/energyTrends';
+import {
+  evaluateTrendForAgent,
+  parseTrendStatuses,
+  type TrendEvaluationOptions,
+} from './trendScoring';
 import { EnergyPolicy, type CategoryEnergyThresholds } from './energyPolicy';
 
 // Minimal ABIs for required contract interactions
@@ -133,6 +142,8 @@ export interface SelectAgentOptions {
   energyCostPerUnit?: number;
   includeDiagnostics?: boolean;
   energyPolicy?: EnergyPolicy;
+  energyTrends?: EnergyTrendSnapshot;
+  trendOptions?: Partial<TrendEvaluationOptions>;
 }
 
 export interface SelectionDiagnosticsEntry {
@@ -147,6 +158,11 @@ export interface SelectionDiagnosticsEntry {
   anomalyRate: number;
   energySource: string;
   efficiencySource: string;
+  trendStatus?: string;
+  energyMomentumRatio?: string;
+  profitThreshold?: string;
+  trendPenalty?: string;
+  trendBonus?: string;
 }
 
 export interface SelectionDiagnostics {
@@ -261,41 +277,63 @@ export async function selectAgent(
     }
   }
 
-  interface EvaluatedAgent {
-    agent: AgentInfo;
-    reputation: bigint;
-    predictedEnergy: number;
-    efficiency: number;
-    skillMatches: number;
-    profitMargin: number;
-    profitable: boolean;
-    stakeSufficient: boolean;
-    anomalyRate: number;
-    energySource: string;
-    efficiencySource: string;
-  }
+interface EvaluatedAgent {
+  agent: AgentInfo;
+  reputation: bigint;
+  predictedEnergy: number;
+  efficiency: number;
+  skillMatches: number;
+  profitMargin: number;
+  profitable: boolean;
+  stakeSufficient: boolean;
+  anomalyRate: number;
+  energySource: string;
+  efficiencySource: string;
+  trendStatus: string;
+  energyMomentumRatio: number;
+  profitThreshold: number;
+  trendPenalty: number;
+  trendBonus: number;
+}
 
-  const formatDiagnostics = (
-    entries: EvaluatedAgent[]
-  ): SelectionDiagnosticsEntry[] =>
-    entries.map((entry) => ({
-      address: entry.agent.address,
-      reputation: entry.reputation.toString(),
-      predictedEnergy: entry.predictedEnergy,
-      efficiency: entry.efficiency,
-      skillMatches: entry.skillMatches,
-      profitMargin: Number.isFinite(entry.profitMargin)
-        ? entry.profitMargin.toFixed(6)
-        : 'Infinity',
-      profitable: entry.profitable,
-      stakeSufficient: entry.stakeSufficient,
-      anomalyRate: entry.anomalyRate,
-      energySource: entry.energySource,
-      efficiencySource: entry.efficiencySource,
-    }));
+const formatDiagnostics = (
+  entries: EvaluatedAgent[]
+): SelectionDiagnosticsEntry[] =>
+  entries.map((entry) => ({
+    address: entry.agent.address,
+    reputation: entry.reputation.toString(),
+    predictedEnergy: entry.predictedEnergy,
+    efficiency: entry.efficiency,
+    skillMatches: entry.skillMatches,
+    profitMargin: Number.isFinite(entry.profitMargin)
+      ? entry.profitMargin.toFixed(6)
+      : 'Infinity',
+    profitable: entry.profitable,
+    stakeSufficient: entry.stakeSufficient,
+    anomalyRate: entry.anomalyRate,
+    energySource: entry.energySource,
+    efficiencySource: entry.efficiencySource,
+    trendStatus: entry.trendStatus,
+    energyMomentumRatio: Number.isFinite(entry.energyMomentumRatio)
+      ? entry.energyMomentumRatio.toFixed(4)
+      : undefined,
+    profitThreshold: Number.isFinite(entry.profitThreshold)
+      ? entry.profitThreshold.toFixed(6)
+      : undefined,
+    trendPenalty:
+      entry.trendPenalty > 0 && Number.isFinite(entry.trendPenalty)
+        ? entry.trendPenalty.toFixed(6)
+        : undefined,
+    trendBonus:
+      entry.trendBonus > 0 && Number.isFinite(entry.trendBonus)
+        ? entry.trendBonus.toFixed(6)
+        : undefined,
+  }));
 
   const evaluated: EvaluatedAgent[] = [];
   const energyInsights = getEnergyInsightsSnapshot();
+  const energyTrends = options.energyTrends ?? getEnergyTrendsSnapshot();
+  const trendOptions = resolveTrendOptions(options.trendOptions);
 
   for (const agent of candidates) {
     const reputation = (await reputationEngine.reputation(
@@ -355,7 +393,10 @@ export async function selectAgent(
     } else if (predictedEnergy > 0 && Number.isFinite(predictedEnergy)) {
       efficiencyRaw = 1 / (predictedEnergy + 1);
     }
-    const efficiency = Number.isFinite(efficiencyRaw) ? efficiencyRaw : 0;
+    const efficiency =
+      typeof efficiencyRaw === 'number' && Number.isFinite(efficiencyRaw)
+        ? efficiencyRaw
+        : 0;
     if (efficiency < minEfficiency) {
       continue;
     }
@@ -369,6 +410,19 @@ export async function selectAgent(
       continue;
     }
     const anomalyRate = Math.max(jobAnomalyRate, agentAnomalyRate);
+
+    const trend = energyTrends.agents[agentKey] ?? null;
+    const trendAssessment = evaluateTrendForAgent(
+      trend,
+      minProfitMargin,
+      trendOptions
+    );
+    if (trendAssessment.blocked) {
+      continue;
+    }
+    const profitThreshold = trendAssessment.profitFloor;
+    const trendStatus = trendAssessment.status;
+    const energyMomentumRatio = trendAssessment.momentumRatio;
 
     const candidateSkills = new Set<string>();
     if (Array.isArray(agent.skills)) {
@@ -411,7 +465,7 @@ export async function selectAgent(
         ? profitValue / energyCost
         : Number.POSITIVE_INFINITY;
     const profitable =
-      rewardValue === null ? true : profitMargin >= minProfitMargin;
+      rewardValue === null ? true : profitMargin >= profitThreshold;
 
     let stakeSufficient = true;
     if (stakeManager && options.requiredStake && options.requiredStake > 0n) {
@@ -443,6 +497,11 @@ export async function selectAgent(
       anomalyRate,
       energySource,
       efficiencySource,
+      trendStatus,
+      energyMomentumRatio,
+      profitThreshold,
+      trendPenalty: trendAssessment.penalty,
+      trendBonus: trendAssessment.bonus,
     });
   }
 
@@ -487,6 +546,9 @@ export async function selectAgent(
       return b.skillMatches - a.skillMatches;
     }
     if (a.reputation === b.reputation) {
+      if (a.energyMomentumRatio !== b.energyMomentumRatio) {
+        return a.energyMomentumRatio - b.energyMomentumRatio;
+      }
       if (a.predictedEnergy !== b.predictedEnergy) {
         return a.predictedEnergy - b.predictedEnergy;
       }
@@ -512,6 +574,47 @@ export async function selectAgent(
       efficiencyScore: winner.efficiency,
     },
     diagnostics,
+  };
+}
+
+const DEFAULT_MAX_AGENT_MOMENTUM_RATIO = parseNumericEnv(
+  process.env.MAX_AGENT_ENERGY_MOMENTUM_RATIO,
+  0.35
+);
+
+const DEFAULT_TREND_PROFIT_WEIGHT = parseNumericEnv(
+  process.env.AGENT_TREND_PROFIT_WEIGHT,
+  0.25
+);
+
+const DEFAULT_TREND_COOLING_WEIGHT = parseNumericEnv(
+  process.env.AGENT_TREND_COOLING_BONUS_WEIGHT,
+  0.15
+);
+
+const DEFAULT_TREND_MIN_PROFIT_FLOOR = parseNumericEnv(
+  process.env.AGENT_TREND_MIN_PROFIT_FLOOR,
+  0.02
+);
+
+const DEFAULT_BLOCKED_TREND_STATUSES = parseTrendStatuses(
+  process.env.BLOCKED_AGENT_TREND_STATUSES
+);
+
+function resolveTrendOptions(
+  overrides?: Partial<TrendEvaluationOptions>
+): TrendEvaluationOptions {
+  return {
+    maxMomentumRatio:
+      overrides?.maxMomentumRatio ?? DEFAULT_MAX_AGENT_MOMENTUM_RATIO,
+    profitWeight: overrides?.profitWeight ?? DEFAULT_TREND_PROFIT_WEIGHT,
+    coolingBonusWeight:
+      overrides?.coolingBonusWeight ?? DEFAULT_TREND_COOLING_WEIGHT,
+    minProfitFloor:
+      overrides?.minProfitFloor ?? DEFAULT_TREND_MIN_PROFIT_FLOOR,
+    blockedStatuses: overrides?.blockedStatuses
+      ? new Set(overrides.blockedStatuses)
+      : new Set(DEFAULT_BLOCKED_TREND_STATUSES),
   };
 }
 

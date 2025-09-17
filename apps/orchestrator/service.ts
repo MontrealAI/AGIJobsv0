@@ -600,7 +600,7 @@ export class MetaOrchestrator {
           spec?.thermodynamics?.minProfitMargin ??
           classification.spec?.thermodynamics?.minProfitMargin ??
           this.energyPolicy?.getBaseProfitMargin();
-        const selectionOptions = {
+        const selectionOptions: SelectAgentOptions = {
           provider,
           jobId: summary.jobId,
           minEfficiencyScore:
@@ -611,7 +611,7 @@ export class MetaOrchestrator {
           requiredStake: requirements.stake,
           stakeManagerAddress: this.config.stakeManagerAddress,
           energyPolicy: this.energyPolicy ?? undefined,
-        } satisfies SelectAgentOptions;
+        };
         if (baseProfitMargin !== undefined) {
           selectionOptions.minProfitMargin = baseProfitMargin;
         }
