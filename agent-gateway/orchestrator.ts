@@ -18,6 +18,12 @@ import {
   quarantineManager,
   secureLogAction,
 } from './security';
+import {
+  buildOpportunityForecast,
+  type OpportunityCandidateInput,
+  type OpportunityJobContext,
+} from '../shared/opportunityModel';
+import { recordOpportunityForecast } from './opportunities';
 
 const walletByLabel = new Map<string, Wallet>();
 const walletByAddress = new Map<string, Wallet>();
@@ -188,6 +194,88 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
     console.warn('No viable agent match found for job', job.jobId);
     return null;
   }
+
+  const opportunityCandidates: OpportunityCandidateInput[] = matches.map(
+    (match) => ({
+      address: match.profile.address,
+      ensName: match.profile.ensName,
+      label: match.profile.label,
+      reputationScore: match.profile.reputationScore,
+      successRate: match.profile.successRate,
+      totalJobs: match.profile.totalJobs,
+      averageEnergy: match.profile.averageEnergy,
+      averageDurationMs: match.profile.averageDurationMs,
+      stakeBalance: match.profile.stakeBalance,
+      categories: match.profile.categories,
+      thermodynamics: match.thermodynamics,
+      matchScore: match.score,
+      reasons: [...match.reasons],
+    })
+  );
+
+  const opportunityContext: OpportunityJobContext = {
+    jobId: job.jobId,
+    reward: analysis.reward,
+    stake: analysis.stake,
+    fee: analysis.fee,
+    category: analysis.category,
+    metadata: analysis.metadata,
+    tags: analysis.tags,
+  };
+
+  const opportunityForecast = buildOpportunityForecast(
+    opportunityContext,
+    opportunityCandidates
+  );
+
+  try {
+    await recordOpportunityForecast(opportunityForecast);
+  } catch (err) {
+    console.warn('Failed to persist opportunity forecast', err);
+  }
+
+  try {
+    await secureLogAction({
+      component: 'orchestrator',
+      action: 'forecast',
+      jobId: job.jobId,
+      metadata: {
+        candidateCount: opportunityForecast.candidateCount,
+        bestCandidate: opportunityForecast.bestCandidate?.agent,
+        opportunityScore:
+          opportunityForecast.bestCandidate?.opportunityScore ?? 0,
+        projectedNet: opportunityForecast.bestCandidate?.projectedNet ?? 0,
+        recommendations: opportunityForecast.recommendations,
+      },
+      success:
+        (opportunityForecast.bestCandidate?.projectedNet ?? 0) >= 0 &&
+        (opportunityForecast.bestCandidate?.opportunityScore ?? 0) >= 0,
+    });
+  } catch (err) {
+    console.warn('Failed to log opportunity forecast', err);
+  }
+
+  if (
+    opportunityForecast.bestCandidate &&
+    opportunityForecast.rewardValue > 0 &&
+    opportunityForecast.bestCandidate.projectedNet <=
+      opportunityForecast.rewardValue * 0.05 &&
+    opportunityForecast.bestCandidate.opportunityScore < 0.2
+  ) {
+    console.warn(
+      'Opportunity forecast indicates low expected value; skipping job',
+      job.jobId
+    );
+    return null;
+  }
+
+  const projectionByAgent = new Map(
+    opportunityForecast.candidates.map((candidate) => [
+      candidate.agent.toLowerCase(),
+      candidate,
+    ])
+  );
+
   const efficiencyStats = await getAgentEfficiencyStats();
   if (efficiencyStats.size > 0) {
     const decorated = matches.map((match) => {
@@ -210,8 +298,24 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
       const reliabilityBoost =
         successRate !== null ? Math.max(0, successRate) * 0.05 : 0;
 
-      const finalScore =
+      let finalScore =
         match.score + efficiencyBoost + reliabilityBoost - energyPenalty;
+      const projection = projectionByAgent.get(
+        match.profile.address.toLowerCase()
+      );
+      if (projection) {
+        const opportunityBoost =
+          projection.opportunityScore * 0.2 +
+          projection.confidence * 0.1 +
+          projection.stakeCoverage * 0.05;
+        finalScore += opportunityBoost;
+        match.reasons.push(
+          `opportunity:${projection.opportunityScore.toFixed(3)}`
+        );
+        if (!projection.stakeAdequate) {
+          match.reasons.push('stake-shortfall');
+        }
+      }
 
       return {
         match,
@@ -244,6 +348,18 @@ export async function selectAgentForJob(job: Job): Promise<MatchResult | null> {
         );
       }
       return selectedEntry.match;
+    }
+  }
+
+  const fallbackProjection = opportunityForecast.bestCandidate
+    ? projectionByAgent.get(opportunityForecast.bestCandidate.agent)
+    : undefined;
+  if (fallbackProjection) {
+    matches[0].reasons.push(
+      `opportunity:${fallbackProjection.opportunityScore.toFixed(3)}`
+    );
+    if (!fallbackProjection.stakeAdequate) {
+      matches[0].reasons.push('stake-shortfall');
     }
   }
   return matches[0];

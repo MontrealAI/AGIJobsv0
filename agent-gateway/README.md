@@ -106,6 +106,8 @@ POST /jobs/:id/reveal { address }
 GET  /health
 GET  /efficiency
 GET  /efficiency/:agent[?category=categoryKey]
+GET  /opportunities[?limit=25]
+GET  /opportunities/:jobId
 GET  /audit/anchors[?limit=25]
 POST /audit/anchors { force?, minNewEvents? }
 ```
@@ -117,6 +119,14 @@ provides an individual breakdown. When a `category` query parameter is
 present, the gateway responds with the metrics for that specialised domain –
 for example, `validation` or a custom agent discipline. ENS names can be used
 in place of raw addresses and are resolved automatically before lookup.
+
+The `/opportunities` endpoints expose the orchestrator's bidding forecasts.
+`GET /opportunities` returns the most recent opportunity assessments (newest
+first) while `GET /opportunities/:jobId` retrieves the stored forecast for a
+specific job identifier. Forecasts include the orchestrator's recommended
+agent, projected thermodynamic efficiency, expected net reward, and any
+actions—such as staking adjustments—that were suggested when the job was
+evaluated.
 
 The `/audit/anchors` endpoints manage the Merkle anchoring cadence for the
 gateway's structured audit log. `GET /audit/anchors` returns the recorded
