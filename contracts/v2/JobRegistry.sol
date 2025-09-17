@@ -115,6 +115,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     mapping(uint256 => mapping(bytes32 => BurnReceipt)) private burnReceipts;
+    mapping(uint256 => uint256) public pendingValidationEntropy;
+    mapping(uint256 => bool) public validationStartPending;
 
     /// @notice Tracks job outcomes for each employer.
     struct EmployerStats {
@@ -128,6 +130,39 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     function getSpecHash(uint256 jobId) external view returns (bytes32) {
         return jobs[jobId].specHash;
+    }
+
+    function burnEvidenceStatus(uint256 jobId)
+        public
+        view
+        returns (bool burnRequired, bool burnSatisfied)
+    {
+        burnRequired = _isBurnRequired();
+        if (!burnRequired) {
+            return (false, true);
+        }
+        burnSatisfied = jobs[jobId].burnConfirmed;
+    }
+
+    function _isBurnRequired() internal view returns (bool) {
+        IStakeManager manager = stakeManager;
+        return address(manager) != address(0) && manager.burnPct() > 0;
+    }
+
+    function _clearValidationStart(uint256 jobId) internal {
+        if (validationStartPending[jobId]) {
+            validationStartPending[jobId] = false;
+            delete pendingValidationEntropy[jobId];
+        }
+    }
+
+    function _startValidation(uint256 jobId, uint256 entropy) internal {
+        validationStartPending[jobId] = false;
+        delete pendingValidationEntropy[jobId];
+        if (address(validationModule) != address(0)) {
+            validationModule.start(jobId, entropy);
+            emit ValidationStartTriggered(jobId);
+        }
     }
 
     /// @notice Records evidence of a token burn by the employer.
@@ -211,6 +246,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.burnConfirmed = true;
         job.burnReceiptAmount = uint128(burnReceipts[jobId][burnTxHash].amount);
         emit BurnConfirmed(jobId, burnTxHash);
+        if (validationStartPending[jobId] && job.state == State.Submitted) {
+            _startValidation(jobId, pendingValidationEntropy[jobId]);
+        }
     }
 
     IValidationModule public validationModule;
@@ -393,6 +431,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 receiptAmount,
         uint256 expectedAmount
     );
+    event ValidationStartPending(uint256 indexed jobId);
+    event ValidationStartTriggered(uint256 indexed jobId);
     /// @notice Emitted when an assigned job is cancelled after missing its deadline
     /// @param jobId Identifier of the expired job
     /// @param caller Address that triggered the expiration
@@ -1111,21 +1151,26 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.state = State.Submitted;
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         if (address(validationModule) != address(0)) {
-            validationModule.start(
-                jobId,
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            jobId,
-                            msg.sender,
-                            resultHash,
-                            block.timestamp,
-                            block.prevrandao,
-                            blockhash(block.number - 1)
-                        )
+            uint256 entropy = uint256(
+                keccak256(
+                    abi.encodePacked(
+                        jobId,
+                        msg.sender,
+                        resultHash,
+                        block.timestamp,
+                        block.prevrandao,
+                        blockhash(block.number - 1)
                     )
                 )
             );
+            (bool burnRequired, bool burnSatisfied) = burnEvidenceStatus(jobId);
+            if (burnRequired && !burnSatisfied) {
+                pendingValidationEntropy[jobId] = entropy;
+                validationStartPending[jobId] = true;
+                emit ValidationStartPending(jobId);
+            } else {
+                _startValidation(jobId, entropy);
+            }
         }
     }
 
@@ -1152,6 +1197,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         Job storage job = jobs[jobId];
         if (job.state != State.Submitted) revert NotSubmitted();
+        _clearValidationStart(jobId);
         job.success = success;
         job.state = success ? State.Completed : State.Disputed;
         emit JobCompleted(jobId, success);
@@ -1209,6 +1255,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         Job storage job = jobs[jobId];
         if (job.state != State.Submitted) revert NotSubmitted();
+        _clearValidationStart(jobId);
         job.success = false;
         job.state = State.Completed;
         emit JobCompleted(jobId, false);
@@ -1349,6 +1396,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (job.state != State.Completed) revert NotReady();
         bool isGov = msg.sender == address(governance);
+        _clearValidationStart(jobId);
         uint256 burnRate = address(stakeManager) != address(0)
             ? stakeManager.burnPct()
             : 0;

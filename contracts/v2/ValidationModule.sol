@@ -51,6 +51,7 @@ error CommitMissing();
 error AlreadyRevealed();
 error InvalidReveal();
 error InvalidBurnReceipt();
+error BurnEvidenceIncomplete();
 error AlreadyTallied();
 error RevealPending();
 error UnauthorizedCaller();
@@ -683,6 +684,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         returns (address[] memory selected)
     {
         Round storage r = rounds[jobId];
+        (bool burnRequired, bool burnSatisfied) = jobRegistry
+            .burnEvidenceStatus(jobId);
+        if (burnRequired && !burnSatisfied) revert BurnEvidenceIncomplete();
         // Ensure validators are only chosen once per round to prevent
         // re-selection or commit replay.
         if (r.validators.length != 0) revert ValidatorsAlreadySelected();
@@ -1180,8 +1184,21 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32 commitHash = commitments[jobId][msg.sender][nonce];
         if (commitHash == bytes32(0)) revert CommitMissing();
         if (revealed[jobId][msg.sender]) revert AlreadyRevealed();
-        if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
-            revert InvalidBurnReceipt();
+        (bool burnRequired, bool burnSatisfied) = jobRegistry
+            .burnEvidenceStatus(jobId);
+        if (burnRequired) {
+            if (burnSatisfied) {
+                if (burnTxHash == bytes32(0)) revert InvalidBurnReceipt();
+                if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
+                    revert InvalidBurnReceipt();
+            } else if (burnTxHash != bytes32(0)) {
+                if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
+                    revert InvalidBurnReceipt();
+            }
+        } else if (burnTxHash != bytes32(0)) {
+            if (!jobRegistry.hasBurnReceipt(jobId, burnTxHash))
+                revert InvalidBurnReceipt();
+        }
         bytes32 specHash = jobRegistry.getSpecHash(jobId);
         bytes32 outcomeHash = keccak256(
             abi.encode(nonce, specHash, approve, burnTxHash)
@@ -1348,9 +1365,12 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
         uint256 vlen = r.validators.length;
         if (vlen > maxValidatorsPerJob) vlen = maxValidatorsPerJob;
+        (bool burnRequired, bool burnSatisfied) = jobRegistry
+            .burnEvidenceStatus(jobId);
+        bool skipPenalties = burnRequired && !burnSatisfied;
         for (uint256 i; i < vlen;) {
             address val = r.validators[i];
-            if (!revealed[jobId][val]) {
+            if (!revealed[jobId][val] && !skipPenalties) {
                 uint256 stake = validatorStakes[jobId][val];
                 uint256 penalty = (stake * nonRevealPenaltyBps) / 10_000;
                 if (penalty > 0) {
