@@ -16,6 +16,7 @@ Coordinates job posting, assignment and dispute resolution.
 - `setTaxPolicy(ITaxPolicy policy)` / `acknowledgeTaxPolicy()` – configure the tax policy contract and record participant acknowledgements.
 - `setAgentRootNode(bytes32 node)` / `setAgentMerkleRoot(bytes32 root)` – load ENS allowlists for agent verification.
 - `setIdentityRegistry(IIdentityRegistry registry)` – swap the on-chain identity registry and refresh cached authorizations.
+- `setMinAgentStake(uint256 stake)` – require agents to maintain a minimum stake balance before applying.
 
 ## Events
 
@@ -31,7 +32,7 @@ Coordinates job posting, assignment and dispute resolution.
 - `JobExpired(uint256 indexed jobId, address indexed caller)`
 - `JobDisputed(uint256 indexed jobId, address indexed caller)`
 - `DisputeResolved(uint256 indexed jobId, bool employerWins)`
-- `JobParametersUpdated(uint256 reward, uint256 stake, uint256 maxJobReward, uint256 maxJobDuration)`
+- `JobParametersUpdated(uint256 reward, uint256 stake, uint256 maxJobReward, uint256 maxJobDuration, uint256 minAgentStake)`
 - `BurnReceiptSubmitted(uint256 indexed jobId, bytes32 indexed burnTxHash, uint256 amount, uint256 blockNumber)`
 - `BurnConfirmed(uint256 indexed jobId, bytes32 indexed burnTxHash)`
 - `BurnDiscrepancy(uint256 indexed jobId, uint256 receiptAmount, uint256 expectedAmount)`

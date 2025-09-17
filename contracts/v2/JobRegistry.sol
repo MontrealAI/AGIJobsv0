@@ -73,6 +73,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error BurnReceiptMissing();
     error BurnNotConfirmed();
     error BurnAmountTooLow();
+    error InsufficientAgentStake(uint256 required, uint256 actual);
 
     enum State {
         None,
@@ -263,6 +264,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     // default agent stake requirement configured by owner
     uint96 public jobStake;
+    uint96 public minAgentStake;
     uint96 public constant DEFAULT_JOB_STAKE = uint96(TOKEN_SCALE);
     uint256 public feePct;
     uint256 public constant DEFAULT_FEE_PCT = 5;
@@ -327,7 +329,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 reward,
         uint256 stake,
         uint256 maxJobReward,
-        uint256 maxJobDuration
+        uint256 maxJobDuration,
+        uint256 minAgentStake
     );
 
     // job lifecycle events
@@ -651,7 +654,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice update the required agent stake for each job
     function setJobStake(uint96 stake) external onlyGovernance {
         jobStake = stake;
-        emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration);
+        emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration, minAgentStake);
+    }
+
+    /// @notice update the minimum global stake required for agents when applying
+    function setMinAgentStake(uint256 stake) external onlyGovernance {
+        if (stake > type(uint96).max) revert StakeOverflow();
+        minAgentStake = uint96(stake);
+        emit JobParametersUpdated(0, jobStake, maxJobReward, maxJobDuration, stake);
     }
 
     /// @notice update the percentage of each job reward taken as a protocol fee
@@ -673,13 +683,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external onlyGovernance {
         maxJobReward = maxReward;
-        emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration);
+        emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration, minAgentStake);
     }
 
     /// @notice set the maximum allowed job duration in seconds
     function setJobDurationLimit(uint256 limit) external onlyGovernance {
         maxJobDuration = limit;
-        emit JobParametersUpdated(0, jobStake, maxJobReward, limit);
+        emit JobParametersUpdated(0, jobStake, maxJobReward, limit, minAgentStake);
     }
 
     /// @notice set additional grace period after a job's deadline before it can expire
@@ -780,7 +790,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (stake > type(uint96).max) revert StakeOverflow();
         jobStake = uint96(stake);
         maxJobReward = maxReward;
-        emit JobParametersUpdated(0, stake, maxReward, maxJobDuration);
+        emit JobParametersUpdated(0, stake, maxReward, maxJobDuration, minAgentStake);
     }
 
     // ---------------------------------------------------------------------
@@ -967,6 +977,18 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         if (address(reputationEngine) != address(0)) {
             reputationEngine.onApply(msg.sender);
+        }
+        if (address(stakeManager) != address(0)) {
+            uint256 requiredStake = uint256(minAgentStake);
+            if (requiredStake > 0) {
+                uint256 currentStake = stakeManager.stakeOf(
+                    msg.sender,
+                    IStakeManager.Role.Agent
+                );
+                if (currentStake < requiredStake) {
+                    revert InsufficientAgentStake(requiredStake, currentStake);
+                }
+            }
         }
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             uint64 lockTime;

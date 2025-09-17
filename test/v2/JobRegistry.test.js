@@ -628,9 +628,55 @@ describe('JobRegistry integration', function () {
       registry.connect(owner).setJobParameters(newMaxReward, newStake)
     )
       .to.emit(registry, 'JobParametersUpdated')
-      .withArgs(0, newStake, newMaxReward, duration);
+      .withArgs(0, newStake, newMaxReward, duration, 0);
 
     expect(await registry.jobStake()).to.equal(newStake);
     expect(await registry.maxJobReward()).to.equal(newMaxReward);
+  });
+
+  it('enforces minimum agent stake when applying for a job', async () => {
+    const minStake = stake;
+    const maxRewardLimit = await registry.maxJobReward();
+    const durationLimit = await registry.maxJobDuration();
+
+    await expect(registry.connect(owner).setMinAgentStake(minStake))
+      .to.emit(registry, 'JobParametersUpdated')
+      .withArgs(0, stake, maxRewardLimit, durationLimit, minStake);
+
+    await token
+      .connect(employer)
+      .approve(
+        await stakeManager.getAddress(),
+        BigInt(reward) + (BigInt(reward) * 10n) / 100n
+      );
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('stake-check');
+    await registry
+      .connect(employer)
+      ['createJob(uint256,uint64,bytes32,string)'](
+        reward,
+        deadline,
+        specHash,
+        'uri'
+      );
+
+    const jobId = 1;
+
+    await stakeManager.connect(agent).withdrawStake(0, stake);
+
+    await expect(registry.connect(agent).applyForJob(jobId, '', []))
+      .to.be.revertedWithCustomError(registry, 'InsufficientAgentStake')
+      .withArgs(minStake, 0);
+
+    await token
+      .connect(agent)
+      .approve(await stakeManager.getAddress(), minStake);
+    await stakeManager.connect(agent).depositStake(0, minStake);
+
+    await expect(registry.connect(agent).applyForJob(jobId, '', []))
+      .to.emit(registry, 'AgentIdentityVerified')
+      .withArgs(agent.address, ethers.ZeroHash, '', false, false)
+      .and.to.emit(registry, 'JobApplied')
+      .withArgs(jobId, agent.address, '');
   });
 });
