@@ -237,9 +237,7 @@ describe('Validation burn evidence gating', function () {
     );
     await registry.waitForDeployment();
 
-    await validation
-      .connect(owner)
-      .setJobRegistry(await registry.getAddress());
+    await validation.connect(owner).setJobRegistry(await registry.getAddress());
     await validation
       .connect(owner)
       .setStakeManager(await stakeManager.getAddress());
@@ -285,13 +283,12 @@ describe('Validation burn evidence gating', function () {
     const { jobId } = await submitJob();
     expect(await registry.validationStartPending(jobId)).to.equal(true);
     expect(await validation.revealDeadline(jobId)).to.equal(0);
-    await expect(validation.selectValidators(jobId, 0))
-      .to.be.revertedWithCustomError(validation, 'BurnEvidenceIncomplete');
+    await expect(
+      validation.selectValidators(jobId, 0)
+    ).to.be.revertedWithCustomError(validation, 'BurnEvidenceIncomplete');
 
     const burnTxHash = ethers.keccak256(ethers.toUtf8Bytes('burn'));
-    await registry
-      .connect(employer)
-      .submitBurnReceipt(jobId, burnTxHash, 0, 0);
+    await registry.connect(employer).submitBurnReceipt(jobId, burnTxHash, 0, 0);
     await registry.connect(employer).confirmEmployerBurn(jobId, burnTxHash);
     expect(await registry.validationStartPending(jobId)).to.equal(false);
 
