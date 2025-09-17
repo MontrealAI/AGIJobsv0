@@ -188,8 +188,10 @@ function collectAgentJobs(
     if (b.totalEnergy !== a.totalEnergy) {
       return b.totalEnergy - a.totalEnergy;
     }
-    if (b.averageEfficiency !== a.averageEfficiency) {
-      return b.averageEfficiency - a.averageEfficiency;
+    const efficiencyA = a.efficiencyScore ?? 0;
+    const efficiencyB = b.efficiencyScore ?? 0;
+    if (efficiencyB !== efficiencyA) {
+      return efficiencyB - efficiencyA;
     }
     if (b.samples !== a.samples) {
       return b.samples - a.samples;
