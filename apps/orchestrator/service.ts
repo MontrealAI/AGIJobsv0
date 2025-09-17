@@ -10,7 +10,7 @@ import {
   ChainJobSummary,
 } from './jobClassifier';
 import { buildPipeline, PipelineContext } from './pipeline';
-import { runJob } from './execution';
+import { runJob, JobRunResult } from './execution';
 import { finalizeJob } from './submission';
 import {
   CapabilityMatrix,
@@ -25,6 +25,17 @@ import { getWatchdog } from './monitor';
 import { postJob } from './employer';
 import { evaluateSubmission } from './validation';
 import { LearningCoordinator } from './learning';
+import {
+  CompletedJobEvidence,
+  loadCompletedJobEvidence,
+  persistCompletedJobEvidence,
+  prepareJobDisputeEvidence,
+  PreparedDisputeEvidence,
+  recordDisputeResolution,
+  toCompletedJobEvidence,
+  OnChainJobSnapshot,
+} from './disputes';
+import { getJobEnergyLog } from './metrics';
 
 interface AppliedJobState {
   identity: AgentIdentity;
@@ -46,6 +57,7 @@ const JOB_REGISTRY_ABI = [
   'event JobSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)',
   'event JobCompleted(uint256 indexed jobId,bool success)',
   'event JobCancelled(uint256 indexed jobId)',
+  'event JobDisputed(uint256 indexed jobId,address indexed caller)',
   'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint32 agentPct,uint8 state,bool success,bool burnConfirmed,uint128 burnReceiptAmount,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash,bytes32 specHash)',
   'function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)',
 ];
@@ -62,6 +74,11 @@ const VALIDATION_MODULE_ABI = [
   'function revealValidation(uint256 jobId,bool approve,bytes32 salt,string subdomain,bytes32[] proof)',
 ];
 
+const DISPUTE_MODULE_ABI = [
+  'event DisputeRaised(uint256 indexed jobId,address indexed claimant,bytes32 evidenceHash)',
+  'event DisputeResolved(uint256 indexed jobId,address indexed resolver,bool employerWins)',
+];
+
 const DEFAULT_ASSIGNMENT_POLL_MS = Number(
   process.env.ASSIGNMENT_POLL_INTERVAL_MS || 15000
 );
@@ -74,6 +91,7 @@ export interface MetaOrchestratorConfig {
   jobRegistryAddress: string;
   stakeManagerAddress?: string;
   validationModuleAddress?: string;
+  disputeModuleAddress?: string;
   reputationEngineAddress?: string;
   capabilityMatrixPath: string;
   identityDirectory?: string;
@@ -95,6 +113,7 @@ function resolveConfig(): MetaOrchestratorConfig {
     jobRegistryAddress,
     stakeManagerAddress: process.env.STAKE_MANAGER_ADDRESS || undefined,
     validationModuleAddress: process.env.VALIDATION_MODULE_ADDRESS || undefined,
+    disputeModuleAddress: process.env.DISPUTE_MODULE_ADDRESS || undefined,
     reputationEngineAddress: process.env.REPUTATION_ENGINE_ADDRESS || undefined,
     capabilityMatrixPath,
     identityDirectory: process.env.AGENT_IDENTITY_DIR || undefined,
@@ -132,6 +151,7 @@ export class MetaOrchestrator {
   private registry!: Contract;
   private stakeManager: Contract | null = null;
   private validationModule: Contract | null = null;
+  private disputeModule: Contract | null = null;
   private capabilityMatrix: CapabilityMatrix = {};
   private orchestratorIdentity: AgentIdentity | undefined;
   private validatorIdentities: AgentIdentity[] = [];
@@ -140,6 +160,8 @@ export class MetaOrchestrator {
   private readonly assignmentTimers = new Map<string, NodeJS.Timeout>();
   private readonly commitTimers = new Map<string, NodeJS.Timeout>();
   private readonly commits = new Map<string, CommitData>();
+  private readonly completedJobs = new Map<string, CompletedJobEvidence>();
+  private readonly disputeEvidence = new Map<string, PreparedDisputeEvidence>();
   private readonly watchdog = getWatchdog();
   private readonly learning = new LearningCoordinator();
   private running = false;
@@ -166,6 +188,7 @@ export class MetaOrchestrator {
     );
     await this.instantiateContracts();
     await this.initializeAuditAnchoring();
+    this.loadCompletedEvidenceCache();
   }
 
   private async instantiateContracts(): Promise<void> {
@@ -185,6 +208,13 @@ export class MetaOrchestrator {
       this.validationModule = new Contract(
         this.config.validationModuleAddress,
         VALIDATION_MODULE_ABI,
+        this.provider
+      );
+    }
+    if (this.config.disputeModuleAddress) {
+      this.disputeModule = new Contract(
+        this.config.disputeModuleAddress,
+        DISPUTE_MODULE_ABI,
         this.provider
       );
     }
@@ -249,6 +279,18 @@ export class MetaOrchestrator {
     await this.auditAnchor.initialize();
   }
 
+  private loadCompletedEvidenceCache(): void {
+    try {
+      const records = loadCompletedJobEvidence();
+      this.completedJobs.clear();
+      for (const [jobId, record] of records.entries()) {
+        this.completedJobs.set(jobId, record);
+      }
+    } catch (err) {
+      console.warn('Failed to load completed job evidence cache', err);
+    }
+  }
+
   start(): void {
     if (this.running) return;
     this.running = true;
@@ -269,12 +311,14 @@ export class MetaOrchestrator {
     this.auditAnchor?.stop();
     this.registry.removeAllListeners();
     if (this.validationModule) this.validationModule.removeAllListeners();
+    if (this.disputeModule) this.disputeModule.removeAllListeners();
     for (const timer of this.assignmentTimers.values()) clearInterval(timer);
     for (const timer of this.commitTimers.values()) clearTimeout(timer);
     this.assignmentTimers.clear();
     this.commitTimers.clear();
     this.appliedJobs.clear();
     this.commits.clear();
+    this.disputeEvidence.clear();
   }
 
   private registerEventHandlers(): void {
@@ -336,6 +380,13 @@ export class MetaOrchestrator {
       }
     });
 
+    this.registry.on('JobDisputed', (jobId: bigint, caller: string) => {
+      if (!this.running) return;
+      this.handleJobDisputed(jobId, caller).catch((err) => {
+        console.error('JobDisputed handler failed', err);
+      });
+    });
+
     if (this.validationModule) {
       this.validationModule.on(
         'ValidatorsSelected',
@@ -343,6 +394,31 @@ export class MetaOrchestrator {
           this.handleValidatorsSelected(jobId, validators).catch((err) => {
             console.error('Validator handler failed', err);
           });
+        }
+      );
+    }
+
+    if (this.disputeModule) {
+      this.disputeModule.on(
+        'DisputeRaised',
+        (jobId: bigint, claimant: string, evidenceHash: string) => {
+          if (!this.running) return;
+          this.handleDisputeRaised(jobId, claimant, evidenceHash).catch(
+            (err) => {
+              console.error('DisputeRaised handler failed', err);
+            }
+          );
+        }
+      );
+      this.disputeModule.on(
+        'DisputeResolved',
+        (jobId: bigint, resolver: string, employerWins: boolean) => {
+          if (!this.running) return;
+          this.handleDisputeResolved(jobId, resolver, employerWins).catch(
+            (err) => {
+              console.error('DisputeResolved handler failed', err);
+            }
+          );
         }
       );
     }
@@ -555,6 +631,7 @@ export class MetaOrchestrator {
         ? artifactCid
         : `ipfs://${artifactCid}`;
       await finalizeJob(jobId, resultRef, state.wallet);
+      this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
       auditLog('job.submitted', {
         jobId,
         actor: state.identity.address,
@@ -747,5 +824,228 @@ export class MetaOrchestrator {
     const timer = this.commitTimers.get(key);
     if (timer) clearTimeout(timer);
     this.commitTimers.delete(key);
+  }
+
+  private normaliseChainJob(job: any): OnChainJobSnapshot {
+    const toString = (value: any): string | undefined => {
+      if (value === null || value === undefined) return undefined;
+      if (typeof value === 'string') return value;
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value.toString();
+      }
+      if (typeof value === 'bigint') return value.toString();
+      try {
+        if (typeof value.toString === 'function') {
+          const result = value.toString();
+          return typeof result === 'string' ? result : undefined;
+        }
+      } catch {
+        return undefined;
+      }
+      return undefined;
+    };
+    const toNumber = (value: any): number | undefined => {
+      if (value === null || value === undefined) return undefined;
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'bigint') return Number(value);
+      const str = toString(value);
+      if (!str) return undefined;
+      const parsed = Number(str);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+    return {
+      employer: job?.employer,
+      agent: job?.agent,
+      reward: toString(job?.reward),
+      stake: toString(job?.stake),
+      feePct: toString(job?.feePct),
+      agentPct: toString(job?.agentPct),
+      state: toNumber(job?.state),
+      success: Boolean(job?.success),
+      assignedAt: toString(job?.assignedAt),
+      deadline: toString(job?.deadline),
+      agentTypes: toNumber(job?.agentTypes),
+      resultHash: toString(job?.resultHash),
+      specHash: toString(job?.specHash),
+      uriHash: toString(job?.uriHash),
+      burnReceiptAmount: toString(job?.burnReceiptAmount),
+    };
+  }
+
+  private recordCompletedJob(
+    jobId: string,
+    state: AppliedJobState,
+    runResult: JobRunResult,
+    resultRef: string,
+    chainJob: any
+  ): void {
+    const agentProfile = {
+      address: state.identity.address,
+      ens: state.identity.ens,
+      label: state.identity.label ?? toSubdomain(state.identity),
+      role: state.identity.role,
+      capabilities: state.identity.capabilities,
+    };
+    const orchestratorAddress = this.orchestratorIdentity?.address;
+    const onChain = this.normaliseChainJob(chainJob);
+    const record = toCompletedJobEvidence(
+      jobId,
+      agentProfile,
+      orchestratorAddress,
+      state.classification,
+      state.spec,
+      state.summary,
+      runResult,
+      resultRef,
+      onChain
+    );
+    try {
+      const storagePath = persistCompletedJobEvidence(record);
+      record.storagePath = storagePath;
+      this.completedJobs.set(jobId, record);
+      auditLog('job.evidence_persisted', {
+        jobId,
+        actor: state.identity.address,
+        details: {
+          storagePath,
+          manifestCid: record.manifestCid,
+          resultRef,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to persist completed job evidence', err);
+    }
+  }
+
+  private async prepareDisputeEvidenceForJob(
+    jobId: string,
+    context: { source: string; raisedBy?: string; evidenceHash?: string }
+  ): Promise<void> {
+    if (this.disputeEvidence.has(jobId)) {
+      return;
+    }
+    const record = this.completedJobs.get(jobId);
+    if (!record) {
+      auditLog('dispute.missing_evidence', {
+        jobId,
+        level: 'warning',
+        details: {
+          source: context.source,
+          raisedBy: context.raisedBy,
+        },
+      });
+      return;
+    }
+    const notes: string[] = [`Trigger: ${context.source}`];
+    if (context.raisedBy) {
+      notes.push(`Raised by ${context.raisedBy}`);
+    }
+    if (context.evidenceHash && context.evidenceHash !== ethers.ZeroHash) {
+      notes.push(`Counterparty evidence hash ${context.evidenceHash}`);
+    }
+    const energyLog = getJobEnergyLog(record.agent.address, jobId);
+    try {
+      const prepared = await prepareJobDisputeEvidence(record, {
+        energyLog,
+        additionalNotes: notes,
+      });
+      this.disputeEvidence.set(jobId, prepared);
+      auditLog('dispute.evidence_prepared', {
+        jobId,
+        actor: record.agent.address,
+        details: {
+          hash: prepared.hash,
+          cid: prepared.cid,
+          uri: prepared.uri,
+          storagePath: prepared.filePath,
+          notes,
+          uploadError: prepared.uploadError ?? null,
+        },
+      });
+      if (prepared.uploadError) {
+        console.warn(
+          `Dispute evidence upload failed for job ${jobId}:`,
+          prepared.uploadError
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      auditLog('dispute.evidence_failed', {
+        jobId,
+        actor: record.agent.address,
+        level: 'error',
+        details: {
+          source: context.source,
+          raisedBy: context.raisedBy,
+          reason: message,
+        },
+      });
+      throw err;
+    }
+  }
+
+  private async handleJobDisputed(
+    jobId: bigint,
+    caller: string
+  ): Promise<void> {
+    const key = jobId.toString();
+    auditLog('dispute.job_disputed', {
+      jobId: key,
+      details: { caller },
+    });
+    await this.prepareDisputeEvidenceForJob(key, {
+      source: 'JobRegistry.JobDisputed',
+      raisedBy: caller,
+    });
+  }
+
+  private async handleDisputeRaised(
+    jobId: bigint,
+    claimant: string,
+    evidenceHash: string
+  ): Promise<void> {
+    const key = jobId.toString();
+    auditLog('dispute.raised', {
+      jobId: key,
+      details: { claimant, evidenceHash },
+    });
+    await this.prepareDisputeEvidenceForJob(key, {
+      source: 'DisputeModule.DisputeRaised',
+      raisedBy: claimant,
+      evidenceHash,
+    });
+  }
+
+  private async handleDisputeResolved(
+    jobId: bigint,
+    resolver: string,
+    employerWins: boolean
+  ): Promise<void> {
+    const key = jobId.toString();
+    auditLog('dispute.resolved', {
+      jobId: key,
+      details: { resolver, employerWins },
+    });
+    const record = this.completedJobs.get(key);
+    if (record) {
+      if (employerWins) {
+        this.watchdog.recordFailure(record.agent.address, 'dispute-lost');
+      } else {
+        this.watchdog.recordSuccess(record.agent.address);
+      }
+    }
+    const prepared = this.disputeEvidence.get(key);
+    if (prepared) {
+      try {
+        const updated = recordDisputeResolution(prepared, {
+          employerWins,
+          resolver,
+          resolvedAt: new Date().toISOString(),
+        });
+        this.disputeEvidence.set(key, updated);
+      } catch (err) {
+        console.warn('Failed to record dispute resolution for job', key, err);
+      }
+    }
   }
 }
