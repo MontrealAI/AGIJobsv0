@@ -64,8 +64,9 @@ export const provider: JsonRpcProvider = new ethers.JsonRpcProvider(RPC_URL);
 // Minimal ABI for JobRegistry interactions
 const JOB_REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)',
-  'event JobApplied(uint256 indexed jobId, address indexed agent, string subdomain)',
-  'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
+  'event ApplicationSubmitted(uint256 indexed jobId, address indexed applicant, string subdomain)',
+  'event AgentAssigned(uint256 indexed jobId, address indexed agent, string subdomain)',
+  'event ResultSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
   'function applyForJob(uint256 jobId, string subdomain, bytes proof) external',
   'function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) external returns (uint256)',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes proof) external',

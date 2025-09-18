@@ -193,7 +193,9 @@ describe('JobRegistry integration', function () {
     await expect(registry.connect(agent).applyForJob(jobId, '', []))
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(agent.address, ethers.ZeroHash, '', false, false)
-      .and.to.emit(registry, 'JobApplied')
+      .and.to.emit(registry, 'ApplicationSubmitted')
+      .withArgs(jobId, agent.address, '')
+      .and.to.emit(registry, 'AgentAssigned')
       .withArgs(jobId, agent.address, '');
     await validation.connect(owner).setResult(true);
     const resultHash = ethers.id('result');
@@ -202,7 +204,7 @@ describe('JobRegistry integration', function () {
     )
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(agent.address, ethers.ZeroHash, '', false, false)
-      .and.to.emit(registry, 'JobSubmitted')
+      .and.to.emit(registry, 'ResultSubmitted')
       .withArgs(jobId, agent.address, resultHash, 'result', '');
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
@@ -238,7 +240,9 @@ describe('JobRegistry integration', function () {
     await expect(registry.connect(newAgent).acknowledgeAndApply(1, '', []))
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(newAgent.address, ethers.ZeroHash, '', false, false)
-      .and.to.emit(registry, 'JobApplied')
+      .and.to.emit(registry, 'ApplicationSubmitted')
+      .withArgs(1, newAgent.address, '')
+      .and.to.emit(registry, 'AgentAssigned')
       .withArgs(1, newAgent.address, '');
     expect(await policy.hasAcknowledged(newAgent.address)).to.equal(true);
   });
@@ -676,7 +680,9 @@ describe('JobRegistry integration', function () {
     await expect(registry.connect(agent).applyForJob(jobId, '', []))
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(agent.address, ethers.ZeroHash, '', false, false)
-      .and.to.emit(registry, 'JobApplied')
+      .and.to.emit(registry, 'ApplicationSubmitted')
+      .withArgs(jobId, agent.address, '')
+      .and.to.emit(registry, 'AgentAssigned')
       .withArgs(jobId, agent.address, '');
   });
 });

@@ -389,11 +389,33 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bytes32 specHash,
         string uri
     );
+    /// @notice Emitted when an agent submits an application for a job.
+    event ApplicationSubmitted(
+        uint256 indexed jobId,
+        address indexed applicant,
+        string subdomain
+    );
+    /// @notice Emitted when an agent becomes the active assignee for a job.
+    event AgentAssigned(
+        uint256 indexed jobId,
+        address indexed agent,
+        string subdomain
+    );
+    /// @notice Emitted when work has been submitted for validation.
+    event ResultSubmitted(
+        uint256 indexed jobId,
+        address indexed worker,
+        bytes32 resultHash,
+        string resultURI,
+        string subdomain
+    );
+    /// @dev Legacy alias for {AgentAssigned}. Kept for backwards compatibility.
     event JobApplied(
         uint256 indexed jobId,
         address indexed agent,
         string subdomain
     );
+    /// @dev Legacy alias for {ResultSubmitted}. Kept for backwards compatibility.
     event JobSubmitted(
         uint256 indexed jobId,
         address indexed worker,
@@ -1043,10 +1065,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (address(stakeManager) != address(0)) {
             agentPct = uint32(stakeManager.getTotalPayoutPct(msg.sender));
         }
+        emit ApplicationSubmitted(jobId, msg.sender, subdomain);
         job.agent = msg.sender;
         job.agentPct = agentPct;
         job.state = State.Applied;
         job.assignedAt = uint64(block.timestamp);
+        emit AgentAssigned(jobId, msg.sender, subdomain);
         emit JobApplied(jobId, msg.sender, subdomain);
     }
 
@@ -1150,6 +1174,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         job.resultHash = resultHash;
         job.state = State.Submitted;
+        emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         if (address(validationModule) != address(0)) {
             uint256 entropy = uint256(

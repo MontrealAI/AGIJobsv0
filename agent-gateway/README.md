@@ -46,7 +46,7 @@ Agents register via REST or WebSocket and receive jobs through WebSocket.
 Each dispatched job must be acknowledged with an `ack` message. Pending
 jobs are re-sent when a connection is re-established.
 
-The gateway listens for `JobSubmitted` and validation start events. When the
+The gateway listens for `ResultSubmitted` and validation start events. When the
 reveal window closes it calls `ValidationModule.finalize`, and if a job misses
 its deadline it invokes `JobRegistry.cancelExpiredJob`. These automated
 transactions use the wallet specified by `BOT_WALLET` or the first wallet

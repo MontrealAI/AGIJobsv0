@@ -115,7 +115,7 @@ export function registerEvents(
   }
 
   registry.on(
-    'JobSubmitted',
+    'ResultSubmitted',
     (
       jobId: ethers.BigNumberish,
       worker: string,
@@ -131,7 +131,7 @@ export function registerEvents(
         resultURI,
         subdomain,
       };
-      broadcast(wss, { type: 'JobSubmitted', ...submissionPayload });
+      broadcast(wss, { type: 'ResultSubmitted', ...submissionPayload });
       broadcast(wss, { type: 'AwaitingValidation', ...submissionPayload });
       scheduleFinalize(id);
       console.log('AwaitingValidation', id);
