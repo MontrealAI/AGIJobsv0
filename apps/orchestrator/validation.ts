@@ -70,8 +70,8 @@ async function fetchSubmissionDetails(
   jobId: bigint,
   lookbackBlocks: number
 ): Promise<SubmissionDetails | null> {
-  const filter = registry.filters?.JobSubmitted
-    ? registry.filters.JobSubmitted(jobId)
+  const filter = registry.filters?.ResultSubmitted
+    ? registry.filters.ResultSubmitted(jobId)
     : null;
   if (!filter) {
     return null;
@@ -246,7 +246,7 @@ export async function evaluateSubmission(
     notes.push(
       toEvaluation(
         'error',
-        'No JobSubmitted event found for the job within the configured lookback window.'
+        'No ResultSubmitted event found for the job within the configured lookback window.'
       )
     );
     return {

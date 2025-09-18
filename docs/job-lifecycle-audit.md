@@ -5,8 +5,8 @@ This document cross-checks key `JobRegistry` entry points with the v1 `AGIJobMan
 | v1 function                         | v2 function              | Parameters match                               | Status change                                   | Event emitted     |
 | ----------------------------------- | ------------------------ | ---------------------------------------------- | ----------------------------------------------- | ----------------- |
 | `createJob`                         | `createJob`              | `reward`, `deadline`, `uri` retained.          | `None -> Created`                               | `JobCreated`      |
-| `applyForJob`                       | `applyForJob`            | `jobId`, ENS `subdomain`, `proof`.             | `Created -> Applied`                            | `JobApplied`      |
-| `requestJobCompletion`              | `submit`                 | `jobId`, `resultHash`, `resultURI`, ENS proof. | `Applied -> Submitted`                          | `JobSubmitted`    |
+| `applyForJob`                       | `applyForJob`            | `jobId`, ENS `subdomain`, `proof`.             | `Created -> Applied`                            | `ApplicationSubmitted`, `AgentAssigned` |
+| `requestJobCompletion`              | `submit`                 | `jobId`, `resultHash`, `resultURI`, ENS proof. | `Applied -> Submitted`                          | `ResultSubmitted` |
 | `resolveStalledJob` / `finalizeJob` | `finalize`               | `jobId`.                                       | `Completed -> Finalized` or refunds on failure. | `JobFinalized`    |
 | `cancelJob`                         | `cancelJob`              | `jobId`.                                       | `Created -> Cancelled`                          | `JobCancelled`    |
 | `disputeJob`                        | `raiseDispute`/`dispute` | `jobId`, `evidence`.                           | `Completed -> Disputed`                         | `JobDisputed`     |

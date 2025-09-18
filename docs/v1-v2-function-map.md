@@ -50,12 +50,12 @@ This list focuses on externally callable functions. Internal helpers and purely 
 
 ## Event name mapping
 
-To aid log filtering during migration, v2 preserves the familiar event names from v1.
+To aid log filtering during migration, v2 now emits clearer lifecycle names while keeping the v1 aliases for backwards compatibility.
 
-| v1 event       | v2 event       |
-| -------------- | -------------- |
-| `JobCreated`   | `JobCreated`   |
-| `JobApplied`   | `JobApplied`   |
-| `JobSubmitted` | `JobSubmitted` |
-| `JobCompleted` | `JobCompleted` |
-| `JobFinalized` | `JobFinalized` |
+| v1 event       | v2 canonical event                       |
+| -------------- | ---------------------------------------- |
+| `JobCreated`   | `JobCreated`                             |
+| `JobApplied`   | `AgentAssigned` (`JobApplied` alias)     |
+| `JobSubmitted` | `ResultSubmitted` (`JobSubmitted` alias) |
+| `JobCompleted` | `JobCompleted`                           |
+| `JobFinalized` | `JobFinalized`                           |

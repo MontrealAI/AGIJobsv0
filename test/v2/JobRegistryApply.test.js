@@ -102,7 +102,9 @@ describe('JobRegistry agent gating', function () {
     await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(agent.address, ethers.ZeroHash, 'a', false, false)
-      .and.to.emit(registry, 'JobApplied')
+      .and.to.emit(registry, 'ApplicationSubmitted')
+      .withArgs(jobId, agent.address, 'a')
+      .and.to.emit(registry, 'AgentAssigned')
       .withArgs(jobId, agent.address, 'a');
   });
 

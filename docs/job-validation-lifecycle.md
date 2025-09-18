@@ -9,7 +9,7 @@ for issuing and verifying names.
 
 | Phase    | Gateway behaviour                                                                 | Validator call                                         |
 | -------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Awaiting | `JobRegistry.JobSubmitted` → `ValidationAwaiting` broadcast to the domain agent.    | — (agent inspects submission, optional heuristics).    |
+| Awaiting | `JobRegistry.ResultSubmitted` → `ValidationAwaiting` broadcast to the domain agent.    | — (agent inspects submission, optional heuristics).    |
 | Commit   | Stake checked, ENS identity verified, commit hash computed with `jobNonce`.        | `commitValidation(jobId, commitHash, subdomain, proof)`|
 | Reveal   | Reveal scheduled from `validation.rounds(jobId)` once commit window closes.         | `revealValidation(jobId, approve, salt, subdomain, proof)`|
 | Finalize | Gateway (or anyone) calls `ValidationModule.finalize`. Employer finalises registry. | `ValidationModule.finalize(jobId)` then `JobRegistry.finalize(jobId)` |
@@ -19,7 +19,7 @@ for issuing and verifying names.
 
 ## Awaiting validation signal
 
-* `JobRegistry.JobSubmitted` emits the canonical transition to the
+* `JobRegistry.ResultSubmitted` emits the canonical transition to the
   *awaiting validation* state. The gateway rebroadcasts this as
   `type: 'AwaitingValidation'` on the websocket feed.
 * Any managed validator that matches the `.club.agi.eth` wallet receives a

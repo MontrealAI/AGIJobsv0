@@ -387,7 +387,7 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
 
 ### C. Events to Watch
 
-- **Lifecycle**: `JobCreated`, `JobApplied`, `JobSubmitted`, `ValidatorsSelected`, `JobFinalized`
+- **Lifecycle**: `JobCreated`, `ApplicationSubmitted`, `AgentAssigned`, `ResultSubmitted`, `ValidatorsSelected`, `JobFinalized`
 - **Stake**: `StakeDeposited`, `StakeWithdrawn`, `StakeSlashed`
 - **Validation**: `ValidationCommitted`, `ValidationRevealed`
 - **Dispute**: `DisputeRaised`, `DisputeResolved`
@@ -599,8 +599,9 @@ event StakeUnlocked(address indexed user, uint8 indexed role, uint256 amount, ui
 event StakeSlashed(address indexed user, uint8 indexed role, address indexed employer, address indexed treasury, uint256 employerShare, uint256 treasuryShare, uint256 burnShare);
 
 event JobCreated(uint256 indexed jobId, address indexed employer, uint256 reward, string uri);
-event JobApplied(uint256 indexed jobId, address indexed agent, string agentLabel);
-event JobSubmitted(uint256 indexed jobId, address indexed agent, bytes32 resultHash);
+event ApplicationSubmitted(uint256 indexed jobId, address indexed applicant, string agentLabel);
+event AgentAssigned(uint256 indexed jobId, address indexed agent, string agentLabel);
+event ResultSubmitted(uint256 indexed jobId, address indexed agent, bytes32 resultHash);
 event JobCompleted(uint256 indexed jobId, bool success);
 event JobFinalized(uint256 indexed jobId, address indexed agent, uint256 netPaid, uint256 fee);
 event JobDisputed(uint256 indexed jobId, address indexed by, uint256 fee);
@@ -761,11 +762,11 @@ Record each address.
 
 1. Ensure you own the correct `*.agent.agi.eth` subdomain.
 2. **JobRegistry** → `applyForJob(jobId, "yourLabel", [])`
-3. On success: `JobApplied` and you become the assignee.
+3. On success: `ApplicationSubmitted` is emitted, followed by `AgentAssigned` when you become the assignee.
 
 ### C.4 Submit work (agent)
 
-- **JobRegistry** → `submitWork(jobId, resultHashOrURI)` → `JobSubmitted`.
+- **JobRegistry** → `submitWork(jobId, resultHashOrURI)` → `ResultSubmitted`.
 
 ### C.5 Validate work (validator)
 

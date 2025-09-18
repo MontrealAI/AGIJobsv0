@@ -56,8 +56,9 @@ interface CommitData {
 
 const JOB_REGISTRY_ABI = [
   'event JobCreated(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 reward,uint256 stake,uint256 fee,bytes32 specHash,string uri)',
-  'event JobApplied(uint256 indexed jobId,address indexed agent,string subdomain)',
-  'event JobSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)',
+  'event ApplicationSubmitted(uint256 indexed jobId,address indexed applicant,string subdomain)',
+  'event AgentAssigned(uint256 indexed jobId,address indexed agent,string subdomain)',
+  'event ResultSubmitted(uint256 indexed jobId,address indexed worker,bytes32 resultHash,string resultURI,string subdomain)',
   'event JobCompleted(uint256 indexed jobId,bool success)',
   'event JobCancelled(uint256 indexed jobId)',
   'event JobDisputed(uint256 indexed jobId,address indexed caller)',

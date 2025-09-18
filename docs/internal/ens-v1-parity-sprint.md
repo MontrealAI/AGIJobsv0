@@ -38,7 +38,7 @@ This sprint migrates every capability from the legacy `AGIJobManager` into the m
 
 - Each module inherits `Ownable`; only the owner can update parameters.
 - No module routes funds to the owner; fees go to `FeePool` or are burned to preserve tax neutrality.
-- Events mirror v0 naming where possible (`JobCreated`, `JobApplied`, `JobSubmitted`, `JobFinalized`, etc.).
+- Events now emit clarified lifecycle terminology (`JobCreated`, `ApplicationSubmitted`, `AgentAssigned`, `ResultSubmitted`, `JobFinalized`, etc.) while keeping the legacy aliases for indexer parity.
 
 ## 4. Testing and Verification
 

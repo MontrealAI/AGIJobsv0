@@ -69,7 +69,7 @@
 **C1. Event schema & indexing**
 
 - Normalize names & indexed fields across:
-  - **Jobs:** `JobCreated(id, employer, reward)`, `JobApplied(id, agent)`, `JobSubmitted(id, agent)`, `JobFinalized(id, success)`.
+  - **Jobs:** `JobCreated(id, employer, reward)`, `ApplicationSubmitted(id, agent)`, `AgentAssigned(id, agent)`, `ResultSubmitted(id, agent)`, `JobFinalized(id, success)`.
    - **Stakes:** `StakeDeposited(user, role, amount)`, `StakeWithdrawn(user, role, amount)`, `StakeSlashed(user, role, employer, treasury, employerShare, treasuryShare, burnShare)`.
   - **Fees:** `FeeAccrued(jobId, amount)`, `FeesBurned(amount)`, `FeesDistributed(total, perToken)`.
   - **Identity:** `IdentityVerified(user, node, role)`; `AllowlistUsed(user, role, reason)`.
@@ -250,7 +250,7 @@
 
 ### 3.5 Submit work (agent)
 
-- Call `submitWork(jobId, resultURIOrHash)` (check the contract for the exact function—names are human‑readable on Etherscan). Event: `JobSubmitted`. :contentReference[oaicite:46]{index=46}
+- Call `submitWork(jobId, resultURIOrHash)` (check the contract for the exact function—names are human‑readable on Etherscan). Event: `ResultSubmitted`. :contentReference[oaicite:46]{index=46}
 
 ### 3.6 Validate (validators)
 

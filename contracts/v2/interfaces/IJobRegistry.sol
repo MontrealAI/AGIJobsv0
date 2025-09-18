@@ -83,11 +83,30 @@ interface IJobRegistry {
         bytes32 specHash,
         string uri
     );
+    event ApplicationSubmitted(
+        uint256 indexed jobId,
+        address indexed applicant,
+        string subdomain
+    );
+    event AgentAssigned(
+        uint256 indexed jobId,
+        address indexed agent,
+        string subdomain
+    );
+    event ResultSubmitted(
+        uint256 indexed jobId,
+        address indexed worker,
+        bytes32 resultHash,
+        string resultURI,
+        string subdomain
+    );
+    /// @dev Legacy alias for {AgentAssigned}. Kept for backwards compatibility.
     event JobApplied(
         uint256 indexed jobId,
         address indexed agent,
         string subdomain
     );
+    /// @dev Legacy alias for {ResultSubmitted}. Kept for backwards compatibility.
     event JobSubmitted(
         uint256 indexed jobId,
         address indexed worker,

@@ -95,7 +95,7 @@ const VALIDATION_ABI = [
 ];
 
 const REGISTRY_ABI = [
-  'event JobSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
+  'event ResultSubmitted(uint256 indexed jobId, address indexed worker, bytes32 resultHash, string resultURI, string subdomain)',
   'event JobDisputed(uint256 indexed jobId, address indexed caller)',
   'event BurnReceiptSubmitted(uint256 indexed jobId, bytes32 burnTxHash, uint256 amount, uint256 blockNumber)',
   'function getSpecHash(uint256 jobId) view returns (bytes32)',
@@ -313,11 +313,11 @@ function loadSubmission(jobId: bigint): SubmissionRecord | null {
 }
 
 async function fetchSubmissionEvent(jobId: bigint): Promise<SubmissionRecord> {
-  const filter = registry.filters?.JobSubmitted
-    ? registry.filters.JobSubmitted(jobId)
+  const filter = registry.filters?.ResultSubmitted
+    ? registry.filters.ResultSubmitted(jobId)
     : null;
   if (!filter) {
-    throw new Error('JobSubmitted event unavailable on registry ABI');
+    throw new Error('ResultSubmitted event unavailable on registry ABI');
   }
   const latest = await provider.getBlockNumber();
   const fromBlock = Math.max(0, latest - SUBMISSION_LOOKBACK_BLOCKS);
@@ -578,7 +578,7 @@ async function handleValidatorsSelected(jobId: bigint, validators: string[]) {
   scheduleReveal(jobId);
 }
 
-async function handleJobSubmitted(
+async function handleResultSubmitted(
   jobId: bigint,
   worker: string,
   resultHash: string,
@@ -655,7 +655,7 @@ async function reveal(jobId: bigint) {
 
 validation.on('ValidatorsSelected', handleValidatorsSelected);
 registry.on(
-  'JobSubmitted',
+  'ResultSubmitted',
   (
     jobId: bigint,
     worker: string,
@@ -664,14 +664,14 @@ registry.on(
     subdomain: string,
     event: { blockNumber?: bigint | number }
   ) => {
-    handleJobSubmitted(
+    handleResultSubmitted(
       jobId,
       worker,
       resultHash,
       resultURI,
       subdomain,
       event
-    ).catch((err) => console.error('Failed to process JobSubmitted', err));
+    ).catch((err) => console.error('Failed to process ResultSubmitted', err));
   }
 );
 registry.on('JobDisputed', (jobId: bigint, caller: string) => {

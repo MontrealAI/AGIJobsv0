@@ -125,12 +125,12 @@ then be performed through the "Write" tabs on each module.
 1. Ensure your ENS subdomain is set up and whitelisted.
 2. Call `JobRegistry.applyForJob(jobId, subdomain, proof)` or
    `stakeAndApply(jobId, amount, subdomain, proof)`.
-3. `JobApplied(jobId, agent)` will be emitted.
+3. `ApplicationSubmitted(jobId, agent)` and `AgentAssigned(jobId, agent)` will be emitted.
 
 ### Submitting Work
 
 1. The selected agent calls `JobRegistry.submit(jobId, resultHash, resultURI)` when the task is complete.
-2. `JobSubmitted(jobId, resultHash, resultURI)` confirms the submission and triggers validation.
+2. `ResultSubmitted(jobId, resultHash, resultURI)` confirms the submission and triggers validation.
 
 ### Validation
 
@@ -262,7 +262,8 @@ To generate proofs:
 | Event                                                                                         | Emitted by         | Meaning                                   |
 | --------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
 | `JobCreated(uint256 jobId, address employer, uint256 reward)`                                 | `JobRegistry`      | Employer posted a job and escrowed funds. |
-| `JobApplied(uint256 jobId, address agent)`                                                    | `JobRegistry`      | Agent applied for a job.                  |
+| `ApplicationSubmitted(uint256 jobId, address applicant)`                                     | `JobRegistry`      | Agent submitted an application.           |
+| `AgentAssigned(uint256 jobId, address agent)`                                                | `JobRegistry`      | Agent assignment recorded.                |
 | `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)` | `ValidationModule` | Validator submitted hashed vote.          |
 | `ValidationRevealed(uint256 jobId, address validator, bool approve, bytes32 burnTxHash, string subdomain)` | `ValidationModule` | Validator revealed vote.                  |
 | `DisputeRaised(uint256 jobId, address claimant, bytes32 evidenceHash, string evidence)`       | `DisputeModule`    | A job result was contested.               |
