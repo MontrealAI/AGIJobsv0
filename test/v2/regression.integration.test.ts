@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA_DECIMALS } from '../../scripts/constants';
-const { decodeJobMetadata } = require('../utils/jobMetadata');
+import { decodeJobMetadata } from '../utils/jobMetadata';
 
 enum Role {
   Agent,

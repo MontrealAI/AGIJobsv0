@@ -173,7 +173,9 @@ function decodePackedJobMetadata(packed: any): {
     state: Number((value & JOB_STATE_MASK) >> JOB_STATE_OFFSET),
     success: (value & JOB_SUCCESS_MASK) !== 0n,
     burnConfirmed: (value & JOB_BURN_CONFIRMED_MASK) !== 0n,
-    agentTypes: Number((value & JOB_AGENT_TYPES_MASK) >> JOB_AGENT_TYPES_OFFSET),
+    agentTypes: Number(
+      (value & JOB_AGENT_TYPES_MASK) >> JOB_AGENT_TYPES_OFFSET
+    ),
     feePct: (value & JOB_FEE_PCT_MASK) >> JOB_FEE_PCT_OFFSET,
     agentPct: (value & JOB_AGENT_PCT_MASK) >> JOB_AGENT_PCT_OFFSET,
     deadline: (value & JOB_DEADLINE_MASK) >> JOB_DEADLINE_OFFSET,
@@ -1027,15 +1029,6 @@ export class MetaOrchestrator {
         return undefined;
       }
       return undefined;
-    };
-    const toNumber = (value: any): number | undefined => {
-      if (value === null || value === undefined) return undefined;
-      if (typeof value === 'number' && Number.isFinite(value)) return value;
-      if (typeof value === 'bigint') return Number(value);
-      const str = toString(value);
-      if (!str) return undefined;
-      const parsed = Number(str);
-      return Number.isFinite(parsed) ? parsed : undefined;
     };
     const metadata = decodePackedJobMetadata(job?.packedMetadata);
     return {

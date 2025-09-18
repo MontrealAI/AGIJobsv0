@@ -103,10 +103,7 @@ describe('Job finalization with contract employer', function () {
     const stateMask = 0x7n;
     const successMask = 0x1n << 3n;
     const cleared = prev & ~(stateMask | successMask);
-    const value =
-      cleared |
-      (4n << 0n) |
-      (BigInt(success ? 1 : 0) << 3n);
+    const value = cleared | (4n << 0n) | (BigInt(success ? 1 : 0) << 3n);
     await ethers.provider.send('hardhat_setStorageAt', [
       await registry.getAddress(),
       ethers.toBeHex(slot),
