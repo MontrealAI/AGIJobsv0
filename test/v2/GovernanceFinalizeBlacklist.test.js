@@ -107,18 +107,14 @@ describe('JobRegistry governance finalization', function () {
         coder.encode(['uint256', 'uint256'], [BigInt(jobId), 4n])
       )
     );
-    const slot = base + 3n;
+    const slot = base + 7n;
     const prev = BigInt(
       await ethers.provider.getStorage(await registry.getAddress(), slot)
     );
-    const stateOffset = 32n;
-    const successOffset = 40n;
-    const mask = (0xffn << stateOffset) | (0xffn << successOffset);
-    const cleared = prev & ~mask;
-    const value =
-      cleared |
-      (4n << stateOffset) |
-      (BigInt(success ? 1 : 0) << successOffset);
+    const stateMask = 0x7n;
+    const successMask = 0x1n << 3n;
+    const cleared = prev & ~(stateMask | successMask);
+    const value = cleared | (4n << 0n) | (BigInt(success ? 1 : 0) << 3n);
     await ethers.provider.send('hardhat_setStorageAt', [
       await registry.getAddress(),
       ethers.toBeHex(slot),

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA_DECIMALS } from '../../scripts/constants';
+import { decodeJobMetadata } from '../utils/jobMetadata';
 
 enum Role {
   Agent,
@@ -200,7 +201,11 @@ describe('Kleros dispute module', function () {
     expect(await stake.stakes(v2.address, Role.Validator)).to.be.lt(
       stakeAmount
     );
-    expect(await registry.jobs(1)).to.have.property('state', 5); // Disputed
+    {
+      const job = await registry.jobs(1);
+      const metadata = decodeJobMetadata(job.packedMetadata);
+      expect(metadata.state).to.equal(5); // Disputed
+    }
 
     await registry.connect(agent).dispute(1, ethers.id('evidence'));
     expect(await mockArb.lastJobId()).to.equal(1n);
@@ -209,7 +214,11 @@ describe('Kleros dispute module', function () {
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
-    expect(await registry.jobs(1)).to.have.property('state', 6); // Finalized
+    {
+      const job = await registry.jobs(1);
+      const metadata = decodeJobMetadata(job.packedMetadata);
+      expect(metadata.state).to.equal(6); // Finalized
+    }
     expect(await token.balanceOf(agent.address)).to.be.gt(initialAgentBalance);
   });
 });

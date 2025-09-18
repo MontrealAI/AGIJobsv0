@@ -193,6 +193,25 @@ contract MockStakeManager is IStakeManager {
 
 contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public constant version = 2;
+
+    uint256 private constant _STATUS_OFFSET = 0;
+    uint256 private constant _SUCCESS_OFFSET = 3;
+    uint256 private constant _BURN_CONFIRMED_OFFSET = 4;
+    uint256 private constant _AGENT_TYPES_OFFSET = 5;
+    uint256 private constant _FEE_PCT_OFFSET = 13;
+    uint256 private constant _AGENT_PCT_OFFSET = 45;
+    uint256 private constant _DEADLINE_OFFSET = 77;
+    uint256 private constant _ASSIGNED_AT_OFFSET = 141;
+
+    uint256 private constant _STATUS_MASK = 0x7 << _STATUS_OFFSET;
+    uint256 private constant _SUCCESS_MASK = 1 << _SUCCESS_OFFSET;
+    uint256 private constant _BURN_CONFIRMED_MASK = 1 << _BURN_CONFIRMED_OFFSET;
+    uint256 private constant _AGENT_TYPES_MASK = uint256(0xFF) << _AGENT_TYPES_OFFSET;
+    uint256 private constant _FEE_PCT_MASK = uint256(type(uint32).max) << _FEE_PCT_OFFSET;
+    uint256 private constant _AGENT_PCT_MASK = uint256(type(uint32).max) << _AGENT_PCT_OFFSET;
+    uint256 private constant _DEADLINE_MASK = uint256(type(uint64).max) << _DEADLINE_OFFSET;
+    uint256 private constant _ASSIGNED_AT_MASK = uint256(type(uint64).max) << _ASSIGNED_AT_OFFSET;
+
     constructor() Ownable(msg.sender) {}
     mapping(uint256 => Job) private _jobs;
     uint256 public taxPolicyVersion;
@@ -234,24 +253,105 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         bytes32 resultHash;
     }
 
+    function _encodeMetadata(JobMetadata memory metadata)
+        internal
+        pure
+        returns (uint256)
+    {
+        return
+            (uint256(uint8(metadata.status)) << _STATUS_OFFSET) |
+            (metadata.success ? (1 << _SUCCESS_OFFSET) : 0) |
+            (metadata.burnConfirmed ? (1 << _BURN_CONFIRMED_OFFSET) : 0) |
+            (uint256(metadata.agentTypes) << _AGENT_TYPES_OFFSET) |
+            (uint256(metadata.feePct) << _FEE_PCT_OFFSET) |
+            (uint256(metadata.agentPct) << _AGENT_PCT_OFFSET) |
+            (uint256(metadata.deadline) << _DEADLINE_OFFSET) |
+            (uint256(metadata.assignedAt) << _ASSIGNED_AT_OFFSET);
+    }
+
+    function _getMetadata(Job storage job)
+        internal
+        view
+        returns (JobMetadata memory)
+    {
+        return decodeJobMetadata(job.packedMetadata);
+    }
+
+    function _setMetadata(Job storage job, JobMetadata memory metadata)
+        internal
+    {
+        job.packedMetadata = _encodeMetadata(metadata);
+    }
+
+    function _getStatus(Job storage job) internal view returns (Status) {
+        return Status(uint8((job.packedMetadata & _STATUS_MASK) >> _STATUS_OFFSET));
+    }
+
+    function _setStatus(Job storage job, Status status) internal {
+        JobMetadata memory metadata = _getMetadata(job);
+        metadata.status = status;
+        _setMetadata(job, metadata);
+    }
+
+    function _getSuccess(Job storage job) internal view returns (bool) {
+        return (job.packedMetadata & _SUCCESS_MASK) != 0;
+    }
+
+    function _setSuccess(Job storage job, bool success) internal {
+        JobMetadata memory metadata = _getMetadata(job);
+        metadata.success = success;
+        _setMetadata(job, metadata);
+    }
+
+    function _setBurnConfirmed(Job storage job, bool burnConfirmed) internal {
+        JobMetadata memory metadata = _getMetadata(job);
+        metadata.burnConfirmed = burnConfirmed;
+        _setMetadata(job, metadata);
+    }
+
+    function _setAssignedAt(Job storage job, uint64 assignedAt) internal {
+        JobMetadata memory metadata = _getMetadata(job);
+        metadata.assignedAt = assignedAt;
+        _setMetadata(job, metadata);
+    }
+
+    function decodeJobMetadata(uint256 packed)
+        public
+        pure
+        override
+        returns (JobMetadata memory metadata)
+    {
+        metadata.status = Status(uint8((packed & _STATUS_MASK) >> _STATUS_OFFSET));
+        metadata.success = (packed & _SUCCESS_MASK) != 0;
+        metadata.burnConfirmed = (packed & _BURN_CONFIRMED_MASK) != 0;
+        metadata.agentTypes = uint8((packed & _AGENT_TYPES_MASK) >> _AGENT_TYPES_OFFSET);
+        metadata.feePct = uint32((packed & _FEE_PCT_MASK) >> _FEE_PCT_OFFSET);
+        metadata.agentPct = uint32((packed & _AGENT_PCT_MASK) >> _AGENT_PCT_OFFSET);
+        metadata.deadline = uint64((packed & _DEADLINE_MASK) >> _DEADLINE_OFFSET);
+        metadata.assignedAt = uint64((packed & _ASSIGNED_AT_MASK) >> _ASSIGNED_AT_OFFSET);
+    }
+
     function setJob(uint256 jobId, LegacyJob calldata job) external {
+        JobMetadata memory metadata = JobMetadata({
+            status: job.status,
+            success: job.success,
+            burnConfirmed: false,
+            agentTypes: 0,
+            feePct: uint32(feePct),
+            agentPct: 0,
+            deadline: 0,
+            assignedAt: 0
+        });
         _jobs[jobId] = Job({
             employer: job.employer,
             agent: job.agent,
             reward: uint128(job.reward),
             stake: uint96(job.stake),
-            feePct: uint32(feePct),
-            agentPct: 0,
-            status: job.status,
-            success: job.success,
-            burnConfirmed: false,
             burnReceiptAmount: 0,
-            agentTypes: 0,
-            deadline: 0,
-            assignedAt: 0,
             uriHash: job.uriHash,
             resultHash: job.resultHash,
-            specHash: bytes32(0)
+            specHash: bytes32(0),
+            packedMetadata: _encodeMetadata(metadata)
         });
     }
 
@@ -294,7 +394,8 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         if (!burnRequired) {
             return (false, true);
         }
-        burnSatisfied = _jobs[jobId].burnConfirmed;
+        burnSatisfied =
+            (decodeJobMetadata(_jobs[jobId].packedMetadata).burnConfirmed);
     }
 
     function acknowledgeTaxPolicy() external {
@@ -395,23 +496,26 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         );
         jobId = ++nextJobId;
         bytes32 uriHash = keccak256(bytes(uri));
+        JobMetadata memory metadata = JobMetadata({
+            status: Status.Created,
+            success: false,
+            burnConfirmed: false,
+            agentTypes: 0,
+            feePct: uint32(feePct),
+            agentPct: 0,
+            deadline: deadline,
+            assignedAt: 0
+        });
         _jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
             reward: uint128(reward),
             stake: uint96(jobStake),
-            feePct: uint32(feePct),
-            agentPct: 0,
-            status: Status.Created,
-            success: false,
-            burnConfirmed: false,
             burnReceiptAmount: 0,
-            agentTypes: 0,
-            deadline: deadline,
-            assignedAt: 0,
             uriHash: uriHash,
             resultHash: bytes32(0),
-            specHash: bytes32(0)
+            specHash: bytes32(0),
+            packedMetadata: _encodeMetadata(metadata)
         });
         deadlines[jobId] = deadline;
         if (address(_stakeManager) != address(0) && reward > 0) {
@@ -426,12 +530,13 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         bytes32[] calldata
     ) public override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Created, "state");
+        require(_getStatus(job) == Status.Created, "state");
         if (address(reputationEngine) != address(0)) {
             require(!reputationEngine.isBlacklisted(msg.sender), "blacklisted");
         }
         job.agent = msg.sender;
-        job.status = Status.Applied;
+        _setStatus(job, Status.Applied);
+        _setAssignedAt(job, uint64(block.timestamp));
         emit ApplicationSubmitted(jobId, msg.sender, subdomain);
         emit AgentAssigned(jobId, msg.sender, subdomain);
         emit JobApplied(jobId, msg.sender, subdomain);
@@ -462,11 +567,11 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         bytes32[] calldata
     ) public override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Applied, "state");
+        require(_getStatus(job) == Status.Applied, "state");
         require(msg.sender == job.agent, "agent");
         require(block.timestamp <= deadlines[jobId], "deadline");
         job.resultHash = resultHash;
-        job.status = Status.Submitted;
+        _setStatus(job, Status.Submitted);
         emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         if (validationModule != address(0)) {
@@ -486,9 +591,9 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function finalizeAfterValidation(uint256 jobId, bool success) public override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Submitted, "state");
-        job.success = success;
-        job.status = success ? Status.Completed : Status.Disputed;
+        require(_getStatus(job) == Status.Submitted, "state");
+        _setSuccess(job, success);
+        _setStatus(job, success ? Status.Completed : Status.Disputed);
         if (!success) {
             emit JobDisputed(jobId, msg.sender);
         }
@@ -508,14 +613,14 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function forceFinalize(uint256 jobId) external override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Submitted, "state");
-        job.success = false;
-        job.status = Status.Completed;
+        require(_getStatus(job) == Status.Submitted, "state");
+        _setSuccess(job, false);
+        _setStatus(job, Status.Completed);
     }
 
     function dispute(uint256 jobId, bytes32 evidenceHash) public override {
         Job storage job = _jobs[jobId];
-        job.status = Status.Disputed;
+        _setStatus(job, Status.Disputed);
         if (address(disputeModule) != address(0)) {
             disputeModule.raiseDispute(jobId, msg.sender, evidenceHash);
         }
@@ -537,31 +642,32 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function resolveDispute(uint256 jobId, bool employerWins) external override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Disputed, "state");
-        job.success = !employerWins;
-        job.status = Status.Completed;
+        require(_getStatus(job) == Status.Disputed, "state");
+        _setSuccess(job, !employerWins);
+        _setStatus(job, Status.Completed);
         emit DisputeResolved(jobId, employerWins);
     }
 
     function finalize(uint256 jobId) public override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Completed, "state");
-        job.status = Status.Finalized;
+        require(_getStatus(job) == Status.Completed, "state");
+        _setStatus(job, Status.Finalized);
+        bool success = _getSuccess(job);
         if (address(_stakeManager) != address(0) && job.reward > 0) {
-            address recipient = job.success ? job.agent : job.employer;
+            address recipient = success ? job.agent : job.employer;
             _stakeManager.release(job.employer, recipient, job.reward);
-            if (!job.success) {
+            if (!success) {
                 _stakeManager.slash(job.agent, IStakeManager.Role.Agent, job.stake, recipient);
             }
         }
         if (address(reputationEngine) != address(0)) {
-            if (job.success) {
+            if (success) {
                 reputationEngine.add(job.agent, 1);
             } else {
                 reputationEngine.subtract(job.agent, 1);
             }
         }
-        if (job.success && address(certificateNFT) != address(0)) {
+        if (success && address(certificateNFT) != address(0)) {
             certificateNFT.mint(job.agent, jobId, job.uriHash);
         }
         emit JobFinalized(jobId, job.agent);
@@ -573,9 +679,9 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function cancelJob(uint256 jobId) public override {
         Job storage job = _jobs[jobId];
-        require(job.status == Status.Created, "state");
+        require(_getStatus(job) == Status.Created, "state");
         require(msg.sender == job.employer || msg.sender == owner(), "unauthorized");
-        job.status = Status.Cancelled;
+        _setStatus(job, Status.Cancelled);
         if (address(_stakeManager) != address(0) && job.reward > 0) {
             _stakeManager.release(job.employer, job.employer, job.reward);
         }
@@ -587,11 +693,11 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     }
 
     function confirmEmployerBurn(uint256 jobId, bytes32) external override {
-        _jobs[jobId].burnConfirmed = true;
+        _setBurnConfirmed(_jobs[jobId], true);
     }
 
     function setBurnConfirmed(uint256 jobId, bool confirmed) external {
-        _jobs[jobId].burnConfirmed = confirmed;
+        _setBurnConfirmed(_jobs[jobId], confirmed);
     }
 
     function getEmployerReputation(address)

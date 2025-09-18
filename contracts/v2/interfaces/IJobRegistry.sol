@@ -22,18 +22,22 @@ interface IJobRegistry {
         address agent;
         uint128 reward;
         uint96 stake;
-        uint32 feePct;
-        uint32 agentPct;
-        Status status;
-        bool success;
-        bool burnConfirmed;
         uint128 burnReceiptAmount;
-        uint8 agentTypes;
-        uint64 deadline;
-        uint64 assignedAt;
         bytes32 uriHash;
         bytes32 resultHash;
         bytes32 specHash;
+        uint256 packedMetadata;
+    }
+
+    struct JobMetadata {
+        Status status;
+        bool success;
+        bool burnConfirmed;
+        uint8 agentTypes;
+        uint32 feePct;
+        uint32 agentPct;
+        uint64 deadline;
+        uint64 assignedAt;
     }
 
     /// @dev Reverts when job creation parameters have not been configured
@@ -183,6 +187,12 @@ interface IJobRegistry {
     /// @notice Retrieve the StakeManager contract handling collateral
     /// @return Address of the StakeManager
     function stakeManager() external view returns (address);
+
+    /// @notice Decode packed job metadata into individual fields.
+    function decodeJobMetadata(uint256 packed)
+        external
+        pure
+        returns (JobMetadata memory);
 
     /// @notice Retrieve the ValidationModule managing validator sets
     /// @return Address of the ValidationModule

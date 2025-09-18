@@ -1,9 +1,11 @@
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { enrichJob } = require('../utils/jobMetadata');
 
 describe('JobRegistry payout snapshot', function () {
   let owner, employer, agent, other;
+
   let token, stakeManager, validation, registry, identity, nft;
 
   beforeEach(async () => {
@@ -111,7 +113,7 @@ describe('JobRegistry payout snapshot', function () {
     await nft.mint(agent.address);
     const { reward, jobId } = await createJob();
     await registry.connect(agent).applyForJob(jobId, '', []);
-    let job = await registry.jobs(jobId);
+    let job = enrichJob(await registry.jobs(jobId));
     expect(job.agentPct).to.equal(150n);
     await nft.connect(agent).transferFrom(agent.address, other.address, 0n);
 
@@ -131,7 +133,7 @@ describe('JobRegistry payout snapshot', function () {
   it('ignores NFTs gained after assignment', async () => {
     const { reward, jobId } = await createJob();
     await registry.connect(agent).applyForJob(jobId, '', []);
-    let job = await registry.jobs(jobId);
+    let job = enrichJob(await registry.jobs(jobId));
     expect(job.agentPct).to.equal(100n);
     await nft.mint(agent.address);
 

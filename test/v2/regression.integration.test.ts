@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA_DECIMALS } from '../../scripts/constants';
+import { decodeJobMetadata } from '../utils/jobMetadata';
 
 enum Role {
   Agent,
@@ -265,6 +266,10 @@ describe('regression scenarios', function () {
     await stub.setResult(true);
     await stub.finalize(1);
 
-    expect(await registry.jobs(1)).to.have.property('state', 6);
+    {
+      const job = await registry.jobs(1);
+      const metadata = decodeJobMetadata(job.packedMetadata);
+      expect(metadata.state).to.equal(6);
+    }
   });
 });

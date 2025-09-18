@@ -93,18 +93,145 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         address agent;
         uint128 reward;
         uint96 stake;
-        uint32 feePct;
-        uint32 agentPct;
-        State state;
-        bool success;
-        bool burnConfirmed;
         uint128 burnReceiptAmount;
-        uint8 agentTypes;
-        uint64 deadline;
-        uint64 assignedAt;
         bytes32 uriHash;
         bytes32 resultHash;
         bytes32 specHash;
+        uint256 packedMetadata;
+    }
+
+    struct JobMetadata {
+        State state;
+        bool success;
+        bool burnConfirmed;
+        uint8 agentTypes;
+        uint32 feePct;
+        uint32 agentPct;
+        uint64 deadline;
+        uint64 assignedAt;
+    }
+
+    uint256 private constant _STATE_OFFSET = 0;
+    uint256 private constant _SUCCESS_OFFSET = 3;
+    uint256 private constant _BURN_CONFIRMED_OFFSET = 4;
+    uint256 private constant _AGENT_TYPES_OFFSET = 5;
+    uint256 private constant _FEE_PCT_OFFSET = 13;
+    uint256 private constant _AGENT_PCT_OFFSET = 45;
+    uint256 private constant _DEADLINE_OFFSET = 77;
+    uint256 private constant _ASSIGNED_AT_OFFSET = 141;
+
+    uint256 private constant _STATE_MASK = 0x7 << _STATE_OFFSET;
+    uint256 private constant _SUCCESS_MASK = 1 << _SUCCESS_OFFSET;
+    uint256 private constant _BURN_CONFIRMED_MASK = 1 << _BURN_CONFIRMED_OFFSET;
+    uint256 private constant _AGENT_TYPES_MASK = uint256(0xFF) << _AGENT_TYPES_OFFSET;
+    uint256 private constant _FEE_PCT_MASK = uint256(type(uint32).max) << _FEE_PCT_OFFSET;
+    uint256 private constant _AGENT_PCT_MASK = uint256(type(uint32).max) << _AGENT_PCT_OFFSET;
+    uint256 private constant _DEADLINE_MASK = uint256(type(uint64).max) << _DEADLINE_OFFSET;
+    uint256 private constant _ASSIGNED_AT_MASK = uint256(type(uint64).max) << _ASSIGNED_AT_OFFSET;
+
+    function _encodeMetadata(JobMetadata memory metadata)
+        private
+        pure
+        returns (uint256 packed)
+    {
+        packed =
+            (uint256(uint8(metadata.state)) << _STATE_OFFSET) |
+            (metadata.success ? (1 << _SUCCESS_OFFSET) : 0) |
+            (metadata.burnConfirmed ? (1 << _BURN_CONFIRMED_OFFSET) : 0) |
+            (uint256(metadata.agentTypes) << _AGENT_TYPES_OFFSET) |
+            (uint256(metadata.feePct) << _FEE_PCT_OFFSET) |
+            (uint256(metadata.agentPct) << _AGENT_PCT_OFFSET) |
+            (uint256(metadata.deadline) << _DEADLINE_OFFSET) |
+            (uint256(metadata.assignedAt) << _ASSIGNED_AT_OFFSET);
+    }
+
+    function _decodeMetadata(uint256 packed)
+        private
+        pure
+        returns (JobMetadata memory metadata)
+    {
+        metadata.state = State(uint8((packed & _STATE_MASK) >> _STATE_OFFSET));
+        metadata.success = (packed & _SUCCESS_MASK) != 0;
+        metadata.burnConfirmed = (packed & _BURN_CONFIRMED_MASK) != 0;
+        metadata.agentTypes = uint8((packed & _AGENT_TYPES_MASK) >> _AGENT_TYPES_OFFSET);
+        metadata.feePct = uint32((packed & _FEE_PCT_MASK) >> _FEE_PCT_OFFSET);
+        metadata.agentPct = uint32((packed & _AGENT_PCT_MASK) >> _AGENT_PCT_OFFSET);
+        metadata.deadline = uint64((packed & _DEADLINE_MASK) >> _DEADLINE_OFFSET);
+        metadata.assignedAt = uint64((packed & _ASSIGNED_AT_MASK) >> _ASSIGNED_AT_OFFSET);
+    }
+
+    function _getState(Job storage job) private view returns (State) {
+        return State(uint8((job.packedMetadata & _STATE_MASK) >> _STATE_OFFSET));
+    }
+
+    function _setState(Job storage job, State state) private {
+        job.packedMetadata =
+            (job.packedMetadata & ~_STATE_MASK) |
+            (uint256(uint8(state)) << _STATE_OFFSET);
+    }
+
+    function _getSuccess(Job storage job) private view returns (bool) {
+        return (job.packedMetadata & _SUCCESS_MASK) != 0;
+    }
+
+    function _setSuccess(Job storage job, bool success) private {
+        if (success) {
+            job.packedMetadata = job.packedMetadata | _SUCCESS_MASK;
+        } else {
+            job.packedMetadata = job.packedMetadata & ~_SUCCESS_MASK;
+        }
+    }
+
+    function _getBurnConfirmed(Job storage job) private view returns (bool) {
+        return (job.packedMetadata & _BURN_CONFIRMED_MASK) != 0;
+    }
+
+    function _setBurnConfirmed(Job storage job, bool burnConfirmed) private {
+        if (burnConfirmed) {
+            job.packedMetadata = job.packedMetadata | _BURN_CONFIRMED_MASK;
+        } else {
+            job.packedMetadata = job.packedMetadata & ~_BURN_CONFIRMED_MASK;
+        }
+    }
+
+    function _getAgentTypes(Job storage job) private view returns (uint8) {
+        return uint8((job.packedMetadata & _AGENT_TYPES_MASK) >> _AGENT_TYPES_OFFSET);
+    }
+
+    function _getFeePct(Job storage job) private view returns (uint32) {
+        return uint32((job.packedMetadata & _FEE_PCT_MASK) >> _FEE_PCT_OFFSET);
+    }
+
+    function _getAgentPct(Job storage job) private view returns (uint32) {
+        return uint32((job.packedMetadata & _AGENT_PCT_MASK) >> _AGENT_PCT_OFFSET);
+    }
+
+    function _setAgentPct(Job storage job, uint32 pct) private {
+        job.packedMetadata =
+            (job.packedMetadata & ~_AGENT_PCT_MASK) |
+            (uint256(pct) << _AGENT_PCT_OFFSET);
+    }
+
+    function _getDeadline(Job storage job) private view returns (uint64) {
+        return uint64((job.packedMetadata & _DEADLINE_MASK) >> _DEADLINE_OFFSET);
+    }
+
+    function _getAssignedAt(Job storage job) private view returns (uint64) {
+        return uint64((job.packedMetadata & _ASSIGNED_AT_MASK) >> _ASSIGNED_AT_OFFSET);
+    }
+
+    function _setAssignedAt(Job storage job, uint64 timestamp) private {
+        job.packedMetadata =
+            (job.packedMetadata & ~_ASSIGNED_AT_MASK) |
+            (uint256(timestamp) << _ASSIGNED_AT_OFFSET);
+    }
+
+    function decodeJobMetadata(uint256 packed)
+        external
+        pure
+        returns (JobMetadata memory)
+    {
+        return _decodeMetadata(packed);
     }
 
     uint256 public nextJobId;
@@ -143,7 +270,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (!burnRequired) {
             return (false, true);
         }
-        burnSatisfied = jobs[jobId].burnConfirmed;
+        Job storage job = jobs[jobId];
+        burnSatisfied = _getBurnConfirmed(job);
     }
 
     function _isBurnRequired() internal view returns (bool) {
@@ -245,10 +373,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (job.employer != msg.sender) revert OnlyEmployer();
         if (!burnReceipts[jobId][burnTxHash].exists) revert BurnReceiptMissing();
-        job.burnConfirmed = true;
+        _setBurnConfirmed(job, true);
         job.burnReceiptAmount = uint128(burnReceipts[jobId][burnTxHash].amount);
         emit BurnConfirmed(jobId, burnTxHash);
-        if (validationStartPending[jobId] && job.state == State.Submitted) {
+        if (validationStartPending[jobId] && _getState(job) == State.Submitted) {
             _startValidation(jobId, pendingValidationEntropy[jobId]);
         }
     }
@@ -293,10 +421,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     modifier onlyAfterDeadline(uint256 jobId) {
         Job storage job = jobs[jobId];
-        if (job.state != State.Applied) revert CannotExpire();
+        if (_getState(job) != State.Applied) revert CannotExpire();
+        uint64 deadline = _getDeadline(job);
         if (
             block.timestamp <=
-            uint256(job.deadline) + expirationGracePeriod
+            uint256(deadline) + expirationGracePeriod
         ) revert DeadlineNotReached();
         _;
     }
@@ -902,23 +1031,26 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         jobId = nextJobId;
         uint32 feePctSnapshot = uint32(feePct);
         bytes32 uriHash = keccak256(bytes(uri));
+        JobMetadata memory metadata = JobMetadata({
+            state: State.Created,
+            success: false,
+            burnConfirmed: false,
+            agentTypes: agentTypes,
+            feePct: feePctSnapshot,
+            agentPct: 100,
+            deadline: deadline,
+            assignedAt: 0
+        });
         jobs[jobId] = Job({
             employer: msg.sender,
             agent: address(0),
             reward: uint128(reward),
             stake: jobStake,
-            feePct: feePctSnapshot,
-            agentPct: 100,
-            state: State.Created,
-            success: false,
-            burnConfirmed: false,
             burnReceiptAmount: 0,
-            agentTypes: agentTypes,
-            deadline: deadline,
-            assignedAt: 0,
             uriHash: uriHash,
             resultHash: bytes32(0),
-            specHash: specHash
+            specHash: specHash,
+            packedMetadata: _encodeMetadata(metadata)
         });
         uint256 fee;
         if (address(stakeManager) != address(0) && reward > 0) {
@@ -1002,7 +1134,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         )
     {
         Job storage job = jobs[jobId];
-        if (job.state != State.Created) revert NotOpen();
+        if (_getState(job) != State.Created) revert NotOpen();
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
         }
@@ -1032,11 +1164,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
         if (!authorized) revert NotAuthorizedAgent();
-        if (job.agentTypes > 0) {
+        uint8 agentTypes = _getAgentTypes(job);
+        if (agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender
             );
-            if ((job.agentTypes & (1 << uint8(aType))) == 0)
+            if ((agentTypes & (1 << uint8(aType))) == 0)
                 revert AgentTypeNotAllowed();
         }
         if (address(reputationEngine) != address(0)) {
@@ -1056,8 +1189,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         if (job.stake > 0 && address(stakeManager) != address(0)) {
             uint64 lockTime;
-            if (job.deadline > block.timestamp) {
-                lockTime = uint64(job.deadline - block.timestamp);
+            uint64 deadline = _getDeadline(job);
+            if (uint256(deadline) > block.timestamp) {
+                lockTime = uint64(uint256(deadline) - block.timestamp);
             }
             stakeManager.lockStake(msg.sender, uint256(job.stake), lockTime);
         }
@@ -1067,9 +1201,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         }
         emit ApplicationSubmitted(jobId, msg.sender, subdomain);
         job.agent = msg.sender;
-        job.agentPct = agentPct;
-        job.state = State.Applied;
-        job.assignedAt = uint64(block.timestamp);
+        _setAgentPct(job, agentPct);
+        _setState(job, State.Applied);
+        _setAssignedAt(job, uint64(block.timestamp));
         emit AgentAssigned(jobId, msg.sender, subdomain);
         emit JobApplied(jobId, msg.sender, subdomain);
     }
@@ -1147,9 +1281,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         nonReentrant
     {
         Job storage job = jobs[jobId];
-        if (job.state != State.Applied) revert InvalidJobState();
+        if (_getState(job) != State.Applied) revert InvalidJobState();
         if (msg.sender != job.agent) revert OnlyAgent();
-        if (block.timestamp > job.deadline) revert DeadlinePassed();
+        if (block.timestamp > _getDeadline(job)) revert DeadlinePassed();
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
@@ -1165,15 +1299,16 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             viaWrapper,
             viaMerkle
         );
-        if (job.agentTypes > 0) {
+        uint8 agentTypes = _getAgentTypes(job);
+        if (agentTypes > 0) {
             IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
                 msg.sender
             );
-            if ((job.agentTypes & (1 << uint8(aType))) == 0)
+            if ((agentTypes & (1 << uint8(aType))) == 0)
                 revert AgentTypeNotAllowed();
         }
         job.resultHash = resultHash;
-        job.state = State.Submitted;
+        _setState(job, State.Submitted);
         emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         emit JobSubmitted(jobId, msg.sender, resultHash, resultURI, subdomain);
         if (address(validationModule) != address(0)) {
@@ -1222,10 +1357,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function _finalizeAfterValidation(uint256 jobId, bool success) internal {
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         Job storage job = jobs[jobId];
-        if (job.state != State.Submitted) revert NotSubmitted();
+        if (_getState(job) != State.Submitted) revert NotSubmitted();
         _clearValidationStart(jobId);
-        job.success = success;
-        job.state = success ? State.Completed : State.Disputed;
+        _setSuccess(job, success);
+        _setState(job, success ? State.Completed : State.Disputed);
         emit JobCompleted(jobId, success);
     }
 
@@ -1280,10 +1415,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     {
         if (msg.sender != address(validationModule)) revert OnlyValidationModule();
         Job storage job = jobs[jobId];
-        if (job.state != State.Submitted) revert NotSubmitted();
+        if (_getState(job) != State.Submitted) revert NotSubmitted();
         _clearValidationStart(jobId);
-        job.success = false;
-        job.state = State.Completed;
+        _setSuccess(job, false);
+        _setState(job, State.Completed);
         emit JobCompleted(jobId, false);
     }
 
@@ -1330,12 +1465,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (msg.sender != job.agent && msg.sender != job.employer)
             revert OnlyParticipant();
-        if (
-            !(job.state == State.Completed ||
-                (job.state == State.Disputed && !job.success))
-        ) revert CannotDispute();
-        if (job.state == State.Completed) {
-            job.state = State.Disputed;
+        State state = _getState(job);
+        bool success = _getSuccess(job);
+        if (!(state == State.Completed || (state == State.Disputed && !success))) {
+            revert CannotDispute();
+        }
+        if (state == State.Completed) {
+            _setState(job, State.Disputed);
         }
         if (address(reputationEngine) != address(0)) {
             if (reputationEngine.isBlacklisted(msg.sender)) revert Blacklisted();
@@ -1385,10 +1521,10 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     {
         if (msg.sender != address(disputeModule)) revert OnlyDisputeModule();
         Job storage job = jobs[jobId];
-        if (job.state != State.Disputed) revert NoDispute();
+        if (_getState(job) != State.Disputed) revert NoDispute();
 
-        job.success = !employerWins;
-        job.state = State.Completed;
+        _setSuccess(job, !employerWins);
+        _setState(job, State.Completed);
         emit DisputeResolved(jobId, employerWins);
     }
 
@@ -1420,7 +1556,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     function _finalize(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
-        if (job.state != State.Completed) revert NotReady();
+        if (_getState(job) != State.Completed) revert NotReady();
         bool isGov = msg.sender == address(governance);
         _clearValidationStart(jobId);
         uint256 burnRate = address(stakeManager) != address(0)
@@ -1437,14 +1573,15 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (employerBlacklisted) revert BlacklistedEmployer();
             }
         }
-        job.state = State.Finalized;
+        _setState(job, State.Finalized);
         bytes32 jobKey = bytes32(jobId);
         bool fundsRedirected;
         address[] memory validators;
         if (address(validationModule) != address(0)) {
             validators = validationModule.validators(jobId);
         }
-        if (job.success) {
+        bool success = _getSuccess(job);
+        if (success) {
             IFeePool pool = feePool;
             uint256 validatorReward;
             if (validators.length > 0 && validatorRewardPct > 0) {
@@ -1455,10 +1592,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             uint256 rewardAfterValidator =
                 uint256(job.reward) - validatorReward;
             uint256 fee;
-            uint256 agentPct = job.agentPct == 0 ? 100 : job.agentPct;
+            uint32 agentPctRaw = _getAgentPct(job);
+            uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
             if (address(stakeManager) != address(0)) {
                 if (address(pool) != address(0) && job.reward > 0) {
-                    fee = (uint256(job.reward) * job.feePct) / 100;
+                    fee = (uint256(job.reward) * _getFeePct(job)) / 100;
                 }
             }
             uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
@@ -1510,7 +1648,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                         stakeManager.releaseStake(job.agent, uint256(job.stake));
                     }
                 }
-                if (job.burnConfirmed && burnRate > 0) {
+                if (_getBurnConfirmed(job) && burnRate > 0) {
                     uint256 expectedBurn = (agentAmount * burnRate) / 100;
                     if (uint256(job.burnReceiptAmount) != expectedBurn) {
                         emit BurnDiscrepancy(
@@ -1522,7 +1660,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 }
             }
             if (address(reputationEngine) != address(0)) {
-                uint256 completionTime = block.timestamp - job.assignedAt;
+                uint256 completionTime =
+                    block.timestamp - uint256(_getAssignedAt(job));
                 uint256 payout = agentAmount * 1e12;
                 uint256 agentGain = reputationEngine.calculateReputationPoints(
                     payout,
@@ -1553,7 +1692,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             emit JobPayout(jobId, job.agent, rewardAfterValidator, bonus, fee);
         } else {
             if (address(stakeManager) != address(0)) {
-                uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+                uint256 fee = (uint256(job.reward) * _getFeePct(job)) / 100;
                 address recipient = job.employer;
                 if (isGov && treasury != address(0) && employerBlacklisted) {
                     recipient = treasury;
@@ -1581,7 +1720,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
-        if (job.success) {
+        if (success) {
             employerStats[job.employer].successful++;
         } else {
             employerStats[job.employer].failed++;
@@ -1618,11 +1757,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Cancel a job before completion and refund the employer.
     function _cancelJob(uint256 jobId) internal whenNotPaused {
         Job storage job = jobs[jobId];
-        if (!(job.state == State.Created && job.agent == address(0)))
+        if (!(_getState(job) == State.Created && job.agent == address(0)))
             revert CannotCancel();
-        job.state = State.Cancelled;
+        _setState(job, State.Cancelled);
         if (address(stakeManager) != address(0) && job.reward > 0) {
-            uint256 fee = (uint256(job.reward) * job.feePct) / 100;
+            uint256 fee = (uint256(job.reward) * _getFeePct(job)) / 100;
             stakeManager.releaseReward(
                 bytes32(jobId),
                 job.employer,
@@ -1677,18 +1816,18 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (msg.sender != job.employer && msg.sender != gov) {
             revert OnlyEmployer();
         }
-        if (job.state != State.Applied) revert InvalidJobState();
-        uint256 expiry = uint256(job.deadline) + expirationGracePeriod;
+        if (_getState(job) != State.Applied) revert InvalidJobState();
+        uint256 expiry = uint256(_getDeadline(job)) + expirationGracePeriod;
         if (block.timestamp <= expiry) revert CannotExpire();
 
         address employer = job.employer;
         address agent = job.agent;
         uint128 reward = job.reward;
         uint96 stakeAmount = job.stake;
-        uint32 feePctSnapshot = job.feePct;
+        uint32 feePctSnapshot = _getFeePct(job);
 
-        job.success = false;
-        job.state = State.Finalized;
+        _setSuccess(job, false);
+        _setState(job, State.Finalized);
 
         if (address(stakeManager) != address(0)) {
             bytes32 jobKey = bytes32(jobId);
@@ -1710,11 +1849,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         employerStats[employer].failed++;
 
         job.agent = address(0);
-        job.agentPct = 0;
-        job.assignedAt = 0;
+        _setAgentPct(job, 0);
+        _setAssignedAt(job, 0);
         job.reward = 0;
         job.stake = 0;
-        job.burnConfirmed = false;
+        _setBurnConfirmed(job, false);
         job.burnReceiptAmount = 0;
         job.resultHash = bytes32(0);
 
@@ -1741,8 +1880,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (msg.sender != job.employer && msg.sender != address(governance)) {
             revert OnlyEmployer();
         }
-        job.success = false;
-        job.state = State.Completed;
+        _setSuccess(job, false);
+        _setState(job, State.Completed);
         _finalize(jobId);
         emit JobExpired(jobId, msg.sender);
     }
