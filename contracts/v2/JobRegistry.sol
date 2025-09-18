@@ -16,6 +16,7 @@ import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IJobRegistryAck} from "./interfaces/IJobRegistryAck.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ThermoMath} from "./libraries/ThermoMath.sol";
 
 /// @title JobRegistry
 /// @notice Coordinates job lifecycle and external modules.
@@ -128,6 +129,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     mapping(address => EmployerStats) public employerStats;
 
+    // ---------------------------------------------------------------
+    // Maxwell-Boltzmann reward parameters
+    // ---------------------------------------------------------------
+    bool public useMBRewards;
+    int256 public mbTemperature = 1e18; // WAD
+    mapping(uint256 => int256) public jobAgentEnergy;
+    mapping(uint256 => int256) public jobValidatorEnergy;
+
     function getSpecHash(uint256 jobId) external view returns (bytes32) {
         return jobs[jobId].specHash;
     }
@@ -226,6 +235,31 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             return 0;
         }
         return (stats.successful * TOKEN_SCALE) / total;
+    }
+
+    /// ---------------------------------------------------------------
+    /// Maxwell-Boltzmann reward configuration
+    /// ---------------------------------------------------------------
+
+    /// @notice Enable or disable MB-based reward sharing.
+    function setMBRewardEnabled(bool enabled) external onlyGovernance {
+        useMBRewards = enabled;
+    }
+
+    /// @notice Set the temperature parameter used for MB weighting.
+    function setMBTemperature(int256 temp) external onlyGovernance {
+        require(temp > 0, "temp");
+        mbTemperature = temp;
+    }
+
+    /// @notice Provide energy metrics for a job.
+    function setJobEnergies(
+        uint256 jobId,
+        int256 agentE,
+        int256 validatorE
+    ) external onlyGovernance {
+        jobAgentEnergy[jobId] = agentE;
+        jobValidatorEnergy[jobId] = validatorE;
     }
 
     /// @notice Confirms previously submitted burn evidence.
@@ -1421,13 +1455,26 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (job.success) {
             IFeePool pool = feePool;
             uint256 validatorReward;
-            if (validators.length > 0 && validatorRewardPct > 0) {
-                validatorReward =
-                    (uint256(job.reward) * validatorRewardPct) / 100;
-            }
+            uint256 rewardAfterValidator;
+            if (useMBRewards && validators.length > 0) {
+                int256[] memory E = new int256[](2);
+                uint256[] memory g = new uint256[](2);
+                E[0] = jobAgentEnergy[jobId];
+                E[1] = jobValidatorEnergy[jobId];
+                g[0] = 1;
+                g[1] = 1;
+                uint256[] memory w = ThermoMath.mbWeights(E, g, mbTemperature, 0);
+                validatorReward = (uint256(job.reward) * w[1]) / 1e18;
+                rewardAfterValidator = uint256(job.reward) - validatorReward;
+            } else {
+                if (validators.length > 0 && validatorRewardPct > 0) {
+                    validatorReward =
+                        (uint256(job.reward) * validatorRewardPct) / 100;
+                }
 
-            uint256 rewardAfterValidator =
-                uint256(job.reward) - validatorReward;
+                rewardAfterValidator =
+                    uint256(job.reward) - validatorReward;
+            }
             uint256 fee;
             uint256 agentPct = job.agentPct == 0 ? 100 : job.agentPct;
             if (address(stakeManager) != address(0)) {

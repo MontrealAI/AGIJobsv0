@@ -40,3 +40,7 @@ All modules expose simple `Ownable` setters so the contract owner can retune fee
 - Reward flows never touch off‑chain accounts, keeping operators pseudonymous and outside traditional reporting regimes.
 
 These incentives encourage honest participation, amplify $AGIALPHA demand, and keep all flows pseudonymous and globally tax‑neutral.
+
+## 6. Maxwell–Boltzmann Reward Splitting
+
+Job rewards may be divided between the executing agent and participating validators using a Maxwell–Boltzmann weighting. When governance enables the feature through `JobRegistry.setMBRewardEnabled`, a configurable temperature governs how strongly efficiency differences affect payouts. Per-job energy metrics are supplied via `setJobEnergies`, and the contract allocates the reward in proportion to `exp(-E/T)` for each participant, favouring lower-energy (more efficient) work. If the feature is disabled, the registry falls back to the standard fixed-percentage distribution.
