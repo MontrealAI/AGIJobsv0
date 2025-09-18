@@ -1400,6 +1400,78 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // slashing logic
     // ---------------------------------------------------------------
 
+    /// @notice slash a validator and reward a challenger
+    /// @param user validator being slashed
+    /// @param amount token amount to slash
+    /// @param challenger recipient of the validator reward
+    /// @param jobId optional job identifier for event indexing
+    function slashAndReward(
+        address user,
+        uint256 amount,
+        address challenger,
+        bytes32 jobId
+    ) external onlyDisputeModule whenNotPaused nonReentrant {
+        uint256 staked = stakes[user][Role.Validator];
+        if (staked < amount) revert InsufficientStake();
+        if (treasury != address(0) && !treasuryAllowlist[treasury]) revert InvalidTreasury();
+
+        uint256 newStake = staked - amount;
+        uint256 pct = getTotalPayoutPct(user);
+        uint256 newBoosted = (newStake * pct) / 100;
+        uint256 oldBoosted = boostedStake[user][Role.Validator];
+        boostedStake[user][Role.Validator] = newBoosted;
+        totalBoostedStakes[Role.Validator] =
+            totalBoostedStakes[Role.Validator] + newBoosted - oldBoosted;
+        stakes[user][Role.Validator] = newStake;
+        totalStakes[Role.Validator] -= amount;
+
+        unbonds[user].jailed = true;
+
+        uint256 locked = lockedStakes[user];
+        if (locked > 0) {
+            if (amount >= locked) {
+                lockedStakes[user] = 0;
+                unlockTime[user] = 0;
+                emit StakeUnlocked(user, locked);
+            } else {
+                lockedStakes[user] = locked - amount;
+            }
+        }
+
+        uint256 validatorShare = amount / 4;
+        uint256 treasuryShare = amount / 4;
+        uint256 burnShare = amount - validatorShare - treasuryShare;
+
+        if (validatorShare > 0) {
+            token.safeTransfer(challenger, validatorShare);
+            emit RewardValidator(challenger, validatorShare, jobId);
+        }
+
+        if (treasuryShare > 0) {
+            if (treasury != address(0)) {
+                token.safeTransfer(treasury, treasuryShare);
+            } else {
+                burnShare += treasuryShare;
+                treasuryShare = 0;
+            }
+        }
+
+        if (burnShare > 0) {
+            _burnToken(jobId, burnShare);
+        }
+
+        emit Slash(user, amount, challenger);
+        emit StakeSlashed(
+            user,
+            Role.Validator,
+            challenger,
+            treasury,
+            0,
+            treasuryShare,
+            burnShare
+        );
+    }
+
     /// @dev internal slashing routine used by dispute and job slashing
     function _slash(address user, Role role, uint256 amount, address recipient, address[] memory validators) internal {
         if (role > Role.Platform) revert InvalidRole();

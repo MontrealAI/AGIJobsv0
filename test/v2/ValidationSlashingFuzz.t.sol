@@ -64,5 +64,28 @@ contract ValidationSlashingFuzz is Test {
             assertEq(validation.validatorPool(i), pool[i]);
         }
     }
+
+    function testFuzz_slashAndReward(uint96 amt) public {
+        amt = uint96(bound(uint256(amt), 1e16, 1e24));
+        address validator = address(uint160(uint256(keccak256("validator"))));
+        address challenger = address(uint160(uint256(keccak256("challenger"))));
+        stake.setDisputeModule(address(this));
+        stake.setTreasuryAllowlist(address(this), true);
+        token.mint(validator, amt);
+        vm.prank(validator);
+        token.approve(address(stake), amt);
+        vm.prank(validator);
+        stake.depositStake(StakeManager.Role.Validator, amt);
+        uint256 supplyBefore = token.totalSupply();
+        uint256 validatorBefore = token.balanceOf(validator);
+        stake.slashAndReward(validator, amt, challenger, bytes32(0));
+        uint256 valShare = amt / 4;
+        uint256 treasShare = amt / 4;
+        uint256 burnShare = amt - valShare - treasShare;
+        assertEq(token.balanceOf(challenger), valShare);
+        assertEq(token.balanceOf(address(this)), treasShare);
+        assertEq(token.totalSupply(), supplyBefore - burnShare);
+        assertEq(token.balanceOf(validator), validatorBefore - amt);
+    }
 }
 
