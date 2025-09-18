@@ -15,6 +15,11 @@ import {
   secureLogAction,
   quarantineManager,
 } from './security';
+import {
+  computeEnergyTrends,
+  type AgentEnergyTrend,
+  type EnergyTrendOptions,
+} from './energyTrends';
 
 export const ENERGY_ORACLE_URL = process.env.ENERGY_ORACLE_URL || '';
 export const ENERGY_ORACLE_TOKEN = process.env.ENERGY_ORACLE_TOKEN || '';
@@ -38,6 +43,10 @@ let warnedMissingSigner = false;
 const ENERGY_METRICS_PATH = path.resolve(
   __dirname,
   '../data/energy-metrics.jsonl'
+);
+const ENERGY_METRICS_HISTORY_LIMIT = ensurePositiveInteger(
+  Number(process.env.ENERGY_METRICS_HISTORY_LIMIT || '1000'),
+  1000
 );
 
 const COMPLEXITY_ORDER = [
@@ -262,6 +271,7 @@ export interface AgentEfficiencyStats {
 }
 
 const agentEfficiencyAggregates = new Map<string, AgentEfficiencyAggregate>();
+const energyMetricHistory: EnergyMetricRecord[] = [];
 let energyMetricsLoaded = false;
 let energyMetricsLoadPromise: Promise<void> | null = null;
 
@@ -275,6 +285,16 @@ function normaliseAgent(agent: string | undefined): string {
 function complexityIndex(label: string): number {
   const idx = COMPLEXITY_ORDER.indexOf(label);
   return idx === -1 ? 0 : idx;
+}
+
+function addEnergyMetricToHistory(record: EnergyMetricRecord): void {
+  energyMetricHistory.push(record);
+  if (energyMetricHistory.length > ENERGY_METRICS_HISTORY_LIMIT) {
+    energyMetricHistory.splice(
+      0,
+      energyMetricHistory.length - ENERGY_METRICS_HISTORY_LIMIT
+    );
+  }
 }
 
 function updateAgentAggregate(record: EnergyMetricRecord): void {
@@ -338,6 +358,7 @@ async function ensureEnergyMetricsLoaded(): Promise<void> {
         try {
           const parsed = JSON.parse(line) as EnergyMetricRecord;
           if (parsed && parsed.agent) {
+            addEnergyMetricToHistory(parsed);
             updateAgentAggregate(parsed);
           }
         } catch (err) {
@@ -358,6 +379,7 @@ async function ensureEnergyMetricsLoaded(): Promise<void> {
 
 async function appendEnergyMetric(record: EnergyMetricRecord): Promise<void> {
   await ensureEnergyMetricsLoaded();
+  addEnergyMetricToHistory(record);
   updateAgentAggregate(record);
   ensureDir(path.dirname(ENERGY_METRICS_PATH));
   await fs.promises.appendFile(
@@ -702,6 +724,19 @@ export async function getAgentEfficiencyStats(): Promise<
   }
   return snapshot;
 }
+
+export function getEnergyMetricHistory(): EnergyMetricRecord[] {
+  return [...energyMetricHistory];
+}
+
+export async function getEnergyTrendReport(
+  options?: EnergyTrendOptions
+): Promise<AgentEnergyTrend[]> {
+  await ensureEnergyMetricsLoaded();
+  return computeEnergyTrends(energyMetricHistory, options);
+}
+
+export type { AgentEnergyTrend, EnergyTrendOptions } from './energyTrends';
 
 export interface EnergyAnomalySnapshot {
   agent: string;
