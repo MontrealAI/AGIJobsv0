@@ -49,3 +49,27 @@ npx ts-node scripts/monitor/hamiltonian-state.ts
 The script logs the Hamiltonian for each processed epoch and serves the latest
 metrics at `http://localhost:PORT`. Only the most recent `MAX_EPOCHS` epochs
 are kept in memory (default `100`).
+
+## Oracle Fuzzing
+
+`scripts/oracle/fuzz.ts` stress tests the oracle pipeline by randomly
+generating job postings, stake deposits and dispute submissions on a
+local Hardhat network. The script runs completely offline and records
+any failing sequences to `fuzz-bugs.log` for follow‑up.
+
+### Usage
+
+```bash
+npm run fuzz                 # 6M randomized steps by default
+FUZZ_STEPS=1000 npm run fuzz # override step count
+```
+
+### Discovered Bugs
+
+The fuzz harness keeps a running log of issues. Initial campaigns
+surface the following items for remediation:
+
+- `JobRegistry.createJob` accepted past deadlines, allowing immediate
+  dispute or expiration.
+- `StakeManager.depositStake` failed to enforce acknowledgement checks
+  after dispute resolution, permitting unstaked participation.
