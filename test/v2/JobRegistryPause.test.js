@@ -33,6 +33,18 @@ describe('JobRegistry pause', function () {
     await registry.connect(owner).setJobParameters(0, 0);
   });
 
+  it('restricts pause and unpause to governance or pauser', async () => {
+    await expect(
+      registry.connect(employer).pause()
+    ).to.be.revertedWithCustomError(registry, 'NotGovernanceOrPauser');
+
+    await registry.connect(owner).pause();
+
+    await expect(
+      registry.connect(employer).unpause()
+    ).to.be.revertedWithCustomError(registry, 'NotGovernanceOrPauser');
+  });
+
   it('pauses job creation and applications', async () => {
     const deadline = (await time.latest()) + 100;
     const specHash = ethers.id('spec');

@@ -50,7 +50,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error InvalidTaxPolicy();
     error InvalidTreasury();
     error InvalidAckModule();
+    error NotGovernanceOrPauser();
     error NotAcknowledger();
+    error ZeroAcknowledgerAddress();
     error StakeOverflow();
     error NotOpen();
     error BlacklistedAgent();
@@ -268,10 +270,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     mapping(address => bool) public acknowledgers;
 
     modifier onlyGovernanceOrPauser() {
-        require(
-            msg.sender == address(governance) || msg.sender == pauser,
-            "governance or pauser only"
-        );
+        if (msg.sender != address(governance) && msg.sender != pauser) {
+            revert NotGovernanceOrPauser();
+        }
         _;
     }
 
@@ -796,7 +797,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param acknowledger Address granted permission to acknowledge for users.
     /// @param allowed True to allow the address, false to revoke.
     function setAcknowledger(address acknowledger, bool allowed) external onlyGovernance {
-        if (allowed) require(acknowledger != address(0));
+        if (allowed && acknowledger == address(0)) revert ZeroAcknowledgerAddress();
         acknowledgers[acknowledger] = allowed;
         emit AcknowledgerUpdated(acknowledger, allowed);
     }

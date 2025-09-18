@@ -56,6 +56,12 @@ describe('JobRegistry agent auth cache', function () {
       .withArgs(5);
   });
 
+  it('reverts when enabling zero acknowledger', async () => {
+    await expect(
+      registry.connect(owner).setAcknowledger(ethers.ZeroAddress, true)
+    ).to.be.revertedWithCustomError(registry, 'ZeroAcknowledgerAddress');
+  });
+
   async function createJob() {
     const deadline = (await time.latest()) + 100;
     jobId++;
