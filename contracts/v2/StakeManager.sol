@@ -158,6 +158,9 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     /// @notice maximum total stake allowed per address
     uint256 public maxStakePerAddress;
 
+    /// @notice maximum stake share per address as a percentage of total stakes
+    uint256 public maxStakePct;
+
     /// @notice escrowed job funds
     mapping(bytes32 => uint256) public jobEscrows;
 
@@ -285,6 +288,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event TreasuryAllowlistUpdated(address indexed treasury, bool allowed);
     event JobRegistryUpdated(address indexed registry);
     event MaxStakePerAddressUpdated(uint256 maxStake);
+    event MaxStakePctUpdated(uint256 pct);
     event StakeTimeLocked(address indexed user, uint256 amount, uint64 unlockTime);
     event StakeUnlocked(address indexed user, uint256 amount);
     event ModulesUpdated(address indexed jobRegistry, address indexed disputeModule);
@@ -391,23 +395,22 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     function _maybeAdjustStake() internal {
         if (block.timestamp < lastStakeTune + stakeTuneWindow) return;
         uint256 oldMin = minStake;
-        uint256 score = disputeCount * disputeWeight;
-        if (address(thermostat) != address(0) && temperatureWeight > 0 && stakeTempThreshold != 0) {
-            int256 t = thermostat.systemTemperature();
-            if (t >= stakeTempThreshold) score += temperatureWeight;
+        bool tempHigh;
+        bool hamHigh;
+        if (address(thermostat) != address(0) && stakeTempThreshold != 0) {
+            tempHigh = thermostat.systemTemperature() >= stakeTempThreshold;
         }
-        if (address(hamiltonianFeed) != address(0) && hamiltonianWeight > 0 && stakeHamiltonianThreshold != 0) {
-            int256 h = hamiltonianFeed.currentHamiltonian();
-            if (h >= stakeHamiltonianThreshold) score += hamiltonianWeight;
+        if (address(hamiltonianFeed) != address(0) && stakeHamiltonianThreshold != 0) {
+            hamHigh = hamiltonianFeed.currentHamiltonian() >= stakeHamiltonianThreshold;
         }
-        uint256 thresholdScore = stakeDisputeThreshold * disputeWeight;
-        if ((thresholdScore == 0 && score > 0) || (thresholdScore > 0 && score >= thresholdScore)) {
+        bool disputeHigh = stakeDisputeThreshold > 0 ? disputeCount >= stakeDisputeThreshold : disputeCount > 0;
+        if (disputeHigh || tempHigh || hamHigh) {
             uint256 inc = (minStake * stakeIncreasePct) / 100;
             if (inc == 0) inc = 1;
             uint256 newMin = minStake + inc;
             if (maxMinStake != 0 && newMin > maxMinStake) newMin = maxMinStake;
             minStake = newMin;
-        } else if (score == 0 && minStake > minStakeFloor) {
+        } else if (disputeCount == 0 && !tempHigh && !hamHigh && minStake > minStakeFloor) {
             uint256 dec = (minStake * stakeDecreasePct) / 100;
             uint256 newMin = minStake > dec ? minStake - dec : minStakeFloor;
             if (newMin < minStakeFloor) newMin = minStakeFloor;
@@ -652,6 +655,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit MaxStakePerAddressUpdated(maxStake);
     }
 
+    /// @notice set maximum stake percentage per address relative to total stakes
+    /// @param pct percentage cap (0 disables the check)
+    function setMaxStakePct(uint256 pct) external onlyGovernance {
+        if (pct > 100) revert InvalidPercentage();
+        maxStakePct = pct;
+        emit MaxStakePctUpdated(pct);
+    }
+
     /// @notice set recommended minimum and maximum stake values
     /// @dev `newMax` may be zero to disable the limit but must not be below `newMin`
     /// @param newMin recommended minimum stake with 18 decimals
@@ -809,10 +820,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 oldStake = stakes[user][role];
         uint256 newStake = oldStake + amount;
         if (newStake < minStake) revert BelowMinimumStake();
-        if (maxStakePerAddress > 0) {
-            uint256 total =
-                stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform] + amount;
-            if (total > maxStakePerAddress) revert MaxStakeExceeded();
+        uint256 total =
+            stakes[user][Role.Agent] + stakes[user][Role.Validator] + stakes[user][Role.Platform];
+        uint256 newTotal = total + amount;
+        if (maxStakePerAddress > 0 && newTotal > maxStakePerAddress) {
+            revert MaxStakeExceeded();
+        }
+        if (maxStakePct > 0) {
+            uint256 globalTotal =
+                totalStakes[Role.Agent] +
+                totalStakes[Role.Validator] +
+                totalStakes[Role.Platform] +
+                amount;
+            uint256 cap = (globalTotal * maxStakePct) / 100;
+            if (newTotal > cap) revert MaxStakeExceeded();
         }
         uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (newStake * pct) / 100;
