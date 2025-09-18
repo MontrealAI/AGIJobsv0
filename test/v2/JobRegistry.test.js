@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { enrichJob } = require('../utils/jobMetadata');
 
 describe('JobRegistry integration', function () {
   let token,
@@ -468,7 +469,7 @@ describe('JobRegistry integration', function () {
     await expect(registry.connect(employer).cancelJob(jobId))
       .to.emit(registry, 'JobCancelled')
       .withArgs(jobId);
-    const job = await registry.jobs(jobId);
+    const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(7); // Cancelled enum value
   });
 
@@ -485,7 +486,7 @@ describe('JobRegistry integration', function () {
     await expect(registry.connect(owner).delistJob(jobId))
       .to.emit(registry, 'JobCancelled')
       .withArgs(jobId);
-    const job = await registry.jobs(jobId);
+    const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(7);
   });
 

@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
+const { enrichJob } = require('../utils/jobMetadata');
 
 const Role = { Agent: 0, Validator: 1, Platform: 2 };
 
@@ -170,7 +171,7 @@ describe('Mid-job module upgrades', function () {
     const hash = ethers.id('ipfs://result');
     await registry.connect(agent).submit(1, hash, 'ipfs://result', 'agent', []);
 
-    const before = await registry.jobs(1);
+    const before = enrichJob(await registry.jobs(1));
 
     const Validation = await ethers.getContractFactory(
       'contracts/v2/mocks/ValidationStub.sol:ValidationStub'
@@ -198,7 +199,7 @@ describe('Mid-job module upgrades', function () {
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
-    const after = await registry.jobs(1);
+    const after = enrichJob(await registry.jobs(1));
     expect(after.employer).to.equal(before.employer);
     expect(after.agent).to.equal(before.agent);
     expect(after.state).to.equal(6); // Finalized

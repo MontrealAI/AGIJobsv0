@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { enrichJob } = require('../utils/jobMetadata');
 
 const abi = ethers.AbiCoder.defaultAbiCoder();
 
@@ -194,8 +195,8 @@ describe('ValidationModule finalize flows', function () {
     await validation.finalize(1);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(6); // Finalized
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(6); // Finalized
     expect(job.success).to.equal(true);
   });
 
@@ -302,8 +303,8 @@ describe('ValidationModule finalize flows', function () {
       .revealValidation(1, true, burnTxHash, salt3, '', []);
     await advance(61);
     await validation.finalize(1);
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(5); // Disputed
   });
 
   it('disputes when validators fail to reveal', async () => {
@@ -312,8 +313,8 @@ describe('ValidationModule finalize flows', function () {
     await advance(61); // end commit
     await advance(61); // end reveal
     await validation.finalize(1);
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(5); // Disputed
   });
 
   it('reverts reveal after the reveal deadline', async () => {
@@ -384,8 +385,8 @@ describe('ValidationModule finalize flows', function () {
     const banV3 = await validation.validatorBanUntil(v3.address);
     expect(banV2).to.be.greaterThan(0n);
     expect(banV3).to.be.greaterThan(0n);
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(5); // Disputed
   });
 
   it('allows force finalize after deadline and slashes no-shows', async () => {
@@ -449,8 +450,8 @@ describe('ValidationModule finalize flows', function () {
     await validation.forceFinalize(1);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(6); // Finalized
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(6); // Finalized
     expect(await stakeManager.stakeOf(v1.address, 1)).to.equal(
       ethers.parseEther('99.5')
     );
@@ -499,8 +500,8 @@ describe('ValidationModule finalize flows', function () {
     } else {
       expect(afterV4).to.equal(beforeV4);
     }
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(6); // Finalized
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(6); // Finalized
   });
 
   it('disputes when approvals fall below threshold', async () => {
@@ -549,7 +550,7 @@ describe('ValidationModule finalize flows', function () {
       .revealValidation(1, false, burnTxHash, salt3, '', []);
     await advance(61);
     await validation.finalize(1);
-    const job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    const job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(5); // Disputed
   });
 });

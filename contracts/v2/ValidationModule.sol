@@ -1050,8 +1050,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         uint256 entropy
     ) external override whenNotPaused nonReentrant returns (address[] memory selected) {
         if (msg.sender != address(jobRegistry)) revert OnlyJobRegistry();
-        if (jobRegistry.jobs(jobId).status != IJobRegistry.Status.Submitted)
-            revert JobNotSubmitted();
+        IJobRegistry.Job memory jobSnapshot = jobRegistry.jobs(jobId);
+        IJobRegistry.JobMetadata memory meta = jobRegistry.decodeJobMetadata(
+            jobSnapshot.packedMetadata
+        );
+        if (meta.status != IJobRegistry.Status.Submitted) revert JobNotSubmitted();
         Round storage r = rounds[jobId];
         uint256 n = validatorPool.length;
         if (n < minValidators) revert ValidatorPoolTooSmall();
@@ -1080,8 +1083,11 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         bytes32[] memory proof
     ) internal whenNotPaused {
         Round storage r = rounds[jobId];
-        if (jobRegistry.jobs(jobId).status != IJobRegistry.Status.Submitted)
-            revert JobNotSubmitted();
+        IJobRegistry.Job memory jobSnapshot = jobRegistry.jobs(jobId);
+        IJobRegistry.JobMetadata memory meta = jobRegistry.decodeJobMetadata(
+            jobSnapshot.packedMetadata
+        );
+        if (meta.status != IJobRegistry.Status.Submitted) revert JobNotSubmitted();
         if (r.commitDeadline == 0 || block.timestamp > r.commitDeadline)
             revert CommitPhaseClosed();
         if (validatorBanUntil[msg.sender] > block.number) revert ValidatorBanned();

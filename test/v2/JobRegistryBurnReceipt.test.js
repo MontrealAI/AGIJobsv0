@@ -4,6 +4,8 @@ const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 const { address: AGIALPHA } = require('../../config/agialpha.json');
 
+const { decodeJobMetadata, enrichJob } = require('../utils/jobMetadata');
+
 describe('JobRegistry burn receipt validation', function () {
   let owner, employer, agent;
   let token, stakeManager, validation, registry, identity, registrySigner;
@@ -109,8 +111,9 @@ describe('JobRegistry burn receipt validation', function () {
 
     const jobKey = ethers.zeroPadValue(ethers.toBeHex(jobId), 32);
     const jobData = await registry.jobs(jobId);
+    const metadata = decodeJobMetadata(jobData.packedMetadata);
     const rewardValue = BigInt(jobData.reward.toString());
-    const agentPctValue = BigInt(jobData.agentPct.toString());
+    const agentPctValue = metadata.agentPct ?? 0n;
     const agentPct = agentPctValue === 0n ? 100n : agentPctValue;
     const validatorPctValue = BigInt(
       (await registry.validatorRewardPct()).toString()
@@ -160,8 +163,9 @@ describe('JobRegistry burn receipt validation', function () {
     expect(supplyBefore - supplyAfter).to.equal(expectedBurn);
 
     const jobData = await registry.jobs(jobId);
+    const metadata = decodeJobMetadata(jobData.packedMetadata);
     const rewardValue = BigInt(jobData.reward.toString());
-    const feePct = BigInt(jobData.feePct.toString());
+    const feePct = metadata.feePct ?? 0n;
     const fee = (rewardValue * feePct) / 100n;
     const employerBalance = await token.balanceOf(employer.address);
     expect(employerBalance).to.equal(
@@ -317,7 +321,7 @@ describe('Validation burn evidence gating', function () {
     expect(await validation.validatorBanUntil(v1.address)).to.equal(0);
     expect(await registry.validationStartPending(jobId)).to.equal(false);
     expect(await registry.pendingValidationEntropy(jobId)).to.equal(0);
-    const job = await registry.jobs(jobId);
+    const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(4); // Completed
   });
 });

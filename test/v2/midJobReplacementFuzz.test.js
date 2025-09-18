@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
+const { enrichJob } = require('../utils/jobMetadata');
 
 async function deploySystem() {
   const [owner, employer, agent] = await ethers.getSigners();
@@ -198,7 +199,7 @@ describe('Mid-job module replacement fuzz', function () {
         await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
         await registry.connect(employer).finalize(1);
       }
-      const job = await registry.jobs(1);
+      const job = enrichJob(await registry.jobs(1));
       expect(job.state).to.equal(result ? 6 : 5);
       expect(job.success).to.equal(result);
     }

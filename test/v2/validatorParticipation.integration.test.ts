@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA_DECIMALS } from '../../scripts/constants';
+const { decodeJobMetadata } = require('../utils/jobMetadata');
 
 enum Role {
   Agent,
@@ -187,7 +188,11 @@ describe('validator participation', function () {
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
-    expect(await registry.jobs(1)).to.have.property('state', 6);
+    {
+      const job = await registry.jobs(1);
+      const metadata = decodeJobMetadata(job.packedMetadata);
+      expect(metadata.state).to.equal(6);
+    }
   });
 
   it('resolves disputes when validators reject', async () => {
@@ -257,13 +262,21 @@ describe('validator participation', function () {
     await time.increase(2);
     await validation.finalize(1);
 
-    expect(await registry.jobs(1)).to.have.property('state', 5);
+    {
+      const job = await registry.jobs(1);
+      const metadata = decodeJobMetadata(job.packedMetadata);
+      expect(metadata.state).to.equal(5);
+    }
 
     await registry.connect(agent).dispute(1, ethers.id('evidence'));
     await dispute.connect(moderator).resolve(1, false);
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 
-    expect(await registry.jobs(1)).to.have.property('state', 6);
+    {
+      const job = await registry.jobs(1);
+      const metadata = decodeJobMetadata(job.packedMetadata);
+      expect(metadata.state).to.equal(6);
+    }
   });
 });

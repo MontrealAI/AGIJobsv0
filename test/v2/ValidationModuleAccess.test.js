@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { enrichJob } = require('../utils/jobMetadata');
 
 describe('ValidationModule access controls', function () {
   let owner, employer, v1, v2, v3;
@@ -247,8 +248,8 @@ describe('ValidationModule access controls', function () {
     ).wait();
     await advance(61);
     await validation.finalize(1);
-    let job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(5); // Disputed
+    let job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(5); // Disputed
 
     await validation.connect(owner).resetJobNonce(1);
     // reset job status to Submitted
@@ -314,8 +315,8 @@ describe('ValidationModule access controls', function () {
     await validation.finalize(1);
     await jobRegistry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await jobRegistry.connect(employer).finalize(1);
-    job = await jobRegistry.jobs(1);
-    expect(job.status).to.equal(6); // Finalized
+    job = enrichJob(await jobRegistry.jobs(1));
+    expect(job.state).to.equal(6); // Finalized
     expect(job.success).to.equal(true);
   });
 });

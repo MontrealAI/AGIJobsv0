@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
+const { enrichJob } = require('../utils/jobMetadata');
 
 describe('Job expiration boundary', function () {
   const { AGIALPHA } = require('../../scripts/constants');
@@ -173,7 +174,7 @@ describe('Job expiration boundary', function () {
 
     expect(await token.balanceOf(employer.address)).to.equal(1200);
     expect(await token.balanceOf(agent.address)).to.equal(800);
-    const job = await registry.jobs(jobId);
+    const job = enrichJob(await registry.jobs(jobId));
     expect(job.state).to.equal(6);
     expect(job.success).to.equal(false);
     expect(await stakeManager.stakes(agent.address, 0)).to.equal(0);

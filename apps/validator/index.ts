@@ -99,8 +99,63 @@ const REGISTRY_ABI = [
   'event JobDisputed(uint256 indexed jobId, address indexed caller)',
   'event BurnReceiptSubmitted(uint256 indexed jobId, bytes32 burnTxHash, uint256 amount, uint256 blockNumber)',
   'function getSpecHash(uint256 jobId) view returns (bytes32)',
-  'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint32 feePct,uint32 agentPct,uint8 state,bool success,bool burnConfirmed,uint128 burnReceiptAmount,uint8 agentTypes,uint64 deadline,uint64 assignedAt,bytes32 uriHash,bytes32 resultHash,bytes32 specHash)',
+  'function jobs(uint256 jobId) view returns (address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata)',
 ];
+
+const JOB_STATE_OFFSET = 0n;
+const JOB_SUCCESS_OFFSET = 3n;
+const JOB_BURN_CONFIRMED_OFFSET = 4n;
+const JOB_AGENT_TYPES_OFFSET = 5n;
+const JOB_FEE_PCT_OFFSET = 13n;
+const JOB_AGENT_PCT_OFFSET = 45n;
+const JOB_DEADLINE_OFFSET = 77n;
+const JOB_ASSIGNED_AT_OFFSET = 141n;
+
+const JOB_STATE_MASK = 0x7n << JOB_STATE_OFFSET;
+const JOB_SUCCESS_MASK = 0x1n << JOB_SUCCESS_OFFSET;
+const JOB_BURN_CONFIRMED_MASK = 0x1n << JOB_BURN_CONFIRMED_OFFSET;
+const JOB_AGENT_TYPES_MASK = 0xffn << JOB_AGENT_TYPES_OFFSET;
+const JOB_FEE_PCT_MASK = 0xffffffffn << JOB_FEE_PCT_OFFSET;
+const JOB_AGENT_PCT_MASK = 0xffffffffn << JOB_AGENT_PCT_OFFSET;
+const JOB_DEADLINE_MASK = 0xffffffffffffffffn << JOB_DEADLINE_OFFSET;
+const JOB_ASSIGNED_AT_MASK = 0xffffffffffffffffn << JOB_ASSIGNED_AT_OFFSET;
+
+function decodePackedJobMetadata(packed: any): {
+  state?: number;
+  success?: boolean;
+  burnConfirmed?: boolean;
+  agentTypes?: number;
+  feePct?: bigint;
+  agentPct?: bigint;
+  deadline?: bigint;
+  assignedAt?: bigint;
+} {
+  if (packed === undefined || packed === null) {
+    return {};
+  }
+  let value: bigint;
+  if (typeof packed === 'bigint') {
+    value = packed;
+  } else if (typeof packed === 'number' && Number.isFinite(packed)) {
+    value = BigInt(packed);
+  } else if (typeof packed === 'string') {
+    value = BigInt(packed);
+  } else if (typeof (packed as any).toString === 'function') {
+    value = BigInt((packed as any).toString());
+  } else {
+    return {};
+  }
+  return {
+    state: Number((value & JOB_STATE_MASK) >> JOB_STATE_OFFSET),
+    success: (value & JOB_SUCCESS_MASK) !== 0n,
+    burnConfirmed: (value & JOB_BURN_CONFIRMED_MASK) !== 0n,
+    agentTypes: Number((value & JOB_AGENT_TYPES_MASK) >> JOB_AGENT_TYPES_OFFSET),
+    feePct: (value & JOB_FEE_PCT_MASK) >> JOB_FEE_PCT_OFFSET,
+    agentPct: (value & JOB_AGENT_PCT_MASK) >> JOB_AGENT_PCT_OFFSET,
+    deadline: (value & JOB_DEADLINE_MASK) >> JOB_DEADLINE_OFFSET,
+    assignedAt: (value & JOB_ASSIGNED_AT_MASK) >> JOB_ASSIGNED_AT_OFFSET,
+  };
+}
 
 const DISPUTE_ABI = [
   'event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 evidenceHash)',
@@ -389,7 +444,8 @@ async function ensureSubmission(
 async function evaluateJob(jobId: bigint): Promise<EvaluationResult> {
   console.log(`Evaluating job ${jobId}`);
   const job = await registry.jobs(jobId);
-  const state = Number(job.state ?? job[6] ?? 0);
+  const metadata = decodePackedJobMetadata(job.packedMetadata);
+  const state = metadata.state ?? 0;
   const states = [
     'None',
     'Created',
@@ -401,9 +457,7 @@ async function evaluateJob(jobId: bigint): Promise<EvaluationResult> {
     'Cancelled',
   ];
   const jobState = states[state] ?? `Unknown(${state})`;
-  const resultHash: string = (job.resultHash ??
-    job[15] ??
-    ethers.ZeroHash) as string;
+  const resultHash: string = (job.resultHash ?? ethers.ZeroHash) as string;
   const submission = await ensureSubmission(jobId);
   const notes: string[] = [];
   let approve = true;
