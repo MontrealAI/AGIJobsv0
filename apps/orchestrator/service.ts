@@ -817,14 +817,12 @@ export class MetaOrchestrator {
     const wallet = employer.wallet.connect(this.provider);
     for (const subtask of spec.subtasks) {
       try {
-        await postJob({
+        await postJob(subtask.description, subtask.reward, {
           wallet,
-          reward: subtask.reward,
           deadline: Math.floor(Date.now() / 1000) + 3 * 24 * 60 * 60,
           dependencies: [jobId],
           metadata: {
             parent: jobId,
-            description: subtask.description,
             createdBy: 'meta-orchestrator',
           },
         });

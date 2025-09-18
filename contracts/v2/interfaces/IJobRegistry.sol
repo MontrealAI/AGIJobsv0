@@ -4,6 +4,12 @@ pragma solidity ^0.8.25;
 /// @title IJobRegistry
 /// @notice Interface for orchestrating job lifecycles and module coordination
 interface IJobRegistry {
+    struct PostJobParams {
+        uint64 deadline;
+        uint8 agentTypes;
+        bytes32 specHash;
+        string uri;
+    }
     /// @notice Module version for compatibility checks.
     function version() external view returns (uint256);
     enum Status {
@@ -204,6 +210,17 @@ interface IJobRegistry {
         uint64 deadline,
         bytes32 specHash,
         string calldata uri
+    ) external returns (uint256 jobId);
+
+    /// @notice Post a job by encoding parameters into a single calldata payload.
+    /// @param description Human-readable summary of the job.
+    /// @param reward Amount escrowed as payment for the job.
+    /// @param params ABI encoded tuple containing deadline, agent types, spec hash and URI.
+    /// @return jobId Identifier of the newly created job.
+    function postJob(
+        string calldata description,
+        uint256 reward,
+        bytes calldata params
     ) external returns (uint256 jobId);
 
     /// @notice Agent expresses interest in a job
