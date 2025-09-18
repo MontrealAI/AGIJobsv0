@@ -63,6 +63,10 @@ contract MockStakeManager is IStakeManager {
         IFeePool,
         bool
     ) external override {}
+    function releaseValidatorReward(bytes32, address, uint256)
+        external
+        override
+    {}
     function distributeValidatorRewards(bytes32, uint256) external override {}
     function fundOperatorRewardPool(uint256) external override {}
     function withdrawOperatorRewardPool(address, uint256) external override {}
@@ -212,6 +216,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public minAgentStake;
     uint256 public feePct;
     uint256 public validatorRewardPct;
+    uint256 public validatorCap;
     uint256 public nextJobId;
     mapping(uint256 => uint256) public deadlines;
     mapping(uint256 => mapping(bytes32 => bool)) public burnReceiptMap;
@@ -239,16 +244,16 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             employer: job.employer,
             agent: job.agent,
             reward: uint128(job.reward),
-            stake: uint96(job.stake),
-            feePct: uint32(feePct),
+            feePct: uint16(feePct),
             agentPct: 0,
+            deadline: 0,
+            assignedAt: 0,
+            burnReceiptAmount: 0,
+            stake: uint96(job.stake),
+            agentTypes: 0,
             status: job.status,
             success: job.success,
             burnConfirmed: false,
-            burnReceiptAmount: 0,
-            agentTypes: 0,
-            deadline: 0,
-            assignedAt: 0,
             uriHash: job.uriHash,
             resultHash: job.resultHash,
             specHash: bytes32(0)
@@ -371,6 +376,14 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         validatorRewardPct = pct;
     }
 
+    function setValidatorCap(uint256 cap) external override {
+        validatorCap = cap;
+    }
+
+    function processValidatorRewards(uint256, uint256) external override {}
+
+    function claimValidatorReward(uint256) external override {}
+
     function createJob(
         uint256 reward,
         uint64 deadline,
@@ -399,16 +412,16 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
             employer: msg.sender,
             agent: address(0),
             reward: uint128(reward),
-            stake: uint96(jobStake),
-            feePct: uint32(feePct),
+            feePct: uint16(feePct),
             agentPct: 0,
+            deadline: uint48(deadline),
+            assignedAt: 0,
+            burnReceiptAmount: 0,
+            stake: uint96(jobStake),
+            agentTypes: 0,
             status: Status.Created,
             success: false,
             burnConfirmed: false,
-            burnReceiptAmount: 0,
-            agentTypes: 0,
-            deadline: deadline,
-            assignedAt: 0,
             uriHash: uriHash,
             resultHash: bytes32(0),
             specHash: bytes32(0)
