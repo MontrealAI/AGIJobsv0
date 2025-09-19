@@ -103,6 +103,7 @@ async function deploySystem() {
   await validation.setJobRegistry(await registry.getAddress());
   await nft.setJobRegistry(await registry.getAddress());
   await nft.setStakeManager(await stake.getAddress());
+  await nft.setBaseURI('ipfs://lifecycle/');
   await registry.setModules(
     await validation.getAddress(),
     await stake.getAddress(),

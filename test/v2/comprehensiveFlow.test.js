@@ -72,6 +72,7 @@ describe('comprehensive job flows', function () {
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
     nft = await NFT.deploy('Cert', 'CERT');
+    await nft.setBaseURI('ipfs://comprehensive/');
 
     const Registry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'

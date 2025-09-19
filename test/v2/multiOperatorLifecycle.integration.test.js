@@ -72,6 +72,7 @@ describe('multi-operator job lifecycle', function () {
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
     nft = await NFT.deploy('Cert', 'CERT');
+    await nft.connect(owner).setBaseURI('ipfs://module-multi-operator/');
 
     const Registry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'
