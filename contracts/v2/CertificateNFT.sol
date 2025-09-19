@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {AGIALPHA} from "./Constants.sol";
@@ -17,9 +18,14 @@ import {AGIALPHA} from "./Constants.sol";
 ///      assets or accrues taxable exposure in any jurisdiction.
 contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
+    using Strings for uint256;
 
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+    /// @notice Maximum number of certificates mintable in one batch call.
+    uint256 public constant MAX_BATCH_MINT = 20;
+
+    string internal constant _TOKEN_URI_SUFFIX = ".json";
 
     /// @dev Emitted when a zero address is supplied where non-zero is required.
     error ZeroAddress();
@@ -35,6 +41,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
+    string private _baseTokenURI;
 
     IStakeManager public stakeManager;
 
@@ -72,6 +79,17 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         emit JobRegistryUpdated(registry);
     }
 
+    function setBaseURI(string calldata baseURI_) external onlyOwner {
+        if (bytes(_baseTokenURI).length != 0) revert BaseURIAlreadySet();
+        _assertValidBaseURI(baseURI_);
+        _baseTokenURI = baseURI_;
+        emit BaseURISet(baseURI_);
+    }
+
+    function baseURI() external view returns (string memory) {
+        return _baseTokenURI;
+    }
+
     function setStakeManager(address manager) external onlyOwner {
         if (manager == address(0)) revert ZeroAddress();
         if (IStakeManager(manager).version() != version) {
@@ -105,9 +123,41 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         tokenHashes[tokenId] = uriHash;
         emit CertificateMinted(to, jobId, uriHash);
     }
+    function mintBatch(
+        address[] calldata recipients,
+        uint256[] calldata jobIds,
+        bytes32[] calldata uriHashes
+    ) external onlyJobRegistry returns (uint256[] memory tokenIds) {
+        uint256 length = recipients.length;
+        if (length != jobIds.length || length != uriHashes.length) {
+            revert ArrayLengthMismatch();
+        }
+        if (length > MAX_BATCH_MINT) {
+            revert BatchSizeExceeded(length, MAX_BATCH_MINT);
+        }
+        tokenIds = new uint256[](length);
+        for (uint256 i; i < length;) {
+            address recipient = recipients[i];
+            if (recipient == address(0)) revert ZeroAddress();
+            bytes32 uriHash = uriHashes[i];
+            if (uriHash == bytes32(0)) revert EmptyURI();
+            uint256 tokenId = jobIds[i];
+            if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(tokenId);
+            _safeMint(recipient, tokenId);
+            tokenHashes[tokenId] = uriHash;
+            tokenIds[i] = tokenId;
+            emit CertificateMinted(recipient, tokenId, uriHash);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        string memory baseUri = _baseTokenURI;
+        if (bytes(baseUri).length == 0) revert BaseURINotSet();
+        return string.concat(baseUri, tokenId.toString(), _TOKEN_URI_SUFFIX);
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {
@@ -170,6 +220,21 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
         revert("CertificateNFT: no ether");
+    }
+
+    function _assertValidBaseURI(string calldata baseURI_) private pure {
+        bytes memory uriBytes = bytes(baseURI_);
+        if (uriBytes.length < 8) revert InvalidBaseURI();
+        if (
+            uriBytes[0] != 'i' ||
+            uriBytes[1] != 'p' ||
+            uriBytes[2] != 'f' ||
+            uriBytes[3] != 's' ||
+            uriBytes[4] != ':' ||
+            uriBytes[5] != '/' ||
+            uriBytes[6] != '/'
+        ) revert InvalidBaseURI();
+        if (uriBytes[uriBytes.length - 1] != '/') revert InvalidBaseURI();
     }
 }
 
