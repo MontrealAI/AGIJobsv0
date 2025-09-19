@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {AGIALPHA} from "./Constants.sol";
@@ -32,9 +33,16 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error InsufficientAllowance();
     error InvalidStakeManagerVersion();
     error InvalidStakeManagerToken();
+    error BaseURIAlreadySet();
+    error BaseURIUnset();
+    error EmptyBaseURI();
+    error InvalidBaseURI();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
+
+    string private _baseTokenURI;
+    bool private _baseURIConfigured;
 
     IStakeManager public stakeManager;
 
@@ -51,6 +59,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
+    event BaseURISet(string baseURI);
 
     constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
@@ -70,6 +79,11 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         if (registry == address(0)) revert ZeroAddress();
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
+    }
+
+    function setBaseURI(string calldata baseURI) external onlyOwner {
+        if (_baseURIConfigured) revert BaseURIAlreadySet();
+        _setBaseURI(baseURI);
     }
 
     function setStakeManager(address manager) external onlyOwner {
@@ -107,7 +121,14 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     }
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        if (!_baseURIConfigured) revert BaseURIUnset();
+        bytes32 hash = tokenHashes[tokenId];
+        if (hash == bytes32(0)) revert EmptyURI();
+        return string.concat(_baseTokenURI, _toHexString(hash));
+    }
+
+    function baseTokenURI() external view returns (string memory) {
+        return _baseTokenURI;
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {
@@ -170,6 +191,36 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
         revert("CertificateNFT: no ether");
+    }
+
+    function _setBaseURI(string memory baseURI) private {
+        if (bytes(baseURI).length == 0) revert EmptyBaseURI();
+        if (!_isIpfsURI(baseURI)) revert InvalidBaseURI();
+        _baseTokenURI = baseURI;
+        _baseURIConfigured = true;
+        emit BaseURISet(baseURI);
+    }
+
+    function _toHexString(bytes32 value) private pure returns (string memory) {
+        string memory fullHex = Strings.toHexString(uint256(value), 32);
+        bytes memory hexBytes = bytes(fullHex);
+        bytes memory trimmed = new bytes(hexBytes.length - 2);
+        for (uint256 i = 2; i < hexBytes.length; ++i) {
+            trimmed[i - 2] = hexBytes[i];
+        }
+        return string(trimmed);
+    }
+
+    function _isIpfsURI(string memory uri) private pure returns (bool) {
+        bytes memory data = bytes(uri);
+        bytes memory prefix = bytes("ipfs://");
+        if (data.length < prefix.length) return false;
+        for (uint256 i = 0; i < prefix.length; ++i) {
+            if (data[i] != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

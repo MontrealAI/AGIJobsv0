@@ -109,7 +109,9 @@ Mints completion certificates and allows optional marketplace listings.
 
 ### Key Functions
 
+- `setBaseURI(string baseURI)` – One-time configuration of the collection IPFS CID.
 - `mint(address to, uint256 jobId, bytes32 uriHash)` – Mint certificate for a finished job.
+- `tokenURI(uint256 tokenId)` – Return `ipfs://` metadata derived from the base URI and stored hash.
 - `list(uint256 tokenId, uint256 price)` – Offer an owned certificate for sale.
 - `purchase(uint256 tokenId)` – Buy a listed certificate.
 - `delist(uint256 tokenId)` – Cancel an active listing.
