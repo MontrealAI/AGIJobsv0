@@ -55,21 +55,17 @@ describe('CertificateNFT batch minting', function () {
     const entries = Array.from({ length: maxBatch + 1 }, (_, i) => ({
       to: alice.address,
       jobId: i + 100,
-      uriHash: ethers.keccak256(
-        ethers.toUtf8Bytes(`${BASE_URI}${i + 100}`)
-      ),
+      uriHash: ethers.keccak256(ethers.toUtf8Bytes(`${BASE_URI}${i + 100}`)),
     }));
 
-    await expect(nft.connect(registry).mintBatch(entries)).to.be.revertedWithCustomError(
-      nft,
-      'MintBatchTooLarge'
-    );
+    await expect(
+      nft.connect(registry).mintBatch(entries)
+    ).to.be.revertedWithCustomError(nft, 'MintBatchTooLarge');
   });
 
   it('rejects empty batches', async () => {
-    await expect(nft.connect(registry).mintBatch([])).to.be.revertedWithCustomError(
-      nft,
-      'EmptyMintBatch'
-    );
+    await expect(
+      nft.connect(registry).mintBatch([])
+    ).to.be.revertedWithCustomError(nft, 'EmptyMintBatch');
   });
 });
