@@ -41,7 +41,7 @@ describe('CertificateNFT marketplace', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', 'bafybasecid');
     await nft.setJobRegistry(owner.address);
     await nft.setStakeManager(await stake.getAddress());
 

@@ -59,7 +59,7 @@ describe('JobRegistry integration', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', 'bafybasecid');
     const FeePool = await ethers.getContractFactory(
       'contracts/v2/FeePool.sol:FeePool'
     );
