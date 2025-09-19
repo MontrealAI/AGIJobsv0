@@ -5,6 +5,7 @@ const { enrichJob } = require('../utils/jobMetadata');
 
 describe('Job expiration boundary', function () {
   const { AGIALPHA } = require('../../scripts/constants');
+  const BASE_URI = 'ipfs://certificates.example/';
   let token,
     stakeManager,
     rep,
@@ -49,7 +50,7 @@ describe('Job expiration boundary', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
     const FeePool = await ethers.getContractFactory(
       'contracts/v2/FeePool.sol:FeePool'
     );

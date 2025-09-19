@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('CertificateNFT ether rejection', function () {
+  const BASE_URI = 'ipfs://certificates.example/';
   let owner, nft;
 
   beforeEach(async () => {
@@ -9,7 +10,7 @@ describe('CertificateNFT ether rejection', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
     await nft.waitForDeployment();
   });
 

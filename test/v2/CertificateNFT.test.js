@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('CertificateNFT', function () {
+  const BASE_URI = 'ipfs://certificates.example/';
   let nft, owner, jobRegistry, user;
 
   beforeEach(async () => {
@@ -9,7 +10,7 @@ describe('CertificateNFT', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
     await nft.connect(owner).setJobRegistry(jobRegistry.address);
   });
 
@@ -22,6 +23,7 @@ describe('CertificateNFT', function () {
     expect(await nft.ownerOf(1)).to.equal(user.address);
     const hash = await nft.tokenHashes(1);
     expect(hash).to.equal(uriHash);
+    expect(await nft.tokenURI(1)).to.equal(`${BASE_URI}1`);
     await expect(
       nft
         .connect(owner)
@@ -30,6 +32,8 @@ describe('CertificateNFT', function () {
           2,
           ethers.keccak256(ethers.toUtf8Bytes('ipfs://job/2'))
         )
-    ).to.be.revertedWith('only JobRegistry');
+    )
+      .to.be.revertedWithCustomError(nft, 'NotJobRegistry')
+      .withArgs(owner.address);
   });
 });

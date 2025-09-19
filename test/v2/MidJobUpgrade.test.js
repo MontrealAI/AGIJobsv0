@@ -2,6 +2,8 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
+
+const BASE_URI = 'ipfs://certificates.example/';
 const { enrichJob } = require('../utils/jobMetadata');
 
 const Role = { Agent: 0, Validator: 1, Platform: 2 };
@@ -57,7 +59,7 @@ async function deploySystem() {
   const NFT = await ethers.getContractFactory(
     'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy('Cert', 'CERT');
+  const nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
   await nft.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(

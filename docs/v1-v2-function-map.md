@@ -20,9 +20,9 @@ The table below maps common public functions from the monolithic `AGIJobManagerV
 | `stakeAgent`                                     | `StakeManager`             | `depositStake(Role.Agent)`            |
 | `withdrawAgentStake`                             | `StakeManager`             | `withdrawStake(Role.Agent)`           |
 | `contributeToRewardPool`                         | `FeePool`                  | `contribute`                          |
-| `listNFT`                                        | `CertificateNFT`           | `list`                                |
-| `purchaseNFT`                                    | `CertificateNFT`           | `purchase`                            |
-| `delistNFT`                                      | `CertificateNFT`           | `delist`                              |
+| `listNFT`                                        | `CertificateNFT`           | removed – marketplace functionality dropped |
+| `purchaseNFT`                                    | `CertificateNFT`           | removed – marketplace functionality dropped |
+| `delistNFT`                                      | `CertificateNFT`           | removed – marketplace functionality dropped |
 | `updateAGITokenAddress`                          | `StakeManager` / `FeePool` | removed – token address is immutable  |
 | `blacklistAgent` / `clearAgentBlacklist`         | `ReputationEngine`         | `blacklist(user, status)`             |
 | `blacklistValidator` / `clearValidatorBlacklist` | `ReputationEngine`         | `blacklist(user, status)`             |
@@ -40,7 +40,7 @@ The table below maps common public functions from the monolithic `AGIJobManagerV
 | `setAgentStakeRequirement`                       | `JobRegistry`              | `setJobStake`                         |
 | `pause` / `unpause`                              | –                          | removed in v2                         |
 | `acceptTerms`                                    | `JobRegistry`              | `acknowledgeTaxPolicy`                |
-| `setBaseURI`                                     | `CertificateNFT`           | `setBaseURI`                          |
+| `setBaseURI`                                     | `CertificateNFT`           | configured via constructor            |
 | `setValidationRewardPercentage`                  | `JobRegistry`              | `setValidatorRewardPct`               |
 | `setBurnPercentage` / `setBurnAddress`           | `FeePool`                  | `setBurnPct` / `setTreasury`          |
 | `setValidatorsPerJob`                            | `ValidationModule`         | `setValidatorBounds`                  |

@@ -39,7 +39,7 @@ async function main() {
   const NFT = await ethers.getContractFactory(
     'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy('Cert', 'CERT');
+  const nft = await NFT.deploy('Cert', 'CERT', 'ipfs://certificates.example/');
   await nft.waitForDeployment();
 
   const Registry = await ethers.getContractFactory(

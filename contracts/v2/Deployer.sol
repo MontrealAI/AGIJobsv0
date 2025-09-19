@@ -36,6 +36,8 @@ import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IReputationEngine as IRInterface} from "./interfaces/IReputationEngine.sol";
 import {TOKEN_SCALE} from "./Constants.sol";
 
+string constant CERTIFICATE_BASE_URI = "ipfs://certificates.example/";
+
 /// @title Deployer
 /// @notice One shot helper that deploys and wires the core module set.
 /// @dev Each module is deployed with default parameters (zero values) and
@@ -323,7 +325,11 @@ contract Deployer is Ownable {
         );
         dispute.setCommittee(address(committee));
 
-        CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
+        CertificateNFT certificate = new CertificateNFT(
+            "Cert",
+            "CERT",
+            CERTIFICATE_BASE_URI
+        );
         certificate.setJobRegistry(address(registry));
 
         TaxPolicy policy;

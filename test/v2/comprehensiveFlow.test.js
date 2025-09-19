@@ -3,6 +3,8 @@ const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
 
+const BASE_URI = 'ipfs://certificates.example/';
+
 describe('comprehensive job flows', function () {
   const reward = ethers.parseUnits('1000', AGIALPHA_DECIMALS);
   const stakeRequired = ethers.parseUnits('200', AGIALPHA_DECIMALS);
@@ -71,7 +73,7 @@ describe('comprehensive job flows', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
 
     const Registry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'
