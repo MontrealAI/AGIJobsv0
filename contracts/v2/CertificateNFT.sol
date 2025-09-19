@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {AGIALPHA} from "./Constants.sol";
@@ -17,9 +18,11 @@ import {AGIALPHA} from "./Constants.sol";
 ///      assets or accrues taxable exposure in any jurisdiction.
 contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
+    using Strings for uint256;
 
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+    uint256 public constant MAX_BATCH_MINT = 32;
 
     /// @dev Emitted when a zero address is supplied where non-zero is required.
     error ZeroAddress();
@@ -35,6 +38,9 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
+    string private _baseTokenURI;
+    bool private _baseURISet;
+    mapping(uint256 => bool) private _validatedWithBase;
 
     IStakeManager public stakeManager;
 
@@ -84,6 +90,49 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         emit StakeManagerUpdated(manager);
     }
 
+    function setBaseURI(string calldata baseURI_) external onlyOwner {
+        if (_baseURISet) revert BaseURIAlreadySet();
+        if (!_isValidIPFSURI(baseURI_)) revert InvalidBaseURI();
+        _baseTokenURI = baseURI_;
+        _baseURISet = true;
+        emit BaseURISet(baseURI_);
+    }
+
+    function _isValidIPFSURI(string calldata baseURI_) private pure returns (bool) {
+        bytes memory data = bytes(baseURI_);
+        bytes memory prefix = bytes("ipfs://");
+        if (data.length <= prefix.length) {
+            return false;
+        }
+        for (uint256 i; i < prefix.length; ) {
+            if (data[i] != prefix[i]) {
+                return false;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        if (data[data.length - 1] != 0x2f) {
+            return false;
+        }
+        return true;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return _baseTokenURI;
+    }
+
+    function _validateHash(uint256 tokenId, bytes32 uriHash) private view {
+        if (!_baseURISet) {
+            return;
+        }
+        string memory uri = string.concat(_baseTokenURI, tokenId.toString());
+        bytes32 computed = keccak256(bytes(uri));
+        if (computed != uriHash) {
+            revert MetadataHashMismatch(tokenId, uriHash, computed);
+        }
+    }
+
     function pause() external onlyOwner {
         _pause();
     }
@@ -101,13 +150,58 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         if (to == address(0)) revert ZeroAddress();
         tokenId = jobId;
         if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(jobId);
+        _validateHash(tokenId, uriHash);
         _safeMint(to, tokenId);
         tokenHashes[tokenId] = uriHash;
+        if (_baseURISet) {
+            _validatedWithBase[tokenId] = true;
+        }
         emit CertificateMinted(to, jobId, uriHash);
     }
+
+    function mintBatch(
+        address[] calldata recipients,
+        uint256[] calldata jobIds,
+        bytes32[] calldata uriHashes
+    ) external onlyJobRegistry {
+        uint256 length = recipients.length;
+        if (length == 0) return;
+        if (length != jobIds.length || length != uriHashes.length) {
+            revert ArrayLengthMismatch();
+        }
+        if (length > MAX_BATCH_MINT) revert BatchSizeTooLarge(length, MAX_BATCH_MINT);
+        for (uint256 i; i < length; ) {
+            address to = recipients[i];
+            uint256 tokenId = jobIds[i];
+            bytes32 uriHash = uriHashes[i];
+            if (uriHash == bytes32(0)) revert EmptyURI();
+            if (to == address(0)) revert ZeroAddress();
+            if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(tokenId);
+            _validateHash(tokenId, uriHash);
+            _safeMint(to, tokenId);
+            tokenHashes[tokenId] = uriHash;
+            if (_baseURISet) {
+                _validatedWithBase[tokenId] = true;
+            }
+            emit CertificateMinted(to, tokenId, uriHash);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        if (!_baseURISet) revert BaseURINotSet();
+        string memory uri = super.tokenURI(tokenId);
+        if (_validatedWithBase[tokenId]) {
+            bytes32 expected = tokenHashes[tokenId];
+            bytes32 actual = keccak256(bytes(uri));
+            if (expected != actual) {
+                revert MetadataHashMismatch(tokenId, expected, actual);
+            }
+        }
+        return uri;
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {
