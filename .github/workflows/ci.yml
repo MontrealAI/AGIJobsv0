@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  schedule:
+    - cron: '0 3 * * *'
 
 jobs:
   build:
@@ -30,3 +32,36 @@ jobs:
         run: npm test
       - name: Check module governance
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/transfer-ownership.ts --new-owner 0x0000000000000000000000000000000000000000
+
+  slither:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - name: Install Node.js dependencies
+        run: npm ci
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Slither
+        run: |
+          pip install slither-analyzer solc-select
+          solc-select install 0.8.25
+          solc-select use 0.8.25
+      - name: Run Slither
+        run: >-
+          slither . --solc-remaps @openzeppelin=node_modules/@openzeppelin/ --fail-on high
+          --filter-paths node_modules --json slither-report.json --markdown slither-report.md
+      - name: Upload Slither report
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-report
+          path: |
+            slither-report.json
+            slither-report.md
+          if-no-files-found: error
