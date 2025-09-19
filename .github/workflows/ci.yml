@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  schedule:
+    - cron: '0 3 * * *'
 
 jobs:
   build:
@@ -30,3 +32,52 @@ jobs:
         run: npm test
       - name: Check module governance
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/transfer-ownership.ts --new-owner 0x0000000000000000000000000000000000000000
+
+  slither:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - name: Install Node.js dependencies
+        run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile --force
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Slither
+        run: |
+          pip install slither-analyzer solc-select
+          solc-select install 0.8.25
+          solc-select use 0.8.25
+      - name: Run Slither
+        run: |
+          set -euo pipefail
+          mkdir -p slither-report
+          set +e
+          slither . \
+            --solc-remaps @openzeppelin=node_modules/@openzeppelin/ \
+            --filter-paths node_modules \
+            --compile-force-framework hardhat \
+            --hardhat-ignore-compile \
+            --json slither-report/slither-report.json \
+            --checklist \
+            --fail-high
+          status=$?
+          set -e
+          if [ -f slither-checklist.md ]; then
+            mv slither-checklist.md slither-report/slither-report.md
+          fi
+          exit "$status"
+      - name: Upload Slither report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-report
+          path: slither-report/
+          if-no-files-found: error
