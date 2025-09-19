@@ -8,6 +8,10 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical token is deployed externally; this repository ships [`contracts/test/AGIALPHAToken.sol`](contracts/test/AGIALPHAToken.sol) for local testing only. Token address and decimal configuration live in [`config/agialpha.json`](config/agialpha.json) and feed both Solidity and TypeScript consumers.
 
+## Continuous Integration
+
+The [CI workflow](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml) runs on every push, pull request and a nightly (01:00 UTC) schedule. Alongside the Node.js checks, the dedicated **Foundry** job installs [Foundry](https://book.getfoundry.sh/) and executes `forge test -vvv` so the invariant suite under `test/v2/invariant/` is exercised continuously. It also enforces the checked-in gas budgets with `forge snapshot --check`, failing the build when the contents of `gas-snapshots/` drift. The workflow uploads the resulting gas reports (`gas-snapshots/`, `foundry-out/`) as build artifacts so reviewers can inspect changes from both PR and scheduled runs.
+
 ## Prerequisites
 
 - Node.js 20.x LTS and npm 10+
