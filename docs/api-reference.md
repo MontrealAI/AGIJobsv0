@@ -109,7 +109,9 @@ Mints completion certificates and allows optional marketplace listings.
 
 ### Key Functions
 
+- `setBaseURI(string baseURI)` – Permanently set the IPFS base for metadata.
 - `mint(address to, uint256 jobId, bytes32 uriHash)` – Mint certificate for a finished job.
+- `batchMint(address[] to, uint256[] jobIds, bytes32[] uriHashes)` – Mint a bounded batch of certificates.
 - `list(uint256 tokenId, uint256 price)` – Offer an owned certificate for sale.
 - `purchase(uint256 tokenId)` – Buy a listed certificate.
 - `delist(uint256 tokenId)` – Cancel an active listing.

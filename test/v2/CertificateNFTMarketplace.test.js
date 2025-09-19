@@ -44,6 +44,7 @@ describe('CertificateNFT marketplace', function () {
     nft = await NFT.deploy('Cert', 'CERT');
     await nft.setJobRegistry(owner.address);
     await nft.setStakeManager(await stake.getAddress());
+    await nft.setBaseURI('ipfs://market/');
 
     await nft.mint(
       seller.address,

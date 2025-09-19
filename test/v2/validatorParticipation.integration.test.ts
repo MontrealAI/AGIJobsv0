@@ -65,6 +65,7 @@ async function deployFullSystem() {
     'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
   const nft = await NFT.deploy('Cert', 'CERT');
+  await nft.setBaseURI('ipfs://validator-participation/');
 
   const Registry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'
