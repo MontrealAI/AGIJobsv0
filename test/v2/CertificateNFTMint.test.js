@@ -2,6 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
 describe('CertificateNFT minting', function () {
+  const BASE_URI = 'ipfs://certificates.example/';
   let owner, jobRegistry, user, nft;
 
   beforeEach(async () => {
@@ -9,7 +10,7 @@ describe('CertificateNFT minting', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
     await nft.setJobRegistry(jobRegistry.address);
   });
 
@@ -22,6 +23,15 @@ describe('CertificateNFT minting', function () {
     expect(await nft.ownerOf(1)).to.equal(user.address);
     const hash = await nft.tokenHashes(1);
     expect(hash).to.equal(uriHash);
+    expect(await nft.tokenURI(1)).to.equal(`${BASE_URI}1`);
+
+    await expect(
+      nft
+        .connect(jobRegistry)
+        .mint(user.address, 1, ethers.keccak256(ethers.toUtf8Bytes('ipfs://1')))
+    )
+      .to.be.revertedWithCustomError(nft, 'CertificateAlreadyMinted')
+      .withArgs(1);
 
     await expect(
       nft.connect(jobRegistry).mint(user.address, 2, ethers.ZeroHash)

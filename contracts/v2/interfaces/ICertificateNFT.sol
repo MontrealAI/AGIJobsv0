@@ -15,7 +15,19 @@ interface ICertificateNFT {
     /// @dev Reverts when an empty metadata hash is supplied
     error EmptyURI();
 
+    /// @dev Reverts when no mint instructions are supplied for a batch mint
+    error EmptyMintBatch();
+
+    /// @dev Reverts when attempting to mint more certificates than permitted in a batch
+    error MintBatchTooLarge(uint256 requested, uint256 maxAllowed);
+
     event CertificateMinted(address indexed to, uint256 indexed jobId, bytes32 uriHash);
+
+    struct MintInput {
+        address to;
+        uint256 jobId;
+        bytes32 uriHash;
+    }
 
     /// @notice Mint a completion certificate NFT for a job
     /// @param to Recipient of the certificate
@@ -28,5 +40,10 @@ interface ICertificateNFT {
         uint256 jobId,
         bytes32 uriHash
     ) external returns (uint256 tokenId);
+
+    /// @notice Mint multiple certificates in a single transaction
+    /// @param mints Array of mint parameters
+    /// @return tokenIds Identifiers of the minted certificates
+    function mintBatch(MintInput[] calldata mints) external returns (uint256[] memory tokenIds);
 }
 

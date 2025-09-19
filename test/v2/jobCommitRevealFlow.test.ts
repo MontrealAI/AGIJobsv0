@@ -3,6 +3,8 @@ import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { AGIALPHA_DECIMALS } from '../../scripts/constants';
 
+const CERTIFICATE_BASE_URI = 'ipfs://certificates.example/';
+
 function leaf(addr: string, label: string) {
   return ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(
@@ -83,7 +85,7 @@ async function deploySystem() {
   const NFT = await ethers.getContractFactory(
     'contracts/v2/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy('Cert', 'CERT');
+  const nft = await NFT.deploy('Cert', 'CERT', CERTIFICATE_BASE_URI);
 
   const Registry = await ethers.getContractFactory(
     'contracts/v2/JobRegistry.sol:JobRegistry'

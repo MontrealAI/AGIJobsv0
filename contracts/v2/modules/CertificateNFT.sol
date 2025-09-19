@@ -10,29 +10,36 @@ import {ICertificateNFT} from "../interfaces/ICertificateNFT.sol";
 /// @dev Only participants bear any tax obligations; the contract holds no
 ///      ether and rejects unsolicited transfers.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
-    /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
+    uint256 public constant MAX_BATCH_MINT = 25;
+
+    bytes private constant IPFS_PREFIX = bytes("ipfs://");
+
+    error ZeroAddress();
+    error InvalidBaseURI();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
 
-    event JobRegistryUpdated(address registry);
+    string private _baseTokenURI;
 
-    constructor(string memory name_, string memory symbol_)
+    event JobRegistryUpdated(address registry);
+    event BaseURISet(string baseURI);
+
+    constructor(string memory name_, string memory symbol_, string memory baseURI_)
         ERC721(name_, symbol_)
         Ownable(msg.sender)
-    {}
+    {
+        _setBaseURI(baseURI_);
+    }
 
     modifier onlyJobRegistry() {
-        require(msg.sender == jobRegistry, "only JobRegistry");
+        if (msg.sender != jobRegistry) revert NotJobRegistry(msg.sender);
         _;
     }
 
-    // ---------------------------------------------------------------------
-    // Owner setters (use Etherscan's "Write Contract" tab)
-    // ---------------------------------------------------------------------
-
     function setJobRegistry(address registry) external onlyOwner {
+        if (registry == address(0)) revert ZeroAddress();
         jobRegistry = registry;
         emit JobRegistryUpdated(registry);
     }
@@ -42,37 +49,75 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         uint256 jobId,
         bytes32 uriHash
     ) external onlyJobRegistry returns (uint256 tokenId) {
-        if (uriHash == bytes32(0)) revert EmptyURI();
-        tokenId = jobId;
-        _safeMint(to, tokenId);
-        tokenHashes[tokenId] = uriHash;
-        emit CertificateMinted(to, jobId, uriHash);
+        tokenId = _mintCertificate(to, jobId, uriHash);
+    }
+
+    function mintBatch(ICertificateNFT.MintInput[] calldata mints)
+        external
+        onlyJobRegistry
+        returns (uint256[] memory tokenIds)
+    {
+        uint256 length = mints.length;
+        if (length == 0) revert EmptyMintBatch();
+        if (length > MAX_BATCH_MINT) revert MintBatchTooLarge(length, MAX_BATCH_MINT);
+
+        tokenIds = new uint256[](length);
+
+        for (uint256 i = 0; i < length; ) {
+            ICertificateNFT.MintInput calldata mintInput = mints[i];
+            tokenIds[i] = _mintCertificate(mintInput.to, mintInput.jobId, mintInput.uriHash);
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        return super.tokenURI(tokenId);
     }
 
-    /// @notice Confirms this NFT module and owner remain tax neutral.
-    /// @return Always true, indicating no tax liabilities can accrue.
     function isTaxExempt() external pure returns (bool) {
         return true;
     }
 
-    // ---------------------------------------------------------------
-    // Ether rejection
-    // ---------------------------------------------------------------
-
-    /// @dev Reject direct ETH transfers to keep the contract and its owner
-    /// free of taxable assets.
     receive() external payable {
         revert("CertificateNFT: no ether");
     }
 
-    /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
         revert("CertificateNFT: no ether");
     }
-}
 
+    function _baseURI() internal view override returns (string memory) {
+        return _baseTokenURI;
+    }
+
+    function _mintCertificate(
+        address to,
+        uint256 jobId,
+        bytes32 uriHash
+    ) internal returns (uint256 tokenId) {
+        if (to == address(0)) revert ZeroAddress();
+        if (uriHash == bytes32(0)) revert EmptyURI();
+
+        tokenId = jobId;
+        if (_ownerOf(tokenId) != address(0)) revert CertificateAlreadyMinted(jobId);
+
+        _safeMint(to, tokenId);
+        tokenHashes[tokenId] = uriHash;
+        emit CertificateMinted(to, tokenId, uriHash);
+    }
+
+    function _setBaseURI(string memory baseURI_) internal {
+        bytes memory uriBytes = bytes(baseURI_);
+        if (uriBytes.length <= IPFS_PREFIX.length) revert InvalidBaseURI();
+        for (uint256 i = 0; i < IPFS_PREFIX.length; ++i) {
+            if (uriBytes[i] != IPFS_PREFIX[i]) revert InvalidBaseURI();
+        }
+        if (uriBytes[uriBytes.length - 1] != "/") revert InvalidBaseURI();
+
+        _baseTokenURI = baseURI_;
+        emit BaseURISet(baseURI_);
+    }
+}

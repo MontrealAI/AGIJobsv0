@@ -118,7 +118,8 @@ async function main() {
   ]);
   await verify(reputationEngine);
   await verify(disputeModule, [jobRegistry, 0, 0, governance]);
-  await verify(certificateNFT, ['Cert', 'CERT']);
+  const certificateBaseURI = 'ipfs://certificates.example/';
+  await verify(certificateNFT, ['Cert', 'CERT', certificateBaseURI]);
   await verify(platformRegistry, [stakeManager, reputationEngine, 0]);
   await verify(jobRouter, [platformRegistry]);
   await verify(platformIncentives, [stakeManager, platformRegistry, jobRouter]);

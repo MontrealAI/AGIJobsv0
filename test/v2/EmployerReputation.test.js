@@ -13,6 +13,7 @@ describe('Employer reputation', function () {
     policy,
     identity;
   const { address: AGIALPHA } = require('../../config/agialpha.json');
+  const BASE_URI = 'ipfs://certificates.example/';
   let owner, employer, agent, treasury;
   let feePool;
 
@@ -58,7 +59,7 @@ describe('Employer reputation', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
     const FeePool = await ethers.getContractFactory(
       'contracts/v2/FeePool.sol:FeePool'
     );

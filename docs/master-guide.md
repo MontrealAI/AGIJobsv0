@@ -423,7 +423,7 @@ Create `docs/deployment-addresses.json` (or similar) and keep it updated:
 
 **CertificateNFT**
 
-- Setters: `setJobRegistry(addr)`, `setStakeManager(addr)` (and `setBaseURI(...)` if present)
+- Setters: `setJobRegistry(addr)`, `setStakeManager(addr)`
 
 **FeePool**
 

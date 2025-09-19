@@ -3,6 +3,8 @@ const { ethers, artifacts, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
 
+const BASE_URI = 'ipfs://certificates.example/';
+
 describe('end-to-end job lifecycle', function () {
   let token,
     stakeManager,
@@ -69,7 +71,7 @@ describe('end-to-end job lifecycle', function () {
     const NFT = await ethers.getContractFactory(
       'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
     );
-    nft = await NFT.deploy('Cert', 'CERT');
+    nft = await NFT.deploy('Cert', 'CERT', BASE_URI);
 
     const Registry = await ethers.getContractFactory(
       'contracts/v2/JobRegistry.sol:JobRegistry'

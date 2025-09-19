@@ -52,6 +52,11 @@ async function main() {
     typeof args.governance === 'string' ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
+  const certificateBaseURI =
+    typeof args.certificateBaseURI === 'string'
+      ? args.certificateBaseURI
+      : 'ipfs://certificates.example/';
+
   const token = await ethers.getContractAt(
     ['function decimals() view returns (uint8)'],
     AGIALPHA
@@ -156,7 +161,7 @@ async function main() {
   const NFT = await ethers.getContractFactory(
     'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy('Cert', 'CERT');
+  const nft = await NFT.deploy('Cert', 'CERT', certificateBaseURI);
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
@@ -454,7 +459,7 @@ async function main() {
       governance,
     ]);
   }
-  await verify(await nft.getAddress(), ['Cert', 'CERT', governance]);
+  await verify(await nft.getAddress(), ['Cert', 'CERT', certificateBaseURI]);
   await verify(await tax.getAddress(), [
     'ipfs://policy',
     'All taxes on participants; contract and owner exempt',
