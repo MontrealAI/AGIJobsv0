@@ -4,17 +4,25 @@ pragma solidity ^0.8.25;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ICertificateNFT} from "../interfaces/ICertificateNFT.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title CertificateNFT (module)
 /// @notice ERC721 certificate minted upon successful job completion.
 /// @dev Only participants bear any tax obligations; the contract holds no
 ///      ether and rejects unsolicited transfers.
 contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
+    using Strings for uint256;
+
+    /// @notice Maximum number of certificates that can be minted in a single batch.
+    uint256 public constant MAX_BATCH_MINT = 20;
+
+    string internal constant _TOKEN_URI_SUFFIX = ".json";
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
+    string private _baseTokenURI;
 
     event JobRegistryUpdated(address registry);
 
@@ -37,6 +45,17 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         emit JobRegistryUpdated(registry);
     }
 
+    function setBaseURI(string calldata baseURI_) external onlyOwner {
+        if (bytes(_baseTokenURI).length != 0) revert BaseURIAlreadySet();
+        _assertValidBaseURI(baseURI_);
+        _baseTokenURI = baseURI_;
+        emit BaseURISet(baseURI_);
+    }
+
+    function baseURI() external view returns (string memory) {
+        return _baseTokenURI;
+    }
+
     function mint(
         address to,
         uint256 jobId,
@@ -49,9 +68,39 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
         emit CertificateMinted(to, jobId, uriHash);
     }
 
+    function mintBatch(
+        address[] calldata recipients,
+        uint256[] calldata jobIds,
+        bytes32[] calldata uriHashes
+    ) external onlyJobRegistry returns (uint256[] memory tokenIds) {
+        uint256 length = recipients.length;
+        if (length != jobIds.length || length != uriHashes.length) {
+            revert ArrayLengthMismatch();
+        }
+        if (length > MAX_BATCH_MINT) {
+            revert BatchSizeExceeded(length, MAX_BATCH_MINT);
+        }
+        tokenIds = new uint256[](length);
+        for (uint256 i; i < length;) {
+            bytes32 uriHash = uriHashes[i];
+            if (uriHash == bytes32(0)) revert EmptyURI();
+            uint256 tokenId = jobIds[i];
+            address recipient = recipients[i];
+            _safeMint(recipient, tokenId);
+            tokenHashes[tokenId] = uriHash;
+            tokenIds[i] = tokenId;
+            emit CertificateMinted(recipient, tokenId, uriHash);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        string memory baseUri = _baseTokenURI;
+        if (bytes(baseUri).length == 0) revert BaseURINotSet();
+        return string.concat(baseUri, tokenId.toString(), _TOKEN_URI_SUFFIX);
     }
 
     /// @notice Confirms this NFT module and owner remain tax neutral.
@@ -73,6 +122,21 @@ contract CertificateNFT is ERC721, Ownable, ICertificateNFT {
     /// @dev Reject calls with unexpected calldata or funds.
     fallback() external payable {
         revert("CertificateNFT: no ether");
+    }
+
+    function _assertValidBaseURI(string calldata baseURI_) private pure {
+        bytes memory uriBytes = bytes(baseURI_);
+        if (uriBytes.length < 8) revert InvalidBaseURI();
+        if (
+            uriBytes[0] != 'i' ||
+            uriBytes[1] != 'p' ||
+            uriBytes[2] != 'f' ||
+            uriBytes[3] != 's' ||
+            uriBytes[4] != ':' ||
+            uriBytes[5] != '/' ||
+            uriBytes[6] != '/'
+        ) revert InvalidBaseURI();
+        if (uriBytes[uriBytes.length - 1] != '/') revert InvalidBaseURI();
     }
 }
 
