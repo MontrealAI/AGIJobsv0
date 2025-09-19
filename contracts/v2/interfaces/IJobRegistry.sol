@@ -198,6 +198,12 @@ interface IJobRegistry {
     /// @return Address of the ValidationModule
     function validationModule() external view returns (address);
 
+    /// @notice Retrieve the validator committee cached for a job.
+    function getJobValidators(uint256 jobId) external view returns (address[] memory);
+
+    /// @notice Retrieve the cached approval vote for a validator on a job.
+    function getJobValidatorVote(uint256 jobId, address validator) external view returns (bool);
+
     /// @notice Owner configuration of job limits
     /// @param maxReward Maximum allowed reward for a job
     /// @param stake Stake required from the agent to accept a job

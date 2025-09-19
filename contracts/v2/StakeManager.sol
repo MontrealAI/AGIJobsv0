@@ -1330,10 +1330,17 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         nonReentrant
     {
         if (amount == 0) return;
-        address vm = address(validationModule);
-        if (vm == address(0)) revert ValidationModuleNotSet();
-        address[] memory vals = validationModule.validators(uint256(jobId));
+        address registry = jobRegistry;
+        if (registry == address(0)) revert JobRegistryNotSet();
+
+        address[] memory vals = IJobRegistry(registry).getJobValidators(uint256(jobId));
         uint256 count = vals.length;
+        if (count == 0) {
+            address vm = address(validationModule);
+            if (vm == address(0)) revert ValidationModuleNotSet();
+            vals = validationModule.validators(uint256(jobId));
+            count = vals.length;
+        }
         if (count == 0) revert NoValidators();
         uint256 escrow = jobEscrows[jobId];
         if (escrow < amount) revert InsufficientEscrow();

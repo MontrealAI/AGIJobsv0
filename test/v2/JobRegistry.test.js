@@ -199,6 +199,8 @@ describe('JobRegistry integration', function () {
       .and.to.emit(registry, 'AgentAssigned')
       .withArgs(jobId, agent.address, '');
     await validation.connect(owner).setResult(true);
+    const committee = [owner.address, treasury.address];
+    await validation.connect(owner).setValidators(committee);
     const resultHash = ethers.id('result');
     await expect(
       registry.connect(agent).submit(jobId, resultHash, 'result', '', [])
@@ -210,11 +212,21 @@ describe('JobRegistry integration', function () {
     await expect(validation.finalize(jobId))
       .to.emit(registry, 'JobCompleted')
       .withArgs(jobId, true);
+
+    expect(await registry.getJobValidators(jobId)).to.deep.equal(committee);
+    for (const member of committee) {
+      expect(await registry.getJobValidatorVote(jobId, member)).to.equal(true);
+    }
     await expect(registry.connect(employer).finalize(jobId))
       .to.emit(registry, 'JobPayout')
       .withArgs(jobId, agent.address, reward, 0, 0)
       .and.to.emit(registry, 'JobFinalized')
       .withArgs(jobId, agent.address);
+
+    expect(await registry.getJobValidators(jobId)).to.deep.equal([]);
+    for (const member of committee) {
+      expect(await registry.getJobValidatorVote(jobId, member)).to.equal(false);
+    }
 
     expect(await token.balanceOf(agent.address)).to.equal(900);
     expect(await rep.reputation(agent.address)).to.equal(0);
