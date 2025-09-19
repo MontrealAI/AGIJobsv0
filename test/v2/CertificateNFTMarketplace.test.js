@@ -44,6 +44,7 @@ describe('CertificateNFT marketplace', function () {
     nft = await NFT.deploy('Cert', 'CERT');
     await nft.setJobRegistry(owner.address);
     await nft.setStakeManager(await stake.getAddress());
+    await nft.setBaseURI('ipfs://certificates/');
 
     await nft.mint(
       seller.address,
@@ -245,5 +246,13 @@ describe('CertificateNFT marketplace', function () {
       .to.emit(nft, 'NFTPurchased')
       .withArgs(1, await attacker.getAddress(), price);
     expect(await nft.ownerOf(1)).to.equal(await attacker.getAddress());
+  });
+
+  it('exposes deterministic metadata with an immutable base URI', async () => {
+    expect(await nft.tokenURI(1)).to.equal('ipfs://certificates/1');
+    await expect(nft.setBaseURI('ipfs://other/')).to.be.revertedWithCustomError(
+      nft,
+      'BaseURIAlreadySet'
+    );
   });
 });
