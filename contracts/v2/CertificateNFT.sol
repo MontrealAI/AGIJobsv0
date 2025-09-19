@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {AGIALPHA} from "./Constants.sol";
@@ -17,6 +18,7 @@ import {AGIALPHA} from "./Constants.sol";
 ///      assets or accrues taxable exposure in any jurisdiction.
 contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertificateNFT {
     using SafeERC20 for IERC20;
+    using Strings for uint256;
 
     /// @notice Module version for compatibility checks.
     uint256 public constant version = 2;
@@ -32,9 +34,15 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error InsufficientAllowance();
     error InvalidStakeManagerVersion();
     error InvalidStakeManagerToken();
+    error EmptyBaseURI();
+    error BaseURIAlreadySet();
+    error BaseURIUnset();
 
     address public jobRegistry;
     mapping(uint256 => bytes32) public tokenHashes;
+
+    string private _baseTokenURI;
+    bool private _baseURISet;
 
     IStakeManager public stakeManager;
 
@@ -51,6 +59,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     event NFTListed(uint256 indexed tokenId, address indexed seller, uint256 price);
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
+    event BaseURISet(string baseURI);
 
     constructor(string memory name_, string memory symbol_)
         ERC721(name_, symbol_)
@@ -84,6 +93,14 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         emit StakeManagerUpdated(manager);
     }
 
+    function setBaseURI(string calldata baseURI_) external onlyOwner {
+        if (bytes(baseURI_).length == 0) revert EmptyBaseURI();
+        if (_baseURISet) revert BaseURIAlreadySet();
+        _baseTokenURI = baseURI_;
+        _baseURISet = true;
+        emit BaseURISet(baseURI_);
+    }
+
     function pause() external onlyOwner {
         _pause();
     }
@@ -107,7 +124,8 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     }
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        if (!_baseURISet) revert BaseURIUnset();
+        return string(abi.encodePacked(_baseTokenURI, tokenId.toString()));
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {
