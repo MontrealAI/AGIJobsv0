@@ -43,6 +43,7 @@ import {TOKEN_SCALE} from "./Constants.sol";
 ///      governance address once wiring is complete.
 contract Deployer is Ownable {
     bool public deployed;
+    string private constant _DEFAULT_CERTIFICATE_BASE_CID = "bafybasecid";
 
     constructor() Ownable(msg.sender) {}
 
@@ -323,7 +324,11 @@ contract Deployer is Ownable {
         );
         dispute.setCommittee(address(committee));
 
-        CertificateNFT certificate = new CertificateNFT("Cert", "CERT");
+        CertificateNFT certificate = new CertificateNFT(
+            "Cert",
+            "CERT",
+            _DEFAULT_CERTIFICATE_BASE_CID
+        );
         certificate.setJobRegistry(address(registry));
 
         TaxPolicy policy;

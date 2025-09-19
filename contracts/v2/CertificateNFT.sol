@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ICertificateNFT} from "./interfaces/ICertificateNFT.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {AGIALPHA} from "./Constants.sol";
@@ -34,6 +35,7 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     error InvalidStakeManagerToken();
 
     address public jobRegistry;
+    string private _baseCid;
     mapping(uint256 => bytes32) public tokenHashes;
 
     IStakeManager public stakeManager;
@@ -52,10 +54,15 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     event NFTPurchased(uint256 indexed tokenId, address indexed buyer, uint256 price);
     event NFTDelisted(uint256 indexed tokenId);
 
-    constructor(string memory name_, string memory symbol_)
+    error EmptyBaseCid();
+
+    constructor(string memory name_, string memory symbol_, string memory baseCid_)
         ERC721(name_, symbol_)
         Ownable(msg.sender)
-    {}
+    {
+        if (bytes(baseCid_).length == 0) revert EmptyBaseCid();
+        _baseCid = baseCid_;
+    }
 
     modifier onlyJobRegistry() {
         if (msg.sender != jobRegistry) revert NotJobRegistry(msg.sender);
@@ -105,9 +112,22 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
         tokenHashes[tokenId] = uriHash;
         emit CertificateMinted(to, jobId, uriHash);
     }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        revert("Off-chain URI");
+        bytes32 digest = tokenHashes[tokenId];
+        if (digest == bytes32(0)) revert EmptyURI();
+        return string(
+            abi.encodePacked("ipfs://", _baseCid, "/", _digestToPath(digest))
+        );
+    }
+
+    function baseCid() external view returns (string memory) {
+        return _baseCid;
+    }
+
+    function _digestToPath(bytes32 digest) private pure returns (string memory) {
+        return Strings.toHexString(uint256(digest), 32);
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {

@@ -156,7 +156,7 @@ async function main() {
   const NFT = await ethers.getContractFactory(
     'contracts/v2/modules/CertificateNFT.sol:CertificateNFT'
   );
-  const nft = await NFT.deploy('Cert', 'CERT');
+  const nft = await NFT.deploy('Cert', 'CERT', 'bafybasecid');
   await nft.waitForDeployment();
 
   const Dispute = await ethers.getContractFactory(
