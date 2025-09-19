@@ -246,6 +246,8 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     mapping(uint256 => mapping(bytes32 => BurnReceipt)) private burnReceipts;
     mapping(uint256 => uint256) public pendingValidationEntropy;
     mapping(uint256 => bool) public validationStartPending;
+    mapping(uint256 => address[]) private jobValidators;
+    mapping(uint256 => mapping(address => bool)) private jobValidatorVotes;
 
     /// @notice Tracks job outcomes for each employer.
     struct EmployerStats {
@@ -256,6 +258,22 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     mapping(address => EmployerStats) public employerStats;
+
+    function getJobValidators(uint256 jobId)
+        external
+        view
+        returns (address[] memory)
+    {
+        return jobValidators[jobId];
+    }
+
+    function getJobValidatorVote(uint256 jobId, address validator)
+        external
+        view
+        returns (bool)
+    {
+        return jobValidatorVotes[jobId][validator];
+    }
 
     function getSpecHash(uint256 jobId) external view returns (bytes32) {
         return jobs[jobId].specHash;
@@ -277,6 +295,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function _isBurnRequired() internal view returns (bool) {
         IStakeManager manager = stakeManager;
         return address(manager) != address(0) && manager.burnPct() > 0;
+    }
+
+    function _clearValidatorData(uint256 jobId) internal {
+        address[] storage validators = jobValidators[jobId];
+        uint256 length = validators.length;
+        if (length == 0) {
+            return;
+        }
+        for (uint256 i; i < length;) {
+            delete jobValidatorVotes[jobId][validators[i]];
+            unchecked {
+                ++i;
+            }
+        }
+        delete jobValidators[jobId];
     }
 
     function _clearValidationStart(uint256 jobId) internal {
@@ -1442,7 +1475,21 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             address(validationModule)
         )
     {
-        validators; // silence unused variable warning
+        _clearValidatorData(jobId);
+        if (validators.length > 0) {
+            address[] storage storedValidators = jobValidators[jobId];
+            for (uint256 i; i < validators.length;) {
+                address validator = validators[i];
+                storedValidators.push(validator);
+                jobValidatorVotes[jobId][validator] = validationModule.votes(
+                    jobId,
+                    validator
+                );
+                unchecked {
+                    ++i;
+                }
+            }
+        }
         _finalizeAfterValidation(jobId, success);
     }
 
@@ -1525,6 +1572,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
         _setSuccess(job, !employerWins);
         _setState(job, State.Completed);
+        _clearValidatorData(jobId);
         emit DisputeResolved(jobId, employerWins);
     }
 
@@ -1576,10 +1624,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _setState(job, State.Finalized);
         bytes32 jobKey = bytes32(jobId);
         bool fundsRedirected;
-        address[] memory validators;
-        if (address(validationModule) != address(0)) {
-            validators = validationModule.validators(jobId);
-        }
+        address[] memory validators = jobValidators[jobId];
         bool success = _getSuccess(job);
         if (success) {
             IFeePool pool = feePool;
@@ -1676,7 +1721,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 if (validators.length > 0) {
                     for (uint256 i; i < validators.length;) {
                         address val = validators[i];
-                        if (validationModule.votes(jobId, val)) {
+                        if (jobValidatorVotes[jobId][val]) {
                             reputationEngine.rewardValidator(val, agentGain);
                         }
                         unchecked {
@@ -1729,6 +1774,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
         }
+        _clearValidatorData(jobId);
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.
@@ -1769,6 +1815,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                 uint256(job.reward) + fee
             );
         }
+        _clearValidatorData(jobId);
         emit JobCancelled(jobId);
     }
 
@@ -1857,6 +1904,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.burnReceiptAmount = 0;
         job.resultHash = bytes32(0);
 
+        _clearValidatorData(jobId);
         emit JobTimedOut(jobId, msg.sender);
     }
 
