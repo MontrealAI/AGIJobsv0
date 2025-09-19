@@ -39,10 +39,19 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - name: Install npm dependencies
+        run: npm ci
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
+      - name: Install Foundry dependencies
+        run: forge install --no-git foundry-rs/forge-std@v1.9.5
       - name: Run forge tests
         run: forge test -vvv
       - name: Check gas snapshots

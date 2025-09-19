@@ -70,10 +70,15 @@ contract ValidationFinalizeGas is Test {
 
     function _prepareJob() internal returns (uint256 jobId) {
         jobId = 1;
-        IJobRegistry.Job memory job;
+        MockJobRegistry.LegacyJob memory job;
         job.employer = employer;
         job.agent = agent;
+        job.reward = 0;
+        job.stake = 0;
+        job.success = false;
         job.status = IJobRegistry.Status.Submitted;
+        job.uriHash = bytes32(0);
+        job.resultHash = bytes32(0);
         jobRegistry.setJob(jobId, job);
 
         vm.prank(employer);
