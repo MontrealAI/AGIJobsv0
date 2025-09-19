@@ -31,7 +31,11 @@ describe('CertificateNFT minting', function () {
     await expect(
       nft
         .connect(owner)
-        .mint(user.address, 3, ethers.keccak256(ethers.toUtf8Bytes('metadata/3.json')))
+        .mint(
+          user.address,
+          3,
+          ethers.keccak256(ethers.toUtf8Bytes('metadata/3.json'))
+        )
     )
       .to.be.revertedWithCustomError(nft, 'NotJobRegistry')
       .withArgs(owner.address);
@@ -42,8 +46,9 @@ describe('CertificateNFT minting', function () {
   });
 
   it('rejects an empty base CID', async () => {
-    await expect(
-      NFT.deploy('Cert', 'CERT', '')
-    ).to.be.revertedWithCustomError(nft, 'EmptyBaseCid');
+    await expect(NFT.deploy('Cert', 'CERT', '')).to.be.revertedWithCustomError(
+      nft,
+      'EmptyBaseCid'
+    );
   });
 });

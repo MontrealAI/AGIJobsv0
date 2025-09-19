@@ -37,8 +37,9 @@ describe('CertificateNFT', function () {
   });
 
   it('rejects empty base CID at deployment', async () => {
-    await expect(
-      NFT.deploy('Cert', 'CERT', '')
-    ).to.be.revertedWithCustomError(nft, 'EmptyBaseCid');
+    await expect(NFT.deploy('Cert', 'CERT', '')).to.be.revertedWithCustomError(
+      nft,
+      'EmptyBaseCid'
+    );
   });
 });
