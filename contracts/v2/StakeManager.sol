@@ -1240,28 +1240,30 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         bool byGovernance
     ) internal {
         emit JobFundsFinalized(jobId, employer);
-        uint256 modified = (reward * pct) / 100;
+
+        uint256 rewardSpent = reward;
+        uint256 feeAmount = fee;
+        uint256 escrow = jobEscrows[jobId];
+        uint256 available = escrow - validatorReward;
+        if (available < rewardSpent + feeAmount) {
+            uint256 deficit = rewardSpent + feeAmount - available;
+            uint256 feeReduction = deficit > feeAmount ? feeAmount : deficit;
+            feeAmount -= feeReduction;
+            deficit -= feeReduction;
+            if (deficit > 0) {
+                if (deficit > rewardSpent) revert InsufficientEscrow();
+                rewardSpent -= deficit;
+            }
+        }
+
+        uint256 modified = (rewardSpent * pct) / 100;
         uint256 burnAmount = (modified * burnPct) / 100;
         uint256 payout = modified - burnAmount;
 
-        uint256 escrow = jobEscrows[jobId];
-        uint256 available = escrow - validatorReward;
-        uint256 total = reward + fee + burnAmount;
-        if (available < total) {
-            uint256 deficit = total - available;
-            if (deficit > burnAmount + fee) revert InsufficientEscrow();
-            uint256 burnReduction = deficit > burnAmount ? burnAmount : deficit;
-            burnAmount -= burnReduction;
-            deficit -= burnReduction;
-            uint256 feeReduction = deficit > fee ? fee : deficit;
-            fee -= feeReduction;
-            total -= burnReduction + feeReduction;
-        }
-
-        uint256 spent = reward + fee + burnAmount;
+        uint256 spent = rewardSpent + feeAmount;
         jobEscrows[jobId] = escrow - spent;
 
-        uint256 extra = payout > reward ? payout - reward : 0;
+        uint256 extra = modified > rewardSpent ? modified - rewardSpent : 0;
         if (extra > 0) {
             if (operatorRewardPool < extra) revert InsufficientRewardPool();
             operatorRewardPool -= extra;
@@ -1280,14 +1282,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
             token.safeTransfer(agent, payout);
             emit RewardPaid(jobId, agent, payout);
         }
-        if (fee > 0) {
+        if (feeAmount > 0) {
             if (address(_feePool) != address(0)) {
-                token.safeTransfer(address(_feePool), fee);
-                _feePool.depositFee(fee);
+                token.safeTransfer(address(_feePool), feeAmount);
+                _feePool.depositFee(feeAmount);
                 _feePool.distributeFees();
-                emit StakeReleased(jobId, address(_feePool), fee);
+                emit StakeReleased(jobId, address(_feePool), feeAmount);
             } else {
-                token.safeTransfer(employer, fee);
+                token.safeTransfer(employer, feeAmount);
             }
         }
         if (burnAmount > 0) {

@@ -175,4 +175,100 @@ describe('StakeManager burn reduction', function () {
     expect(await token.balanceOf(employer.address)).to.equal(afterLockEmployer);
     expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
   });
+
+  it('emits burn and pays correct payout when escrow fully funds burn', async () => {
+    const jobId = ethers.encodeBytes32String('burned');
+    const reward = ethers.parseEther('100');
+    const fee = ethers.parseEther('20');
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, reward + fee);
+
+    const expectedBurn = (reward * 10n) / 100n;
+    const supplyBefore = await token.totalSupply();
+    const agentBefore = await token.balanceOf(agent.address);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .finalizeJobFunds(
+          jobId,
+          employer.address,
+          agent.address,
+          reward,
+          0,
+          fee,
+          ethers.ZeroAddress,
+          false
+        )
+    )
+      .to.emit(stakeManager, 'TokensBurned')
+      .withArgs(jobId, expectedBurn)
+      .and.to.emit(stakeManager, 'RewardPaid')
+      .withArgs(jobId, agent.address, reward - expectedBurn);
+
+    const supplyAfter = await token.totalSupply();
+    expect(supplyBefore - supplyAfter).to.equal(expectedBurn);
+    expect(await token.balanceOf(agent.address)).to.equal(
+      agentBefore + reward - expectedBurn
+    );
+    expect(await stakeManager.jobEscrows(jobId)).to.equal(0n);
+  });
+
+  it('settles payout, burn, and fee exactly to the escrowed funds', async () => {
+    const scenarios = [
+      { burnPct: 5, reward: '100', fee: '0', shortfall: '0' },
+      { burnPct: 0, reward: '75', fee: '25', shortfall: '0' },
+      { burnPct: 20, reward: '80', fee: '40', shortfall: '0' },
+      { burnPct: 15, reward: '90', fee: '30', shortfall: '20' },
+    ];
+
+    for (const scenario of scenarios) {
+      await stakeManager.connect(owner).setBurnPct(scenario.burnPct);
+
+      const reward = ethers.parseEther(scenario.reward);
+      const fee = ethers.parseEther(scenario.fee);
+      const shortfall = ethers.parseEther(scenario.shortfall);
+      const deposit = reward + fee - shortfall;
+
+      const jobId = ethers.encodeBytes32String(
+        `acct-${scenario.burnPct}-${scenario.shortfall}`
+      );
+
+      await stakeManager
+        .connect(registrySigner)
+        .lockReward(jobId, employer.address, deposit);
+
+      const beforeEscrow = await stakeManager.jobEscrows(jobId);
+      const beforeSupply = await token.totalSupply();
+      const beforeAgent = await token.balanceOf(agent.address);
+      const beforeEmployer = await token.balanceOf(employer.address);
+
+      await stakeManager
+        .connect(registrySigner)
+        .finalizeJobFunds(
+          jobId,
+          employer.address,
+          agent.address,
+          reward,
+          0,
+          fee,
+          ethers.ZeroAddress,
+          false
+        );
+
+      const afterEscrow = await stakeManager.jobEscrows(jobId);
+      const afterSupply = await token.totalSupply();
+      const afterAgent = await token.balanceOf(agent.address);
+      const afterEmployer = await token.balanceOf(employer.address);
+
+      const agentDelta = afterAgent - beforeAgent;
+      const employerDelta = afterEmployer - beforeEmployer;
+      const burnDelta = beforeSupply - afterSupply;
+      const totalOut = agentDelta + employerDelta + burnDelta;
+      const escrowDelta = beforeEscrow - afterEscrow;
+
+      expect(totalOut).to.equal(escrowDelta);
+    }
+  });
 });
