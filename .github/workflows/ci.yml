@@ -44,6 +44,8 @@ jobs:
           cache: npm
       - name: Install Node.js dependencies
         run: npm ci
+      - name: Compile contracts
+        run: npx hardhat compile --force
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -54,14 +56,28 @@ jobs:
           solc-select install 0.8.25
           solc-select use 0.8.25
       - name: Run Slither
-        run: >-
-          slither . --solc-remaps @openzeppelin=node_modules/@openzeppelin/ --fail-on high
-          --filter-paths node_modules --json slither-report.json --markdown slither-report.md
+        run: |
+          set -euo pipefail
+          mkdir -p slither-report
+          set +e
+          slither . \
+            --solc-remaps @openzeppelin=node_modules/@openzeppelin/ \
+            --filter-paths node_modules \
+            --compile-force-framework hardhat \
+            --hardhat-ignore-compile \
+            --json slither-report/slither-report.json \
+            --checklist \
+            --fail-high
+          status=$?
+          set -e
+          if [ -f slither-checklist.md ]; then
+            mv slither-checklist.md slither-report/slither-report.md
+          fi
+          exit "$status"
       - name: Upload Slither report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: slither-report
-          path: |
-            slither-report.json
-            slither-report.md
+          path: slither-report/
           if-no-files-found: error
