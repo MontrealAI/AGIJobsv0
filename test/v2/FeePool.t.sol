@@ -5,6 +5,7 @@ import "contracts/v2/FeePool.sol";
 import "contracts/v2/interfaces/IFeePool.sol";
 import "contracts/legacy/MockV2.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
 import {AGIALPHA} from "contracts/v2/Constants.sol";
 import {ITaxPolicy} from "contracts/v2/interfaces/ITaxPolicy.sol";
 
@@ -42,6 +43,14 @@ contract FeePoolTest {
     address bob = address(0xB2);
 
     uint256 constant TOKEN = 1e18;
+
+    function _deployTimelock() internal returns (TimelockController) {
+        address[] memory proposers = new address[](1);
+        proposers[0] = address(this);
+        address[] memory executors = new address[](1);
+        executors[0] = address(this);
+        return new TimelockController(0, proposers, executors, address(this));
+    }
 
     function setUp() public {
         TestToken impl = new TestToken();
@@ -143,6 +152,40 @@ contract FeePoolTest {
         feePool.depositFee(TOKEN);
         vm.expectRevert(TokenNotBurnable.selector);
         feePool.distributeFees();
+    }
+
+    function testGovernanceWithdrawBurnsWhenBurnAddressIsZero() public {
+        setUp();
+        TimelockController timelock = _deployTimelock();
+        feePool.setGovernance(address(timelock));
+
+        uint256 amount = 5 * TOKEN;
+        token.mint(address(feePool), amount);
+        uint256 supplyBefore = token.totalSupply();
+
+        vm.prank(address(timelock));
+        feePool.governanceWithdraw(BURN_ADDRESS, amount);
+
+        require(token.totalSupply() == supplyBefore - amount, "burned");
+        require(token.balanceOf(address(feePool)) == 0, "pool");
+    }
+
+    function testGovernanceWithdrawTreasuryWhenBurnAddressIsZero() public {
+        setUp();
+        address treasuryAddr = address(0xCAFE);
+        feePool = new FeePool(stakeManager, 0, treasuryAddr, ITaxPolicy(address(0)));
+        TimelockController timelock = _deployTimelock();
+        feePool.setGovernance(address(timelock));
+
+        uint256 amount = 2 * TOKEN;
+        token.mint(address(feePool), amount);
+
+        vm.prank(address(timelock));
+        feePool.governanceWithdraw(treasuryAddr, amount);
+
+        require(token.balanceOf(treasuryAddr) == amount, "treasury");
+        require(token.balanceOf(address(feePool)) == 0, "pool");
+        require(token.totalSupply() == amount, "supply");
     }
 
     /// @notice ensures rewards distribute precisely with 18-decimal tokens

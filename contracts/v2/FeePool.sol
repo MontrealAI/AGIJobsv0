@@ -342,8 +342,23 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         requiresTaxAcknowledgement(taxPolicy, msg.sender, owner(), address(0), address(0))
         nonReentrant
     {
-        if (to == address(0) || to == owner()) revert InvalidRecipient();
-        if (to != BURN_ADDRESS && to != treasury) revert InvalidRecipient();
+        if (to == owner()) revert InvalidRecipient();
+
+        if (to == BURN_ADDRESS) {
+            if (BURN_ADDRESS == address(0)) {
+                try IERC20Burnable(address(token)).burn(amount) {
+                    emit GovernanceWithdrawal(to, amount);
+                } catch {
+                    revert TokenNotBurnable();
+                }
+            } else {
+                token.safeTransfer(BURN_ADDRESS, amount);
+                emit GovernanceWithdrawal(to, amount);
+            }
+            return;
+        }
+
+        if (to == address(0) || to != treasury) revert InvalidRecipient();
         token.safeTransfer(to, amount);
         emit GovernanceWithdrawal(to, amount);
     }
