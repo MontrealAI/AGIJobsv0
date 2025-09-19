@@ -113,6 +113,58 @@ describe('CertificateNFT marketplace', function () {
     ).to.be.revertedWithCustomError(nft, 'AlreadyListed');
   });
 
+  it('cleans stale listings on transfer so the new owner can manage again', async () => {
+    await nft.connect(seller).list(1, price);
+    await nft
+      .connect(seller)
+      ['safeTransferFrom(address,address,uint256)'](
+        seller.address,
+        buyer.address,
+        1
+      );
+
+    const staleListing = await nft.listings(1);
+    expect(staleListing.active).to.equal(true);
+    expect(staleListing.seller).to.equal(seller.address);
+
+    const newPrice = price * 2n;
+    await expect(nft.connect(buyer).list(1, newPrice))
+      .to.emit(nft, 'NFTListed')
+      .withArgs(1, buyer.address, newPrice);
+
+    const refreshedListing = await nft.listings(1);
+    expect(refreshedListing.active).to.equal(true);
+    expect(refreshedListing.seller).to.equal(buyer.address);
+    expect(refreshedListing.price).to.equal(newPrice);
+
+    await expect(nft.connect(buyer).delist(1))
+      .to.emit(nft, 'NFTDelisted')
+      .withArgs(1);
+  });
+
+  it('lets the current owner delist stale listings after a transfer', async () => {
+    await nft.connect(seller).list(1, price);
+    await nft
+      .connect(seller)
+      ['safeTransferFrom(address,address,uint256)'](
+        seller.address,
+        buyer.address,
+        1
+      );
+
+    await expect(nft.connect(buyer).delist(1))
+      .to.emit(nft, 'NFTDelisted')
+      .withArgs(1);
+
+    const clearedListing = await nft.listings(1);
+    expect(clearedListing.active).to.equal(false);
+
+    const relistPrice = price * 3n;
+    await expect(nft.connect(buyer).list(1, relistPrice))
+      .to.emit(nft, 'NFTListed')
+      .withArgs(1, buyer.address, relistPrice);
+  });
+
   it('rejects purchase after delisting', async () => {
     await nft.connect(seller).list(1, price);
     await nft.connect(seller).delist(1);

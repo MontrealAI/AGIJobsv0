@@ -111,11 +111,15 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     }
 
     function list(uint256 tokenId, uint256 price) external whenNotPaused {
-        if (ownerOf(tokenId) != msg.sender) revert NotTokenOwner();
+        address tokenOwner = ownerOf(tokenId);
+        if (tokenOwner != msg.sender) revert NotTokenOwner();
         if (price == 0) revert InvalidPrice();
         Listing storage listing = listings[tokenId];
+        if (listing.active && listing.seller != tokenOwner) {
+            delete listings[tokenId];
+        }
         if (listing.active) revert AlreadyListed();
-        listing.seller = msg.sender;
+        listing.seller = tokenOwner;
         listing.price = price;
         listing.active = true;
         emit NFTListed(tokenId, msg.sender, price);
@@ -139,7 +143,10 @@ contract CertificateNFT is ERC721, Ownable, Pausable, ReentrancyGuard, ICertific
     function delist(uint256 tokenId) external whenNotPaused {
         Listing storage listing = listings[tokenId];
         if (!listing.active) revert NotListed();
-        if (listing.seller != msg.sender) revert NotTokenOwner();
+        address tokenOwner = ownerOf(tokenId);
+        if (listing.seller != msg.sender && tokenOwner != msg.sender) {
+            revert NotTokenOwner();
+        }
         delete listings[tokenId];
         emit NFTDelisted(tokenId);
     }
