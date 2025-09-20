@@ -1,57 +1,25 @@
-const fs = require('fs');
-const path = require('path');
-const ts = require('typescript');
 const { expect } = require('chai');
 const { Wallet } = require('ethers');
+const path = require('path');
+
+const { compileAndRequireTsModule } = require('../utils/tsLoader');
 
 const DUMMY_ADDRESS = '0x0000000000000000000000000000000000000001';
 const MODULE_PATH = '../../agent-gateway/utils';
 const utilsTsPath = path.join(__dirname, MODULE_PATH + '.ts');
 
-function compileAndRequire(filePath) {
-  const source = fs.readFileSync(filePath, 'utf8');
-  const { outputText } = ts.transpileModule(source, {
-    compilerOptions: {
-      target: 'ES2020',
-      module: ts.ModuleKind.CommonJS,
-      esModuleInterop: true,
-      resolveJsonModule: true,
-    },
-    fileName: filePath,
-  });
-
-  const moduleExports = { exports: {} };
-  const localRequire = (specifier) => {
-    if (specifier.startsWith('.') || specifier.startsWith('/')) {
-      const resolved = require.resolve(
-        path.join(path.dirname(filePath), specifier)
-      );
-      return require(resolved);
-    }
-    return require(specifier);
-  };
-
-  const evaluator = new Function(
-    'require',
-    'module',
-    'exports',
-    '__filename',
-    '__dirname',
-    outputText
-  );
-  evaluator(
-    localRequire,
-    moduleExports,
-    moduleExports.exports,
-    filePath,
-    path.dirname(filePath)
-  );
-  return moduleExports.exports;
+function clearModuleCache() {
+  try {
+    const resolved = require.resolve(MODULE_PATH);
+    delete require.cache[resolved];
+  } catch {
+    // Module may not be cached or resolvable when not yet compiled; ignore.
+  }
 }
 
 function loadUtils() {
-  delete require.cache[require.resolve(MODULE_PATH)];
-  return compileAndRequire(utilsTsPath);
+  clearModuleCache();
+  return compileAndRequireTsModule(utilsTsPath);
 }
 
 describe('agent gateway wallet initialisation', function () {
@@ -71,11 +39,11 @@ describe('agent gateway wallet initialisation', function () {
     delete process.env.JOB_REGISTRY_ADDRESS;
     delete process.env.VALIDATION_MODULE_ADDRESS;
     delete process.env.KEYSTORE_URL;
-    delete require.cache[require.resolve(MODULE_PATH)];
+    clearModuleCache();
   });
 
   after(() => {
-    delete require.cache[require.resolve(MODULE_PATH)];
+    clearModuleCache();
   });
 
   it('fails when the keystore response has no wallet keys', async function () {

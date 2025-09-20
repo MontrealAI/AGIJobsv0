@@ -5,19 +5,72 @@ import WalletManager from './wallet';
 import { Job, AgentInfo, CommitData } from './types';
 import { loadCommitRecord, updateCommitRecord } from './validationStore';
 
+const DEFAULT_RPC_URL = 'http://localhost:8545';
+const ALLOWED_RPC_PROTOCOLS = new Set(['http:', 'https:', 'ws:', 'wss:']);
+const ALLOWED_KEYSTORE_PROTOCOLS = new Set(['http:', 'https:']);
+
+function readEnv(name: string): string | undefined {
+  const value = process.env[name];
+  if (value === undefined) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function resolveRpcUrl(raw?: string): string {
+  const candidate = raw && raw.length > 0 ? raw : DEFAULT_RPC_URL;
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch (err) {
+    throw new Error(`RPC_URL must be a valid URL: ${(err as Error).message}`);
+  }
+  if (!ALLOWED_RPC_PROTOCOLS.has(parsed.protocol)) {
+    throw new Error(
+      `RPC_URL must use HTTP(S) or WS(S); received protocol ${parsed.protocol}`
+    );
+  }
+  return candidate;
+}
+
+function parseIntegerEnv(
+  name: string,
+  defaultValue: number,
+  { min, max }: { min?: number; max?: number } = {}
+): number {
+  const raw = readEnv(name);
+  const value = raw === undefined ? defaultValue : Number(raw);
+  if (!Number.isFinite(value) || !Number.isInteger(value)) {
+    throw new Error(`${name} must be an integer value`);
+  }
+  if (min !== undefined && value < min) {
+    throw new Error(`${name} must be greater than or equal to ${min}`);
+  }
+  if (max !== undefined && value > max) {
+    throw new Error(`${name} must be less than or equal to ${max}`);
+  }
+  return value;
+}
+
 // Environment configuration
-export const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
-export const JOB_REGISTRY_ADDRESS = process.env.JOB_REGISTRY_ADDRESS || '';
-export const STAKE_MANAGER_ADDRESS = process.env.STAKE_MANAGER_ADDRESS || '';
+export const RPC_URL = resolveRpcUrl(readEnv('RPC_URL'));
+export const JOB_REGISTRY_ADDRESS = readEnv('JOB_REGISTRY_ADDRESS') || '';
+export const STAKE_MANAGER_ADDRESS = readEnv('STAKE_MANAGER_ADDRESS') || '';
 export const VALIDATION_MODULE_ADDRESS =
-  process.env.VALIDATION_MODULE_ADDRESS || '';
-export const DISPUTE_MODULE_ADDRESS = process.env.DISPUTE_MODULE_ADDRESS || '';
-export const KEYSTORE_URL = process.env.KEYSTORE_URL || '';
-export const KEYSTORE_TOKEN = process.env.KEYSTORE_TOKEN || '';
-export const BOT_WALLET = process.env.BOT_WALLET || '';
-export const ORCHESTRATOR_WALLET = process.env.ORCHESTRATOR_WALLET || '';
-export const FETCH_TIMEOUT_MS = Number(process.env.FETCH_TIMEOUT_MS || '5000');
-export const PORT = Number(process.env.PORT || 3000);
+  readEnv('VALIDATION_MODULE_ADDRESS') || '';
+export const DISPUTE_MODULE_ADDRESS = readEnv('DISPUTE_MODULE_ADDRESS') || '';
+export const KEYSTORE_URL = readEnv('KEYSTORE_URL') || '';
+export const KEYSTORE_TOKEN = readEnv('KEYSTORE_TOKEN') || '';
+export const BOT_WALLET = readEnv('BOT_WALLET') || '';
+export const ORCHESTRATOR_WALLET = readEnv('ORCHESTRATOR_WALLET') || '';
+export const FETCH_TIMEOUT_MS = parseIntegerEnv('FETCH_TIMEOUT_MS', 5000, {
+  min: 1,
+});
+export const PORT = parseIntegerEnv('PORT', 3000, { min: 1, max: 65535 });
+
+const STALE_JOB_FLOOR_MS = 60 * 1000;
+const SWEEP_INTERVAL_FLOOR_MS = 1000;
 
 function validateEnvConfig(): void {
   const checkAddress = (value: string, name: string): void => {
@@ -52,9 +105,16 @@ function validateEnvConfig(): void {
     throw new Error('KEYSTORE_URL is required');
   }
   try {
-    new URL(KEYSTORE_URL);
-  } catch {
-    throw new Error(`KEYSTORE_URL is malformed: ${KEYSTORE_URL}`);
+    const parsed = new URL(KEYSTORE_URL);
+    if (!ALLOWED_KEYSTORE_PROTOCOLS.has(parsed.protocol)) {
+      throw new Error(
+        `KEYSTORE_URL must use HTTP(S); received protocol ${parsed.protocol}`
+      );
+    }
+  } catch (err) {
+    throw new Error(
+      `KEYSTORE_URL is malformed: ${(err as Error).message || KEYSTORE_URL}`
+    );
   }
 }
 
@@ -148,8 +208,12 @@ export const agents = new Map<string, AgentInfo>();
 export const commits = new Map<string, Record<string, CommitData>>();
 export const pendingJobs = new Map<string, Job[]>();
 export const jobTimestamps = new Map<string, number>();
-export const STALE_JOB_MS = Number(process.env.STALE_JOB_MS || 60 * 60 * 1000); // 1 hour
-const SWEEP_INTERVAL_MS = Number(process.env.SWEEP_INTERVAL_MS || 60 * 1000); // 1 minute
+export const STALE_JOB_MS = parseIntegerEnv('STALE_JOB_MS', 60 * 60 * 1000, {
+  min: STALE_JOB_FLOOR_MS,
+}); // 1 hour default, floor at 1 minute
+const SWEEP_INTERVAL_MS = parseIntegerEnv('SWEEP_INTERVAL_MS', 60 * 1000, {
+  min: SWEEP_INTERVAL_FLOOR_MS,
+}); // 1 minute default
 export function cleanupJob(jobId: string): void {
   if (expiryTimers.has(jobId)) {
     clearTimeout(expiryTimers.get(jobId)!);
