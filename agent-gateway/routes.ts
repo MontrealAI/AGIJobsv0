@@ -182,6 +182,89 @@ function parseFloatParam(value: unknown): number | undefined {
   return undefined;
 }
 
+class GatewayError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'GatewayError';
+    this.status = status;
+  }
+}
+
+const TRUE_STRINGS = new Set(['true', '1', 'yes', 'y', 'on', 'enabled']);
+
+const FALSE_STRINGS = new Set(['false', '0', 'no', 'n', 'off', 'disabled']);
+
+function normaliseAddressInput(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new GatewayError(400, `${field} is required`);
+  }
+  try {
+    return ethers.getAddress(value.trim());
+  } catch {
+    throw new GatewayError(400, `${field} must be a valid address`);
+  }
+}
+
+function requireWalletManagerInstance() {
+  if (!walletManager) {
+    throw new GatewayError(503, 'wallet manager is not initialised');
+  }
+  return walletManager;
+}
+
+function parseBooleanBody(value: unknown, field: string): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const normalised = value.trim().toLowerCase();
+    if (TRUE_STRINGS.has(normalised)) {
+      return true;
+    }
+    if (FALSE_STRINGS.has(normalised)) {
+      return false;
+    }
+  }
+  throw new GatewayError(400, `${field} must be a boolean value`);
+}
+
+function parseOptionalBooleanBody(
+  value: unknown,
+  field: string
+): boolean | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'string' && value.trim().length === 0) {
+    throw new GatewayError(400, `${field} must be a boolean value`);
+  }
+  return parseBooleanBody(value, field);
+}
+
+function handleGatewayError(
+  res: express.Response,
+  err: unknown,
+  fallbackStatus = 500
+): void {
+  if (err instanceof GatewayError) {
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
+  const message =
+    err instanceof Error ? err.message : 'unexpected gateway error';
+  if (/invalid|missing|malformed|no valid/i.test(message)) {
+    res.status(400).json({ error: message });
+    return;
+  }
+  if (/not configured|no automation wallet|wallet manager/i.test(message)) {
+    res.status(503).json({ error: message });
+    return;
+  }
+  res.status(fallbackStatus).json({ error: message });
+}
+
 function parseThermodynamicSortKey(
   value: unknown
 ): ThermodynamicSummarySortKey | undefined {
@@ -1114,18 +1197,21 @@ app.post(
   '/jobs/:id/commit',
   authMiddleware,
   async (req: express.Request, res: express.Response) => {
-    const { address, approve, salt } = req.body as {
-      address: string;
-      approve: boolean;
-      salt?: string;
-    };
-    const wallet = walletManager.get(address);
-    if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
+      const manager = requireWalletManagerInstance();
+      const address = normaliseAddressInput(req.body?.address, 'address');
+      const wallet = manager.get(address);
+      if (!wallet) {
+        throw new GatewayError(400, `unknown wallet: ${address}`);
+      }
+      const approve = parseBooleanBody(req.body?.approve, 'approve');
+      const saltRaw =
+        typeof req.body?.salt === 'string' ? req.body.salt.trim() : undefined;
+      const salt = saltRaw && saltRaw.length > 0 ? saltRaw : undefined;
       const result = await commitHelper(req.params.id, wallet, approve, salt);
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      handleGatewayError(res, err);
     }
   }
 );
@@ -1135,18 +1221,21 @@ app.post(
   '/jobs/:id/reveal',
   authMiddleware,
   async (req: express.Request, res: express.Response) => {
-    const { address, approve, salt } = req.body as {
-      address: string;
-      approve?: boolean;
-      salt?: string;
-    };
-    const wallet = walletManager.get(address);
-    if (!wallet) return res.status(400).json({ error: 'unknown wallet' });
     try {
+      const manager = requireWalletManagerInstance();
+      const address = normaliseAddressInput(req.body?.address, 'address');
+      const wallet = manager.get(address);
+      if (!wallet) {
+        throw new GatewayError(400, `unknown wallet: ${address}`);
+      }
+      const approve = parseOptionalBooleanBody(req.body?.approve, 'approve');
+      const saltRaw =
+        typeof req.body?.salt === 'string' ? req.body.salt.trim() : undefined;
+      const salt = saltRaw && saltRaw.length > 0 ? saltRaw : undefined;
       const result = await revealHelper(req.params.id, wallet, approve, salt);
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      handleGatewayError(res, err);
     }
   }
 );
