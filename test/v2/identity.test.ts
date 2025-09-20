@@ -20,7 +20,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
@@ -67,7 +69,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Resolver = await ethers.getContractFactory('MockResolver');
@@ -122,7 +126,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
@@ -160,7 +166,9 @@ describe('IdentityRegistry ENS verification', function () {
   it('authorizes via allowlists and attestations when ENS is unset', async () => {
     const [owner, agent, validator] = await ethers.getSigners();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
@@ -218,7 +226,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
@@ -268,7 +278,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
@@ -317,7 +329,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
@@ -356,7 +370,9 @@ describe('IdentityRegistry ENS verification', function () {
     const ENS = await ethers.getContractFactory('MockENS');
     const ens = await ENS.deploy();
 
-    const Wrapper = await ethers.getContractFactory('contracts/mocks/MockNameWrapper.sol:MockNameWrapper');
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/mocks/MockNameWrapper.sol:MockNameWrapper'
+    );
     const wrapper = await Wrapper.deploy();
 
     const Stake = await ethers.getContractFactory('MockStakeManager');
