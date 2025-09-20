@@ -9,6 +9,10 @@ address constant AGIALPHA = 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA;
 // Standard decimals for $AGIALPHA.
 uint8 constant AGIALPHA_DECIMALS = 18;
 
+// ERC-20 metadata for $AGIALPHA.
+string constant AGIALPHA_SYMBOL = "AGIALPHA";
+string constant AGIALPHA_NAME = "AGI ALPHA";
+
 // Base unit scaling factor for $AGIALPHA (10 ** decimals).
 uint256 constant TOKEN_SCALE = 1000000000000000000;
 

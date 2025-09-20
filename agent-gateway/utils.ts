@@ -61,7 +61,23 @@ function validateEnvConfig(): void {
 validateEnvConfig();
 
 // $AGIALPHA token parameters
-const { address: AGIALPHA_ADDRESS, decimals: AGIALPHA_DECIMALS } = agialpha;
+const {
+  address: AGIALPHA_ADDRESS,
+  decimals: AGIALPHA_DECIMALS,
+  symbol: AGIALPHA_SYMBOL,
+  name: AGIALPHA_NAME,
+} = agialpha as {
+  address: string;
+  decimals: number;
+  symbol?: string;
+  name?: string;
+};
+if (!AGIALPHA_SYMBOL || typeof AGIALPHA_SYMBOL !== 'string') {
+  throw new Error('config/agialpha.json is missing token symbol');
+}
+if (!AGIALPHA_NAME || typeof AGIALPHA_NAME !== 'string') {
+  throw new Error('config/agialpha.json is missing token name');
+}
 export const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
 export const GATEWAY_API_KEY = process.env.GATEWAY_API_KEY || '';
 export const AUTH_MESSAGE = 'Agent Gateway Auth';
@@ -289,17 +305,41 @@ export async function verifyTokenDecimals(): Promise<void> {
   try {
     const token = new Contract(
       AGIALPHA_ADDRESS,
-      ['function decimals() view returns (uint8)'],
+      [
+        'function decimals() view returns (uint8)',
+        'function symbol() view returns (string)',
+        'function name() view returns (string)',
+      ],
       provider
     );
-    const chainDecimals = await token.decimals();
+    const [chainDecimals, chainSymbol, chainName] = await Promise.all([
+      token.decimals(),
+      token.symbol(),
+      token.name(),
+    ]);
     if (Number(chainDecimals) !== Number(TOKEN_DECIMALS)) {
       throw new Error(
         `AGIALPHA decimals mismatch: config ${TOKEN_DECIMALS} vs chain ${chainDecimals}`
       );
     }
+    if (
+      typeof chainSymbol !== 'string' ||
+      chainSymbol.trim() !== AGIALPHA_SYMBOL.trim()
+    ) {
+      throw new Error(
+        `AGIALPHA symbol mismatch: config ${AGIALPHA_SYMBOL} vs chain ${chainSymbol}`
+      );
+    }
+    if (
+      typeof chainName !== 'string' ||
+      chainName.trim() !== AGIALPHA_NAME.trim()
+    ) {
+      throw new Error(
+        `AGIALPHA name mismatch: config ${AGIALPHA_NAME} vs chain ${chainName}`
+      );
+    }
   } catch (err: any) {
-    throw new Error(`Unable to verify AGIALPHA token decimals: ${err.message}`);
+    throw new Error(`Unable to verify AGIALPHA token metadata: ${err.message}`);
   }
 }
 

@@ -46,7 +46,7 @@ The diagram illustrates how the `Deployer` contract fans out into every core mod
 - **Etherscan key** – set `ETHERSCAN_API_KEY` so `truffle-plugin-verify` can verify contracts.
 - **Optional parameters** – `FEE_PCT`, `BURN_PCT`, or `NO_TAX` can override default economics.
 - **Testnet dry‑run** – always run the migration on a public testnet such as Sepolia with the same environment variables before attempting mainnet.
-- **AGIALPHA token** – the token address and decimals are fixed in `config/agialpha.json` and compiled into the contracts; no extra configuration is required.
+- **AGIALPHA token** – the token address, ERC‑20 metadata (symbol/name) and decimals are fixed in `config/agialpha.json` and compiled into the contracts; no extra configuration is required.
 
 Example `.env`:
 
@@ -220,7 +220,9 @@ module.exports = async function (deployer, network, accounts) {
     }
     try {
       const { execSync } = require('child_process');
-      const cmd = `npx truffle run verify ${contracts.join(' ')} --network ${network}`;
+      const cmd = `npx truffle run verify ${contracts.join(
+        ' '
+      )} --network ${network}`;
       console.log('Running:', cmd);
       execSync(cmd, { stdio: 'inherit' });
     } catch (err) {
