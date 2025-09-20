@@ -15,6 +15,8 @@ type TokenConfig = {
   address: string;
   decimals: number;
   burnAddress: string;
+  symbol: string;
+  name: string;
 };
 
 function assertAddress(
@@ -45,6 +47,22 @@ function assertDecimals(value: number, label: string): number {
   return value;
 }
 
+function parseStringConstant(
+  source: string,
+  pattern: RegExp,
+  label: string
+): string {
+  const match = source.match(pattern);
+  if (!match) {
+    throw new Error(`Failed to parse ${label} from Constants.sol`);
+  }
+  try {
+    return JSON.parse(match[1]);
+  } catch (err) {
+    throw new Error(`Unable to decode ${label}: ${(err as Error).message}`);
+  }
+}
+
 function parseConstants(constantsSrc: string) {
   const addrMatch = constantsSrc.match(
     /address constant AGIALPHA = (0x[0-9a-fA-F]{40});/
@@ -60,10 +78,23 @@ function parseConstants(constantsSrc: string) {
     throw new Error('Failed to parse Constants.sol');
   }
 
+  const symbol = parseStringConstant(
+    constantsSrc,
+    /string constant AGIALPHA_SYMBOL = (".*?");/,
+    'AGIALPHA symbol'
+  );
+  const name = parseStringConstant(
+    constantsSrc,
+    /string constant AGIALPHA_NAME = (".*?");/,
+    'AGIALPHA name'
+  );
+
   return {
     address: addrMatch[1],
     decimals: parseInt(decMatch[1], 10),
     burnAddress: burnMatch[1],
+    symbol,
+    name,
   };
 }
 
@@ -75,7 +106,10 @@ export function verifyAgialpha(
   const constantsSrc = fs.readFileSync(constantsPath, 'utf8');
   const constants = parseConstants(constantsSrc);
 
-  const configAddress = assertAddress(config.address, 'Config AGIALPHA address');
+  const configAddress = assertAddress(
+    config.address,
+    'Config AGIALPHA address'
+  );
   const constantsAddress = assertAddress(
     constants.address,
     'Constants AGIALPHA address'
@@ -88,14 +122,15 @@ export function verifyAgialpha(
     'Constants burn address',
     { allowZero: true }
   );
-  const configDecimals = assertDecimals(
-    config.decimals,
-    'Config decimals'
-  );
+  const configDecimals = assertDecimals(config.decimals, 'Config decimals');
   const constantsDecimals = assertDecimals(
     constants.decimals,
     'Constants decimals'
   );
+  const configSymbol = config.symbol?.trim();
+  const constantsSymbol = constants.symbol?.trim();
+  const configName = config.name?.trim();
+  const constantsName = constants.name?.trim();
 
   if (configAddress !== constantsAddress) {
     throw new Error(
@@ -114,12 +149,32 @@ export function verifyAgialpha(
       `Burn address mismatch: config ${configBurn} vs contract ${constantsBurn}`
     );
   }
+
+  if (!configSymbol || !constantsSymbol) {
+    throw new Error('AGIALPHA symbol missing from config or constants');
+  }
+  if (configSymbol !== constantsSymbol) {
+    throw new Error(
+      `Symbol mismatch: config ${configSymbol} vs contract ${constantsSymbol}`
+    );
+  }
+
+  if (!configName || !constantsName) {
+    throw new Error('AGIALPHA name missing from config or constants');
+  }
+  if (configName !== constantsName) {
+    throw new Error(
+      `Name mismatch: config ${configName} vs contract ${constantsName}`
+    );
+  }
 }
 
 if (require.main === module) {
   try {
     verifyAgialpha();
-    console.log('AGIALPHA address, decimals, and burn address match.');
+    console.log(
+      'AGIALPHA address, metadata, decimals, and burn address match.'
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(message);

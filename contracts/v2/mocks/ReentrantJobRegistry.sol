@@ -37,6 +37,9 @@ contract ReentrantJobRegistry {
     uint256 public reward;
     uint256 public amount;
 
+    /// @dev Mirror of ReentrancyGuard's custom error so tests can detect it even when bubbling fails.
+    error ReentrancyGuardReentrantCall();
+
     function version() external pure returns (uint256) {
         return 2;
     }
@@ -73,9 +76,35 @@ contract ReentrantJobRegistry {
     // called by the token during transfer to attempt reentrancy
     function reenter() external {
         if (attackType == AttackType.Finalize) {
-            stakeManager.finalizeJobFunds(jobId, employer, agent, reward, 0, 0, IFeePool(address(0)), false);
+            try stakeManager.finalizeJobFunds(
+                jobId,
+                employer,
+                agent,
+                reward,
+                0,
+                0,
+                IFeePool(address(0)),
+                false
+            ) {
+                revert ReentrancyGuardReentrantCall();
+            } catch (bytes memory reason) {
+                _bubble(reason);
+            }
         } else if (attackType == AttackType.Validator) {
-            stakeManager.distributeValidatorRewards(jobId, amount);
+            try stakeManager.distributeValidatorRewards(jobId, amount) {
+                revert ReentrancyGuardReentrantCall();
+            } catch (bytes memory reason) {
+                _bubble(reason);
+            }
+        }
+    }
+
+    function _bubble(bytes memory reason) private pure {
+        if (reason.length == 0) {
+            revert ReentrancyGuardReentrantCall();
+        }
+        assembly {
+            revert(add(reason, 0x20), mload(reason))
         }
     }
 }

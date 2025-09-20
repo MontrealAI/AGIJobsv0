@@ -288,10 +288,12 @@ describe('job finalization integration', function () {
     const employerAfter = await token.balanceOf(employer.address);
     const v1Bal = await token.balanceOf(validator1.address);
     const v2Bal = await token.balanceOf(validator2.address);
-    expect(agentAfter - agentBefore).to.equal(reward - vReward);
+    // Validators forfeited their share after being overruled by the dispute
+    // module, so the agent receives the full reward.
+    expect(agentAfter - agentBefore).to.equal(reward);
     expect(employerAfter).to.equal(employerBefore);
-    expect(v1Bal).to.equal(vReward / 2n);
-    expect(v2Bal).to.equal(vReward / 2n);
+    expect(v1Bal).to.equal(0n);
+    expect(v2Bal).to.equal(0n);
     expect(await rep.reputation(agent.address)).to.equal(152n);
     expect(await nft.balanceOf(agent.address)).to.equal(1n);
   });
