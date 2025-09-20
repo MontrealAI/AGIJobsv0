@@ -40,6 +40,14 @@ function validateEnvConfig(): void {
   if (DISPUTE_MODULE_ADDRESS) {
     checkAddress(DISPUTE_MODULE_ADDRESS, 'DISPUTE_MODULE_ADDRESS');
   }
+  if (BOT_WALLET && !ethers.isAddress(BOT_WALLET)) {
+    throw new Error(`BOT_WALLET is not a valid address: ${BOT_WALLET}`);
+  }
+  if (ORCHESTRATOR_WALLET && !ethers.isAddress(ORCHESTRATOR_WALLET)) {
+    throw new Error(
+      `ORCHESTRATOR_WALLET is not a valid address: ${ORCHESTRATOR_WALLET}`
+    );
+  }
   if (!KEYSTORE_URL) {
     throw new Error('KEYSTORE_URL is required');
   }
@@ -185,7 +193,13 @@ export async function loadWalletKeys(retry = true): Promise<string[]> {
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const data = await res.json();
-    return data.keys || [];
+    if (!data || !Array.isArray(data.keys)) {
+      throw new Error('Keystore response missing keys array');
+    }
+    return data.keys
+      .filter((key: unknown): key is string => typeof key === 'string')
+      .map((key) => key.trim())
+      .filter((key) => key.length > 0);
   } catch (err: any) {
     clearTimeout(timer);
     if (err.name === 'AbortError' && retry) {
@@ -199,17 +213,52 @@ export async function loadWalletKeys(retry = true): Promise<string[]> {
 export async function initWallets(): Promise<void> {
   try {
     const keys = await loadWalletKeys();
-    walletManager = new WalletManager(keys.join(','), provider);
-    if (BOT_WALLET) {
-      automationWallet = walletManager.get(BOT_WALLET);
-    } else {
-      const [first] = walletManager.list();
-      if (first) automationWallet = walletManager.get(first);
+    if (!keys || keys.length === 0) {
+      throw new Error('Keystore returned no wallet keys');
     }
+
+    walletManager = new WalletManager(keys.join(','), provider);
+
+    const availableAddresses = walletManager.list();
+    if (!availableAddresses || availableAddresses.length === 0) {
+      throw new Error('No wallets were loaded from the provided keys');
+    }
+
+    if (BOT_WALLET) {
+      const normalisedBot = ethers.getAddress(BOT_WALLET);
+      automationWallet = walletManager.get(normalisedBot);
+      if (!automationWallet) {
+        throw new Error(
+          `Configured BOT_WALLET ${normalisedBot} is missing from keystore`
+        );
+      }
+    } else {
+      const [first] = availableAddresses;
+      automationWallet = first ? walletManager.get(first) : undefined;
+    }
+
+    if (!automationWallet) {
+      throw new Error(
+        'No automation wallet available; ensure the keystore contains at least one key or configure BOT_WALLET'
+      );
+    }
+
     if (ORCHESTRATOR_WALLET) {
-      orchestratorWallet = walletManager.get(ORCHESTRATOR_WALLET);
+      const normalisedOrchestrator = ethers.getAddress(ORCHESTRATOR_WALLET);
+      orchestratorWallet = walletManager.get(normalisedOrchestrator);
+      if (!orchestratorWallet) {
+        throw new Error(
+          `Configured ORCHESTRATOR_WALLET ${normalisedOrchestrator} is missing from keystore`
+        );
+      }
     } else {
       orchestratorWallet = automationWallet;
+    }
+
+    if (!orchestratorWallet) {
+      throw new Error(
+        'No orchestrator wallet available; configure ORCHESTRATOR_WALLET or BOT_WALLET so a wallet can be selected'
+      );
     }
   } catch (err: any) {
     throw new Error(`Failed to initialize wallets: ${err.message}`);
