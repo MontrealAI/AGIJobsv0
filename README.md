@@ -38,6 +38,8 @@ Agents and validators must own ENS subdomains under `agent.agi.eth` and `club.ag
 
 Token parameters are defined once in [`config/agialpha.json`](config/agialpha.json). Run `npm run compile` after editing this file to regenerate `contracts/v2/Constants.sol` with the canonical token address, decimals, scaling factor and burn address. Any change to `config/agialpha.json` must be followed by `npm run compile` or the constants check in CI will fail.
 
+`npm run compile` validates the configured addresses and decimals before writing the Solidity constants. The command halts if the token or burn addresses are malformed, zero (where disallowed) or the decimals fall outside the supported `0-255` range, preventing a bad configuration from reaching production contracts.
+
 ### Fee handling and treasury
 
 `JobRegistry` routes protocol fees to `FeePool`, which burns a configurable percentage (`burnPct`) when an employer finalizes a job and escrows the remainder for platform stakers. By default the `treasury` is unset (`address(0)`), so any rounding dust is burned. Governance may later call `StakeManager.setTreasury`, `JobRegistry.setTreasury`, or `FeePool.setTreasury` to direct funds to a community-controlled treasury. These setters reject the owner address and, for `FeePool`, require the target to be pre-approved via `setTreasuryAllowlist`. The platform only routes funds and never initiates or profits from burns.

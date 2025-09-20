@@ -1,14 +1,51 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { ethers } from 'ethers';
 
-const configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
-const { address, decimals, burnAddress } = JSON.parse(
-  fs.readFileSync(configPath, 'utf8')
-) as {
+type TokenConfig = {
   address: string;
   decimals: number;
   burnAddress: string;
 };
+
+function assertAddress(
+  value: string,
+  label: string,
+  { allowZero = false }: { allowZero?: boolean } = {}
+): string {
+  if (!value || typeof value !== 'string') {
+    throw new Error(`${label} is required`);
+  }
+  if (!ethers.isAddress(value)) {
+    throw new Error(`${label} must be a valid Ethereum address`);
+  }
+  const normalised = ethers.getAddress(value);
+  if (!allowZero && normalised === ethers.ZeroAddress) {
+    throw new Error(`${label} cannot be the zero address`);
+  }
+  return normalised;
+}
+
+function assertDecimals(value: number): number {
+  if (!Number.isInteger(value)) {
+    throw new Error('decimals must be an integer');
+  }
+  if (value < 0 || value > 255) {
+    throw new Error('decimals must be between 0 and 255');
+  }
+  return value;
+}
+
+const configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
+const config = JSON.parse(
+  fs.readFileSync(configPath, 'utf8')
+) as TokenConfig;
+
+const address = assertAddress(config.address, 'AGIALPHA address');
+const decimals = assertDecimals(config.decimals);
+const burnAddress = assertAddress(config.burnAddress, 'burn address', {
+  allowZero: true,
+});
 
 // Compute the token scale (10 ** decimals) using BigInt to avoid precision loss.
 const scale = BigInt(10) ** BigInt(decimals);
