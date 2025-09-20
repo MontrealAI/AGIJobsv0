@@ -37,8 +37,15 @@ contract MockNameWrapper {
     /// @param owner Owner address to set.
     /// @param fuses Fuse bitmask to store.
     /// @param expiry Expiry timestamp for the name.
-    function setData(uint256 node, address owner, uint32 fuses, uint64 expiry) external {
+    function setData(uint256 node, address owner, uint32 fuses, uint64 expiry) public {
         _nameData[node] = NameData(owner, fuses, expiry);
         emit NameUpdated(node, owner, fuses, expiry);
+    }
+
+    /// @notice Convenience helper mirroring legacy mock behaviour.
+    /// @param node Namehash for the ENS name.
+    /// @param owner Owner address to set with zeroed fuses and expiry.
+    function setOwner(uint256 node, address owner) external {
+        setData(node, owner, 0, 0);
     }
 }
