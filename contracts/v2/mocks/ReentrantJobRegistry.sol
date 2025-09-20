@@ -28,7 +28,6 @@ interface IReentrantToken {
 contract ReentrantJobRegistry {
     IStakeManager public stakeManager;
     IReentrantToken public token;
-    address[] internal validatorCache;
 
     enum AttackType { None, Finalize, Validator }
     AttackType public attackType;
@@ -51,23 +50,11 @@ contract ReentrantJobRegistry {
         stakeManager.lockReward(_jobId, from, _amount);
     }
 
-    function getJobValidators(uint256) external view returns (address[] memory) {
-        return validatorCache;
-    }
-
-    function _setValidatorCache(address validator) internal {
-        delete validatorCache;
-        if (validator != address(0)) {
-            validatorCache.push(validator);
-        }
-    }
-
     function attackFinalize(bytes32 _jobId, address _agent, uint256 _reward) external {
         jobId = _jobId;
         agent = _agent;
         employer = msg.sender;
         reward = _reward;
-        _setValidatorCache(_agent);
         attackType = AttackType.Finalize;
         token.setAttack(true);
         stakeManager.finalizeJobFunds(jobId, employer, agent, reward, 0, 0, IFeePool(address(0)), false);
@@ -77,7 +64,6 @@ contract ReentrantJobRegistry {
     function attackValidator(bytes32 _jobId, uint256 _amount) external {
         jobId = _jobId;
         amount = _amount;
-        _setValidatorCache(msg.sender);
         attackType = AttackType.Validator;
         token.setAttack(true);
         stakeManager.distributeValidatorRewards(jobId, amount);
