@@ -19,6 +19,27 @@ type TokenConfig = {
   name: string;
 };
 
+type TokenMetadata = {
+  decimals: number;
+  symbol: string;
+  name: string;
+};
+
+type VerifyOptions = {
+  rpcUrl?: string;
+  provider?: ethers.Provider;
+  timeoutMs?: number;
+  skipOnChain?: boolean;
+  fetchMetadata?: (
+    provider: ethers.Provider,
+    address: string
+  ) => Promise<TokenMetadata>;
+};
+
+type VerifyResult = {
+  onChainVerified: boolean;
+};
+
 function assertAddress(
   value: string,
   label: string,
@@ -98,10 +119,95 @@ function parseConstants(constantsSrc: string) {
   };
 }
 
-export function verifyAgialpha(
+const ERC20_INTERFACE = new ethers.Interface([
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
+  'function name() view returns (string)',
+]);
+
+async function fetchTokenMetadata(
+  provider: ethers.Provider,
+  address: string
+): Promise<TokenMetadata> {
+  const decimalsData = await provider.call({
+    to: address,
+    data: ERC20_INTERFACE.encodeFunctionData('decimals'),
+  });
+  const symbolData = await provider.call({
+    to: address,
+    data: ERC20_INTERFACE.encodeFunctionData('symbol'),
+  });
+  const nameData = await provider.call({
+    to: address,
+    data: ERC20_INTERFACE.encodeFunctionData('name'),
+  });
+
+  const [decimalsRaw] = ERC20_INTERFACE.decodeFunctionResult(
+    'decimals',
+    decimalsData
+  );
+  const [symbolRaw] = ERC20_INTERFACE.decodeFunctionResult(
+    'symbol',
+    symbolData
+  );
+  const [nameRaw] = ERC20_INTERFACE.decodeFunctionResult('name', nameData);
+
+  return {
+    decimals: Number(decimalsRaw),
+    symbol: String(symbolRaw),
+    name: String(nameRaw),
+  };
+}
+
+function ensureTimeout(timeoutMs?: number): number {
+  if (!Number.isFinite(timeoutMs) || timeoutMs === undefined) {
+    return 15_000;
+  }
+  if (timeoutMs <= 0) {
+    throw new Error('Timeout must be greater than zero milliseconds');
+  }
+  return Math.floor(timeoutMs);
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
+}
+
+function resolveRpcUrl(options: VerifyOptions): string | undefined {
+  if (options.rpcUrl) {
+    return options.rpcUrl;
+  }
+  if (typeof process !== 'undefined') {
+    return process.env.VERIFY_RPC_URL || process.env.RPC_URL;
+  }
+  return undefined;
+}
+
+function normaliseMetadataValue(value: string): string {
+  return value.trim();
+}
+
+export async function verifyAgialpha(
   configPath: string = defaultConfigPath,
-  constantsPath: string = defaultConstantsPath
-): void {
+  constantsPath: string = defaultConstantsPath,
+  options: VerifyOptions = {}
+): Promise<VerifyResult> {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as TokenConfig;
   const constantsSrc = fs.readFileSync(constantsPath, 'utf8');
   const constants = parseConstants(constantsSrc);
@@ -167,17 +273,97 @@ export function verifyAgialpha(
       `Name mismatch: config ${configName} vs contract ${constantsName}`
     );
   }
+
+  const skipOnChain = Boolean(options.skipOnChain);
+  const fetcher = options.fetchMetadata ?? fetchTokenMetadata;
+  const rpcUrl = resolveRpcUrl(options);
+  const provider =
+    options.provider ?? (rpcUrl ? new ethers.JsonRpcProvider(rpcUrl) : null);
+
+  if (skipOnChain || !provider) {
+    return { onChainVerified: false };
+  }
+
+  const timeout = ensureTimeout(options.timeoutMs);
+  const metadata = await withTimeout(
+    fetcher(provider, configAddress),
+    timeout,
+    'AGIALPHA metadata query'
+  );
+
+  const chainDecimals = Number(metadata.decimals);
+  const chainSymbol = normaliseMetadataValue(String(metadata.symbol ?? ''));
+  const chainName = normaliseMetadataValue(String(metadata.name ?? ''));
+
+  if (Number.isNaN(chainDecimals)) {
+    throw new Error('On-chain decimals result is not a valid number');
+  }
+
+  if (chainDecimals !== configDecimals) {
+    throw new Error(
+      `On-chain decimals mismatch: config ${configDecimals} vs chain ${chainDecimals}`
+    );
+  }
+
+  if (chainSymbol !== configSymbol) {
+    throw new Error(
+      `On-chain symbol mismatch: config ${configSymbol} vs chain ${chainSymbol}`
+    );
+  }
+
+  if (chainName !== configName) {
+    throw new Error(
+      `On-chain name mismatch: config ${configName} vs chain ${chainName}`
+    );
+  }
+
+  return { onChainVerified: true };
 }
 
 if (require.main === module) {
-  try {
-    verifyAgialpha();
-    console.log(
-      'AGIALPHA address, metadata, decimals, and burn address match.'
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(message);
-    process.exit(1);
-  }
+  (async () => {
+    const args = process.argv.slice(2);
+    let configPath = defaultConfigPath;
+    let constantsPath = defaultConstantsPath;
+    let rpcUrl: string | undefined;
+    let timeoutMs: number | undefined;
+    let skipOnChain = false;
+
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      if (arg === '--config' && i + 1 < args.length) {
+        configPath = args[++i];
+      } else if (arg === '--constants' && i + 1 < args.length) {
+        constantsPath = args[++i];
+      } else if (arg === '--rpc' && i + 1 < args.length) {
+        rpcUrl = args[++i];
+      } else if (arg === '--timeout' && i + 1 < args.length) {
+        timeoutMs = Number(args[++i]);
+      } else if (arg === '--skip-onchain') {
+        skipOnChain = true;
+      } else {
+        console.warn(`Unrecognized argument: ${arg}`);
+      }
+    }
+
+    try {
+      const result = await verifyAgialpha(configPath, constantsPath, {
+        rpcUrl,
+        timeoutMs,
+        skipOnChain,
+      });
+      console.log(
+        'AGIALPHA address, metadata, decimals, and burn address match.'
+      );
+      if (result.onChainVerified) {
+        console.log('On-chain metadata matches configuration.');
+      } else if (!skipOnChain) {
+        console.log('Skipped on-chain verification (no RPC URL provided).');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(message);
+      process.exit(1);
+    }
+  })();
 }

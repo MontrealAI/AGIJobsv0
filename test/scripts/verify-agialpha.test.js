@@ -10,6 +10,17 @@ require('ts-node').register({
 
 const { verifyAgialpha } = require('../../scripts/verify-agialpha');
 
+async function expectRejection(promise, pattern) {
+  try {
+    await promise;
+  } catch (err) {
+    expect(err).to.be.instanceOf(Error);
+    expect((err && err.message) || '').to.match(pattern);
+    return;
+  }
+  throw new Error('Expected promise to be rejected');
+}
+
 function createConstantsSource({
   address,
   decimals,
@@ -45,7 +56,7 @@ describe('verifyAgialpha script', () => {
   const symbol = 'AGIALPHA';
   const name = 'AGI ALPHA';
 
-  it('passes when config and constants match', () => {
+  it('passes when config and constants match', async () => {
     const { dir, constantsPath, configPath } = writeFixture({
       address,
       decimals: 18,
@@ -54,13 +65,16 @@ describe('verifyAgialpha script', () => {
       name,
     });
     try {
-      expect(() => verifyAgialpha(configPath, constantsPath)).to.not.throw();
+      const result = await verifyAgialpha(configPath, constantsPath, {
+        skipOnChain: true,
+      });
+      expect(result.onChainVerified).to.equal(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('throws when burn address differs', () => {
+  it('throws when burn address differs', async () => {
     const { dir, constantsPath } = writeFixture({
       address,
       decimals: 18,
@@ -84,15 +98,18 @@ describe('verifyAgialpha script', () => {
       )
     );
     try {
-      expect(() => verifyAgialpha(mismatchedConfig, constantsPath)).to.throw(
-        'Burn address mismatch'
+      await expectRejection(
+        verifyAgialpha(mismatchedConfig, constantsPath, {
+          skipOnChain: true,
+        }),
+        /Burn address mismatch/
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('throws when symbol differs', () => {
+  it('throws when symbol differs', async () => {
     const { dir, constantsPath } = writeFixture({
       address,
       decimals: 18,
@@ -116,15 +133,18 @@ describe('verifyAgialpha script', () => {
       )
     );
     try {
-      expect(() => verifyAgialpha(mismatchedConfig, constantsPath)).to.throw(
-        'Symbol mismatch'
+      await expectRejection(
+        verifyAgialpha(mismatchedConfig, constantsPath, {
+          skipOnChain: true,
+        }),
+        /Symbol mismatch/
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('throws when name differs', () => {
+  it('throws when name differs', async () => {
     const { dir, constantsPath } = writeFixture({
       address,
       decimals: 18,
@@ -148,11 +168,100 @@ describe('verifyAgialpha script', () => {
       )
     );
     try {
-      expect(() => verifyAgialpha(mismatchedConfig, constantsPath)).to.throw(
-        'Name mismatch'
+      await expectRejection(
+        verifyAgialpha(mismatchedConfig, constantsPath, {
+          skipOnChain: true,
+        }),
+        /Name mismatch/
       );
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  describe('on-chain metadata checks', () => {
+    function createOnChainFixture() {
+      return writeFixture({
+        address,
+        decimals: 18,
+        burnAddress,
+        symbol,
+        name,
+      });
+    }
+
+    it('passes when metadata matches', async () => {
+      const { dir, constantsPath, configPath } = createOnChainFixture();
+      try {
+        const result = await verifyAgialpha(configPath, constantsPath, {
+          provider: { call: async () => '0x' },
+          fetchMetadata: async () => ({
+            decimals: 18,
+            symbol,
+            name,
+          }),
+        });
+        expect(result.onChainVerified).to.equal(true);
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('fails when chain decimals differ', async () => {
+      const { dir, constantsPath, configPath } = createOnChainFixture();
+      try {
+        await expectRejection(
+          verifyAgialpha(configPath, constantsPath, {
+            provider: { call: async () => '0x' },
+            fetchMetadata: async () => ({
+              decimals: 19,
+              symbol,
+              name,
+            }),
+          }),
+          /On-chain decimals mismatch/
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('fails when chain symbol differs', async () => {
+      const { dir, constantsPath, configPath } = createOnChainFixture();
+      try {
+        await expectRejection(
+          verifyAgialpha(configPath, constantsPath, {
+            provider: { call: async () => '0x' },
+            fetchMetadata: async () => ({
+              decimals: 18,
+              symbol: 'OTHER',
+              name,
+            }),
+          }),
+          /On-chain symbol mismatch/
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
+
+    it('fails when chain name differs', async () => {
+      const { dir, constantsPath, configPath } = createOnChainFixture();
+      try {
+        await expectRejection(
+          verifyAgialpha(configPath, constantsPath, {
+            provider: { call: async () => '0x' },
+            fetchMetadata: async () => ({
+              decimals: 18,
+              symbol,
+              name: 'Different',
+            }),
+          }),
+          /On-chain name mismatch/
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    });
   });
 });
