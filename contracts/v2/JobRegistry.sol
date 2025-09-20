@@ -1570,6 +1570,27 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         Job storage job = jobs[jobId];
         if (_getState(job) != State.Disputed) revert NoDispute();
 
+        if (jobValidators[jobId].length == 0) {
+            address vm = address(validationModule);
+            if (vm != address(0)) {
+                address[] memory validators = validationModule.validators(jobId);
+                if (validators.length > 0) {
+                    address[] storage storedValidators = jobValidators[jobId];
+                    for (uint256 i; i < validators.length;) {
+                        address validator = validators[i];
+                        storedValidators.push(validator);
+                        jobValidatorVotes[jobId][validator] = validationModule.votes(
+                            jobId,
+                            validator
+                        );
+                        unchecked {
+                            ++i;
+                        }
+                    }
+                }
+            }
+        }
+
         _setSuccess(job, !employerWins);
         _setState(job, State.Completed);
         emit DisputeResolved(jobId, employerWins);
