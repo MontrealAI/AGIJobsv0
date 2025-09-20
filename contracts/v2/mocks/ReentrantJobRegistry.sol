@@ -50,6 +50,10 @@ contract ReentrantJobRegistry {
         stakeManager.lockReward(_jobId, from, _amount);
     }
 
+    function getJobValidators(uint256) external pure returns (address[] memory) {
+        return new address[](0);
+    }
+
     function attackFinalize(bytes32 _jobId, address _agent, uint256 _reward) external {
         jobId = _jobId;
         agent = _agent;

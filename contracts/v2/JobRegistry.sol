@@ -1572,7 +1572,6 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
         _setSuccess(job, !employerWins);
         _setState(job, State.Completed);
-        _clearValidatorData(jobId);
         emit DisputeResolved(jobId, employerWins);
     }
 
