@@ -79,6 +79,9 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     event RewardBudget(
         uint256 indexed epoch, uint256 minted, uint256 dust, uint256 redistributed, uint256 distributionRatio
     );
+    event MaxProofsUpdated(uint256 maxProofs);
+    event ThermostatUpdated(address indexed thermostat);
+    event ManualTemperatureUpdated(int256 temperature);
 
     constructor(
         Thermostat _thermostat,
@@ -160,12 +163,14 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     /// @param max Maximum length of each proofs array.
     function setMaxProofs(uint256 max) external onlyGovernance {
         maxProofs = max;
+        emit MaxProofsUpdated(max);
     }
 
     /// @notice Update the Thermostat contract reference.
     /// @param _thermostat New thermostat contract or zero address to disable.
     function setThermostat(Thermostat _thermostat) external onlyGovernance {
         thermostat = _thermostat;
+        emit ThermostatUpdated(address(_thermostat));
     }
 
     /// @notice Set a manual system temperature when no Thermostat is used.
@@ -173,6 +178,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     function setTemperature(int256 temp) external onlyGovernance {
         require(temp > 0, "temp");
         temperature = temp;
+        emit ManualTemperatureUpdated(temp);
     }
 
     /// @notice Distribute rewards for an epoch based on energy attestations.

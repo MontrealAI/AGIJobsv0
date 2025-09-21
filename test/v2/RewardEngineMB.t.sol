@@ -383,6 +383,28 @@ contract RewardEngineMBTest is Test {
         engine.setSettler(address(0xBEEF), true);
     }
 
+    function test_setMaxProofsEmits() public {
+        vm.expectEmit(false, false, false, true);
+        emit RewardEngineMB.MaxProofsUpdated(200);
+        engine.setMaxProofs(200);
+        assertEq(engine.maxProofs(), 200);
+    }
+
+    function test_setThermostatEmits() public {
+        Thermostat newThermo = new Thermostat(int256(1e18), int256(1), int256(2e18), address(this));
+        vm.expectEmit(true, false, false, true);
+        emit RewardEngineMB.ThermostatUpdated(address(newThermo));
+        engine.setThermostat(newThermo);
+        assertEq(address(engine.thermostat()), address(newThermo));
+    }
+
+    function test_setTemperatureEmits() public {
+        vm.expectEmit(false, false, false, true);
+        emit RewardEngineMB.ManualTemperatureUpdated(int256(2e18));
+        engine.setTemperature(int256(2e18));
+        assertEq(engine.temperature(), int256(2e18));
+    }
+
     function test_setMuEmits() public {
         vm.expectEmit(true, false, false, true);
         emit RewardEngineMB.MuUpdated(RewardEngineMB.Role.Agent, 1);
