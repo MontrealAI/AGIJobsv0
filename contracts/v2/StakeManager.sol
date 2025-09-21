@@ -1429,6 +1429,33 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         }
 
         uint256 newStake = staked - amount;
+
+        Unbond storage u = unbonds[user];
+        if (u.amt != 0) {
+            uint256 updated;
+            if (staked <= amount) {
+                updated = 0;
+            } else {
+                uint256 reduction = (u.amt * amount) / staked;
+                if (reduction >= u.amt) {
+                    updated = 0;
+                } else {
+                    updated = u.amt - reduction;
+                    if (updated > newStake) {
+                        updated = newStake;
+                    }
+                }
+            }
+
+            if (updated == 0) {
+                delete unbonds[user];
+            } else {
+                u.amt = updated;
+                u.unlockAt = uint64(block.timestamp + unbondingPeriod);
+                u.jailed = false;
+            }
+        }
+
         uint256 pct = getTotalPayoutPct(user);
         uint256 newBoosted = (newStake * pct) / 100;
         uint256 oldBoosted = boostedStake[user][role];
@@ -1436,8 +1463,6 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         totalBoostedStakes[role] = totalBoostedStakes[role] + newBoosted - oldBoosted;
         stakes[user][role] = newStake;
         totalStakes[role] -= amount;
-
-        unbonds[user].jailed = true;
 
         uint256 locked = lockedStakes[user];
         if (locked > 0) {
