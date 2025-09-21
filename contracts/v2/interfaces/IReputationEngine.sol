@@ -11,6 +11,8 @@ interface IReputationEngine {
 
     /// @dev Reverts when attempting to act on a blacklisted user
     error BlacklistedUser(address user);
+    /// @dev Reverts when array lengths for validator context mismatch
+    error ArrayLengthMismatch();
 
     event ReputationUpdated(address indexed user, int256 delta, uint256 newScore);
     event BlacklistUpdated(address indexed user, bool status);
@@ -90,6 +92,26 @@ interface IReputationEngine {
     function onFinalize(address user, bool success, uint256 payout, uint256 duration) external;
 
     function rewardValidator(address validator, uint256 agentGain) external;
+
+    /// @notice Update agent and validator reputation for a completed job.
+    /// @param jobId Identifier of the job being settled.
+    /// @param agent Address of the agent that executed the job.
+    /// @param validators Validator committee that assessed the job.
+    /// @param success True if the job was approved by validators.
+    /// @param validatorRevealed Flags indicating whether each validator revealed their vote.
+    /// @param validatorVotes Recorded vote for each validator (true = approval).
+    /// @param payout Agent payout expressed with 18 decimals.
+    /// @param duration Time elapsed between assignment and completion in seconds.
+    function updateScores(
+        uint256 jobId,
+        address agent,
+        address[] calldata validators,
+        bool success,
+        bool[] calldata validatorRevealed,
+        bool[] calldata validatorVotes,
+        uint256 payout,
+        uint256 duration
+    ) external;
 
     /// @notice Compute reputation gain for an agent based on payout and duration.
     /// @param payout Amount paid to the agent (18-decimal).

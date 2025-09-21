@@ -249,6 +249,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     mapping(uint256 => bool) public validationStartPending;
     mapping(uint256 => address[]) private jobValidators;
     mapping(uint256 => mapping(address => bool)) private jobValidatorVotes;
+    mapping(uint256 => bool) public reputationProcessed;
 
     /// @notice Tracks job outcomes for each employer.
     struct EmployerStats {
@@ -518,6 +519,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event AgentRootNodeUpdated(bytes32 node);
     event AgentMerkleRootUpdated(bytes32 root);
     event ValidatorRootNodeUpdated(bytes32 node);
+    event ReputationProcessingMarked(uint256 indexed jobId);
     event ValidatorMerkleRootUpdated(bytes32 root);
     event AgentAuthCacheUpdated(address indexed agent, bool authorized);
     event AgentAuthCacheDurationUpdated(uint256 duration);
@@ -1417,6 +1419,14 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit JobCompleted(jobId, success);
     }
 
+    /// @notice Record that reputation updates have already been applied for a job.
+    /// @param jobId Identifier of the job that triggered the update.
+    function markReputationProcessed(uint256 jobId) external {
+        if (msg.sender != address(validationModule)) revert OnlyValidationModule();
+        reputationProcessed[jobId] = true;
+        emit ReputationProcessingMarked(jobId);
+    }
+
     /// @param jobId Identifier of the job being finalised.
     /// @param success True if validators approved the job.
     function finalizeAfterValidation(uint256 jobId, bool success)
@@ -1593,6 +1603,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _setSuccess(job, !employerWins);
         _setState(job, State.Completed);
         _clearValidatorData(jobId);
+        if (reputationProcessed[jobId]) {
+            delete reputationProcessed[jobId];
+        }
         emit DisputeResolved(jobId, employerWins);
     }
 
@@ -1646,6 +1659,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         bool fundsRedirected;
         address[] memory validators = jobValidators[jobId];
         bool success = _getSuccess(job);
+        bool reputationHandled = reputationProcessed[jobId];
         if (success) {
             IFeePool pool = feePool;
             uint256 validatorReward;
@@ -1724,7 +1738,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     }
                 }
             }
-            if (address(reputationEngine) != address(0)) {
+            if (address(reputationEngine) != address(0) && !reputationHandled) {
                 uint256 completionTime =
                     block.timestamp - uint256(_getAssignedAt(job));
                 uint256 payout = agentAmount * 1e12;
@@ -1781,7 +1795,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
                     );
                 }
             }
-            if (address(reputationEngine) != address(0)) {
+            if (address(reputationEngine) != address(0) && !reputationHandled) {
                 reputationEngine.onFinalize(job.agent, false, 0, 0);
             }
         }
@@ -1802,6 +1816,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
         _clearValidatorData(jobId);
+        if (reputationProcessed[jobId]) {
+            delete reputationProcessed[jobId];
+        }
     }
 
     /// @notice Acknowledge the tax policy and finalise the job in one call.
@@ -1843,6 +1860,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             );
         }
         _clearValidatorData(jobId);
+        if (reputationProcessed[jobId]) {
+            delete reputationProcessed[jobId];
+        }
         emit JobCancelled(jobId);
     }
 
@@ -1938,6 +1958,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
         }
         _clearValidatorData(jobId);
+        if (reputationProcessed[jobId]) {
+            delete reputationProcessed[jobId];
+        }
         emit JobTimedOut(jobId, msg.sender);
     }
 

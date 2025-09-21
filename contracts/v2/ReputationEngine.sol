@@ -63,6 +63,8 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
     event ValidationRewardPercentageUpdated(uint256 percentage);
     event PauserUpdated(address indexed pauser);
 
+    error ArrayLengthMismatch();
+
     modifier onlyOwnerOrPauser() {
         require(
             msg.sender == owner() || msg.sender == pauser,
@@ -261,45 +263,46 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
         uint256 payout,
         uint256 duration
     ) external onlyCaller whenNotPaused {
-        if (success) {
-            uint256 gain = calculateReputationPoints(payout, duration);
-            uint256 current = reputation[user];
-            uint256 newScore = _enforceReputationGrowth(current, gain);
-            reputation[user] = newScore;
-            uint256 delta = newScore - current;
-            emit ReputationUpdated(user, int256(delta), newScore);
-            if (blacklisted[user] && newScore >= premiumThreshold) {
-                blacklisted[user] = false;
-                emit BlacklistUpdated(user, false);
-            }
-        } else {
-            uint256 penalty = calculateReputationPoints(payout, duration);
-            uint256 current = reputation[user];
-            uint256 newScore = current > penalty ? current - penalty : 0;
-            reputation[user] = newScore;
-            uint256 delta = current - newScore;
-            emit ReputationUpdated(user, -int256(delta), newScore);
-
-            if (!blacklisted[user] && newScore < premiumThreshold) {
-                blacklisted[user] = true;
-                emit BlacklistUpdated(user, true);
-            }
-        }
+        _finalizeAgent(user, success, payout, duration);
     }
 
     /// @notice Reward a validator based on an agent's reputation gain.
     /// @param validator The validator address
     /// @param agentGain Reputation points awarded to the agent
     function rewardValidator(address validator, uint256 agentGain) external onlyCaller whenNotPaused {
-        uint256 gain = calculateValidatorReputationPoints(agentGain);
-        uint256 current = reputation[validator];
-        uint256 newScore = _enforceReputationGrowth(current, gain);
-        reputation[validator] = newScore;
-        uint256 delta = newScore - current;
-        emit ReputationUpdated(validator, int256(delta), newScore);
-        if (blacklisted[validator] && newScore >= premiumThreshold) {
-            blacklisted[validator] = false;
-            emit BlacklistUpdated(validator, false);
+        _rewardValidator(validator, agentGain);
+    }
+
+    /// @notice Update agent and validator reputation for a completed job.
+    function updateScores(
+        uint256,
+        address agent,
+        address[] calldata validators,
+        bool success,
+        bool[] calldata validatorRevealed,
+        bool[] calldata validatorVotes,
+        uint256 payout,
+        uint256 duration
+    ) external onlyCaller whenNotPaused {
+        uint256 length = validators.length;
+        if (length != validatorRevealed.length || length != validatorVotes.length) {
+            revert ArrayLengthMismatch();
+        }
+
+        uint256 agentGain = _finalizeAgent(agent, success, payout, duration);
+
+        for (uint256 i; i < length;) {
+            address validator = validators[i];
+            if (!validatorRevealed[i]) {
+                _decreaseReputation(validator, 1);
+            } else if (validatorVotes[i] != success) {
+                _decreaseReputation(validator, 1);
+            } else if (success) {
+                _rewardValidator(validator, agentGain);
+            }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -353,6 +356,50 @@ contract ReputationEngine is Ownable, Pausable, IReputationEngineV2 {
             return MAX_REPUTATION;
         }
         return diminishedReputation;
+    }
+
+    function _finalizeAgent(
+        address user,
+        bool success,
+        uint256 payout,
+        uint256 duration
+    ) internal returns (uint256 agentGain) {
+        uint256 points = calculateReputationPoints(payout, duration);
+        if (success) {
+            agentGain = points;
+            uint256 current = reputation[user];
+            uint256 newScore = _enforceReputationGrowth(current, points);
+            reputation[user] = newScore;
+            uint256 delta = newScore - current;
+            emit ReputationUpdated(user, int256(delta), newScore);
+            if (blacklisted[user] && newScore >= premiumThreshold) {
+                blacklisted[user] = false;
+                emit BlacklistUpdated(user, false);
+            }
+        } else {
+            uint256 current = reputation[user];
+            uint256 newScore = current > points ? current - points : 0;
+            reputation[user] = newScore;
+            uint256 delta = current - newScore;
+            emit ReputationUpdated(user, -int256(delta), newScore);
+            if (!blacklisted[user] && newScore < premiumThreshold) {
+                blacklisted[user] = true;
+                emit BlacklistUpdated(user, true);
+            }
+        }
+    }
+
+    function _rewardValidator(address validator, uint256 agentGain) internal {
+        uint256 gain = calculateValidatorReputationPoints(agentGain);
+        uint256 current = reputation[validator];
+        uint256 newScore = _enforceReputationGrowth(current, gain);
+        reputation[validator] = newScore;
+        uint256 delta = newScore - current;
+        emit ReputationUpdated(validator, int256(delta), newScore);
+        if (blacklisted[validator] && newScore >= premiumThreshold) {
+            blacklisted[validator] = false;
+            emit BlacklistUpdated(validator, false);
+        }
     }
 
     /// @notice Return the combined operator score based on stake and reputation.
