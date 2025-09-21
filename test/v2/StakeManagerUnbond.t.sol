@@ -51,10 +51,31 @@ contract StakeManagerUnbond is Test {
     function testJailOnSlash() public {
         _request(5e17);
         stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
-        vm.warp(block.timestamp + stake.unbondingPeriod());
         vm.prank(user);
-        vm.expectRevert(Jailed.selector);
+        vm.expectRevert(UnbondLocked.selector);
         stake.finalizeWithdraw(StakeManager.Role.Validator);
+    }
+
+    function testSlashWhileUnbondingAllowsNewWithdraw() public {
+        _request(5e17);
+        stake.slash(user, StakeManager.Role.Validator, 1e17, address(this));
+
+        (uint256 pending, uint64 unlockAt, bool jailed) = stake.unbonds(user);
+        assertFalse(jailed);
+        assertEq(pending, 45e16);
+        assertEq(unlockAt, uint64(block.timestamp + stake.unbondingPeriod()));
+
+        vm.warp(block.timestamp + stake.unbondingPeriod());
+        uint256 balanceBefore = token.balanceOf(user);
+        vm.prank(user);
+        stake.finalizeWithdraw(StakeManager.Role.Validator);
+        assertEq(token.balanceOf(user), balanceBefore + 45e16);
+
+        (pending,,) = stake.unbonds(user);
+        assertEq(pending, 0);
+
+        vm.prank(user);
+        stake.requestWithdraw(StakeManager.Role.Validator, 2e17);
     }
 
     function testPendingPenaltyRace() public {
