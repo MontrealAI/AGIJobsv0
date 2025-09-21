@@ -2,11 +2,9 @@ import { ethers } from 'ethers';
 import { config as dotenvConfig } from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import { loadEnsConfig } from '../config';
 
 dotenvConfig();
-
-const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-const REVERSE_REGISTRAR = '0x084b1c3C81545d370f3634392De611CaaBFf8148';
 
 const REGISTRY_ABI = [
   'function resolver(bytes32 node) view returns (address)',
@@ -17,9 +15,6 @@ const RESOLVER_ABI = ['function setAddr(bytes32 node, address addr) external'];
 const REVERSE_ABI = [
   'function setName(string name) external returns (bytes32)',
 ];
-
-const AGENT_ROOT = ethers.namehash('agent.agi.eth');
-const CLUB_ROOT = ethers.namehash('club.agi.eth');
 
 const IDENTITY_STORAGE_ROOT = path.join(
   __dirname,
@@ -49,26 +44,83 @@ type StoredIdentity = {
 
 const ROLE_VALUES: Role[] = ['agent', 'validator', 'orchestrator'];
 
-const ROLE_CONFIG: Record<Role, RoleConfig> = {
-  agent: {
-    parentNode: AGENT_ROOT,
-    parentName: 'agent.agi.eth',
-    storageDir: path.join(IDENTITY_STORAGE_ROOT, 'agents'),
-    fileName: (label: string) => `${label}.json`,
-  },
-  validator: {
-    parentNode: CLUB_ROOT,
-    parentName: 'club.agi.eth',
-    storageDir: path.join(IDENTITY_STORAGE_ROOT, 'validators'),
-    fileName: (label: string) => `${label}.json`,
-  },
-  orchestrator: {
-    parentNode: AGENT_ROOT,
-    parentName: 'agent.agi.eth',
-    storageDir: IDENTITY_STORAGE_ROOT,
-    fileName: () => 'orchestrator.json',
-  },
-};
+let ROLE_CONFIG: Record<Role, RoleConfig> | null = null;
+
+function setRoleConfig(config: Record<Role, RoleConfig>): void {
+  ROLE_CONFIG = config;
+}
+
+function getRoleConfig(): Record<Role, RoleConfig> {
+  if (!ROLE_CONFIG) {
+    throw new Error('ENS role configuration has not been initialised');
+  }
+  return ROLE_CONFIG;
+}
+
+function normaliseConfigAddress(
+  value: string | undefined,
+  label: string,
+  { allowZero = false }: { allowZero?: boolean } = {}
+): string {
+  if (value === undefined || value === null) {
+    if (allowZero) {
+      return ethers.ZeroAddress;
+    }
+    throw new Error(`${label} is not configured`);
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    if (allowZero) {
+      return ethers.ZeroAddress;
+    }
+    throw new Error(`${label} is not configured`);
+  }
+  const prefixed = trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`;
+  const address = ethers.getAddress(prefixed);
+  if (!allowZero && address === ethers.ZeroAddress) {
+    throw new Error(`${label} cannot be the zero address`);
+  }
+  return address;
+}
+
+function createRoleConfig(
+  roots: Record<string, any>
+): Record<Role, RoleConfig> {
+  const agentRoot = roots.agent;
+  const clubRoot = roots.club;
+  if (!agentRoot || !agentRoot.node || !agentRoot.name) {
+    throw new Error('ENS configuration is missing the agent.agi.eth root');
+  }
+  if (!clubRoot || !clubRoot.node || !clubRoot.name) {
+    throw new Error('ENS configuration is missing the club.agi.eth root');
+  }
+  const normaliseNode = (value: string) =>
+    ethers.hexlify(ethers.getBytes(value));
+  const agentNode = normaliseNode(agentRoot.node);
+  const clubNode = normaliseNode(clubRoot.node);
+  const agentName = String(agentRoot.name).toLowerCase();
+  const clubName = String(clubRoot.name).toLowerCase();
+  return {
+    agent: {
+      parentNode: agentNode,
+      parentName: agentName,
+      storageDir: path.join(IDENTITY_STORAGE_ROOT, 'agents'),
+      fileName: (label: string) => `${label}.json`,
+    },
+    validator: {
+      parentNode: clubNode,
+      parentName: clubName,
+      storageDir: path.join(IDENTITY_STORAGE_ROOT, 'validators'),
+      fileName: (label: string) => `${label}.json`,
+    },
+    orchestrator: {
+      parentNode: agentNode,
+      parentName: agentName,
+      storageDir: IDENTITY_STORAGE_ROOT,
+      fileName: () => 'orchestrator.json',
+    },
+  };
+}
 
 function parseArgs(): { name: string; role: Role } {
   const argv = process.argv.slice(2);
@@ -106,7 +158,7 @@ function normalizeLabel(input: string): string {
 }
 
 function resolveStoragePath(role: Role, label: string): string {
-  const config = ROLE_CONFIG[role];
+  const config = getRoleConfig()[role];
   fs.mkdirSync(config.storageDir, { recursive: true });
   const fileName = config.fileName(label);
   return path.join(config.storageDir, fileName);
@@ -154,9 +206,15 @@ async function registerEnsSubdomain(
   rootWallet: ethers.Wallet,
   subWallet: ethers.Wallet,
   label: string,
-  config: RoleConfig
+  config: RoleConfig,
+  registryAddress: string,
+  reverseRegistrar: string
 ): Promise<string> {
-  const registry = new ethers.Contract(ENS_REGISTRY, REGISTRY_ABI, rootWallet);
+  const registry = new ethers.Contract(
+    registryAddress,
+    REGISTRY_ABI,
+    rootWallet
+  );
   const resolverAddr = await registry.resolver(config.parentNode);
   if (resolverAddr === ethers.ZeroAddress) {
     throw new Error('Parent node has no resolver set');
@@ -179,11 +237,7 @@ async function registerEnsSubdomain(
   const resolver = new ethers.Contract(resolverAddr, RESOLVER_ABI, subWallet);
   await (await resolver.setAddr(node, subWallet.address)).wait();
 
-  const reverse = new ethers.Contract(
-    REVERSE_REGISTRAR,
-    REVERSE_ABI,
-    subWallet
-  );
+  const reverse = new ethers.Contract(reverseRegistrar, REVERSE_ABI, subWallet);
   await (await reverse.setName(ensName)).wait();
 
   await verifyReverseResolution(provider, subWallet.address, ensName);
@@ -194,9 +248,22 @@ async function registerEnsSubdomain(
 async function main() {
   const { name, role } = parseArgs();
   const normalizedLabel = normalizeLabel(name);
-  const roleConfig = ROLE_CONFIG[role];
   const rpc = process.env.RPC_URL || 'http://localhost:8545';
   const provider = new ethers.JsonRpcProvider(rpc);
+
+  const { config: ensConfig } = loadEnsConfig({
+    network: process.env.ENS_NETWORK || process.env.NETWORK,
+  });
+  setRoleConfig(createRoleConfig(ensConfig.roots || {}));
+  const roleConfig = getRoleConfig()[role];
+  const registryAddress = normaliseConfigAddress(
+    process.env.ENS_REGISTRY_ADDRESS ?? ensConfig.registry,
+    'ENS registry'
+  );
+  const reverseRegistrar = normaliseConfigAddress(
+    process.env.ENS_REVERSE_REGISTRAR_ADDRESS ?? ensConfig.reverseRegistrar,
+    'ENS reverse registrar'
+  );
 
   const rootKey = process.env.ENS_OWNER_KEY;
   if (!rootKey) {
@@ -211,7 +278,9 @@ async function main() {
     rootWallet,
     participantWallet,
     normalizedLabel,
-    roleConfig
+    roleConfig,
+    registryAddress,
+    reverseRegistrar
   );
 
   const outputPath = persistWalletRecord(

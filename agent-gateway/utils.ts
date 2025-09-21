@@ -1,6 +1,6 @@
 import { ethers, Contract, Wallet, JsonRpcProvider } from 'ethers';
 import { WebSocketServer, WebSocket } from 'ws';
-import agialpha from '../config/agialpha.json';
+import { loadTokenConfig } from '../scripts/config';
 import WalletManager from './wallet';
 import { Job, AgentInfo, CommitData } from './types';
 import { loadCommitRecord, updateCommitRecord } from './validationStore';
@@ -121,21 +121,20 @@ function validateEnvConfig(): void {
 validateEnvConfig();
 
 // $AGIALPHA token parameters
+const { config: agialpha } = loadTokenConfig({
+  network: process.env.AGIALPHA_NETWORK || process.env.NETWORK,
+});
+
 const {
   address: AGIALPHA_ADDRESS,
   decimals: AGIALPHA_DECIMALS,
   symbol: AGIALPHA_SYMBOL,
   name: AGIALPHA_NAME,
-} = agialpha as {
-  address: string;
-  decimals: number;
-  symbol?: string;
-  name?: string;
-};
-if (!AGIALPHA_SYMBOL || typeof AGIALPHA_SYMBOL !== 'string') {
+} = agialpha;
+if (AGIALPHA_SYMBOL.trim().length === 0) {
   throw new Error('config/agialpha.json is missing token symbol');
 }
-if (!AGIALPHA_NAME || typeof AGIALPHA_NAME !== 'string') {
+if (AGIALPHA_NAME.trim().length === 0) {
   throw new Error('config/agialpha.json is missing token name');
 }
 export const TOKEN_DECIMALS = AGIALPHA_DECIMALS;
@@ -276,10 +275,11 @@ export async function loadWalletKeys(retry = true): Promise<string[]> {
     if (!data || !Array.isArray(data.keys)) {
       throw new Error('Keystore response missing keys array');
     }
-    return data.keys
+    const keys = Array.isArray(data.keys) ? (data.keys as unknown[]) : [];
+    return keys
       .filter((key: unknown): key is string => typeof key === 'string')
-      .map((key) => key.trim())
-      .filter((key) => key.length > 0);
+      .map((key: string) => key.trim())
+      .filter((key: string) => key.length > 0);
   } catch (err: any) {
     clearTimeout(timer);
     if (err.name === 'AbortError' && retry) {

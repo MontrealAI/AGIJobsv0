@@ -1,28 +1,15 @@
 import { Contract, Wallet, ethers } from 'ethers';
-import ensConfig from '../config/ens.json';
+import { loadEnsConfig } from '../scripts/config';
 import { provider } from './utils';
 import { secureLogAction } from './security';
 
 export type EnsSpace = 'agent' | 'club' | 'business';
-
-interface RawParentConfig {
-  name?: string;
-  node?: string;
-  resolver?: string;
-  role?: 'agent' | 'validator' | 'business';
-}
 
 interface ResolvedParentConfig {
   name: string;
   node: string;
   resolver: string;
   role: 'agent' | 'validator' | 'business';
-}
-
-interface EnsConfigMap {
-  agent?: RawParentConfig;
-  club?: RawParentConfig;
-  business?: RawParentConfig;
 }
 
 const ENS_REGISTRY_ABI = [
@@ -57,20 +44,29 @@ function normaliseLabel(label: string): string {
   return trimmed;
 }
 
+const { config: ensConfig } = loadEnsConfig({
+  network: process.env.ENS_NETWORK || process.env.NETWORK,
+});
+
+const ENS_ROOTS = (ensConfig.roots || {}) as Record<string, any>;
+
 function ensureConfiguredAddress(
   value: string | undefined,
-  name: string
+  name: string,
+  { allowZero = false }: { allowZero?: boolean } = {}
 ): string {
-  if (!value) {
+  if (value === undefined || value === null) {
+    if (allowZero) return ethers.ZeroAddress;
     throw new Error(`${name} is not configured`);
   }
   const address = value.trim();
   if (!address) {
+    if (allowZero) return ethers.ZeroAddress;
     throw new Error(`${name} is not configured`);
   }
   const prefixed = address.startsWith('0x') ? address : `0x${address}`;
   const normalised = ethers.getAddress(prefixed);
-  if (normalised === ethers.ZeroAddress) {
+  if (!allowZero && normalised === ethers.ZeroAddress) {
     throw new Error(`${name} cannot be the zero address`);
   }
   return normalised;
@@ -78,52 +74,62 @@ function ensureConfiguredAddress(
 
 function resolveRegistryAddress(): string {
   return ensureConfiguredAddress(
-    process.env.ENS_REGISTRY_ADDRESS,
-    'ENS_REGISTRY_ADDRESS'
+    process.env.ENS_REGISTRY_ADDRESS ?? ensConfig.registry,
+    'ENS registry'
   );
 }
 
 function resolveReverseRegistrarAddress(): string {
   return ensureConfiguredAddress(
-    process.env.ENS_REVERSE_REGISTRAR_ADDRESS,
-    'ENS_REVERSE_REGISTRAR_ADDRESS'
+    process.env.ENS_REVERSE_REGISTRAR_ADDRESS ?? ensConfig.reverseRegistrar,
+    'ENS reverse registrar'
   );
 }
 
 function readParentConfig(space: EnsSpace): ResolvedParentConfig {
-  const mapping = ensConfig as EnsConfigMap;
-  const raw = mapping[space];
-  if (!raw) {
+  const raw = ENS_ROOTS[space];
+  if (!raw || !raw.name || !raw.node) {
     throw new Error(`ENS parent configuration missing for ${space}`);
   }
-  const name = (raw.name ?? '').trim().toLowerCase();
-  if (!name) {
-    throw new Error(`ENS parent name missing for ${space}`);
-  }
-  const resolver = ensureConfiguredAddress(raw.resolver, `${space} resolver`);
-  const node = raw.node
-    ? ethers.hexlify(ethers.getBytes(raw.node))
-    : ethers.namehash(name);
+  const name = String(raw.name).trim().toLowerCase();
+  const resolver = ensureConfiguredAddress(raw.resolver, `${space} resolver`, {
+    allowZero: true,
+  });
+  const normalisedResolver =
+    resolver === ethers.ZeroAddress
+      ? ethers.ZeroAddress
+      : ethers.getAddress(resolver);
+  const node = ethers.hexlify(ethers.getBytes(raw.node));
   const role: 'agent' | 'validator' | 'business' =
-    raw.role ??
-    (space === 'club'
-      ? 'validator'
-      : space === 'business'
-      ? 'business'
-      : 'agent');
+    raw.role ?? (space === 'club' ? 'validator' : 'agent');
   return {
     name,
     node,
-    resolver,
+    resolver: normalisedResolver,
     role,
   };
 }
 
 function detectSpaceFromParent(parentName: string): EnsSpace | null {
   const normalised = parentName.trim().toLowerCase();
-  if (normalised === 'agent.agi.eth') return 'agent';
-  if (normalised === 'club.agi.eth') return 'club';
-  if (normalised === 'a.agi.eth') return 'business';
+  if (
+    ENS_ROOTS.agent?.name &&
+    String(ENS_ROOTS.agent.name).toLowerCase() === normalised
+  ) {
+    return 'agent';
+  }
+  if (
+    ENS_ROOTS.club?.name &&
+    String(ENS_ROOTS.club.name).toLowerCase() === normalised
+  ) {
+    return 'club';
+  }
+  if (
+    ENS_ROOTS.business?.name &&
+    String(ENS_ROOTS.business.name).toLowerCase() === normalised
+  ) {
+    return 'business';
+  }
   return null;
 }
 

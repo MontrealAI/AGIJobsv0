@@ -1,10 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import { loadTokenConfig } from './config';
 
-const configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
-const { address, decimals, symbol, name } = JSON.parse(
-  fs.readFileSync(configPath, 'utf8')
-) as { address: string; decimals: number; symbol: string; name: string };
+const {
+  config: { address, decimals, symbol, name },
+} = loadTokenConfig();
 
 // Canonical $AGIALPHA token address on Ethereum mainnet.
 export const AGIALPHA = address;

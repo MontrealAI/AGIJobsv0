@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ethers } from 'ethers';
+import { loadTokenConfig, inferNetworkKey } from './config';
 
-const defaultConfigPath = path.join(__dirname, '..', 'config', 'agialpha.json');
+const { path: defaultConfigPath } = loadTokenConfig();
 const defaultConstantsPath = path.join(
   __dirname,
   '..',
@@ -328,11 +329,14 @@ if (require.main === module) {
     let rpcUrl: string | undefined;
     let timeoutMs: number | undefined;
     let skipOnChain = false;
+    let networkArg: string | undefined;
+    let configOverride = false;
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       if (arg === '--config' && i + 1 < args.length) {
         configPath = args[++i];
+        configOverride = true;
       } else if (arg === '--constants' && i + 1 < args.length) {
         constantsPath = args[++i];
       } else if (arg === '--rpc' && i + 1 < args.length) {
@@ -341,9 +345,21 @@ if (require.main === module) {
         timeoutMs = Number(args[++i]);
       } else if (arg === '--skip-onchain') {
         skipOnChain = true;
+      } else if (arg === '--network' && i + 1 < args.length) {
+        networkArg = args[++i];
+      } else if (arg.startsWith('--network=')) {
+        networkArg = arg.slice('--network='.length);
       } else {
         console.warn(`Unrecognized argument: ${arg}`);
       }
+    }
+
+    if (!configOverride && networkArg) {
+      const inferred = inferNetworkKey(networkArg) ?? networkArg;
+      const { path: networkConfigPath } = loadTokenConfig({
+        network: inferred,
+      });
+      configPath = networkConfigPath;
     }
 
     try {

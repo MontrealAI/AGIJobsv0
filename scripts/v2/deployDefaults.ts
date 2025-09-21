@@ -1,5 +1,6 @@
-import { ethers, run } from 'hardhat';
+import { ethers, run, network } from 'hardhat';
 import { AGIALPHA_DECIMALS } from '../constants';
+import { loadEnsConfig } from '../config';
 
 async function verify(address: string, args: any[] = []) {
   try {
@@ -45,14 +46,27 @@ async function main() {
   const deployerAddress = await deployer.getAddress();
   console.log('Deployer', deployerAddress);
 
+  const { config: ensConfig } = loadEnsConfig({
+    network: network.name,
+    chainId: network.config?.chainId,
+  });
+  const roots = ensConfig.roots || {};
+  const agentRootNode = roots.agent?.node;
+  const clubRootNode = roots.club?.node;
+  if (!agentRootNode || !clubRootNode) {
+    throw new Error('ENS configuration is missing agent or club root nodes');
+  }
   const ids = {
-    ens: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
-    nameWrapper: '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',
-    clubRootNode: ethers.namehash('club.agi.eth'),
-    agentRootNode: ethers.namehash('agent.agi.eth'),
-    validatorMerkleRoot: ethers.ZeroHash,
-    agentMerkleRoot: ethers.ZeroHash,
+    ens: ensConfig.registry,
+    nameWrapper: ensConfig.nameWrapper || ethers.ZeroAddress,
+    clubRootNode,
+    agentRootNode,
+    validatorMerkleRoot: roots.club?.merkleRoot || ethers.ZeroHash,
+    agentMerkleRoot: roots.agent?.merkleRoot || ethers.ZeroHash,
   };
+  if (!ids.ens) {
+    throw new Error('ENS registry address missing from configuration');
+  }
 
   const tx = withTax
     ? customEcon
