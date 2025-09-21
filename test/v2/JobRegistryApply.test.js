@@ -65,11 +65,12 @@ describe('JobRegistry agent gating', function () {
     await verifier.setResult(false);
   });
 
-  async function createJob() {
-    const deadline = (await time.latest()) + 100;
+  async function createJob(offset = 100) {
+    const deadline = (await time.latest()) + offset;
     const specHash = ethers.id('spec');
     await registry.connect(employer).createJob(1, deadline, specHash, 'uri');
-    return 1;
+    const jobId = await registry.nextJobId();
+    return { jobId, deadline };
   }
 
   it('syncs ENS roots and merkle updates to verifier', async () => {
@@ -90,7 +91,7 @@ describe('JobRegistry agent gating', function () {
   });
 
   it('rejects unverified agents', async () => {
-    const jobId = await createJob();
+    const { jobId } = await createJob();
     await expect(
       registry.connect(agent).applyForJob(jobId, 'a', [])
     ).to.be.revertedWithCustomError(registry, 'NotAuthorizedAgent');
@@ -98,7 +99,7 @@ describe('JobRegistry agent gating', function () {
 
   it('allows manual allowlisted agents', async () => {
     await verifier.addAdditionalAgent(agent.address);
-    const jobId = await createJob();
+    const { jobId } = await createJob();
     await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
       .to.emit(registry, 'AgentIdentityVerified')
       .withArgs(agent.address, ethers.ZeroHash, 'a', false, false)
@@ -111,17 +112,56 @@ describe('JobRegistry agent gating', function () {
   it('rejects blacklisted agents', async () => {
     await verifier.setResult(true);
     await rep.connect(owner).setBlacklist(agent.address, true);
-    const jobId = await createJob();
+    const { jobId } = await createJob();
     await expect(
       registry.connect(agent).applyForJob(jobId, 'a', [])
     ).to.be.revertedWithCustomError(registry, 'BlacklistedAgent');
   });
 
   it('rejects agents without acknowledging tax policy', async () => {
-    const jobId = await createJob();
+    const { jobId } = await createJob();
     await policy.bumpPolicyVersion();
     await expect(registry.connect(agent).applyForJob(jobId, 'a', []))
       .to.be.revertedWithCustomError(registry, 'TaxPolicyNotAcknowledged')
       .withArgs(agent.address);
+  });
+
+  it('enforces the maximum active jobs per agent', async () => {
+    await verifier.addAdditionalAgent(agent.address);
+    await registry.connect(owner).setMaxActiveJobsPerAgent(1);
+    const { jobId: firstJobId } = await createJob();
+    await registry.connect(agent).applyForJob(firstJobId, 'a', []);
+    expect(await registry.activeJobs(agent.address)).to.equal(1n);
+
+    const { jobId: secondJobId } = await createJob();
+    await expect(
+      registry.connect(agent).applyForJob(secondJobId, 'a', [])
+    )
+      .to.be.revertedWithCustomError(registry, 'MaxActiveJobsReached')
+      .withArgs(1);
+    expect(await registry.activeJobs(agent.address)).to.equal(1n);
+  });
+
+  it('releases active job slots once work is finalized', async () => {
+    await verifier.addAdditionalAgent(agent.address);
+    await registry.connect(owner).setMaxActiveJobsPerAgent(1);
+    const { jobId: firstJobId, deadline } = await createJob(50);
+    await registry.connect(agent).applyForJob(firstJobId, 'a', []);
+    const { jobId: secondJobId } = await createJob();
+
+    await expect(
+      registry.connect(agent).applyForJob(secondJobId, 'a', [])
+    )
+      .to.be.revertedWithCustomError(registry, 'MaxActiveJobsReached')
+      .withArgs(1);
+
+    await time.increaseTo(deadline + 1);
+    await registry.connect(employer).cancelExpiredJob(firstJobId);
+    expect(await registry.activeJobs(agent.address)).to.equal(0n);
+
+    await expect(registry.connect(agent).applyForJob(secondJobId, 'a', []))
+      .to.emit(registry, 'AgentAssigned')
+      .withArgs(secondJobId, agent.address, 'a');
+    expect(await registry.activeJobs(agent.address)).to.equal(1n);
   });
 });

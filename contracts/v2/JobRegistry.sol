@@ -76,6 +76,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     error BurnNotConfirmed();
     error BurnAmountTooLow();
     error InsufficientAgentStake(uint256 required, uint256 actual);
+    error MaxActiveJobsReached(uint256 limit);
 
     enum State {
         None,
@@ -258,6 +259,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     }
 
     mapping(address => EmployerStats) public employerStats;
+
+    /// @notice Tracks the number of active jobs assigned to each agent.
+    mapping(address => uint256) public activeJobs;
+    /// @notice Optional governance-configured limit on active jobs per agent. Zero disables the limit.
+    uint256 public maxActiveJobsPerAgent;
 
     function getJobValidators(uint256 jobId)
         external
@@ -628,6 +634,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     event FeePoolUpdated(address pool);
     event FeePctUpdated(uint256 feePct);
     event ExpirationGracePeriodUpdated(uint256 period);
+    event MaxActiveJobsPerAgentUpdated(uint256 limit);
     event GovernanceFinalized(
         uint256 indexed jobId,
         address indexed caller,
@@ -916,6 +923,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function setJobDurationLimit(uint256 limit) external onlyGovernance {
         maxJobDuration = limit;
         emit JobParametersUpdated(0, jobStake, maxJobReward, limit, minAgentStake);
+    }
+
+    /// @notice Set the maximum number of simultaneously active jobs an agent may hold.
+    /// @dev A value of zero disables the limit.
+    function setMaxActiveJobsPerAgent(uint256 limit) external onlyGovernance {
+        maxActiveJobsPerAgent = limit;
+        emit MaxActiveJobsPerAgentUpdated(limit);
     }
 
     /// @notice set additional grace period after a job's deadline before it can expire
@@ -1228,6 +1242,11 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             }
             stakeManager.lockStake(msg.sender, uint256(job.stake), lockTime);
         }
+        uint256 active = activeJobs[msg.sender];
+        uint256 activeLimit = maxActiveJobsPerAgent;
+        if (activeLimit != 0 && active >= activeLimit) {
+            revert MaxActiveJobsReached(activeLimit);
+        }
         uint32 agentPct = 100;
         if (address(stakeManager) != address(0)) {
             agentPct = uint32(stakeManager.getTotalPayoutPct(msg.sender));
@@ -1237,6 +1256,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _setAgentPct(job, agentPct);
         _setState(job, State.Applied);
         _setAssignedAt(job, uint64(block.timestamp));
+        activeJobs[msg.sender] = active + 1;
         emit AgentAssigned(jobId, msg.sender, subdomain);
         emit JobApplied(jobId, msg.sender, subdomain);
     }
@@ -1774,6 +1794,13 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         if (isGov) {
             emit GovernanceFinalized(jobId, msg.sender, fundsRedirected);
         }
+        address agentAddr = job.agent;
+        if (agentAddr != address(0)) {
+            uint256 activeCount = activeJobs[agentAddr];
+            if (activeCount > 0) {
+                activeJobs[agentAddr] = activeCount - 1;
+            }
+        }
         _clearValidatorData(jobId);
     }
 
@@ -1904,6 +1931,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         job.burnReceiptAmount = 0;
         job.resultHash = bytes32(0);
 
+        if (agent != address(0)) {
+            uint256 activeCount = activeJobs[agent];
+            if (activeCount > 0) {
+                activeJobs[agent] = activeCount - 1;
+            }
+        }
         _clearValidatorData(jobId);
         emit JobTimedOut(jobId, msg.sender);
     }
