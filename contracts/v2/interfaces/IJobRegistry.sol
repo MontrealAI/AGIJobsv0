@@ -194,6 +194,15 @@ interface IJobRegistry {
         pure
         returns (JobMetadata memory);
 
+    /// @notice Retrieve validator reward percentage used for reputation context.
+    function validatorRewardPct() external view returns (uint256);
+
+    /// @notice Mark that reputation for a job has been processed externally.
+    function markReputationProcessed(uint256 jobId) external;
+
+    /// @notice Check whether reputation updates for a job were already applied.
+    function reputationProcessed(uint256 jobId) external view returns (bool);
+
     /// @notice Retrieve the ValidationModule managing validator sets
     /// @return Address of the ValidationModule
     function validationModule() external view returns (address);

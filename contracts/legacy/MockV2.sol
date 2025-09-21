@@ -234,6 +234,7 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
     uint256 public nextJobId;
     mapping(uint256 => uint256) public deadlines;
     mapping(uint256 => mapping(bytes32 => bool)) public burnReceiptMap;
+    mapping(uint256 => bool) public reputationProcessed;
 
     event JobCreated(
         uint256 indexed jobId,
@@ -437,6 +438,10 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
 
     function setReputationEngine(address engine) external override {
         reputationEngine = IReputationEngine(engine);
+    }
+
+    function markReputationProcessed(uint256 jobId) external override {
+        reputationProcessed[jobId] = true;
     }
 
     function setStakeManager(address manager) external override {
@@ -814,6 +819,36 @@ contract MockReputationEngine is IReputationEngine {
 
     function rewardValidator(address user, uint256) external override {
         _rep[user] += 1;
+    }
+
+    function updateScores(
+        uint256,
+        address agent,
+        address[] calldata validators,
+        bool success,
+        bool[] calldata validatorRevealed,
+        bool[] calldata validatorVotes,
+        uint256,
+        uint256
+    ) external override {
+        if (success) {
+            _rep[agent] += 1;
+        } else if (_rep[agent] < threshold) {
+            _blacklist[agent] = true;
+        }
+        uint256 length = validators.length;
+        for (uint256 i; i < length;) {
+            address validator = validators[i];
+            if (!validatorRevealed[i] || validatorVotes[i] != success) {
+                uint256 rep = _rep[validator];
+                _rep[validator] = rep > 0 ? rep - 1 : 0;
+            } else if (success) {
+                _rep[validator] += 1;
+            }
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function calculateReputationPoints(uint256, uint256)

@@ -8,7 +8,6 @@ import {IJobRegistry} from "./interfaces/IJobRegistry.sol";
 import {IJobRegistryTax} from "./interfaces/IJobRegistryTax.sol";
 import {IStakeManager} from "./interfaces/IStakeManager.sol";
 import {IReputationEngine} from "./interfaces/IReputationEngine.sol";
-import {ReputationEngine} from "./ReputationEngine.sol";
 import {IValidationModule} from "./interfaces/IValidationModule.sol";
 import {IIdentityRegistry} from "./interfaces/IIdentityRegistry.sol";
 import {ITaxPolicy} from "./interfaces/ITaxPolicy.sol";
@@ -1443,18 +1442,52 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             success = false;
         }
         IJobRegistry.Job memory job = jobRegistry.jobs(jobId);
-        uint256 agentGain;
-        if (address(reputationEngine) != address(0) && success) {
-            uint256 payout = uint256(job.reward) * 1e12;
-            // attempt to derive validator reward from reputation engine
-            try
-                ReputationEngine(payable(address(reputationEngine)))
-                    .calculateReputationPoints(payout, 0)
-            returns (uint256 points) {
-                agentGain = points;
-            } catch {
-                agentGain = 1;
+        address[] memory committee = new address[](vlen);
+        bool[] memory revealedStates = new bool[](vlen);
+        bool[] memory voteStates = new bool[](vlen);
+        for (uint256 i; i < vlen;) {
+            address validator = r.validators[i];
+            committee[i] = validator;
+            revealedStates[i] = revealed[jobId][validator];
+            voteStates[i] = votes[jobId][validator];
+            unchecked {
+                ++i;
             }
+        }
+
+        if (address(reputationEngine) != address(0)) {
+            uint256 payout;
+            uint256 duration;
+            if (success) {
+                IJobRegistry.JobMetadata memory metadata = jobRegistry.decodeJobMetadata(
+                    job.packedMetadata
+                );
+                uint256 validatorPct = jobRegistry.validatorRewardPct();
+                uint256 rewardAfterValidator = uint256(job.reward);
+                if (committee.length > 0 && validatorPct > 0) {
+                    uint256 validatorReward = (uint256(job.reward) * validatorPct) / 100;
+                    rewardAfterValidator -= validatorReward;
+                }
+                uint256 agentPctRaw = metadata.agentPct;
+                uint256 agentPct = agentPctRaw == 0 ? 100 : agentPctRaw;
+                uint256 agentAmount = (rewardAfterValidator * agentPct) / 100;
+                payout = agentAmount * 1e12;
+                if (metadata.assignedAt != 0 && block.timestamp > metadata.assignedAt) {
+                    duration = block.timestamp - uint256(metadata.assignedAt);
+                }
+            }
+
+            reputationEngine.updateScores(
+                jobId,
+                job.agent,
+                committee,
+                success,
+                revealedStates,
+                voteStates,
+                payout,
+                duration
+            );
+            jobRegistry.markReputationProcessed(jobId);
         }
 
         for (uint256 i; i < vlen;) {
@@ -1476,9 +1509,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                     validatorBanUntil[val] = untilBlock;
                     emit ValidatorBanApplied(val, untilBlock);
                 }
-                if (address(reputationEngine) != address(0)) {
-                    reputationEngine.subtract(val, 1);
-                }
             } else if (votes[jobId][val] != success) {
                 if (slashAmount > 0) {
                     stakeManager.slash(
@@ -1488,11 +1518,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
                         job.employer
                     );
                 }
-                if (address(reputationEngine) != address(0)) {
-                    reputationEngine.subtract(val, 1);
-                }
-            } else if (address(reputationEngine) != address(0)) {
-                reputationEngine.rewardValidator(val, agentGain);
             }
             unchecked { ++i; }
         }
