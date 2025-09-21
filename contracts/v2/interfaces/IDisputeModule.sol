@@ -9,10 +9,11 @@ interface IDisputeModule {
     function raiseDispute(
         uint256 jobId,
         address claimant,
-        bytes32 evidenceHash
+        bytes32 evidenceHash,
+        string calldata reason
     ) external;
 
-    function resolve(uint256 jobId, bool employerWins) external;
+    function resolveDispute(uint256 jobId, bool employerWins) external;
 
     function slashValidator(
         address juror,

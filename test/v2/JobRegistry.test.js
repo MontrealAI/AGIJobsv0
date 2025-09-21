@@ -418,10 +418,15 @@ describe('JobRegistry integration', function () {
     const registrySigner = await ethers.getImpersonatedSigner(registryAddr);
     await dispute
       .connect(registrySigner)
-      .raiseDispute(jobId, agent.address, ethers.id('evidence'));
+      .raiseDispute(
+        jobId,
+        agent.address,
+        ethers.id('evidence'),
+        'ipfs://evidence'
+      );
     await dispute.connect(owner).setCommittee(owner.address);
     await dispute.connect(owner).setDisputeWindow(0);
-    await dispute.connect(owner).resolve(jobId, false);
+    await dispute.connect(owner).resolveDispute(jobId, false);
     await expect(
       registry.connect(agent).finalize(jobId)
     ).to.be.revertedWithCustomError(registry, 'OnlyEmployer');

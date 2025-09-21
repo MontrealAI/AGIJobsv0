@@ -97,6 +97,7 @@ async function setup() {
   await jobRegistry.connect(employer).submitBurnReceipt(1, burnTxHash, 0, 0);
   async function select(jobId, entropy = 0) {
     await validation.selectValidators(jobId, entropy);
+    await validation.connect(v1).selectValidators(jobId, entropy + 1);
     await ethers.provider.send('evm_mine', []);
     return validation.connect(v1).selectValidators(jobId, 0);
   }

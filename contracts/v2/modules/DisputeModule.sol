@@ -45,6 +45,7 @@ contract DisputeModule is Ownable, Pausable {
         bool resolved;
         uint256 fee;
         bytes32 evidenceHash;
+        string reason;
     }
 
     /// @dev Tracks active disputes by jobId.
@@ -53,7 +54,8 @@ contract DisputeModule is Ownable, Pausable {
     event DisputeRaised(
         uint256 indexed jobId,
         address indexed claimant,
-        bytes32 indexed evidenceHash
+        bytes32 indexed evidenceHash,
+        string reason
     );
     event DisputeResolved(
         uint256 indexed jobId,
@@ -200,9 +202,13 @@ contract DisputeModule is Ownable, Pausable {
     function raiseDispute(
         uint256 jobId,
         address claimant,
-        bytes32 evidenceHash
+        bytes32 evidenceHash,
+        string calldata reason
     ) external onlyJobRegistry whenNotPaused {
-        require(evidenceHash != bytes32(0), "evidence");
+        require(
+            evidenceHash != bytes32(0) || bytes(reason).length != 0,
+            "evidence"
+        );
         Dispute storage d = disputes[jobId];
         require(d.raisedAt == 0, "disputed");
 
@@ -220,16 +226,14 @@ contract DisputeModule is Ownable, Pausable {
             sm.recordDispute();
         }
 
-        disputes[jobId] =
-            Dispute({
-                claimant: claimant,
-                raisedAt: block.timestamp,
-                resolved: false,
-                fee: disputeFee,
-                evidenceHash: evidenceHash
-            });
+        disputes[jobId].claimant = claimant;
+        disputes[jobId].raisedAt = block.timestamp;
+        disputes[jobId].resolved = false;
+        disputes[jobId].fee = disputeFee;
+        disputes[jobId].evidenceHash = evidenceHash;
+        disputes[jobId].reason = reason;
 
-        emit DisputeRaised(jobId, claimant, evidenceHash);
+        emit DisputeRaised(jobId, claimant, evidenceHash, reason);
 
         if (committee != address(0)) {
             ArbitratorCommittee(committee).openCase(jobId);
@@ -240,7 +244,10 @@ contract DisputeModule is Ownable, Pausable {
     /// @param jobId Identifier of the disputed job.
     /// @param employerWins True if the employer prevails.
     /// @dev Only callable by the arbitrator committee.
-    function resolve(uint256 jobId, bool employerWins) external whenNotPaused {
+    function resolveDispute(uint256 jobId, bool employerWins)
+        public
+        whenNotPaused
+    {
         require(msg.sender == committee, "not committee");
         Dispute storage d = disputes[jobId];
         require(d.raisedAt != 0 && !d.resolved, "no dispute");
@@ -285,6 +292,11 @@ contract DisputeModule is Ownable, Pausable {
         }
 
         emit DisputeResolved(jobId, msg.sender, employerWins);
+    }
+
+    /// @notice Backwards-compatible alias for older integrations.
+    function resolve(uint256 jobId, bool employerWins) external {
+        resolveDispute(jobId, employerWins);
     }
 
     /// @notice Slash a validator for absenteeism during dispute resolution.

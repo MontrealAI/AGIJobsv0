@@ -641,26 +641,54 @@ contract MockJobRegistry is Ownable, IJobRegistry, IJobRegistryTax {
         _setStatus(job, Status.Completed);
     }
 
-    function dispute(uint256 jobId, bytes32 evidenceHash) public override {
-        Job storage job = _jobs[jobId];
-        _setStatus(job, Status.Disputed);
-        if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, msg.sender, evidenceHash);
-        }
-        emit JobDisputed(jobId, msg.sender);
+    function dispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata reason
+    ) public override {
+        _dispute(jobId, evidenceHash, reason);
     }
 
     /// @notice Backwards-compatible wrapper for legacy tests
     /// @dev Forwards to {dispute} with the provided evidence hash
     function raiseDispute(uint256 jobId, bytes32 evidenceHash) external {
-        dispute(jobId, evidenceHash);
+        _dispute(jobId, evidenceHash, "");
+    }
+
+    function raiseDispute(uint256 jobId, string calldata reason) external {
+        _dispute(jobId, bytes32(0), reason);
+    }
+
+    function acknowledgeAndDispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata reason
+    ) external override {
+        _dispute(jobId, evidenceHash, reason);
     }
 
     function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash)
         external
         override
     {
-        dispute(jobId, evidenceHash);
+        _dispute(jobId, evidenceHash, "");
+    }
+
+    function _dispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string memory reason
+    ) internal {
+        require(
+            evidenceHash != bytes32(0) || bytes(reason).length != 0,
+            "evidence"
+        );
+        Job storage job = _jobs[jobId];
+        _setStatus(job, Status.Disputed);
+        if (address(disputeModule) != address(0)) {
+            disputeModule.raiseDispute(jobId, msg.sender, evidenceHash, reason);
+        }
+        emit JobDisputed(jobId, msg.sender);
     }
 
     function resolveDispute(uint256 jobId, bool employerWins) external override {

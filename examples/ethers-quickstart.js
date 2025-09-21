@@ -20,6 +20,7 @@ const registryAbi = [
   'function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)',
   'function submit(uint256 jobId, bytes32 resultHash, string resultURI)',
   'function raiseDispute(uint256 jobId, bytes32 evidenceHash)',
+  'function raiseDispute(uint256 jobId, string reason)',
 ];
 const stakeAbi = ['function depositStake(uint8 role, uint256 amount)'];
 const validationAbi = [
@@ -89,8 +90,11 @@ async function validate(jobId, hash, subdomain, proof, approve, salt) {
 }
 
 async function dispute(jobId, evidence) {
-  const evidenceHash = ethers.id(evidence);
-  await registry.raiseDispute(jobId, evidenceHash);
+  if (evidence.startsWith('0x') && evidence.length === 66) {
+    await registry.raiseDispute(jobId, evidence);
+    return;
+  }
+  await registry.raiseDispute(jobId, evidence);
 }
 
 async function attest(name, role, delegate) {
