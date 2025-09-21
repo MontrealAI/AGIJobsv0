@@ -1,5 +1,11 @@
+const fs = require('fs');
+const path = require('path');
+
 const Deployer = artifacts.require('Deployer');
-const { loadEnsConfig } = require('../scripts/config');
+const TestAGIALPHA = artifacts.require(
+  'contracts/mocks/TestAGIALPHA.sol:TestAGIALPHA'
+);
+const { loadEnsConfig, loadTokenConfig } = require('../scripts/config');
 
 /**
  * Truffle migration for deploying the full AGIJobs v2 stack on Ethereum
@@ -26,6 +32,50 @@ module.exports = async function (deployer, network, accounts) {
   const withTax = !process.env.NO_TAX;
   const feePct = process.env.FEE_PCT ? parseInt(process.env.FEE_PCT) : 5;
   const burnPct = process.env.BURN_PCT ? parseInt(process.env.BURN_PCT) : 5;
+
+  let mockToken;
+  if (network === 'sepolia') {
+    const decimals = process.env.AGIALPHA_MOCK_DECIMALS
+      ? parseInt(process.env.AGIALPHA_MOCK_DECIMALS, 10)
+      : 18;
+    if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
+      throw new Error('AGIALPHA_MOCK_DECIMALS must be an integer between 0 and 255');
+    }
+    const supplyTokens = process.env.AGIALPHA_MOCK_SUPPLY || '1000000';
+    const initialSupply = (
+      BigInt(supplyTokens) * BigInt(10) ** BigInt(decimals)
+    ).toString();
+
+    await deployer.deploy(
+      TestAGIALPHA,
+      'AGI ALPHA',
+      'AGIALPHA',
+      decimals,
+      governance,
+      initialSupply
+    );
+    mockToken = await TestAGIALPHA.deployed();
+
+    const {
+      path: tokenConfigPath,
+      config: tokenConfig,
+    } = loadTokenConfig({ network });
+    const updatedConfig = {
+      ...tokenConfig,
+      address: mockToken.address,
+      decimals,
+    };
+    fs.writeFileSync(
+      tokenConfigPath,
+      `${JSON.stringify(updatedConfig, null, 2)}\n`
+    );
+    console.log(
+      `Deployed TestAGIALPHA to ${mockToken.address} and updated ${path.relative(
+        process.cwd(),
+        tokenConfigPath
+      )}`
+    );
+  }
 
   await deployer.deploy(Deployer);
   const instance = await Deployer.deployed();
