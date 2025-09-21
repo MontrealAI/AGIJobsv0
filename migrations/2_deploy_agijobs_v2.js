@@ -39,12 +39,13 @@ module.exports = async function (deployer, network, accounts) {
       ? parseInt(process.env.AGIALPHA_MOCK_DECIMALS, 10)
       : 18;
     if (!Number.isInteger(decimals) || decimals < 0 || decimals > 255) {
-      throw new Error('AGIALPHA_MOCK_DECIMALS must be an integer between 0 and 255');
+      throw new Error(
+        'AGIALPHA_MOCK_DECIMALS must be an integer between 0 and 255'
+      );
     }
     const supplyTokens = process.env.AGIALPHA_MOCK_SUPPLY || '1000000';
-    const initialSupply = (
-      BigInt(supplyTokens) * BigInt(10) ** BigInt(decimals)
-    ).toString();
+    const decimalsFactor = 10n ** BigInt(decimals);
+    const initialSupply = (BigInt(supplyTokens) * decimalsFactor).toString();
 
     await deployer.deploy(
       TestAGIALPHA,
@@ -56,24 +57,21 @@ module.exports = async function (deployer, network, accounts) {
     );
     mockToken = await TestAGIALPHA.deployed();
 
-    const {
-      path: tokenConfigPath,
-      config: tokenConfig,
-    } = loadTokenConfig({ network });
+    const { path: tokenConfigPath, config: tokenConfig } = loadTokenConfig({
+      network,
+    });
     const updatedConfig = {
       ...tokenConfig,
       address: mockToken.address,
       decimals,
     };
+    const relativePath = path.relative(process.cwd(), tokenConfigPath);
     fs.writeFileSync(
       tokenConfigPath,
       `${JSON.stringify(updatedConfig, null, 2)}\n`
     );
     console.log(
-      `Deployed TestAGIALPHA to ${mockToken.address} and updated ${path.relative(
-        process.cwd(),
-        tokenConfigPath
-      )}`
+      `Deployed TestAGIALPHA to ${mockToken.address} and updated ${relativePath}`
     );
   }
 
