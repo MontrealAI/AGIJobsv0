@@ -84,8 +84,14 @@ describe('ValidationModule V2', function () {
   }
 
   async function select(jobId, entropy = 0) {
-    await validation.selectValidators(jobId, entropy);
-    await ethers.provider.send('evm_mine', []);
+    await validation.connect(v1).selectValidators(jobId, entropy);
+    const selectionTarget = await validation.selectionBlock(jobId);
+    await validation.connect(v2).selectValidators(jobId, entropy + 1);
+
+    while (BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget) {
+      await ethers.provider.send('evm_mine', []);
+    }
+
     return validation.connect(v1).selectValidators(jobId, 0);
   }
 
@@ -98,8 +104,14 @@ describe('ValidationModule V2', function () {
     await ethers.provider.send('hardhat_impersonateAccount', [addr]);
     const registry = await ethers.getSigner(addr);
     await validation.connect(registry).start(jobId, entropy);
+    const selectionTarget = await validation.selectionBlock(jobId);
+    await validation.connect(v1).selectValidators(jobId, entropy + 1);
     await ethers.provider.send('hardhat_stopImpersonatingAccount', [addr]);
-    await ethers.provider.send('evm_mine', []);
+
+    while (BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget) {
+      await ethers.provider.send('evm_mine', []);
+    }
+
     return validation.connect(v1).selectValidators(jobId, 0);
   }
 
@@ -181,8 +193,14 @@ describe('ValidationModule V2', function () {
       .connect(owner)
       .setValidatorPool([v1.address, v2.address, v3.address]);
 
-    await unconfigured.selectValidators(1, 0);
-    await ethers.provider.send('evm_mine', []);
+    await unconfigured.connect(v1).selectValidators(1, 0);
+    const selectionTarget = await unconfigured.selectionBlock(1);
+    await unconfigured.connect(v2).selectValidators(1, 1);
+
+    while (BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget) {
+      await ethers.provider.send('evm_mine', []);
+    }
+
     await expect(
       unconfigured.connect(v1).selectValidators(1, 0)
     ).to.be.revertedWithCustomError(unconfigured, 'StakeManagerNotSet');
@@ -209,6 +227,36 @@ describe('ValidationModule V2', function () {
       (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
     );
     expect(event.args[1].length).to.equal(3);
+  });
+
+  it('ignores entropy submitted after the selection block is mined', async () => {
+    const jobId = 1;
+    await validation.connect(v1).selectValidators(jobId, 123);
+    const selectionTarget = await validation.selectionBlock(jobId);
+
+    await validation.connect(v2).selectValidators(jobId, 456);
+
+    while (BigInt(await ethers.provider.getBlockNumber()) <= selectionTarget) {
+      await ethers.provider.send('evm_mine', []);
+    }
+
+    const beforeCount = await validation.entropyContributorCount(jobId);
+    const expected = await validation
+      .connect(v3)
+      .selectValidators.staticCall(jobId, 111);
+    const alt = await validation
+      .connect(v3)
+      .selectValidators.staticCall(jobId, 999);
+    expect(alt).to.deep.equal(expected);
+
+    const tx = await validation.connect(v3).selectValidators(jobId, 789);
+    const receipt = await tx.wait();
+    expect(await validation.entropyContributorCount(jobId)).to.equal(beforeCount);
+
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
+    );
+    expect(event.args[1].length).to.equal(expected.length);
   });
 
   it('rejects zero stake manager address', async () => {

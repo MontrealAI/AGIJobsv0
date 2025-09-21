@@ -33,7 +33,6 @@ error InvalidRevealWindow();
 error InvalidPercentage();
 error InvalidApprovals();
 error ValidatorsAlreadySelected();
-error AwaitBlockhash();
 error InsufficientValidators();
 error StakeManagerNotSet();
 error OnlyJobRegistry();
@@ -153,8 +152,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
     mapping(uint256 => mapping(address => bool)) private _validatorLookup;
     mapping(uint256 => uint256) public jobNonce;
     // Aggregated entropy contributed by job parties prior to final selection.
-    // Each call to `selectValidators` before the target block XORs a
-    // caller-supplied value (mixed with the caller address) into this pool.
+    // Each call to `selectValidators` while the target block has not yet been
+    // mined XORs a caller-supplied value (mixed with the caller address) into
+    // this pool.
     mapping(uint256 => uint256) public pendingEntropy;
     // Block number whose hash will be used to finalize committee selection.
     mapping(uint256 => uint256) public selectionBlock;
@@ -714,8 +714,9 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         // Before the target block is mined, allow additional parties to
         // contribute entropy. Each contribution is mixed into the pool via XOR.
         uint256 round = entropyRound[jobId];
+        uint256 targetBlock = selectionBlock[jobId];
 
-        if (block.number <= selectionBlock[jobId]) {
+        if (block.number <= targetBlock) {
             pendingEntropy[jobId] ^= uint256(
                 keccak256(abi.encodePacked(msg.sender, entropy))
             );
@@ -729,16 +730,6 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
 
         // Finalization path using the stored entropy and future blockhash.
-        if (block.number <= selectionBlock[jobId]) revert AwaitBlockhash();
-        if (!entropyContributed[jobId][round][msg.sender]) {
-            pendingEntropy[jobId] ^= uint256(
-                keccak256(abi.encodePacked(msg.sender, entropy))
-            );
-            entropyContributed[jobId][round][msg.sender] = true;
-            unchecked {
-                entropyContributorCount[jobId] += 1;
-            }
-        }
         if (entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS) {
             round += 1;
             entropyRound[jobId] = round;
@@ -751,7 +742,7 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
             emit SelectionReset(jobId);
             return selected;
         }
-        bytes32 bhash = blockhash(selectionBlock[jobId]);
+        bytes32 bhash = blockhash(targetBlock);
         if (bhash == bytes32(0)) {
             round += 1;
             entropyRound[jobId] = round;
