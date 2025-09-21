@@ -10,7 +10,7 @@
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts,.tsx",
     "pretest": "npx tsc scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
-    "wire:verify": "npx truffle exec scripts/verify-wiring.js",
+    "wire:verify": "node scripts/run-wire-verify.js",
     "verify:wiring": "npm run wire:verify",
     "test": "npx hardhat test",
     "gateway": "npm run build:gateway && node agent-gateway/dist/index.js",
@@ -30,6 +30,7 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "6.1.0",
     "@openzeppelin/contracts": "^5.4.0",
+    "@truffle/hdwallet-provider": "^2.1.15",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.12",
     "@types/ws": "^8.5.10",
