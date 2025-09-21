@@ -5,7 +5,11 @@
 # of successful reveals. The fuzzing campaign is configured in assertion
 # mode so that Echidna stops immediately on counterexamples.
 testMode: assertion
-contract: CommitRevealEchidnaHarness
 corpusDir: echidna/corpus/commit-reveal
 seed: 1
-maxTestCaseRetries: 3
+
+# Force crytic-compile to use the bundled solc compiler so the Echidna
+# container does not require Foundry's `forge` binary.
+cryticArgs:
+  - --compile-force-framework
+  - solc
