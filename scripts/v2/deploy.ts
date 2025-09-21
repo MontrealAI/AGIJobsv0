@@ -1,17 +1,8 @@
-import { ethers, run } from 'hardhat';
+import { ethers, run, network } from 'hardhat';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
-
-// Mainnet ENS and NameWrapper configuration
-// ENS registry: 0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e
-// NameWrapper: 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401
-// agent.agi.eth node: 0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d
-// club.agi.eth node: 0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16
-const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-const NAME_WRAPPER = '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401';
-const AGENT_ROOT_NODE = ethers.namehash('agent.agi.eth');
-const CLUB_ROOT_NODE = ethers.namehash('club.agi.eth');
+import { loadEnsConfig } from '../config';
 
 // rudimentary CLI flag parser
 function parseArgs() {
@@ -51,6 +42,17 @@ async function main() {
   const governance =
     typeof args.governance === 'string' ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
+
+  const {
+    config: ensConfig,
+  } = loadEnsConfig({ network: network.name, chainId: network.config?.chainId });
+  const roots = ensConfig.roots || {};
+  const agentRootNode = roots.agent?.node;
+  const clubRootNode = roots.club?.node;
+  if (!ensConfig.registry || !agentRootNode || !clubRootNode) {
+    throw new Error('ENS configuration must include registry and agent/club root nodes');
+  }
+  const nameWrapperAddress = ensConfig.nameWrapper || ethers.ZeroAddress;
 
   const token = await ethers.getContractAt(
     ['function decimals() view returns (uint8)'],
@@ -140,12 +142,20 @@ async function main() {
     ethers.ZeroHash
   );
   await identity.waitForDeployment();
-  await identity.configureMainnet();
+  await identity.setENS(ensConfig.registry);
+  if (nameWrapperAddress !== ethers.ZeroAddress) {
+    await identity.setNameWrapper(nameWrapperAddress);
+  }
+  await identity.setAgentRootNode(agentRootNode);
+  await identity.setClubRootNode(clubRootNode);
 
   const Attestation = await ethers.getContractFactory(
     'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
   );
-  const attestation = await Attestation.deploy(ENS_REGISTRY, NAME_WRAPPER);
+  const attestation = await Attestation.deploy(
+    ensConfig.registry,
+    nameWrapperAddress
+  );
   await attestation.waitForDeployment();
   await identity.setAttestationRegistry(await attestation.getAddress());
   await registry
@@ -263,8 +273,8 @@ async function main() {
       await feePool.getAddress(),
       await tax.getAddress(),
       await identity.getAddress(),
-      CLUB_ROOT_NODE,
-      AGENT_ROOT_NODE,
+      clubRootNode,
+      agentRootNode,
       ethers.ZeroHash,
       ethers.ZeroHash,
       []
@@ -439,7 +449,7 @@ async function main() {
     moderator,
     governance,
   ]);
-  await verify(await attestation.getAddress(), [ENS_REGISTRY, NAME_WRAPPER]);
+  await verify(await attestation.getAddress(), [ensConfig.registry, nameWrapperAddress]);
   await verify(await identity.getAddress(), [
     ethers.ZeroAddress,
     ethers.ZeroAddress,

@@ -8,6 +8,7 @@ cache/
 # Ignore built scripts
 scripts/**/*.js
 !scripts/constants.js
+!scripts/config/index.js
 
 build/
 lib/

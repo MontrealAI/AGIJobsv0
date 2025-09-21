@@ -1,0 +1,31 @@
+{
+  "registry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+  "nameWrapper": "0x0635513f179D50A207757E05759CbD106d7dFcE8",
+  "reverseRegistrar": "0x4F382928805ba0e23B30cFB75fC9E848e82DFD47",
+  "roots": {
+    "agent": {
+      "label": "agent",
+      "name": "agent.agi.eth",
+      "labelhash": "0x314c1dfbbccab41a44cf9fefc21e632eb8e01bc0346d4414114d4c3dd0e9fdf1",
+      "node": "0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d",
+      "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "agent"
+    },
+    "club": {
+      "label": "club",
+      "name": "club.agi.eth",
+      "labelhash": "0xe1e1884f7473923c2fed5da5f5489310ba525a82307b50b511b8963ee9b20113",
+      "node": "0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16",
+      "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "validator"
+    },
+    "business": {
+      "label": "a",
+      "name": "a.agi.eth",
+      "labelhash": "0x3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb",
+      "node": "0x5b8fd43b9dbddd6cba9f03bbff224df24e6e592c54456f8e46c4a47433c44403",
+      "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "business"
+    }
+  }
+}

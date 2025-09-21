@@ -5,14 +5,13 @@ exports.AGIALPHA_NAME =
   exports.AGIALPHA_DECIMALS =
   exports.AGIALPHA =
     void 0;
-var fs = require('fs');
-var path = require('path');
-var configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
-var _a = JSON.parse(fs.readFileSync(configPath, 'utf8')),
-  address = _a.address,
-  decimals = _a.decimals,
-  symbol = _a.symbol,
-  name = _a.name;
+var loadConfig = require('./config').loadTokenConfig;
+var _a = loadConfig(),
+  _b = _a.config,
+  address = _b.address,
+  decimals = _b.decimals,
+  symbol = _b.symbol,
+  name = _b.name;
 // Canonical $AGIALPHA token address on Ethereum mainnet.
 exports.AGIALPHA = address;
 // Standard decimals for $AGIALPHA.

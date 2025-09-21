@@ -1,4 +1,5 @@
 const Deployer = artifacts.require('Deployer');
+const { loadEnsConfig } = require('../scripts/config');
 
 /**
  * Truffle migration for deploying the full AGIJobs v2 stack on Ethereum
@@ -29,17 +30,29 @@ module.exports = async function (deployer, network, accounts) {
   await deployer.deploy(Deployer);
   const instance = await Deployer.deployed();
 
-  // Mainnet ENS registry, NameWrapper and AGIJobs subdomain roots
+  const {
+    config: { registry, nameWrapper, roots = {} },
+  } = loadEnsConfig({ network });
+
+  const zeroHash = '0x' + '0'.repeat(64);
+  const agentRoot = roots.agent || {};
+  const clubRoot = roots.club || {};
+
   const ids = {
-    ens: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
-    nameWrapper: '0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',
-    clubRootNode:
-      '0x39eb848f88bdfb0a6371096249dd451f56859dfe2cd3ddeab1e26d5bb68ede16',
-    agentRootNode:
-      '0x2c9c6189b2e92da4d0407e9deb38ff6870729ad063af7e8576cb7b7898c88e2d',
-    validatorMerkleRoot: '0x' + '0'.repeat(64),
-    agentMerkleRoot: '0x' + '0'.repeat(64),
+    ens: registry,
+    nameWrapper: nameWrapper || '0x0000000000000000000000000000000000000000',
+    clubRootNode: clubRoot.node,
+    agentRootNode: agentRoot.node,
+    validatorMerkleRoot: clubRoot.merkleRoot || zeroHash,
+    agentMerkleRoot: agentRoot.merkleRoot || zeroHash,
   };
+
+  if (!ids.ens) {
+    throw new Error('ENS registry address missing from configuration');
+  }
+  if (!ids.clubRootNode || !ids.agentRootNode) {
+    throw new Error('ENS root nodes missing from configuration');
+  }
 
   const econ = {
     feePct,

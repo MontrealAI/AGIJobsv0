@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ethers } from 'ethers';
+import { loadTokenConfig } from './config';
 
 type TokenConfig = {
   address: string;
@@ -66,14 +67,30 @@ function assertName(value: string, label: string): string {
   return trimmed;
 }
 
-const configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as TokenConfig;
+let networkArg: string | undefined;
+for (let i = 0; i < process.argv.length; i++) {
+  const arg = process.argv[i];
+  if (arg === '--network' && i + 1 < process.argv.length) {
+    networkArg = process.argv[i + 1];
+    break;
+  }
+  if (arg.startsWith('--network=')) {
+    networkArg = arg.slice('--network='.length);
+    break;
+  }
+}
+
+const { config, path: configPath } = loadTokenConfig({ network: networkArg });
 
 const address = assertAddress(config.address, 'AGIALPHA address');
 const decimals = assertDecimals(config.decimals);
-const burnAddress = assertAddress(config.burnAddress, 'burn address', {
-  allowZero: true,
-});
+const burnAddress = assertAddress(
+  config.burnAddress ?? ethers.ZeroAddress,
+  'burn address',
+  {
+    allowZero: true,
+  }
+);
 const symbol = assertSymbol(config.symbol, 'AGIALPHA symbol');
 const name = assertName(config.name, 'AGIALPHA name');
 

@@ -1,15 +1,13 @@
 import { JsonRpcProvider, Interface } from 'ethers';
-import * as fs from 'fs';
-import * as path from 'path';
+import { loadTokenConfig } from './config';
 
 async function main() {
   const rpcUrl = process.env.RPC_URL || 'http://localhost:8545';
   const provider = new JsonRpcProvider(rpcUrl);
 
-  const configPath = path.join(__dirname, '..', 'config', 'agialpha.json');
-  const { address } = JSON.parse(fs.readFileSync(configPath, 'utf8')) as {
-    address: string;
-  };
+  const {
+    config: { address },
+  } = loadTokenConfig();
 
   const iface = new Interface(['function burn(uint256)']);
   const data = iface.encodeFunctionData('burn', [0n]);

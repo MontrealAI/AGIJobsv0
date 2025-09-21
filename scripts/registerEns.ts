@@ -2,11 +2,9 @@ import { ethers } from 'ethers';
 import { config as dotenvConfig } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { loadEnsConfig } from './config';
 
 dotenvConfig();
-
-const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
-const REVERSE_REGISTRAR = '0x084b1c3C81545d370f3634392De611CaaBFf8148';
 
 const REGISTRY_ABI = [
   'function resolver(bytes32 node) view returns (address)',
@@ -30,25 +28,13 @@ type ParentConfig = {
   role: 'agent' | 'validator';
 };
 
-const PARENT_CONFIG: Record<EnsSpace, ParentConfig> = {
-  agent: {
-    node: ethers.namehash('agent.agi.eth'),
-    name: 'agent.agi.eth',
-    role: 'agent',
-  },
-  club: {
-    node: ethers.namehash('club.agi.eth'),
-    name: 'club.agi.eth',
-    role: 'validator',
-  },
-};
-
 interface CliOptions {
   label: string;
   space: EnsSpace;
   rpcUrl: string;
   ownerKey: string;
   force: boolean;
+  network?: string;
 }
 
 function normalizeLabel(input: string): string {
@@ -67,6 +53,32 @@ function normalizeLabel(input: string): string {
   return trimmed;
 }
 
+function normaliseConfigAddress(
+  value: string | undefined,
+  label: string,
+  { allowZero = false }: { allowZero?: boolean } = {}
+): string {
+  if (value === undefined || value === null) {
+    if (allowZero) {
+      return ethers.ZeroAddress;
+    }
+    throw new Error(`${label} is not configured`);
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    if (allowZero) {
+      return ethers.ZeroAddress;
+    }
+    throw new Error(`${label} is not configured`);
+  }
+  const prefixed = trimmed.startsWith('0x') ? trimmed : `0x${trimmed}`;
+  const address = ethers.getAddress(prefixed);
+  if (!allowZero && address === ethers.ZeroAddress) {
+    throw new Error(`${label} cannot be the zero address`);
+  }
+  return address;
+}
+
 function parseArgs(): CliOptions {
   const argv = process.argv.slice(2);
   if (argv.length === 0) {
@@ -80,7 +92,9 @@ function parseArgs(): CliOptions {
   let rpcUrl = process.env.RPC_URL || 'http://localhost:8545';
   let ownerKey = process.env.ENS_OWNER_KEY || '';
   let force = false;
-  for (const arg of rest) {
+  let network = process.env.ENS_NETWORK || process.env.NETWORK;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i];
     if (arg === '--club' || arg === '--validator') {
       space = 'club';
       continue;
@@ -110,6 +124,18 @@ function parseArgs(): CliOptions {
       force = true;
       continue;
     }
+    if (arg === '--network') {
+      const next = rest[i + 1];
+      if (next && !next.startsWith('--')) {
+        network = next;
+        i += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith('--network=')) {
+      network = arg.slice('--network='.length);
+      continue;
+    }
   }
   if (!ownerKey) {
     throw new Error(
@@ -122,19 +148,50 @@ function parseArgs(): CliOptions {
     rpcUrl,
     ownerKey,
     force,
+    network,
+  };
+}
+
+function buildParentMap(roots: Record<string, any>): Record<EnsSpace, ParentConfig> {
+  const agentRoot = roots.agent;
+  const clubRoot = roots.club;
+  if (!agentRoot || !agentRoot.node || !agentRoot.name) {
+    throw new Error('ENS configuration is missing the agent.agi.eth root');
+  }
+  if (!clubRoot || !clubRoot.node || !clubRoot.name) {
+    throw new Error('ENS configuration is missing the club.agi.eth root');
+  }
+  const normaliseNode = (node: string) => ethers.hexlify(ethers.getBytes(node));
+  return {
+    agent: {
+      node: normaliseNode(agentRoot.node),
+      name: String(agentRoot.name).toLowerCase(),
+      role: 'agent',
+    },
+    club: {
+      node: normaliseNode(clubRoot.node),
+      name: String(clubRoot.name).toLowerCase(),
+      role: 'validator',
+    },
   };
 }
 
 async function registerEns(
   options: CliOptions,
-  provider: ethers.JsonRpcProvider
+  provider: ethers.JsonRpcProvider,
+  registryAddress: string,
+  reverseRegistrar: string,
+  parents: Record<EnsSpace, ParentConfig>
 ): Promise<{
   ensName: string;
   wallet: ethers.Wallet;
   resolver: string;
 }> {
-  const parent = PARENT_CONFIG[options.space];
-  const registry = new ethers.Contract(ENS_REGISTRY, REGISTRY_ABI, provider);
+  const parent = parents[options.space];
+  if (!parent) {
+    throw new Error(`ENS parent configuration missing for ${options.space}`);
+  }
+  const registry = new ethers.Contract(registryAddress, REGISTRY_ABI, provider);
 
   const rootWallet = new ethers.Wallet(options.ownerKey, provider);
   const signerRegistry = registry.connect(rootWallet);
@@ -165,7 +222,7 @@ async function registerEns(
   console.log(`setAddr tx: ${addrTx.hash}`);
   await addrTx.wait();
 
-  const reverse = new ethers.Contract(REVERSE_REGISTRAR, REVERSE_ABI, wallet);
+  const reverse = new ethers.Contract(reverseRegistrar, REVERSE_ABI, wallet);
   const reverseTx = await reverse.setName(ensName);
   console.log(`setName tx: ${reverseTx.hash}`);
   await reverseTx.wait();
@@ -190,7 +247,8 @@ function persistIdentity(
   wallet: ethers.Wallet,
   resolver: string,
   chainId: bigint,
-  networkName?: string
+  networkName: string | undefined,
+  parents: Record<EnsSpace, ParentConfig>
 ): string {
   const outputDir = path.resolve(__dirname, '../config/agents');
   fs.mkdirSync(outputDir, { recursive: true });
@@ -200,13 +258,14 @@ function persistIdentity(
       `Identity file already exists at ${filePath}. Use --force to overwrite.`
     );
   }
+  const parent = parents[options.space];
   const record = {
     label: options.label,
     ens: ensName,
     address: wallet.address,
     privateKey: wallet.privateKey,
-    role: PARENT_CONFIG[options.space].role,
-    parent: PARENT_CONFIG[options.space].name,
+    role: parent.role,
+    parent: parent.name,
     resolver,
     chainId: Number(chainId),
     network: networkName ?? 'unknown',
@@ -219,15 +278,34 @@ function persistIdentity(
 async function main(): Promise<void> {
   const options = parseArgs();
   const provider = new ethers.JsonRpcProvider(options.rpcUrl);
+  const {
+    config: ensConfig,
+  } = loadEnsConfig({ network: options.network });
+  const parents = buildParentMap(ensConfig.roots || {});
+  const registryAddress = normaliseConfigAddress(
+    process.env.ENS_REGISTRY_ADDRESS ?? ensConfig.registry,
+    'ENS registry'
+  );
+  const reverseRegistrar = normaliseConfigAddress(
+    process.env.ENS_REVERSE_REGISTRAR_ADDRESS ?? ensConfig.reverseRegistrar,
+    'ENS reverse registrar'
+  );
   const network = await provider.getNetwork();
-  const { ensName, wallet, resolver } = await registerEns(options, provider);
+  const { ensName, wallet, resolver } = await registerEns(
+    options,
+    provider,
+    registryAddress,
+    reverseRegistrar,
+    parents
+  );
   const filePath = persistIdentity(
     options,
     ensName,
     wallet,
     resolver,
     network.chainId,
-    network.name
+    network.name,
+    parents
   );
   console.log(`Saved identity file to ${filePath}`);
 }
