@@ -35,6 +35,15 @@ module.exports = {
         ? [process.env.MAINNET_PRIVATE_KEY]
         : [],
     },
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL || '',
+      accounts: process.env.SEPOLIA_PRIVATE_KEY
+        ? [process.env.SEPOLIA_PRIVATE_KEY]
+        : process.env.TESTNET_PRIVATE_KEY
+        ? [process.env.TESTNET_PRIVATE_KEY]
+        : [],
+      chainId: 11155111,
+    },
   },
   mocha: {
     require: ['./test/setup.js'],
