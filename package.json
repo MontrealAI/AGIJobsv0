@@ -10,7 +10,8 @@
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts,.tsx",
     "pretest": "npx tsc scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
-    "verify:wiring": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-wiring.ts",
+    "wire:verify": "npx truffle exec scripts/verify-wiring.js",
+    "verify:wiring": "npm run wire:verify",
     "test": "npx hardhat test",
     "gateway": "npm run build:gateway && node agent-gateway/dist/index.js",
     "build:gateway": "tsc -p agent-gateway/tsconfig.json",
@@ -19,8 +20,8 @@
     "identity:register": "npx ts-node scripts/identity/manageEnsKeys.ts",
     "namehash:mainnet": "node scripts/compute-namehash.js deployment-config/mainnet.json",
     "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json",
-    "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset",
-    "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset"
+    "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset && TRUFFLE_NETWORK=mainnet npm run wire:verify",
+    "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset && TRUFFLE_NETWORK=sepolia npm run wire:verify"
   },
   "keywords": [],
   "author": "",

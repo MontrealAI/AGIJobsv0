@@ -72,8 +72,9 @@ The script prints module addresses and verifies source on Etherscan.
 10. **Verify source code** – publish each contract on the block explorer using
     `npx hardhat verify --network <network> <address> <constructor args>` or the
     explorer UI so others can audit and interact with it.
-11. **Verify wiring** – run `npm run verify:wiring` to confirm module getters
-    match the addresses recorded in `docs/deployment-addresses.json`.
+11. **Verify wiring** – run `npm run wire:verify -- --network <network>` to confirm module
+    getters match the addresses recorded in `config/agialpha.<network>.json` and
+    `config/ens.<network>.json`.
 12. **Configure ENS and Merkle roots** using `setAgentRootNode`, `setClubRootNode`,
     `setAgentMerkleRoot` and `setValidatorMerkleRoot` on `IdentityRegistry`.
 13. **Governance setup** – deploy a multisig wallet or timelock controller

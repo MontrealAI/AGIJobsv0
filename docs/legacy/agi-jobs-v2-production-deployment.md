@@ -56,7 +56,8 @@ certificate, feePool, new address[](0))`.
 2. Call `setJobRegistry(jobRegistry)` on `StakeManager`, `ValidationModule` and
    `CertificateNFT`.
 3. Authorise `PlatformIncentives` on `PlatformRegistry` and `JobRouter`.
-4. Verify wiring with the provided `scripts/verify-wiring.ts` script.
+4. Verify wiring with the provided `scripts/verify-wiring.js` script
+   (`npm run wire:verify -- --network <network>`).
 
 ## Post-Deployment Configuration
 

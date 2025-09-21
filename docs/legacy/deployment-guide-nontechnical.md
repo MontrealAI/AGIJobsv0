@@ -134,7 +134,7 @@ Source: [`contracts/v2/JobRegistry.sol`](../contracts/v2/JobRegistry.sol)
   3.  **Validate** – Validators stake (role `1`) then call `ValidationModule.commitValidation` followed later by `ValidationModule.revealValidation`.
   4.  **Finalize** – After the reveal window anyone may call `ValidationModule.finalize`; `StakeManager` pays the Agent, sends protocol fees to `FeePool` and burns the configured percentage.
   5.  **Dispute** – To test disputes, raise one via `JobRegistry.raiseDispute` and resolve it through `DisputeModule.resolve` (or a moderator/committee if configured).
-- **Final verification.** Confirm each module reports the correct addresses via their `Read` interfaces or run `npm run verify:wiring` to check automatically.
+- **Final verification.** Confirm each module reports the correct addresses via their `Read` interfaces or run `npm run wire:verify -- --network <network>` to check automatically against `config/agialpha.<network>.json` and `config/ens.<network>.json`.
 - **Record keeping.** Log all contract addresses and parameter changes, updating [`deployment-addresses.json`](deployment-addresses.json) and noting changes in commit messages or the changelog whenever any parameter or address changes. Maintain an admin log of post-deployment actions for auditability. For scripted deployments see [`deployment-addresses.md`](deployment-addresses.md).
 - **Legal compliance.** Consult professionals to ensure operations comply with local regulations.
 
