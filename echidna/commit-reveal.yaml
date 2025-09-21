@@ -1,0 +1,15 @@
+# Echidna configuration for the CommitReveal harness.
+#
+# The harness exercises the commit/reveal flow and maintains an invariant
+# ensuring that the internal nonce accounting never drifts from the number
+# of successful reveals. The fuzzing campaign is configured in assertion
+# mode so that Echidna stops immediately on counterexamples.
+testMode: assertion
+corpusDir: echidna/corpus/commit-reveal
+seed: 1
+
+# Force crytic-compile to use the bundled solc compiler so the Echidna
+# container does not require Foundry's `forge` binary.
+cryticArgs:
+  - --compile-force-framework
+  - solc
