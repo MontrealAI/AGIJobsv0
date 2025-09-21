@@ -179,7 +179,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     /// @param epoch The epoch identifier to settle.
     /// @param data Batches of signed attestations and paid cost data.
     function settleEpoch(uint256 epoch, EpochData calldata data) external nonReentrant
-    /// #if_succeeds {:msg "budget >= distributed"} budget >= distributed;
+    /// #if_succeeds {:msg "budget >= redistributed"} budget >= redistributed;
     {
         require(settlers[msg.sender], "not settler");
         require(!epochSettled[epoch], "settled");
@@ -224,8 +224,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         if (budget > 0) {
             if (treasury == address(0)) revert TreasuryNotSet();
             token.mint(address(feePool), budget);
-            token.mint(treasury, budget);
-            minted = budget * 2;
+            minted = budget;
         }
 
         // compute weights for each role
@@ -234,20 +233,19 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         (uint256[] memory wO, uint256 sumO) = _weights(operators, Role.Operator);
         (uint256[] memory wE, uint256 sumE) = _weights(employers, Role.Employer);
 
-        uint256 distributed;
-        distributed += _distribute(Role.Agent, budget, agents, wA, sumA);
-        distributed += _distribute(Role.Validator, budget, validators, wV, sumV);
-        distributed += _distribute(Role.Operator, budget, operators, wO, sumO);
-        distributed += _distribute(Role.Employer, budget, employers, wE, sumE);
+        uint256 redistributed;
+        redistributed += _distribute(Role.Agent, budget, agents, wA, sumA);
+        redistributed += _distribute(Role.Validator, budget, validators, wV, sumV);
+        redistributed += _distribute(Role.Operator, budget, operators, wO, sumO);
+        redistributed += _distribute(Role.Employer, budget, employers, wE, sumE);
 
-        uint256 dust = budget > distributed ? budget - distributed : 0;
+        uint256 dust = budget > redistributed ? budget - redistributed : 0;
         if (dust > 0) {
             feePool.reward(treasury, dust);
-            distributed += dust;
         }
-        uint256 ratio = budget > 0 ? (distributed * uint256(WAD)) / budget : 0;
+        uint256 ratio = budget > 0 ? (redistributed * uint256(WAD)) / budget : 0;
         epochSettled[epoch] = true;
-        emit RewardBudget(epoch, minted, dust, distributed, ratio);
+        emit RewardBudget(epoch, minted, dust, redistributed, ratio);
         emit EpochSettled(epoch, budget, dH, dS, Tsys, dust);
     }
 
