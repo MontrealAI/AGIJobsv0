@@ -16,3 +16,4 @@ scripts/**/*.js
 build/
 lib/
 agent-gateway/dist/
+examples/agentic/runtime-agentic.jsonl

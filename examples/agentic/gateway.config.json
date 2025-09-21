@@ -1,0 +1,20 @@
+{
+  "network": "mainnet",
+  "rpcUrl": "https://mainnet.infura.io/v3/<key>",
+  "jobRegistry": "<JOB_REGISTRY_ADDRESS>",
+  "validationModule": "<VALIDATION_MODULE_ADDRESS>",
+  "stakeManager": "<STAKE_MANAGER_ADDRESS>",
+  "feePool": "<FEE_POOL_ADDRESS>",
+  "ens": {
+    "agentRoot": "agent.agi.eth",
+    "clubRoot": "club.agi.eth",
+    "alphaClubRoot": "alpha.club.agi.eth",
+    "acceptAlphaRoot": true
+  },
+  "token": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+  "policy": {
+    "minRewardWei": "10000000000000000",
+    "maxStakeWei": "100000000000000000000",
+    "skipCategories": ["spam", "illegal"]
+  }
+}

@@ -1,348 +1,282 @@
 #!/usr/bin/env node
-/**
- * Validator helper for AGI Jobs v2 commit/reveal flow.
- *
- * Usage:
- *   node examples/agentic/v2-validator.js commit <jobId> <approve> [salt] [subdomain]
- *   node examples/agentic/v2-validator.js reveal <jobId> [approve] [salt] [burnTxHash] [subdomain]
- *
- * Environment variables:
- *   RPC_URL                      JSON-RPC endpoint (defaults to http://localhost:8545)
- *   PRIVATE_KEY                  Validator private key (required)
- *   VALIDATION_MODULE_ADDRESS    ValidationModule address (or VALIDATION_MODULE)
- *   JOB_REGISTRY_ADDRESS         JobRegistry address (or JOB_REGISTRY)
- *   VALIDATOR_SUBDOMAIN          ENS/identity label (falls back to ENS_LABEL)
- *   MERKLE_PROOF                 JSON array or comma-separated proof for commit/reveal
- *   COMMIT_PROOF                 Optional override for commit proof
- *   REVEAL_PROOF                 Optional override for reveal proof
- *   BURN_TX_HASH                 Optional burn receipt hash override (0x...)
- */
+'use strict';
 
-const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
+const namehash = require('eth-ens-namehash');
+require('dotenv').config();
 
-function usage() {
-  console.error(
-    `Usage: node v2-validator.js <commit|reveal> <jobId> [options]\n\n` +
-      'Examples:\n' +
-      '  node v2-validator.js commit 42 true\n' +
-      '  node v2-validator.js reveal 42\n'
+const metrics = require('./metrics');
+const { loadConfig, ensLabelFrom } = require('./v2-agent-gateway');
+
+const ZERO_HASH = ethers.ZeroHash;
+const CONFIG_PATH = process.env.GATEWAY_CONFIG
+  ? path.resolve(process.cwd(), process.env.GATEWAY_CONFIG)
+  : path.resolve(__dirname, 'gateway.config.json');
+
+function parseProvider(cfg) {
+  const fallback = cfg?.rpcUrl || process.env.RPC_URL || '';
+  const networkKey = (cfg?.network || '').toLowerCase();
+  if (networkKey === 'mainnet' && process.env.RPC_MAINNET) {
+    return new ethers.JsonRpcProvider(process.env.RPC_MAINNET);
+  }
+  if (networkKey === 'sepolia' && process.env.RPC_SEPOLIA) {
+    return new ethers.JsonRpcProvider(process.env.RPC_SEPOLIA);
+  }
+  if (!fallback) {
+    throw new Error('RPC URL missing (set rpcUrl in config or RPC_URL env).');
+  }
+  return new ethers.JsonRpcProvider(fallback);
+}
+
+function loadWallet(provider) {
+  if (process.env.PRIVATE_KEY) {
+    return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  }
+  if (process.env.MNEMONIC) {
+    return ethers.HDNodeWallet.fromPhrase(process.env.MNEMONIC).connect(provider);
+  }
+  throw new Error('Provide PRIVATE_KEY or MNEMONIC for validator runtime.');
+}
+
+function ensureValidatorEns(ensName, cfg) {
+  if (!ensName) {
+    throw new Error('Set VALIDATOR_ENS to your validator ENS name.');
+  }
+  const normalised = namehash.normalize(ensName);
+  const allowed = new Set();
+  if (cfg?.ens?.clubRoot) {
+    allowed.add(namehash.normalize(cfg.ens.clubRoot));
+  }
+  if (cfg?.ens?.alphaClubRoot && cfg?.ens?.acceptAlphaRoot) {
+    allowed.add(namehash.normalize(cfg.ens.alphaClubRoot));
+  }
+  if (allowed.size === 0) {
+    return;
+  }
+  for (const root of allowed) {
+    if (normalised.endsWith(`.${root}`) || normalised === root) {
+      return;
+    }
+  }
+  throw new Error(
+    `Validator ENS ${normalised} is not inside allowed club roots (${Array.from(allowed).join(', ')})`
   );
 }
 
-const ACTION = (process.argv[2] || '').toLowerCase();
-if (!['commit', 'reveal'].includes(ACTION)) {
-  usage();
-  process.exit(1);
-}
-
-const jobIdArg = process.argv[3];
-if (!jobIdArg) {
-  console.error('Missing jobId argument.');
-  usage();
-  process.exit(1);
-}
-
-let jobId;
-try {
-  jobId = ethers.getBigInt(jobIdArg);
-} catch (err) {
-  console.error('Invalid job identifier:', err.message || err);
-  process.exit(1);
-}
-
-const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
-const VALIDATION_ADDRESS =
-  process.env.VALIDATION_MODULE_ADDRESS || process.env.VALIDATION_MODULE || '';
-const JOB_REGISTRY_ADDRESS =
-  process.env.JOB_REGISTRY_ADDRESS || process.env.JOB_REGISTRY || '';
-
-if (!PRIVATE_KEY) {
-  console.error('PRIVATE_KEY is required.');
-  process.exit(1);
-}
-if (!VALIDATION_ADDRESS) {
-  console.error('VALIDATION_MODULE_ADDRESS (or VALIDATION_MODULE) is required.');
-  process.exit(1);
-}
-if (!ethers.isAddress(VALIDATION_ADDRESS)) {
-  console.error('Validation module address must be a valid Ethereum address.');
-  process.exit(1);
-}
-if (!JOB_REGISTRY_ADDRESS) {
-  console.error('JOB_REGISTRY_ADDRESS (or JOB_REGISTRY) is required.');
-  process.exit(1);
-}
-if (!ethers.isAddress(JOB_REGISTRY_ADDRESS)) {
-  console.error('Job registry address must be a valid Ethereum address.');
-  process.exit(1);
-}
-
-const provider = new ethers.JsonRpcProvider(RPC_URL);
-const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-
-const DEFAULT_SUBDOMAIN =
-  (process.env.VALIDATOR_SUBDOMAIN || process.env.ENS_LABEL || '').trim();
-
-const validationAbi = [
-  'function jobNonce(uint256 jobId) view returns (uint256)',
-  'function commitValidation(uint256,bytes32,string,bytes32[])',
-  'function revealValidation(uint256,bool,bytes32,bytes32,string,bytes32[])',
-];
-
-const registryAbi = [
-  'event BurnReceiptSubmitted(uint256 indexed jobId, bytes32 burnTxHash, uint256 amount, uint256 blockNumber)',
-  'function getSpecHash(uint256 jobId) view returns (bytes32)',
-  'function burnEvidenceStatus(uint256 jobId) view returns (bool burnRequired, bool burnSatisfied)',
-  'function hasBurnReceipt(uint256 jobId, bytes32 burnTxHash) view returns (bool)',
-];
-
-const validation = new ethers.Contract(VALIDATION_ADDRESS, validationAbi, wallet);
-const registry = new ethers.Contract(JOB_REGISTRY_ADDRESS, registryAbi, provider);
-
-const STORAGE_ROOT = path.resolve(__dirname, '../../storage/validation');
-
-function ensureStorage() {
-  if (!fs.existsSync(STORAGE_ROOT)) {
-    fs.mkdirSync(STORAGE_ROOT, { recursive: true, mode: 0o700 });
+function normalizeProofEntry(entry) {
+  if (entry === null || typeof entry === 'undefined') {
+    return null;
   }
-}
-
-function storagePath(job, address) {
-  return path.join(STORAGE_ROOT, `${job.toString()}-${address.toLowerCase()}.json`);
-}
-
-function loadRecord(job, address) {
+  const text = String(entry).trim();
+  if (!text || text === '0x' || text === '[]') {
+    return null;
+  }
   try {
-    const raw = fs.readFileSync(storagePath(job, address), 'utf8');
-    return JSON.parse(raw);
+    const value = BigInt(text);
+    return ethers.hexlify(ethers.zeroPadValue(ethers.toBeArray(value), 32));
   } catch (err) {
-    if (err && err.code !== 'ENOENT') {
-      console.warn('Failed to read validation record:', err.message || err);
+    try {
+      const bytes = ethers.getBytes(text);
+      return ethers.hexlify(ethers.zeroPadValue(bytes, 32));
+    } catch {
+      return null;
     }
-    return {};
   }
-}
-
-function saveRecord(job, address, update) {
-  ensureStorage();
-  const existing = loadRecord(job, address);
-  const record = { ...existing, ...update };
-  const file = storagePath(job, address);
-  fs.writeFileSync(file, JSON.stringify(record, null, 2), { mode: 0o600 });
-  try {
-    fs.chmodSync(file, 0o600);
-  } catch (err) {
-    console.warn('chmod failed for validation record:', err);
-  }
-  return record;
-}
-
-function isBytes32(value) {
-  return typeof value === 'string' && /^0x?[0-9a-fA-F]{64}$/.test(value.trim());
-}
-
-function normaliseBytes32(value) {
-  if (!value) {
-    throw new Error('Expected 32-byte hex value.');
-  }
-  const hex = value.startsWith('0x') ? value : `0x${value}`;
-  const bytes = ethers.getBytes(hex);
-  if (bytes.length !== 32) {
-    throw new Error('Value must be 32 bytes.');
-  }
-  return ethers.hexlify(bytes);
-}
-
-function parseApprove(value) {
-  if (typeof value === 'undefined') return undefined;
-  const text = String(value).trim().toLowerCase();
-  if (['true', '1', 'yes', 'y'].includes(text)) return true;
-  if (['false', '0', 'no', 'n'].includes(text)) return false;
-  throw new Error(`Unable to parse approve flag from "${value}"`);
 }
 
 function parseProof(raw) {
   if (!raw) return [];
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
-    if (!trimmed || trimmed === '[]' || trimmed === '0x') return [];
-    try {
-      const parsed = JSON.parse(trimmed);
-      return parseProof(parsed);
-    } catch (err) {
-      const parts = trimmed.split(/[,\s]+/).filter(Boolean);
-      if (parts.length === 0) return [];
-      return parts.map((part) => normaliseBytes32(part));
+  const normalised = [];
+  const push = (value) => {
+    const normalisedValue = normalizeProofEntry(value);
+    if (normalisedValue) {
+      normalised.push(normalisedValue);
     }
-  }
+  };
   if (Array.isArray(raw)) {
-    return raw
-      .map((entry) => {
-        if (entry === null || typeof entry === 'undefined') return null;
-        const value = String(entry).trim();
-        if (!value || value === '0x') return null;
-        return normaliseBytes32(value);
-      })
-      .filter((value) => value !== null);
+    raw.forEach(push);
+    return normalised;
   }
-  return [normaliseBytes32(String(raw))];
-}
-
-const commitProof = parseProof(
-  process.env.COMMIT_PROOF || process.env.MERKLE_PROOF || process.env.VALIDATOR_PROOF
-);
-const revealProof = (function () {
-  const override =
-    process.env.REVEAL_PROOF || process.env.VALIDATOR_REVEAL_PROOF || process.env.VALIDATION_PROOF;
-  return override ? parseProof(override) : commitProof;
-})();
-
-async function resolveBurnTxHash(job, override) {
-  if (override && override !== '0x') {
-    return normaliseBytes32(override);
+  const text = String(raw).trim();
+  if (!text || text === '0x' || text === '[]') {
+    return [];
   }
-  if (process.env.BURN_TX_HASH && process.env.BURN_TX_HASH !== '0x') {
-    return normaliseBytes32(process.env.BURN_TX_HASH);
-  }
-  const filter = registry.filters.BurnReceiptSubmitted(job);
-  const events = await registry.queryFilter(filter, 0, 'latest');
-  if (events.length === 0) {
-    return ethers.ZeroHash;
-  }
-  const last = events[events.length - 1];
-  const hash = last.args?.burnTxHash || ethers.ZeroHash;
   try {
-    return normaliseBytes32(hash);
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      parsed.forEach(push);
+      return normalised;
+    }
+    push(parsed);
+    return normalised;
   } catch (err) {
-    console.warn('Unexpected burn receipt hash from registry:', hash, err);
-    return ethers.ZeroHash;
+    const stripped = text.replace(/^[\[{\s]+|[\]}\s]+$/g, '');
+    if (!stripped) {
+      return [];
+    }
+    stripped.split(/[\s,]+/).forEach(push);
+    return normalised;
   }
 }
 
-async function commit(job, approveFlag, saltArg, subdomainArg) {
-  if (typeof approveFlag !== 'boolean') {
-    throw new Error('Approve flag required for commit action.');
+function commitHash(approve, saltHex) {
+  const salt = ethers.getBytes(saltHex);
+  if (salt.length !== 32) {
+    throw new Error('Salt must be 32 bytes.');
   }
-  const nonce = await validation.jobNonce(job);
-  const specHash = await registry.getSpecHash(job);
-  const burnTxHash = await resolveBurnTxHash(job);
-  const salt = saltArg ? normaliseBytes32(saltArg) : ethers.hexlify(ethers.randomBytes(32));
-  const subdomain = (subdomainArg || DEFAULT_SUBDOMAIN || '').trim();
-
-  const commitHash = ethers.solidityPackedKeccak256(
-    ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
-    [job, nonce, approveFlag, burnTxHash, salt, specHash]
-  );
-
-  const tx = await validation.commitValidation(job, commitHash, subdomain, commitProof);
-  await tx.wait();
-
-  const record = saveRecord(job, wallet.address, {
-    jobId: job.toString(),
-    validator: wallet.address,
-    approve: approveFlag,
-    salt,
-    burnTxHash,
-    subdomain,
-    commitHash,
-    commitTx: tx.hash,
-    committedAt: new Date().toISOString(),
-  });
-  console.log('Committed validation', tx.hash);
-  console.log('Stored record at', storagePath(job, wallet.address));
-  console.log('Record:', record);
+  return ethers.keccak256(ethers.solidityPacked(['bool', 'bytes32'], [approve, salt]));
 }
 
-async function reveal(job, approveOverride, saltArg, burnArg, subdomainArg) {
-  const record = loadRecord(job, wallet.address);
-  const approve =
-    typeof approveOverride === 'boolean'
-      ? approveOverride
-      : typeof record.approve === 'boolean'
-      ? record.approve
-      : undefined;
-  if (typeof approve !== 'boolean') {
-    throw new Error('Approve flag missing. Provide it or commit first.');
-  }
-  const saltSource = saltArg || record.salt;
-  if (!saltSource) {
-    throw new Error('Salt missing. Provide it or ensure commit record exists.');
-  }
-  const burnSource = burnArg || record.burnTxHash;
-  const salt = normaliseBytes32(saltSource);
-  const burnTxHash = burnSource ? normaliseBytes32(burnSource) : await resolveBurnTxHash(job);
-  const subdomain = (subdomainArg || record.subdomain || DEFAULT_SUBDOMAIN || '').trim();
-
-  const tx = await validation.revealValidation(
-    job,
-    approve,
-    burnTxHash,
-    salt,
-    subdomain,
-    revealProof
-  );
-  await tx.wait();
-
-  const updated = saveRecord(job, wallet.address, {
-    approve,
-    salt,
-    burnTxHash,
-    subdomain,
-    revealTx: tx.hash,
-    revealedAt: new Date().toISOString(),
-  });
-  console.log('Revealed validation', tx.hash);
-  console.log('Updated record:', updated);
+function schedule(fn, delayMs) {
+  return setTimeout(fn, Math.max(0, delayMs));
 }
 
 async function main() {
-  const approveArg = process.argv[4];
-  try {
-    if (ACTION === 'commit') {
-      const approve = parseApprove(approveArg);
-      if (approve === undefined) {
-        throw new Error('Approve flag required for commit (true/false).');
-      }
-      const remaining = process.argv.slice(5);
-      let saltArg;
-      let subdomainArg;
-      if (remaining.length > 0 && isBytes32(remaining[0])) {
-        saltArg = remaining.shift();
-      }
-      if (remaining.length > 0) {
-        subdomainArg = remaining.shift();
-      }
-      await commit(jobId, approve, saltArg, subdomainArg);
-    } else {
-      const remaining = process.argv.slice(4);
-      let approveOverride;
-      if (remaining.length > 0) {
-        const candidate = String(remaining[0]).trim().toLowerCase();
-        if (['true', '1', 'yes', 'y', 'false', '0', 'no', 'n'].includes(candidate)) {
-          approveOverride = parseApprove(remaining.shift());
-        }
-      }
-      let saltArg;
-      let burnArg;
-      if (remaining.length > 0 && isBytes32(remaining[0])) {
-        saltArg = remaining.shift();
-      }
-      if (remaining.length > 0 && isBytes32(remaining[0])) {
-        burnArg = remaining.shift();
-      }
-      const subdomainArg = remaining.length > 0 ? remaining.shift() : undefined;
-      await reveal(jobId, approveOverride, saltArg, burnArg, subdomainArg);
-    }
-  } catch (err) {
-    console.error(err.message || err);
-    process.exit(1);
+  const cfg = loadConfig(CONFIG_PATH);
+  const provider = parseProvider(cfg);
+  const wallet = loadWallet(provider);
+
+  const validationAddress = cfg.validationModule || cfg.validationModuleAddress;
+  if (!validationAddress || !ethers.isAddress(validationAddress)) {
+    throw new Error('Configure validationModule address in gateway.config.json');
   }
+
+  const validatorEns = process.env.VALIDATOR_ENS || process.env.ENS_LABEL || '';
+  ensureValidatorEns(validatorEns, cfg);
+  const validatorLabel = ensLabelFrom(validatorEns);
+
+  const commitProof = parseProof(
+    process.env.COMMIT_PROOF || process.env.VALIDATOR_PROOF || process.env.MERKLE_PROOF
+  );
+  const revealProof = parseProof(
+    process.env.REVEAL_PROOF || process.env.VALIDATOR_REVEAL_PROOF || process.env.VALIDATION_PROOF
+  );
+  const burnHash = (process.env.BURN_TX_HASH || '').trim();
+  const defaultApprove =
+    typeof process.env.VALIDATOR_DECISION === 'string'
+      ? ['1', 'true', 'yes', 'approve'].includes(
+          process.env.VALIDATOR_DECISION.trim().toLowerCase()
+        )
+      : true;
+
+  const validationAbi = [
+    'event ValidatorsSelected(uint256 indexed jobId,address[] validators)',
+    'event ValidationCommitted(uint256 indexed jobId,address indexed validator,bytes32 commitHash,string subdomain)',
+    'event ValidationResult(uint256 indexed jobId,bool success)',
+    'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
+    'function revealValidation(uint256 jobId,bool approve,bytes32 burnTxHash,bytes32 salt,string subdomain,bytes32[] proof)',
+    'function revealDeadline(uint256 jobId) view returns (uint256)'
+  ];
+
+  const moduleReader = new ethers.Contract(validationAddress, validationAbi, provider);
+  const moduleWriter = moduleReader.connect(wallet);
+
+  const network = await provider.getNetwork();
+  console.log(
+    `[validator] network=${network.name} chainId=${network.chainId} wallet=${wallet.address} ens=${validatorEns}`
+  );
+
+  const commits = new Map();
+
+  function clearJob(jobId) {
+    const key = jobId.toString();
+    const state = commits.get(key);
+    if (state && state.timer) {
+      clearTimeout(state.timer);
+    }
+    commits.delete(key);
+  }
+
+  moduleReader.on('ValidatorsSelected', async (jobId, validators) => {
+    const started = Date.now();
+    try {
+      const normalized = Array.isArray(validators)
+        ? validators.map((addr) => addr.toLowerCase())
+        : [];
+      if (!normalized.includes(wallet.address.toLowerCase())) {
+        return;
+      }
+      const approve = defaultApprove;
+      const salt = ethers.hexlify(ethers.randomBytes(32));
+      const hash = commitHash(approve, salt);
+      console.log(`[validator] committing job=${jobId.toString()} hash=${hash}`);
+      const tx = await moduleWriter.commitValidation(jobId, hash, validatorLabel, commitProof);
+      await tx.wait(2);
+      metrics.logEnergy('commit', {
+        jobId: jobId.toString(),
+        millis: Date.now() - started,
+      });
+
+      let revealDelayMs = 10_000;
+      try {
+        const deadline = await moduleReader.revealDeadline(jobId);
+        const deadlineMs = Number(deadline) * 1000;
+        const buffer = 5_000;
+        const wait = deadlineMs - Date.now() - buffer;
+        if (Number.isFinite(wait)) {
+          revealDelayMs = Math.max(1_000, wait);
+        }
+      } catch (deadlineErr) {
+        console.warn('[validator] revealDeadline lookup failed:', deadlineErr.message || deadlineErr);
+      }
+
+      const timer = schedule(async () => {
+        const revealStarted = Date.now();
+        try {
+          const burn = burnHash
+            ? ethers.hexlify(ethers.zeroPadValue(ethers.getBytes(burnHash), 32))
+            : ZERO_HASH;
+          const txReveal = await moduleWriter.revealValidation(
+            jobId,
+            approve,
+            burn,
+            salt,
+            validatorLabel,
+            revealProof
+          );
+          await txReveal.wait(2);
+          metrics.logEnergy('reveal', {
+            jobId: jobId.toString(),
+            millis: Date.now() - revealStarted,
+          });
+          clearJob(jobId);
+        } catch (revealErr) {
+          const message = revealErr?.error?.message || revealErr?.message || String(revealErr);
+          console.error('[validator] reveal error:', message);
+          metrics.logQuarantine('reveal', message, { jobId: jobId.toString() });
+        }
+      }, revealDelayMs);
+
+      commits.set(jobId.toString(), { approve, salt, timer });
+    } catch (err) {
+      const message = err?.error?.message || err?.message || String(err);
+      console.error('[validator] commit error:', message);
+      metrics.logQuarantine('commit', message, { jobId: jobId.toString() });
+    }
+  });
+
+  moduleReader.on('ValidationResult', (jobId, success) => {
+    console.log(`[validator] validation result job=${jobId.toString()} success=${success}`);
+    clearJob(jobId);
+  });
+
+  metrics.logTelemetry('validator.started', {
+    chainId: Number(network.chainId),
+    wallet: wallet.address,
+  });
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('[validator] fatal:', err.message || err);
+    metrics.logQuarantine('fatal', err.message || String(err));
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  commitHash,
+  main,
+  parseProof,
+};

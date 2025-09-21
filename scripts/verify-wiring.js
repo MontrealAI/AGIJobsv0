@@ -2,9 +2,16 @@
 
 const { loadTokenConfig, loadEnsConfig } = require('./config');
 const { ethers } = require('ethers');
+const { AGIALPHA } = require('./constants');
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
 const ZERO_HASH = ethers.ZeroHash;
+
+function eqAddress(a, b) {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
 
 function parseNetworkArg() {
   const argv = process.argv.slice(2);
@@ -287,13 +294,14 @@ module.exports = async function main(callback) {
     const governance = tokenConfig.governance || tokenConfig.owners || {};
     const allowedOwners = new Set();
 
-    const govSafe = normaliseAddress(governance.govSafe, { allowZero: false });
+    const govSafe = normaliseAddress(governance.govSafe, { allowZero: false }) ||
+      normaliseAddress(process.env.GOV_SAFE, { allowZero: false });
     if (govSafe) {
       allowedOwners.add(govSafe.toLowerCase());
     }
-    const timelock = normaliseAddress(governance.timelock, {
-      allowZero: false,
-    });
+    const timelock =
+      normaliseAddress(governance.timelock, { allowZero: false }) ||
+      normaliseAddress(process.env.TIMELOCK_ADDR, { allowZero: false });
     if (timelock) {
       allowedOwners.add(timelock.toLowerCase());
     }
@@ -321,6 +329,7 @@ module.exports = async function main(callback) {
       systemPause: artifacts.require('SystemPause'),
     };
 
+    const stakeManagerAddress = resolveModuleAddress(modules, 'stakeManager');
     const moduleList = [
       {
         key: 'systemPause',
@@ -368,7 +377,7 @@ module.exports = async function main(callback) {
         key: 'stakeManager',
         displayName: 'StakeManager',
         artifact: moduleArtifacts.stakeManager,
-        address: resolveModuleAddress(modules, 'stakeManager'),
+        address: stakeManagerAddress,
         allowedOwners,
         checks: [
           {
@@ -675,6 +684,25 @@ module.exports = async function main(callback) {
         allowedOwners: ownerSet,
         web3Instance,
       });
+    }
+
+    if (stakeManagerAddress && web3Instance) {
+      try {
+        const stakeManager = await moduleArtifacts.stakeManager.at(stakeManagerAddress);
+        const stakeToken = await stakeManager.token();
+        const chainId = await web3Instance.eth.getChainId();
+        if (Number(chainId) === 1) {
+          if (!eqAddress(stakeToken, AGIALPHA)) {
+            logFail(
+              `StakeManager.token mismatch on mainnet (expected ${AGIALPHA}, got ${stakeToken})`
+            );
+          } else {
+            logOk(`StakeManager.token matches canonical AGIALPHA ${AGIALPHA}`);
+          }
+        }
+      } catch (err) {
+        logFail(`Failed to verify StakeManager token: ${err.message || err}`);
+      }
     }
 
     if (failureCount > 0) {

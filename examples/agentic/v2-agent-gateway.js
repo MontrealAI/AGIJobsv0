@@ -1,498 +1,276 @@
 #!/usr/bin/env node
-/**
- * Agent gateway helper for AGI Jobs v2.
- *
- * The script drives the on-chain lifecycle for an agent wallet:
- *  - checks the job record via `jobs(uint256)`
- *  - optionally tops up stake using the StakeManager
- *  - applies for the job using `applyForJob(uint256,string,bytes32[])`
- *  - submits results with `submit(uint256,bytes32,string,string,bytes32[])`
- *  - finalizes the job through `finalize(uint256)`
- *
- * Usage examples:
- *   RPC_URL=https://sepolia.infura.io/v3/KEY \
- *   JOB_REGISTRY_ADDRESS=0xRegistry \
- *   STAKE_MANAGER_ADDRESS=0xStake \
- *   PRIVATE_KEY=0xabc... \
- *   ENS_LABEL=my-agent \
- *   MERKLE_PROOF='["0xproof1","0xproof2"]' \
- *   node examples/agentic/v2-agent-gateway.js status 42
- *
- *   RESULT_HASH=0xdeadbeef... \
- *   RESULT_URI=https://ipfs.io/ipfs/... \
- *   node examples/agentic/v2-agent-gateway.js submit 42
- *
- *   node examples/agentic/v2-agent-gateway.js finalize 42
- *
- * Provide `STAKE_RECIPIENT` to deposit stake for another address. When omitted
- * the script assumes the signing wallet is also the agent.
- */
+'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { ethers } = require('ethers');
+const namehash = require('eth-ens-namehash');
+require('dotenv').config();
 
-const ACTION = (process.argv[2] || '').toLowerCase();
-const SUPPORTED_ACTIONS = new Set(['status', 'apply', 'submit', 'finalize']);
+const metrics = require('./metrics');
+const { AGIALPHA } = require('../../scripts/constants');
 
-function usage() {
-  console.error(`Usage: node v2-agent-gateway.js <action> <jobId>
-
-Actions:
-  status    Show on-chain job details and staking state
-  apply     Ensure stake then call applyForJob
-  submit    Submit results for the job
-  finalize  Finalize the job (employer only)
-`);
-}
-
-if (!SUPPORTED_ACTIONS.has(ACTION)) {
-  usage();
-  process.exit(1);
-}
-
-const jobIdInput = process.argv[3];
-if (!jobIdInput) {
-  console.error('Missing job identifier argument.');
-  usage();
-  process.exit(1);
-}
-
-let jobId;
-try {
-  jobId = ethers.getBigInt(jobIdInput);
-} catch (err) {
-  console.error('Invalid job identifier:', err.message);
-  process.exit(1);
-}
-
-const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
-const JOB_REGISTRY_ADDRESS =
-  process.env.JOB_REGISTRY_ADDRESS || process.env.JOB_REGISTRY || '';
-const STAKE_MANAGER_ADDRESS = process.env.STAKE_MANAGER_ADDRESS || '';
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
-const ENS_LABEL = process.env.ENS_LABEL || process.env.AGENT_ENS_LABEL || '';
-const APPLY_PROOF = parseProof(
-  process.env.MERKLE_PROOF || process.env.APPLY_PROOF || process.env.AGENT_PROOF
-);
-const SUBMIT_LABEL = process.env.SUBMIT_LABEL || ENS_LABEL;
-const SUBMIT_PROOF = (function () {
-  const override =
-    process.env.SUBMIT_PROOF ||
-    process.env.SUBMIT_MERKLE_PROOF ||
-    process.env.RESULT_PROOF ||
-    '';
-  return override ? parseProof(override) : APPLY_PROOF;
-})();
-const RESULT_HASH = process.env.RESULT_HASH || process.env.SUBMIT_HASH || '';
-const RESULT_URI = process.env.RESULT_URI || process.env.SUBMIT_URI || '';
-const STAKE_RECIPIENT = (process.env.STAKE_RECIPIENT || '').trim();
-
-const needsSigner = ACTION !== 'status';
-if (!JOB_REGISTRY_ADDRESS) {
-  console.error('Set JOB_REGISTRY_ADDRESS (or JOB_REGISTRY).');
-  process.exit(1);
-}
-if (!ethers.isAddress(JOB_REGISTRY_ADDRESS)) {
-  console.error('JOB_REGISTRY_ADDRESS must be a valid Ethereum address.');
-  process.exit(1);
-}
-if (needsSigner && !PRIVATE_KEY) {
-  console.error('Set PRIVATE_KEY for signing transactions.');
-  process.exit(1);
-}
-if (needsSigner && ACTION !== 'finalize' && !STAKE_MANAGER_ADDRESS) {
-  console.error(
-    'Set STAKE_MANAGER_ADDRESS to manage staking for apply/submit actions.'
-  );
-  process.exit(1);
-}
-if (STAKE_RECIPIENT && !ethers.isAddress(STAKE_RECIPIENT)) {
-  console.error('STAKE_RECIPIENT must be a valid address when provided.');
-  process.exit(1);
-}
-if (STAKE_MANAGER_ADDRESS && !ethers.isAddress(STAKE_MANAGER_ADDRESS)) {
-  console.error('STAKE_MANAGER_ADDRESS must be a valid address.');
-  process.exit(1);
-}
-
-const provider = new ethers.JsonRpcProvider(RPC_URL);
-const wallet = PRIVATE_KEY ? new ethers.Wallet(PRIVATE_KEY, provider) : null;
-const agentAddress =
-  STAKE_RECIPIENT || (wallet ? wallet.address : ethers.ZeroAddress);
-
-const JOB_REGISTRY_ABI = [
-  'function jobs(uint256 jobId) view returns (tuple(address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata))',
-  'function minAgentStake() view returns (uint96)',
-  'function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)',
-  'function submit(uint256 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes32[] proof)',
-  'function finalize(uint256 jobId)',
-];
-const STAKE_MANAGER_ABI = [
-  'function stakeOf(address user,uint8 role) view returns (uint256)',
-  'function depositStake(uint8 role,uint256 amount)',
-  'function depositStakeFor(address user,uint8 role,uint256 amount)',
-  'function minStake() view returns (uint256)',
-  'function token() view returns (address)',
-];
-const ERC20_ABI = [
-  'function allowance(address owner,address spender) view returns (uint256)',
-  'function approve(address spender,uint256 amount) returns (bool)',
-  'function balanceOf(address owner) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)',
-];
-
-const registry = new ethers.Contract(
-  JOB_REGISTRY_ADDRESS,
-  JOB_REGISTRY_ABI,
-  provider
-);
-const registryWithSigner = wallet ? registry.connect(wallet) : null;
-const stakeManager =
-  STAKE_MANAGER_ADDRESS !== ''
-    ? new ethers.Contract(STAKE_MANAGER_ADDRESS, STAKE_MANAGER_ABI, provider)
-    : null;
-const stakeManagerWithSigner =
-  stakeManager && wallet ? stakeManager.connect(wallet) : null;
+const CONFIG_PATH = process.env.GATEWAY_CONFIG
+  ? path.resolve(process.cwd(), process.env.GATEWAY_CONFIG)
+  : path.resolve(__dirname, 'gateway.config.json');
 
 const AGENT_ROLE = 0;
-const STATE_NAMES = [
-  'None',
-  'Created',
-  'Applied',
-  'Submitted',
-  'Completed',
-  'Disputed',
-  'Finalized',
-  'Cancelled',
-];
-const STATE_MASK = 0x7n;
-const SUCCESS_MASK = 0x8n;
-const BURN_CONFIRMED_MASK = 0x10n;
-const AGENT_TYPES_MASK = 0xffn << 5n;
-const FEE_MASK = ((1n << 32n) - 1n) << 13n;
-const AGENT_PCT_MASK = ((1n << 32n) - 1n) << 45n;
-const DEADLINE_MASK = ((1n << 64n) - 1n) << 77n;
-const ASSIGNED_AT_MASK = ((1n << 64n) - 1n) << 141n;
+const ZERO_BYTES = '0x';
 
-let tokenInfoPromise = null;
-async function loadTokenInfo() {
-  if (!stakeManager) return null;
-  if (!tokenInfoPromise) {
-    tokenInfoPromise = (async () => {
-      const tokenAddress = await stakeManager.token();
-      const reader = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
-      const [symbol, decimals] = await Promise.all([
-        reader.symbol().catch(() => 'TOKEN'),
-        reader.decimals().catch(() => 18),
-      ]);
-      return {
-        address: tokenAddress,
-        symbol,
-        decimals: Number(decimals) || 18,
-        reader,
-      };
-    })();
-  }
-  return tokenInfoPromise;
+function loadConfig(configPath = CONFIG_PATH) {
+  const file = fs.readFileSync(configPath, 'utf8');
+  const parsed = JSON.parse(file);
+  return parsed;
 }
 
-function parseProof(raw) {
-  if (!raw) return [];
-  const trimmed = raw.trim();
-  if (!trimmed || trimmed === '0x' || trimmed === '0X') {
-    return [];
+function bigIntFrom(value, fallback = 0n) {
+  if (value === undefined || value === null || value === '') {
+    return fallback;
   }
-  let entries;
-  if (trimmed.startsWith('[')) {
-    try {
-      entries = JSON.parse(trimmed);
-    } catch (err) {
-      throw new Error(`Failed to parse proof JSON: ${err.message}`);
-    }
-    if (!Array.isArray(entries)) {
-      throw new Error('Merkle proof JSON must decode to an array.');
-    }
-  } else {
-    entries = trimmed.split(',');
-  }
-  return entries
-    .map((value) => {
-      const v = String(value).trim();
-      if (!ethers.isHexString(v)) {
-        throw new Error(`Merkle proof entries must be hex strings: ${v}`);
-      }
-      const normalized = ethers.hexlify(v);
-      if (ethers.dataLength(normalized) !== 32) {
-        throw new Error(
-          `Merkle proof entries must be 32 bytes; received length ${
-            ethers.dataLength(normalized) || 0
-          }`
-        );
-      }
-      return normalized;
-    })
-    .filter((v) => v.length > 2);
-}
-
-function decodeJob(raw) {
-  const metadata = raw.packedMetadata;
-  const stateIndex = Number(metadata & STATE_MASK);
-  const success = (metadata & SUCCESS_MASK) !== 0n;
-  const burnConfirmed = (metadata & BURN_CONFIRMED_MASK) !== 0n;
-  const agentTypes = Number((metadata & AGENT_TYPES_MASK) >> 5n);
-  const feePct = Number((metadata & FEE_MASK) >> 13n);
-  const agentPct = Number((metadata & AGENT_PCT_MASK) >> 45n);
-  const deadline = Number((metadata & DEADLINE_MASK) >> 77n);
-  const assignedAt = Number((metadata & ASSIGNED_AT_MASK) >> 141n);
-  return {
-    employer: raw.employer,
-    agent: raw.agent,
-    reward: raw.reward,
-    stake: raw.stake,
-    burnReceiptAmount: raw.burnReceiptAmount,
-    uriHash: raw.uriHash,
-    resultHash: raw.resultHash,
-    specHash: raw.specHash,
-    metadata: {
-      state: STATE_NAMES[stateIndex] || `Unknown(${stateIndex})`,
-      stateIndex,
-      success,
-      burnConfirmed,
-      agentTypes,
-      feePct,
-      agentPct,
-      deadline,
-      assignedAt,
-    },
-  };
-}
-
-async function fetchJob(jobIdValue) {
-  const job = await registry.jobs(jobIdValue);
-  return decodeJob(job);
-}
-
-async function formatTokenAmount(value) {
-  const info = await loadTokenInfo();
-  if (!info) {
-    return `${ethers.formatUnits(value, 18)} tokens`;
-  }
-  return `${ethers.formatUnits(value, info.decimals)} ${info.symbol}`;
-}
-
-async function ensureStake(target, recipient) {
-  if (!stakeManager || !stakeManagerWithSigner || !wallet) {
-    throw new Error('Stake manager signer is not configured.');
-  }
-  if (target === 0n) {
-    console.log('No stake required for this job.');
-    return;
-  }
-  const current = await stakeManager.stakeOf(recipient, AGENT_ROLE);
-  if (current >= target) {
-    console.log(
-      `Stake requirement satisfied (${await formatTokenAmount(
-        current
-      )} available).`
-    );
-    return;
-  }
-  const shortfall = target - current;
-  const info = await loadTokenInfo();
-  const tokenWithSigner = new ethers.Contract(info.address, ERC20_ABI, wallet);
-  const allowance = await tokenWithSigner.allowance(
-    wallet.address,
-    STAKE_MANAGER_ADDRESS
-  );
-  if (allowance < shortfall) {
-    console.log(
-      `Approving ${await formatTokenAmount(shortfall)} for StakeManager...`
-    );
-    const approveTx = await tokenWithSigner.approve(
-      STAKE_MANAGER_ADDRESS,
-      shortfall
-    );
-    console.log('approve tx hash:', approveTx.hash);
-    await approveTx.wait();
-  }
-  const depositMethod =
-    recipient.toLowerCase() === wallet.address.toLowerCase()
-      ? stakeManagerWithSigner.depositStake(AGENT_ROLE, shortfall)
-      : stakeManagerWithSigner.depositStakeFor(
-          recipient,
-          AGENT_ROLE,
-          shortfall
-        );
-  console.log(
-    `Depositing ${await formatTokenAmount(shortfall)} for ${recipient}...`
-  );
-  const depositTx = await depositMethod;
-  console.log('deposit tx hash:', depositTx.hash);
-  await depositTx.wait();
-}
-
-function describeTimestamp(seconds) {
-  if (!seconds) return 'not set';
-  if (!Number.isFinite(seconds)) return `${seconds} (raw)`;
-  const millis = seconds * 1000;
-  if (!Number.isFinite(millis)) return `${seconds} (raw)`;
-  return new Date(millis).toISOString();
-}
-
-async function showStatus(job) {
-  console.log('Job ID:', jobId.toString());
-  console.log('Employer:', job.employer);
-  console.log('Agent:', job.agent);
-  console.log('Reward:', await formatTokenAmount(job.reward));
-  console.log('Stake requirement (job):', await formatTokenAmount(job.stake));
-  console.log('Spec hash:', job.specHash);
-  console.log('Result hash:', job.resultHash);
-  console.log('Metadata state:', job.metadata.state);
-  console.log('State index:', job.metadata.stateIndex);
-  console.log('Success flag:', job.metadata.success);
-  console.log('Burn confirmed:', job.metadata.burnConfirmed);
-  console.log('Agent types bitmask:', job.metadata.agentTypes);
-  console.log('Fee pct:', job.metadata.feePct);
-  console.log('Agent pct:', job.metadata.agentPct);
-  console.log('Deadline:', describeTimestamp(job.metadata.deadline));
-  console.log('Assigned at:', describeTimestamp(job.metadata.assignedAt));
-  if (stakeManager) {
-    const [minStake, currentStake] = await Promise.all([
-      stakeManager.minStake(),
-      stakeManager.stakeOf(agentAddress, AGENT_ROLE),
-    ]);
-    console.log('StakeManager.minStake:', await formatTokenAmount(minStake));
-    console.log(
-      `Stake available for ${agentAddress}:`,
-      await formatTokenAmount(currentStake)
-    );
-  }
-}
-
-async function computeStakeTarget(job) {
-  let minAgentStake = 0n;
   try {
-    const value = await registry.minAgentStake();
-    minAgentStake = ethers.getBigInt(value);
+    return typeof value === 'bigint' ? value : BigInt(value);
   } catch (err) {
-    console.warn('Unable to read minAgentStake:', err.message);
+    throw new Error(`Unable to parse bigint from value ${value}`);
   }
-  let minStake = 0n;
-  if (stakeManager) {
-    try {
-      minStake = ethers.getBigInt(await stakeManager.minStake());
-    } catch (err) {
-      console.warn('Unable to read StakeManager.minStake:', err.message);
+}
+
+function ensLabelFrom(full) {
+  if (!full) return '';
+  const normalised = namehash.normalize(full);
+  const [label] = normalised.split('.');
+  return label || '';
+}
+
+function ensureEnsMembership(ensName, cfg) {
+  if (!ensName) {
+    throw new Error('ENS name missing for agent runtime (set AGENT_ENS).');
+  }
+  const normalised = namehash.normalize(ensName);
+  const allowed = new Set();
+  if (cfg?.ens?.agentRoot) {
+    allowed.add(namehash.normalize(cfg.ens.agentRoot));
+  }
+  if (cfg?.ens?.alphaClubRoot && cfg?.ens?.acceptAlphaRoot) {
+    allowed.add(namehash.normalize(cfg.ens.alphaClubRoot));
+  }
+  if (cfg?.ens?.clubRoot && cfg?.ens?.acceptAlphaRoot) {
+    allowed.add(namehash.normalize(cfg.ens.clubRoot));
+  }
+  if (allowed.size === 0) {
+    return;
+  }
+  for (const root of allowed) {
+    if (normalised.endsWith(`.${root}`) || normalised === root) {
+      return;
     }
   }
-  const requirements = [job.stake, minAgentStake, minStake];
-  return requirements.reduce((max, value) => (value > max ? value : max), 0n);
-}
-
-async function handleApply(job) {
-  if (!registryWithSigner || !wallet) {
-    throw new Error('Signer is required to apply.');
-  }
-  if (job.agent !== ethers.ZeroAddress) {
-    throw new Error(`Job already has an agent assigned: ${job.agent}`);
-  }
-  const stakeTarget = await computeStakeTarget(job);
-  console.log('Stake target:', await formatTokenAmount(stakeTarget));
-  await ensureStake(stakeTarget, agentAddress);
-  console.log('Submitting applyForJob transaction...');
-  const tx = await registryWithSigner.applyForJob(
-    jobId,
-    ENS_LABEL,
-    APPLY_PROOF
+  throw new Error(
+    `ENS name ${normalised} not under allowed roots (${Array.from(allowed).join(', ')})`
   );
-  console.log('apply tx hash:', tx.hash);
-  await tx.wait();
-  console.log('Application confirmed.');
 }
 
-async function handleSubmit(job) {
-  if (!registryWithSigner || !wallet) {
-    throw new Error('Signer is required to submit results.');
+function shouldApply(job, policy) {
+  const minReward = bigIntFrom(policy?.minRewardWei, 0n);
+  const maxStake = bigIntFrom(policy?.maxStakeWei, 0n);
+  if (job.reward < minReward) {
+    return false;
   }
-  if (job.agent.toLowerCase() !== wallet.address.toLowerCase()) {
-    console.warn(
-      `Warning: connected wallet ${wallet.address} is not the assigned agent ${job.agent}`
-    );
+  if (maxStake > 0n && job.requiredStake > maxStake) {
+    return false;
   }
-  if (
-    !ethers.isHexString(RESULT_HASH) ||
-    ethers.dataLength(RESULT_HASH) !== 32
-  ) {
-    throw new Error('Set RESULT_HASH to a 32-byte hex string.');
+  if (policy?.skipCategories?.length && job.category) {
+    const skip = policy.skipCategories.map((entry) => String(entry).toLowerCase());
+    if (skip.includes(String(job.category).toLowerCase())) {
+      return false;
+    }
   }
-  if (!RESULT_URI) {
-    console.warn('RESULT_URI is empty; submitting an empty URI string.');
-  }
-  console.log('Submitting job result...');
-  const tx = await registryWithSigner.submit(
-    jobId,
-    ethers.hexlify(RESULT_HASH),
-    RESULT_URI,
-    SUBMIT_LABEL,
-    SUBMIT_PROOF
-  );
-  console.log('submit tx hash:', tx.hash);
-  await tx.wait();
-  console.log('Submission confirmed.');
+  return true;
 }
 
-async function handleFinalize(job) {
-  if (!registryWithSigner || !wallet) {
-    throw new Error('Signer is required to finalize jobs.');
+async function ensureStake(stakeManager, wallet, required, policy) {
+  if (!required || required <= 0n) {
+    return;
   }
-  if (job.employer.toLowerCase() !== wallet.address.toLowerCase()) {
-    console.warn(
-      `Warning: wallet ${wallet.address} is not the recorded employer ${job.employer}`
-    );
+  const current = await stakeManager.stakeOf(wallet.address, AGENT_ROLE);
+  if (current >= required) {
+    return;
   }
-  console.log('Finalizing job...');
-  const tx = await registryWithSigner.finalize(jobId);
-  console.log('finalize tx hash:', tx.hash);
-  await tx.wait();
-  console.log('Finalize transaction confirmed.');
+  const delta = required - current;
+  const maxStake = bigIntFrom(policy?.maxStakeWei, 0n);
+  if (maxStake > 0n && delta > maxStake) {
+    throw new Error(`Stake delta ${delta} exceeds policy cap ${maxStake}`);
+  }
+  const tx = await stakeManager.depositStake(AGENT_ROLE, delta);
+  await tx.wait(2);
+}
+
+function parseProvider(cfg) {
+  const fallback = cfg?.rpcUrl || process.env.RPC_URL || '';
+  const networkKey = (cfg?.network || '').toLowerCase();
+  if (networkKey === 'mainnet' && process.env.RPC_MAINNET) {
+    return new ethers.JsonRpcProvider(process.env.RPC_MAINNET);
+  }
+  if (networkKey === 'sepolia' && process.env.RPC_SEPOLIA) {
+    return new ethers.JsonRpcProvider(process.env.RPC_SEPOLIA);
+  }
+  if (!fallback) {
+    throw new Error('RPC URL missing (set rpcUrl in config or RPC_URL env).');
+  }
+  return new ethers.JsonRpcProvider(fallback);
+}
+
+function loadWallet(provider) {
+  if (process.env.PRIVATE_KEY) {
+    return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  }
+  if (process.env.MNEMONIC) {
+    return ethers.HDNodeWallet.fromPhrase(process.env.MNEMONIC).connect(provider);
+  }
+  throw new Error('Provide PRIVATE_KEY or MNEMONIC in environment.');
+}
+
+function resolveAddress(label, value) {
+  if (!value || !ethers.isAddress(value)) {
+    throw new Error(`Missing or invalid address for ${label}`);
+  }
+  return value;
 }
 
 async function main() {
-  console.log('RPC URL:', RPC_URL);
-  console.log('JobRegistry:', JOB_REGISTRY_ADDRESS);
-  if (stakeManager) {
-    console.log('StakeManager:', STAKE_MANAGER_ADDRESS);
+  const cfg = loadConfig();
+  const provider = parseProvider(cfg);
+  const wallet = loadWallet(provider);
+
+  const jobRegistryAddress = resolveAddress('jobRegistry', cfg.jobRegistry || cfg.jobRegistryAddress);
+  const stakeManagerAddress = resolveAddress('stakeManager', cfg.stakeManager || cfg.stakeManagerAddress);
+
+  const jobRegistryAbi = [
+    'event JobCreated(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 reward,uint256 stake,uint256 fee,bytes32 specHash,string uri)',
+    'function jobs(uint256 jobId) view returns (tuple(address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata))',
+    'function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)',
+    'function submit(uint256 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes32[] proof)',
+    'function finalize(uint256 jobId)'
+  ];
+
+  const stakeManagerAbi = [
+    'function stakeOf(address user,uint8 role) view returns (uint256)',
+    'function depositStake(uint8 role,uint256 amount)',
+    'function token() view returns (address)'
+  ];
+
+  const jobRegistry = new ethers.Contract(jobRegistryAddress, jobRegistryAbi, provider);
+  const jobRegistryWithSigner = jobRegistry.connect(wallet);
+  const stakeManager = new ethers.Contract(stakeManagerAddress, stakeManagerAbi, wallet);
+
+  const network = await provider.getNetwork();
+  const chainId = Number(network.chainId);
+  const stakeToken = await stakeManager.token();
+  if (chainId === 1 && stakeToken.toLowerCase() !== AGIALPHA.toLowerCase()) {
+    throw new Error(
+      `StakeManager token mismatch: expected ${AGIALPHA} on mainnet, received ${stakeToken}`
+    );
   }
-  if (wallet) {
-    console.log('Signer address:', wallet.address);
+
+  const agentEns = process.env.AGENT_ENS || process.env.ENS_LABEL || '';
+  ensureEnsMembership(agentEns, cfg);
+  const agentLabel = ensLabelFrom(agentEns);
+
+  console.log(
+    `[gateway] network=${network.name} chainId=${chainId} wallet=${wallet.address} ens=${agentEns}`
+  );
+
+  const policy = cfg.policy || {};
+
+  jobRegistry.on(
+    'JobCreated',
+    async (jobId, employer, agent, reward, stake, fee, specHash, uri) => {
+      const started = Date.now();
+      try {
+        if (agent && agent !== ethers.ZeroAddress) {
+          return;
+        }
+        const job = await jobRegistry.jobs(jobId);
+        const rewardWei = BigInt(job.reward ?? reward ?? 0);
+        const requiredStake = BigInt(job.stake ?? stake ?? 0);
+        const meta = {
+          id: jobId.toString(),
+          reward: rewardWei.toString(),
+          stake: requiredStake.toString(),
+          specHash: specHash,
+          uri,
+        };
+        const jobDetails = {
+          reward: rewardWei,
+          requiredStake,
+          employer,
+          category: '',
+        };
+        if (!shouldApply(jobDetails, policy)) {
+          metrics.logTelemetry('job.skipped', meta);
+          return;
+        }
+        await ensureStake(stakeManager, wallet, requiredStake, policy);
+        console.log(
+          `[gateway] applying job=${jobId.toString()} reward=${rewardWei.toString()} stake=${requiredStake.toString()}`
+        );
+        const tx = await jobRegistryWithSigner.applyForJob(jobId, agentLabel, []);
+        await tx.wait(2);
+        metrics.logEnergy('apply', {
+          jobId: jobId.toString(),
+          millis: Date.now() - started,
+        });
+      } catch (err) {
+        const message = err?.error?.message || err?.message || String(err);
+        console.error('[gateway] JobCreated handler error:', message);
+        metrics.logQuarantine('apply', message, { jobId: jobId.toString() });
+      }
+    }
+  );
+
+  async function submit(jobId, resultHash, resultURI) {
+    const started = Date.now();
+    try {
+      if (resultHash && resultHash !== ZERO_BYTES) {
+        const submitTx = await jobRegistryWithSigner.submit(
+          jobId,
+          resultHash,
+          resultURI || '',
+          agentLabel,
+          []
+        );
+        await submitTx.wait(2);
+      }
+      const finalizeTx = await jobRegistryWithSigner.finalize(jobId);
+      await finalizeTx.wait(2);
+      metrics.logEnergy('submit', {
+        jobId: jobId.toString(),
+        millis: Date.now() - started,
+      });
+    } catch (err) {
+      const message = err?.error?.message || err?.message || String(err);
+      console.error('[gateway] submit error:', message);
+      metrics.logQuarantine('submit', message, { jobId: jobId.toString() });
+      throw err;
+    }
   }
-  const job = await fetchJob(jobId);
-  if (ACTION === 'status') {
-    await showStatus(job);
-    return;
-  }
-  switch (ACTION) {
-    case 'apply':
-      await handleApply(job);
-      break;
-    case 'submit':
-      await handleSubmit(job);
-      break;
-    case 'finalize':
-      await handleFinalize(job);
-      break;
-    default:
-      throw new Error(`Unsupported action: ${ACTION}`);
-  }
-  const updated = await fetchJob(jobId);
-  console.log('--- Updated Job State ---');
-  await showStatus(updated);
+
+  console.log('[gateway] listening for JobCreated events…');
+  metrics.logTelemetry('gateway.started', { chainId, wallet: wallet.address });
+
+  return { submit };
 }
 
-main().catch((err) => {
-  console.error('Error:', err.message || err);
-  if (err?.stack) {
-    console.error(err.stack);
-  }
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('[gateway] fatal:', err.message || err);
+    metrics.logQuarantine('fatal', err.message || String(err));
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  loadConfig,
+  ensLabelFrom,
+  shouldApply,
+  main,
+};
