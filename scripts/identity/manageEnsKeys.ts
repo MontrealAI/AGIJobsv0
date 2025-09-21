@@ -83,7 +83,9 @@ function normaliseConfigAddress(
   return address;
 }
 
-function createRoleConfig(roots: Record<string, any>): Record<Role, RoleConfig> {
+function createRoleConfig(
+  roots: Record<string, any>
+): Record<Role, RoleConfig> {
   const agentRoot = roots.agent;
   const clubRoot = roots.club;
   if (!agentRoot || !agentRoot.node || !agentRoot.name) {
@@ -92,7 +94,8 @@ function createRoleConfig(roots: Record<string, any>): Record<Role, RoleConfig> 
   if (!clubRoot || !clubRoot.node || !clubRoot.name) {
     throw new Error('ENS configuration is missing the club.agi.eth root');
   }
-  const normaliseNode = (value: string) => ethers.hexlify(ethers.getBytes(value));
+  const normaliseNode = (value: string) =>
+    ethers.hexlify(ethers.getBytes(value));
   const agentNode = normaliseNode(agentRoot.node);
   const clubNode = normaliseNode(clubRoot.node);
   const agentName = String(agentRoot.name).toLowerCase();
@@ -207,7 +210,11 @@ async function registerEnsSubdomain(
   registryAddress: string,
   reverseRegistrar: string
 ): Promise<string> {
-  const registry = new ethers.Contract(registryAddress, REGISTRY_ABI, rootWallet);
+  const registry = new ethers.Contract(
+    registryAddress,
+    REGISTRY_ABI,
+    rootWallet
+  );
   const resolverAddr = await registry.resolver(config.parentNode);
   if (resolverAddr === ethers.ZeroAddress) {
     throw new Error('Parent node has no resolver set');
@@ -230,11 +237,7 @@ async function registerEnsSubdomain(
   const resolver = new ethers.Contract(resolverAddr, RESOLVER_ABI, subWallet);
   await (await resolver.setAddr(node, subWallet.address)).wait();
 
-  const reverse = new ethers.Contract(
-    reverseRegistrar,
-    REVERSE_ABI,
-    subWallet
-  );
+  const reverse = new ethers.Contract(reverseRegistrar, REVERSE_ABI, subWallet);
   await (await reverse.setName(ensName)).wait();
 
   await verifyReverseResolution(provider, subWallet.address, ensName);
@@ -248,9 +251,9 @@ async function main() {
   const rpc = process.env.RPC_URL || 'http://localhost:8545';
   const provider = new ethers.JsonRpcProvider(rpc);
 
-  const {
-    config: ensConfig,
-  } = loadEnsConfig({ network: process.env.ENS_NETWORK || process.env.NETWORK });
+  const { config: ensConfig } = loadEnsConfig({
+    network: process.env.ENS_NETWORK || process.env.NETWORK,
+  });
   setRoleConfig(createRoleConfig(ensConfig.roots || {}));
   const roleConfig = getRoleConfig()[role];
   const registryAddress = normaliseConfigAddress(

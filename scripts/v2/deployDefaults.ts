@@ -46,9 +46,10 @@ async function main() {
   const deployerAddress = await deployer.getAddress();
   console.log('Deployer', deployerAddress);
 
-  const {
-    config: ensConfig,
-  } = loadEnsConfig({ network: network.name, chainId: network.config?.chainId });
+  const { config: ensConfig } = loadEnsConfig({
+    network: network.name,
+    chainId: network.config?.chainId,
+  });
   const roots = ensConfig.roots || {};
   const agentRootNode = roots.agent?.node;
   const clubRootNode = roots.club?.node;

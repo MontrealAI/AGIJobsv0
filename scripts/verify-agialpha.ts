@@ -356,7 +356,9 @@ if (require.main === module) {
 
     if (!configOverride && networkArg) {
       const inferred = inferNetworkKey(networkArg) ?? networkArg;
-      const { path: networkConfigPath } = loadTokenConfig({ network: inferred });
+      const { path: networkConfigPath } = loadTokenConfig({
+        network: inferred,
+      });
       configPath = networkConfigPath;
     }
 

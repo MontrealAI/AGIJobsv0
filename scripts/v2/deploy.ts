@@ -43,14 +43,17 @@ async function main() {
     typeof args.governance === 'string' ? args.governance : deployer.address;
   const governanceSigner = await ethers.getSigner(governance);
 
-  const {
-    config: ensConfig,
-  } = loadEnsConfig({ network: network.name, chainId: network.config?.chainId });
+  const { config: ensConfig } = loadEnsConfig({
+    network: network.name,
+    chainId: network.config?.chainId,
+  });
   const roots = ensConfig.roots || {};
   const agentRootNode = roots.agent?.node;
   const clubRootNode = roots.club?.node;
   if (!ensConfig.registry || !agentRootNode || !clubRootNode) {
-    throw new Error('ENS configuration must include registry and agent/club root nodes');
+    throw new Error(
+      'ENS configuration must include registry and agent/club root nodes'
+    );
   }
   const nameWrapperAddress = ensConfig.nameWrapper || ethers.ZeroAddress;
 
@@ -449,7 +452,10 @@ async function main() {
     moderator,
     governance,
   ]);
-  await verify(await attestation.getAddress(), [ensConfig.registry, nameWrapperAddress]);
+  await verify(await attestation.getAddress(), [
+    ensConfig.registry,
+    nameWrapperAddress,
+  ]);
   await verify(await identity.getAddress(), [
     ethers.ZeroAddress,
     ethers.ZeroAddress,

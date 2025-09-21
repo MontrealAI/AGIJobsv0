@@ -3,14 +3,6 @@ import * as path from 'path';
 import { ethers } from 'ethers';
 import { loadTokenConfig } from './config';
 
-type TokenConfig = {
-  address: string;
-  decimals: number;
-  burnAddress: string;
-  symbol: string;
-  name: string;
-};
-
 function assertAddress(
   value: string,
   label: string,
@@ -80,7 +72,7 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
-const { config, path: configPath } = loadTokenConfig({ network: networkArg });
+const { config } = loadTokenConfig({ network: networkArg });
 
 const address = assertAddress(config.address, 'AGIALPHA address');
 const decimals = assertDecimals(config.decimals);

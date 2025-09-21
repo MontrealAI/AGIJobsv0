@@ -44,9 +44,9 @@ function normaliseLabel(label: string): string {
   return trimmed;
 }
 
-const {
-  config: ensConfig,
-} = loadEnsConfig({ network: process.env.ENS_NETWORK || process.env.NETWORK });
+const { config: ensConfig } = loadEnsConfig({
+  network: process.env.ENS_NETWORK || process.env.NETWORK,
+});
 
 const ENS_ROOTS = (ensConfig.roots || {}) as Record<string, any>;
 
@@ -112,13 +112,22 @@ function readParentConfig(space: EnsSpace): ResolvedParentConfig {
 
 function detectSpaceFromParent(parentName: string): EnsSpace | null {
   const normalised = parentName.trim().toLowerCase();
-  if (ENS_ROOTS.agent?.name && String(ENS_ROOTS.agent.name).toLowerCase() === normalised) {
+  if (
+    ENS_ROOTS.agent?.name &&
+    String(ENS_ROOTS.agent.name).toLowerCase() === normalised
+  ) {
     return 'agent';
   }
-  if (ENS_ROOTS.club?.name && String(ENS_ROOTS.club.name).toLowerCase() === normalised) {
+  if (
+    ENS_ROOTS.club?.name &&
+    String(ENS_ROOTS.club.name).toLowerCase() === normalised
+  ) {
     return 'club';
   }
-  if (ENS_ROOTS.business?.name && String(ENS_ROOTS.business.name).toLowerCase() === normalised) {
+  if (
+    ENS_ROOTS.business?.name &&
+    String(ENS_ROOTS.business.name).toLowerCase() === normalised
+  ) {
     return 'business';
   }
   return null;

@@ -152,7 +152,9 @@ function parseArgs(): CliOptions {
   };
 }
 
-function buildParentMap(roots: Record<string, any>): Record<EnsSpace, ParentConfig> {
+function buildParentMap(
+  roots: Record<string, any>
+): Record<EnsSpace, ParentConfig> {
   const agentRoot = roots.agent;
   const clubRoot = roots.club;
   if (!agentRoot || !agentRoot.node || !agentRoot.name) {
@@ -278,9 +280,9 @@ function persistIdentity(
 async function main(): Promise<void> {
   const options = parseArgs();
   const provider = new ethers.JsonRpcProvider(options.rpcUrl);
-  const {
-    config: ensConfig,
-  } = loadEnsConfig({ network: options.network });
+  const { config: ensConfig } = loadEnsConfig({
+    network: options.network,
+  });
   const parents = buildParentMap(ensConfig.roots || {});
   const registryAddress = normaliseConfigAddress(
     process.env.ENS_REGISTRY_ADDRESS ?? ensConfig.registry,
