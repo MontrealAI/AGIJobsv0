@@ -140,7 +140,9 @@ This example verifies all core contracts. Include `TaxPolicy` at the end if it w
 
 1. Confirm each module’s owner or governance address matches your multisig.
 2. Keep a record of the printed addresses; they are required for clients and future governance actions.
-3. Use `npm run verify:wiring` to sanity‑check that contracts reference one another correctly.
+3. Use `npm run wire:verify -- --network <network>` to sanity‑check that contracts
+   reference one another correctly and match the values in `config/agialpha.<network>.json`
+   and `config/ens.<network>.json`.
 4. Exercise the `SystemPause` contract to ensure emergency controls work.
 5. Be prepared to call `SystemPause.pauseAll()` from your governance address in emergencies.
 

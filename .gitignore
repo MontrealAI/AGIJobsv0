@@ -10,6 +10,8 @@ scripts/**/*.js
 !scripts/constants.js
 !scripts/compute-namehash.js
 !scripts/config/index.js
+!scripts/verify-wiring.js
+!scripts/run-wire-verify.js
 
 build/
 lib/

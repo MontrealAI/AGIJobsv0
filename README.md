@@ -181,8 +181,9 @@ Record each address during deployment. The defaults below assume the 18‑decima
    - `JobRegistry.setTaxPolicy(taxPolicy)` then `DisputeModule.setTaxPolicy(taxPolicy)`
    - `JobRegistry.setIdentityRegistry(identityRegistry)` and `ValidationModule.setIdentityRegistry(identityRegistry)`
    - Load ENS settings with `IdentityRegistry.setAgentRootNode`, `setClubRootNode`, `setAgentMerkleRoot` and `setValidatorMerkleRoot`
-3. **Verify wiring** – run `npm run verify:wiring` to confirm on-chain module
-   references match `docs/deployment-addresses.json`.
+3. **Verify wiring** – run `npm run wire:verify -- --network <network>` to confirm
+   on-chain module references, ENS settings and root hashes match
+   `config/agialpha.<network>.json` and `config/ens.<network>.json`.
 4. **Example transactions** – after wiring you can:
    - Approve and stake: `$AGIALPHA.approve(StakeManager, 1_000000000000000000)` then `StakeManager.depositStake(role, 1_000000000000000000)`
    - Post a job: `JobRegistry.createJob(1_000000000000000000, "ipfs://QmHash")`

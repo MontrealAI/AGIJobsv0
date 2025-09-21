@@ -140,7 +140,7 @@ who can verify staking.
 On FeePool: setStakeManager(stakeManager) so only the designated manager can deposit fees and trigger distributions.
 On JobRegistry: if not already done via setModules, also call setIdentityRegistry(identityRegistry) to enforce ENS checks on job applications, and setTaxPolicy(taxPolicy) if applicable.
 If you deployed PlatformRegistry/JobRouter/PlatformIncentives: call PlatformRegistry.setRegistrar(platformIncentives, true) and JobRouter.setRegistrar(platformIncentives, true) to link the incentives module (or follow any specific instructions in their docs).
-After manual wiring, double-check each module’s state via the Read Contract functions or events to ensure addresses have been set correctly. The repository provides a script (npm run verify:wiring) that can also confirm on-chain that each module has the expected references.
+After manual wiring, double-check each module’s state via the Read Contract functions or events to ensure addresses have been set correctly. The repository provides a script (`npm run wire:verify -- --network <network>`) that can also confirm on-chain that each module has the expected references recorded in `config/agialpha.<network>.json` and `config/ens.<network>.json`.
 
 ### 3. Post-Deployment Governance and Settings
 

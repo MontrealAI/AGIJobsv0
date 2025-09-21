@@ -6,6 +6,16 @@ export interface TokenConfig {
   symbol: string;
   name: string;
   burnAddress?: string;
+  governance?: GovernanceConfig;
+  owners?: GovernanceConfig;
+  modules?: Record<string, string>;
+  contracts?: Record<string, string>;
+  [key: string]: unknown;
+}
+
+export interface GovernanceConfig {
+  govSafe?: string;
+  timelock?: string;
   [key: string]: unknown;
 }
 

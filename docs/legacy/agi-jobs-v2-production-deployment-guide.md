@@ -103,7 +103,7 @@ Verify wiring by reading stored addresses on Etherscan.
 - **Security features:** contracts rely on OpenZeppelin libraries (`Ownable`, `ReentrancyGuard`, `SafeERC20`, etc.) and a modular design so faulty modules can be replaced. A dedicated pause mechanism (`docs/system-pause.md`) lets you halt the system if needed.
 - **Security checks:** test a small job end‑to‑end, monitor emitted events, and keep the pause mechanism ready.
 - **Trial run:** walk through posting a job, staking, validation, finalization and a dispute with small amounts or on a testnet to confirm module interactions.
-- **Final verification:** confirm stored addresses in each module's _Read_ tab or run `npm run verify:wiring` locally.
+- **Final verification:** confirm stored addresses in each module's _Read_ tab or run `npm run wire:verify -- --network <network>` locally against `config/agialpha.<network>.json` and `config/ens.<network>.json`.
 - **Record keeping:** maintain an admin log of parameter changes and update `docs/deployment-addresses.json` whenever addresses change.
 - **Legal compliance:** consult professionals to ensure the platform operates within your jurisdiction's regulations.
 
