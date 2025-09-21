@@ -71,8 +71,18 @@ contract MockEnergyOracle is IEnergyOracle {
     }
 }
 
+contract RewardEngineMBHarness is RewardEngineMB {
+    constructor(Thermostat _thermo, IFeePool _feePool, IReputationEngineV2 _rep, IEnergyOracle _oracle, address _gov)
+        RewardEngineMB(_thermo, _feePool, _rep, _oracle, _gov)
+    {}
+
+    function exposeWeights(RoleData memory rd, Role r) external view returns (uint256[] memory w, uint256 sum) {
+        return _weights(rd, r);
+    }
+}
+
 contract RewardEngineMBTest is Test {
-    RewardEngineMB engine;
+    RewardEngineMBHarness engine;
     MockFeePool pool;
     MockReputation rep;
     Thermostat thermo;
@@ -93,7 +103,7 @@ contract RewardEngineMBTest is Test {
         pool = new MockFeePool();
         rep = new MockReputation();
         oracle = new MockEnergyOracle();
-        engine = new RewardEngineMB(thermo, pool, rep, oracle, address(this));
+        engine = new RewardEngineMBHarness(thermo, pool, rep, oracle, address(this));
         engine.setSettler(address(this), true);
         engine.setTreasury(treasury);
         bytes32 ownerSlot = bytes32(uint256(5));
@@ -378,6 +388,44 @@ contract RewardEngineMBTest is Test {
         emit RewardEngineMB.MuUpdated(RewardEngineMB.Role.Agent, 1);
         engine.setMu(RewardEngineMB.Role.Agent, 1);
         assertEq(engine.mu(RewardEngineMB.Role.Agent), 1);
+    }
+
+    function test_setMu_scales_mb_weights() public {
+        RewardEngineMB.RoleData memory rd;
+        rd.users = new address[](2);
+        rd.energies = new int256[](2);
+        rd.degeneracies = new uint256[](2);
+        rd.users[0] = address(0xAA1);
+        rd.users[1] = address(0xAA2);
+        rd.energies[0] = int256(1e18);
+        rd.energies[1] = int256(2e18);
+        rd.degeneracies[0] = 1;
+        rd.degeneracies[1] = 2;
+
+        (uint256[] memory wBase, uint256 sumBase) = engine.exposeWeights(rd, RewardEngineMB.Role.Agent);
+
+        engine.setMu(RewardEngineMB.Role.Agent, 20e18);
+        (uint256[] memory wMu, uint256 sumMu) = engine.exposeWeights(rd, RewardEngineMB.Role.Agent);
+
+        assertGt(sumMu, sumBase, "mu increases aggregate weight");
+        assertGt(wMu[0], wBase[0], "low energy scaled up");
+        assertGt(wMu[1], wBase[1], "high energy scaled up");
+
+        RewardEngineMB.EpochData memory data;
+        RewardEngineMB.Proof[] memory proofs = new RewardEngineMB.Proof[](2);
+        proofs[0] = _proof(rd.users[0], rd.energies[0], 1, RewardEngineMB.Role.Agent);
+        proofs[0].att.uPre = 1e18;
+        proofs[1] = _proofWithDeg(rd.users[1], rd.energies[1], rd.degeneracies[1], 1, RewardEngineMB.Role.Agent);
+        data.agents = proofs;
+
+        engine.settleEpoch(1, data);
+
+        uint256 bucket = pool.total();
+        uint256 expectedLow = bucket * (wMu[0] * rd.degeneracies[0]) / sumMu;
+        uint256 expectedHigh = bucket * (wMu[1] * rd.degeneracies[1]) / sumMu;
+
+        assertApproxEqAbs(pool.rewards(rd.users[0]), expectedLow, 2, "low payout matches");
+        assertApproxEqAbs(pool.rewards(rd.users[1]), expectedHigh, 2, "high payout matches");
     }
 
     function test_reverts_on_negative_energy() public {

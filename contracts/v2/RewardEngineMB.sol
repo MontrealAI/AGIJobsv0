@@ -297,7 +297,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         }
     }
 
-    function _weights(RoleData memory rd, Role r) private view returns (uint256[] memory w, uint256 sum) {
+    function _weights(RoleData memory rd, Role r) internal view returns (uint256[] memory w, uint256 sum) {
         int256 Tr =
             address(thermostat) != address(0)
                 ? thermostat.getRoleTemperature(Thermostat.Role(uint8(r)))
@@ -305,11 +305,18 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         require(Tr > 0, "T>0");
         uint256 n = rd.users.length;
         w = new uint256[](n);
+        if (n == 0) return (w, 0);
+
+        int256 muR = mu[r];
         for (uint256 i = 0; i < n; i++) {
-            int256 x = (-rd.energies[i] * int256(WAD)) / Tr;
-            uint256 e = ThermoMath.expWad(x);
-            w[i] = e;
-            sum += e * rd.degeneracies[i];
+            int256 x = ((muR - rd.energies[i]) * int256(WAD)) / Tr;
+            uint256 weight = ThermoMath.expWad(x);
+            uint256 degeneracy = rd.degeneracies[i];
+            if (degeneracy > type(uint256).max / weight) revert ThermoMath.WeightOverflow();
+            uint256 scaled = weight * degeneracy;
+            if (sum > type(uint256).max - scaled) revert ThermoMath.WeightOverflow();
+            w[i] = weight;
+            sum += scaled;
         }
     }
 
