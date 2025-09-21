@@ -13,6 +13,7 @@ abstract contract Governable {
     TimelockController public governance;
 
     event GovernanceUpdated(address indexed newGovernance);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /// @dev Thrown when a zero address is supplied where a non-zero address is required.
     error ZeroAddress();
@@ -22,7 +23,15 @@ abstract contract Governable {
 
     constructor(address _governance) {
         if (_governance == address(0)) revert ZeroAddress();
+        _setGovernance(_governance);
+    }
+
+    function _setGovernance(address _governance) internal {
+        if (_governance == address(0)) revert ZeroAddress();
+        address previousOwner = address(governance);
         governance = TimelockController(payable(_governance));
+        emit GovernanceUpdated(_governance);
+        emit OwnershipTransferred(previousOwner, _governance);
     }
 
     function _checkGovernor() internal view {
@@ -40,9 +49,11 @@ abstract contract Governable {
     }
 
     function setGovernance(address _governance) public onlyGovernance {
-        if (_governance == address(0)) revert ZeroAddress();
-        governance = TimelockController(payable(_governance));
-        emit GovernanceUpdated(_governance);
+        _setGovernance(_governance);
+    }
+
+    function transferOwnership(address newOwner) public onlyGovernance {
+        _setGovernance(newOwner);
     }
 
     /// @notice Compatibility helper for systems expecting Ownable-style `owner()`

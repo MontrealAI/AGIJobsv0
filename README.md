@@ -219,6 +219,10 @@ single key can change parameters:
    event. Timelock contracts must schedule and execute the call; direct EOA
    transactions will revert once ownership has moved.
 
+For a day-2 operations checklist covering pauser rotation, emergency
+halt procedures, and monitoring, consult
+[`docs/security-deployment-guide.md`](docs/security-deployment-guide.md).
+
 ### Agent/Validator Identity – ENS subdomain registration
 
 All participants must prove ownership of a subdomain in the AGI ENS
