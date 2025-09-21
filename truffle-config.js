@@ -14,6 +14,17 @@ module.exports = {
       timeoutBlocks: 200,
       skipDryRun: true,
     },
+    sepolia: {
+      provider: () =>
+        new HDWalletProvider(
+          process.env.SEPOLIA_PRIVATE_KEY || process.env.TESTNET_PRIVATE_KEY,
+          process.env.SEPOLIA_RPC_URL
+        ),
+      network_id: 11155111,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skipDryRun: true,
+    },
   },
   compilers: {
     solc: {

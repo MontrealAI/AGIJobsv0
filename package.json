@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && npx hardhat compile",
+    "compile:mainnet": "npm run compile -- --network mainnet",
+    "compile:sepolia": "npm run compile -- --network sepolia",
     "lint": "npx solhint 'contracts/**/*.sol' && npx eslint . --ext .js,.ts,.tsx",
     "pretest": "npx tsc scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
@@ -16,7 +18,9 @@
     "format:check": "prettier --check \"**/*.{js,ts,md}\"",
     "identity:register": "npx ts-node scripts/identity/manageEnsKeys.ts",
     "namehash:mainnet": "node scripts/compute-namehash.js deployment-config/mainnet.json",
-    "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json"
+    "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json",
+    "migrate:mainnet": "TRUFFLE_NETWORK=mainnet npm run compile:mainnet && npx truffle migrate --network mainnet --reset",
+    "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset"
   },
   "keywords": [],
   "author": "",
