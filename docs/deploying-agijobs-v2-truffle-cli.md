@@ -48,6 +48,23 @@ The diagram illustrates how the `Deployer` contract fans out into every core mod
 - **Testnet dry‑run** – always run the migration on a public testnet such as Sepolia with the same environment variables before attempting mainnet.
 - **AGIALPHA token** – the token address, ERC‑20 metadata (symbol/name) and decimals are fixed in `config/agialpha.json` and compiled into the contracts; no extra configuration is required.
 
+### ENS namehash preparation
+
+Before running any migrations ensure the ENS root configuration is in sync:
+
+1. Update `deployment-config/<network>.json` with the ENS names you intend to gate (`agentRoot`, `clubRoot`, `alphaClubRoot`).
+2. Run the helper to recompute the namehashes:
+
+   ```bash
+   npm run namehash:sepolia   # testnet dry-run
+   npm run namehash:mainnet   # production config
+   ```
+
+   The script normalises the configured names and rewrites the `hash` fields in-place. Commit the resulting JSON so migrations pick up the latest values.
+3. Add the helper to CI (for example as a linting step that runs the command and asserts the working tree stays clean) so stale hashes are caught before a deployment window.
+
+This workflow mirrors the on-chain expectations of `IdentityRegistry` and prevents drift between the documented ENS roots and the values deployed to production.
+
 Example `.env`:
 
 ```env
