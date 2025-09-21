@@ -1526,7 +1526,12 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Agent or employer disputes a job outcome with a hash of off-chain evidence.
     /// @param jobId Identifier of the disputed job.
     /// @param evidenceHash Keccak256 hash of the evidence stored off-chain.
-    function dispute(uint256 jobId, bytes32 evidenceHash)
+    /// @param reason Plain-text description or URI describing the dispute.
+    function dispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata reason
+    )
         public
         whenNotPaused
         nonReentrant
@@ -1538,7 +1543,56 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             address(validationModule)
         )
     {
-        if (evidenceHash == bytes32(0)) revert EvidenceMissing();
+        _dispute(jobId, evidenceHash, reason);
+    }
+
+    /// @notice Backwards-compatible wrapper for legacy integrations.
+    /// @dev Calls {dispute} with the provided evidence hash.
+    function raiseDispute(uint256 jobId, bytes32 evidenceHash) public {
+        _dispute(jobId, evidenceHash, "");
+    }
+
+    /// @notice Overload supporting plain-text dispute reasons.
+    /// @param jobId Identifier of the disputed job.
+    /// @param reason Plain-text or URI reason for the dispute.
+    function raiseDispute(uint256 jobId, string calldata reason) public {
+        _dispute(jobId, bytes32(0), reason);
+    }
+
+    /**
+     * @notice Acknowledge the tax policy if needed and raise a dispute with
+     *         supporting evidence stored off-chain.
+     * @dev No tokens are transferred; any stake requirements elsewhere use
+     *      18-decimal $AGIALPHA units that must have been approved previously.
+     * @param jobId Identifier of the disputed job.
+     * @param evidenceHash Keccak256 hash of the off-chain evidence.
+     */
+    function acknowledgeAndDispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata reason
+    ) public {
+        if (
+            address(taxPolicy) != address(0) &&
+            !taxPolicy.hasAcknowledged(msg.sender)
+        ) {
+            _acknowledge(msg.sender);
+        }
+        _dispute(jobId, evidenceHash, reason);
+    }
+
+    /// @notice Backwards-compatible helper without a reason string.
+    function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash) external {
+        _dispute(jobId, evidenceHash, "");
+    }
+
+    function _dispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string memory reason
+    ) internal {
+        if (evidenceHash == bytes32(0) && bytes(reason).length == 0)
+            revert EvidenceMissing();
         Job storage job = jobs[jobId];
         if (msg.sender != job.agent && msg.sender != job.employer)
             revert OnlyParticipant();
@@ -1556,33 +1610,9 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
         if (address(disputeModule) != address(0)) {
-            disputeModule.raiseDispute(jobId, msg.sender, evidenceHash);
+            disputeModule.raiseDispute(jobId, msg.sender, evidenceHash, reason);
         }
         emit JobDisputed(jobId, msg.sender);
-    }
-
-    /// @notice Backwards-compatible wrapper for legacy integrations.
-    /// @dev Calls {dispute} with the provided evidence hash.
-    function raiseDispute(uint256 jobId, bytes32 evidenceHash) public {
-        dispute(jobId, evidenceHash);
-    }
-
-    /**
-     * @notice Acknowledge the tax policy if needed and raise a dispute with
-     *         supporting evidence stored off-chain.
-     * @dev No tokens are transferred; any stake requirements elsewhere use
-     *      18-decimal $AGIALPHA units that must have been approved previously.
-     * @param jobId Identifier of the disputed job.
-     * @param evidenceHash Keccak256 hash of the off-chain evidence.
-     */
-    function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash) external {
-        if (
-            address(taxPolicy) != address(0) &&
-            !taxPolicy.hasAcknowledged(msg.sender)
-        ) {
-            _acknowledge(msg.sender);
-        }
-        dispute(jobId, evidenceHash);
     }
 
     /// @notice Resolve a dispute relayed by the dispute module.

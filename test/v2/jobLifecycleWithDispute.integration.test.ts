@@ -206,13 +206,15 @@ describe('job lifecycle with dispute and validator failure', function () {
       expect(metadata.state).to.equal(5); // Disputed
     }
 
-    await registry.connect(agent).dispute(1, ethers.id('evidence'));
+    await registry
+      .connect(agent)
+      .dispute(1, ethers.id('evidence'), 'ipfs://evidence');
     const hash = ethers.solidityPackedKeccak256(
       ['address', 'uint256', 'bool'],
       [await dispute.getAddress(), 1, false]
     );
     const sig = await owner.signMessage(ethers.getBytes(hash));
-    await dispute.connect(owner).resolve(1, false, [sig]);
+    await dispute.connect(owner).resolveDispute(1, false);
     await registry.connect(employer).finalize(1);
 
     {

@@ -356,13 +356,32 @@ interface IJobRegistry {
 
     /// @notice Raise a dispute for a completed job
     /// @param jobId Identifier of the disputed job
-    /// @param evidenceHash Keccak256 hash of off-chain evidence
+    /// @param evidenceHash Keccak256 hash of off-chain evidence (optional)
+    /// @param reason Plain-text description or URI with additional context
     /// @dev Reverts with {InvalidStatus} or {OnlyAgent}
-    function dispute(uint256 jobId, bytes32 evidenceHash) external;
+    function dispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata reason
+    ) external;
+
+    /// @notice Convenience overload forwarding a hashed evidence payload.
+    function raiseDispute(uint256 jobId, bytes32 evidenceHash) external;
+
+    /// @notice Convenience overload for providing a plain-text reason only.
+    function raiseDispute(uint256 jobId, string calldata reason) external;
 
     /// @notice Acknowledge tax policy if needed and raise a dispute with evidence
     /// @param jobId Identifier of the disputed job
-    /// @param evidenceHash Keccak256 hash of the evidence
+    /// @param evidenceHash Keccak256 hash of the evidence (optional)
+    /// @param reason Plain-text description or URI with supporting details
+    function acknowledgeAndDispute(
+        uint256 jobId,
+        bytes32 evidenceHash,
+        string calldata reason
+    ) external;
+
+    /// @notice Backwards-compatible helper without a reason parameter.
     function acknowledgeAndDispute(uint256 jobId, bytes32 evidenceHash) external;
 
     /// @notice Resolve a dispute and record the final outcome

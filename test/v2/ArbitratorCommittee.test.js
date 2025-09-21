@@ -114,16 +114,17 @@ describe('ArbitratorCommittee', function () {
       .to.emit(committee, 'Paused')
       .withArgs(owner.address);
     const evidence = ethers.id('evidence');
+    const reason = 'ipfs://evidence';
     await expect(
-      registry.connect(agent).dispute(1, evidence)
+      registry.connect(agent).dispute(1, evidence, reason)
     ).to.be.revertedWithCustomError(committee, 'EnforcedPause');
     await expect(committee.unpause())
       .to.emit(committee, 'Unpaused')
       .withArgs(owner.address);
 
-    await expect(registry.connect(agent).dispute(1, evidence))
+    await expect(registry.connect(agent).dispute(1, evidence, reason))
       .to.emit(dispute, 'DisputeRaised')
-      .withArgs(1, agent.address, evidence);
+      .withArgs(1, agent.address, evidence, reason);
 
     const fakeCommit = ethers.keccak256(
       ethers.solidityPacked(
@@ -200,7 +201,8 @@ describe('ArbitratorCommittee', function () {
     await committee.setCommitRevealWindows(3n, 2n);
 
     const evidence = ethers.id('evidence');
-    await registry.connect(agent).dispute(1, evidence);
+    const reason = 'ipfs://evidence';
+    await registry.connect(agent).dispute(1, evidence, reason);
 
     const s1 = 1n,
       s2 = 2n;
@@ -256,7 +258,8 @@ describe('ArbitratorCommittee', function () {
     }
 
     const evidence = ethers.id('evidence');
-    await registry.connect(agent).dispute(1, evidence);
+    const reason = 'ipfs://evidence';
+    await registry.connect(agent).dispute(1, evidence, reason);
 
     const s1 = 1n,
       s2 = 2n;

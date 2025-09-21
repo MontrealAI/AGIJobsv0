@@ -199,10 +199,12 @@ describe('Employer reputation', function () {
       .connect(agent)
       .submit(jobId, ethers.id('res'), 'res', '', []);
     await validation.finalize(jobId);
-    await registry.connect(agent).dispute(jobId, ethers.id('evidence'));
+    await registry
+      .connect(agent)
+      .dispute(jobId, ethers.id('evidence'), 'ipfs://evidence');
     await dispute.connect(owner).setCommittee(owner.address);
     await dispute.connect(owner).setDisputeWindow(0);
-    await dispute.connect(owner).resolve(jobId, true);
+    await dispute.connect(owner).resolveDispute(jobId, true);
     await registry.connect(employer).finalize(jobId);
     const [successful, failed] = await registry.getEmployerReputation(
       employer.address

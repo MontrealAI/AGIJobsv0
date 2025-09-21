@@ -268,8 +268,10 @@ describe('validator participation', function () {
       expect(metadata.state).to.equal(5);
     }
 
-    await registry.connect(agent).dispute(1, ethers.id('evidence'));
-    await dispute.connect(moderator).resolve(1, false);
+    await registry
+      .connect(agent)
+      .dispute(1, ethers.id('evidence'), 'ipfs://evidence');
+    await dispute.connect(moderator).resolveDispute(1, false);
     await registry.connect(employer).confirmEmployerBurn(1, burnTxHash);
     await registry.connect(employer).finalize(1);
 

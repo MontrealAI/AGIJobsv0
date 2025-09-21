@@ -207,7 +207,9 @@ describe('Kleros dispute module', function () {
       expect(metadata.state).to.equal(5); // Disputed
     }
 
-    await registry.connect(agent).dispute(1, ethers.id('evidence'));
+    await registry
+      .connect(agent)
+      .dispute(1, ethers.id('evidence'), 'ipfs://evidence');
     expect(await mockArb.lastJobId()).to.equal(1n);
 
     await mockArb.deliverResult(1, false); // agent wins

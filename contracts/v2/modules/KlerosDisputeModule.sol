@@ -27,7 +27,12 @@ contract KlerosDisputeModule is IDisputeModule {
     error Unsupported();
 
     event GovernanceUpdated(address governance);
-    event DisputeRaised(uint256 indexed jobId, address indexed claimant, bytes32 evidenceHash);
+    event DisputeRaised(
+        uint256 indexed jobId,
+        address indexed claimant,
+        bytes32 evidenceHash,
+        string reason
+    );
     event DisputeResolved(uint256 indexed jobId, bool employerWins);
 
     /// @notice Job registry that created disputes originate from.
@@ -82,23 +87,32 @@ contract KlerosDisputeModule is IDisputeModule {
     function raiseDispute(
         uint256 jobId,
         address claimant,
-        bytes32 evidenceHash
+        bytes32 evidenceHash,
+        string calldata reason
     ) external override onlyJobRegistry {
-        if (evidenceHash == bytes32(0)) revert ZeroEvidence();
+        if (evidenceHash == bytes32(0) && bytes(reason).length == 0)
+            revert ZeroEvidence();
+        bytes32 payload =
+            evidenceHash != bytes32(0) ? evidenceHash : keccak256(bytes(reason));
         if (arbitrator != address(0)) {
-            IArbitrationService(arbitrator).createDispute(jobId, claimant, evidenceHash);
+            IArbitrationService(arbitrator).createDispute(jobId, claimant, payload);
         }
-        emit DisputeRaised(jobId, claimant, evidenceHash);
+        emit DisputeRaised(jobId, claimant, payload, reason);
     }
 
     /// @inheritdoc IDisputeModule
-    function resolve(uint256 jobId, bool employerWins)
-        external
+    function resolveDispute(uint256 jobId, bool employerWins)
+        public
         override
         onlyArbitrator
     {
         jobRegistry.resolveDispute(jobId, employerWins);
         emit DisputeResolved(jobId, employerWins);
+    }
+
+    /// @notice Backwards compatible alias for existing integrations.
+    function resolve(uint256 jobId, bool employerWins) external onlyArbitrator {
+        resolveDispute(jobId, employerWins);
     }
 
     /// @inheritdoc IDisputeModule

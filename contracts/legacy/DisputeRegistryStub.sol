@@ -7,7 +7,8 @@ interface IDisputeModule {
     function raiseDispute(
         uint256 jobId,
         address claimant,
-        bytes32 evidenceHash
+        bytes32 evidenceHash,
+        string calldata reason
     ) external;
 }
 
@@ -42,6 +43,6 @@ contract DisputeRegistryStub {
         uint256 jobId,
         bytes32 evidenceHash
     ) external payable {
-        IDisputeModule(module).raiseDispute(jobId, msg.sender, evidenceHash);
+        IDisputeModule(module).raiseDispute(jobId, msg.sender, evidenceHash, "");
     }
 }

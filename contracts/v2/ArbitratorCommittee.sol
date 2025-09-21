@@ -145,7 +145,7 @@ contract ArbitratorCommittee is Ownable, Pausable {
         c.finalized = true;
         bool employerWins = c.reveals > 0 && c.employerVotes * 2 > c.reveals;
         address employer = jobRegistry.jobs(jobId).employer;
-        disputeModule.resolve(jobId, employerWins);
+        disputeModule.resolveDispute(jobId, employerWins);
         bool doSlash = absenteeSlash > 0;
         for (uint256 i; i < c.jurors.length; ++i) {
             address juror = c.jurors[i];
