@@ -34,7 +34,9 @@ function loadWallet(provider) {
     return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   }
   if (process.env.MNEMONIC) {
-    return ethers.HDNodeWallet.fromPhrase(process.env.MNEMONIC).connect(provider);
+    return ethers.HDNodeWallet.fromPhrase(process.env.MNEMONIC).connect(
+      provider
+    );
   }
   throw new Error('Provide PRIVATE_KEY or MNEMONIC for validator runtime.');
 }
@@ -60,7 +62,9 @@ function ensureValidatorEns(ensName, cfg) {
     }
   }
   throw new Error(
-    `Validator ENS ${normalised} is not inside allowed club roots (${Array.from(allowed).join(', ')})`
+    `Validator ENS ${normalised} is not inside allowed club roots (${Array.from(
+      allowed
+    ).join(', ')})`
   );
 }
 
@@ -125,7 +129,9 @@ function commitHash(approve, saltHex) {
   if (salt.length !== 32) {
     throw new Error('Salt must be 32 bytes.');
   }
-  return ethers.keccak256(ethers.solidityPacked(['bool', 'bytes32'], [approve, salt]));
+  return ethers.keccak256(
+    ethers.solidityPacked(['bool', 'bytes32'], [approve, salt])
+  );
 }
 
 function schedule(fn, delayMs) {
@@ -139,7 +145,9 @@ async function main() {
 
   const validationAddress = cfg.validationModule || cfg.validationModuleAddress;
   if (!validationAddress || !ethers.isAddress(validationAddress)) {
-    throw new Error('Configure validationModule address in gateway.config.json');
+    throw new Error(
+      'Configure validationModule address in gateway.config.json'
+    );
   }
 
   const validatorEns = process.env.VALIDATOR_ENS || process.env.ENS_LABEL || '';
@@ -147,10 +155,14 @@ async function main() {
   const validatorLabel = ensLabelFrom(validatorEns);
 
   const commitProof = parseProof(
-    process.env.COMMIT_PROOF || process.env.VALIDATOR_PROOF || process.env.MERKLE_PROOF
+    process.env.COMMIT_PROOF ||
+      process.env.VALIDATOR_PROOF ||
+      process.env.MERKLE_PROOF
   );
   const revealProof = parseProof(
-    process.env.REVEAL_PROOF || process.env.VALIDATOR_REVEAL_PROOF || process.env.VALIDATION_PROOF
+    process.env.REVEAL_PROOF ||
+      process.env.VALIDATOR_REVEAL_PROOF ||
+      process.env.VALIDATION_PROOF
   );
   const burnHash = (process.env.BURN_TX_HASH || '').trim();
   const defaultApprove =
@@ -166,10 +178,14 @@ async function main() {
     'event ValidationResult(uint256 indexed jobId,bool success)',
     'function commitValidation(uint256 jobId,bytes32 commitHash,string subdomain,bytes32[] proof)',
     'function revealValidation(uint256 jobId,bool approve,bytes32 burnTxHash,bytes32 salt,string subdomain,bytes32[] proof)',
-    'function revealDeadline(uint256 jobId) view returns (uint256)'
+    'function revealDeadline(uint256 jobId) view returns (uint256)',
   ];
 
-  const moduleReader = new ethers.Contract(validationAddress, validationAbi, provider);
+  const moduleReader = new ethers.Contract(
+    validationAddress,
+    validationAbi,
+    provider
+  );
   const moduleWriter = moduleReader.connect(wallet);
 
   const network = await provider.getNetwork();
@@ -200,25 +216,35 @@ async function main() {
       const approve = defaultApprove;
       const salt = ethers.hexlify(ethers.randomBytes(32));
       const hash = commitHash(approve, salt);
-      console.log(`[validator] committing job=${jobId.toString()} hash=${hash}`);
-      const tx = await moduleWriter.commitValidation(jobId, hash, validatorLabel, commitProof);
+      console.log(
+        `[validator] committing job=${jobId.toString()} hash=${hash}`
+      );
+      const tx = await moduleWriter.commitValidation(
+        jobId,
+        hash,
+        validatorLabel,
+        commitProof
+      );
       await tx.wait(2);
       metrics.logEnergy('commit', {
         jobId: jobId.toString(),
         millis: Date.now() - started,
       });
 
-      let revealDelayMs = 10_000;
+      let revealDelayMs = 10000;
       try {
         const deadline = await moduleReader.revealDeadline(jobId);
         const deadlineMs = Number(deadline) * 1000;
-        const buffer = 5_000;
+        const buffer = 5000;
         const wait = deadlineMs - Date.now() - buffer;
         if (Number.isFinite(wait)) {
-          revealDelayMs = Math.max(1_000, wait);
+          revealDelayMs = Math.max(1000, wait);
         }
       } catch (deadlineErr) {
-        console.warn('[validator] revealDeadline lookup failed:', deadlineErr.message || deadlineErr);
+        console.warn(
+          '[validator] revealDeadline lookup failed:',
+          deadlineErr.message || deadlineErr
+        );
       }
 
       const timer = schedule(async () => {
@@ -242,7 +268,10 @@ async function main() {
           });
           clearJob(jobId);
         } catch (revealErr) {
-          const message = revealErr?.error?.message || revealErr?.message || String(revealErr);
+          const message =
+            revealErr?.error?.message ||
+            revealErr?.message ||
+            String(revealErr);
           console.error('[validator] reveal error:', message);
           metrics.logQuarantine('reveal', message, { jobId: jobId.toString() });
         }
@@ -257,7 +286,9 @@ async function main() {
   });
 
   moduleReader.on('ValidationResult', (jobId, success) => {
-    console.log(`[validator] validation result job=${jobId.toString()} success=${success}`);
+    console.log(
+      `[validator] validation result job=${jobId.toString()} success=${success}`
+    );
     clearJob(jobId);
   });
 

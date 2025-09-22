@@ -14,11 +14,15 @@ describe('CommitRevealMock (coverage)', function () {
     const nonce = await contract.nonces(jobId);
 
     const commitHash = ethers.keccak256(
-      ethers.solidityPacked(['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'], [jobId, nonce, approve, salt, specHash])
+      ethers.solidityPacked(
+        ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32'],
+        [jobId, nonce, approve, salt, specHash]
+      )
     );
 
     await contract.commit(jobId, commitHash);
-    await expect(contract.reveal(jobId, approve, salt, specHash)).to.not.be.reverted;
+    await expect(contract.reveal(jobId, approve, salt, specHash)).to.not.be
+      .reverted;
     const updatedNonce = await contract.nonces(jobId);
     expect(updatedNonce).to.equal(nonce + 1n);
     const wasRevealed = await contract.revealed(jobId, caller.address);
@@ -33,6 +37,8 @@ describe('CommitRevealMock (coverage)', function () {
     const salt = ethers.encodeBytes32String('salt');
     const specHash = ethers.encodeBytes32String('spec');
 
-    await expect(contract.reveal(jobId, true, salt, specHash)).to.be.revertedWith('hash mismatch');
+    await expect(
+      contract.reveal(jobId, true, salt, specHash)
+    ).to.be.revertedWith('hash mismatch');
   });
 });
