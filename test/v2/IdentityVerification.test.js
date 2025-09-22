@@ -1,5 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+
+const { finalizeValidatorSelection } = require('../helpers/validation');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('Identity verification enforcement', function () {
@@ -184,9 +186,10 @@ describe('Identity verification enforcement', function () {
     });
 
     async function select(jobId, entropy = 0) {
-      await validation.selectValidators(jobId, entropy);
-      await ethers.provider.send('evm_mine', []);
-      return validation.connect(v1).selectValidators(jobId, 0);
+      return finalizeValidatorSelection(validation, jobId, {
+        contributors: [v1, v2],
+        entropy,
+      });
     }
 
     async function advance(seconds) {

@@ -24,7 +24,12 @@ describe('StakeManager', function () {
         ['bytes32', 'bytes32'],
         [ethers.zeroPadValue(address, 32), ethers.ZeroHash]
       );
-    for (const addr of [owner.address, user.address, employer.address, treasury.address]) {
+    for (const addr of [
+      owner.address,
+      user.address,
+      employer.address,
+      treasury.address,
+    ]) {
       await network.provider.send('hardhat_setStorageAt', [
         AGIALPHA,
         balanceSlot(addr),
@@ -375,9 +380,7 @@ describe('StakeManager', function () {
     await token.connect(user).approve(await stakeManager.getAddress(), 200);
     await stakeManager.connect(user).depositStake(0, 200);
 
-    const tx = await stakeManager
-      .connect(user)
-      .requestWithdraw(0, 100);
+    const tx = await stakeManager.connect(user).requestWithdraw(0, 100);
     const receipt = await tx.wait();
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === 'WithdrawRequested'
@@ -393,9 +396,7 @@ describe('StakeManager', function () {
     await time.increaseTo(Number(unlockAt));
 
     const before = await token.balanceOf(user.address);
-    await expect(
-      stakeManager.connect(user).finalizeWithdraw(0)
-    )
+    await expect(stakeManager.connect(user).finalizeWithdraw(0))
       .to.emit(stakeManager, 'StakeWithdrawn')
       .withArgs(user.address, 0, 100);
     const after = await token.balanceOf(user.address);

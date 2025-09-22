@@ -9,7 +9,7 @@ const network =
   process.env.NETWORK ||
   undefined;
 
-const args = ['--yes', 'truffle', 'exec', 'scripts/verify-wiring.js'];
+const args = ['scripts/verify-wiring.js'];
 if (network) {
   args.push('--network', network);
 }
@@ -19,7 +19,7 @@ if (extraArgs.length > 0) {
   args.push(...extraArgs);
 }
 
-const result = spawnSync('npx', args, {
+const result = spawnSync(process.execPath, args, {
   stdio: 'inherit',
   shell: process.platform === 'win32',
   env: process.env,

@@ -3,6 +3,48 @@ require('@nomicfoundation/hardhat-toolbox');
 require('hardhat-gas-reporter');
 require('solidity-coverage');
 
+function normalisePrivateKey(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    return null;
+  }
+  let hex = trimmed;
+  if (hex.startsWith('0x') || hex.startsWith('0X')) {
+    hex = hex.slice(2);
+  }
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error('Private key must be a hex string');
+  }
+  if (hex.length > 64) {
+    throw new Error('Private key must be at most 32 bytes long');
+  }
+  const padded = hex.padStart(64, '0');
+  if (/^0+$/.test(padded)) {
+    throw new Error('Private key cannot be zero');
+  }
+  return `0x${padded}`;
+}
+
+function resolveAccounts(envKeys) {
+  const keys = Array.isArray(envKeys) ? envKeys : [envKeys];
+  for (const key of keys) {
+    if (!key) {
+      continue;
+    }
+    const value = process.env[key];
+    if (value !== undefined) {
+      const normalised = normalisePrivateKey(value);
+      if (normalised) {
+        return [normalised];
+      }
+    }
+  }
+  return [];
+}
+
 const coverageOnly = process.env.COVERAGE_ONLY === '1';
 
 const solidityConfig = coverageOnly
@@ -43,17 +85,11 @@ module.exports = {
     },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
-      accounts: process.env.MAINNET_PRIVATE_KEY
-        ? [process.env.MAINNET_PRIVATE_KEY]
-        : [],
+      accounts: resolveAccounts('MAINNET_PRIVATE_KEY'),
     },
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || '',
-      accounts: process.env.SEPOLIA_PRIVATE_KEY
-        ? [process.env.SEPOLIA_PRIVATE_KEY]
-        : process.env.TESTNET_PRIVATE_KEY
-        ? [process.env.TESTNET_PRIVATE_KEY]
-        : [],
+      accounts: resolveAccounts(['SEPOLIA_PRIVATE_KEY', 'TESTNET_PRIVATE_KEY']),
       chainId: 11155111,
     },
   },

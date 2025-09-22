@@ -251,7 +251,9 @@ describe('ValidationModule V2', function () {
 
     const tx = await validation.connect(v3).selectValidators(jobId, 789);
     const receipt = await tx.wait();
-    expect(await validation.entropyContributorCount(jobId)).to.equal(beforeCount);
+    expect(await validation.entropyContributorCount(jobId)).to.equal(
+      beforeCount
+    );
 
     const event = receipt.logs.find(
       (l) => l.fragment && l.fragment.name === 'ValidatorsSelected'
@@ -425,7 +427,9 @@ describe('ValidationModule V2', function () {
     ).wait();
     await advance(61);
     await expect(
-      validation.connect(v1).revealValidation(1, false, burnTxHash, salt, '', [])
+      validation
+        .connect(v1)
+        .revealValidation(1, false, burnTxHash, salt, '', [])
     ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
