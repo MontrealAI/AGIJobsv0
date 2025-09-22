@@ -25,6 +25,30 @@ export interface TokenConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface JobRegistryConfig {
+  jobStake?: string;
+  jobStakeTokens?: string | number;
+  minAgentStake?: string;
+  minAgentStakeTokens?: string | number;
+  maxJobReward?: string;
+  maxJobRewardTokens?: string | number;
+  jobDurationLimitSeconds?: number | string;
+  maxActiveJobsPerAgent?: number | string;
+  expirationGracePeriodSeconds?: number | string;
+  feePct?: number | string;
+  validatorRewardPct?: number | string;
+  treasury?: string | null;
+  taxPolicy?: string | null;
+  acknowledgers?: Record<string, boolean>;
+  [key: string]: unknown;
+}
+
+export interface JobRegistryConfigResult {
+  config: JobRegistryConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface EnsRootConfig {
   label: string;
   name: string;
@@ -57,8 +81,12 @@ export interface LoadOptions {
   name?: string;
   context?: any;
   persist?: boolean;
+  path?: string;
 }
 
 export function inferNetworkKey(value: any): SupportedNetwork | undefined;
 export function loadTokenConfig(options?: LoadOptions): TokenConfigResult;
 export function loadEnsConfig(options?: LoadOptions): EnsConfigResult;
+export function loadJobRegistryConfig(
+  options?: LoadOptions
+): JobRegistryConfigResult;

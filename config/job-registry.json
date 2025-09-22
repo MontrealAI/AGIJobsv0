@@ -1,0 +1,13 @@
+{
+  "jobStakeTokens": "1",
+  "minAgentStakeTokens": "10",
+  "maxJobRewardTokens": "1000",
+  "jobDurationLimitSeconds": 604800,
+  "maxActiveJobsPerAgent": 3,
+  "expirationGracePeriodSeconds": 86400,
+  "feePct": 5,
+  "validatorRewardPct": 10,
+  "treasury": "0x0000000000000000000000000000000000000000",
+  "taxPolicy": "0x0000000000000000000000000000000000000000",
+  "acknowledgers": {}
+}
