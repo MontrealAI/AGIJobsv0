@@ -11,6 +11,9 @@ import {Governable} from "./Governable.sol";
 contract EnergyOracle is EIP712, Governable, IEnergyOracle {
     using ECDSA for bytes32;
 
+    /// @dev Thrown when batched signer updates receive mismatched array lengths.
+    error LengthMismatch();
+
     /// @notice Emitted when a signer is added or removed from the oracle.
     /// @param signer The address of the signer that was updated.
     /// @param allowed True if the signer is authorized, false if removed.
@@ -31,6 +34,24 @@ contract EnergyOracle is EIP712, Governable, IEnergyOracle {
     function setSigner(address signer, bool allowed) external onlyGovernance {
         signers[signer] = allowed;
         emit SignerUpdated(signer, allowed);
+    }
+
+    /// @notice Update multiple signer permissions in a single governance call.
+    /// @param signers_ Array of signer addresses to update.
+    /// @param allowed Array of flags indicating whether each signer is enabled.
+    function setSigners(address[] calldata signers_, bool[] calldata allowed)
+        external
+        onlyGovernance
+    {
+        uint256 length = signers_.length;
+        if (length != allowed.length) revert LengthMismatch();
+
+        for (uint256 i = 0; i < length; ++i) {
+            address signer = signers_[i];
+            bool status = allowed[i];
+            signers[signer] = status;
+            emit SignerUpdated(signer, status);
+        }
     }
 
     /// @inheritdoc IEnergyOracle

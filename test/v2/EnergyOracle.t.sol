@@ -126,4 +126,40 @@ contract EnergyOracleTest is Test {
         emit EnergyOracle.SignerUpdated(newSigner, true);
         oracle.setSigner(newSigner, true);
     }
+
+    function test_batch_set_signers_updates_permissions() public {
+        address[] memory batch = new address[](3);
+        bool[] memory statuses = new bool[](3);
+        batch[0] = signer;
+        statuses[0] = false;
+        batch[1] = address(0xFEED);
+        statuses[1] = true;
+        batch[2] = address(0xB0B);
+        statuses[2] = true;
+
+        oracle.setSigners(batch, statuses);
+
+        assertFalse(oracle.signers(signer));
+        assertTrue(oracle.signers(batch[1]));
+        assertTrue(oracle.signers(batch[2]));
+    }
+
+    function test_batch_set_signers_rejects_length_mismatch() public {
+        address[] memory batch = new address[](2);
+        bool[] memory statuses = new bool[](1);
+
+        vm.expectRevert(EnergyOracle.LengthMismatch.selector);
+        oracle.setSigners(batch, statuses);
+    }
+
+    function test_only_governance_can_batch_update_signers() public {
+        address[] memory batch = new address[](1);
+        bool[] memory statuses = new bool[](1);
+        batch[0] = address(0xDEAD);
+        statuses[0] = true;
+
+        vm.expectRevert(Governable.NotGovernance.selector);
+        vm.prank(address(0xDEAD));
+        oracle.setSigners(batch, statuses);
+    }
 }
