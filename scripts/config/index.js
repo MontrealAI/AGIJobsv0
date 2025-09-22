@@ -262,6 +262,71 @@ function loadStakeManagerConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normaliseFeePoolConfig(config = {}) {
+  const result = { ...config };
+
+  const addressKeys = [
+    'stakeManager',
+    'treasury',
+    'governance',
+    'pauser',
+    'taxPolicy',
+  ];
+
+  for (const key of addressKeys) {
+    if (result[key] !== undefined) {
+      const value = result[key];
+      if (value === null) {
+        result[key] = ethers.ZeroAddress;
+      } else {
+        result[key] = ensureAddress(value, `FeePool ${key}`, {
+          allowZero: true,
+        });
+      }
+    }
+  }
+
+  if (result.treasuryAllowlist && typeof result.treasuryAllowlist === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(result.treasuryAllowlist)) {
+      if (value === undefined || value === null) continue;
+      const address = ensureAddress(key, `treasuryAllowlist ${key}`, {
+        allowZero: true,
+      });
+      mapped[address] = Boolean(value);
+    }
+    result.treasuryAllowlist = mapped;
+  }
+
+  if (result.rewarders && typeof result.rewarders === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(result.rewarders)) {
+      if (value === undefined || value === null) continue;
+      const address = ensureAddress(key, `rewarder ${key}`, { allowZero: false });
+      mapped[address] = Boolean(value);
+    }
+    result.rewarders = mapped;
+  }
+
+  if (result.rewardRole !== undefined && result.rewardRole !== null) {
+    result.rewardRole = String(result.rewardRole).trim();
+  }
+
+  return result;
+}
+
+function loadFeePoolConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('fee-pool', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Fee pool config not found at ${configPath}`);
+  }
+  const config = normaliseFeePoolConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseThermodynamicsConfig(config = {}) {
   const result = { ...config };
 
@@ -453,6 +518,7 @@ module.exports = {
   loadEnsConfig,
   loadJobRegistryConfig,
   loadStakeManagerConfig,
+  loadFeePoolConfig,
   loadThermodynamicsConfig,
   inferNetworkKey,
 };

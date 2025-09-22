@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""A lightweight shim for `forge config --json` used in CI containers.
+
+The Echidna Docker image used by `npm run echidna` does not bundle Foundry's
+`forge` binary, but crytic-compile attempts to call `forge config --json` when a
+`foundry.toml` file is present. This script emulates the subset of the Foundry
+CLI we need so that fuzzing can run without requiring Forge inside the
+container.
+"""
+
+from __future__ import annotations
+
+import ast
+import json
+import os
+import re
+import sys
+from pathlib import Path
+from typing import Any, Dict
+
+CONFIG_ENV = "FOUNDRY_CONFIG"
+DEFAULT_CONFIG = "foundry.toml"
+
+
+def _parse_value(raw: str) -> Any:
+    """Parse a TOML literal using `ast.literal_eval` with minimal preprocessing.
+
+    The Foundry config we ship only uses primitive literals, arrays and strings.
+    We normalise booleans to their Python equivalents before evaluating the
+    expression. If evaluation fails we fall back to returning a stripped string
+    so the shim behaves defensively.
+    """
+
+    pythonish = re.sub(r"\btrue\b", "True", raw, flags=re.IGNORECASE)
+    pythonish = re.sub(r"\bfalse\b", "False", pythonish, flags=re.IGNORECASE)
+    pythonish = re.sub(r"\bnull\b", "None", pythonish, flags=re.IGNORECASE)
+    try:
+        return ast.literal_eval(pythonish)
+    except (ValueError, SyntaxError):
+        return raw.strip().strip('"\'')
+
+
+def _load_foundry_config(path: Path) -> Dict[str, Any]:
+    config: Dict[str, Any] = {"profile": {}}
+    current: Dict[str, Any] | None = None
+
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1]
+            if section.startswith("profile."):
+                profile_name = section.split(".", 1)[1]
+                current = config["profile"].setdefault(profile_name, {})
+            else:
+                current = None
+            continue
+        if current is None or "=" not in line:
+            continue
+        key, raw_value = [part.strip() for part in line.split("=", 1)]
+        current[key] = _parse_value(raw_value)
+
+    return config
+
+
+def _resolve_config_path() -> Path:
+    location = os.environ.get(CONFIG_ENV, DEFAULT_CONFIG)
+    candidate = Path(location)
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    return candidate
+
+
+def _handle_config(args: list[str]) -> int:
+    if "--help" in args or "-h" in args:
+        print("Usage: forge config [--json]")
+        return 0
+
+    config_path = _resolve_config_path()
+    if not config_path.exists():
+        print(f"forge-shim: config file not found: {config_path}", file=sys.stderr)
+        return 1
+
+    data = _load_foundry_config(config_path)
+    if "--json" in args:
+        print(json.dumps(data))
+    else:
+        for profile, values in data.get("profile", {}).items():
+            print(f"[{profile}]")
+            for key, value in values.items():
+                print(f"{key} = {value}")
+    return 0
+
+
+def main() -> int:
+    if len(sys.argv) <= 1:
+        print("forge-shim: no arguments provided", file=sys.stderr)
+        return 1
+
+    command, *rest = sys.argv[1:]
+    if command == "--version":
+        print("forge-shim 0.0.1")
+        return 0
+    if command == "config":
+        return _handle_config(rest)
+
+    print(
+        "forge-shim: unsupported command. Only `forge config` is available in this environment.",
+        file=sys.stderr,
+    )
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
