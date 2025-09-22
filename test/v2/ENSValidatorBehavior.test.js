@@ -1,9 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-const {
-  finalizeValidatorSelection,
-} = require('../helpers/validation');
+const { finalizeValidatorSelection } = require('../helpers/validation');
 
 function namehash(root, label) {
   return ethers.keccak256(

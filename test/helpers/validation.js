@@ -63,4 +63,3 @@ async function finalizeValidatorSelection(
 module.exports = {
   finalizeValidatorSelection,
 };
-

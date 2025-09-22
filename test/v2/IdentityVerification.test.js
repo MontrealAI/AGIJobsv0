@@ -1,9 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-const {
-  finalizeValidatorSelection,
-} = require('../helpers/validation');
+const { finalizeValidatorSelection } = require('../helpers/validation');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('Identity verification enforcement', function () {
