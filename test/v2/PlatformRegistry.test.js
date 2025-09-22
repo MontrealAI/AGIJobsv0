@@ -1,16 +1,42 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, artifacts, network } = require('hardhat');
 
 describe('PlatformRegistry', function () {
-  let owner, platform, sybil, treasury;
+  let owner, platform, sybil, treasury, pauser, registrar;
   let token, stakeManager, reputationEngine, registry;
 
   const STAKE = 10n ** 18n; // 1 token with 18 decimals
 
   beforeEach(async () => {
-    [owner, platform, sybil, treasury] = await ethers.getSigners();
+    [owner, platform, sybil, treasury, pauser, registrar] =
+      await ethers.getSigners();
 
     const { AGIALPHA } = require('../../scripts/constants');
+    const artifact = await artifacts.readArtifact(
+      'contracts/test/MockERC20.sol:MockERC20'
+    );
+    await network.provider.send('hardhat_setCode', [
+      AGIALPHA,
+      artifact.deployedBytecode,
+    ]);
+    const balanceSlot = (address) =>
+      ethers.solidityPackedKeccak256(
+        ['bytes32', 'bytes32'],
+        [ethers.zeroPadValue(address, 32), ethers.ZeroHash]
+      );
+    for (const addr of [owner.address, platform.address, treasury.address]) {
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        balanceSlot(addr),
+        ethers.ZeroHash,
+      ]);
+    }
+    const totalSupplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      totalSupplySlot,
+      ethers.ZeroHash,
+    ]);
     token = await ethers.getContractAt(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
@@ -21,22 +47,22 @@ describe('PlatformRegistry', function () {
     const Stake = await ethers.getContractFactory(
       'contracts/v2/StakeManager.sol:StakeManager'
     );
-    stakeManager = await Stake.connect(platform).deploy(
+    stakeManager = await Stake.connect(owner).deploy(
       0,
       100,
       0,
       treasury.address,
       ethers.ZeroAddress,
       ethers.ZeroAddress,
-      platform.address
+      owner.address
     );
-    await stakeManager.connect(platform).setMinStake(STAKE);
+    await stakeManager.connect(owner).setMinStake(STAKE);
     const MockRegistry = await ethers.getContractFactory(
       'contracts/legacy/MockV2.sol:MockJobRegistry'
     );
     const mockRegistry = await MockRegistry.deploy();
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await mockRegistry.getAddress());
     await token
       .connect(platform)
@@ -101,7 +127,7 @@ describe('PlatformRegistry', function () {
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
     await expect(registry.connect(platform).acknowledgeAndRegister())
       .to.emit(registry, 'Registered')
@@ -150,7 +176,7 @@ describe('PlatformRegistry', function () {
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
     await expect(
       registry.connect(owner).acknowledgeAndRegisterFor(platform.address)
@@ -189,7 +215,7 @@ describe('PlatformRegistry', function () {
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
     await token
       .connect(platform)
@@ -233,7 +259,7 @@ describe('PlatformRegistry', function () {
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
     await expect(
       registry
@@ -273,7 +299,7 @@ describe('PlatformRegistry', function () {
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
     await expect(registry.connect(platform).acknowledgeAndRegister())
@@ -302,6 +328,116 @@ describe('PlatformRegistry', function () {
     await expect(registry.setMinPlatformStake(STAKE * 2n))
       .to.emit(registry, 'MinPlatformStakeUpdated')
       .withArgs(STAKE * 2n);
+  });
+
+  it('allows owner to batch apply configuration changes', async () => {
+    const Stake = await ethers.getContractFactory(
+      'contracts/v2/StakeManager.sol:StakeManager'
+    );
+    const stakeManager2 = await Stake.connect(owner).deploy(
+      0,
+      100,
+      0,
+      treasury.address,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      owner.address
+    );
+
+    const MockRegistry = await ethers.getContractFactory(
+      'contracts/legacy/MockV2.sol:MockJobRegistry'
+    );
+    const mockRegistry = await MockRegistry.deploy();
+    await stakeManager2
+      .connect(owner)
+      .setJobRegistry(await mockRegistry.getAddress());
+
+    await token.mint(platform.address, STAKE * 3n);
+    await token
+      .connect(platform)
+      .approve(await stakeManager2.getAddress(), STAKE * 2n);
+    await stakeManager2
+      .connect(platform)
+      .depositStakeFor(platform.address, 2, STAKE * 2n);
+
+    const Rep = await ethers.getContractFactory(
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
+    );
+    const reputationEngine2 = await Rep.connect(owner).deploy(
+      await stakeManager2.getAddress()
+    );
+    await reputationEngine2.setStakeManager(await stakeManager2.getAddress());
+    await reputationEngine2.setAuthorizedCaller(owner.address, true);
+
+    await registry.setBlacklist(platform.address, true);
+
+    const newStakeManager = await stakeManager2.getAddress();
+    const newReputationEngine = await reputationEngine2.getAddress();
+    const registrarUpdates = [
+      { registrar: registrar.address, allowed: true },
+    ];
+    const blacklistUpdates = [
+      { operator: platform.address, status: false },
+      { operator: sybil.address, status: true },
+    ];
+    const newMinStake = STAKE * 2n;
+
+    await expect(
+      registry.applyConfiguration(
+        {
+          setStakeManager: true,
+          stakeManager: newStakeManager,
+          setReputationEngine: true,
+          reputationEngine: newReputationEngine,
+          setMinPlatformStake: true,
+          minPlatformStake: newMinStake,
+          setPauser: true,
+          pauser: pauser.address,
+        },
+        registrarUpdates,
+        blacklistUpdates
+      )
+    )
+      .to.emit(registry, 'StakeManagerUpdated')
+      .withArgs(newStakeManager)
+      .and.to.emit(registry, 'ReputationEngineUpdated')
+      .withArgs(newReputationEngine)
+      .and.to.emit(registry, 'MinPlatformStakeUpdated')
+      .withArgs(newMinStake)
+      .and.to.emit(registry, 'PauserUpdated')
+      .withArgs(pauser.address)
+      .and.to.emit(registry, 'RegistrarUpdated')
+      .withArgs(registrar.address, true)
+      .and.to.emit(registry, 'Blacklisted')
+      .withArgs(platform.address, false)
+      .and.to.emit(registry, 'Blacklisted')
+      .withArgs(sybil.address, true)
+      .and.to.emit(registry, 'ModulesUpdated')
+      .withArgs(newStakeManager, newReputationEngine)
+      .and.to.emit(registry, 'ConfigurationApplied')
+      .withArgs(owner.address, true, true, true, true, 1, 2);
+
+    expect(await registry.stakeManager()).to.equal(newStakeManager);
+    expect(await registry.reputationEngine()).to.equal(newReputationEngine);
+    expect(await registry.minPlatformStake()).to.equal(newMinStake);
+    expect(await registry.pauser()).to.equal(pauser.address);
+    expect(await registry.registrars(registrar.address)).to.equal(true);
+    expect(await registry.blacklist(platform.address)).to.equal(false);
+    expect(await registry.blacklist(sybil.address)).to.equal(true);
+
+    await expect(registry.connect(pauser).pause())
+      .to.emit(registry, 'Paused')
+      .withArgs(pauser.address);
+    await expect(registry.connect(owner).unpause())
+      .to.emit(registry, 'Unpaused')
+      .withArgs(owner.address);
+
+    await expect(registry.connect(registrar).registerFor(platform.address))
+      .to.emit(registry, 'Registered')
+      .withArgs(platform.address);
+    await expect(registry.connect(sybil).register()).to.be.revertedWith(
+      'blacklisted'
+    );
   });
 
   it('enforces owner-managed blacklist', async () => {
@@ -398,7 +534,7 @@ describe('PlatformRegistry', function () {
       .connect(owner)
       .setAcknowledger(await registry.getAddress(), true);
     await stakeManager
-      .connect(platform)
+      .connect(owner)
       .setJobRegistry(await jobRegistry.getAddress());
 
     await policy.connect(platform).acknowledge();

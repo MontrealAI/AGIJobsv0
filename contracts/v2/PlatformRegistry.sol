@@ -32,6 +32,27 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     mapping(address => bool) public registrars;
     address public pauser;
 
+    struct ConfigUpdate {
+        bool setStakeManager;
+        IStakeManager stakeManager;
+        bool setReputationEngine;
+        IReputationEngine reputationEngine;
+        bool setMinPlatformStake;
+        uint256 minPlatformStake;
+        bool setPauser;
+        address pauser;
+    }
+
+    struct RegistrarConfig {
+        address registrar;
+        bool allowed;
+    }
+
+    struct BlacklistConfig {
+        address operator;
+        bool status;
+    }
+
     event Registered(address indexed operator);
     event Deregistered(address indexed operator);
     event StakeManagerUpdated(address indexed stakeManager);
@@ -42,6 +63,15 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     event RegistrarUpdated(address indexed registrar, bool allowed);
     event Activated(address indexed operator, uint256 amount);
     event PauserUpdated(address indexed pauser);
+    event ConfigurationApplied(
+        address indexed caller,
+        bool stakeManagerUpdated,
+        bool reputationEngineUpdated,
+        bool minStakeUpdated,
+        bool pauserUpdated,
+        uint256 registrarUpdates,
+        uint256 blacklistUpdates
+    );
 
     modifier onlyOwnerOrPauser() {
         require(
@@ -52,8 +82,7 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     }
 
     function setPauser(address _pauser) external onlyOwner {
-        pauser = _pauser;
-        emit PauserUpdated(_pauser);
+        _setPauser(_pauser);
     }
 
     /// @notice Deploys the PlatformRegistry.
@@ -270,29 +299,94 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
     // Use Etherscan's "Write Contract" tab to invoke these setters.
 
     function setStakeManager(IStakeManager manager) external onlyOwner {
-        stakeManager = manager;
-        emit StakeManagerUpdated(address(manager));
+        _setStakeManager(manager);
+        _emitModulesUpdated();
     }
 
     function setReputationEngine(IReputationEngine engine) external onlyOwner {
-        reputationEngine = engine;
-        emit ReputationEngineUpdated(address(engine));
+        _setReputationEngine(engine);
+        _emitModulesUpdated();
     }
 
     function setMinPlatformStake(uint256 stake) external onlyOwner {
-        minPlatformStake = stake;
-        emit MinPlatformStakeUpdated(stake);
+        _setMinPlatformStake(stake);
     }
 
     function setBlacklist(address operator, bool status) external onlyOwner {
-        blacklist[operator] = status;
-        emit Blacklisted(operator, status);
+        _setBlacklist(operator, status);
     }
 
     /// @notice Authorize or revoke a registrar address.
     function setRegistrar(address registrar, bool allowed) external onlyOwner {
-        registrars[registrar] = allowed;
-        emit RegistrarUpdated(registrar, allowed);
+        _setRegistrar(registrar, allowed);
+    }
+
+    /**
+     * @notice Atomically update core configuration parameters.
+     * @dev Allows governance to synchronise module upgrades, risk controls and
+     *      access lists in a single transaction for faster incident response.
+     *      Set the corresponding boolean flag in `config` to true to update a
+     *      field while leaving it untouched otherwise. Array parameters apply
+     *      each update sequentially.
+     * @param config Packed configuration options with update flags.
+     * @param registrarUpdates Registrar authorisation changes to apply.
+     * @param blacklistUpdates Blacklist status updates to apply.
+     */
+    function applyConfiguration(
+        ConfigUpdate calldata config,
+        RegistrarConfig[] calldata registrarUpdates,
+        BlacklistConfig[] calldata blacklistUpdates
+    ) external onlyOwner {
+        bool stakeManagerChanged;
+        bool reputationEngineChanged;
+        bool minStakeChanged;
+        bool pauserChanged;
+
+        if (config.setStakeManager) {
+            _setStakeManager(config.stakeManager);
+            stakeManagerChanged = true;
+        }
+
+        if (config.setReputationEngine) {
+            _setReputationEngine(config.reputationEngine);
+            reputationEngineChanged = true;
+        }
+
+        if (config.setMinPlatformStake) {
+            _setMinPlatformStake(config.minPlatformStake);
+            minStakeChanged = true;
+        }
+
+        if (config.setPauser) {
+            _setPauser(config.pauser);
+            pauserChanged = true;
+        }
+
+        uint256 registrarLen = registrarUpdates.length;
+        for (uint256 i; i < registrarLen; i++) {
+            RegistrarConfig calldata entry = registrarUpdates[i];
+            _setRegistrar(entry.registrar, entry.allowed);
+        }
+
+        uint256 blacklistLen = blacklistUpdates.length;
+        for (uint256 i; i < blacklistLen; i++) {
+            BlacklistConfig calldata update = blacklistUpdates[i];
+            _setBlacklist(update.operator, update.status);
+        }
+
+        if (stakeManagerChanged || reputationEngineChanged) {
+            _emitModulesUpdated();
+        }
+
+        emit ConfigurationApplied(
+            msg.sender,
+            stakeManagerChanged,
+            reputationEngineChanged,
+            minStakeChanged,
+            pauserChanged,
+            registrarLen,
+            blacklistLen
+        );
     }
 
     /// @notice Confirms the contract and owner are perpetually tax neutral.
@@ -318,6 +412,40 @@ contract PlatformRegistry is Ownable, ReentrancyGuard, Pausable {
 
     fallback() external payable {
         revert("PlatformRegistry: no ether");
+    }
+
+    function _setPauser(address _pauser) internal {
+        pauser = _pauser;
+        emit PauserUpdated(_pauser);
+    }
+
+    function _setStakeManager(IStakeManager manager) internal {
+        stakeManager = manager;
+        emit StakeManagerUpdated(address(manager));
+    }
+
+    function _setReputationEngine(IReputationEngine engine) internal {
+        reputationEngine = engine;
+        emit ReputationEngineUpdated(address(engine));
+    }
+
+    function _setMinPlatformStake(uint256 stake) internal {
+        minPlatformStake = stake;
+        emit MinPlatformStakeUpdated(stake);
+    }
+
+    function _setBlacklist(address operator, bool status) internal {
+        blacklist[operator] = status;
+        emit Blacklisted(operator, status);
+    }
+
+    function _setRegistrar(address registrar, bool allowed) internal {
+        registrars[registrar] = allowed;
+        emit RegistrarUpdated(registrar, allowed);
+    }
+
+    function _emitModulesUpdated() private {
+        emit ModulesUpdated(address(stakeManager), address(reputationEngine));
     }
 }
 
