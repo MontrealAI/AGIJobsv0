@@ -61,7 +61,9 @@ function buildProvider({ privateKeyEnv, rpcUrlEnv }) {
   const rpcUrl = ensureRpcUrl(rpcUrlEnv);
   const privateKey = resolvePrivateKey(privateKeyEnv);
   if (!privateKey) {
-    throw new Error(`Missing private key for ${rpcUrlEnv} (env: ${privateKeyEnv})`);
+    throw new Error(
+      `Missing private key for ${rpcUrlEnv} (env: ${privateKeyEnv})`
+    );
   }
   return new HDWalletProvider({
     privateKeys: [privateKey],

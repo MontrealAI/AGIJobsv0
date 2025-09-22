@@ -7,7 +7,9 @@ const LOG_PATH = path.join(__dirname, 'runtime-agentic.jsonl');
 
 function append(record) {
   try {
-    fs.appendFileSync(LOG_PATH, `${JSON.stringify(record)}\n`, { encoding: 'utf8' });
+    fs.appendFileSync(LOG_PATH, `${JSON.stringify(record)}\n`, {
+      encoding: 'utf8',
+    });
   } catch (err) {
     console.warn('[metrics] append failed:', err.message || err);
   }
