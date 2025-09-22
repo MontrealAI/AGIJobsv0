@@ -110,6 +110,23 @@ contract RewardEngineMBTest is Test {
         vm.store(AGIALPHA, ownerSlot, bytes32(uint256(uint160(address(engine)))));
     }
 
+    function test_setRoleSharesRebalancesAllRoles() public {
+        uint256[4] memory shares = [uint256(6e17), 2e17, 1e17, 1e17];
+        engine.setRoleShares(shares);
+
+        assertEq(engine.roleShare(RewardEngineMB.Role.Agent), shares[0]);
+        assertEq(engine.roleShare(RewardEngineMB.Role.Validator), shares[1]);
+        assertEq(engine.roleShare(RewardEngineMB.Role.Operator), shares[2]);
+        assertEq(engine.roleShare(RewardEngineMB.Role.Employer), shares[3]);
+    }
+
+    function test_setRoleSharesRevertsWhenSumInvalid() public {
+        uint256[4] memory shares = [uint256(7e17), 2e17, 1e17, 1e17];
+        uint256 sum = shares[0] + shares[1] + shares[2] + shares[3];
+        vm.expectRevert(abi.encodeWithSelector(RewardEngineMB.InvalidRoleShareSum.selector, sum));
+        engine.setRoleShares(shares);
+    }
+
     function _proof(address user, int256 energy, uint256 epoch, RewardEngineMB.Role role)
         internal
         pure

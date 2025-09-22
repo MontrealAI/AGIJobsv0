@@ -134,9 +134,7 @@ describe('JobRegistry agent gating', function () {
     expect(await registry.activeJobs(agent.address)).to.equal(1n);
 
     const { jobId: secondJobId } = await createJob();
-    await expect(
-      registry.connect(agent).applyForJob(secondJobId, 'a', [])
-    )
+    await expect(registry.connect(agent).applyForJob(secondJobId, 'a', []))
       .to.be.revertedWithCustomError(registry, 'MaxActiveJobsReached')
       .withArgs(1);
     expect(await registry.activeJobs(agent.address)).to.equal(1n);
@@ -149,9 +147,7 @@ describe('JobRegistry agent gating', function () {
     await registry.connect(agent).applyForJob(firstJobId, 'a', []);
     const { jobId: secondJobId } = await createJob();
 
-    await expect(
-      registry.connect(agent).applyForJob(secondJobId, 'a', [])
-    )
+    await expect(registry.connect(agent).applyForJob(secondJobId, 'a', []))
       .to.be.revertedWithCustomError(registry, 'MaxActiveJobsReached')
       .withArgs(1);
 

@@ -95,16 +95,22 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         roleShare[Role.Validator] = 15e16;
         roleShare[Role.Operator] = 15e16;
         roleShare[Role.Employer] = 5e16;
-        _validateRoleShares();
+        _validateRoleShares(_currentRoleShares());
     }
 
     /// @notice Configure how much of the reward budget a role receives.
     /// @param r The participant role to adjust.
     /// @param share Portion of the budget scaled by 1e18.
     function setRoleShare(Role r, uint256 share) external onlyGovernance {
-        roleShare[r] = share;
-        _validateRoleShares();
-        emit RoleShareUpdated(r, share);
+        uint256[4] memory shares = _currentRoleShares();
+        shares[uint256(r)] = share;
+        _setRoleShares(shares);
+    }
+
+    /// @notice Configure the reward budget portions for all roles at once.
+    /// @param shares Array of role shares scaled by 1e18 ordered as Agent, Validator, Operator, Employer.
+    function setRoleShares(uint256[4] calldata shares) external onlyGovernance {
+        _setRoleShares(shares);
     }
 
     /// @notice Set the chemical potential \(\mu\) used in MB weighting for a role.
@@ -339,9 +345,32 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         }
     }
 
-    function _validateRoleShares() private view {
-        uint256 sum =
-            roleShare[Role.Agent] + roleShare[Role.Validator] + roleShare[Role.Operator] + roleShare[Role.Employer];
+    function _setRoleShares(uint256[4] memory shares) private {
+        uint256[4] memory previous = _currentRoleShares();
+
+        _validateRoleShares(shares);
+
+        roleShare[Role.Agent] = shares[0];
+        roleShare[Role.Validator] = shares[1];
+        roleShare[Role.Operator] = shares[2];
+        roleShare[Role.Employer] = shares[3];
+
+        for (uint256 i = 0; i < shares.length; i++) {
+            if (shares[i] != previous[i]) {
+                emit RoleShareUpdated(Role(i), shares[i]);
+            }
+        }
+    }
+
+    function _currentRoleShares() private view returns (uint256[4] memory shares) {
+        shares[0] = roleShare[Role.Agent];
+        shares[1] = roleShare[Role.Validator];
+        shares[2] = roleShare[Role.Operator];
+        shares[3] = roleShare[Role.Employer];
+    }
+
+    function _validateRoleShares(uint256[4] memory shares) private pure {
+        uint256 sum = shares[0] + shares[1] + shares[2] + shares[3];
         if (sum != uint256(WAD)) revert InvalidRoleShareSum(sum);
     }
 }

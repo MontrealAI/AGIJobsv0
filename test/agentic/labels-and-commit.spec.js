@@ -1,7 +1,13 @@
 const { expect } = require('chai');
 
-const { ensLabelFrom, shouldApply } = require('../../examples/agentic/v2-agent-gateway');
-const { commitHash, parseProof } = require('../../examples/agentic/v2-validator');
+const {
+  ensLabelFrom,
+  shouldApply,
+} = require('../../examples/agentic/v2-agent-gateway');
+const {
+  commitHash,
+  parseProof,
+} = require('../../examples/agentic/v2-validator');
 
 describe('agentic helpers', () => {
   it('ensLabelFrom normalises ENS labels', () => {

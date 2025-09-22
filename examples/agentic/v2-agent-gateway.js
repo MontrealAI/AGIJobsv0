@@ -30,7 +30,7 @@ function bigIntFrom(value, fallback = 0n) {
   try {
     return typeof value === 'bigint' ? value : BigInt(value);
   } catch (err) {
-    throw new Error(`Unable to parse bigint from value ${value}`);
+    throw new Error(`Unable to parse bigint from value ${value}: ${err}`);
   }
 }
 
@@ -65,7 +65,9 @@ function ensureEnsMembership(ensName, cfg) {
     }
   }
   throw new Error(
-    `ENS name ${normalised} not under allowed roots (${Array.from(allowed).join(', ')})`
+    `ENS name ${normalised} not under allowed roots (${Array.from(allowed).join(
+      ', '
+    )})`
   );
 }
 
@@ -79,7 +81,9 @@ function shouldApply(job, policy) {
     return false;
   }
   if (policy?.skipCategories?.length && job.category) {
-    const skip = policy.skipCategories.map((entry) => String(entry).toLowerCase());
+    const skip = policy.skipCategories.map((entry) =>
+      String(entry).toLowerCase()
+    );
     if (skip.includes(String(job.category).toLowerCase())) {
       return false;
     }
@@ -124,7 +128,9 @@ function loadWallet(provider) {
     return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   }
   if (process.env.MNEMONIC) {
-    return ethers.HDNodeWallet.fromPhrase(process.env.MNEMONIC).connect(provider);
+    return ethers.HDNodeWallet.fromPhrase(process.env.MNEMONIC).connect(
+      provider
+    );
   }
   throw new Error('Provide PRIVATE_KEY or MNEMONIC in environment.');
 }
@@ -141,26 +147,40 @@ async function main() {
   const provider = parseProvider(cfg);
   const wallet = loadWallet(provider);
 
-  const jobRegistryAddress = resolveAddress('jobRegistry', cfg.jobRegistry || cfg.jobRegistryAddress);
-  const stakeManagerAddress = resolveAddress('stakeManager', cfg.stakeManager || cfg.stakeManagerAddress);
+  const jobRegistryAddress = resolveAddress(
+    'jobRegistry',
+    cfg.jobRegistry || cfg.jobRegistryAddress
+  );
+  const stakeManagerAddress = resolveAddress(
+    'stakeManager',
+    cfg.stakeManager || cfg.stakeManagerAddress
+  );
 
   const jobRegistryAbi = [
     'event JobCreated(uint256 indexed jobId,address indexed employer,address indexed agent,uint256 reward,uint256 stake,uint256 fee,bytes32 specHash,string uri)',
     'function jobs(uint256 jobId) view returns (tuple(address employer,address agent,uint128 reward,uint96 stake,uint128 burnReceiptAmount,bytes32 uriHash,bytes32 resultHash,bytes32 specHash,uint256 packedMetadata))',
     'function applyForJob(uint256 jobId,string subdomain,bytes32[] proof)',
     'function submit(uint256 jobId,bytes32 resultHash,string resultURI,string subdomain,bytes32[] proof)',
-    'function finalize(uint256 jobId)'
+    'function finalize(uint256 jobId)',
   ];
 
   const stakeManagerAbi = [
     'function stakeOf(address user,uint8 role) view returns (uint256)',
     'function depositStake(uint8 role,uint256 amount)',
-    'function token() view returns (address)'
+    'function token() view returns (address)',
   ];
 
-  const jobRegistry = new ethers.Contract(jobRegistryAddress, jobRegistryAbi, provider);
+  const jobRegistry = new ethers.Contract(
+    jobRegistryAddress,
+    jobRegistryAbi,
+    provider
+  );
   const jobRegistryWithSigner = jobRegistry.connect(wallet);
-  const stakeManager = new ethers.Contract(stakeManagerAddress, stakeManagerAbi, wallet);
+  const stakeManager = new ethers.Contract(
+    stakeManagerAddress,
+    stakeManagerAbi,
+    wallet
+  );
 
   const network = await provider.getNetwork();
   const chainId = Number(network.chainId);
@@ -213,7 +233,11 @@ async function main() {
         console.log(
           `[gateway] applying job=${jobId.toString()} reward=${rewardWei.toString()} stake=${requiredStake.toString()}`
         );
-        const tx = await jobRegistryWithSigner.applyForJob(jobId, agentLabel, []);
+        const tx = await jobRegistryWithSigner.applyForJob(
+          jobId,
+          agentLabel,
+          []
+        );
         await tx.wait(2);
         metrics.logEnergy('apply', {
           jobId: jobId.toString(),

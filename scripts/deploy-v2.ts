@@ -158,14 +158,14 @@ async function main() {
   await feePool.setRewarder(await rewardEngine.getAddress(), true);
   await reputation.setCaller(await rewardEngine.getAddress(), true);
 
-  const shares = [
+  const shares: [bigint, bigint, bigint, bigint] = [
     ethers.parseUnits('0.65', 18),
     ethers.parseUnits('0.15', 18),
     ethers.parseUnits('0.15', 18),
     ethers.parseUnits('0.05', 18),
   ];
+  await rewardEngine.setRoleShares(shares);
   for (let i = 0; i < shares.length; i++) {
-    await rewardEngine.setRoleShare(i, shares[i]);
     await rewardEngine.setMu(i, 0);
   }
   await rewardEngine.setSettler(deployer.address, true);
