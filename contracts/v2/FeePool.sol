@@ -85,6 +85,33 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice addresses allowed to call reward
     mapping(address => bool) public rewarders;
 
+    struct ConfigUpdate {
+        bool setStakeManager;
+        IStakeManager stakeManager;
+        bool setRewardRole;
+        IStakeManager.Role rewardRole;
+        bool setBurnPct;
+        uint256 burnPct;
+        bool setTreasury;
+        address treasury;
+        bool setGovernance;
+        address governance;
+        bool setTaxPolicy;
+        ITaxPolicy taxPolicy;
+        bool setPauser;
+        address pauser;
+    }
+
+    struct AllowlistUpdate {
+        address treasury;
+        bool allowed;
+    }
+
+    struct RewarderConfig {
+        address rewarder;
+        bool allowed;
+    }
+
     event FeeDeposited(address indexed from, uint256 amount);
     event FeesDistributed(uint256 amount);
     event FeesBurned(address indexed caller, uint256 amount);
@@ -102,6 +129,18 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     event TaxPolicyUpdated(address indexed policy);
     event RewarderUpdated(address indexed rewarder, bool allowed);
     event TreasuryRewarded(address indexed treasury, uint256 amount);
+    event ConfigurationApplied(
+        address indexed caller,
+        bool stakeManagerUpdated,
+        bool rewardRoleUpdated,
+        bool burnPctUpdated,
+        bool treasuryUpdated,
+        bool governanceUpdated,
+        bool taxPolicyUpdated,
+        bool pauserUpdated,
+        uint256 rewarderUpdates,
+        uint256 treasuryAllowlistUpdates
+    );
 
     modifier onlyOwnerOrPauser() {
         if (msg.sender != owner() && msg.sender != pauser) {
@@ -111,14 +150,12 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     }
 
     function setPauser(address _pauser) external onlyOwner {
-        pauser = _pauser;
-        emit PauserUpdated(_pauser);
+        _setPauser(_pauser);
     }
 
     /// @notice Authorize an address to distribute rewards.
     function setRewarder(address rewarder, bool allowed) external onlyOwner {
-        rewarders[rewarder] = allowed;
-        emit RewarderUpdated(rewarder, allowed);
+        _setRewarder(rewarder, allowed);
     }
 
     /// @notice Deploys the FeePool.
@@ -324,9 +361,7 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice designate the timelock or governance contract for withdrawals
     /// @param _governance Timelock or governance address
     function setGovernance(address _governance) external onlyOwner {
-        if (_governance == address(0)) revert ZeroAddress();
-        governance = TimelockController(payable(_governance));
-        emit GovernanceUpdated(_governance);
+        _setGovernance(_governance);
     }
 
     /// @notice governance-controlled emergency escape hatch to withdraw tokens
@@ -366,6 +401,57 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
     /// @notice update StakeManager contract
     /// @param manager contract orchestrating fee deposits and staking
     function setStakeManager(IStakeManager manager) external onlyOwner {
+        _setStakeManager(manager);
+    }
+
+    /// @notice update reward role used for distribution
+    /// @param role staker role whose participants earn rewards
+    function setRewardRole(IStakeManager.Role role) external onlyOwner {
+        _setRewardRole(role);
+    }
+
+    /// @notice update percentage of each fee to burn
+    /// @param pct percentage of fees burned (0-100)
+    function setBurnPct(uint256 pct) external onlyOwner {
+        _setBurnPct(pct);
+    }
+
+    /// @notice update treasury address for rounding dust
+    /// @param _treasury address receiving dust after distribution
+    function setTreasury(address _treasury) external onlyOwner {
+        _setTreasury(_treasury);
+    }
+
+    /// @notice Allow or disallow a treasury address
+    /// @param _treasury Treasury candidate
+    /// @param allowed True to allow, false to revoke
+    function setTreasuryAllowlist(address _treasury, bool allowed) external onlyOwner {
+        _setTreasuryAllowlist(_treasury, allowed);
+    }
+
+    /// @notice update the tax policy contract
+    /// @param _policy address of the TaxPolicy contract
+    function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
+        _setTaxPolicy(_policy);
+    }
+
+    function _setPauser(address _pauser) internal {
+        pauser = _pauser;
+        emit PauserUpdated(_pauser);
+    }
+
+    function _setRewarder(address rewarder, bool allowed) internal {
+        rewarders[rewarder] = allowed;
+        emit RewarderUpdated(rewarder, allowed);
+    }
+
+    function _setGovernance(address _governance) internal {
+        if (_governance == address(0)) revert ZeroAddress();
+        governance = TimelockController(payable(_governance));
+        emit GovernanceUpdated(_governance);
+    }
+
+    function _setStakeManager(IStakeManager manager) internal {
         if (address(manager) == address(0)) revert ZeroAddress();
         if (manager.version() != version) revert InvalidStakeManagerVersion();
         stakeManager = manager;
@@ -373,24 +459,18 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         emit ModulesUpdated(address(manager));
     }
 
-    /// @notice update reward role used for distribution
-    /// @param role staker role whose participants earn rewards
-    function setRewardRole(IStakeManager.Role role) external onlyOwner {
+    function _setRewardRole(IStakeManager.Role role) internal {
         rewardRole = role;
         emit RewardRoleUpdated(role);
     }
 
-    /// @notice update percentage of each fee to burn
-    /// @param pct percentage of fees burned (0-100)
-    function setBurnPct(uint256 pct) external onlyOwner {
+    function _setBurnPct(uint256 pct) internal {
         if (pct > 100) revert InvalidPercentage();
         burnPct = pct;
         emit BurnPctUpdated(pct);
     }
 
-    /// @notice update treasury address for rounding dust
-    /// @param _treasury address receiving dust after distribution
-    function setTreasury(address _treasury) external onlyOwner {
+    function _setTreasury(address _treasury) internal {
         if (_treasury == owner()) revert InvalidTreasury();
         if (_treasury != address(0) && !treasuryAllowlist[_treasury]) {
             revert InvalidTreasury();
@@ -399,21 +479,98 @@ contract FeePool is Ownable, Pausable, ReentrancyGuard, TaxAcknowledgement {
         emit TreasuryUpdated(_treasury);
     }
 
-    /// @notice Allow or disallow a treasury address
-    /// @param _treasury Treasury candidate
-    /// @param allowed True to allow, false to revoke
-    function setTreasuryAllowlist(address _treasury, bool allowed) external onlyOwner {
+    function _setTreasuryAllowlist(address _treasury, bool allowed) internal {
         treasuryAllowlist[_treasury] = allowed;
         emit TreasuryAllowlistUpdated(_treasury, allowed);
     }
 
-    /// @notice update the tax policy contract
-    /// @param _policy address of the TaxPolicy contract
-    function setTaxPolicy(ITaxPolicy _policy) external onlyOwner {
+    function _setTaxPolicy(ITaxPolicy _policy) internal {
         if (address(_policy) == address(0)) revert InvalidTaxPolicy();
         if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
         taxPolicy = _policy;
         emit TaxPolicyUpdated(address(_policy));
+    }
+
+    /**
+     * @notice Atomically apply multiple configuration updates.
+     * @dev Processes allowlist and rewarder updates before setters so newly
+     *      authorised addresses can be referenced in the same transaction.
+     * @param config Packed configuration toggles and values.
+     * @param allowlistUpdates Treasury allowlist modifications to apply.
+     * @param rewarderUpdates Rewarder allow/deny list updates to apply.
+     */
+    function applyConfiguration(
+        ConfigUpdate calldata config,
+        AllowlistUpdate[] calldata allowlistUpdates,
+        RewarderConfig[] calldata rewarderUpdates
+    ) external onlyOwner {
+        uint256 allowlistLen = allowlistUpdates.length;
+        for (uint256 i; i < allowlistLen; i++) {
+            AllowlistUpdate calldata update = allowlistUpdates[i];
+            _setTreasuryAllowlist(update.treasury, update.allowed);
+        }
+
+        uint256 rewarderLen = rewarderUpdates.length;
+        for (uint256 i; i < rewarderLen; i++) {
+            RewarderConfig calldata entry = rewarderUpdates[i];
+            _setRewarder(entry.rewarder, entry.allowed);
+        }
+
+        bool stakeManagerChanged;
+        bool rewardRoleChanged;
+        bool burnPctChanged;
+        bool treasuryChanged;
+        bool governanceChanged;
+        bool taxPolicyChanged;
+        bool pauserChanged;
+
+        if (config.setStakeManager) {
+            _setStakeManager(config.stakeManager);
+            stakeManagerChanged = true;
+        }
+
+        if (config.setRewardRole) {
+            _setRewardRole(config.rewardRole);
+            rewardRoleChanged = true;
+        }
+
+        if (config.setBurnPct) {
+            _setBurnPct(config.burnPct);
+            burnPctChanged = true;
+        }
+
+        if (config.setTreasury) {
+            _setTreasury(config.treasury);
+            treasuryChanged = true;
+        }
+
+        if (config.setGovernance) {
+            _setGovernance(config.governance);
+            governanceChanged = true;
+        }
+
+        if (config.setTaxPolicy) {
+            _setTaxPolicy(config.taxPolicy);
+            taxPolicyChanged = true;
+        }
+
+        if (config.setPauser) {
+            _setPauser(config.pauser);
+            pauserChanged = true;
+        }
+
+        emit ConfigurationApplied(
+            msg.sender,
+            stakeManagerChanged,
+            rewardRoleChanged,
+            burnPctChanged,
+            treasuryChanged,
+            governanceChanged,
+            taxPolicyChanged,
+            pauserChanged,
+            rewarderLen,
+            allowlistLen
+        );
     }
 
     /// @notice Confirms the contract and its owner can never incur tax liability.
