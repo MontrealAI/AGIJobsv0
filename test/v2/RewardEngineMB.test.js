@@ -21,6 +21,31 @@ describe('RewardEngineMB', function () {
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );
+    const balanceSlot = (address) =>
+      ethers.solidityPackedKeccak256(
+        ['bytes32', 'bytes32'],
+        [ethers.zeroPadValue(address, 32), ethers.ZeroHash]
+      );
+    for (const addr of [
+      owner.address,
+      agent.address,
+      validator.address,
+      operator.address,
+      employer.address,
+      treasury.address,
+    ]) {
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        balanceSlot(addr),
+        ethers.ZeroHash,
+      ]);
+    }
+    const totalSupplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      totalSupplySlot,
+      ethers.ZeroHash,
+    ]);
 
     const Thermostat = await ethers.getContractFactory(
       'contracts/v2/Thermostat.sol:Thermostat'
@@ -36,6 +61,11 @@ describe('RewardEngineMB', function () {
       'contracts/v2/mocks/RewardEngineMBMocks.sol:MockFeePool'
     );
     feePool = await MockFeePool.deploy();
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      balanceSlot(await feePool.getAddress()),
+      ethers.ZeroHash,
+    ]);
 
     const MockReputation = await ethers.getContractFactory(
       'contracts/v2/mocks/RewardEngineMBMocks.sol:MockReputation'
@@ -213,12 +243,150 @@ describe('RewardEngineMB', function () {
     expect(rT).to.equal(3n);
     expect(r1 + r2 + rT).to.equal(budget);
     expect(await feePool.total()).to.equal(budget);
-    expect(await token.totalSupply()).to.equal(supplyBefore + budget * 2n);
+    expect(await token.totalSupply()).to.equal(supplyBefore + budget);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
       feePoolBalBefore + budget
     );
     expect(await token.balanceOf(treasury.address)).to.equal(
-      treasuryBalBefore + budget
+      treasuryBalBefore
     );
+  });
+
+  it('respects role share caps and energy-weighted rewards', async function () {
+    const signers = await ethers.getSigners();
+    const extraAgent = signers[6];
+    const extraValidator = signers[7];
+
+    const attAgentLow = {
+      jobId: 1,
+      user: agent.address,
+      energy: 0n,
+      degeneracy: 1n,
+      epochId: 2n,
+      role: 0,
+      nonce: 1n,
+      deadline: 0n,
+      uPre: ethers.parseUnits('1', 18),
+      uPost: 0n,
+      value: 0n,
+    };
+    const attAgentHigh = {
+      jobId: 1,
+      user: extraAgent.address,
+      energy: ethers.parseUnits('4', 18),
+      degeneracy: 1n,
+      epochId: 2n,
+      role: 0,
+      nonce: 2n,
+      deadline: 0n,
+      uPre: ethers.parseUnits('1', 18),
+      uPost: 0n,
+      value: 0n,
+    };
+    const attValidatorLow = {
+      jobId: 1,
+      user: validator.address,
+      energy: 0n,
+      degeneracy: 1n,
+      epochId: 2n,
+      role: 1,
+      nonce: 3n,
+      deadline: 0n,
+      uPre: ethers.parseUnits('1', 18),
+      uPost: 0n,
+      value: 0n,
+    };
+    const attValidatorHigh = {
+      jobId: 1,
+      user: extraValidator.address,
+      energy: ethers.parseUnits('3', 18),
+      degeneracy: 1n,
+      epochId: 2n,
+      role: 1,
+      nonce: 4n,
+      deadline: 0n,
+      uPre: ethers.parseUnits('1', 18),
+      uPost: 0n,
+      value: 0n,
+    };
+    const attOperator = {
+      jobId: 1,
+      user: operator.address,
+      energy: 0n,
+      degeneracy: 1n,
+      epochId: 2n,
+      role: 2,
+      nonce: 5n,
+      deadline: 0n,
+      uPre: ethers.parseUnits('1', 18),
+      uPost: 0n,
+      value: 0n,
+    };
+    const attEmployer = {
+      jobId: 1,
+      user: employer.address,
+      energy: 0n,
+      degeneracy: 1n,
+      epochId: 2n,
+      role: 3,
+      nonce: 6n,
+      deadline: 0n,
+      uPre: ethers.parseUnits('1', 18),
+      uPost: 0n,
+      value: 0n,
+    };
+
+    const data = {
+      agents: [
+        { att: attAgentLow, sig: '0x' },
+        { att: attAgentHigh, sig: '0x' },
+      ],
+      validators: [
+        { att: attValidatorLow, sig: '0x' },
+        { att: attValidatorHigh, sig: '0x' },
+      ],
+      operators: [{ att: attOperator, sig: '0x' }],
+      employers: [{ att: attEmployer, sig: '0x' }],
+      paidCosts: 0n,
+    };
+
+    const tx = await engine.settleEpoch(2, data);
+    const receipt = await tx.wait();
+    const budget = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === 'EpochSettled'
+    ).args.budget;
+
+    const agentRewardLow = await feePool.rewards(agent.address);
+    const agentRewardHigh = await feePool.rewards(extraAgent.address);
+    const validatorRewardLow = await feePool.rewards(validator.address);
+    const validatorRewardHigh = await feePool.rewards(extraValidator.address);
+    const operatorReward = await feePool.rewards(operator.address);
+    const employerReward = await feePool.rewards(employer.address);
+    const treasuryReward = await feePool.rewards(treasury.address);
+
+    const agentTotal = agentRewardLow + agentRewardHigh;
+    const validatorTotal = validatorRewardLow + validatorRewardHigh;
+    const totalRewards =
+      agentTotal +
+      validatorTotal +
+      operatorReward +
+      employerReward +
+      treasuryReward;
+
+    expect(await feePool.total()).to.equal(budget);
+    expect(totalRewards).to.equal(budget);
+
+    const agentBucket = (budget * 65n) / 100n;
+    const validatorBucket = (budget * 15n) / 100n;
+    const operatorBucket = (budget * 15n) / 100n;
+    const employerBucket = (budget * 5n) / 100n;
+
+    expect(agentTotal).to.be.lte(agentBucket);
+    expect(validatorTotal).to.be.lte(validatorBucket);
+    expect(operatorReward).to.be.lte(operatorBucket);
+    expect(employerReward).to.be.lte(employerBucket);
+
+    expect(agentRewardLow).to.be.gt(agentRewardHigh);
+    expect(validatorRewardLow).to.be.gt(validatorRewardHigh);
   });
 });

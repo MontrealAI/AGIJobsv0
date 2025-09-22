@@ -412,6 +412,23 @@ describe('ValidationModule V2', function () {
     ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
   });
 
+  it('rejects reveal when commit data does not match', async () => {
+    await select(1);
+    const nonce = await validation.jobNonce(1);
+    const salt = ethers.keccak256(ethers.toUtf8Bytes('flip'));
+    const commit = ethers.solidityPackedKeccak256(
+      ['uint256', 'uint256', 'bool', 'bytes32', 'bytes32', 'bytes32'],
+      [1n, nonce, true, burnTxHash, salt, ethers.ZeroHash]
+    );
+    await (
+      await validation.connect(v1).commitValidation(1, commit, '', [])
+    ).wait();
+    await advance(61);
+    await expect(
+      validation.connect(v1).revealValidation(1, false, burnTxHash, salt, '', [])
+    ).to.be.revertedWithCustomError(validation, 'InvalidReveal');
+  });
+
   it('clears commitments after finalization', async () => {
     await validation.connect(owner).setValidatorBounds(3, 3);
     await validation

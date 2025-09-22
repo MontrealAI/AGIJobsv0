@@ -260,6 +260,38 @@ describe('JobRegistry integration', function () {
     expect(await policy.hasAcknowledged(newAgent.address)).to.equal(true);
   });
 
+  it('blocks additional agents once a job has been assigned', async () => {
+    const [, , , , secondAgent] = await ethers.getSigners();
+    await registry.connect(owner).setJobParameters(reward, 0);
+    await policy.connect(secondAgent).acknowledge();
+
+    await token
+      .connect(employer)
+      .approve(await stakeManager.getAddress(), reward);
+
+    const deadline = (await time.latest()) + 1000;
+    const specHash = ethers.id('multi-agent');
+    await registry
+      .connect(employer)
+      ['createJob(uint256,uint64,bytes32,string)'](
+        reward,
+        deadline,
+        specHash,
+        'uri'
+      );
+
+    await expect(registry.connect(agent).applyForJob(1, '', []))
+      .to.emit(registry, 'AgentAssigned')
+      .withArgs(1, agent.address, '');
+
+    await expect(
+      registry.connect(secondAgent).applyForJob(1, '', [])
+    ).to.be.revertedWithCustomError(registry, 'NotOpen');
+
+    const job = await registry.jobs(1);
+    expect(job.agent).to.equal(agent.address);
+  });
+
   it('distributes platform fee to stakers', async () => {
     // set up fee pool rewarding platform stakers
     const FeePool = await ethers.getContractFactory(
