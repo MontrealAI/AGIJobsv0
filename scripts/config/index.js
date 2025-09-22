@@ -262,6 +262,82 @@ function loadStakeManagerConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normaliseThermodynamicsConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.rewardEngine && typeof result.rewardEngine === 'object') {
+    const reward = { ...result.rewardEngine };
+
+    if (reward.address !== undefined) {
+      reward.address = ensureAddress(reward.address, 'RewardEngine address');
+    }
+
+    if (reward.treasury !== undefined) {
+      reward.treasury = ensureAddress(reward.treasury, 'RewardEngine treasury', {
+        allowZero: true,
+      });
+    }
+
+    if (reward.thermostat !== undefined) {
+      const allowZero = reward.thermostat === null || reward.thermostat === '';
+      reward.thermostat = allowZero
+        ? ethers.ZeroAddress
+        : ensureAddress(reward.thermostat, 'RewardEngine thermostat', {
+            allowZero: true,
+          });
+    }
+
+    if (reward.settlers && typeof reward.settlers === 'object') {
+      const mapped = {};
+      for (const [key, value] of Object.entries(reward.settlers)) {
+        if (value === undefined || value === null) continue;
+        const address = ensureAddress(key, `RewardEngine settler ${key}`);
+        mapped[address] = Boolean(value);
+      }
+      reward.settlers = mapped;
+    }
+
+    result.rewardEngine = reward;
+  }
+
+  if (result.thermostat && typeof result.thermostat === 'object') {
+    const thermo = { ...result.thermostat };
+
+    if (thermo.address !== undefined) {
+      const allowZero = thermo.address === null || thermo.address === '';
+      thermo.address = allowZero
+        ? ethers.ZeroAddress
+        : ensureAddress(thermo.address, 'Thermostat address', {
+            allowZero: true,
+          });
+    }
+
+    if (thermo.roleTemperatures && typeof thermo.roleTemperatures === 'object') {
+      const mapped = {};
+      for (const [key, value] of Object.entries(thermo.roleTemperatures)) {
+        mapped[key] = value;
+      }
+      thermo.roleTemperatures = mapped;
+    }
+
+    result.thermostat = thermo;
+  }
+
+  return result;
+}
+
+function loadThermodynamicsConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('thermodynamics', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Thermodynamics config not found at ${configPath}`);
+  }
+  const config = normaliseThermodynamicsConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseRootEntry(key, root) {
   const result = { ...root };
   let changed = false;
@@ -377,5 +453,6 @@ module.exports = {
   loadEnsConfig,
   loadJobRegistryConfig,
   loadStakeManagerConfig,
+  loadThermodynamicsConfig,
   inferNetworkKey,
 };

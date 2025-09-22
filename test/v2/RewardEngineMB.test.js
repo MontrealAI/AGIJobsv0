@@ -243,11 +243,14 @@ describe('RewardEngineMB', function () {
     expect(rT).to.equal(3n);
     expect(r1 + r2 + rT).to.equal(budget);
     expect(await feePool.total()).to.equal(budget);
+    const agentBal = await token.balanceOf(agent.address);
+    const treasuryBal = await token.balanceOf(treasury.address);
     expect(await token.totalSupply()).to.equal(supplyBefore + budget);
     expect(await token.balanceOf(await feePool.getAddress())).to.equal(
-      feePoolBalBefore + budget
+      feePoolBalBefore
     );
-    expect(await token.balanceOf(treasury.address)).to.equal(treasuryBalBefore);
+    expect(agentBal).to.equal(r1);
+    expect(treasuryBal).to.equal(treasuryBalBefore + rT);
   });
 
   it('respects role share caps and energy-weighted rewards', async function () {

@@ -2,6 +2,8 @@ node_modules/
 .env
 artifacts/
 cache/
+coverage/
+coverage.json
 
 .next/
 
@@ -10,6 +12,7 @@ scripts/**/*.js
 !scripts/constants.js
 !scripts/compute-namehash.js
 !scripts/config/index.js
+!scripts/check-coverage.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
 

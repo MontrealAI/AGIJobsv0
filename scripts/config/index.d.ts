@@ -108,6 +108,65 @@ export interface StakeManagerConfigResult {
   network?: SupportedNetwork;
 }
 
+export type RoleShareInput =
+  | number
+  | string
+  | {
+      percent?: number | string;
+      wad?: number | string;
+    };
+
+export interface RewardEngineThermoConfig {
+  address?: string;
+  treasury?: string | null;
+  thermostat?: string | null;
+  roleShares?: Record<string, RoleShareInput>;
+  mu?: Record<string, number | string>;
+  baselineEnergy?: Record<string, number | string>;
+  kappa?: number | string;
+  maxProofs?: number | string;
+  temperature?: number | string;
+  settlers?: Record<string, boolean>;
+  [key: string]: unknown;
+}
+
+export interface ThermostatConfigInput {
+  address?: string | null;
+  systemTemperature?: number | string;
+  bounds?: {
+    min?: number | string;
+    max?: number | string;
+  };
+  pid?: {
+    kp?: number | string;
+    ki?: number | string;
+    kd?: number | string;
+  };
+  kpiWeights?: {
+    emission?: number | string;
+    backlog?: number | string;
+    sla?: number | string;
+  };
+  integralBounds?: {
+    min?: number | string;
+    max?: number | string;
+  };
+  roleTemperatures?: Record<string, number | string | null>;
+  [key: string]: unknown;
+}
+
+export interface ThermodynamicsConfig {
+  rewardEngine?: RewardEngineThermoConfig;
+  thermostat?: ThermostatConfigInput;
+  [key: string]: unknown;
+}
+
+export interface ThermodynamicsConfigResult {
+  config: ThermodynamicsConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface EnsRootConfig {
   label: string;
   name: string;
@@ -152,3 +211,6 @@ export function loadJobRegistryConfig(
 export function loadStakeManagerConfig(
   options?: LoadOptions
 ): StakeManagerConfigResult;
+export function loadThermodynamicsConfig(
+  options?: LoadOptions
+): ThermodynamicsConfigResult;

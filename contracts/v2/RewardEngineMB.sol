@@ -96,6 +96,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         roleShare[Role.Operator] = 15e16;
         roleShare[Role.Employer] = 5e16;
         _validateRoleShares();
+        temperature = int256(WAD);
     }
 
     /// @notice Configure how much of the reward budget a role receives.
@@ -105,6 +106,29 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         roleShare[r] = share;
         _validateRoleShares();
         emit RoleShareUpdated(r, share);
+    }
+
+    /// @notice Update the reward distribution for all roles in a single call.
+    /// @dev Prevents transient invalid states when rebalancing the shares.
+    /// @param agentShare Portion of the budget for agents scaled by 1e18.
+    /// @param validatorShare Portion of the budget for validators scaled by 1e18.
+    /// @param operatorShare Portion of the budget for operators scaled by 1e18.
+    /// @param employerShare Portion of the budget for employers scaled by 1e18.
+    function setRoleShares(
+        uint256 agentShare,
+        uint256 validatorShare,
+        uint256 operatorShare,
+        uint256 employerShare
+    ) external onlyGovernance {
+        roleShare[Role.Agent] = agentShare;
+        roleShare[Role.Validator] = validatorShare;
+        roleShare[Role.Operator] = operatorShare;
+        roleShare[Role.Employer] = employerShare;
+        _validateRoleShares();
+        emit RoleShareUpdated(Role.Agent, agentShare);
+        emit RoleShareUpdated(Role.Validator, validatorShare);
+        emit RoleShareUpdated(Role.Operator, operatorShare);
+        emit RoleShareUpdated(Role.Employer, employerShare);
     }
 
     /// @notice Set the chemical potential \(\mu\) used in MB weighting for a role.
@@ -214,8 +238,14 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
 
         int256 dH = int256(totalValue) - int256(data.paidCosts);
         int256 dS = int256(sumUpre) - int256(sumUpost);
-        int256 Tsys =
-            address(thermostat) != address(0) ? thermostat.systemTemperature() : temperature;
+        int256 Tsys;
+        if (address(thermostat) != address(0)) {
+            Tsys = thermostat.systemTemperature();
+        }
+        if (Tsys <= 0) {
+            Tsys = temperature;
+        }
+        require(Tsys > 0, "temp");
         int256 free = -(dH - (Tsys * dS) / WAD);
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);
