@@ -95,7 +95,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         roleShare[Role.Validator] = 15e16;
         roleShare[Role.Operator] = 15e16;
         roleShare[Role.Employer] = 5e16;
-        _validateRoleShares();
+        _validateRoleShares(_currentRoleShares());
     }
 
     /// @notice Configure how much of the reward budget a role receives.
@@ -348,12 +348,12 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
     function _setRoleShares(uint256[4] memory shares) private {
         uint256[4] memory previous = _currentRoleShares();
 
+        _validateRoleShares(shares);
+
         roleShare[Role.Agent] = shares[0];
         roleShare[Role.Validator] = shares[1];
         roleShare[Role.Operator] = shares[2];
         roleShare[Role.Employer] = shares[3];
-
-        _validateRoleShares();
 
         for (uint256 i = 0; i < shares.length; i++) {
             if (shares[i] != previous[i]) {
@@ -369,9 +369,8 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         shares[3] = roleShare[Role.Employer];
     }
 
-    function _validateRoleShares() private view {
-        uint256 sum =
-            roleShare[Role.Agent] + roleShare[Role.Validator] + roleShare[Role.Operator] + roleShare[Role.Employer];
+    function _validateRoleShares(uint256[4] memory shares) private pure {
+        uint256 sum = shares[0] + shares[1] + shares[2] + shares[3];
         if (sum != uint256(WAD)) revert InvalidRoleShareSum(sum);
     }
 }
