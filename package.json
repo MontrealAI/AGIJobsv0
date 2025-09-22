@@ -13,7 +13,7 @@
     "wire:verify": "node scripts/run-wire-verify.js",
     "verify:wiring": "npm run wire:verify",
     "test": "npx hardhat test",
-    "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
+    "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",
     "coverage:report": "COVERAGE_ONLY=1 npx hardhat coverage",
     "coverage:check": "node scripts/check-coverage.js",
