@@ -107,6 +107,29 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         emit RoleShareUpdated(r, share);
     }
 
+    /// @notice Update the reward distribution for all roles in a single call.
+    /// @dev Prevents transient invalid states when rebalancing the shares.
+    /// @param agentShare Portion of the budget for agents scaled by 1e18.
+    /// @param validatorShare Portion of the budget for validators scaled by 1e18.
+    /// @param operatorShare Portion of the budget for operators scaled by 1e18.
+    /// @param employerShare Portion of the budget for employers scaled by 1e18.
+    function setRoleShares(
+        uint256 agentShare,
+        uint256 validatorShare,
+        uint256 operatorShare,
+        uint256 employerShare
+    ) external onlyGovernance {
+        roleShare[Role.Agent] = agentShare;
+        roleShare[Role.Validator] = validatorShare;
+        roleShare[Role.Operator] = operatorShare;
+        roleShare[Role.Employer] = employerShare;
+        _validateRoleShares();
+        emit RoleShareUpdated(Role.Agent, agentShare);
+        emit RoleShareUpdated(Role.Validator, validatorShare);
+        emit RoleShareUpdated(Role.Operator, operatorShare);
+        emit RoleShareUpdated(Role.Employer, employerShare);
+    }
+
     /// @notice Set the chemical potential \(\mu\) used in MB weighting for a role.
     /// @param r The role whose \(\mu\) is being configured.
     /// @param _mu Fixed-point chemical potential value.

@@ -1,0 +1,52 @@
+{
+  "rewardEngine": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "treasury": "0x0000000000000000000000000000000000000000",
+    "thermostat": "0x0000000000000000000000000000000000000000",
+    "roleShares": {
+      "agent": 65,
+      "validator": 15,
+      "operator": 15,
+      "employer": 5
+    },
+    "mu": {
+      "agent": "0",
+      "validator": "0",
+      "operator": "0",
+      "employer": "0"
+    },
+    "baselineEnergy": {
+      "agent": "0",
+      "validator": "0",
+      "operator": "0",
+      "employer": "0"
+    },
+    "kappa": "1000000000000000000",
+    "maxProofs": 100,
+    "temperature": "1000000000000000000",
+    "settlers": {}
+  },
+  "thermostat": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "systemTemperature": "1000000000000000000",
+    "bounds": {
+      "min": "100000000000000000",
+      "max": "5000000000000000000"
+    },
+    "pid": {
+      "kp": "0",
+      "ki": "0",
+      "kd": "0"
+    },
+    "kpiWeights": {
+      "emission": "1",
+      "backlog": "1",
+      "sla": "1"
+    },
+    "integralBounds": {
+      "min": "-1000000000000000000",
+      "max": "1000000000000000000"
+    },
+    "roleTemperatures": {}
+  }
+}

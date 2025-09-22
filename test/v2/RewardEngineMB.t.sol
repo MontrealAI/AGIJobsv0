@@ -377,6 +377,27 @@ contract RewardEngineMBTest is Test {
         engine.setRoleShare(RewardEngineMB.Role.Agent, 65e16);
     }
 
+    function test_setRoleShares_updates_all_roles() public {
+        uint256 agentShare = 60e16;
+        uint256 validatorShare = 20e16;
+        uint256 operatorShare = 15e16;
+        uint256 employerShare = 5e16;
+
+        engine.setRoleShares(agentShare, validatorShare, operatorShare, employerShare);
+
+        assertEq(engine.roleShare(RewardEngineMB.Role.Agent), agentShare);
+        assertEq(engine.roleShare(RewardEngineMB.Role.Validator), validatorShare);
+        assertEq(engine.roleShare(RewardEngineMB.Role.Operator), operatorShare);
+        assertEq(engine.roleShare(RewardEngineMB.Role.Employer), employerShare);
+    }
+
+    function test_setRoleShares_reverts_when_sum_invalid() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(RewardEngineMB.InvalidRoleShareSum.selector, uint256(105e16))
+        );
+        engine.setRoleShares(70e16, 15e16, 15e16, 5e16);
+    }
+
     function test_setSettlerEmits() public {
         vm.expectEmit(true, false, false, true);
         emit RewardEngineMB.SettlerUpdated(address(0xBEEF), true);
