@@ -108,6 +108,25 @@ export interface StakeManagerConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface FeePoolConfig {
+  stakeManager?: string | null;
+  rewardRole?: string | number | null;
+  burnPct?: number | string;
+  treasury?: string | null;
+  treasuryAllowlist?: Record<string, boolean>;
+  governance?: string | null;
+  pauser?: string | null;
+  taxPolicy?: string | null;
+  rewarders?: Record<string, boolean>;
+  [key: string]: unknown;
+}
+
+export interface FeePoolConfigResult {
+  config: FeePoolConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export type RoleShareInput =
   | number
   | string
@@ -211,6 +230,7 @@ export function loadJobRegistryConfig(
 export function loadStakeManagerConfig(
   options?: LoadOptions
 ): StakeManagerConfigResult;
+export function loadFeePoolConfig(options?: LoadOptions): FeePoolConfigResult;
 export function loadThermodynamicsConfig(
   options?: LoadOptions
 ): ThermodynamicsConfigResult;
