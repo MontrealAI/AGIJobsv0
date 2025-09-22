@@ -155,6 +155,13 @@ node -e "require('./examples/ethers-quickstart').dispute(1, 'ipfs://evidence')"
 
 ## Step‑by‑Step Deployment with $AGIALPHA
 
+Prefer scripted deployments when possible. The Hardhat helper at
+[`scripts/deploy/providerAgnosticDeploy.ts`](scripts/deploy/providerAgnosticDeploy.ts)
+automates contract deployment, wiring, token metadata verification and a
+post-deploy integration test. See
+[docs/deployment/provider-agnostic-deploy.md](docs/deployment/provider-agnostic-deploy.md)
+for detailed instructions.
+
 Record each address during deployment. The defaults below assume the 18‑decimal `$AGIALPHA` token; token rotation is considered legacy and is not supported in new deployments.
 
 | Module                                                                     | Owner‑only setters                                                                                                                                             |
