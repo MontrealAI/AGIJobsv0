@@ -96,6 +96,7 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
         roleShare[Role.Operator] = 15e16;
         roleShare[Role.Employer] = 5e16;
         _validateRoleShares();
+        temperature = int256(WAD);
     }
 
     /// @notice Configure how much of the reward budget a role receives.
@@ -237,8 +238,14 @@ contract RewardEngineMB is Governable, ReentrancyGuard {
 
         int256 dH = int256(totalValue) - int256(data.paidCosts);
         int256 dS = int256(sumUpre) - int256(sumUpost);
-        int256 Tsys =
-            address(thermostat) != address(0) ? thermostat.systemTemperature() : temperature;
+        int256 Tsys;
+        if (address(thermostat) != address(0)) {
+            Tsys = thermostat.systemTemperature();
+        }
+        if (Tsys <= 0) {
+            Tsys = temperature;
+        }
+        require(Tsys > 0, "temp");
         int256 free = -(dH - (Tsys * dS) / WAD);
         if (free < 0) free = 0;
         uint256 budget = uint256(free) * kappa / uint256(WAD);

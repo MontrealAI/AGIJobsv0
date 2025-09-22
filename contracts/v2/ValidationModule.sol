@@ -729,6 +729,18 @@ contract ValidationModule is IValidationModule, Ownable, TaxAcknowledgement, Pau
         }
 
         // Finalization path using the stored entropy and future blockhash.
+        if (
+            entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS &&
+            !entropyContributed[jobId][round][msg.sender]
+        ) {
+            pendingEntropy[jobId] ^= uint256(
+                keccak256(abi.encodePacked(msg.sender, entropy))
+            );
+            entropyContributed[jobId][round][msg.sender] = true;
+            unchecked {
+                entropyContributorCount[jobId] += 1;
+            }
+        }
         if (entropyContributorCount[jobId] < MIN_ENTROPY_CONTRIBUTORS) {
             round += 1;
             entropyRound[jobId] = round;
