@@ -49,6 +49,65 @@ export interface JobRegistryConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface StakeRecommendationsConfig {
+  min?: string;
+  minTokens?: string | number;
+  max?: string | null;
+  maxTokens?: string | number | null;
+  [key: string]: unknown;
+}
+
+export interface AutoStakeConfig {
+  enabled?: boolean | string;
+  threshold?: number | string;
+  increasePct?: number | string;
+  decreasePct?: number | string;
+  windowSeconds?: number | string;
+  floor?: string;
+  floorTokens?: string | number;
+  ceiling?: string | number | null;
+  ceilingTokens?: string | number | null;
+  temperatureThreshold?: number | string;
+  hamiltonianThreshold?: number | string;
+  disputeWeight?: number | string;
+  temperatureWeight?: number | string;
+  hamiltonianWeight?: number | string;
+  [key: string]: unknown;
+}
+
+export interface StakeManagerConfig {
+  minStake?: string;
+  minStakeTokens?: string | number;
+  feePct?: number | string;
+  burnPct?: number | string;
+  validatorRewardPct?: number | string;
+  employerSlashPct?: number | string;
+  treasurySlashPct?: number | string;
+  treasury?: string | null;
+  treasuryAllowlist?: Record<string, boolean>;
+  unbondingPeriodSeconds?: number | string;
+  maxStakePerAddress?: string;
+  maxStakePerAddressTokens?: string | number;
+  stakeRecommendations?: StakeRecommendationsConfig;
+  autoStake?: AutoStakeConfig;
+  pauser?: string | null;
+  jobRegistry?: string | null;
+  disputeModule?: string | null;
+  validationModule?: string | null;
+  thermostat?: string | null;
+  hamiltonianFeed?: string | null;
+  feePool?: string | null;
+  maxAGITypes?: number | string;
+  maxTotalPayoutPct?: number | string;
+  [key: string]: unknown;
+}
+
+export interface StakeManagerConfigResult {
+  config: StakeManagerConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface EnsRootConfig {
   label: string;
   name: string;
@@ -90,3 +149,6 @@ export function loadEnsConfig(options?: LoadOptions): EnsConfigResult;
 export function loadJobRegistryConfig(
   options?: LoadOptions
 ): JobRegistryConfigResult;
+export function loadStakeManagerConfig(
+  options?: LoadOptions
+): StakeManagerConfigResult;

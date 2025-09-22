@@ -202,6 +202,66 @@ function loadJobRegistryConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normaliseStakeManagerConfig(config = {}) {
+  const result = { ...config };
+
+  const addressKeys = [
+    'treasury',
+    'pauser',
+    'jobRegistry',
+    'disputeModule',
+    'validationModule',
+    'thermostat',
+    'hamiltonianFeed',
+    'feePool',
+  ];
+
+  for (const key of addressKeys) {
+    if (result[key] !== undefined) {
+      const value = result[key];
+      if (value === null) {
+        result[key] = ethers.ZeroAddress;
+      } else {
+        result[key] = ensureAddress(value, `StakeManager ${key}`, {
+          allowZero: true,
+        });
+      }
+    }
+  }
+
+  if (result.treasuryAllowlist && typeof result.treasuryAllowlist === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(result.treasuryAllowlist)) {
+      if (value === undefined || value === null) continue;
+      const address = ensureAddress(key, `treasuryAllowlist ${key}`);
+      mapped[address] = Boolean(value);
+    }
+    result.treasuryAllowlist = mapped;
+  }
+
+  if (result.autoStake && typeof result.autoStake === 'object') {
+    result.autoStake = { ...result.autoStake };
+  }
+
+  if (result.stakeRecommendations && typeof result.stakeRecommendations === 'object') {
+    result.stakeRecommendations = { ...result.stakeRecommendations };
+  }
+
+  return result;
+}
+
+function loadStakeManagerConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('stake-manager', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Stake manager config not found at ${configPath}`);
+  }
+  const config = normaliseStakeManagerConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseRootEntry(key, root) {
   const result = { ...root };
   let changed = false;
@@ -316,5 +376,6 @@ module.exports = {
   loadTokenConfig,
   loadEnsConfig,
   loadJobRegistryConfig,
+  loadStakeManagerConfig,
   inferNetworkKey,
 };
