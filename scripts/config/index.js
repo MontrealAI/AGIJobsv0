@@ -4,6 +4,8 @@ const { ethers } = require('ethers');
 
 const CONFIG_DIR = path.join(__dirname, '..', '..', 'config');
 
+const MAX_UINT96 = (1n << 96n) - 1n;
+
 const NETWORK_ALIASES = new Map([
   ['mainnet', 'mainnet'],
   ['homestead', 'mainnet'],
@@ -136,8 +138,67 @@ function findConfigPath(baseName, network) {
 
 function loadTokenConfig(options = {}) {
   const network = resolveNetwork(options);
-  const configPath = findConfigPath('agialpha', network);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('agialpha', network);
   const config = readJson(configPath);
+  return { config, path: configPath, network };
+}
+
+function normaliseJobRegistryConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.treasury !== undefined) {
+    result.treasury = ensureAddress(result.treasury, 'JobRegistry treasury', {
+      allowZero: true,
+    });
+  }
+
+  if (result.taxPolicy !== undefined) {
+    const allowZero = result.taxPolicy === null || result.taxPolicy === '';
+    result.taxPolicy = allowZero
+      ? ethers.ZeroAddress
+      : ensureAddress(result.taxPolicy, 'JobRegistry tax policy');
+  }
+
+  if (result.jobStake !== undefined) {
+    const raw = BigInt(result.jobStake);
+    if (raw < 0n || raw > MAX_UINT96) {
+      throw new Error('jobStake must be between 0 and 2^96-1');
+    }
+    result.jobStake = raw.toString();
+  }
+
+  if (result.minAgentStake !== undefined) {
+    const raw = BigInt(result.minAgentStake);
+    if (raw < 0n || raw > MAX_UINT96) {
+      throw new Error('minAgentStake must be between 0 and 2^96-1');
+    }
+    result.minAgentStake = raw.toString();
+  }
+
+  if (result.acknowledgers && typeof result.acknowledgers === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(result.acknowledgers)) {
+      if (value === undefined || value === null) continue;
+      const address = ensureAddress(key, `acknowledger ${key}`);
+      mapped[address] = Boolean(value);
+    }
+    result.acknowledgers = mapped;
+  }
+
+  return result;
+}
+
+function loadJobRegistryConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('job-registry', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Job registry config not found at ${configPath}`);
+  }
+  const config = normaliseJobRegistryConfig(readJson(configPath));
   return { config, path: configPath, network };
 }
 
@@ -254,5 +315,6 @@ function loadEnsConfig(options = {}) {
 module.exports = {
   loadTokenConfig,
   loadEnsConfig,
+  loadJobRegistryConfig,
   inferNetworkKey,
 };
