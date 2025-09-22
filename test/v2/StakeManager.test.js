@@ -19,6 +19,24 @@ describe('StakeManager', function () {
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken',
       AGIALPHA
     );
+    const balanceSlot = (address) =>
+      ethers.solidityPackedKeccak256(
+        ['bytes32', 'bytes32'],
+        [ethers.zeroPadValue(address, 32), ethers.ZeroHash]
+      );
+    for (const addr of [owner.address, user.address, employer.address, treasury.address]) {
+      await network.provider.send('hardhat_setStorageAt', [
+        AGIALPHA,
+        balanceSlot(addr),
+        ethers.ZeroHash,
+      ]);
+    }
+    const totalSupplySlot = '0x' + (2).toString(16).padStart(64, '0');
+    await network.provider.send('hardhat_setStorageAt', [
+      AGIALPHA,
+      totalSupplySlot,
+      ethers.ZeroHash,
+    ]);
     await token.mint(owner.address, 1000);
     await token.mint(user.address, 1000);
     await token.mint(employer.address, 1000);
@@ -322,6 +340,70 @@ describe('StakeManager', function () {
         );
       expect(await stakeManager.stakes(user.address, role)).to.equal(50n);
     }
+  });
+
+  it('enforces the unbonding delay before releasing stake', async () => {
+    const JobRegistry = await ethers.getContractFactory(
+      'contracts/v2/JobRegistry.sol:JobRegistry'
+    );
+    const jobRegistry = await JobRegistry.deploy(
+      ethers.ZeroAddress,
+      await stakeManager.getAddress(),
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      [],
+      owner.address
+    );
+    const TaxPolicy = await ethers.getContractFactory(
+      'contracts/v2/TaxPolicy.sol:TaxPolicy'
+    );
+    const taxPolicy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+    await jobRegistry.connect(owner).setTaxPolicy(await taxPolicy.getAddress());
+    await taxPolicy
+      .connect(owner)
+      .setAcknowledger(await jobRegistry.getAddress(), true);
+    await stakeManager
+      .connect(owner)
+      .setJobRegistry(await jobRegistry.getAddress());
+    await taxPolicy.connect(user).acknowledge();
+
+    await token.connect(user).approve(await stakeManager.getAddress(), 200);
+    await stakeManager.connect(user).depositStake(0, 200);
+
+    const tx = await stakeManager
+      .connect(user)
+      .requestWithdraw(0, 100);
+    const receipt = await tx.wait();
+    const event = receipt.logs.find(
+      (l) => l.fragment && l.fragment.name === 'WithdrawRequested'
+    );
+    expect(event.args.user).to.equal(user.address);
+    expect(event.args.amount).to.equal(100n);
+
+    await expect(
+      stakeManager.connect(user).finalizeWithdraw(0)
+    ).to.be.revertedWithCustomError(stakeManager, 'UnbondLocked');
+
+    const unlockAt = event.args.unlockAt;
+    await time.increaseTo(Number(unlockAt));
+
+    const before = await token.balanceOf(user.address);
+    await expect(
+      stakeManager.connect(user).finalizeWithdraw(0)
+    )
+      .to.emit(stakeManager, 'StakeWithdrawn')
+      .withArgs(user.address, 0, 100);
+    const after = await token.balanceOf(user.address);
+    expect(after - before).to.equal(100n);
+
+    const [pending, , jailed] = await stakeManager.unbonds(user.address);
+    expect(pending).to.equal(0n);
+    expect(jailed).to.equal(false);
   });
 
   it('reverts for invalid role', async () => {
