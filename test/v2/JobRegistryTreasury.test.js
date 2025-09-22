@@ -84,7 +84,7 @@ describe('JobRegistry Treasury', function () {
     expect(await registry.treasury()).to.equal(treasury.address);
   });
 
-  it('mints rewards 1:1 to treasury', async function () {
+  it('mints rewards and forwards shares to treasury', async function () {
     const Thermostat = await ethers.getContractFactory(
       'contracts/v2/Thermostat.sol:Thermostat'
     );
@@ -155,11 +155,21 @@ describe('JobRegistry Treasury', function () {
 
     await engine.settleEpoch(1, data);
 
-    const poolBal = await token.balanceOf(await feePool.getAddress());
-    const treasuryBal = await token.balanceOf(treasury.address);
-    expect(poolBal).to.equal(treasuryBal);
-    expect(poolBal).to.be.gt(0n);
-    expect(await token.totalSupply()).to.equal(poolBal + treasuryBal);
+    const feePoolAddress = await feePool.getAddress();
+    const poolBal = await token.balanceOf(feePoolAddress);
+    const agentReward = await token.balanceOf(owner.address);
+    const treasuryReward = await token.balanceOf(treasury.address);
+    const recordedAgent = await feePool.rewards(owner.address);
+    const recordedTreasury = await feePool.rewards(treasury.address);
+
+    expect(poolBal).to.equal(0n);
+    expect(agentReward).to.equal(recordedAgent);
+    expect(treasuryReward).to.equal(recordedTreasury);
+    expect(agentReward).to.be.gt(0n);
+    expect(treasuryReward).to.be.gt(0n);
+
+    const totalSupply = await token.totalSupply();
+    expect(agentReward + treasuryReward).to.equal(totalSupply);
   });
 
   it('reverts when treasury is unset', async function () {

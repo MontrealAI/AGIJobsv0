@@ -1,6 +1,10 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
+const {
+  finalizeValidatorSelection,
+} = require('../helpers/validation');
+
 function namehash(root, label) {
   return ethers.keccak256(
     ethers.solidityPacked(
@@ -118,10 +122,9 @@ describe('Validator ENS integration', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.selectValidators(1, 0);
-    await ethers.provider.send('evm_mine', []);
-    await expect(validation.connect(v2).selectValidators(1, 0)).to.not.be
-      .reverted;
+    await finalizeValidatorSelection(validation, 1, {
+      contributors: [validator, v2],
+    });
 
     await expect(
       validation.connect(validator).commitValidation(1, ethers.id('h'), 'v', [])
@@ -146,10 +149,10 @@ describe('Validator ENS integration', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.selectValidators(1, 0);
-    await ethers.provider.send('evm_mine', []);
     await expect(
-      validation.connect(v2).selectValidators(1, 0)
+      finalizeValidatorSelection(validation, 1, {
+        contributors: [validator, v2],
+      })
     ).to.be.revertedWithCustomError(validation, 'InsufficientValidators');
 
     await validation.setValidatorSubdomains([validator.address], ['v']);
@@ -160,9 +163,10 @@ describe('Validator ENS integration', function () {
     await resolver.setAddr(namehash(root, 'v'), validator.address);
 
     await jobRegistry.setJob(2, job);
-    await validation.selectValidators(2, 99999);
-    await ethers.provider.send('evm_mine', []);
-    await validation.connect(v2).selectValidators(2, 0);
+    await finalizeValidatorSelection(validation, 2, {
+      contributors: [validator, v2],
+      entropy: 99999,
+    });
     await expect(
       validation.connect(validator).commitValidation(2, ethers.id('h'), 'v', [])
     )
@@ -216,9 +220,10 @@ describe('Validator ENS integration', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.selectValidators(1, 11111);
-    await ethers.provider.send('evm_mine', []);
-    await validation.connect(v2).selectValidators(1, 0);
+    await finalizeValidatorSelection(validation, 1, {
+      contributors: [validator, v2],
+      entropy: 11111,
+    });
 
     // transfer ENS ownership
     await wrapper.setOwner(ethers.toBigInt(node), other.address);
@@ -265,10 +270,11 @@ describe('Validator ENS integration', function () {
       resultHash: ethers.ZeroHash,
     };
     await jobRegistry.setJob(1, job);
-    await validation.selectValidators(1, 22222);
-    await ethers.provider.send('evm_mine', []);
     await expect(
-      validation.connect(v2).selectValidators(1, 0)
+      finalizeValidatorSelection(validation, 1, {
+        contributors: [validator, v2],
+        entropy: 22222,
+      })
     ).to.be.revertedWithCustomError(validation, 'InsufficientValidators');
   });
 });
