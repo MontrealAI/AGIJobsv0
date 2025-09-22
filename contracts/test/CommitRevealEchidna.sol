@@ -8,6 +8,8 @@ import {CommitRevealMock} from "../CommitRevealMock.sol";
 contract CommitRevealEchidnaHarness {
     CommitRevealMock internal immutable commitReveal;
 
+    uint256 internal constant MAX_TRACKED_JOB_IDS = 16;
+
     // Track the number of successful reveals per job id so we can
     // assert that CommitRevealMock's nonce accounting never drifts.
     mapping(uint256 => uint256) internal successfulReveals;
@@ -20,11 +22,13 @@ contract CommitRevealEchidnaHarness {
     /// @dev Echidna will mutate the parameters to attempt to break the
     ///      CommitRevealMock invariant that nonce == number of reveals.
     function fuzzCommitAndReveal(
-        uint256 jobId,
+        uint256 rawJobId,
         bool approve,
         bytes32 salt,
         bytes32 specHash
     ) external {
+        uint256 jobId = rawJobId % MAX_TRACKED_JOB_IDS;
+
         bytes32 commitHash = keccak256(
             abi.encodePacked(jobId, commitReveal.nonces(jobId), approve, salt, specHash)
         );
@@ -44,7 +48,13 @@ contract CommitRevealEchidnaHarness {
     /// @notice Echidna invariant ensuring CommitRevealMock's nonce
     ///         bookkeeping always matches the number of successful
     ///         reveals we recorded for each job id.
-    function echidna_nonce_matches_successful_reveals(uint256 jobId) external view returns (bool) {
-        return commitReveal.nonces(jobId) == successfulReveals[jobId];
+    function echidna_nonce_matches_successful_reveals() external view returns (bool) {
+        for (uint256 jobId = 0; jobId < MAX_TRACKED_JOB_IDS; ++jobId) {
+            if (commitReveal.nonces(jobId) != successfulReveals[jobId]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
