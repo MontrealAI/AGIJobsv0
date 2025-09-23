@@ -71,8 +71,6 @@ describe('QuadraticVoting reentrancy', function () {
     // perform normal vote to accrue cost
     await attack.vote();
     await qv.connect(executor).execute(1);
-    await token.connect(deployer).approve(await qv.getAddress(), 10n);
-
     await expect(attack.attackReward()).to.be.revertedWithCustomError(
       qv,
       'ReentrancyGuardReentrantCall'
