@@ -47,30 +47,24 @@ function resolveAccounts(envKeys) {
 
 const coverageOnly = process.env.COVERAGE_ONLY === '1';
 
-const solidityConfig = coverageOnly
-  ? {
-      version: '0.8.25',
-      settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
-    }
-  : {
-      compilers: [
-        {
-          version: '0.8.25',
-          settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
-        },
-        {
-          version: '0.8.23',
-          settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
-        },
-        {
-          version: '0.8.21',
-          settings: { optimizer: { enabled: true, runs: 200 }, viaIR: true },
-        },
-      ],
-    };
+function createCompilerConfig(version) {
+  return {
+    version,
+    settings: {
+      optimizer: { enabled: true, runs: 200 },
+      viaIR: true,
+    },
+  };
+}
+
+const compilerVersions = ['0.8.25', '0.8.23', '0.8.21'];
+
+const solidityConfig = {
+  compilers: compilerVersions.map(createCompilerConfig),
+};
 
 const pathsConfig = coverageOnly
-  ? { sources: './contracts/coverage', tests: './test/coverage' }
+  ? { sources: './contracts/coverage', tests: './test' }
   : { sources: './contracts' };
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -98,7 +92,7 @@ module.exports = {
     },
   },
   mocha: {
-    require: ['./test/setup.js'],
+    require: ['ts-node/register', './test/setup.js'],
   },
   gasReporter: {
     enabled: true,
