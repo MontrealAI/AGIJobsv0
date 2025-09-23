@@ -327,6 +327,97 @@ function loadFeePoolConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normalisePlatformIncentivesConfig(config = {}) {
+  const result = { ...config };
+
+  const addressKeys = [
+    'address',
+    'stakeManager',
+    'platformRegistry',
+    'jobRouter',
+  ];
+
+  for (const key of addressKeys) {
+    if (result[key] !== undefined) {
+      const value = result[key];
+      if (value === null) {
+        if (key === 'address') {
+          throw new Error('PlatformIncentives address cannot be null');
+        }
+        result[key] = ethers.ZeroAddress;
+      } else {
+        result[key] = ensureAddress(value, `PlatformIncentives ${key}`, {
+          allowZero: key !== 'address',
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+function loadPlatformIncentivesConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('platform-incentives', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Platform incentives config not found at ${configPath}`);
+  }
+  const config = normalisePlatformIncentivesConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
+function normaliseTaxPolicyConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.address !== undefined) {
+    const value = result.address;
+    if (value === null) {
+      throw new Error('TaxPolicy address cannot be null');
+    }
+    result.address = ensureAddress(value, 'TaxPolicy address');
+  }
+
+  if (result.policyURI !== undefined && result.policyURI !== null) {
+    result.policyURI = String(result.policyURI);
+  }
+
+  if (result.acknowledgement !== undefined && result.acknowledgement !== null) {
+    result.acknowledgement = String(result.acknowledgement);
+  }
+
+  if (result.bumpVersion !== undefined) {
+    result.bumpVersion = Boolean(result.bumpVersion);
+  }
+
+  if (result.acknowledgers && typeof result.acknowledgers === 'object') {
+    const mapped = {};
+    for (const [key, value] of Object.entries(result.acknowledgers)) {
+      if (value === undefined || value === null) continue;
+      const address = ensureAddress(key, `TaxPolicy acknowledger ${key}`, {
+        allowZero: false,
+      });
+      mapped[address] = Boolean(value);
+    }
+    result.acknowledgers = mapped;
+  }
+
+  return result;
+}
+
+function loadTaxPolicyConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('tax-policy', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Tax policy config not found at ${configPath}`);
+  }
+  const config = normaliseTaxPolicyConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseThermodynamicsConfig(config = {}) {
   const result = { ...config };
 
@@ -519,6 +610,8 @@ module.exports = {
   loadJobRegistryConfig,
   loadStakeManagerConfig,
   loadFeePoolConfig,
+  loadPlatformIncentivesConfig,
+  loadTaxPolicyConfig,
   loadThermodynamicsConfig,
   inferNetworkKey,
 };

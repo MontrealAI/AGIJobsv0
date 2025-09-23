@@ -127,6 +127,35 @@ export interface FeePoolConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface PlatformIncentivesConfig {
+  address?: string;
+  stakeManager?: string | null;
+  platformRegistry?: string | null;
+  jobRouter?: string | null;
+  [key: string]: unknown;
+}
+
+export interface PlatformIncentivesConfigResult {
+  config: PlatformIncentivesConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
+export interface TaxPolicyConfig {
+  address?: string;
+  policyURI?: string;
+  acknowledgement?: string;
+  bumpVersion?: boolean;
+  acknowledgers?: Record<string, boolean>;
+  [key: string]: unknown;
+}
+
+export interface TaxPolicyConfigResult {
+  config: TaxPolicyConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export type RoleShareInput =
   | number
   | string
@@ -231,6 +260,12 @@ export function loadStakeManagerConfig(
   options?: LoadOptions
 ): StakeManagerConfigResult;
 export function loadFeePoolConfig(options?: LoadOptions): FeePoolConfigResult;
+export function loadPlatformIncentivesConfig(
+  options?: LoadOptions
+): PlatformIncentivesConfigResult;
+export function loadTaxPolicyConfig(
+  options?: LoadOptions
+): TaxPolicyConfigResult;
 export function loadThermodynamicsConfig(
   options?: LoadOptions
 ): ThermodynamicsConfigResult;
