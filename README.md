@@ -118,6 +118,20 @@ For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs 
 
 The original v0 and v1 contracts are preserved under the `legacy` git tag for reference only and receive no support. New development should target the v2 modules in `contracts/v2`. See [docs/migration-guide.md](docs/migration-guide.md) for help mapping legacy entry points to their v2 equivalents.
 
+## CI / security quickcheck
+
+Run a smoke pass locally before pushing to surface lint, tests and wiring issues:
+
+```bash
+npm ci
+npm run compile
+npm test
+npm run owner:health
+npm run verify:agialpha -- --skip-onchain
+```
+
+Docker-based analyzers (Slither/Echidna) run automatically on GitHub-hosted runners. When Docker is unavailable—common in lightweight local containers—the workflows skip these stages without failing the build while the nightly job continues to execute full fuzzing runs.
+
 ## Quick Start
 
 Use the `examples/ethers-quickstart.js` script to interact with the deployed contracts. Export `RPC_URL`, `PRIVATE_KEY`, `JOB_REGISTRY`, `STAKE_MANAGER`, `VALIDATION_MODULE` and `ATTESTATION_REGISTRY`.

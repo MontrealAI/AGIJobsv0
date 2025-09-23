@@ -12,6 +12,7 @@
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "wire:verify": "node scripts/run-wire-verify.js",
     "verify:wiring": "npm run wire:verify",
+    "owner:health": "npx hardhat run --no-compile scripts/owner-healthcheck.js",
     "test": "hardhat test --no-compile",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",

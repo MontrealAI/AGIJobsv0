@@ -17,16 +17,32 @@ env:
   CI: 'true'
 
 jobs:
+  docker-check:
+    name: Detect Docker availability
+    runs-on: ubuntu-22.04
+    outputs:
+      available: ${{ steps.detect.outputs.available }}
+    steps:
+      - name: Check Docker
+        id: detect
+        run: |
+          if command -v docker >/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-test:
+    needs: docker-check
     name: Build • Lint • Unit tests
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -38,7 +54,7 @@ jobs:
         run: npm run security:audit
 
       - name: Pin Foundry toolchain
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@82dee4ba654bd2146511f85f0d013af94670c4de
         with:
           version: ${{ env.FOUNDRY_VERSION }}
 
@@ -65,47 +81,64 @@ jobs:
           RPC_URL: ''
         run: npm test
 
+      - name: Owner control healthcheck (ephemeral devnet)
+        env:
+          HARDHAT_NETWORK: hardhat
+        run: npm run owner:health
+
+      - name: Verify AGIALPHA wiring assumptions
+        run: npm run verify:agialpha -- --skip-onchain
+
   slither:
     name: Slither (fail-high)
-    needs: build-test
+    needs: [build-test, docker-check]
+    if: needs.docker-check.outputs.available == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Run Slither inside pinned Docker
-        uses: crytic/slither-action@v0.3.0
-        with:
-          target: .
-          slither-args: --fail-high --exclude-dependencies --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
-          sarif: true
+        run: |
+          docker run --rm -v "$PWD":/src -w /src trailofbits/eth-security-toolbox:2024.08.22 \
+            /bin/bash -lc "slither . --fail-high --exclude-dependencies --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --sarif results.sarif"
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@528ca598d956c91826bd742262cdfc5d02b77710
         with:
           sarif_file: results.sarif
 
+  slither-skip:
+    name: Slither (Docker unavailable)
+    needs: [build-test, docker-check]
+    if: needs.docker-check.outputs.available != 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Docker not available; skipping Slither by design."
+
   echidna-smoke:
     name: Echidna smoke (PR)
-    needs: build-test
+    needs: [build-test, docker-check]
+    if: needs.docker-check.outputs.available == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 15
-    container: ghcr.io/crytic/echidna:2.2.3
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install JS dependencies
-        run: npm ci
-      - name: Smoke fuzz (bounded & deterministic)
-        env:
-          MALLOC_ARENA_MAX: 2
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Echidna smoke (Docker)
         run: |
-          echidna-test ./contracts/test/CommitRevealEchidna.sol \
-            --contract CommitRevealEchidnaHarness \
-            --config ./echidna/echidna.smoke.yml \
-            --test-mode assertion \
-            --seed 1337 \
-            --corpus-dir echidna/corpus-smoke
+          docker run --rm -v "$PWD":/src -w /src ghcr.io/crytic/echidna:2.2.7 \
+            echidna-test ./contracts/test/CommitRevealEchidna.sol \
+              --contract CommitRevealEchidnaHarness \
+              --config ./echidna/echidna.smoke.yml \
+              --test-mode assertion \
+              --seed 1337 \
+              --corpus-dir echidna/corpus-smoke
+
+  echidna-skip:
+    name: Echidna smoke (Docker unavailable)
+    needs: [build-test, docker-check]
+    if: needs.docker-check.outputs.available != 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Docker not available; skipping Echidna smoke test."
 
   coverage:
     name: Coverage (threshold gate)
@@ -113,8 +146,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -132,8 +165,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: foundry-rs/foundry-toolchain@82dee4ba654bd2146511f85f0d013af94670c4de
         with:
           version: ${{ env.FOUNDRY_VERSION }}
       - name: Ensure baseline snapshot exists
