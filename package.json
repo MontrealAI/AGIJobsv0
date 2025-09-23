@@ -15,7 +15,7 @@
     "test": "hardhat test --no-compile",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",
-    "coverage:report": "COVERAGE_ONLY=1 hardhat coverage --network coverage --temp build-coverage --testfiles 'test/**/*.ts'",
+    "coverage:report": "COVERAGE_ONLY=1 hardhat coverage --temp build-coverage",
     "coverage:check": "node scripts/check-coverage.js",
     "coverage:full": "npm run coverage:report",
     "check:coverage": "npm run coverage:check",
