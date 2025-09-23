@@ -83,6 +83,10 @@ module.exports = {
       gas: 100000000,
       blockGasLimit: 100000000,
     },
+    anvil: {
+      url: process.env.ANVIL_RPC_URL || 'http://127.0.0.1:8545',
+      chainId: 31337,
+    },
     mainnet: {
       url: process.env.MAINNET_RPC_URL || '',
       accounts: resolveAccounts('MAINNET_PRIVATE_KEY'),
