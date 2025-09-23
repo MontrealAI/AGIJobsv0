@@ -373,9 +373,7 @@ describe('PlatformRegistry', function () {
 
     const newStakeManager = await stakeManager2.getAddress();
     const newReputationEngine = await reputationEngine2.getAddress();
-    const registrarUpdates = [
-      { registrar: registrar.address, allowed: true },
-    ];
+    const registrarUpdates = [{ registrar: registrar.address, allowed: true }];
     const blacklistUpdates = [
       { operator: platform.address, status: false },
       { operator: sybil.address, status: true },
