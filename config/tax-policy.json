@@ -1,0 +1,5 @@
+{
+  "policyURI": "ipfs://example-tax-policy",
+  "acknowledgement": "Employers, agents, and validators accept full responsibility for all applicable taxes.",
+  "acknowledgers": {}
+}

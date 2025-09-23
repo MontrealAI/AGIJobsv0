@@ -173,14 +173,16 @@ then be performed through the "Write" tabs on each module.
 
 ### Adjustable Parameters
 
-| Module             | Function                   | Description                                     |
-| ------------------ | -------------------------- | ----------------------------------------------- |
-| `JobRegistry`      | `setFeePct(pct)`           | Percentage of each reward taken as protocol fee |
-| `StakeManager`     | `setMinStake(amount)`      | Minimum stake required for any role             |
-| `ValidationModule` | `setCommitWindow(seconds)` | Commit phase length for validation votes        |
-| `ValidationModule` | `setRevealWindow(seconds)` | Reveal phase length for validation votes        |
-| `DisputeModule`    | `setDisputeFee(fee)`       | Fee required to raise a dispute                 |
-| `FeePool`          | `setBurnPct(pct)`          | Portion of fees burned before distribution      |
+| Module               | Function                              | Description                                                                 |
+| -------------------- | ------------------------------------- | --------------------------------------------------------------------------- |
+| `JobRegistry`        | `setFeePct(pct)`                      | Percentage of each reward taken as protocol fee                             |
+| `StakeManager`       | `setMinStake(amount)`                 | Minimum stake required for any role                                         |
+| `ValidationModule`   | `setCommitWindow(seconds)`            | Commit phase length for validation votes                                    |
+| `ValidationModule`   | `setRevealWindow(seconds)`            | Reveal phase length for validation votes                                    |
+| `DisputeModule`      | `setDisputeFee(fee)`                  | Fee required to raise a dispute                                             |
+| `FeePool`            | `setBurnPct(pct)`                     | Portion of fees burned before distribution                                  |
+| `PlatformIncentives` | `setModules(stake, registry, router)` | Points to the canonical `StakeManager`, `PlatformRegistry`, and `JobRouter` |
+| `TaxPolicy`          | `setPolicy(uri, acknowledgementText)` | Rotates the tax-policy pointer and disclaimer shown to participants         |
 
 - **Manage allowlists:** use `JobRegistry.setAgentRootNode(node)` / `setAgentMerkleRoot(root)` for agents and `JobRegistry.setValidatorRootNode(node)` / `setValidatorMerkleRoot(root)` for validators. These call the underlying `IdentityRegistry` setters and automatically bump the `ValidationModule` validator auth cache so outdated entries expire. Add individual addresses with `IdentityRegistry.addAdditionalAgent(addr)` and `addAdditionalValidator(addr)`.
 - **Transfer ownership:** hand governance to a multisig or timelock so no
@@ -260,16 +262,16 @@ To generate proofs:
 
 ## Event & Function Glossary
 
-| Event                                                                                         | Emitted by         | Meaning                                   |
-| --------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
-| `JobCreated(uint256 jobId, address employer, uint256 reward)`                                 | `JobRegistry`      | Employer posted a job and escrowed funds. |
-| `ApplicationSubmitted(uint256 jobId, address applicant)`                                     | `JobRegistry`      | Agent submitted an application.           |
-| `AgentAssigned(uint256 jobId, address agent)`                                                | `JobRegistry`      | Agent assignment recorded.                |
-| `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)` | `ValidationModule` | Validator submitted hashed vote.          |
+| Event                                                                                                      | Emitted by         | Meaning                                   |
+| ---------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------- |
+| `JobCreated(uint256 jobId, address employer, uint256 reward)`                                              | `JobRegistry`      | Employer posted a job and escrowed funds. |
+| `ApplicationSubmitted(uint256 jobId, address applicant)`                                                   | `JobRegistry`      | Agent submitted an application.           |
+| `AgentAssigned(uint256 jobId, address agent)`                                                              | `JobRegistry`      | Agent assignment recorded.                |
+| `ValidationCommitted(uint256 jobId, address validator, bytes32 commitHash, string subdomain)`              | `ValidationModule` | Validator submitted hashed vote.          |
 | `ValidationRevealed(uint256 jobId, address validator, bool approve, bytes32 burnTxHash, string subdomain)` | `ValidationModule` | Validator revealed vote.                  |
-| `DisputeRaised(uint256 jobId, address claimant, bytes32 evidenceHash, string evidence)`       | `DisputeModule`    | A job result was contested.               |
-| `DisputeResolved(uint256 jobId, bool employerWins)`                                           | `DisputeModule`    | Moderator issued final ruling.            |
-| `CertificateMinted(address to, uint256 jobId)`                                                | `CertificateNFT`   | NFT minted for a completed job.           |
+| `DisputeRaised(uint256 jobId, address claimant, bytes32 evidenceHash, string evidence)`                    | `DisputeModule`    | A job result was contested.               |
+| `DisputeResolved(uint256 jobId, bool employerWins)`                                                        | `DisputeModule`    | Moderator issued final ruling.            |
+| `CertificateMinted(address to, uint256 jobId)`                                                             | `CertificateNFT`   | NFT minted for a completed job.           |
 
 | Function                                                                                         | Module             | Purpose                         |
 | ------------------------------------------------------------------------------------------------ | ------------------ | ------------------------------- |
@@ -281,3 +283,12 @@ To generate proofs:
 | `raiseDispute(uint256 jobId, string reason)`                                                     | `JobRegistry`      | Start appeal process.           |
 | `list(uint256 tokenId, uint256 price)`                                                           | `CertificateNFT`   | List job certificate for sale.  |
 | `purchase(uint256 tokenId)`                                                                      | `CertificateNFT`   | Buy listed certificate.         |
+
+- **Automation helpers:** Dry-run your changes with
+  `npx hardhat run scripts/v2/updatePlatformIncentives.ts --network <network>`
+  (rewires module addresses) and
+  `npx hardhat run scripts/v2/updateTaxPolicy.ts --network <network>`
+  (updates policy URI, acknowledgement text, acknowledger allowlist, or bumps
+  the version). Both scripts read defaults from `config/*.json`, ensure the
+  connected signer controls the target contract, and print a human-readable
+  plan before executing.
