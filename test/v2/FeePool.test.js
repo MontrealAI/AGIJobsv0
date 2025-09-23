@@ -6,6 +6,7 @@ describe('FeePool', function () {
     stakeManager,
     jobRegistry,
     feePool,
+    policy,
     owner,
     user1,
     user2,
@@ -63,7 +64,7 @@ describe('FeePool', function () {
     const TaxPolicy = await ethers.getContractFactory(
       'contracts/v2/TaxPolicy.sol:TaxPolicy'
     );
-    const policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
+    policy = await TaxPolicy.deploy('ipfs://policy', 'ack');
     await jobRegistry.connect(owner).setTaxPolicy(await policy.getAddress());
     await stakeManager
       .connect(owner)
@@ -83,7 +84,7 @@ describe('FeePool', function () {
     feePool = await FeePool.deploy(
       await stakeManager.getAddress(),
       0,
-      ethers.ZeroAddress,
+      await policy.getAddress(),
       ethers.ZeroAddress
     );
     await feePool.setBurnPct(0);
@@ -260,6 +261,56 @@ describe('FeePool', function () {
     expect((await token.balanceOf(user2.address)) - before2).to.equal(45n);
     const supplyAfter = await token.totalSupply();
     expect(supplyBefore - supplyAfter).to.equal(20n);
+  });
+
+  it('finalizes jobs after a tax policy bump without stake manager re-acknowledgement', async () => {
+    const stakeManagerAddress = await stakeManager.getAddress();
+    const feePoolAddress = await feePool.getAddress();
+
+    await policy.connect(owner).setAcknowledger(owner.address, true);
+    await policy.connect(owner).acknowledgeFor(stakeManagerAddress);
+    expect(await policy.hasAcknowledged(stakeManagerAddress)).to.equal(true);
+
+    await policy.connect(owner).bumpPolicyVersion();
+    expect(await policy.hasAcknowledged(stakeManagerAddress)).to.equal(false);
+
+    const jobId = ethers.encodeBytes32String('jobPolicyReset');
+    const feeAmount = 100n;
+    await token.connect(employer).approve(stakeManagerAddress, feeAmount);
+    await stakeManager
+      .connect(registrySigner)
+      .lockReward(jobId, employer.address, feeAmount);
+
+    await expect(
+      stakeManager
+        .connect(registrySigner)
+        .finalizeJobFunds(
+          jobId,
+          registrySigner.address,
+          user1.address,
+          0,
+          0,
+          feeAmount,
+          feePoolAddress,
+          false
+        )
+    ).to.not.be.reverted;
+
+    expect(await feePool.pendingFees()).to.equal(0n);
+    const rewardRole = await feePool.rewardRole();
+    const totalStake = await stakeManager.totalBoostedStake(Number(rewardRole));
+    const scale = await feePool.ACCUMULATOR_SCALE();
+    const expectedPerToken = (feeAmount * scale) / totalStake;
+    expect(await feePool.cumulativePerToken()).to.equal(expectedPerToken);
+
+    await policy.connect(user1).acknowledge();
+    await policy.connect(user2).acknowledge();
+    const before1 = await token.balanceOf(user1.address);
+    const before2 = await token.balanceOf(user2.address);
+    await feePool.connect(user1).claimRewards();
+    await feePool.connect(user2).claimRewards();
+    expect((await token.balanceOf(user1.address)) - before1).to.equal(25n);
+    expect((await token.balanceOf(user2.address)) - before2).to.equal(75n);
   });
 
   it('emits zero payout for owner without stake', async () => {
