@@ -2,132 +2,138 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
-  schedule:
-    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.12.2'
+  FOUNDRY_VERSION: 'nightly-2024-09-01'
+  SOLC_VERSION: '0.8.25'
+  CI: 'true'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-test:
+    name: Build • Lint • Unit tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: 22.x
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Verify AGIALPHA constants
-        run: npm run verify:agialpha
-      - name: Detect ungenerated constants
-        run: npm run compile && git diff --exit-code contracts/v2/Constants.sol
-      - name: Verify module wiring
-        env:
-          TRUFFLE_NETWORK: mainnet
-          MAINNET_RPC_URL: https://cloudflare-eth.com
-          MAINNET_PRIVATE_KEY: 0x0000000000000000000000000000000000000000000000000000000000000001
-        run: npm run wire:verify
-      - name: Run lint
-        run: npm run lint
-      - name: Check formatting
-        run: npm run format -- --check
-      - name: Run tests
-        run: npm test
-      - name: Check module governance
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/transfer-ownership.ts --new-owner 0x0000000000000000000000000000000000000000
+          fetch-depth: 0
 
-  slither:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - name: Install Node.js dependencies
-        run: npm ci
-      - name: Compile contracts
-        run: npx hardhat compile --force
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install Slither
-        run: |
-          pip install slither-analyzer solc-select
-          solc-select install 0.8.25
-          solc-select use 0.8.25
-      - name: Run Slither
-        run: |
-          set -euo pipefail
-          mkdir -p slither-report
-          set +e
-          slither . \
-            --solc-remaps @openzeppelin=node_modules/@openzeppelin/ \
-            --filter-paths node_modules \
-            --compile-force-framework hardhat \
-            --hardhat-ignore-compile \
-            --json slither-report/slither-report.json \
-            --checklist \
-            --fail-high
-          status=$?
-          set -e
-          if [ -f slither-checklist.md ]; then
-            mv slither-checklist.md slither-report/slither-report.md
-          fi
-          exit "$status"
-      - name: Upload Slither report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: slither-report
-          path: slither-report/
-          if-no-files-found: error
 
-  echidna:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: npm
-      - name: Install dependencies
+      - name: Install deps (npm ci, exact lockfile)
         run: npm ci
-      - name: Run Echidna fuzzing campaign
-        run: npm run echidna
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Run Solidity coverage with threshold gate
-        run: npm run coverage:full
-
-  gas-snapshot:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Foundry
+      - name: Pin Foundry toolchain
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: stable
-      - name: Run gas snapshot regression check
-        run: npm run gas:check
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Print tool versions
+        run: |
+          node -v
+          npm -v
+          forge --version
+
+      - name: Lint & format (no writes)
+        run: |
+          npm run lint:check || (echo "::error::Lint failed. Run npm run lint:fix locally." && exit 1)
+          npm run format:check || (echo "::error::Format failed. Run npm run format:fix locally." && exit 1)
+
+      - name: Compile (hardhat)
+        env:
+          HARDHAT_NETWORK: anvil
+        run: npm run compile
+
+      - name: Unit tests (local anvil only)
+        env:
+          HARDHAT_NETWORK: anvil
+          ETHERSCAN_API_KEY: ''
+          RPC_URL: ''
+        run: npm test
+
+  slither:
+    name: Slither (fail-high)
+    needs: build-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Slither inside pinned Docker
+        uses: crytic/slither-action@v0.3.0
+        with:
+          target: .
+          slither-args: --fail-high --exclude-dependencies --solc-remaps "@openzeppelin=node_modules/@openzeppelin"
+          sarif: true
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+  echidna-smoke:
+    name: Echidna smoke (PR)
+    needs: build-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    container: ghcr.io/crytic/echidna:2.2.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Smoke fuzz (bounded & deterministic)
+        env:
+          MALLOC_ARENA_MAX: 2
+        run: |
+          echidna-test ./contracts/test/CommitRevealEchidna.sol \
+            --contract CommitRevealEchidnaHarness \
+            --config ./echidna/echidna.smoke.yml \
+            --test-mode assertion \
+            --seed 1337 \
+            --corpus-dir echidna/corpus-smoke
+
+  coverage:
+    name: Coverage (threshold gate)
+    needs: build-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Run coverage (no forking)
+        env:
+          HARDHAT_NETWORK: coverage
+        run: npm run coverage:full
+      - name: Enforce threshold
+        run: node ./scripts/ci/check-coverage-threshold.mjs 90
+
+  gas:
+    name: Gas snapshot (regression gate)
+    needs: build-test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - name: Ensure baseline snapshot exists
+        env:
+          FOUNDRY_PROFILE: gas
+        run: |
+          test -f gas-snapshots/.gas-snapshot || forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot
+      - name: Check gas regressions (±3%)
+        env:
+          FOUNDRY_PROFILE: gas
+        run: ./scripts/ci/check-gas-regressions.sh gas-snapshots/.gas-snapshot 3

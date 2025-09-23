@@ -47,25 +47,21 @@ function resolveAccounts(envKeys) {
 
 const coverageOnly = process.env.COVERAGE_ONLY === '1';
 
-function createCompilerConfig(version) {
-  return {
+const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
+
+const solidityConfig = {
+  compilers: SOLIDITY_VERSIONS.map((version) => ({
     version,
     settings: {
       optimizer: { enabled: true, runs: 200 },
       viaIR: true,
     },
-  };
-}
-
-const compilerVersions = ['0.8.25', '0.8.23', '0.8.21'];
-
-const solidityConfig = {
-  compilers: compilerVersions.map(createCompilerConfig),
+  })),
 };
 
 const pathsConfig = coverageOnly
   ? { sources: './contracts/coverage', tests: './test' }
-  : { sources: './contracts' };
+  : { sources: './contracts', tests: './test' };
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -79,6 +75,10 @@ module.exports = {
     },
     anvil: {
       url: process.env.ANVIL_RPC_URL || 'http://127.0.0.1:8545',
+      chainId: 31337,
+    },
+    coverage: {
+      url: process.env.COVERAGE_RPC_URL || 'http://127.0.0.1:8555',
       chainId: 31337,
     },
     mainnet: {
