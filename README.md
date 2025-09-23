@@ -93,6 +93,16 @@ npx hardhat run scripts/v2/deployDefaults.ts --network <network> --governance <a
 
 Provide `--governance` to assign a multisig or timelock owner. Include `--no-tax` to skip deploying `TaxPolicy`.
 
+### System pause maintenance
+
+`SystemPause.setModules` now validates that every module has already transferred ownership or governance to the pause contract before it rewires addresses. This prevents accidentally wiring in contracts that cannot be paused during an emergency. When swapping modules, transfer ownership to the deployed `SystemPause` address first, then run the helper script:
+
+```bash
+npx hardhat run scripts/v2/updateSystemPause.ts --network <network>
+```
+
+The script performs a dry run by default, reporting any address, ownership or pauser mismatches. Re-run with `--execute` once all modules report `owner == SystemPause` to apply the wiring transaction safely.
+
 ### Mainnet Deployment
 
 For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md).

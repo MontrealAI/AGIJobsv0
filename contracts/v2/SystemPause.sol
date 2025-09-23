@@ -33,6 +33,7 @@ contract SystemPause is Governable, ReentrancyGuard {
     error InvalidFeePool(address module);
     error InvalidReputationEngine(address module);
     error InvalidArbitratorCommittee(address module);
+    error ModuleNotOwned(address module, address owner);
 
     event ModulesUpdated(
         address jobRegistry,
@@ -138,6 +139,17 @@ contract SystemPause is Governable, ReentrancyGuard {
             address(_arbitratorCommittee).code.length == 0
         ) revert InvalidArbitratorCommittee(address(_arbitratorCommittee));
 
+        _requireModuleOwnership(
+            _jobRegistry,
+            _stakeManager,
+            _validationModule,
+            _disputeModule,
+            _platformRegistry,
+            _feePool,
+            _reputationEngine,
+            _arbitratorCommittee
+        );
+
         jobRegistry = _jobRegistry;
         stakeManager = _stakeManager;
         validationModule = _validationModule;
@@ -192,6 +204,51 @@ contract SystemPause is Governable, ReentrancyGuard {
         feePool.setPauser(address(this));
         reputationEngine.setPauser(address(this));
         arbitratorCommittee.setPauser(address(this));
+    }
+
+    function _requireModuleOwnership(
+        JobRegistry _jobRegistry,
+        StakeManager _stakeManager,
+        ValidationModule _validationModule,
+        DisputeModule _disputeModule,
+        PlatformRegistry _platformRegistry,
+        FeePool _feePool,
+        ReputationEngine _reputationEngine,
+        ArbitratorCommittee _arbitratorCommittee
+    ) internal view {
+        if (_jobRegistry.owner() != address(this)) {
+            revert ModuleNotOwned(address(_jobRegistry), _jobRegistry.owner());
+        }
+        if (_stakeManager.owner() != address(this)) {
+            revert ModuleNotOwned(address(_stakeManager), _stakeManager.owner());
+        }
+        if (_validationModule.owner() != address(this)) {
+            revert ModuleNotOwned(address(_validationModule), _validationModule.owner());
+        }
+        if (_disputeModule.owner() != address(this)) {
+            revert ModuleNotOwned(address(_disputeModule), _disputeModule.owner());
+        }
+        if (_platformRegistry.owner() != address(this)) {
+            revert ModuleNotOwned(
+                address(_platformRegistry),
+                _platformRegistry.owner()
+            );
+        }
+        if (_feePool.owner() != address(this)) {
+            revert ModuleNotOwned(address(_feePool), _feePool.owner());
+        }
+        if (_reputationEngine.owner() != address(this)) {
+            revert ModuleNotOwned(
+                address(_reputationEngine),
+                _reputationEngine.owner()
+            );
+        }
+        if (_arbitratorCommittee.owner() != address(this)) {
+            revert ModuleNotOwned(
+                address(_arbitratorCommittee),
+                _arbitratorCommittee.owner()
+            );
+        }
     }
 }
 
