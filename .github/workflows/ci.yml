@@ -88,6 +88,11 @@ jobs:
     container: ghcr.io/crytic/echidna:2.2.3
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install JS dependencies
+        run: npm ci
       - name: Smoke fuzz (bounded & deterministic)
         env:
           MALLOC_ARENA_MAX: 2
