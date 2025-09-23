@@ -28,3 +28,25 @@ See [docs/security-deployment-guide.md](docs/security-deployment-guide.md) for a
 - **Foundry:**
   - `forge build`
   - `forge test`
+
+## Dependency Vulnerability Allowlist
+
+The CI security audit (see `npm run security:audit`) fail-gates any new vulnerability reports.
+Three advisories are intentionally allowlisted because the upstream projects that
+provide Truffle compatibility and the Solidity compiler toolchain have not yet
+published patched releases:
+
+- `GHSA-p8p7-x288-28g6` and `GHSA-3h5v-q93c-6h6q` stem from the legacy `request`
+  stack required by `@truffle/hdwallet-provider`. The provider is only required
+  for backwards-compatible Truffle migrations; production deployments should
+  prefer the Hardhat scripts shipped in `scripts/deploy`. We monitor the
+  dependency for updates and will remove the allowlist once the maintainer ships
+  a patched release or when we fully deprecate the Truffle path.
+- `GHSA-52f5-9888-hmc6` is inherited from the official `solc` npm package used by
+  Hardhat. The compiler team has acknowledged the issue and is tracking a fix;
+  no alternative package exists today. The vulnerability requires a malicious
+  symlink in a caller-controlled temporary directory, which our tooling never
+  exposes because all invocations run inside isolated build sandboxes.
+
+The audit report is stored in `audit-ci.json` together with the allowlist so that
+any future pipeline run will fail immediately when new advisories appear.

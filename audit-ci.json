@@ -1,0 +1,10 @@
+{
+  "low": true,
+  "allowlist": [
+    "GHSA-p8p7-x288-28g6",
+    "GHSA-52f5-9888-hmc6",
+    "GHSA-3h5v-q93c-6h6q"
+  ],
+  "show-found": true,
+  "report-type": "summary"
+}

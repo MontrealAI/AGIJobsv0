@@ -34,6 +34,9 @@ jobs:
       - name: Install deps (npm ci, exact lockfile)
         run: npm ci
 
+      - name: Security audit (allowlist enforced)
+        run: npm run security:audit
+
       - name: Pin Foundry toolchain
         uses: foundry-rs/foundry-toolchain@v1
         with:
