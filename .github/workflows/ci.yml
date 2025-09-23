@@ -12,7 +12,7 @@ concurrency:
 
 env:
   NODE_VERSION: '20.12.2'
-  FOUNDRY_VERSION: 'nightly-2024-09-01'
+  FOUNDRY_VERSION: 'nightly-2024-08-28'
   SOLC_VERSION: '0.8.25'
   CI: 'true'
 
