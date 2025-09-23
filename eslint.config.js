@@ -36,4 +36,15 @@ module.exports = [
       'prettier/prettier': 'error',
     },
   },
+  {
+    files: [
+      'examples/**/*.{js,ts,tsx}',
+      'test/**/*.{js,ts,tsx}',
+      'scripts/**/*.ts',
+    ],
+    rules: {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
 ];

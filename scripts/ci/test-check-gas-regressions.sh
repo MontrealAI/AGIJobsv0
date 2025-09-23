@@ -7,19 +7,44 @@ workdir=$(mktemp -d)
 trap 'rm -rf "$workdir"' EXIT
 
 baseline_snapshot="$workdir/baseline.snap"
-new_snapshot="$workdir/new.snap"
 
 cat <<'SNAP' > "$baseline_snapshot"
 ExampleContract:testOne() (gas: 100)
 ExampleContract:testTwo() (gas: 200)
 SNAP
 
-cat <<'SNAP' > "$new_snapshot"
+cat <<'SH' > "$workdir/forge"
+#!/usr/bin/env bash
+set -euo pipefail
+
+snap_file=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --snap)
+      snap_file="$2"
+      shift 2
+      ;;
+    *)
+      shift 1
+      ;;
+  esac
+done
+
+if [[ -z "$snap_file" ]]; then
+  echo "Missing --snap argument" >&2
+  exit 1
+fi
+
+cat <<'SNAP' > "$snap_file"
 ExampleContract:testOne() (gas: 100)
 SNAP
+SH
+chmod +x "$workdir/forge"
+
+PATH="$workdir:$PATH"
 
 set +e
-output="$($repo_root/scripts/ci/check-gas-regressions.sh "$baseline_snapshot" "$new_snapshot" 2>&1)"
+output="$($repo_root/scripts/ci/check-gas-regressions.sh "$baseline_snapshot" 5 2>&1)"
 status=$?
 set -e
 

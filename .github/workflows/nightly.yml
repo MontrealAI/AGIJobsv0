@@ -1,0 +1,24 @@
+name: Nightly Security
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  echidna-long:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    container: ghcr.io/crytic/echidna:2.2.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Long fuzz (more tests, more runs)
+        env:
+          MALLOC_ARENA_MAX: 2
+        run: |
+          echidna-test ./contracts/test/CommitRevealEchidna.sol \
+            --contract CommitRevealEchidnaHarness \
+            --config ./echidna/echidna.long.yml \
+            --test-mode assertion \
+            --corpus-dir echidna/corpus \
+            --seed 42

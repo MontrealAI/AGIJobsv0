@@ -1,62 +1,73 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 2 ]]; then
-  echo "Usage: $0 <baseline-snapshot> <new-snapshot>" >&2
+baseline_snapshot=${1:-gas-snapshots/.gas-snapshot}
+threshold_pct=${2:-3}
+
+if [[ ! -f "$baseline_snapshot" ]]; then
+  echo "Baseline gas snapshot not found at $baseline_snapshot" >&2
   exit 1
 fi
 
-baseline_snapshot_path=$1
-new_snapshot_path=$2
+tmp_snapshot="$(mktemp)"
+trap 'rm -f "$tmp_snapshot"' EXIT
 
-declare -A baseline_snapshot
-declare -A new_snapshot
+export FOUNDRY_PROFILE="${FOUNDRY_PROFILE:-gas}"
+forge_match_default="${GAS_SNAPSHOT_MATCH:-CommitRevealGas}"
+forge_args=(snapshot --snap "$tmp_snapshot")
+if [[ -n "$forge_match_default" ]]; then
+  forge_args+=(--match-contract "$forge_match_default")
+fi
+forge "${forge_args[@]}" >/dev/null
 
-parse_snapshot() {
-  local snapshot_path=$1
-  local -n snapshot_map=$2
+python3 - "$baseline_snapshot" "$tmp_snapshot" "$threshold_pct" <<'PY'
+import sys
 
-  while IFS= read -r line || [[ -n $line ]]; do
-    [[ -z ${line//[[:space:]]/} ]] && continue
+def load_snapshot(path):
+    data = {}
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            if ':' not in line or '(gas:' not in line:
+                raise SystemExit(f"Unrecognized snapshot line: {line}")
+            identifier, rest = line.split(' (gas: ')
+            gas = int(rest.rstrip(')'))
+            data[identifier] = gas
+    return data
 
-    if [[ $line =~ ^(.+)\ \(gas:\ ([0-9]+)\)$ ]]; then
-      local identifier=${BASH_REMATCH[1]}
-      local gas_value=${BASH_REMATCH[2]}
-      snapshot_map["$identifier"]=$gas_value
-    else
-      echo "Unrecognized snapshot line: $line" >&2
-      exit 1
-    fi
-  done < "$snapshot_path"
-}
+baseline = load_snapshot(sys.argv[1])
+current = load_snapshot(sys.argv[2])
+threshold = float(sys.argv[3])
 
-parse_snapshot "$baseline_snapshot_path" baseline_snapshot
-parse_snapshot "$new_snapshot_path" new_snapshot
+regressions = []
+missing = []
 
-regression_found=0
+for key, base_value in baseline.items():
+    if key not in current:
+        missing.append(key)
+        continue
+    new_value = current[key]
+    if base_value <= 0:
+        continue
+    delta = new_value - base_value
+    pct = (delta / base_value) * 100
+    if pct > threshold:
+        regressions.append((key, base_value, new_value, pct))
 
-for identifier in "${!baseline_snapshot[@]}"; do
-  if [[ -z ${new_snapshot[$identifier]+x} ]]; then
-    echo "Gas snapshot missing test '$identifier' in new snapshot" >&2
-    regression_found=1
-  fi
-done
+if missing:
+    print('Gas snapshot missing entries:')
+    for key in sorted(missing):
+        print(f"  {key}")
 
-for identifier in "${!new_snapshot[@]}"; do
-  if [[ -z ${baseline_snapshot[$identifier]+x} ]]; then
-    echo "New gas snapshot introduced '$identifier' with gas ${new_snapshot[$identifier]}" >&2
-    continue
-  fi
+if regressions:
+    print('Gas regressions detected:')
+    for key, base, new, pct in regressions:
+        print(f"  {key}: {base} -> {new} (+{pct:.2f}%)")
 
-  old_value=${baseline_snapshot[$identifier]}
-  new_value=${new_snapshot[$identifier]}
+if missing or regressions:
+    sys.exit(1)
 
-  if (( new_value > old_value )); then
-    increase=$(( new_value - old_value ))
-    echo "Gas regression for '$identifier': ${old_value} -> ${new_value} (+${increase})" >&2
-    regression_found=1
-  fi
-
-done
-
-exit $regression_found
+print('Gas OK')
+PY
