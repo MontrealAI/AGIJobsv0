@@ -81,6 +81,55 @@ contract IdentityRegistry is Ownable2Step {
         bytes32 clubRoot
     );
 
+    event ConfigurationApplied(
+        address indexed caller,
+        bool ensUpdated,
+        bool nameWrapperUpdated,
+        bool reputationEngineUpdated,
+        bool attestationRegistryUpdated,
+        bool agentRootUpdated,
+        bool clubRootUpdated,
+        bool agentMerkleRootUpdated,
+        bool validatorMerkleRootUpdated,
+        uint256 additionalAgentUpdates,
+        uint256 additionalValidatorUpdates,
+        uint256 agentTypeUpdates
+    );
+
+    struct ConfigUpdate {
+        bool setENS;
+        address ens;
+        bool setNameWrapper;
+        address nameWrapper;
+        bool setReputationEngine;
+        address reputationEngine;
+        bool setAttestationRegistry;
+        address attestationRegistry;
+        bool setAgentRootNode;
+        bytes32 agentRootNode;
+        bool setClubRootNode;
+        bytes32 clubRootNode;
+        bool setAgentMerkleRoot;
+        bytes32 agentMerkleRoot;
+        bool setValidatorMerkleRoot;
+        bytes32 validatorMerkleRoot;
+    }
+
+    struct AdditionalAgentConfig {
+        address agent;
+        bool allowed;
+    }
+
+    struct AdditionalValidatorConfig {
+        address validator;
+        bool allowed;
+    }
+
+    struct AgentTypeConfig {
+        address agent;
+        AgentType agentType;
+    }
+
     address public constant MAINNET_ENS =
         0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e;
     address public constant MAINNET_NAME_WRAPPER =
@@ -127,6 +176,161 @@ contract IdentityRegistry is Ownable2Step {
     // ---------------------------------------------------------------------
 
     function setENS(address ensAddr) public onlyOwner {
+        _setENS(ensAddr);
+    }
+
+    function setNameWrapper(address wrapper) public onlyOwner {
+        _setNameWrapper(wrapper);
+    }
+
+    function setReputationEngine(address engine) external onlyOwner {
+        _setReputationEngine(engine);
+    }
+
+    function setAttestationRegistry(address registry) external onlyOwner {
+        _setAttestationRegistry(registry);
+    }
+
+    function setAgentRootNode(bytes32 root) public onlyOwner {
+        _setAgentRootNode(root);
+    }
+
+    function setClubRootNode(bytes32 root) public onlyOwner {
+        _setClubRootNode(root);
+    }
+
+    /// @notice Configure the registry with canonical mainnet ENS settings.
+    function configureMainnet() external onlyOwner {
+        _setENS(MAINNET_ENS);
+        _setNameWrapper(MAINNET_NAME_WRAPPER);
+        _setAgentRootNode(MAINNET_AGENT_ROOT_NODE);
+        _setClubRootNode(MAINNET_CLUB_ROOT_NODE);
+        emit MainnetConfigured(
+            MAINNET_ENS,
+            MAINNET_NAME_WRAPPER,
+            MAINNET_AGENT_ROOT_NODE,
+            MAINNET_CLUB_ROOT_NODE
+        );
+    }
+
+    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+        _setAgentMerkleRoot(root);
+    }
+
+    function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
+        _setValidatorMerkleRoot(root);
+    }
+
+    function addAdditionalAgent(address agent) external onlyOwner {
+        _setAdditionalAgent(agent, true);
+    }
+
+    function removeAdditionalAgent(address agent) external onlyOwner {
+        _setAdditionalAgent(agent, false);
+    }
+
+    function addAdditionalValidator(address validator) external onlyOwner {
+        _setAdditionalValidator(validator, true);
+    }
+
+    function removeAdditionalValidator(address validator) external onlyOwner {
+        _setAdditionalValidator(validator, false);
+    }
+
+    function setAgentType(address agent, AgentType agentType) external onlyOwner {
+        _setAgentType(agent, agentType);
+    }
+
+    function applyConfiguration(
+        ConfigUpdate calldata config,
+        AdditionalAgentConfig[] calldata agentUpdates,
+        AdditionalValidatorConfig[] calldata validatorUpdates,
+        AgentTypeConfig[] calldata agentTypeUpdates
+    ) external onlyOwner {
+        bool ensUpdated;
+        bool nameWrapperUpdated;
+        bool reputationUpdated;
+        bool attestationUpdated;
+        bool agentRootUpdated;
+        bool clubRootUpdated;
+        bool agentMerkleUpdated;
+        bool validatorMerkleUpdated;
+
+        if (config.setENS) {
+            _setENS(config.ens);
+            ensUpdated = true;
+        }
+
+        if (config.setNameWrapper) {
+            _setNameWrapper(config.nameWrapper);
+            nameWrapperUpdated = true;
+        }
+
+        if (config.setReputationEngine) {
+            _setReputationEngine(config.reputationEngine);
+            reputationUpdated = true;
+        }
+
+        if (config.setAttestationRegistry) {
+            _setAttestationRegistry(config.attestationRegistry);
+            attestationUpdated = true;
+        }
+
+        if (config.setAgentRootNode) {
+            _setAgentRootNode(config.agentRootNode);
+            agentRootUpdated = true;
+        }
+
+        if (config.setClubRootNode) {
+            _setClubRootNode(config.clubRootNode);
+            clubRootUpdated = true;
+        }
+
+        if (config.setAgentMerkleRoot) {
+            _setAgentMerkleRoot(config.agentMerkleRoot);
+            agentMerkleUpdated = true;
+        }
+
+        if (config.setValidatorMerkleRoot) {
+            _setValidatorMerkleRoot(config.validatorMerkleRoot);
+            validatorMerkleUpdated = true;
+        }
+
+        uint256 agentLen = agentUpdates.length;
+        for (uint256 i; i < agentLen; i++) {
+            AdditionalAgentConfig calldata update = agentUpdates[i];
+            _setAdditionalAgent(update.agent, update.allowed);
+        }
+
+        uint256 validatorLen = validatorUpdates.length;
+        for (uint256 i; i < validatorLen; i++) {
+            AdditionalValidatorConfig calldata update = validatorUpdates[i];
+            _setAdditionalValidator(update.validator, update.allowed);
+        }
+
+        uint256 agentTypeLen = agentTypeUpdates.length;
+        for (uint256 i; i < agentTypeLen; i++) {
+            AgentTypeConfig calldata update = agentTypeUpdates[i];
+            _setAgentType(update.agent, update.agentType);
+        }
+
+        emit ConfigurationApplied(
+            msg.sender,
+            ensUpdated,
+            nameWrapperUpdated,
+            reputationUpdated,
+            attestationUpdated,
+            agentRootUpdated,
+            clubRootUpdated,
+            agentMerkleUpdated,
+            validatorMerkleUpdated,
+            agentLen,
+            validatorLen,
+            agentTypeLen
+        );
+    }
+
+    function _setENS(address ensAddr) internal {
         if (ensAddr == address(0)) {
             revert ZeroAddress();
         }
@@ -134,7 +338,7 @@ contract IdentityRegistry is Ownable2Step {
         emit ENSUpdated(ensAddr);
     }
 
-    function setNameWrapper(address wrapper) public onlyOwner {
+    function _setNameWrapper(address wrapper) internal {
         if (wrapper == address(0)) {
             revert ZeroAddress();
         }
@@ -142,7 +346,7 @@ contract IdentityRegistry is Ownable2Step {
         emit NameWrapperUpdated(wrapper);
     }
 
-    function setReputationEngine(address engine) external onlyOwner {
+    function _setReputationEngine(address engine) internal {
         if (engine == address(0)) {
             revert ZeroAddress();
         }
@@ -153,7 +357,7 @@ contract IdentityRegistry is Ownable2Step {
         emit ReputationEngineUpdated(engine);
     }
 
-    function setAttestationRegistry(address registry) external onlyOwner {
+    function _setAttestationRegistry(address registry) internal {
         if (registry == address(0)) {
             revert ZeroAddress();
         }
@@ -161,67 +365,43 @@ contract IdentityRegistry is Ownable2Step {
         emit AttestationRegistryUpdated(registry);
     }
 
-    function setAgentRootNode(bytes32 root) public onlyOwner {
+    function _setAgentRootNode(bytes32 root) internal {
         agentRootNode = root;
         emit AgentRootNodeUpdated(root);
     }
 
-    function setClubRootNode(bytes32 root) public onlyOwner {
+    function _setClubRootNode(bytes32 root) internal {
         clubRootNode = root;
         emit ClubRootNodeUpdated(root);
     }
 
-    /// @notice Configure the registry with canonical mainnet ENS settings.
-    function configureMainnet() external onlyOwner {
-        setENS(MAINNET_ENS);
-        setNameWrapper(MAINNET_NAME_WRAPPER);
-        setAgentRootNode(MAINNET_AGENT_ROOT_NODE);
-        setClubRootNode(MAINNET_CLUB_ROOT_NODE);
-        emit MainnetConfigured(
-            MAINNET_ENS,
-            MAINNET_NAME_WRAPPER,
-            MAINNET_AGENT_ROOT_NODE,
-            MAINNET_CLUB_ROOT_NODE
-        );
-    }
-
-    function setAgentMerkleRoot(bytes32 root) external onlyOwner {
+    function _setAgentMerkleRoot(bytes32 root) internal {
         agentMerkleRoot = root;
         emit AgentMerkleRootUpdated(root);
     }
 
-    function setValidatorMerkleRoot(bytes32 root) external onlyOwner {
+    function _setValidatorMerkleRoot(bytes32 root) internal {
         validatorMerkleRoot = root;
         emit ValidatorMerkleRootUpdated(root);
     }
 
-    function addAdditionalAgent(address agent) external onlyOwner {
-        if (agent == address(0)) {
+    function _setAdditionalAgent(address agent, bool allowed) internal {
+        if (allowed && agent == address(0)) {
             revert ZeroAddress();
         }
-        additionalAgents[agent] = true;
-        emit AdditionalAgentUpdated(agent, true);
+        additionalAgents[agent] = allowed;
+        emit AdditionalAgentUpdated(agent, allowed);
     }
 
-    function removeAdditionalAgent(address agent) external onlyOwner {
-        additionalAgents[agent] = false;
-        emit AdditionalAgentUpdated(agent, false);
-    }
-
-    function addAdditionalValidator(address validator) external onlyOwner {
-        if (validator == address(0)) {
+    function _setAdditionalValidator(address validator, bool allowed) internal {
+        if (allowed && validator == address(0)) {
             revert ZeroAddress();
         }
-        additionalValidators[validator] = true;
-        emit AdditionalValidatorUpdated(validator, true);
+        additionalValidators[validator] = allowed;
+        emit AdditionalValidatorUpdated(validator, allowed);
     }
 
-    function removeAdditionalValidator(address validator) external onlyOwner {
-        additionalValidators[validator] = false;
-        emit AdditionalValidatorUpdated(validator, false);
-    }
-
-    function setAgentType(address agent, AgentType agentType) external onlyOwner {
+    function _setAgentType(address agent, AgentType agentType) internal {
         if (agent == address(0)) {
             revert ZeroAddress();
         }
