@@ -12,8 +12,7 @@ concurrency:
 
 env:
   NODE_VERSION: '20.12.2'
-  # Pin to a published nightly tag to avoid 404s during toolchain download.
-  FOUNDRY_VERSION: 'nightly-b1514b033d92bd97900f0c8db839995f5eaae8fe'
+  FOUNDRY_VERSION: 'nightly-2024-09-01'
   SOLC_VERSION: '0.8.25'
   CI: 'true'
 
@@ -133,7 +132,9 @@ jobs:
         env:
           FOUNDRY_PROFILE: gas
         run: |
-          test -f gas-snapshots/.gas-snapshot || forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot
+          if [ ! -f gas-snapshots/.gas-snapshot ]; then
+            forge snapshot --match-contract CommitRevealGas --snap gas-snapshots/.gas-snapshot
+          fi
       - name: Check gas regressions (±3%)
         env:
           FOUNDRY_PROFILE: gas
