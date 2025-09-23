@@ -15,7 +15,7 @@
     "test": "npx hardhat test",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",
-    "coverage:report": "COVERAGE_ONLY=1 npx hardhat coverage",
+    "coverage:report": "COVERAGE_ONLY=1 npx hardhat coverage --testfiles \"test/{coverage/**/*.test.js,coverage/**/*.test.ts,gateway/initWallets.test.js}\"",
     "coverage:check": "node scripts/check-coverage.js",
     "coverage:full": "npm run coverage:report && npm run coverage:check",
     "check:coverage": "npm run coverage:check",
