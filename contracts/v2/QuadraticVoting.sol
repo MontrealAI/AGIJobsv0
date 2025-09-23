@@ -14,9 +14,10 @@ interface IGovernanceReward {
 
 /// @title QuadraticVoting
 /// @notice Simple quadratic voting mechanism where voting cost grows with the
-/// square of votes. Tokens are sent to a treasury when voting and can be
+/// square of votes. Tokens are held by this contract when voting and can be
 /// claimed back as rewards after the proposal is executed. Rewards are
-/// distributed proportionally to the square root of the voting cost. The
+/// distributed proportionally to the square root of the voting cost, and any
+/// residual balance can be swept to a treasury once rewards settle. The
 /// contract can notify a GovernanceReward contract to record voters for reward
 /// distribution.
 contract QuadraticVoting is Ownable, ReentrancyGuard {
@@ -73,6 +74,7 @@ contract QuadraticVoting is Ownable, ReentrancyGuard {
 
     /// @notice Update the treasury address receiving fees.
     function setTreasury(address _treasury) external onlyOwner {
+        require(_treasury != address(0), "treasury");
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
     }
@@ -81,7 +83,6 @@ contract QuadraticVoting is Ownable, ReentrancyGuard {
     function castVote(uint256 proposalId, uint256 numVotes, uint256 deadline) external nonReentrant {
         require(!executed[proposalId], "executed");
         require(numVotes > 0, "votes");
-        require(treasury != address(0), "treasury");
         uint256 d = proposalDeadline[proposalId];
         if (d == 0) {
             require(deadline > block.timestamp, "deadline");
@@ -90,7 +91,7 @@ contract QuadraticVoting is Ownable, ReentrancyGuard {
             require(block.timestamp <= d, "expired");
         }
         uint256 cost = numVotes * numVotes;
-        token.safeTransferFrom(msg.sender, treasury, cost);
+        token.safeTransferFrom(msg.sender, address(this), cost);
 
         uint256 oldCost = costs[proposalId][msg.sender];
         uint256 newCost = oldCost + cost;
@@ -126,8 +127,16 @@ contract QuadraticVoting is Ownable, ReentrancyGuard {
         require(!rewardClaimed[proposalId][msg.sender], "claimed");
         rewardClaimed[proposalId][msg.sender] = true;
         uint256 reward = (totalCost[proposalId] * Math.sqrt(userCost)) / totalSqrtCost[proposalId];
-        token.safeTransferFrom(treasury, msg.sender, reward);
+        token.safeTransfer(msg.sender, reward);
         emit RewardClaimed(proposalId, msg.sender, reward);
+    }
+
+    /// @notice Sweep remaining contract balance to the treasury after rewards settle.
+    function sweepTreasury() external onlyOwner nonReentrant {
+        address sweepRecipient = treasury;
+        require(sweepRecipient != address(0), "treasury");
+        uint256 balance = token.balanceOf(address(this));
+        token.safeTransfer(sweepRecipient, balance);
     }
 
     /// @notice Returns number of voters for a proposal.
