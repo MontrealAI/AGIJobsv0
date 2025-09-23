@@ -53,12 +53,12 @@ jobs:
 
       - name: Compile (hardhat)
         env:
-          HARDHAT_NETWORK: anvil
+          HARDHAT_NETWORK: hardhat
         run: npm run compile
 
-      - name: Unit tests (local anvil only)
+      - name: Unit tests (local hardhat network)
         env:
-          HARDHAT_NETWORK: anvil
+          HARDHAT_NETWORK: hardhat
           ETHERSCAN_API_KEY: ''
           RPC_URL: ''
         run: npm test
