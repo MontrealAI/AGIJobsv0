@@ -218,7 +218,10 @@ halt job creation, validation and payouts during emergencies and
   flow on a test network before promoting configuration changes to mainnet.
 - **Legal compliance:** consult counsel on tax, securities and data-privacy
   obligations in relevant jurisdictions and ensure participants acknowledge the
-  posted tax policy.
+  posted tax policy. Core contracts wired in via governance (e.g. `StakeManager`
+  and `FeePool`) are treated as trusted modules and remain exempt after policy
+  updates, so operators do not need to re-acknowledge them when bumping the
+  version.
 
 ## ENS Identity Monitor
 
