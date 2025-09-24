@@ -2,7 +2,8 @@
 cryticArgs:
   - '--compile-force-framework=hardhat'
   - '--solc-remaps=@openzeppelin=node_modules/@openzeppelin'
-  - '--solc-version=0.8.25'
+  - '--solc-version'
+  - '0.8.25'
 testMode: assertion
 testLimit: 5000
 seqLen: 64
