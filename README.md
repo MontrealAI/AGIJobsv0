@@ -30,7 +30,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ### Identity policy
 
-Agents and validators must own ENS subdomains under `agent.agi.eth` and `club.agi.eth`. All workflows perform on-chain verification and bypass mechanisms are reserved for emergency governance only. See [docs/ens-identity-policy.md](docs/ens-identity-policy.md) for details.
+Agents and validators must own ENS subdomains under `agent.agi.eth` and `club.agi.eth`. Owners of `*.alpha.agent.agi.eth` and `*.alpha.club.agi.eth` subdomains enjoy identical permissions—the `IdentityRegistry` treats those aliases as equivalent roots. All workflows perform on-chain verification and bypass mechanisms are reserved for emergency governance only. See [docs/ens-identity-policy.md](docs/ens-identity-policy.md) for details.
 
 > **Emergency allowlists:** The `IdentityRegistry` owner can directly whitelist addresses using `addAdditionalAgent` or `addAdditionalValidator`. These overrides bypass ENS proofs and should only be used to recover from deployment errors or other emergencies.
 
