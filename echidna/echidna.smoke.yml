@@ -1,9 +1,5 @@
-# Deterministic smoke profile for CI
-cryticArgs:
-  - '--compile-force-framework=hardhat'
-  - '--solc-remaps=@openzeppelin=node_modules/@openzeppelin'
 testMode: assertion
-testLimit: 5000
+format: text
 seqLen: 64
-corpusDir: echidna/corpus-smoke
-seed: 1337
+shrinkLimit: 1000
+# No --solc-version misuse here; Echidna will use its embedded toolchain.
