@@ -106,8 +106,8 @@ const MODULE_ABIS = {
     'function thermostat() view returns (address)',
     'function feePool() view returns (address)',
     'function reputation() view returns (address)',
-    'function energyOracle() view returns (address)',
     'function treasury() view returns (address)',
+    'function energyOracle() view returns (address)',
     'function token() view returns (address)'
   ),
   Thermostat: buildAbi(),
@@ -223,31 +223,6 @@ const NETWORK_ALIAS_MAP = new Map([
   ['sepolia', ['sepolia', 'sep']],
 ]);
 
-const ADDRESS_CANDIDATE_KEYS = [
-  'address',
-  'proxy',
-  'proxyAddress',
-  'implementation',
-  'implementationAddress',
-  'impl',
-  'target',
-  'module',
-  'moduleAddress',
-  'instance',
-  'deployment',
-  'deploymentAddress',
-  'value',
-];
-
-const ADDRESS_CONTAINER_KEYS = [
-  'addresses',
-  'deployments',
-  'networks',
-  'instances',
-  'chains',
-  'values',
-];
-
 function buildNetworkKeyCandidates({ network, chainId } = {}) {
   const keys = new Set();
   const push = (value) => {
@@ -285,6 +260,31 @@ function buildNetworkKeyCandidates({ network, chainId } = {}) {
 
   return Array.from(keys).filter(Boolean);
 }
+
+const ADDRESS_CANDIDATE_KEYS = [
+  'address',
+  'proxy',
+  'proxyAddress',
+  'implementation',
+  'implementationAddress',
+  'impl',
+  'target',
+  'module',
+  'moduleAddress',
+  'instance',
+  'deployment',
+  'deploymentAddress',
+  'value',
+];
+
+const ADDRESS_CONTAINER_KEYS = [
+  'addresses',
+  'deployments',
+  'networks',
+  'instances',
+  'chains',
+  'values',
+];
 
 function collectAddressCandidates(value, context, visited = new Set()) {
   if (value === undefined || value === null) {
@@ -366,7 +366,15 @@ function resolveModuleAddress(modules, key, { network, chainId } = {}) {
     }
   }
 
-  return null;
+  if (entry === undefined || entry === null) {
+    return null;
+  }
+
+  try {
+    return normaliseAddress(entry, { allowZero: false });
+  } catch (err) {
+    throw new Error(`Invalid address for modules.${key}: ${err.message}`);
+  }
 }
 
 function resolveAddress(value, label, { allowZero = false } = {}) {
@@ -718,30 +726,18 @@ async function main() {
       address: systemPauseAddress,
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
         {
           getter: 'validationModule',
           expected: () => moduleAddress('validationModule'),
         },
-        {
-          getter: 'disputeModule',
-          expected: () => moduleAddress('disputeModule'),
-        },
+        { getter: 'disputeModule', expected: () => moduleAddress('disputeModule') },
         {
           getter: 'platformRegistry',
           expected: () => moduleAddress('platformRegistry'),
         },
-        {
-          getter: 'feePool',
-          expected: () => moduleAddress('feePool'),
-        },
+        { getter: 'feePool', expected: () => moduleAddress('feePool') },
         {
           getter: 'reputationEngine',
           expected: () => moduleAddress('reputationEngine'),
@@ -759,26 +755,13 @@ async function main() {
       address: stakeManagerAddress,
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'disputeModule',
-          expected: () => moduleAddress('disputeModule'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'disputeModule', expected: () => moduleAddress('disputeModule') },
         {
           getter: 'validationModule',
           expected: () => moduleAddress('validationModule'),
         },
-        {
-          getter: 'feePool',
-          expected: () => moduleAddress('feePool'),
-        },
-        {
-          getter: 'thermostat',
-          expected: () => thermostatExpectedAddress,
-        },
+        { getter: 'feePool', expected: () => moduleAddress('feePool') },
       ],
     },
     {
@@ -788,10 +771,7 @@ async function main() {
       address: moduleAddress('jobRegistry'),
       allowedOwners,
       checks: [
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
         {
           getter: 'validationModule',
           expected: () => moduleAddress('validationModule'),
@@ -800,22 +780,13 @@ async function main() {
           getter: 'reputationEngine',
           expected: () => moduleAddress('reputationEngine'),
         },
-        {
-          getter: 'disputeModule',
-          expected: () => moduleAddress('disputeModule'),
-        },
+        { getter: 'disputeModule', expected: () => moduleAddress('disputeModule') },
         {
           getter: 'certificateNFT',
           expected: () => moduleAddress('certificateNFT'),
         },
-        {
-          getter: 'taxPolicy',
-          expected: () => moduleAddress('taxPolicy'),
-        },
-        {
-          getter: 'feePool',
-          expected: () => moduleAddress('feePool'),
-        },
+        { getter: 'taxPolicy', expected: () => moduleAddress('taxPolicy') },
+        { getter: 'feePool', expected: () => moduleAddress('feePool') },
         {
           getter: 'identityRegistry',
           expected: () => moduleAddress('identityRegistry'),
@@ -829,14 +800,8 @@ async function main() {
       address: moduleAddress('validationModule'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
         {
           getter: 'identityRegistry',
           expected: () => moduleAddress('identityRegistry'),
@@ -854,10 +819,7 @@ async function main() {
       address: moduleAddress('reputationEngine'),
       allowedOwners,
       checks: [
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
       ],
     },
     {
@@ -867,18 +829,11 @@ async function main() {
       address: moduleAddress('disputeModule'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
         {
           getter: 'committee',
-          expected: () =>
-            moduleAddress('arbitratorCommittee'),
+          expected: () => moduleAddress('arbitratorCommittee'),
         },
       ],
     },
@@ -889,14 +844,8 @@ async function main() {
       address: moduleAddress('arbitratorCommittee'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'disputeModule',
-          expected: () => moduleAddress('disputeModule'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'disputeModule', expected: () => moduleAddress('disputeModule') },
       ],
     },
     {
@@ -906,14 +855,8 @@ async function main() {
       address: moduleAddress('certificateNFT'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
       ],
     },
     {
@@ -923,18 +866,9 @@ async function main() {
       address: moduleAddress('taxPolicy'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
-        {
-          getter: 'feePool',
-          expected: () => moduleAddress('feePool'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
+        { getter: 'feePool', expected: () => moduleAddress('feePool') },
       ],
     },
     {
@@ -944,14 +878,8 @@ async function main() {
       address: moduleAddress('feePool'),
       allowedOwners,
       checks: [
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
         {
           getter: 'platformIncentives',
           expected: () => moduleAddress('platformIncentives'),
@@ -965,22 +893,13 @@ async function main() {
       address: rewardEngineAddress,
       allowedOwners,
       checks: [
-        {
-          getter: 'feePool',
-          expected: () => moduleAddress('feePool'),
-        },
+        { getter: 'feePool', expected: () => moduleAddress('feePool') },
         {
           getter: 'reputation',
           expected: () => moduleAddress('reputationEngine'),
         },
-        {
-          getter: 'thermostat',
-          expected: () => thermostatExpectedAddress,
-        },
-        {
-          getter: 'treasury',
-          expected: () => rewardEngineTreasuryExpected,
-        },
+        { getter: 'thermostat', expected: () => thermostatExpectedAddress },
+        { getter: 'treasury', expected: () => rewardEngineTreasuryExpected },
         {
           getter: 'energyOracle',
           expected: () => rewardEngineEnergyOracleExpected,
@@ -994,10 +913,7 @@ async function main() {
       address: moduleAddress('platformRegistry'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRouter',
-          expected: () => moduleAddress('jobRouter'),
-        },
+        { getter: 'jobRouter', expected: () => moduleAddress('jobRouter') },
       ],
     },
     {
@@ -1007,10 +923,7 @@ async function main() {
       address: moduleAddress('jobRouter'),
       allowedOwners,
       checks: [
-        {
-          getter: 'jobRegistry',
-          expected: () => moduleAddress('jobRegistry'),
-        },
+        { getter: 'jobRegistry', expected: () => moduleAddress('jobRegistry') },
         {
           getter: 'platformRegistry',
           expected: () => moduleAddress('platformRegistry'),
@@ -1019,10 +932,7 @@ async function main() {
           getter: 'platformIncentives',
           expected: () => moduleAddress('platformIncentives'),
         },
-        {
-          getter: 'feePool',
-          expected: () => moduleAddress('feePool'),
-        },
+        { getter: 'feePool', expected: () => moduleAddress('feePool') },
       ],
     },
     {
@@ -1032,18 +942,12 @@ async function main() {
       address: moduleAddress('platformIncentives'),
       allowedOwners,
       checks: [
-        {
-          getter: 'stakeManager',
-          expected: () => moduleAddress('stakeManager'),
-        },
+        { getter: 'stakeManager', expected: () => moduleAddress('stakeManager') },
         {
           getter: 'platformRegistry',
           expected: () => moduleAddress('platformRegistry'),
         },
-        {
-          getter: 'jobRouter',
-          expected: () => moduleAddress('jobRouter'),
-        },
+        { getter: 'jobRouter', expected: () => moduleAddress('jobRouter') },
       ],
     },
     {
@@ -1061,10 +965,7 @@ async function main() {
           getter: 'attestationRegistry',
           expected: () => moduleAddress('attestationRegistry'),
         },
-        {
-          getter: 'ens',
-          expected: () => normaliseAddress(ensConfig.registry),
-        },
+        { getter: 'ens', expected: () => normaliseAddress(ensConfig.registry) },
         {
           getter: 'nameWrapper',
           expected: () => normaliseAddress(ensConfig.nameWrapper),
@@ -1098,10 +999,7 @@ async function main() {
       address: moduleAddress('attestationRegistry'),
       allowedOwners,
       checks: [
-        {
-          getter: 'ens',
-          expected: () => normaliseAddress(ensConfig.registry),
-        },
+        { getter: 'ens', expected: () => normaliseAddress(ensConfig.registry) },
         {
           getter: 'nameWrapper',
           expected: () => normaliseAddress(ensConfig.nameWrapper),
