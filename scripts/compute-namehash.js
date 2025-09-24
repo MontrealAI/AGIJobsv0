@@ -4,7 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const namehash = require('eth-ens-namehash');
 
-const TARGET_KEYS = new Set(['agentRoot', 'clubRoot', 'alphaClubRoot']);
+const TARGET_KEYS = new Set([
+  'agentRoot',
+  'alphaAgentRoot',
+  'clubRoot',
+  'alphaClubRoot',
+]);
 
 function usage() {
   console.error('Usage: node scripts/compute-namehash.js <config.json>');

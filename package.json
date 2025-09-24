@@ -33,6 +33,7 @@
     "format": "npm run format:fix",
     "format:check": "prettier --check \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
     "identity:register": "npx ts-node scripts/identity/manageEnsKeys.ts",
+    "identity:update": "npx hardhat run scripts/v2/updateIdentityRegistry.ts",
     "namehash:mainnet": "node scripts/compute-namehash.js deployment-config/mainnet.json",
     "namehash:sepolia": "node scripts/compute-namehash.js deployment-config/sepolia.json",
     "deploy:protocol": "npx hardhat run scripts/deploy/providerAgnosticDeploy.ts",

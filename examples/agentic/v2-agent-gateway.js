@@ -50,6 +50,9 @@ function ensureEnsMembership(ensName, cfg) {
   if (cfg?.ens?.agentRoot) {
     allowed.add(namehash.normalize(cfg.ens.agentRoot));
   }
+  if (cfg?.ens?.alphaAgentRoot && cfg?.ens?.acceptAlphaRoot) {
+    allowed.add(namehash.normalize(cfg.ens.alphaAgentRoot));
+  }
   if (cfg?.ens?.alphaClubRoot && cfg?.ens?.acceptAlphaRoot) {
     allowed.add(namehash.normalize(cfg.ens.alphaClubRoot));
   }

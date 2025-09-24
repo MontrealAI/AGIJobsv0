@@ -113,11 +113,21 @@ describe('AttestationRegistry', function () {
     );
     await identity.setAttestationRegistry(await attest.getAddress());
 
+    const agentRoot = ethers.namehash('agent.agi.eth');
+    const alphaAgentRoot = ethers.namehash('alpha.agent.agi.eth');
+    const clubRoot = ethers.namehash('club.agi.eth');
+    const alphaClubRoot = ethers.namehash('alpha.club.agi.eth');
+
+    await identity.setAgentRootNode(agentRoot);
+    await identity.addAgentRootNodeAlias(alphaAgentRoot);
+    await identity.setClubRootNode(clubRoot);
+    await identity.addClubRootNodeAlias(alphaClubRoot);
+
     const agentLabel = 'agent';
     const agentNode = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
-        [ethers.ZeroHash, ethers.id(agentLabel)]
+        [agentRoot, ethers.id(agentLabel)]
       )
     );
     await wrapper.setOwner(BigInt(agentNode), owner.address);
@@ -127,20 +137,60 @@ describe('AttestationRegistry', function () {
       await identity.isAuthorizedAgent.staticCall(agent.address, agentLabel, [])
     ).to.equal(true);
 
+    const aliasLabel = 'alpha-agent';
+    const aliasNode = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [alphaAgentRoot, ethers.id(aliasLabel)]
+      )
+    );
+    await wrapper.setOwner(BigInt(aliasNode), owner.address);
+    await attest.connect(owner).attest(aliasNode, 0, agent.address);
+
+    expect(
+      await identity.isAuthorizedAgent.staticCall(
+        agent.address,
+        aliasLabel,
+        []
+      )
+    ).to.equal(true);
+
     const validatorLabel = 'validator';
     const validatorNode = ethers.keccak256(
       ethers.solidityPacked(
         ['bytes32', 'bytes32'],
-        [ethers.ZeroHash, ethers.id(validatorLabel)]
+        [clubRoot, ethers.id(validatorLabel)]
       )
     );
     await wrapper.setOwner(BigInt(validatorNode), owner.address);
-    await attest.connect(owner).attest(validatorNode, 1, validator.address);
+    await attest
+      .connect(owner)
+      .attest(validatorNode, 1, validator.address);
 
     expect(
       await identity.isAuthorizedValidator.staticCall(
         validator.address,
         validatorLabel,
+        []
+      )
+    ).to.equal(true);
+
+    const validatorAliasLabel = 'alpha-validator';
+    const validatorAliasNode = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [alphaClubRoot, ethers.id(validatorAliasLabel)]
+      )
+    );
+    await wrapper.setOwner(BigInt(validatorAliasNode), owner.address);
+    await attest
+      .connect(owner)
+      .attest(validatorAliasNode, 1, validator.address);
+
+    expect(
+      await identity.isAuthorizedValidator.staticCall(
+        validator.address,
+        validatorAliasLabel,
         []
       )
     ).to.equal(true);

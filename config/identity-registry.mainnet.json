@@ -1,0 +1,25 @@
+{
+  "address": "0x0000000000000000000000000000000000000000",
+  "ens": {
+    "registry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+    "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+    "agentRoot": {
+      "name": "agent.agi.eth",
+      "aliases": ["alpha.agent.agi.eth"]
+    },
+    "clubRoot": {
+      "name": "club.agi.eth",
+      "aliases": ["alpha.club.agi.eth"]
+    }
+  },
+  "merkle": {
+    "agent": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "validator": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "reputationEngine": "0x0000000000000000000000000000000000000000",
+  "attestationRegistry": "0x0000000000000000000000000000000000000000",
+  "additionalAgents": {},
+  "additionalValidators": {},
+  "agentTypes": {},
+  "agentProfiles": {}
+}
