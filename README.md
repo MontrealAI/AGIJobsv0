@@ -128,6 +128,7 @@ npm run compile
 npm test
 npm run owner:health
 npm run verify:agialpha -- --skip-onchain
+npm run owner:plan
 # Run the wiring verifier against a live RPC endpoint when available.
 # Example (Hardhat node running on localhost):
 #   WIRE_VERIFY_RPC_URL=http://127.0.0.1:8545 npm run wire:verify
@@ -147,6 +148,18 @@ Docker-based analyzers (Slither/Echidna) run automatically on GitHub-hosted runn
 - **Security artifacts** – Coverage reports, gas snapshots and ABIs are uploaded automatically to aid review and downstream tooling.
 
 The wiring verifier doubles as a continuous identity/wiring guardrail for the α‑AGI integration workstream. As you expose new module getters or identity requirements, extend `scripts/verify-wiring.js` so CI enforces those invariants on every build.
+
+### Governance change sets
+
+`npm run owner:plan` (optionally with `OWNER_PLAN_JSON=1` or
+`OWNER_PLAN_EXECUTE=1`) generates a consolidated governance plan for
+`JobRegistry`, `StakeManager`, and `FeePool`, comparing the live parameters
+against the committed config JSON files. The helper prints human-readable diffs,
+exposes the raw calldata for multisig execution, optionally writes a
+machine-readable JSON artifact and, when `OWNER_PLAN_EXECUTE=1` is provided,
+submits the transactions using the connected signer. See
+[docs/owner-control-playbook.md](docs/owner-control-playbook.md) for
+step-by-step usage guidance.
 
 ## Quick Start
 
