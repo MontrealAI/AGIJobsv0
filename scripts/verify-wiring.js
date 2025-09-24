@@ -219,8 +219,29 @@ function logFail(message) {
 }
 
 function resolveModuleAddress(modules, key) {
+  const entry = modules?.[key];
+  const extractAddress = (value) => {
+    if (!value || typeof value === 'string' || typeof value === 'number') {
+      return value;
+    }
+    if (typeof value === 'object') {
+      for (const keyName of [
+        'address',
+        'proxy',
+        'implementation',
+        'impl',
+        'target',
+      ]) {
+        if (value[keyName] !== undefined) {
+          return value[keyName];
+        }
+      }
+    }
+    return value;
+  };
+
   try {
-    return normaliseAddress(modules?.[key], { allowZero: false });
+    return normaliseAddress(extractAddress(entry), { allowZero: false });
   } catch (err) {
     throw new Error(`Invalid address for modules.${key}: ${err.message}`);
   }
@@ -507,10 +528,11 @@ async function main() {
   const rewardEngineConfig = thermoConfig.rewardEngine || {};
   const thermostatConfig = thermoConfig.thermostat || {};
 
-  const rewardEngineAddress = resolveAddress(
-    rewardEngineConfig.address,
-    'thermodynamics.rewardEngine.address'
-  );
+  const rewardEngineAddress =
+    resolveAddress(
+      rewardEngineConfig.address,
+      'thermodynamics.rewardEngine.address'
+    ) ?? resolveModuleAddress(modules, 'rewardEngine');
   const configuredThermostatForRewardEngine = resolveAddress(
     rewardEngineConfig.thermostat,
     'thermodynamics.rewardEngine.thermostat',
@@ -536,6 +558,10 @@ async function main() {
     rewardEngineConfig.treasury,
     'thermodynamics.rewardEngine.treasury',
     { allowZero: true }
+  );
+  const rewardEngineEnergyOracleExpected = resolveAddress(
+    rewardEngineConfig.energyOracle,
+    'thermodynamics.rewardEngine.energyOracle'
   );
 
   const moduleArtifacts = {
@@ -829,6 +855,10 @@ async function main() {
         {
           getter: 'treasury',
           expected: () => rewardEngineTreasuryExpected,
+        },
+        {
+          getter: 'energyOracle',
+          expected: () => rewardEngineEnergyOracleExpected,
         },
       ],
     },
