@@ -1,3 +1,4 @@
+require('ts-node/register/transpile-only');
 require('dotenv').config();
 require('@nomicfoundation/hardhat-toolbox');
 require('hardhat-gas-reporter');
