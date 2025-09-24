@@ -27,6 +27,7 @@ jobs:
         run: npm ci
       - name: Prepare writable Foundry artifacts directories
         run: |
+          chmod a+rwX .
           mkdir -p out cache
           chmod -R a+rwX out cache
       - name: Authenticate to GitHub Container Registry
