@@ -71,14 +71,26 @@ jobs:
     needs: build-test
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Precompile with Hardhat
+        run: npx hardhat compile
       - name: Run Slither
         id: slither
         uses: crytic/slither-action@v0.4.1
+        env:
+          CRYTIC_DISABLE_PLATFORM: foundry
         with:
           node-version: 20
           target: .
           fail-on: high
           sarif: results.sarif
+          slither-args: --compile-force-framework hardhat --exclude-dependencies
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -101,10 +113,12 @@ jobs:
         run: npx hardhat compile
       - name: Run Echidna (assertion mode)
         uses: crytic/echidna-action@v2
+        env:
+          CRYTIC_DISABLE_PLATFORM: foundry
         with:
           files: .
           contract: EchidnaSmoke
           test-mode: assertion
           format: text
           seq-len: 64
-          crytic-args: --hardhat-ignore-compile
+          crytic-args: --hardhat-ignore-compile --disable-platform foundry
