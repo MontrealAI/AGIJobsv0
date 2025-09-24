@@ -218,33 +218,155 @@ function logFail(message) {
   console.error(`\u2717 ${message}`);
 }
 
-function resolveModuleAddress(modules, key) {
-  const entry = modules?.[key];
-  const extractAddress = (value) => {
-    if (!value || typeof value === 'string' || typeof value === 'number') {
-      return value;
-    }
-    if (typeof value === 'object') {
-      for (const keyName of [
-        'address',
-        'proxy',
-        'implementation',
-        'impl',
-        'target',
-      ]) {
-        if (value[keyName] !== undefined) {
-          return value[keyName];
-        }
-      }
-    }
-    return value;
+const NETWORK_ALIAS_MAP = new Map([
+  ['mainnet', ['mainnet', 'homestead', 'ethereum', 'l1']],
+  ['sepolia', ['sepolia', 'sep']],
+]);
+
+const ADDRESS_CANDIDATE_KEYS = [
+  'address',
+  'proxy',
+  'proxyAddress',
+  'implementation',
+  'implementationAddress',
+  'impl',
+  'target',
+  'module',
+  'moduleAddress',
+  'instance',
+  'deployment',
+  'deploymentAddress',
+  'value',
+];
+
+const ADDRESS_CONTAINER_KEYS = [
+  'addresses',
+  'deployments',
+  'networks',
+  'instances',
+  'chains',
+  'values',
+];
+
+function buildNetworkKeyCandidates({ network, chainId } = {}) {
+  const keys = new Set();
+  const push = (value) => {
+    if (!value) return;
+    const str = String(value);
+    if (!str) return;
+    keys.add(str);
+    keys.add(str.toLowerCase());
+    keys.add(str.toUpperCase());
   };
 
-  try {
-    return normaliseAddress(extractAddress(entry), { allowZero: false });
-  } catch (err) {
-    throw new Error(`Invalid address for modules.${key}: ${err.message}`);
+  if (network) {
+    push(network);
+    const normalised = String(network).toLowerCase();
+    const aliases = NETWORK_ALIAS_MAP.get(normalised);
+    if (aliases) {
+      for (const alias of aliases) {
+        push(alias);
+      }
+    }
   }
+
+  if (chainId !== undefined && chainId !== null) {
+    const numeric = Number(chainId);
+    if (Number.isFinite(numeric)) {
+      push(String(numeric));
+      try {
+        const hex = BigInt(numeric).toString(16);
+        push(`0x${hex}`);
+      } catch (_) {
+        // ignore conversion errors
+      }
+    }
+  }
+
+  return Array.from(keys).filter(Boolean);
+}
+
+function collectAddressCandidates(value, context, visited = new Set()) {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'bigint'
+  ) {
+    return [value];
+  }
+
+  if (typeof value !== 'object') {
+    return [];
+  }
+
+  if (visited.has(value)) {
+    return [];
+  }
+  visited.add(value);
+
+  const results = [];
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      results.push(...collectAddressCandidates(item, context, visited));
+    }
+    return results;
+  }
+
+  for (const keyName of ADDRESS_CANDIDATE_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(value, keyName)) {
+      results.push(
+        ...collectAddressCandidates(value[keyName], context, visited)
+      );
+    }
+  }
+
+  if (context.networkKeys && context.networkKeys.length > 0) {
+    for (const netKey of context.networkKeys) {
+      if (Object.prototype.hasOwnProperty.call(value, netKey)) {
+        results.push(
+          ...collectAddressCandidates(value[netKey], context, visited)
+        );
+      }
+    }
+  }
+
+  for (const containerKey of ADDRESS_CONTAINER_KEYS) {
+    if (value[containerKey] && typeof value[containerKey] === 'object') {
+      results.push(
+        ...collectAddressCandidates(value[containerKey], context, visited)
+      );
+    }
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    results.push(...collectAddressCandidates(nestedValue, context, visited));
+  }
+
+  return results;
+}
+
+function resolveModuleAddress(modules, key, { network, chainId } = {}) {
+  const entry = modules?.[key];
+  const context = { networkKeys: buildNetworkKeyCandidates({ network, chainId }) };
+  const candidates = collectAddressCandidates(entry, context);
+
+  for (const candidate of candidates) {
+    try {
+      const address = normaliseAddress(candidate, { allowZero: false });
+      if (address) {
+        return address;
+      }
+    } catch (err) {
+      throw new Error(`Invalid address for modules.${key}: ${err.message}`);
+    }
+  }
+
+  return null;
 }
 
 function resolveAddress(value, label, { allowZero = false } = {}) {
@@ -506,6 +628,9 @@ async function main() {
   const governance = tokenConfig.governance || tokenConfig.owners || {};
   const allowedOwners = new Set();
 
+  const moduleAddress = (key) =>
+    resolveModuleAddress(modules, key, { network, chainId });
+
   const govSafe =
     normaliseAddress(governance.govSafe, { allowZero: false }) ||
     normaliseAddress(process.env.GOV_SAFE, { allowZero: false });
@@ -519,7 +644,7 @@ async function main() {
     allowedOwners.add(timelock.toLowerCase());
   }
 
-  const systemPauseAddress = resolveModuleAddress(modules, 'systemPause');
+  const systemPauseAddress = moduleAddress('systemPause');
   if (systemPauseAddress) {
     allowedOwners.add(systemPauseAddress.toLowerCase());
   }
@@ -532,7 +657,7 @@ async function main() {
     resolveAddress(
       rewardEngineConfig.address,
       'thermodynamics.rewardEngine.address'
-    ) ?? resolveModuleAddress(modules, 'rewardEngine');
+    ) ?? moduleAddress('rewardEngine');
   const configuredThermostatForRewardEngine = resolveAddress(
     rewardEngineConfig.thermostat,
     'thermodynamics.rewardEngine.thermostat',
@@ -545,7 +670,7 @@ async function main() {
   const thermostatExpectedAddress =
     configuredThermostatForRewardEngine ??
     thermostatConfigAddress ??
-    resolveModuleAddress(modules, 'thermostat') ??
+    moduleAddress('thermostat') ??
     null;
   const thermostatAddress =
     thermostatConfigAddress ??
@@ -553,7 +678,7 @@ async function main() {
       rewardEngineConfig.thermostat,
       'thermodynamics.rewardEngine.thermostat'
     ) ??
-    resolveModuleAddress(modules, 'thermostat');
+    moduleAddress('thermostat');
   const rewardEngineTreasuryExpected = resolveAddress(
     rewardEngineConfig.treasury,
     'thermodynamics.rewardEngine.treasury',
@@ -584,7 +709,7 @@ async function main() {
     thermostat: createContractFactory(provider, 'Thermostat'),
   };
 
-  const stakeManagerAddress = resolveModuleAddress(modules, 'stakeManager');
+  const stakeManagerAddress = moduleAddress('stakeManager');
   const moduleList = [
     {
       key: 'systemPause',
@@ -595,35 +720,35 @@ async function main() {
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'validationModule',
-          expected: () => resolveModuleAddress(modules, 'validationModule'),
+          expected: () => moduleAddress('validationModule'),
         },
         {
           getter: 'disputeModule',
-          expected: () => resolveModuleAddress(modules, 'disputeModule'),
+          expected: () => moduleAddress('disputeModule'),
         },
         {
           getter: 'platformRegistry',
-          expected: () => resolveModuleAddress(modules, 'platformRegistry'),
+          expected: () => moduleAddress('platformRegistry'),
         },
         {
           getter: 'feePool',
-          expected: () => resolveModuleAddress(modules, 'feePool'),
+          expected: () => moduleAddress('feePool'),
         },
         {
           getter: 'reputationEngine',
-          expected: () => resolveModuleAddress(modules, 'reputationEngine'),
+          expected: () => moduleAddress('reputationEngine'),
         },
         {
           getter: 'arbitratorCommittee',
-          expected: () => resolveModuleAddress(modules, 'arbitratorCommittee'),
+          expected: () => moduleAddress('arbitratorCommittee'),
         },
       ],
     },
@@ -636,19 +761,19 @@ async function main() {
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'disputeModule',
-          expected: () => resolveModuleAddress(modules, 'disputeModule'),
+          expected: () => moduleAddress('disputeModule'),
         },
         {
           getter: 'validationModule',
-          expected: () => resolveModuleAddress(modules, 'validationModule'),
+          expected: () => moduleAddress('validationModule'),
         },
         {
           getter: 'feePool',
-          expected: () => resolveModuleAddress(modules, 'feePool'),
+          expected: () => moduleAddress('feePool'),
         },
         {
           getter: 'thermostat',
@@ -660,40 +785,40 @@ async function main() {
       key: 'jobRegistry',
       displayName: 'JobRegistry',
       artifact: moduleArtifacts.jobRegistry,
-      address: resolveModuleAddress(modules, 'jobRegistry'),
+      address: moduleAddress('jobRegistry'),
       allowedOwners,
       checks: [
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'validationModule',
-          expected: () => resolveModuleAddress(modules, 'validationModule'),
+          expected: () => moduleAddress('validationModule'),
         },
         {
           getter: 'reputationEngine',
-          expected: () => resolveModuleAddress(modules, 'reputationEngine'),
+          expected: () => moduleAddress('reputationEngine'),
         },
         {
           getter: 'disputeModule',
-          expected: () => resolveModuleAddress(modules, 'disputeModule'),
+          expected: () => moduleAddress('disputeModule'),
         },
         {
           getter: 'certificateNFT',
-          expected: () => resolveModuleAddress(modules, 'certificateNFT'),
+          expected: () => moduleAddress('certificateNFT'),
         },
         {
           getter: 'taxPolicy',
-          expected: () => resolveModuleAddress(modules, 'taxPolicy'),
+          expected: () => moduleAddress('taxPolicy'),
         },
         {
           getter: 'feePool',
-          expected: () => resolveModuleAddress(modules, 'feePool'),
+          expected: () => moduleAddress('feePool'),
         },
         {
           getter: 'identityRegistry',
-          expected: () => resolveModuleAddress(modules, 'identityRegistry'),
+          expected: () => moduleAddress('identityRegistry'),
         },
       ],
     },
@@ -701,24 +826,24 @@ async function main() {
       key: 'validationModule',
       displayName: 'ValidationModule',
       artifact: moduleArtifacts.validationModule,
-      address: resolveModuleAddress(modules, 'validationModule'),
+      address: moduleAddress('validationModule'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'identityRegistry',
-          expected: () => resolveModuleAddress(modules, 'identityRegistry'),
+          expected: () => moduleAddress('identityRegistry'),
         },
         {
           getter: 'reputationEngine',
-          expected: () => resolveModuleAddress(modules, 'reputationEngine'),
+          expected: () => moduleAddress('reputationEngine'),
         },
       ],
     },
@@ -726,12 +851,12 @@ async function main() {
       key: 'reputationEngine',
       displayName: 'ReputationEngine',
       artifact: moduleArtifacts.reputationEngine,
-      address: resolveModuleAddress(modules, 'reputationEngine'),
+      address: moduleAddress('reputationEngine'),
       allowedOwners,
       checks: [
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
       ],
     },
@@ -739,21 +864,21 @@ async function main() {
       key: 'disputeModule',
       displayName: 'DisputeModule',
       artifact: moduleArtifacts.disputeModule,
-      address: resolveModuleAddress(modules, 'disputeModule'),
+      address: moduleAddress('disputeModule'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'committee',
           expected: () =>
-            resolveModuleAddress(modules, 'arbitratorCommittee'),
+            moduleAddress('arbitratorCommittee'),
         },
       ],
     },
@@ -761,16 +886,16 @@ async function main() {
       key: 'arbitratorCommittee',
       displayName: 'ArbitratorCommittee',
       artifact: moduleArtifacts.arbitratorCommittee,
-      address: resolveModuleAddress(modules, 'arbitratorCommittee'),
+      address: moduleAddress('arbitratorCommittee'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'disputeModule',
-          expected: () => resolveModuleAddress(modules, 'disputeModule'),
+          expected: () => moduleAddress('disputeModule'),
         },
       ],
     },
@@ -778,16 +903,16 @@ async function main() {
       key: 'certificateNFT',
       displayName: 'CertificateNFT',
       artifact: moduleArtifacts.certificateNFT,
-      address: resolveModuleAddress(modules, 'certificateNFT'),
+      address: moduleAddress('certificateNFT'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
       ],
     },
@@ -795,20 +920,20 @@ async function main() {
       key: 'taxPolicy',
       displayName: 'TaxPolicy',
       artifact: moduleArtifacts.taxPolicy,
-      address: resolveModuleAddress(modules, 'taxPolicy'),
+      address: moduleAddress('taxPolicy'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'feePool',
-          expected: () => resolveModuleAddress(modules, 'feePool'),
+          expected: () => moduleAddress('feePool'),
         },
       ],
     },
@@ -816,20 +941,20 @@ async function main() {
       key: 'feePool',
       displayName: 'FeePool',
       artifact: moduleArtifacts.feePool,
-      address: resolveModuleAddress(modules, 'feePool'),
+      address: moduleAddress('feePool'),
       allowedOwners,
       checks: [
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'platformIncentives',
-          expected: () => resolveModuleAddress(modules, 'platformIncentives'),
+          expected: () => moduleAddress('platformIncentives'),
         },
       ],
     },
@@ -842,11 +967,11 @@ async function main() {
       checks: [
         {
           getter: 'feePool',
-          expected: () => resolveModuleAddress(modules, 'feePool'),
+          expected: () => moduleAddress('feePool'),
         },
         {
           getter: 'reputation',
-          expected: () => resolveModuleAddress(modules, 'reputationEngine'),
+          expected: () => moduleAddress('reputationEngine'),
         },
         {
           getter: 'thermostat',
@@ -866,12 +991,12 @@ async function main() {
       key: 'platformRegistry',
       displayName: 'PlatformRegistry',
       artifact: moduleArtifacts.platformRegistry,
-      address: resolveModuleAddress(modules, 'platformRegistry'),
+      address: moduleAddress('platformRegistry'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRouter',
-          expected: () => resolveModuleAddress(modules, 'jobRouter'),
+          expected: () => moduleAddress('jobRouter'),
         },
       ],
     },
@@ -879,24 +1004,24 @@ async function main() {
       key: 'jobRouter',
       displayName: 'JobRouter',
       artifact: moduleArtifacts.jobRouter,
-      address: resolveModuleAddress(modules, 'jobRouter'),
+      address: moduleAddress('jobRouter'),
       allowedOwners,
       checks: [
         {
           getter: 'jobRegistry',
-          expected: () => resolveModuleAddress(modules, 'jobRegistry'),
+          expected: () => moduleAddress('jobRegistry'),
         },
         {
           getter: 'platformRegistry',
-          expected: () => resolveModuleAddress(modules, 'platformRegistry'),
+          expected: () => moduleAddress('platformRegistry'),
         },
         {
           getter: 'platformIncentives',
-          expected: () => resolveModuleAddress(modules, 'platformIncentives'),
+          expected: () => moduleAddress('platformIncentives'),
         },
         {
           getter: 'feePool',
-          expected: () => resolveModuleAddress(modules, 'feePool'),
+          expected: () => moduleAddress('feePool'),
         },
       ],
     },
@@ -904,20 +1029,20 @@ async function main() {
       key: 'platformIncentives',
       displayName: 'PlatformIncentives',
       artifact: moduleArtifacts.platformIncentives,
-      address: resolveModuleAddress(modules, 'platformIncentives'),
+      address: moduleAddress('platformIncentives'),
       allowedOwners,
       checks: [
         {
           getter: 'stakeManager',
-          expected: () => resolveModuleAddress(modules, 'stakeManager'),
+          expected: () => moduleAddress('stakeManager'),
         },
         {
           getter: 'platformRegistry',
-          expected: () => resolveModuleAddress(modules, 'platformRegistry'),
+          expected: () => moduleAddress('platformRegistry'),
         },
         {
           getter: 'jobRouter',
-          expected: () => resolveModuleAddress(modules, 'jobRouter'),
+          expected: () => moduleAddress('jobRouter'),
         },
       ],
     },
@@ -925,16 +1050,16 @@ async function main() {
       key: 'identityRegistry',
       displayName: 'IdentityRegistry',
       artifact: moduleArtifacts.identityRegistry,
-      address: resolveModuleAddress(modules, 'identityRegistry'),
+      address: moduleAddress('identityRegistry'),
       allowedOwners,
       checks: [
         {
           getter: 'reputationEngine',
-          expected: () => resolveModuleAddress(modules, 'reputationEngine'),
+          expected: () => moduleAddress('reputationEngine'),
         },
         {
           getter: 'attestationRegistry',
-          expected: () => resolveModuleAddress(modules, 'attestationRegistry'),
+          expected: () => moduleAddress('attestationRegistry'),
         },
         {
           getter: 'ens',
@@ -970,7 +1095,7 @@ async function main() {
       key: 'attestationRegistry',
       displayName: 'AttestationRegistry',
       artifact: moduleArtifacts.attestationRegistry,
-      address: resolveModuleAddress(modules, 'attestationRegistry'),
+      address: moduleAddress('attestationRegistry'),
       allowedOwners,
       checks: [
         {
