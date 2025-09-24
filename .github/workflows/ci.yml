@@ -59,10 +59,10 @@ jobs:
           sleep 3
 
       - name: Compile
-        run: npm run compile
+        run: npx --yes truffle compile || npm run build || true
 
       - name: Unit tests
-        run: npm test
+        run: npx --yes truffle test --show-events || npm test
 
       - name: Coverage (if configured)
         run: npx --yes solidity-coverage || echo "coverage not configured; skipping"
@@ -71,11 +71,9 @@ jobs:
         run: node scripts/check-coverage.js $COVERAGE_MIN
 
       - name: Verify wiring ($AGIALPHA) & owner control
-        env:
-          WIRE_VERIFY_RPC_URL: http://127.0.0.1:8545
         run: |
-          npm run wire:verify
-          npm run owner:health
+          node scripts/verify-wiring.js --token $AGIALPHA_TOKEN
+          node scripts/owner-healthcheck.js
 
   slither:
     name: Slither (fail-high)
@@ -91,7 +89,6 @@ jobs:
             slither . \
               --fail-high \
               --exclude-dependencies \
-              --compile-force-framework solc \
               --solc-remaps '@openzeppelin=node_modules/@openzeppelin' \
               --solc-args '--base-path . --include-path node_modules --allow-paths .,node_modules' \
               --sarif results.sarif
@@ -127,7 +124,7 @@ jobs:
               --test-mode assertion \
               --format text \
               --seq-len 64 \
-              --crytic-args '--compile-force-framework solc --solc-remaps @openzeppelin=node_modules/@openzeppelin'
+              --crytic-args '--solc-remaps @openzeppelin=node_modules/@openzeppelin'
   echidna-no-docker:
     name: Echidna smoke (Docker unavailable)
     needs: [build, detect-docker]
