@@ -128,9 +128,23 @@ npm run compile
 npm test
 npm run owner:health
 npm run verify:agialpha -- --skip-onchain
+# Run the wiring verifier against a live RPC endpoint when available.
+# Example (Hardhat node running on localhost):
+#   WIRE_VERIFY_RPC_URL=http://127.0.0.1:8545 npm run wire:verify
 ```
 
 Docker-based analyzers (Slither/Echidna) run automatically on GitHub-hosted runners. When Docker is unavailable—common in lightweight local containers—the workflows skip these stages without failing the build while the nightly job continues to execute full fuzzing runs.
+
+### CI/Security expectations
+
+- **Compile, lint and unit tests** – Hardhat compilation and the full Mocha suite must succeed on every push/PR.
+- **Coverage** – `npm run coverage:full` produces `coverage/coverage-summary.json`; the CI gate enforces ≥90 % line coverage once reports exist. Until coverage output is generated the threshold check logs a warning and exits cleanly.
+- **Wiring and owner control** – `npm run verify:agialpha -- --skip-onchain` validates the `$AGIALPHA` constants, while `npm run owner:health` deploys the protocol on an ephemeral Hardhat network to prove privileged setters remain operable by governance.
+- **Static analysis (Slither)** – Runs from the pinned `trailofbits/eth-security-toolbox` Docker image when Docker is present. Self-hosted runners without Docker emit an informational skip message; GitHub-hosted runners always execute the analyzer.
+- **Property-based testing (Echidna)** – PRs run the smoke harness in assertion mode. A nightly workflow extends coverage with a long fuzzing session so deeper bugs surface without slowing the main CI pipeline.
+- **Security artifacts** – Coverage reports, gas snapshots and ABIs are uploaded automatically to aid review and downstream tooling.
+
+The wiring verifier doubles as a continuous identity/wiring guardrail for the α‑AGI integration workstream. As you expose new module getters or identity requirements, extend `scripts/verify-wiring.js` so CI enforces those invariants on every build.
 
 ## Quick Start
 
