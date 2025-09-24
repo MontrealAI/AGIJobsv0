@@ -91,6 +91,7 @@ jobs:
             slither . \
               --fail-high \
               --exclude-dependencies \
+              --compile-force-framework solc \
               --solc-remaps '@openzeppelin=node_modules/@openzeppelin' \
               --solc-args '--base-path . --include-path node_modules --allow-paths .,node_modules' \
               --sarif results.sarif
@@ -126,7 +127,7 @@ jobs:
               --test-mode assertion \
               --format text \
               --seq-len 64 \
-              --crytic-args '--solc-remaps @openzeppelin=node_modules/@openzeppelin'
+              --crytic-args '--compile-force-framework solc --solc-remaps @openzeppelin=node_modules/@openzeppelin'
   echidna-no-docker:
     name: Echidna smoke (Docker unavailable)
     needs: [build, detect-docker]
