@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-const { loadTokenConfig, loadEnsConfig } = require('./config');
+const {
+  loadTokenConfig,
+  loadEnsConfig,
+  loadThermodynamicsConfig,
+} = require('./config');
 const { ethers } = require('ethers');
 const { AGIALPHA } = require('./constants');
 
@@ -98,6 +102,15 @@ const MODULE_ABIS = {
     'function ens() view returns (address)',
     'function nameWrapper() view returns (address)'
   ),
+  RewardEngineMB: buildAbi(
+    'function thermostat() view returns (address)',
+    'function feePool() view returns (address)',
+    'function reputation() view returns (address)',
+    'function energyOracle() view returns (address)',
+    'function treasury() view returns (address)',
+    'function token() view returns (address)'
+  ),
+  Thermostat: buildAbi(),
 };
 
 function eqAddress(a, b) {
@@ -210,6 +223,24 @@ function resolveModuleAddress(modules, key) {
     return normaliseAddress(modules?.[key], { allowZero: false });
   } catch (err) {
     throw new Error(`Invalid address for modules.${key}: ${err.message}`);
+  }
+}
+
+function resolveAddress(value, label, { allowZero = false } = {}) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  try {
+    const address = normaliseAddress(value, { allowZero: true });
+    if (!address) {
+      return null;
+    }
+    if (address === ZERO_ADDRESS && !allowZero) {
+      return null;
+    }
+    return address;
+  } catch (err) {
+    throw new Error(`Invalid address for ${label}: ${err.message}`);
   }
 }
 
@@ -417,6 +448,9 @@ async function main() {
     );
   }
   const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const networkInfo = await provider.getNetwork();
+  const chainId = Number(networkInfo.chainId);
+  const isMainnet = Number.isFinite(chainId) && chainId === 1;
 
   const { config: tokenConfig, path: tokenConfigPath } = loadTokenConfig({
     network,
@@ -425,6 +459,17 @@ async function main() {
     network,
     persist: false,
   });
+  let thermodynamicsConfig = null;
+  let thermodynamicsConfigPath = null;
+  try {
+    const loadedThermo = loadThermodynamicsConfig({ network });
+    thermodynamicsConfig = loadedThermo.config;
+    thermodynamicsConfigPath = loadedThermo.path;
+  } catch (err) {
+    console.log(
+      `Thermodynamics config unavailable (${err.message}); RewardEngine/Thermostat checks skipped.`
+    );
+  }
 
   console.log(
     `Loaded token config from ${tokenConfigPath}${
@@ -432,6 +477,9 @@ async function main() {
     }`
   );
   console.log(`Loaded ENS config from ${ensConfigPath}`);
+  if (thermodynamicsConfigPath) {
+    console.log(`Loaded thermodynamics config from ${thermodynamicsConfigPath}`);
+  }
 
   const modules = tokenConfig.modules || tokenConfig.contracts || {};
   const governance = tokenConfig.governance || tokenConfig.owners || {};
@@ -455,6 +503,41 @@ async function main() {
     allowedOwners.add(systemPauseAddress.toLowerCase());
   }
 
+  const thermoConfig = thermodynamicsConfig || {};
+  const rewardEngineConfig = thermoConfig.rewardEngine || {};
+  const thermostatConfig = thermoConfig.thermostat || {};
+
+  const rewardEngineAddress = resolveAddress(
+    rewardEngineConfig.address,
+    'thermodynamics.rewardEngine.address'
+  );
+  const configuredThermostatForRewardEngine = resolveAddress(
+    rewardEngineConfig.thermostat,
+    'thermodynamics.rewardEngine.thermostat',
+    { allowZero: true }
+  );
+  const thermostatConfigAddress = resolveAddress(
+    thermostatConfig.address,
+    'thermodynamics.thermostat.address'
+  );
+  const thermostatExpectedAddress =
+    configuredThermostatForRewardEngine ??
+    thermostatConfigAddress ??
+    resolveModuleAddress(modules, 'thermostat') ??
+    null;
+  const thermostatAddress =
+    thermostatConfigAddress ??
+    resolveAddress(
+      rewardEngineConfig.thermostat,
+      'thermodynamics.rewardEngine.thermostat'
+    ) ??
+    resolveModuleAddress(modules, 'thermostat');
+  const rewardEngineTreasuryExpected = resolveAddress(
+    rewardEngineConfig.treasury,
+    'thermodynamics.rewardEngine.treasury',
+    { allowZero: true }
+  );
+
   const moduleArtifacts = {
     stakeManager: createContractFactory(provider, 'StakeManager'),
     jobRegistry: createContractFactory(provider, 'JobRegistry'),
@@ -471,6 +554,8 @@ async function main() {
     identityRegistry: createContractFactory(provider, 'IdentityRegistry'),
     attestationRegistry: createContractFactory(provider, 'AttestationRegistry'),
     systemPause: createContractFactory(provider, 'SystemPause'),
+    rewardEngine: createContractFactory(provider, 'RewardEngineMB'),
+    thermostat: createContractFactory(provider, 'Thermostat'),
   };
 
   const stakeManagerAddress = resolveModuleAddress(modules, 'stakeManager');
@@ -538,6 +623,10 @@ async function main() {
         {
           getter: 'feePool',
           expected: () => resolveModuleAddress(modules, 'feePool'),
+        },
+        {
+          getter: 'thermostat',
+          expected: () => thermostatExpectedAddress,
         },
       ],
     },
@@ -719,6 +808,31 @@ async function main() {
       ],
     },
     {
+      key: 'rewardEngine',
+      displayName: 'RewardEngineMB',
+      artifact: moduleArtifacts.rewardEngine,
+      address: rewardEngineAddress,
+      allowedOwners,
+      checks: [
+        {
+          getter: 'feePool',
+          expected: () => resolveModuleAddress(modules, 'feePool'),
+        },
+        {
+          getter: 'reputation',
+          expected: () => resolveModuleAddress(modules, 'reputationEngine'),
+        },
+        {
+          getter: 'thermostat',
+          expected: () => thermostatExpectedAddress,
+        },
+        {
+          getter: 'treasury',
+          expected: () => rewardEngineTreasuryExpected,
+        },
+      ],
+    },
+    {
       key: 'platformRegistry',
       displayName: 'PlatformRegistry',
       artifact: moduleArtifacts.platformRegistry,
@@ -839,6 +953,13 @@ async function main() {
         },
       ],
     },
+    {
+      key: 'thermostat',
+      displayName: 'Thermostat',
+      artifact: moduleArtifacts.thermostat,
+      address: thermostatAddress,
+      allowedOwners,
+    },
   ];
 
   for (const moduleEntry of moduleList) {
@@ -858,9 +979,7 @@ async function main() {
         stakeManagerAddress
       );
       const stakeToken = await stakeManager.token();
-      const networkInfo = await provider.getNetwork();
-      const chainId = Number(networkInfo.chainId);
-      if (Number.isFinite(chainId) && chainId === 1) {
+      if (isMainnet) {
         if (!eqAddress(stakeToken, AGIALPHA)) {
           logFail(
             `StakeManager.token mismatch on mainnet (expected ${AGIALPHA}, got ${stakeToken})`
@@ -871,6 +990,26 @@ async function main() {
       }
     } catch (err) {
       logFail(`Failed to verify StakeManager token: ${err.message || err}`);
+    }
+  }
+
+  if (rewardEngineAddress && isMainnet) {
+    try {
+      const rewardEngine = await moduleArtifacts.rewardEngine.at(
+        rewardEngineAddress
+      );
+      const tokenAddress = await rewardEngine.token();
+      if (!eqAddress(tokenAddress, AGIALPHA)) {
+        logFail(
+          `RewardEngineMB.token mismatch on mainnet (expected ${AGIALPHA}, got ${tokenAddress})`
+        );
+      } else {
+        logOk(`RewardEngineMB.token matches canonical AGIALPHA ${AGIALPHA}`);
+      }
+    } catch (err) {
+      logFail(
+        `Failed to verify RewardEngineMB token: ${err.message || err}`
+      );
     }
   }
 
