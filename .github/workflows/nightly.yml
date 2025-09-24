@@ -2,6 +2,7 @@ name: Nightly Security
 
 env:
   NODE_VERSION: '20.12.2'
+  ECHIDNA_IMAGE: 'ghcr.io/crytic/echidna/echidna:v2.2.7'
 
 on:
   schedule:
@@ -29,7 +30,7 @@ jobs:
           echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
       - name: Echidna long fuzz (Docker)
         run: |
-          docker run --rm -v "$PWD":/src -w /src ghcr.io/crytic/echidna:2.2.7 \
+          docker run --rm -v "$PWD":/src -w /src "$ECHIDNA_IMAGE" \
             echidna-test ./contracts/test/CommitRevealEchidna.sol \
               --contract CommitRevealEchidnaHarness \
               --config ./echidna/echidna.long.yml \

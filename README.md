@@ -142,8 +142,8 @@ Docker-based analyzers (Slither/Echidna) run automatically on GitHub-hosted runn
 - **Compile, lint and unit tests** – Hardhat compilation and the full Mocha suite must succeed on every push/PR.
 - **Coverage** – `npm run coverage:full` produces `coverage/coverage-summary.json`; the CI gate enforces ≥90 % line coverage once reports exist. Until coverage output is generated the threshold check logs a warning and exits cleanly.
 - **Wiring and owner control** – `npm run verify:agialpha -- --skip-onchain` validates the `$AGIALPHA` constants, while `npm run owner:health` deploys the protocol on an ephemeral Hardhat network to prove privileged setters remain operable by governance.
-- **Static analysis (Slither)** – Runs from the pinned `trailofbits/eth-security-toolbox` Docker image when Docker is present. Self-hosted runners without Docker emit an informational skip message; GitHub-hosted runners always execute the analyzer.
-- **Property-based testing (Echidna)** – PRs run the smoke harness in assertion mode. A nightly workflow extends coverage with a long fuzzing session so deeper bugs surface without slowing the main CI pipeline.
+- **Static analysis (Slither)** – Runs from the pinned `trailofbits/eth-security-toolbox:nightly-20240902` Docker image when Docker is present. Self-hosted runners without Docker emit an informational skip message; GitHub-hosted runners always execute the analyzer.
+- **Property-based testing (Echidna)** – PRs run the smoke harness in assertion mode from `ghcr.io/crytic/echidna/echidna:v2.2.7`. A nightly workflow extends coverage with a long fuzzing session so deeper bugs surface without slowing the main CI pipeline.
 - **Security artifacts** – Coverage reports, gas snapshots and ABIs are uploaded automatically to aid review and downstream tooling.
 
 The wiring verifier doubles as a continuous identity/wiring guardrail for the α‑AGI integration workstream. As you expose new module getters or identity requirements, extend `scripts/verify-wiring.js` so CI enforces those invariants on every build.
