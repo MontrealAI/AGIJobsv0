@@ -2,6 +2,8 @@
 
 All participation in AGIJobs requires on‑chain proof of ENS subdomain ownership. This policy ensures agents and validators cannot bypass identity checks.
 
+The protocol recognises `agent.agi.eth` and `alpha.agent.agi.eth` (and likewise `club.agi.eth` and `alpha.club.agi.eth`) as interchangeable roots. Keep both namespaces active when issuing subdomains so alpha holders receive identical permissions. After editing `config/identity-registry.<network>.json`, run `npm run identity:update -- --network <network>` to synchronise the on-chain `IdentityRegistry` with the committed ENS roots, aliases, allowlists, and metadata.
+
 ## Requirements
 
 - **Agents** must own an ENS subdomain under `agent.agi.eth` and present it when applying for or submitting jobs.

@@ -241,6 +241,61 @@ export interface EnsConfigResult {
   updated: boolean;
 }
 
+export interface IdentityRootAliasConfig {
+  name?: string;
+  node: string;
+  label?: string;
+  labelhash?: string;
+  [key: string]: unknown;
+}
+
+export interface IdentityRootConfig {
+  name?: string;
+  node?: string;
+  aliases?: IdentityRootAliasConfig[];
+  [key: string]: unknown;
+}
+
+export interface IdentityRegistryEnsConfig {
+  registry?: string;
+  nameWrapper?: string;
+  agentRoot?: IdentityRootConfig;
+  clubRoot?: IdentityRootConfig;
+  agentAliases?: IdentityRootAliasConfig[];
+  clubAliases?: IdentityRootAliasConfig[];
+  [key: string]: unknown;
+}
+
+export interface IdentityRegistryMerkleConfig {
+  agent?: string;
+  validator?: string;
+  [key: string]: unknown;
+}
+
+export interface IdentityRegistryAgentTypeConfig {
+  value: number;
+  label: 'Human' | 'AI';
+}
+
+export interface IdentityRegistryConfig {
+  address?: string;
+  ens?: IdentityRegistryEnsConfig;
+  merkle?: IdentityRegistryMerkleConfig;
+  reputationEngine?: string | null;
+  attestationRegistry?: string | null;
+  additionalAgents?: Record<string, boolean>;
+  additionalValidators?: Record<string, boolean>;
+  agentTypes?: Record<string, IdentityRegistryAgentTypeConfig>;
+  agentProfiles?: Record<string, string>;
+  [key: string]: unknown;
+}
+
+export interface IdentityRegistryConfigResult {
+  config: IdentityRegistryConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface LoadOptions {
   network?: any;
   chainId?: number | string;
@@ -253,6 +308,9 @@ export interface LoadOptions {
 export function inferNetworkKey(value: any): SupportedNetwork | undefined;
 export function loadTokenConfig(options?: LoadOptions): TokenConfigResult;
 export function loadEnsConfig(options?: LoadOptions): EnsConfigResult;
+export function loadIdentityRegistryConfig(
+  options?: LoadOptions
+): IdentityRegistryConfigResult;
 export function loadJobRegistryConfig(
   options?: LoadOptions
 ): JobRegistryConfigResult;

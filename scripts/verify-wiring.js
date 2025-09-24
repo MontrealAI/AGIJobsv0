@@ -4,6 +4,7 @@
 const {
   loadTokenConfig,
   loadEnsConfig,
+  loadIdentityRegistryConfig,
   loadThermodynamicsConfig,
 } = require('./config');
 const { ethers } = require('ethers');
@@ -203,6 +204,55 @@ function normaliseBytes32(value, label) {
     );
   }
   return ethers.hexlify(bytes).toLowerCase();
+}
+
+function aliasNodesFrom(source, label) {
+  const nodes = [];
+  if (!source) {
+    return nodes;
+  }
+  if (Array.isArray(source)) {
+    for (let i = 0; i < source.length; i += 1) {
+      nodes.push(...aliasNodesFrom(source[i], `${label}[${i}]`));
+    }
+    return nodes;
+  }
+  if (typeof source === 'string') {
+    const node = normaliseBytes32(source, label);
+    if (node) {
+      nodes.push(node);
+    }
+    return nodes;
+  }
+  if (typeof source !== 'object') {
+    return nodes;
+  }
+
+  if (source.node) {
+    const node = normaliseBytes32(source.node, label);
+    if (node) {
+      nodes.push(node);
+    }
+  }
+
+  if (Array.isArray(source.aliases)) {
+    nodes.push(...aliasNodesFrom(source.aliases, `${label}.aliases`));
+  }
+
+  return nodes;
+}
+
+function mergeAliasNodes(...sources) {
+  const set = new Set();
+  for (const source of sources) {
+    const nodes = aliasNodesFrom(source, 'alias');
+    for (const node of nodes) {
+      if (node) {
+        set.add(node);
+      }
+    }
+  }
+  return Array.from(set.values());
 }
 
 function logSkip(message) {
@@ -611,6 +661,17 @@ async function main() {
     network,
     persist: false,
   });
+  let identityConfig = null;
+  let identityConfigPath = null;
+  try {
+    const loadedIdentity = loadIdentityRegistryConfig({ network });
+    identityConfig = loadedIdentity.config;
+    identityConfigPath = loadedIdentity.path;
+  } catch (err) {
+    console.log(
+      `Identity registry config unavailable (${err.message}); alias checks limited to ENS config.`
+    );
+  }
   let thermodynamicsConfig = null;
   let thermodynamicsConfigPath = null;
   try {
@@ -629,6 +690,9 @@ async function main() {
     }`
   );
   console.log(`Loaded ENS config from ${ensConfigPath}`);
+  if (identityConfigPath) {
+    console.log(`Loaded identity registry config from ${identityConfigPath}`);
+  }
   if (thermodynamicsConfigPath) {
     console.log(`Loaded thermodynamics config from ${thermodynamicsConfigPath}`);
   }
@@ -1026,6 +1090,62 @@ async function main() {
       allowedOwners: ownerSet,
       provider,
     });
+  }
+
+  const identityAddress = moduleAddress('identityRegistry');
+  if (identityAddress) {
+    try {
+      const identityInstance = await moduleArtifacts.identityRegistry.at(
+        identityAddress
+      );
+      const [agentAliasList, clubAliasList] = await Promise.all([
+        identityInstance.getAgentRootNodeAliases(),
+        identityInstance.getClubRootNodeAliases(),
+      ]);
+      const onChainAgent = new Set(
+        agentAliasList
+          .map((value) => normaliseBytes32(value, 'agent alias'))
+          .filter(Boolean)
+      );
+      const onChainClub = new Set(
+        clubAliasList
+          .map((value) => normaliseBytes32(value, 'club alias'))
+          .filter(Boolean)
+      );
+
+      const expectedAgentNodes = new Set(
+        mergeAliasNodes(
+          identityConfig?.ens?.agentRoot,
+          identityConfig?.ens?.agentAliases,
+          ensConfig.roots?.agent
+        )
+      );
+      const expectedClubNodes = new Set(
+        mergeAliasNodes(
+          identityConfig?.ens?.clubRoot,
+          identityConfig?.ens?.clubAliases,
+          ensConfig.roots?.club
+        )
+      );
+
+      const verifyAliasSet = (label, expectedSet, actualSet) => {
+        if (!expectedSet || expectedSet.size === 0) {
+          return;
+        }
+        for (const expected of expectedSet) {
+          if (!actualSet.has(expected)) {
+            logFail(
+              `${label} missing expected alias ${expected} on IdentityRegistry`
+            );
+          }
+        }
+      };
+
+      verifyAliasSet('Agent root', expectedAgentNodes, onChainAgent);
+      verifyAliasSet('Club root', expectedClubNodes, onChainClub);
+    } catch (err) {
+      logFail(`IdentityRegistry alias verification failed: ${err.message}`);
+    }
   }
 
   if (stakeManagerAddress) {

@@ -25,6 +25,25 @@ const DEFAULT_ENS_NAMES = {
   business: 'a.agi.eth',
 };
 
+function normaliseEnsName(value, label) {
+  if (value === undefined || value === null) {
+    throw new Error(`${label} ENS name is missing`);
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    throw new Error(`${label} ENS name is empty`);
+  }
+  return ethers.namehash.normalize(trimmed);
+}
+
+function computeNamehash(value, label) {
+  const normalised = normaliseEnsName(value, label);
+  return {
+    name: normalised,
+    node: ethers.namehash(normalised),
+  };
+}
+
 function inferNetworkKey(value) {
   if (value === undefined || value === null) {
     return undefined;
@@ -103,6 +122,115 @@ function ensureBytes32(value) {
     throw new Error(`Expected 32-byte value, got ${bytes.length} bytes`);
   }
   return ethers.hexlify(prefixed);
+}
+
+function normaliseAliasEntry(value, label) {
+  if (value === undefined || value === null) {
+    throw new Error(`${label} alias entry is undefined`);
+  }
+
+  if (typeof value === 'string') {
+    const { name, node } = computeNamehash(value, label);
+    const [labelPart] = name.split('.');
+    return {
+      name,
+      node,
+      label: labelPart || label,
+      labelhash: ethers.id(labelPart || label),
+    };
+  }
+
+  if (typeof value !== 'object') {
+    throw new Error(`${label} alias entry must be a string or object`);
+  }
+
+  const alias = { ...value };
+  let updated = false;
+
+  if (alias.name) {
+    const normalisedName = normaliseEnsName(alias.name, label);
+    if (alias.name !== normalisedName) {
+      alias.name = normalisedName;
+      updated = true;
+    }
+  }
+
+  if (!alias.node && alias.name) {
+    alias.node = ethers.namehash(alias.name);
+    updated = true;
+  }
+
+  if (!alias.node) {
+    throw new Error(`${label} alias is missing a namehash`);
+  }
+
+  const node = ensureBytes32(alias.node);
+  if (alias.node !== node) {
+    alias.node = node;
+    updated = true;
+  }
+
+  const labelName = alias.label || (alias.name ? alias.name.split('.')[0] : undefined);
+  if (labelName) {
+    const normalisedLabel = normaliseLabel(labelName, labelName);
+    if (alias.label !== normalisedLabel) {
+      alias.label = normalisedLabel;
+      updated = true;
+    }
+    const labelhash = ethers.id(normalisedLabel);
+    if (!alias.labelhash || alias.labelhash.toLowerCase() !== labelhash.toLowerCase()) {
+      alias.labelhash = labelhash;
+      updated = true;
+    }
+  }
+
+  return { alias, changed: updated };
+}
+
+function normaliseIdentityRoot(value, label) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    if (ethers.isHexString(value)) {
+      return { node: ensureBytes32(value) };
+    }
+    const { name, node } = computeNamehash(value, label);
+    return { name, node };
+  }
+
+  if (typeof value !== 'object') {
+    throw new Error(`${label} root must be a string or object`);
+  }
+
+  const root = { ...value };
+
+  if (root.name) {
+    root.name = normaliseEnsName(root.name, label);
+  }
+
+  if (!root.node && root.name) {
+    root.node = ethers.namehash(root.name);
+  }
+
+  if (root.node) {
+    root.node = ensureBytes32(root.node);
+  }
+
+  const aliases = Array.isArray(root.aliases)
+    ? root.aliases
+    : root.alias
+    ? [root.alias]
+    : [];
+
+  if (aliases.length > 0) {
+    root.aliases = aliases.map((entry, index) =>
+      normaliseAliasEntry(entry, `${label} alias[${index}]`).alias
+    );
+  }
+
+  return root;
 }
 
 function normaliseLabel(value, fallback) {
@@ -495,18 +623,29 @@ function loadThermodynamicsConfig(options = {}) {
 }
 
 function normaliseRootEntry(key, root) {
-  const result = { ...root };
+  let source = root;
+  if (typeof root === 'string') {
+    const { name, node } = computeNamehash(root, `${key} root`);
+    source = { name, node };
+  }
+
+  const result = { ...(source || {}) };
   let changed = false;
 
   const defaultLabel = key === 'business' ? 'a' : key;
-  const label = normaliseLabel(root?.label, defaultLabel);
+  const label = normaliseLabel(source?.label, defaultLabel);
   if (result.label !== label) {
     result.label = label;
     changed = true;
   }
 
   const defaultName = DEFAULT_ENS_NAMES[key] || result.name;
-  const nameCandidate = typeof root?.name === 'string' ? root.name.trim().toLowerCase() : '';
+  let nameCandidate = '';
+  if (typeof source?.name === 'string') {
+    nameCandidate = source.name.trim().toLowerCase();
+  } else if (typeof source?.ens === 'string') {
+    nameCandidate = source.ens.trim().toLowerCase();
+  }
   const name = nameCandidate || (defaultName ? defaultName.toLowerCase() : `${label}.agi.eth`);
   if (result.name !== name) {
     result.name = name;
@@ -525,14 +664,14 @@ function normaliseRootEntry(key, root) {
     changed = true;
   }
 
-  const merkleRoot = ensureBytes32(root?.merkleRoot);
+  const merkleRoot = ensureBytes32(source?.merkleRoot);
   if (!result.merkleRoot || result.merkleRoot.toLowerCase() !== merkleRoot.toLowerCase()) {
     result.merkleRoot = merkleRoot;
     changed = true;
   }
 
-  if (root?.resolver !== undefined) {
-    const resolver = ensureAddress(root.resolver, `${key} resolver`, { allowZero: true });
+  if (source?.resolver !== undefined) {
+    const resolver = ensureAddress(source.resolver, `${key} resolver`, { allowZero: true });
     if (!result.resolver || result.resolver.toLowerCase() !== resolver.toLowerCase()) {
       result.resolver = resolver;
       changed = true;
@@ -540,10 +679,55 @@ function normaliseRootEntry(key, root) {
   }
 
   const defaultRole =
-    root?.role || (key === 'club' ? 'validator' : key === 'business' ? 'business' : 'agent');
+    source?.role || (key === 'club' ? 'validator' : key === 'business' ? 'business' : 'agent');
   if (result.role !== defaultRole) {
     result.role = defaultRole;
     changed = true;
+  }
+
+  const aliasInput = Array.isArray(source?.aliases)
+    ? source.aliases
+    : source?.alias
+    ? [source.alias]
+    : [];
+
+  if (aliasInput.length > 0 || (Array.isArray(result.aliases) && result.aliases.length > 0)) {
+    const normalisedAliases = [];
+    let aliasChanged = false;
+    for (let i = 0; i < aliasInput.length; i += 1) {
+      const { alias, changed: entryChanged } = normaliseAliasEntry(
+        aliasInput[i],
+        `${key} alias[${i}]`
+      );
+      normalisedAliases.push(alias);
+      if (entryChanged) {
+        aliasChanged = true;
+      }
+    }
+
+    const previous = Array.isArray(result.aliases) ? result.aliases : [];
+    const previousNodes = previous.map((entry) => ensureBytes32(entry.node).toLowerCase());
+    const nextNodes = normalisedAliases.map((entry) =>
+      ensureBytes32(entry.node).toLowerCase()
+    );
+
+    if (previousNodes.length !== nextNodes.length) {
+      aliasChanged = true;
+    } else {
+      for (let i = 0; i < nextNodes.length; i += 1) {
+        if (previousNodes[i] !== nextNodes[i]) {
+          aliasChanged = true;
+          break;
+        }
+      }
+    }
+
+    if (aliasChanged) {
+      result.aliases = normalisedAliases;
+      changed = true;
+    } else if (normalisedAliases.length > 0 && !result.aliases) {
+      result.aliases = normalisedAliases;
+    }
   }
 
   return { root: result, changed };
@@ -552,6 +736,18 @@ function normaliseRootEntry(key, root) {
 function normaliseEnsConfig(config) {
   const updated = { ...config };
   let changed = false;
+
+  if (!updated.roots || typeof updated.roots !== 'object') {
+    updated.roots = {};
+  }
+
+  for (const legacyKey of Object.keys(updated)) {
+    if (['agent', 'club', 'business'].includes(legacyKey) && !updated.roots[legacyKey]) {
+      updated.roots[legacyKey] = updated[legacyKey];
+      delete updated[legacyKey];
+      changed = true;
+    }
+  }
 
   if (updated.registry) {
     const normalised = ensureAddress(updated.registry, 'ENS registry');
@@ -604,9 +800,222 @@ function loadEnsConfig(options = {}) {
   return { config, path: configPath, network, updated: Boolean(changed && persist) };
 }
 
+function normaliseAddressBooleanMap(value, label, { allowZero = false } = {}) {
+  const result = {};
+  if (!value || typeof value !== 'object') {
+    return result;
+  }
+  for (const [key, enabled] of Object.entries(value)) {
+    if (enabled === undefined || enabled === null) continue;
+    const address = ensureAddress(key, `${label} ${key}`, { allowZero });
+    result[address] = Boolean(enabled);
+  }
+  return result;
+}
+
+function normaliseAgentType(value, label) {
+  if (value === undefined || value === null) {
+    throw new Error(`${label} agent type is undefined`);
+  }
+  if (typeof value === 'number') {
+    if (value !== 0 && value !== 1) {
+      throw new Error(`${label} agent type must be 0 (Human) or 1 (AI)`);
+    }
+    return { value, label: value === 1 ? 'AI' : 'Human' };
+  }
+  const raw = String(value).trim().toLowerCase();
+  if (raw === '0' || raw === 'human') {
+    return { value: 0, label: 'Human' };
+  }
+  if (raw === '1' || raw === 'ai' || raw === 'machine') {
+    return { value: 1, label: 'AI' };
+  }
+  throw new Error(
+    `${label} agent type must be one of: 0, 1, "human", "ai", "machine"`
+  );
+}
+
+function normaliseAgentTypeMap(value) {
+  const result = {};
+  if (!value || typeof value !== 'object') {
+    return result;
+  }
+  for (const [key, typeValue] of Object.entries(value)) {
+    if (typeValue === undefined || typeValue === null) continue;
+    const address = ensureAddress(key, `agentType ${key}`);
+    result[address] = normaliseAgentType(typeValue, `agentType ${key}`);
+  }
+  return result;
+}
+
+function normaliseAliasArray(value, label) {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  const list = Array.isArray(value) ? value : [value];
+  return list.map((entry, index) =>
+    normaliseAliasEntry(entry, `${label}[${index}]`).alias
+  );
+}
+
+function mergeAliasSets(primary = [], secondary = []) {
+  const deduped = new Map();
+  for (const entry of [...primary, ...secondary]) {
+    if (!entry || !entry.node) continue;
+    const key = ensureBytes32(entry.node).toLowerCase();
+    if (!deduped.has(key)) {
+      deduped.set(key, {
+        ...entry,
+        node: ensureBytes32(entry.node),
+      });
+    }
+  }
+  return Array.from(deduped.values());
+}
+
+function normaliseIdentityRegistryConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.address !== undefined) {
+    const allowZero =
+      result.address === null ||
+      result.address === '' ||
+      result.address === ethers.ZeroAddress;
+    result.address = allowZero
+      ? ethers.ZeroAddress
+      : ensureAddress(result.address, 'IdentityRegistry address');
+  }
+
+  if (!result.ens || typeof result.ens !== 'object') {
+    result.ens = {};
+  } else {
+    result.ens = { ...result.ens };
+  }
+
+  if (result.ens.registry !== undefined) {
+    result.ens.registry = ensureAddress(
+      result.ens.registry,
+      'IdentityRegistry ENS registry'
+    );
+  }
+
+  if (result.ens.nameWrapper !== undefined) {
+    result.ens.nameWrapper = ensureAddress(
+      result.ens.nameWrapper,
+      'IdentityRegistry NameWrapper'
+    );
+  }
+
+  const agentRoot = normaliseIdentityRoot(
+    result.ens.agentRoot,
+    'IdentityRegistry agentRoot'
+  );
+  const clubRoot = normaliseIdentityRoot(
+    result.ens.clubRoot,
+    'IdentityRegistry clubRoot'
+  );
+
+  const agentAliases = normaliseAliasArray(
+    result.ens.agentAliases,
+    'IdentityRegistry agentAliases'
+  );
+  const clubAliases = normaliseAliasArray(
+    result.ens.clubAliases,
+    'IdentityRegistry clubAliases'
+  );
+
+  if (agentRoot) {
+    agentRoot.aliases = mergeAliasSets(agentRoot.aliases, agentAliases);
+    result.ens.agentRoot = agentRoot;
+  } else if (agentAliases.length > 0) {
+    result.ens.agentAliases = agentAliases;
+  }
+
+  if (clubRoot) {
+    clubRoot.aliases = mergeAliasSets(clubRoot.aliases, clubAliases);
+    result.ens.clubRoot = clubRoot;
+  } else if (clubAliases.length > 0) {
+    result.ens.clubAliases = clubAliases;
+  }
+
+  if (result.ens.agentAlias) {
+    delete result.ens.agentAlias;
+  }
+  if (result.ens.clubAlias) {
+    delete result.ens.clubAlias;
+  }
+
+  if (!result.merkle || typeof result.merkle !== 'object') {
+    result.merkle = {};
+  } else {
+    result.merkle = { ...result.merkle };
+  }
+
+  if (result.merkle.agent !== undefined) {
+    result.merkle.agent = ensureBytes32(result.merkle.agent);
+  }
+
+  if (result.merkle.validator !== undefined) {
+    result.merkle.validator = ensureBytes32(result.merkle.validator);
+  }
+
+  if (result.reputationEngine !== undefined) {
+    result.reputationEngine = ensureAddress(
+      result.reputationEngine,
+      'IdentityRegistry reputationEngine',
+      { allowZero: true }
+    );
+  }
+
+  if (result.attestationRegistry !== undefined) {
+    result.attestationRegistry = ensureAddress(
+      result.attestationRegistry,
+      'IdentityRegistry attestationRegistry',
+      { allowZero: true }
+    );
+  }
+
+  result.additionalAgents = normaliseAddressBooleanMap(
+    result.additionalAgents,
+    'additionalAgent'
+  );
+  result.additionalValidators = normaliseAddressBooleanMap(
+    result.additionalValidators,
+    'additionalValidator'
+  );
+
+  result.agentTypes = normaliseAgentTypeMap(result.agentTypes);
+
+  if (result.agentProfiles && typeof result.agentProfiles === 'object') {
+    const mapped = {};
+    for (const [key, uri] of Object.entries(result.agentProfiles)) {
+      if (uri === undefined || uri === null) continue;
+      const address = ensureAddress(key, `agentProfile ${key}`);
+      mapped[address] = String(uri);
+    }
+    result.agentProfiles = mapped;
+  }
+
+  return result;
+}
+
+function loadIdentityRegistryConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('identity-registry', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Identity registry config not found at ${configPath}`);
+  }
+  const rawConfig = readJson(configPath);
+  const config = normaliseIdentityRegistryConfig(rawConfig);
+  return { config, path: configPath, network };
+}
+
 module.exports = {
   loadTokenConfig,
   loadEnsConfig,
+  loadIdentityRegistryConfig,
   loadJobRegistryConfig,
   loadStakeManagerConfig,
   loadFeePoolConfig,

@@ -7,6 +7,8 @@ describe('IdentityRegistry setters', function () {
   let validator;
   let extra;
   let identity;
+  let ens;
+  let wrapper;
   beforeEach(async () => {
     [owner, agent, validator, extra] = await ethers.getSigners();
 
@@ -23,12 +25,12 @@ describe('IdentityRegistry setters', function () {
     const ENS = await ethers.getContractFactory(
       'contracts/legacy/MockENS.sol:MockENS'
     );
-    const ens = await ENS.deploy();
+    ens = await ENS.deploy();
 
     const Wrapper = await ethers.getContractFactory(
       'contracts/legacy/MockNameWrapper.sol:MockNameWrapper'
     );
-    const wrapper = await Wrapper.deploy();
+    wrapper = await Wrapper.deploy();
 
     const Identity = await ethers.getContractFactory(
       'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
@@ -174,6 +176,50 @@ describe('IdentityRegistry setters', function () {
       await expect(
         identity.removeClubRootNodeAlias(ethers.ZeroHash)
       ).to.be.revertedWithCustomError(identity, 'ZeroNode');
+    });
+  });
+
+  describe('alias verification', function () {
+    it('verifies agents using the alpha root alias', async () => {
+      const agentRoot = ethers.namehash('agent.agi.eth');
+      const alphaAgentRoot = ethers.namehash('alpha.agent.agi.eth');
+      await identity.setAgentRootNode(agentRoot);
+      await identity.addAgentRootNodeAlias(alphaAgentRoot);
+      const label = 'alice';
+      const node = ethers.keccak256(
+        ethers.solidityPacked(
+          ['bytes32', 'bytes32'],
+          [alphaAgentRoot, ethers.id(label)]
+        )
+      );
+      await wrapper.setOwner(BigInt(node), agent.address);
+      const result = await identity.verifyAgent.staticCall(
+        agent.address,
+        label,
+        []
+      );
+      expect(result[0]).to.equal(true);
+    });
+
+    it('verifies validators using the alpha root alias', async () => {
+      const clubRoot = ethers.namehash('club.agi.eth');
+      const alphaClubRoot = ethers.namehash('alpha.club.agi.eth');
+      await identity.setClubRootNode(clubRoot);
+      await identity.addClubRootNodeAlias(alphaClubRoot);
+      const label = 'validator';
+      const node = ethers.keccak256(
+        ethers.solidityPacked(
+          ['bytes32', 'bytes32'],
+          [alphaClubRoot, ethers.id(label)]
+        )
+      );
+      await wrapper.setOwner(BigInt(node), validator.address);
+      const result = await identity.verifyValidator.staticCall(
+        validator.address,
+        label,
+        []
+      );
+      expect(result[0]).to.equal(true);
     });
   });
 

@@ -52,7 +52,7 @@ The diagram illustrates how the `Deployer` contract fans out into every core mod
 
 Before running any migrations ensure the ENS root configuration is in sync:
 
-1. Update `deployment-config/<network>.json` with the ENS names you intend to gate (`agentRoot`, `clubRoot`, `alphaClubRoot`).
+1. Update `deployment-config/<network>.json` with the ENS names you intend to gate (`agentRoot`, `alphaAgentRoot`, `clubRoot`, `alphaClubRoot`).
 2. Run the helper to recompute the namehashes:
 
    ```bash
