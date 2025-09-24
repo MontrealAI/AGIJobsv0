@@ -11,10 +11,10 @@
     "lint": "npm run lint:check",
     "pretest": "npx tsc --skipLibCheck scripts/constants.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
-    "wire:verify": "node scripts/run-wire-verify.js",
+    "wire:verify": "node scripts/verify-wiring.js --token 0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
     "verify:wiring": "npm run wire:verify",
-    "owner:health": "npx hardhat run --no-compile scripts/owner-healthcheck.js",
-    "test": "hardhat test --no-compile",
+    "owner:health": "node scripts/owner-healthcheck.js",
+    "test": "truffle test --show-events",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",
     "echidna": "npm run echidna:commit-reveal",
     "coverage": "solidity-coverage",
@@ -39,7 +39,9 @@
     "migrate:sepolia": "DEPLOY_LOCAL_ERC20=1 TRUFFLE_NETWORK=sepolia npm run compile:sepolia && npx truffle migrate --network sepolia --reset && TRUFFLE_NETWORK=sepolia npm run wire:verify",
     "lint:check": "solhint 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --max-warnings=0",
     "lint:fix": "solhint --fix 'contracts/**/*.sol' && eslint . --ext .js,.ts,.tsx --fix",
-    "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\""
+    "format:fix": "prettier --write \".github/workflows/**/*.yml\" \"scripts/ci/**/*.{js,mjs}\" \"hardhat.config.js\" \"package.json\" \".solcover.js\"",
+    "test:hardhat": "hardhat test --no-compile",
+    "owner:health:hardhat": "npx hardhat run --no-compile scripts/owner-healthcheck.js"
   },
   "keywords": [],
   "author": "",
@@ -64,6 +66,7 @@
     "solhint": "^6.0.0",
     "solidity-coverage": "^0.8.14",
     "supertest": "^7.1.4",
+    "truffle": "^5.11.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
