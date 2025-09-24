@@ -138,6 +138,42 @@ describe('IdentityRegistry setters', function () {
       const mainnetWrapper = await identity.MAINNET_NAME_WRAPPER();
       await identity.configureMainnet();
       expect(await identity.nameWrapper()).to.equal(mainnetWrapper);
+      const alphaAgent = await identity.MAINNET_ALPHA_AGENT_ROOT_NODE();
+      const alphaClub = await identity.MAINNET_ALPHA_CLUB_ROOT_NODE();
+      expect(await identity.isAgentRootNodeAlias(alphaAgent)).to.equal(true);
+      expect(await identity.isClubRootNodeAlias(alphaClub)).to.equal(true);
+    });
+  });
+
+  describe('root node alias management', function () {
+    it('allows the owner to manage aliases explicitly', async () => {
+      const agentAlias = ethers.keccak256(ethers.toUtf8Bytes('manualAgent'));
+      const clubAlias = ethers.keccak256(ethers.toUtf8Bytes('manualClub'));
+      await expect(identity.addAgentRootNodeAlias(agentAlias))
+        .to.emit(identity, 'AgentRootNodeAliasUpdated')
+        .withArgs(agentAlias, true);
+      await expect(identity.addClubRootNodeAlias(clubAlias))
+        .to.emit(identity, 'ClubRootNodeAliasUpdated')
+        .withArgs(clubAlias, true);
+      expect(await identity.isAgentRootNodeAlias(agentAlias)).to.equal(true);
+      expect(await identity.isClubRootNodeAlias(clubAlias)).to.equal(true);
+      await expect(identity.removeAgentRootNodeAlias(agentAlias))
+        .to.emit(identity, 'AgentRootNodeAliasUpdated')
+        .withArgs(agentAlias, false);
+      await expect(identity.removeClubRootNodeAlias(clubAlias))
+        .to.emit(identity, 'ClubRootNodeAliasUpdated')
+        .withArgs(clubAlias, false);
+      expect(await identity.isAgentRootNodeAlias(agentAlias)).to.equal(false);
+      expect(await identity.isClubRootNodeAlias(clubAlias)).to.equal(false);
+    });
+
+    it('reverts when attempting to manage zero-value aliases', async () => {
+      await expect(
+        identity.addAgentRootNodeAlias(ethers.ZeroHash)
+      ).to.be.revertedWithCustomError(identity, 'ZeroNode');
+      await expect(
+        identity.removeClubRootNodeAlias(ethers.ZeroHash)
+      ).to.be.revertedWithCustomError(identity, 'ZeroNode');
     });
   });
 
@@ -199,6 +235,14 @@ describe('IdentityRegistry setters', function () {
       const validatorUpdates = [
         { validator: validator.address, allowed: true },
       ];
+      const agentAliasNode = ethers.keccak256(
+        ethers.toUtf8Bytes('aliasAgentNode')
+      );
+      const clubAliasNode = ethers.keccak256(
+        ethers.toUtf8Bytes('aliasClubNode')
+      );
+      const agentAliasUpdates = [{ node: agentAliasNode, allowed: true }];
+      const clubAliasUpdates = [{ node: clubAliasNode, allowed: true }];
       const agentTypeUpdates = [{ agent: agent.address, agentType: 1 }];
 
       await expect(
@@ -206,6 +250,8 @@ describe('IdentityRegistry setters', function () {
           config,
           agentUpdates,
           validatorUpdates,
+          agentAliasUpdates,
+          clubAliasUpdates,
           agentTypeUpdates
         )
       )
@@ -223,7 +269,11 @@ describe('IdentityRegistry setters', function () {
           BigInt(agentUpdates.length),
           BigInt(validatorUpdates.length),
           BigInt(agentTypeUpdates.length)
-        );
+        )
+        .and.to.emit(identity, 'AgentRootNodeAliasUpdated')
+        .withArgs(agentAliasNode, true)
+        .and.to.emit(identity, 'ClubRootNodeAliasUpdated')
+        .withArgs(clubAliasNode, true);
 
       expect(await identity.ens()).to.equal(await newEns.getAddress());
       expect(await identity.nameWrapper()).to.equal(
@@ -247,6 +297,8 @@ describe('IdentityRegistry setters', function () {
         true
       );
       expect(await identity.getAgentType(agent.address)).to.equal(1n);
+      expect(await identity.isAgentRootNodeAlias(agentAliasNode)).to.equal(true);
+      expect(await identity.isClubRootNodeAlias(clubAliasNode)).to.equal(true);
     });
 
     it('reverts when provided invalid configuration values', async () => {
@@ -270,6 +322,8 @@ describe('IdentityRegistry setters', function () {
             setValidatorMerkleRoot: false,
             validatorMerkleRoot: ethers.ZeroHash,
           },
+          [],
+          [],
           [],
           [],
           []
