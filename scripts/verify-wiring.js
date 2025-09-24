@@ -34,6 +34,7 @@ const MODULE_ABIS = {
     'function disputeModule() view returns (address)',
     'function validationModule() view returns (address)',
     'function feePool() view returns (address)',
+    'function thermostat() view returns (address)',
     'function token() view returns (address)'
   ),
   JobRegistry: buildAbi(
@@ -762,6 +763,7 @@ async function main() {
           expected: () => moduleAddress('validationModule'),
         },
         { getter: 'feePool', expected: () => moduleAddress('feePool') },
+        { getter: 'thermostat', expected: () => thermostatExpectedAddress },
       ],
     },
     {
