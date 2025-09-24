@@ -12,6 +12,17 @@ if (env.HARDHAT_NETWORK) {
 if (env.npm_config_hardhat_network) {
   delete env.npm_config_hardhat_network;
 }
+
+const tsNodeRegister = 'ts-node/register/transpile-only';
+if (!env.NODE_OPTIONS || !env.NODE_OPTIONS.includes(tsNodeRegister)) {
+  const extra = `-r ${tsNodeRegister}`;
+  env.NODE_OPTIONS = env.NODE_OPTIONS
+    ? `${env.NODE_OPTIONS} ${extra}`
+    : extra;
+}
+if (!env.TS_NODE_TRANSPILE_ONLY) {
+  env.TS_NODE_TRANSPILE_ONLY = '1';
+}
 let coverageOnly = env.COVERAGE_ONLY === '1';
 if (!('COVERAGE_ONLY' in env)) {
   env.COVERAGE_ONLY = '1';
