@@ -135,6 +135,8 @@ npm run verify:agialpha -- --skip-onchain
 
 Docker-based analyzers (Slither/Echidna) run automatically on GitHub-hosted runners. When Docker is unavailable—common in lightweight local containers—the workflows skip these stages without failing the build while the nightly job continues to execute full fuzzing runs.
 
+> **Heads up:** the Echidna images are hosted on GitHub Container Registry. Run `echo "$GITHUB_TOKEN" | docker login ghcr.io -u <github-username> --password-stdin` (or supply a PAT with the `read:packages` scope) before pulling `ghcr.io/crytic/echidna:*` locally; the CI workflows authenticate automatically using the ephemeral `GITHUB_TOKEN`.
+
 ### CI/Security expectations
 
 - **Compile, lint and unit tests** – Hardhat compilation and the full Mocha suite must succeed on every push/PR.
