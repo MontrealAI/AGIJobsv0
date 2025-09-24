@@ -2,6 +2,7 @@ name: Nightly Security
 
 env:
   NODE_VERSION: '20.12.2'
+  ECHIDNA_IMAGE: 'ghcr.io/crytic/echidna/echidna:v2.2.7'
 
 on:
   schedule:
@@ -18,6 +19,17 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Install deps (npm ci, exact lockfile)
+        run: npm ci
+      - name: Prepare writable Foundry artifacts directories
+        run: |
+          chmod a+rwX .
+          mkdir -p out cache
+          chmod -R a+rwX out cache
       - name: Authenticate to GitHub Container Registry
         env:
           GHCR_USER: ${{ github.actor }}
@@ -29,7 +41,7 @@ jobs:
           echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
       - name: Echidna long fuzz (Docker)
         run: |
-          docker run --rm -v "$PWD":/src -w /src ghcr.io/crytic/echidna:2.2.7 \
+          docker run --rm -v "$PWD":/src -w /src "$ECHIDNA_IMAGE" \
             echidna-test ./contracts/test/CommitRevealEchidna.sol \
               --contract CommitRevealEchidnaHarness \
               --config ./echidna/echidna.long.yml \

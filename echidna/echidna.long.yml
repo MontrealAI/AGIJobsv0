@@ -1,11 +1,7 @@
 # Extended nightly fuzzing profile
 cryticArgs:
-  - --compile-force-framework
-  - hardhat
-  - --solc-remaps
-  - '@openzeppelin=node_modules/@openzeppelin/'
-  - --solc-version
-  - '0.8.25'
+  - '--compile-force-framework=hardhat'
+  - '--solc-remaps=@openzeppelin=node_modules/@openzeppelin'
 testMode: assertion
 testLimit: 250000
 seqLen: 256
