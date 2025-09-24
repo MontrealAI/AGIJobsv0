@@ -59,7 +59,11 @@ jobs:
           sleep 3
 
       - name: Compile
-        run: npx --yes truffle compile || npm run build || true
+        run: |
+          if ! npx --yes truffle compile; then
+            echo "Truffle compile failed; continuing to Hardhat compile for test artifacts."
+          fi
+          npm run compile
 
       - name: Unit tests
         run: npx --yes truffle test --show-events || npm test
