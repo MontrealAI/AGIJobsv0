@@ -1,0 +1,10 @@
+testMode: assertion
+sender:
+  - "0x10000"
+  - "0x20000"
+coverage: false
+deployer: "0x30000"
+deployment: normal
+format: text
+seqLen: 100
+shrinkLimit: 2000

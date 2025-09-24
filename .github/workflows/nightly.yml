@@ -12,21 +12,15 @@ jobs:
   echidna-long:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
-    container: ghcr.io/crytic/echidna:2.2.3
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install JS dependencies
-        run: npm ci
-      - name: Long fuzz (more tests, more runs)
-        env:
-          MALLOC_ARENA_MAX: 2
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Echidna long fuzz (Docker)
         run: |
-          echidna-test ./contracts/test/CommitRevealEchidna.sol \
-            --contract CommitRevealEchidnaHarness \
-            --config ./echidna/echidna.long.yml \
-            --test-mode assertion \
-            --corpus-dir echidna/corpus \
-            --seed 42
+          docker run --rm -v "$PWD":/src -w /src ghcr.io/crytic/echidna:2.2.7 \
+            echidna-test ./contracts/test/CommitRevealEchidna.sol \
+              --contract CommitRevealEchidnaHarness \
+              --config ./echidna/echidna.long.yml \
+              --test-mode assertion \
+              --corpus-dir echidna/corpus \
+              --seed 42 \
+              --max-steps 500000
