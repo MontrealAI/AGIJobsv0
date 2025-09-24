@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
+const namehash = require('eth-ens-namehash');
 
 const CONFIG_DIR = path.join(__dirname, '..', '..', 'config');
 
@@ -33,7 +34,10 @@ function normaliseEnsName(value, label) {
   if (!trimmed) {
     throw new Error(`${label} ENS name is empty`);
   }
-  return ethers.namehash.normalize(trimmed);
+  if (typeof ethers.namehash === 'function' && ethers.namehash.normalize) {
+    return ethers.namehash.normalize(trimmed);
+  }
+  return namehash.normalize(trimmed);
 }
 
 function computeNamehash(value, label) {
