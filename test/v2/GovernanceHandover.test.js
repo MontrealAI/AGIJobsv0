@@ -72,6 +72,7 @@ describe('Governance handover via Timelock', function () {
         ethers.ZeroHash
       );
     expect(await mock.governance()).to.equal(await tl2.getAddress());
+    expect(await mock.governanceAddress()).to.equal(await tl2.getAddress());
 
     // old timelock can no longer call
     const setValueCall2 = mock.interface.encodeFunctionData('setValue', [2]);
