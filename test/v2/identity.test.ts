@@ -287,6 +287,67 @@ describe('IdentityRegistry ENS verification', function () {
     expect(validatorViaMerkle).to.equal(false);
   });
 
+  it('authorizes ENS ownership through alpha aliases in read-only checks', async () => {
+    const [owner, agent] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory('MockENS');
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory('MockNameWrapper');
+    const wrapper = await Wrapper.deploy();
+
+    const Stake = await ethers.getContractFactory('MockStakeManager');
+    const stake = await Stake.deploy();
+
+    const Rep = await ethers.getContractFactory(
+      'contracts/v2/ReputationEngine.sol:ReputationEngine'
+    );
+    const rep = await Rep.deploy(await stake.getAddress());
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/IdentityRegistry.sol:IdentityRegistry'
+    );
+    const id = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress(),
+      await rep.getAddress(),
+      AGENT_ROOT,
+      CLUB_ROOT
+    );
+
+    const alphaAgentRoot = ethers.namehash('alpha.agent.agi.eth');
+    const alphaClubRoot = ethers.namehash('alpha.club.agi.eth');
+
+    await id.connect(owner).addAgentRootNodeAlias(alphaAgentRoot);
+    await id.connect(owner).addClubRootNodeAlias(alphaClubRoot);
+
+    const agentLabel = 'alpha-builder';
+    const agentAliasNode = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [alphaAgentRoot, ethers.id(agentLabel)]
+      )
+    );
+    await wrapper.setOwner(BigInt(agentAliasNode), agent.address);
+
+    expect(
+      await id.isAuthorizedAgent(agent.address, agentLabel, [])
+    ).to.equal(true);
+
+    const validatorLabel = 'alpha-sentinel';
+    const validatorAliasNode = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [alphaClubRoot, ethers.id(validatorLabel)]
+      )
+    );
+    await wrapper.setOwner(BigInt(validatorAliasNode), agent.address);
+
+    expect(
+      await id.isAuthorizedValidator(agent.address, validatorLabel, [])
+    ).to.equal(true);
+  });
+
   it('authorizes via allowlists and attestations when ENS is unset', async () => {
     const [owner, agent, validator] = await ethers.getSigners();
 
