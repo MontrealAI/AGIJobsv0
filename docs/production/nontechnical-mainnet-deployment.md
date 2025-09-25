@@ -71,7 +71,16 @@ What to expect:
 
 ---
 
-## 4. Execute the Truffle mainnet migration
+## 4. Execute the Truffle mainnet migration (wizard-first)
+
+```mermaid
+flowchart TD
+    A[Dry-run wizard\n`npm run migrate:wizard -- --network mainnet`] --> B{All checks green?}
+    B -- No --> C[Resolve `.env` / ENS / plan issues\nand rerun dry-run]
+    B -- Yes --> D[Execute wizard\n`npm run migrate:wizard -- --network mainnet --execute`]
+    D --> E[Review emitted addresses]
+    E --> F[Run owner tooling]
+```
 
 1. **Lock down your workstation** (enable VPN, disable screen sharing).
 2. Export the governance address so the migration scripts can wire ownership:
@@ -80,10 +89,18 @@ What to expect:
    export GOVERNANCE_ADDRESS=0xYourMultiSig
    ```
 
-3. Run the deployment. This compiles via Hardhat (with optimizer/viaIR), executes every Truffle migration, and verifies wiring afterwards.
+3. Preview the deployment pipeline without spending gas:
 
    ```bash
-   npm run migrate:mainnet
+   npm run migrate:wizard -- --network mainnet
+   ```
+
+   Confirm the table shows `PASS`/`WARN` only. `FAIL` indicates missing configuration—fix the environment, ENS hashes, or deployment plan before proceeding.
+
+4. Run the deployment. This compiles via Hardhat (with optimizer/viaIR), executes every Truffle migration, and verifies wiring afterwards. The wizard wraps the same commands and prints each step before execution.
+
+   ```bash
+   npm run migrate:wizard -- --network mainnet --execute
    ```
 
    What the script does:
@@ -91,10 +108,11 @@ What to expect:
    - `npm run compile:mainnet` – generates constants, compiles Solidity 0.8.25 with optimizer enabled.
    - `truffle migrate --network mainnet --reset` – deploys Deployer + modules and applies migrations 1–5, consuming overrides from `deployment-config/mainnet.json` (governance, fee/burn percentages, stake floors, timing windows, ENS roots).
    - `npm run wire:verify` – runs the health-check harness ensuring every module is connected and owner privileges are intact.
+   - `npx truffle run verify Deployer --network mainnet` – triggers automated Etherscan verification when `ETHERSCAN_API_KEY` is present (the wizard skips this step automatically if the key is absent).
 
-4. Copy the emitted contract addresses from the console output and share them with the reviewer. Store them in your deployment vault (e.g., 1Password Secure Note).
+5. Copy the emitted contract addresses from the console output and share them with the reviewer. Store them in your deployment vault (e.g., 1Password Secure Note).
 
-5. Run the optional Etherscan verification if not handled automatically:
+6. Run the optional Etherscan verification again if you skipped automatic verification or need to re-run for additional modules:
 
    ```bash
    npx truffle run verify Deployer --network mainnet

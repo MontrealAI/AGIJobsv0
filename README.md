@@ -107,7 +107,14 @@ The script performs a dry run by default, reporting any address, ownership or pa
 
 ### Mainnet Deployment
 
-For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md).
+For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs v2 to Ethereum Mainnet (CLI Guide)](docs/deploying-agijobs-v2-truffle-cli.md). Operators who prefer an automated checklist can launch the guided wizard:
+
+```bash
+npm run migrate:wizard -- --network mainnet        # dry-run preview
+npm run migrate:wizard -- --network mainnet --execute
+```
+
+The wizard validates `.env` secrets, highlights ENS configuration drift, prints a Mermaid deployment pipeline, then executes `compile → migrate → wire-verify → truffle verify` with governance and owner-control safety rails when run with `--execute`.
 
 - **Non-technical operators:** follow the [Non-Technical Mainnet Deployment Runbook (Truffle)](docs/production/nontechnical-mainnet-deployment.md) for an operations-friendly checklist powered by `npm run deploy:checklist`.
 - **Institutional change-control teams:** use the [Institutional Truffle Mainnet Playbook](docs/production/institutional-truffle-mainnet-playbook.md) for staged approvals, migration summaries, and sign-off artefact tracking.
