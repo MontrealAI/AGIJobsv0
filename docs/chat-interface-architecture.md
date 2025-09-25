@@ -55,7 +55,7 @@ flowchart LR
 - **Safety Guard** – enforces policy checks so the orchestrator never executes actions outside the user’s permissions, and scores plan confidence before proceeding with irreversible operations.
 
 ### Backend Services Layer
-- **Job Service** – wraps JobRegistry calls (`createJob`, `applyForJob`/`stakeAndApply`, `submit`, `finalize`, `cancel`) and ensures job specifications and artifacts are written to IPFS or another decentralized storage.
+- **Job Service** – wraps JobRegistry calls (`createJob`/`acknowledgeAndCreateJob`, `applyForJob`/`acknowledgeAndApply`/`stakeAndApply`, `submit`/`acknowledgeAndSubmit`, `finalize`/`acknowledgeAndFinalize`, `cancel`/`acknowledgeAndCancel`) and ensures job specifications and artifacts are written to IPFS or another decentralized storage.
 - **Stake Service** – manages role-specific stake deposits, withdrawals, reward claims, and slashing hooks through StakeManager.
 - **Validation Service** – handles commit–reveal flows, validator assignments, tally aggregation from ValidationModule events, and validator reward distribution messaging.
 - **Dispute Service** – abstracts DisputeModule operations including bond management, evidence submission, arbitrator messaging, and post-resolution fund movement summaries.
@@ -72,7 +72,7 @@ flowchart LR
 3. Execution Manager:
    - Uploads task brief/dataset to IPFS and stores the CID for downstream use.
    - Issues ERC-20 permit or approval if needed, bundling allowance setup with the first escrow action.
-   - Calls `JobRegistry.createJob` through the Blockchain Module with escrow amount and metadata URI.
+   - Calls `JobRegistry.createJob` (or `JobRegistry.acknowledgeAndCreateJob` when acknowledgement is outstanding) through the Blockchain Module with escrow amount and metadata URI.
    - Optionally triggers recruitment broadcasts to subscribed AI/human agents.
 4. Chat confirms job ID, escrow status, accuracy target, and monitoring plan.
 5. Event listener notifies the employer when an agent accepts, completes, requests clarification, or if validation/disputes occur.
@@ -80,10 +80,10 @@ flowchart LR
 ### 2. Agent: Application & Completion
 1. Agent queries for jobs (“List available image labeling work”).
 2. Planner composes response from indexed job data, offers quick actions, and surfaces stake requirements upfront.
-3. Upon acceptance, Stake Service ensures collateral via `StakeManager.depositStake` and registers participation with `JobRegistry.applyForJob(jobId, subdomain, proof)` or the combined `JobRegistry.stakeAndApply(jobId, amount, subdomain, proof)` when topping up stake. If insufficient stake exists, the assistant guides the user through funding requirements.
+3. Upon acceptance, Stake Service ensures collateral via `StakeManager.depositStake` and registers participation with `JobRegistry.applyForJob(jobId, subdomain, proof)`, `JobRegistry.acknowledgeAndApply(jobId, subdomain, proof)`, or the combined `JobRegistry.stakeAndApply(jobId, amount, subdomain, proof)` when topping up stake. If insufficient stake exists, the assistant guides the user through funding requirements.
 4. Task assets delivered via chat (download links, instructions). If the worker is an AI microservice, the Orchestrator can spawn specialized agents using the AGI-Alpha toolchain and supervise progress checkpoints.
-5. Completion triggers result upload, IPFS hashing, and a `JobRegistry.submit(jobId, resultHash, resultURI, subdomain, proof)` call. The Orchestrator keeps the agent informed of pending validation or dispute steps, noting that finalization occurs later via `JobRegistry.finalize(jobId)` once outcomes are confirmed.
-6. Chat informs the agent about validation status, stake locks, payout timeline, and reputation updates after `JobRegistry.finalize(jobId)` (or `JobRegistry.finalizeAfterValidation(jobId, success)` when triggered by the validation module) completes the flow.
+5. Completion triggers result upload, IPFS hashing, and a `JobRegistry.submit(jobId, resultHash, resultURI, subdomain, proof)` call (or `JobRegistry.acknowledgeAndSubmit(jobId, resultHash, resultURI, subdomain, proof)` when acknowledgement remains outstanding). The Orchestrator keeps the agent informed of pending validation or dispute steps, noting that finalization occurs later via `JobRegistry.finalize(jobId)` or the validation-driven `JobRegistry.finalizeAfterValidation(jobId, success)` once outcomes are confirmed.
+6. Chat informs the agent about validation status, stake locks, payout timeline, and reputation updates after `JobRegistry.finalize(jobId)` (or `JobRegistry.finalizeAfterValidation(jobId, success)` when triggered by the validation module) completes the flow, while switching to `JobRegistry.acknowledgeAndFinalize(jobId)` if acknowledgement is still required.
 
 ### 3. Validator: Quality Assurance
 1. Validation Service subscribes to `JobCompleted` events and invites staked validators through chat with reward breakdowns and deadlines.
