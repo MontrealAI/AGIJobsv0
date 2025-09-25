@@ -42,12 +42,18 @@ export default function OneBox() {
     setBusy(true);
 
     try {
+      const historyPayload = messages.slice(-12).map(({ role, text, meta }) => ({
+        role,
+        text,
+        meta,
+      }));
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: mine.text,
-          history: messages.slice(-12),
+          history: historyPayload,
         }),
       });
 
