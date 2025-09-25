@@ -1,43 +1,63 @@
 export type ChatMessage = { role: string; content: string };
-export type StreamOptions = { expect?: "json" };
+export type StreamOptions = {
+  expect?: "json";
+  meta?: MetaOptions;
+};
+
+type MetaOptions = {
+  traceId?: string;
+  userId?: string;
+};
 
 export async function streamLLM(
   messages: ChatMessage[],
   _options: StreamOptions
 ): Promise<string> {
   const last = messages[messages.length - 1]?.content ?? "";
+  const meta = resolveMeta(_options.meta);
   const text = last.toLowerCase();
 
   if (text.includes("apply") && text.includes("job")) {
     const jobId = extractJobId(last);
+    const ens = buildEns(last);
     return JSON.stringify({
       intent: "apply_job",
-      params: { jobId },
+      params: { jobId: jobId ?? 0, ens },
       confirm: false,
+      meta,
     });
   }
 
   if (text.includes("submit") && text.includes("job")) {
     const jobId = extractJobId(last);
+    const ens = buildEns(last);
     return JSON.stringify({
       intent: "submit_work",
-      params: { jobId, result: { note: last } },
+      params: {
+        jobId: jobId ?? 0,
+        result: { payload: { note: last } },
+        ens,
+      },
       confirm: true,
+      meta,
     });
   }
 
   if (text.includes("finalize")) {
     const jobId = extractJobId(last);
+    const success = inferSuccess(last);
     return JSON.stringify({
       intent: "finalize",
-      params: { jobId },
+      params: { jobId: jobId ?? 0, success },
       confirm: true,
+      meta,
     });
   }
 
   const reward = extractReward(last);
   const deadline = extractDeadline(last);
   const title = buildTitle(last);
+  const spec = buildSpec(last);
 
   return JSON.stringify({
     intent: "create_job",
@@ -45,13 +65,22 @@ export async function streamLLM(
       job: {
         title,
         description: last,
-        deadlineDays: deadline ?? null,
-        rewardAGIA: reward ?? null,
+        deadline: deadline ?? "",
+        rewardAGIA: reward ?? "",
+        spec,
         attachments: [],
       },
     },
     confirm: true,
+    meta,
   });
+}
+
+function resolveMeta(meta?: MetaOptions) {
+  return {
+    traceId: meta?.traceId ?? "00000000-0000-4000-8000-000000000000",
+    userId: meta?.userId ?? "user-sandbox",
+  } satisfies Required<MetaOptions>;
 }
 
 export function extractJobId(text: string): number | null {
@@ -88,6 +117,17 @@ export function extractJobId(text: string): number | null {
   return null;
 }
 
+function buildEns(text: string) {
+  const subdomain = extractEnsSubdomain(text) ?? "agent";
+  return { subdomain };
+}
+
+function extractEnsSubdomain(text: string): string | null {
+  const match = text.match(/\b([a-z0-9-]+)\.agijobs\.eth\b/i);
+  if (match?.[1]) return match[1].toLowerCase();
+  return null;
+}
+
 function extractReward(text: string): string | null {
   const rewardMatch = text.match(/(\d+(?:\.\d+)?)\s*(agi[a-z]*)/i);
   if (!rewardMatch) return null;
@@ -109,7 +149,20 @@ function buildTitle(text: string): string {
   return capitalize(trimmed.slice(0, 77)) + "…";
 }
 
+function buildSpec(text: string): Record<string, unknown> {
+  return {
+    summary: text.trim(),
+  };
+}
+
 function capitalize(value: string): string {
   if (!value) return value;
   return value[0].toUpperCase() + value.slice(1);
+}
+
+function inferSuccess(text: string): boolean {
+  const normalized = text.toLowerCase();
+  if (/\b(fail|reject|unsuccessful|failed)\b/.test(normalized)) return false;
+  if (/(success|successful|approve|approved|complete|completed|finished)/.test(normalized)) return true;
+  return false;
 }
