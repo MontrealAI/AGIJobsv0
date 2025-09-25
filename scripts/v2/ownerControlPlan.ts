@@ -6,10 +6,18 @@ import {
   loadJobRegistryConfig,
   loadStakeManagerConfig,
   loadFeePoolConfig,
+  loadPlatformRegistryConfig,
+  loadPlatformIncentivesConfig,
+  loadTaxPolicyConfig,
+  loadIdentityRegistryConfig,
 } from '../config';
 import { buildJobRegistryPlan } from './lib/jobRegistryPlan';
 import { buildStakeManagerPlan } from './lib/stakeManagerPlan';
 import { buildFeePoolPlan } from './lib/feePoolPlan';
+import { buildPlatformRegistryPlan } from './lib/platformRegistryPlan';
+import { buildPlatformIncentivesPlan } from './lib/platformIncentivesPlan';
+import { buildTaxPolicyPlan } from './lib/taxPolicyPlan';
+import { buildIdentityRegistryPlan } from './lib/identityRegistryPlan';
 import { describeArgs, sameAddress } from './lib/utils';
 import type { ModulePlan, PlannedAction } from './lib/types';
 
@@ -176,7 +184,10 @@ function serialiseArg(value: any): any {
   return value;
 }
 
-function buildActionSummary(plan: ModulePlan, action: PlannedAction): ActionSummary {
+function buildActionSummary(
+  plan: ModulePlan,
+  action: PlannedAction
+): ActionSummary {
   const iface = plan.iface;
   let signature: string | null = null;
   let functionName: string | null = null;
@@ -196,17 +207,21 @@ function buildActionSummary(plan: ModulePlan, action: PlannedAction): ActionSumm
       }));
     } catch (error) {
       if (process.env.DEBUG) {
-        console.warn(`Failed to resolve ABI metadata for ${plan.module}.${action.method}:`, error);
+        console.warn(
+          `Failed to resolve ABI metadata for ${plan.module}.${action.method}:`,
+          error
+        );
       }
       calldata = iface.encodeFunctionData(action.method, action.args);
     }
   }
   if (calldata === null) {
     try {
-      calldata = plan.contract?.interface?.encodeFunctionData(
-        action.method,
-        action.args
-      ) ?? null;
+      calldata =
+        plan.contract?.interface?.encodeFunctionData(
+          action.method,
+          action.args
+        ) ?? null;
     } catch (_) {
       calldata = null;
     }
@@ -315,7 +330,9 @@ async function writeSafeBundle(
   for (const module of plan.modules) {
     for (const action of module.actions) {
       if (!action.calldata) {
-        throw new Error(`Missing calldata for ${module.module}.${action.method}`);
+        throw new Error(
+          `Missing calldata for ${module.module}.${action.method}`
+        );
       }
       const inputsValues: Record<string, string> = {};
       if (action.inputs && action.inputs.length === action.args.length) {
@@ -396,10 +413,14 @@ async function main() {
       signer = signers[0];
       signerAddress = await signers[0].getAddress();
     } else {
-      console.warn('No signer available from Hardhat environment; running in read-only mode.');
+      console.warn(
+        'No signer available from Hardhat environment; running in read-only mode.'
+      );
     }
   } catch (error) {
-    console.warn('Unable to resolve Hardhat signer; running in read-only mode.');
+    console.warn(
+      'Unable to resolve Hardhat signer; running in read-only mode.'
+    );
     if (process.env.DEBUG) {
       console.warn(error);
     }
@@ -412,7 +433,9 @@ async function main() {
       detectedChainId = (net as any).chainId;
     }
   } catch (error) {
-    console.warn('Unable to detect chain ID from provider; Safe bundle generation may be unavailable.');
+    console.warn(
+      'Unable to detect chain ID from provider; Safe bundle generation may be unavailable.'
+    );
     if (process.env.DEBUG) {
       console.warn(error);
     }
@@ -437,26 +460,33 @@ async function main() {
   if (jobRegistryAddress) {
     const registryAddress = ethers.getAddress(jobRegistryAddress);
     if (registryAddress === ethers.ZeroAddress) {
-      console.warn('JobRegistry address resolves to the zero address; skipping.');
+      console.warn(
+        'JobRegistry address resolves to the zero address; skipping.'
+      );
     } else {
-    const registry = await ethers.getContractAt(
-      'contracts/v2/JobRegistry.sol:JobRegistry',
-      registryAddress
-    );
-    const owner = await ensureContractOwner('JobRegistry', registry, signerAddress, cli.execute);
-    const jobConfig = loadJobRegistryConfig({
-      network: network.name,
-      chainId: network.config?.chainId,
-    });
-    const jobPlan = await buildJobRegistryPlan({
-      registry,
-      config: jobConfig.config,
-      configPath: jobConfig.path,
-      decimals,
-      symbol,
-    });
-    jobPlan.metadata = { ...(jobPlan.metadata || {}), owner };
-    plans.push(jobPlan);
+      const registry = await ethers.getContractAt(
+        'contracts/v2/JobRegistry.sol:JobRegistry',
+        registryAddress
+      );
+      const owner = await ensureContractOwner(
+        'JobRegistry',
+        registry,
+        signerAddress,
+        cli.execute
+      );
+      const jobConfig = loadJobRegistryConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const jobPlan = await buildJobRegistryPlan({
+        registry,
+        config: jobConfig.config,
+        configPath: jobConfig.path,
+        decimals,
+        symbol,
+      });
+      jobPlan.metadata = { ...(jobPlan.metadata || {}), owner };
+      plans.push(jobPlan);
     }
   } else {
     console.warn('JobRegistry address missing from agialpha config; skipping.');
@@ -466,30 +496,39 @@ async function main() {
   if (stakeManagerAddress) {
     const address = ethers.getAddress(stakeManagerAddress);
     if (address === ethers.ZeroAddress) {
-      console.warn('StakeManager address resolves to the zero address; skipping.');
+      console.warn(
+        'StakeManager address resolves to the zero address; skipping.'
+      );
     } else {
-    const stakeManager = await ethers.getContractAt(
-      'contracts/v2/StakeManager.sol:StakeManager',
-      address
-    );
-    const owner = await ensureContractOwner('StakeManager', stakeManager, signerAddress, cli.execute);
-    const stakeConfig = loadStakeManagerConfig({
-      network: network.name,
-      chainId: network.config?.chainId,
-    });
-    const stakePlan = await buildStakeManagerPlan({
-      stakeManager,
-      config: stakeConfig.config,
-      configPath: stakeConfig.path,
-      decimals,
-      symbol,
-      ownerAddress: owner,
-    });
-    stakePlan.metadata = { ...(stakePlan.metadata || {}), owner };
-    plans.push(stakePlan);
+      const stakeManager = await ethers.getContractAt(
+        'contracts/v2/StakeManager.sol:StakeManager',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'StakeManager',
+        stakeManager,
+        signerAddress,
+        cli.execute
+      );
+      const stakeConfig = loadStakeManagerConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const stakePlan = await buildStakeManagerPlan({
+        stakeManager,
+        config: stakeConfig.config,
+        configPath: stakeConfig.path,
+        decimals,
+        symbol,
+        ownerAddress: owner,
+      });
+      stakePlan.metadata = { ...(stakePlan.metadata || {}), owner };
+      plans.push(stakePlan);
     }
   } else {
-    console.warn('StakeManager address missing from agialpha config; skipping.');
+    console.warn(
+      'StakeManager address missing from agialpha config; skipping.'
+    );
   }
 
   const feePoolAddress = tokenConfig.modules?.feePool;
@@ -498,32 +537,167 @@ async function main() {
     if (address === ethers.ZeroAddress) {
       console.warn('FeePool address resolves to the zero address; skipping.');
     } else {
-    const feePool = await ethers.getContractAt(
-      'contracts/v2/FeePool.sol:FeePool',
-      address
-    );
-    const version = await feePool.version();
-    if (version !== 2n) {
-      throw new Error(
-        `FeePool at ${address} reports version ${version}, expected 2`
+      const feePool = await ethers.getContractAt(
+        'contracts/v2/FeePool.sol:FeePool',
+        address
       );
-    }
-    const owner = await ensureContractOwner('FeePool', feePool, signerAddress, cli.execute);
-    const feeConfig = loadFeePoolConfig({
-      network: network.name,
-      chainId: network.config?.chainId,
-    });
-    const feePlan = await buildFeePoolPlan({
-      feePool,
-      config: feeConfig.config,
-      configPath: feeConfig.path,
-      ownerAddress: owner,
-    });
-    feePlan.metadata = { ...(feePlan.metadata || {}), owner };
-    plans.push(feePlan);
+      const version = await feePool.version();
+      if (version !== 2n) {
+        throw new Error(
+          `FeePool at ${address} reports version ${version}, expected 2`
+        );
+      }
+      const owner = await ensureContractOwner(
+        'FeePool',
+        feePool,
+        signerAddress,
+        cli.execute
+      );
+      const feeConfig = loadFeePoolConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const feePlan = await buildFeePoolPlan({
+        feePool,
+        config: feeConfig.config,
+        configPath: feeConfig.path,
+        ownerAddress: owner,
+      });
+      feePlan.metadata = { ...(feePlan.metadata || {}), owner };
+      plans.push(feePlan);
     }
   } else {
     console.warn('FeePool address missing from agialpha config; skipping.');
+  }
+
+  const platformRegistryAddress = tokenConfig.modules?.platformRegistry;
+  if (platformRegistryAddress) {
+    const address = ethers.getAddress(platformRegistryAddress);
+    if (address === ethers.ZeroAddress) {
+      console.warn(
+        'PlatformRegistry address resolves to the zero address; skipping.'
+      );
+    } else {
+      const platformRegistry = await ethers.getContractAt(
+        'contracts/v2/PlatformRegistry.sol:PlatformRegistry',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'PlatformRegistry',
+        platformRegistry,
+        signerAddress,
+        cli.execute
+      );
+      const platformConfig = loadPlatformRegistryConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const platformPlan = await buildPlatformRegistryPlan({
+        platformRegistry,
+        config: platformConfig.config,
+        configPath: platformConfig.path,
+        decimals,
+        symbol,
+        ownerAddress: owner,
+      });
+      platformPlan.metadata = { ...(platformPlan.metadata || {}), owner };
+      plans.push(platformPlan);
+    }
+  }
+
+  const platformIncentivesAddress = tokenConfig.modules?.platformIncentives;
+  if (platformIncentivesAddress) {
+    const address = ethers.getAddress(platformIncentivesAddress);
+    if (address === ethers.ZeroAddress) {
+      console.warn(
+        'PlatformIncentives address resolves to the zero address; skipping.'
+      );
+    } else {
+      const platformIncentives = await ethers.getContractAt(
+        'contracts/v2/PlatformIncentives.sol:PlatformIncentives',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'PlatformIncentives',
+        platformIncentives,
+        signerAddress,
+        cli.execute
+      );
+      const incentivesConfig = loadPlatformIncentivesConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const incentivesPlan = await buildPlatformIncentivesPlan({
+        platformIncentives,
+        config: incentivesConfig.config,
+        configPath: incentivesConfig.path,
+        ownerAddress: owner,
+      });
+      incentivesPlan.metadata = { ...(incentivesPlan.metadata || {}), owner };
+      plans.push(incentivesPlan);
+    }
+  }
+
+  const taxPolicyAddress = tokenConfig.modules?.taxPolicy;
+  if (taxPolicyAddress) {
+    const address = ethers.getAddress(taxPolicyAddress);
+    if (address === ethers.ZeroAddress) {
+      console.warn('TaxPolicy address resolves to the zero address; skipping.');
+    } else {
+      const taxPolicy = await ethers.getContractAt(
+        'contracts/v2/TaxPolicy.sol:TaxPolicy',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'TaxPolicy',
+        taxPolicy,
+        signerAddress,
+        cli.execute
+      );
+      const taxConfig = loadTaxPolicyConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const taxPlan = await buildTaxPolicyPlan({
+        taxPolicy,
+        config: taxConfig.config,
+        configPath: taxConfig.path,
+      });
+      taxPlan.metadata = { ...(taxPlan.metadata || {}), owner };
+      plans.push(taxPlan);
+    }
+  }
+
+  const identityRegistryAddress = tokenConfig.modules?.identityRegistry;
+  if (identityRegistryAddress) {
+    const address = ethers.getAddress(identityRegistryAddress);
+    if (address === ethers.ZeroAddress) {
+      console.warn(
+        'IdentityRegistry address resolves to the zero address; skipping.'
+      );
+    } else {
+      const identityRegistry = await ethers.getContractAt(
+        'contracts/v2/IdentityRegistry.sol:IdentityRegistry',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'IdentityRegistry',
+        identityRegistry,
+        signerAddress,
+        cli.execute
+      );
+      const identityConfig = loadIdentityRegistryConfig({
+        network: network.name,
+        chainId: network.config?.chainId,
+      });
+      const identityPlan = await buildIdentityRegistryPlan({
+        identityRegistry,
+        config: identityConfig.config,
+        configPath: identityConfig.path,
+      });
+      identityPlan.metadata = { ...(identityPlan.metadata || {}), owner };
+      plans.push(identityPlan);
+    }
   }
 
   if (plans.length === 0) {
@@ -585,7 +759,9 @@ async function main() {
 
   if (!cli.execute) {
     if (!cli.json) {
-      console.log('\nDry run complete. Use --execute to apply the plan or --json/--out for offline execution.');
+      console.log(
+        '\nDry run complete. Use --execute to apply the plan or --json/--out for offline execution.'
+      );
     }
     return;
   }
