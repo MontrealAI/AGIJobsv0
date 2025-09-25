@@ -45,12 +45,13 @@ export default function OneBox() {
 
     const appendPending = () =>
       setMessages((prev) => {
+        if (pendingInserted) return prev;
         pendingInserted = true;
         return [...prev, { role: 'assistant_pending', text: '' }];
       });
 
     const removeTrailingPending = (list: ChatMessage[]) => {
-      if (!pendingInserted) return list;
+      if (!pendingInserted || list.length === 0) return list;
       if (list[list.length - 1]?.role !== 'assistant_pending') {
         return list;
       }
