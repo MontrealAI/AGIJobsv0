@@ -1,0 +1,20 @@
+{
+  "name": "@agi/orchestrator",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "ethers": "6.15.0",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.12.12",
+    "typescript": "5.6.3"
+  }
+}
