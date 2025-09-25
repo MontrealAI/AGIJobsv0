@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
 const Deployer = artifacts.require('Deployer');
-const { loadEnsConfig } = require('../scripts/config');
+const { loadEnsConfig, loadDeploymentPlan } = require('../scripts/config');
 
 const ADDRESSES_PATH = path.join(
   __dirname,
@@ -41,6 +41,32 @@ function writeAddressBook(data) {
   fs.writeFileSync(ADDRESSES_PATH, `${JSON.stringify(data, null, 2)}\n`);
 }
 
+function parseBooleanEnv(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) return undefined;
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  return undefined;
+}
+
+function resolveGovernanceAddress(value, label) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const address = ethers.getAddress(value);
+  if (address === ethers.ZeroAddress) {
+    throw new Error(`${label} cannot be the zero address`);
+  }
+  return address;
+}
+
 module.exports = async function (_deployer, network, accounts) {
   const deployerInstance = await Deployer.deployed();
   const alreadyDeployed = await deployerInstance.deployed();
@@ -49,19 +75,63 @@ module.exports = async function (_deployer, network, accounts) {
     return;
   }
 
-  const governance = process.env.GOVERNANCE_ADDRESS || accounts[0];
+  const {
+    plan: deploymentPlan,
+    path: deploymentPlanPath,
+    exists: hasDeploymentPlan,
+  } = loadDeploymentPlan({ network, optional: true });
+
+  if (!hasDeploymentPlan) {
+    console.warn(
+      `Warning: deployment-config for ${network} not found at ${deploymentPlanPath}. Using migration defaults.`
+    );
+  } else {
+    console.log(`Applying deployment overrides from ${deploymentPlanPath}`);
+  }
+
+  const envGovernance = resolveGovernanceAddress(
+    process.env.GOVERNANCE_ADDRESS,
+    'GOVERNANCE_ADDRESS'
+  );
+  const planGovernance = resolveGovernanceAddress(
+    deploymentPlan.governance,
+    'deployment-config.governance'
+  );
+  const fallbackGovernance = resolveGovernanceAddress(
+    accounts && accounts.length > 0 ? accounts[0] : undefined,
+    'default governance account'
+  );
+  const governance = envGovernance || planGovernance || fallbackGovernance;
   if (!governance) {
     throw new Error(
-      'GOVERNANCE_ADDRESS must be provided or defaults available'
+      'GOVERNANCE_ADDRESS must be provided (env or deployment-config) when no default account is available'
     );
   }
 
-  const withTax = !process.env.NO_TAX;
+  const withTaxEnv = parseBooleanEnv(process.env.WITH_TAX);
+  const noTaxEnv = parseBooleanEnv(process.env.NO_TAX);
+  const withTaxPlan =
+    deploymentPlan.withTax === undefined
+      ? undefined
+      : Boolean(deploymentPlan.withTax);
+  let withTax = true;
+  if (noTaxEnv !== undefined) {
+    withTax = !noTaxEnv;
+  } else if (withTaxEnv !== undefined) {
+    withTax = withTaxEnv;
+  } else if (withTaxPlan !== undefined) {
+    withTax = withTaxPlan;
+  }
+
   const feeOverride = parsePercentage(process.env.FEE_PCT, 'FEE_PCT');
   const burnOverride = parsePercentage(process.env.BURN_PCT, 'BURN_PCT');
-  const customEcon = feeOverride !== undefined || burnOverride !== undefined;
-  const feePct = feeOverride ?? 5;
-  const burnPct = burnOverride ?? 5;
+  const planEcon = deploymentPlan.econ || {};
+  const customEcon =
+    feeOverride !== undefined ||
+    burnOverride !== undefined ||
+    Object.keys(planEcon).length > 0;
+  const feePct = feeOverride ?? planEcon.feePct ?? 5;
+  const burnPct = burnOverride ?? planEcon.burnPct ?? 5;
 
   const { config: ensConfig } = loadEnsConfig({ network });
   if (!ensConfig.registry) {
@@ -86,12 +156,14 @@ module.exports = async function (_deployer, network, accounts) {
   const econ = {
     feePct,
     burnPct,
-    employerSlashPct: 0,
-    treasurySlashPct: 0,
-    commitWindow: 0,
-    revealWindow: 0,
-    minStake: 0,
-    jobStake: 0,
+    employerSlashPct: planEcon.employerSlashPct ?? 0,
+    treasurySlashPct: planEcon.treasurySlashPct ?? 0,
+    commitWindow: planEcon.commitWindow ?? 0,
+    revealWindow: planEcon.revealWindow ?? 0,
+    minStake:
+      planEcon.minStake !== undefined ? planEcon.minStake.toString() : 0,
+    jobStake:
+      planEcon.jobStake !== undefined ? planEcon.jobStake.toString() : 0,
   };
 
   console.log('Executing deterministic module deployment via Deployer...');
