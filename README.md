@@ -111,6 +111,7 @@ For a step-by-step mainnet deployment using Truffle, see the [Deploying AGIJobs 
 
 - **Non-technical operators:** follow the [Non-Technical Mainnet Deployment Runbook (Truffle)](docs/production/nontechnical-mainnet-deployment.md) for an operations-friendly checklist powered by `npm run deploy:checklist`.
 - **Institutional change-control teams:** use the [Institutional Truffle Mainnet Playbook](docs/production/institutional-truffle-mainnet-playbook.md) for staged approvals, migration summaries, and sign-off artefact tracking.
+- **Command-line launch coordinators:** the [AGIJobs v0 Institutional Truffle Mainnet Playbook](docs/truffle-mainnet-playbook.md) packages the full CLI workflow with diagrams, rehearsals and owner-control checkpoints suitable for non-technical operators.
 
 - [docs/deployment-production-guide.md](docs/deployment-production-guide.md) – step-by-step walkthrough for deploying AGI Jobs v2 using only a web browser and Etherscan.
 - [docs/deployment-guide-production.md](docs/deployment-guide-production.md) – production deployment checklist.
@@ -156,15 +157,17 @@ The wiring verifier doubles as a continuous identity/wiring guardrail for the α
 
 ### Governance change sets
 
-`npm run owner:plan` (optionally with `OWNER_PLAN_JSON=1` or
-`OWNER_PLAN_EXECUTE=1`) generates a consolidated governance plan for
-`JobRegistry`, `StakeManager`, and `FeePool`, comparing the live parameters
-against the committed config JSON files. The helper prints human-readable diffs,
-exposes the raw calldata for multisig execution, optionally writes a
-machine-readable JSON artifact and, when `OWNER_PLAN_EXECUTE=1` is provided,
-submits the transactions using the connected signer. See
-[docs/owner-control-playbook.md](docs/owner-control-playbook.md) for
-step-by-step usage guidance.
+`npm run owner:dashboard` surfaces a live snapshot of governance ownership,
+treasury destinations and module wiring in both human-readable and JSON
+formats. Combine it with `npm run owner:plan` (optionally with
+`OWNER_PLAN_JSON=1` or `OWNER_PLAN_EXECUTE=1`) to generate a consolidated
+governance plan for `JobRegistry`, `StakeManager`, and `FeePool`, comparing the
+live parameters against the committed config JSON files. The helper prints
+human-readable diffs, exposes the raw calldata for multisig execution,
+optionally writes a machine-readable JSON artifact and, when
+`OWNER_PLAN_EXECUTE=1` is provided, submits the transactions using the
+connected signer. See [docs/owner-control-playbook.md](docs/owner-control-playbook.md)
+for step-by-step usage guidance.
 
 ## Quick Start
 
