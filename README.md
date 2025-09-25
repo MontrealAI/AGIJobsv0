@@ -358,6 +358,7 @@ The contract owner can retune live systems from block‑explorer **Write** tabs:
 - **Merkle roots** – `IdentityRegistry.setAgentMerkleRoot` / `setValidatorMerkleRoot`.
 - **Timing & fees** – `ValidationModule.setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, and `DisputeModule.setDisputeFee`.
 - **Routing & policies** – `JobRegistry.setModules`, `setFeePool`, `setTaxPolicy`, then `DisputeModule.setTaxPolicy`.
+- **Aggregated updates** – `StakeManager.applyConfiguration(ConfigUpdate, TreasuryAllowlistUpdate[])` and `JobRegistry.applyConfiguration(ConfigUpdate, AcknowledgerUpdate[], address[])` bundle multi-parameter governance changes with the same guards as the individual setters. Review the [institutional playbook](docs/production/institutional-truffle-mainnet-playbook.md#7a-one-transaction-owner-bundles) for step-by-step Safe instructions.
 
 Use `npm run owner:wizard` for an interactive, non-destructive configuration walkthrough. The wizard:
 
