@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
-import { validateICS, type ICSType, route } from "./router";
+import { route } from "./router.js";
+import { validateICS, type ICSType } from "./ics.js";
 import { streamLLM } from "./providers/openai";
 
 const SYSTEM_PROMPT = `
