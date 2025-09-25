@@ -1,17 +1,20 @@
 import { ethers } from "ethers";
-import { getAAProvider } from "./providers/aa";
-import { getRelayerWallet } from "./providers/relayer";
 
-const MODE = process.env.TX_MODE ?? "relayer";
+let cachedProvider: ethers.JsonRpcProvider | undefined;
 
-export async function getSignerForUser(userId: string) {
-  if (MODE === "aa") {
-    return getAAProvider(userId);
+export function rpc(): ethers.JsonRpcProvider {
+  if (!cachedProvider) {
+    const url = process.env.RPC_URL ?? "http://localhost:8545";
+    cachedProvider = new ethers.JsonRpcProvider(url);
   }
-  return getRelayerWallet(userId);
+  return cachedProvider;
 }
 
-export function rpc() {
-  const url = process.env.RPC_URL ?? "http://127.0.0.1:8545";
-  return new ethers.JsonRpcProvider(url);
+export async function getSignerForUser(userId: string) {
+  const provider = rpc();
+  const keySeed = ethers.id(userId || "anon");
+  const wallet = ethers.Wallet.createRandom({
+    extraEntropy: ethers.getBytes(keySeed)
+  });
+  return wallet.connect(provider);
 }

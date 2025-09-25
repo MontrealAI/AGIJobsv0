@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    forceSwcTransforms: true,
-    externalDir: true
-  }
+    typedRoutes: true
+  },
+  transpilePackages: ["@agi/orchestrator"]
 };
 
 export default nextConfig;

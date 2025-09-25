@@ -1,29 +1,20 @@
 import { ethers } from "ethers";
 
 export async function pinToIpfs(payload: unknown): Promise<string> {
-  // Placeholder – integrate with IPFS or web3.storage in production.
-  const serialized = JSON.stringify(payload);
-  const digest = ethers.id(serialized).slice(2, 10);
-  return `ipfs://stub-${digest}`;
+  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64");
+  return `ipfs://stub-${encoded.slice(0, 10)}`;
 }
 
 export function toWei(amount: string | number): bigint {
-  const value = typeof amount === "number" ? amount.toString() : amount;
-  return ethers.parseUnits(value, 18);
+  const numeric = typeof amount === "number" ? amount.toString() : amount;
+  try {
+    return ethers.parseUnits(numeric, 18);
+  } catch {
+    return 0n;
+  }
 }
 
-export type Yieldable = AsyncGenerator<string, void, unknown>;
-
-export async function* withSimulation<T>(
-  step: string,
-  runner: () => Promise<T>
-): Yieldable {
-  try {
-    yield `${step}\n`;
-    await runner();
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    yield `❌ ${message}\n`;
-    throw error;
-  }
+export function formatAGIA(amount: string | number | undefined): string {
+  if (amount === undefined) return "0";
+  return typeof amount === "number" ? amount.toString() : amount;
 }
