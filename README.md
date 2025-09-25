@@ -344,6 +344,13 @@ The contract owner can retune live systems from block‑explorer **Write** tabs:
 - **Timing & fees** – `ValidationModule.setCommitWindow`, `setRevealWindow`, `setValidatorBounds`, and `DisputeModule.setDisputeFee`.
 - **Routing & policies** – `JobRegistry.setModules`, `setFeePool`, `setTaxPolicy`, then `DisputeModule.setTaxPolicy`.
 
+Use `npm run owner:wizard` for an interactive, non-destructive configuration walkthrough. The wizard:
+
+- Prompts for updated stakes, fees, treasuries and reward splits using human-friendly token units.
+- Validates input on the fly (addresses, percentages, integer ranges, token precision) before applying changes.
+- Writes safe JSON updates to `config/job-registry.json`, `config/stake-manager.json`, and `config/fee-pool.json` only after you confirm a full change summary.
+- Automatically creates `.bak` backups of each file before saving and then reminds you to run `npm run owner:plan` to generate the transaction bundle.
+
 ## Overview of v2 Modular Architecture
 
 The v2 release decomposes the monolithic manager into single‑purpose modules. Each contract owns its state and can be replaced without touching the rest of the system. Deploy modules in the following order:
