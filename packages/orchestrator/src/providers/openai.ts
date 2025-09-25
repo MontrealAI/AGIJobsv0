@@ -54,10 +54,38 @@ export async function streamLLM(
   });
 }
 
-function extractJobId(text: string): number | null {
-  const match = text.match(/#?(\d+)/);
-  if (!match) return null;
-  return Number.parseInt(match[1], 10);
+export function extractJobId(text: string): number | null {
+  const directPatterns = [
+    /\b(?:job|jobs)\s*(?:id|number|no\.)?\s*#?\s*(\d+)/i,
+    /\bid\s*(?:number|no\.)?\s*#?\s*(\d+)/i,
+  ];
+
+  for (const pattern of directPatterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      return Number.parseInt(match[1], 10);
+    }
+  }
+
+  const hashRegex = /#(\d+)/g;
+  let hashMatch: RegExpExecArray | null;
+  while ((hashMatch = hashRegex.exec(text)) !== null) {
+    const preceding = text.slice(0, hashMatch.index).toLowerCase();
+    const contextRegex = /\b(job|jobs|id)\b/gi;
+    let nearestIndex = -1;
+    let contextMatch: RegExpExecArray | null;
+    while ((contextMatch = contextRegex.exec(preceding)) !== null) {
+      nearestIndex = contextMatch.index;
+    }
+
+    if (nearestIndex === -1) continue;
+
+    if (hashMatch.index - nearestIndex <= 80) {
+      return Number.parseInt(hashMatch[1], 10);
+    }
+  }
+
+  return null;
 }
 
 function extractReward(text: string): string | null {
