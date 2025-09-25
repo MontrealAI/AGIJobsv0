@@ -82,11 +82,25 @@ export default function OneBox() {
         });
       }
 
+      const flushedText = decoder.decode();
+      if (flushedText) {
+        assistantText += flushedText;
+        const partial = assistantText;
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          if (last && last.role === "assistant_pending") {
+            next[next.length - 1] = { ...last, text: partial };
+          }
+          return next;
+        });
+      }
+
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
         if (last && last.role === "assistant_pending") {
-          next[next.length - 1] = { role: "assistant", text: last.text };
+          next[next.length - 1] = { role: "assistant", text: assistantText };
         }
         return next;
       });
