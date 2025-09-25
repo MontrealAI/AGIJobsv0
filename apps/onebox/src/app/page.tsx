@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import styles from "./page.module.css";
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import styles from './page.module.css';
 
-type Role = "user" | "assistant" | "system" | "assistant_pending";
+type Role = 'user' | 'assistant' | 'system' | 'assistant_pending';
 export type ChatMessage = {
   role: Role;
   text: string;
@@ -11,8 +11,8 @@ export type ChatMessage = {
 };
 
 const INITIAL_MESSAGE: ChatMessage = {
-  role: "assistant",
-  text: "Hi! What would you like to do? (e.g., “Post a job to label 500 images for 50 AGIALPHA by next week.”)",
+  role: 'assistant',
+  text: 'Hi! What would you like to do? (e.g., “Post a job to label 500 images for 50 AGIALPHA by next week.”)',
 };
 
 const ROLE_CLASSNAMES: Record<Role, string> = {
@@ -24,33 +24,48 @@ const ROLE_CLASSNAMES: Record<Role, string> = {
 
 export default function OneBox() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [isBusy, setBusy] = useState(false);
   const scroller = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const node = scroller.current;
     if (!node) return;
-    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+    node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
   async function sendMessage() {
     if (!input.trim() || isBusy) return;
-    const mine: ChatMessage = { role: "user", text: input.trim() };
+    const mine: ChatMessage = { role: 'user', text: input.trim() };
     setMessages((prev) => [...prev, mine]);
-    setInput("");
+    setInput('');
     setBusy(true);
 
-    try {
-      const historyPayload = messages.slice(-12).map(({ role, text, meta }) => ({
-        role,
-        text,
-        meta,
-      }));
+    let pendingInserted = false;
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+    const removeTrailingPending = (list: ChatMessage[]) => {
+      if (!pendingInserted) return list;
+      const last = list[list.length - 1];
+      if (!last || last.role !== 'assistant_pending') {
+        pendingInserted = false;
+        return list;
+      }
+      pendingInserted = false;
+      return list.slice(0, -1);
+    };
+
+    try {
+      const historyPayload = messages
+        .slice(-12)
+        .map(({ role, text, meta }) => ({
+          role,
+          text,
+          meta,
+        }));
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: mine.text,
           history: historyPayload,
@@ -58,14 +73,15 @@ export default function OneBox() {
       });
 
       if (!response.body) {
-        throw new Error("No response body");
+        throw new Error('No response body');
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let assistantText = "";
+      let assistantText = '';
 
-      setMessages((prev) => [...prev, { role: "assistant_pending", text: "" }]);
+      setMessages((prev) => [...prev, { role: 'assistant_pending', text: '' }]);
+      pendingInserted = true;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -75,7 +91,7 @@ export default function OneBox() {
         setMessages((prev) => {
           const next = [...prev];
           const last = next[next.length - 1];
-          if (last && last.role === "assistant_pending") {
+          if (last && last.role === 'assistant_pending') {
             next[next.length - 1] = { ...last, text: partial };
           }
           return next;
@@ -89,7 +105,7 @@ export default function OneBox() {
         setMessages((prev) => {
           const next = [...prev];
           const last = next[next.length - 1];
-          if (last && last.role === "assistant_pending") {
+          if (last && last.role === 'assistant_pending') {
             next[next.length - 1] = { ...last, text: partial };
           }
           return next;
@@ -99,22 +115,29 @@ export default function OneBox() {
       setMessages((prev) => {
         const next = [...prev];
         const last = next[next.length - 1];
-        if (last && last.role === "assistant_pending") {
-          next[next.length - 1] = { role: "assistant", text: assistantText };
+        if (last && last.role === 'assistant_pending') {
+          next[next.length - 1] = { role: 'assistant', text: assistantText };
         }
         return next;
       });
+      pendingInserted = false;
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "Unable to complete your request.";
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: `Something went wrong: ${message}`,
-        },
-      ]);
+        error instanceof Error
+          ? error.message
+          : 'Unable to complete your request.';
+      setMessages((prev) => {
+        const withoutPending = removeTrailingPending(prev);
+        return [
+          ...withoutPending,
+          {
+            role: 'assistant',
+            text: `Something went wrong: ${message}`,
+          },
+        ];
+      });
     } finally {
+      setMessages((prev) => removeTrailingPending(prev));
       setBusy(false);
     }
   }
@@ -125,20 +148,29 @@ export default function OneBox() {
   };
 
   const placeholder = useMemo(
-    () => "“Post a job to label 500 images for 50 AGIALPHA by next week.”",
+    () => '“Post a job to label 500 images for 50 AGIALPHA by next week.”',
     []
   );
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <strong>AGI Jobs</strong> — One-Box (gasless, walletless). <i>Type what you want to do.</i>
+        <strong>AGI Jobs</strong> — One-Box (gasless, walletless).{' '}
+        <i>Type what you want to do.</i>
       </header>
-      <div ref={scroller} className={styles.messages} role="log" aria-live="polite">
+      <div
+        ref={scroller}
+        className={styles.messages}
+        role="log"
+        aria-live="polite"
+      >
         {messages.map((message, index) => {
           const bubbleClass = ROLE_CLASSNAMES[message.role];
           return (
-            <div key={`${message.role}-${index}`} className={`${styles.message} ${bubbleClass}`}>
+            <div
+              key={`${message.role}-${index}`}
+              className={`${styles.message} ${bubbleClass}`}
+            >
               {message.text}
             </div>
           );
@@ -158,7 +190,7 @@ export default function OneBox() {
           className={styles.button}
           disabled={isBusy || !input.trim()}
         >
-          {isBusy ? "Working…" : "Send"}
+          {isBusy ? 'Working…' : 'Send'}
         </button>
       </form>
     </div>
