@@ -295,6 +295,99 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     event UnbondingPeriodUpdated(uint256 newPeriod);
     event PauserUpdated(address indexed pauser);
 
+    event ConfigurationApplied(
+        address indexed caller,
+        bool pauserUpdated,
+        bool thermostatUpdated,
+        bool hamiltonianUpdated,
+        bool autoStakeTuningUpdated,
+        bool autoStakeConfigUpdated,
+        bool minStakeUpdated,
+        bool slashingUpdated,
+        bool treasuryUpdated,
+        bool jobRegistryUpdated,
+        bool disputeModuleUpdated,
+        bool validationModuleUpdated,
+        bool modulesUpdated,
+        bool feePctUpdated,
+        bool feePoolUpdated,
+        bool burnPctUpdated,
+        bool validatorRewardPctUpdated,
+        bool unbondingPeriodUpdated,
+        bool maxStakePerAddressUpdated,
+        bool stakeRecommendationsUpdated,
+        bool maxAGITypesUpdated,
+        bool maxTotalPayoutPctUpdated,
+        uint256 treasuryAllowlistUpdates
+    );
+
+    struct AutoStakeSettings {
+        uint256 threshold;
+        uint256 increasePct;
+        uint256 decreasePct;
+        uint256 window;
+        uint256 floor;
+        uint256 ceil;
+        int256 temperatureThreshold;
+        int256 hamiltonianThreshold;
+        uint256 disputeWeight;
+        uint256 temperatureWeight;
+        uint256 hamiltonianWeight;
+    }
+
+    struct ConfigUpdate {
+        bool setPauser;
+        address pauser;
+        bool setThermostat;
+        address thermostat;
+        bool setHamiltonianFeed;
+        address hamiltonianFeed;
+        bool setAutoStakeTuning;
+        bool autoStakeEnabled;
+        bool setAutoStakeSettings;
+        AutoStakeSettings autoStakeSettings;
+        bool setMinStake;
+        uint256 minStake;
+        bool setSlashingPercentages;
+        uint256 employerSlashPct;
+        uint256 treasurySlashPct;
+        bool setTreasury;
+        address treasury;
+        bool setJobRegistry;
+        address jobRegistry;
+        bool setDisputeModule;
+        address disputeModule;
+        bool setValidationModule;
+        address validationModule;
+        bool setModules;
+        address modulesJobRegistry;
+        address modulesDisputeModule;
+        bool setFeePct;
+        uint256 feePct;
+        bool setFeePool;
+        IFeePool feePool;
+        bool setBurnPct;
+        uint256 burnPct;
+        bool setValidatorRewardPct;
+        uint256 validatorRewardPct;
+        bool setUnbondingPeriod;
+        uint256 unbondingPeriod;
+        bool setMaxStakePerAddress;
+        uint256 maxStakePerAddress;
+        bool setStakeRecommendations;
+        uint256 recommendedMinStake;
+        uint256 recommendedMaxStake;
+        bool setMaxAGITypes;
+        uint256 maxAGITypes;
+        bool setMaxTotalPayoutPct;
+        uint256 maxTotalPayoutPct;
+    }
+
+    struct TreasuryAllowlistUpdate {
+        address treasury;
+        bool allowed;
+    }
+
     modifier onlyGovernanceOrPauser() {
         if (!(msg.sender == address(governance) || msg.sender == pauser)) {
             revert Unauthorized();
@@ -302,27 +395,77 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _;
     }
 
-    function setPauser(address _pauser) external onlyGovernance {
+    function _setPauser(address _pauser) internal {
         pauser = _pauser;
         emit PauserUpdated(_pauser);
     }
 
+    function setPauser(address _pauser) external onlyGovernance {
+        _setPauser(_pauser);
+    }
+
     /// @notice set external contracts providing temperature and Hamiltonian metrics
-    function setThermostat(address _thermostat) external onlyGovernance {
+    function _setThermostat(address _thermostat) internal {
         thermostat = Thermostat(_thermostat);
         emit ThermostatUpdated(_thermostat);
     }
 
-    function setHamiltonianFeed(address _feed) external onlyGovernance {
+    function setThermostat(address _thermostat) external onlyGovernance {
+        _setThermostat(_thermostat);
+    }
+
+    function _setHamiltonianFeed(address _feed) internal {
         hamiltonianFeed = IHamiltonian(_feed);
         emit HamiltonianFeedUpdated(_feed);
+    }
+
+    function setHamiltonianFeed(address _feed) external onlyGovernance {
+        _setHamiltonianFeed(_feed);
+    }
+
+    function _setAutoStakeTuning(bool enabled) internal {
+        autoStakeTuning = enabled;
+        emit AutoStakeTuningEnabled(enabled);
     }
 
     /// @notice enable or disable automatic tuning of minStake based on disputes
     /// @param enabled true to enable auto tuning
     function autoTuneStakes(bool enabled) external onlyGovernance {
-        autoStakeTuning = enabled;
-        emit AutoStakeTuningEnabled(enabled);
+        _setAutoStakeTuning(enabled);
+    }
+
+    function _configureAutoStake(AutoStakeSettings memory settings) internal {
+        if (settings.increasePct > 100 || settings.decreasePct > 100) {
+            revert InvalidPercentage();
+        }
+        stakeDisputeThreshold = settings.threshold;
+        stakeIncreasePct = settings.increasePct;
+        stakeDecreasePct = settings.decreasePct;
+        if (settings.window > 0) {
+            stakeTuneWindow = settings.window;
+        }
+        if (settings.floor > 0) {
+            minStakeFloor = settings.floor;
+        }
+        maxMinStake = settings.ceil;
+        stakeTempThreshold = settings.temperatureThreshold;
+        stakeHamiltonianThreshold = settings.hamiltonianThreshold;
+        disputeWeight = settings.disputeWeight;
+        temperatureWeight = settings.temperatureWeight;
+        hamiltonianWeight = settings.hamiltonianWeight;
+        emit AutoStakeConfigUpdated(
+            settings.threshold,
+            settings.increasePct,
+            settings.decreasePct,
+            stakeTuneWindow,
+            minStakeFloor,
+            settings.ceil,
+            settings.temperatureThreshold,
+            settings.hamiltonianThreshold,
+            settings.disputeWeight,
+            settings.temperatureWeight,
+            settings.hamiltonianWeight
+        );
     }
 
     /// @notice configure parameters used for automatic stake tuning
@@ -345,31 +488,20 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         uint256 tempW,
         uint256 hamW
     ) external onlyGovernance {
-        if (upPct > 100 || downPct > 100) revert InvalidPercentage();
-        stakeDisputeThreshold = threshold;
-        stakeIncreasePct = upPct;
-        stakeDecreasePct = downPct;
-        if (window > 0) stakeTuneWindow = window;
-        if (floor > 0) minStakeFloor = floor;
-        maxMinStake = ceil;
-        stakeTempThreshold = tempThreshold;
-        stakeHamiltonianThreshold = hThreshold;
-        disputeWeight = disputeW;
-        temperatureWeight = tempW;
-        hamiltonianWeight = hamW;
-        emit AutoStakeConfigUpdated(
-            threshold,
-            upPct,
-            downPct,
-            stakeTuneWindow,
-            minStakeFloor,
-            ceil,
-            tempThreshold,
-            hThreshold,
-            disputeW,
-            tempW,
-            hamW
-        );
+        AutoStakeSettings memory settings = AutoStakeSettings({
+            threshold: threshold,
+            increasePct: upPct,
+            decreasePct: downPct,
+            window: window,
+            floor: floor,
+            ceil: ceil,
+            temperatureThreshold: tempThreshold,
+            hamiltonianThreshold: hThreshold,
+            disputeWeight: disputeW,
+            temperatureWeight: tempW,
+            hamiltonianWeight: hamW
+        });
+        _configureAutoStake(settings);
     }
 
     /// @notice record a dispute occurrence for auto stake tuning
@@ -479,12 +611,16 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
     // These helpers are intended for manual use via Etherscan's
     // "Write Contract" tab by the authorized owner.
 
-    /// @notice update the minimum stake required
-    /// @param _minStake minimum token amount with 18 decimals
-    function setMinStake(uint256 _minStake) external onlyGovernance {
+    function _setMinStake(uint256 _minStake) internal {
         if (_minStake == 0) revert InvalidMinStake();
         minStake = _minStake;
         emit MinStakeUpdated(_minStake);
+    }
+
+    /// @notice update the minimum stake required
+    /// @param _minStake minimum token amount with 18 decimals
+    function setMinStake(uint256 _minStake) external onlyGovernance {
+        _setMinStake(_minStake);
     }
 
     /// @dev internal helper to update slashing percentages
@@ -525,10 +661,7 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _setSlashingPercentages(_employerSlashPct, _treasurySlashPct);
     }
 
-    /// @notice update treasury recipient address
-    /// @dev Treasury must be zero (burn) or an allowlisted address distinct from the owner
-    /// @param _treasury address receiving treasury slash share
-    function setTreasury(address _treasury) external onlyGovernance {
+    function _setTreasury(address _treasury) internal {
         if (_treasury == owner()) revert InvalidTreasury();
         if (_treasury != address(0) && !treasuryAllowlist[_treasury]) {
             revert InvalidTreasury();
@@ -537,18 +670,26 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit TreasuryUpdated(_treasury);
     }
 
-    /// @notice Allow or disallow a treasury address
-    /// @param _treasury Treasury candidate
-    /// @param allowed True to allow, false to revoke
-    function setTreasuryAllowlist(address _treasury, bool allowed) external onlyGovernance {
+    /// @notice update treasury recipient address
+    /// @dev Treasury must be zero (burn) or an allowlisted address distinct from the owner
+    /// @param _treasury address receiving treasury slash share
+    function setTreasury(address _treasury) external onlyGovernance {
+        _setTreasury(_treasury);
+    }
+
+    function _setTreasuryAllowlist(address _treasury, bool allowed) internal {
         treasuryAllowlist[_treasury] = allowed;
         emit TreasuryAllowlistUpdated(_treasury, allowed);
     }
 
-    /// @notice set the JobRegistry used for tax acknowledgement tracking
-    /// @dev Staking is disabled until a nonzero registry is configured.
-    /// @param _jobRegistry registry contract enforcing tax acknowledgements
-    function setJobRegistry(address _jobRegistry) external onlyGovernance {
+    /// @notice Allow or disallow a treasury address
+    /// @param _treasury Treasury candidate
+    /// @param allowed True to allow, false to revoke
+    function setTreasuryAllowlist(address _treasury, bool allowed) external onlyGovernance {
+        _setTreasuryAllowlist(_treasury, allowed);
+    }
+
+    function _setJobRegistry(address _jobRegistry) internal {
         if (_jobRegistry == address(0) || IJobRegistry(_jobRegistry).version() != 2) {
             revert InvalidJobRegistry();
         }
@@ -557,20 +698,29 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit ModulesUpdated(jobRegistry, disputeModule);
     }
 
-    /// @notice set the dispute module authorized to manage dispute fees
-    /// @param module module contract allowed to move dispute fees
-    function setDisputeModule(address module) external onlyGovernance {
+    /// @notice set the JobRegistry used for tax acknowledgement tracking
+    /// @dev Staking is disabled until a nonzero registry is configured.
+    /// @param _jobRegistry registry contract enforcing tax acknowledgements
+    function setJobRegistry(address _jobRegistry) external onlyGovernance {
+        _setJobRegistry(_jobRegistry);
+    }
+
+    function _setDisputeModule(address module) internal {
         if (module == address(0) || IDisputeModule(module).version() != 2) {
             revert InvalidDisputeModule();
         }
         disputeModule = module;
         emit DisputeModuleUpdated(module);
-        emit ModulesUpdated(jobRegistry, disputeModule);
+        emit ModulesUpdated(jobRegistry, module);
     }
 
-    /// @notice set the validation module used to source validator lists
-    /// @param module ValidationModule contract address
-    function setValidationModule(address module) external onlyGovernance {
+    /// @notice set the dispute module authorized to manage dispute fees
+    /// @param module module contract allowed to move dispute fees
+    function setDisputeModule(address module) external onlyGovernance {
+        _setDisputeModule(module);
+    }
+
+    function _setValidationModule(address module) internal {
         if (module == address(0) || IValidationModule(module).version() != 2) {
             revert InvalidValidationModule();
         }
@@ -578,11 +728,13 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit ValidationModuleUpdated(module);
     }
 
-    /// @notice update job registry and dispute module in one call
-    /// @dev Staking is disabled until `jobRegistry` is set.
-    /// @param _jobRegistry registry contract enforcing tax acknowledgements
-    /// @param _disputeModule module contract allowed to move dispute fees
-    function setModules(address _jobRegistry, address _disputeModule) external onlyGovernance {
+    /// @notice set the validation module used to source validator lists
+    /// @param module ValidationModule contract address
+    function setValidationModule(address module) external onlyGovernance {
+        _setValidationModule(module);
+    }
+
+    function _setModules(address _jobRegistry, address _disputeModule) internal {
         if (_jobRegistry == address(0) || _disputeModule == address(0)) revert InvalidModule();
         if (IJobRegistry(_jobRegistry).version() != 2) revert InvalidJobRegistry();
         if (IDisputeModule(_disputeModule).version() != 2) revert InvalidDisputeModule();
@@ -591,6 +743,14 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit JobRegistryUpdated(_jobRegistry);
         emit DisputeModuleUpdated(_disputeModule);
         emit ModulesUpdated(_jobRegistry, _disputeModule);
+    }
+
+    /// @notice update job registry and dispute module in one call
+    /// @dev Staking is disabled until `jobRegistry` is set.
+    /// @param _jobRegistry registry contract enforcing tax acknowledgements
+    /// @param _disputeModule module contract allowed to move dispute fees
+    function setModules(address _jobRegistry, address _disputeModule) external onlyGovernance {
+        _setModules(_jobRegistry, _disputeModule);
     }
 
     /// @notice Pause staking and escrow operations
@@ -603,17 +763,41 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         _unpause();
     }
 
+    function _applyPercentages(
+        uint256 newFeePct,
+        uint256 newBurnPct,
+        uint256 newValidatorRewardPct,
+        bool updateFee,
+        bool updateBurn,
+        bool updateValidator
+    ) internal returns (bool feeChanged, bool burnChanged, bool validatorChanged) {
+        if (newFeePct + newBurnPct + newValidatorRewardPct > 100) {
+            revert InvalidPercentage();
+        }
+        if (updateFee && newFeePct != feePct) {
+            feePct = newFeePct;
+            emit FeePctUpdated(newFeePct);
+            feeChanged = true;
+        }
+        if (updateBurn && newBurnPct != burnPct) {
+            burnPct = newBurnPct;
+            emit BurnPctUpdated(newBurnPct);
+            burnChanged = true;
+        }
+        if (updateValidator && newValidatorRewardPct != validatorRewardPct) {
+            validatorRewardPct = newValidatorRewardPct;
+            emit ValidatorRewardPctUpdated(newValidatorRewardPct);
+            validatorChanged = true;
+        }
+    }
+
     /// @notice update protocol fee percentage
     /// @param pct percentage of released amount sent to FeePool (0-100)
     function setFeePct(uint256 pct) external onlyGovernance {
-        if (pct + burnPct + validatorRewardPct > 100) revert InvalidPercentage();
-        feePct = pct;
-        emit FeePctUpdated(pct);
+        _applyPercentages(pct, burnPct, validatorRewardPct, true, false, false);
     }
 
-    /// @notice update FeePool contract
-    /// @param pool FeePool receiving protocol fees
-    function setFeePool(IFeePool pool) external onlyGovernance {
+    function _setFeePool(IFeePool pool) internal {
         if (address(pool) == address(0) || pool.version() != 2) {
             revert InvalidFeePool();
         }
@@ -621,42 +805,48 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit FeePoolUpdated(address(pool));
     }
 
+    /// @notice update FeePool contract
+    /// @param pool FeePool receiving protocol fees
+    function setFeePool(IFeePool pool) external onlyGovernance {
+        _setFeePool(pool);
+    }
+
     /// @notice update burn percentage applied on release
     /// @param pct percentage of released amount burned (0-100)
     function setBurnPct(uint256 pct) external onlyGovernance {
-        if (feePct + pct + validatorRewardPct > 100) revert InvalidPercentage();
-        burnPct = pct;
-        emit BurnPctUpdated(pct);
+        _applyPercentages(feePct, pct, validatorRewardPct, false, true, false);
     }
 
     /// @notice update validator reward percentage
     /// @param pct percentage of released amount allocated to validators (0-100)
     function setValidatorRewardPct(uint256 pct) external onlyGovernance {
-        if (feePct + burnPct + pct > 100) revert InvalidPercentage();
-        validatorRewardPct = pct;
-        emit ValidatorRewardPctUpdated(pct);
+        _applyPercentages(feePct, burnPct, pct, false, false, true);
     }
 
-    /// @notice update the unbonding period for withdrawals
-    /// @param newPeriod duration in seconds tokens remain locked after withdrawal request
-    function setUnbondingPeriod(uint256 newPeriod) external onlyGovernance {
+    function _setUnbondingPeriod(uint256 newPeriod) internal {
         if (newPeriod == 0) revert InvalidUnbondingPeriod();
         unbondingPeriod = newPeriod;
         emit UnbondingPeriodUpdated(newPeriod);
     }
 
-    /// @notice set maximum total stake allowed per address (0 disables limit)
-    /// @param maxStake cap on combined stake per address using 18 decimals
-    function setMaxStakePerAddress(uint256 maxStake) external onlyGovernance {
+    /// @notice update the unbonding period for withdrawals
+    /// @param newPeriod duration in seconds tokens remain locked after withdrawal request
+    function setUnbondingPeriod(uint256 newPeriod) external onlyGovernance {
+        _setUnbondingPeriod(newPeriod);
+    }
+
+    function _setMaxStakePerAddress(uint256 maxStake) internal {
         maxStakePerAddress = maxStake;
         emit MaxStakePerAddressUpdated(maxStake);
     }
 
-    /// @notice set recommended minimum and maximum stake values
-    /// @dev `newMax` may be zero to disable the limit but must not be below `newMin`
-    /// @param newMin recommended minimum stake with 18 decimals
-    /// @param newMax recommended maximum total stake per address with 18 decimals
-    function setStakeRecommendations(uint256 newMin, uint256 newMax) external onlyGovernance {
+    /// @notice set maximum total stake allowed per address (0 disables limit)
+    /// @param maxStake cap on combined stake per address using 18 decimals
+    function setMaxStakePerAddress(uint256 maxStake) external onlyGovernance {
+        _setMaxStakePerAddress(maxStake);
+    }
+
+    function _setStakeRecommendations(uint256 newMin, uint256 newMax) internal {
         if (newMin == 0) revert InvalidMinStake();
         if (newMax != 0 && newMax < newMin) revert InvalidParams();
         minStake = newMin;
@@ -665,8 +855,15 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit MaxStakePerAddressUpdated(newMax);
     }
 
-    /// @notice Update the maximum number of AGI types allowed
-    function setMaxAGITypes(uint256 newMax) external onlyGovernance {
+    /// @notice set recommended minimum and maximum stake values
+    /// @dev `newMax` may be zero to disable the limit but must not be below `newMin`
+    /// @param newMin recommended minimum stake with 18 decimals
+    /// @param newMax recommended maximum total stake per address with 18 decimals
+    function setStakeRecommendations(uint256 newMin, uint256 newMax) external onlyGovernance {
+        _setStakeRecommendations(newMin, newMax);
+    }
+
+    function _setMaxAGITypes(uint256 newMax) internal {
         if (newMax > MAX_AGI_TYPES_CAP) {
             revert MaxAGITypesExceeded();
         }
@@ -678,12 +875,199 @@ contract StakeManager is Governable, ReentrancyGuard, TaxAcknowledgement, Pausab
         emit MaxAGITypesUpdated(old, newMax);
     }
 
-    /// @notice Update the maximum total payout percentage across AGI types
-    function setMaxTotalPayoutPct(uint256 newMax) external onlyGovernance {
+    /// @notice Update the maximum number of AGI types allowed
+    function setMaxAGITypes(uint256 newMax) external onlyGovernance {
+        _setMaxAGITypes(newMax);
+    }
+
+    function _setMaxTotalPayoutPct(uint256 newMax) internal {
         if (newMax < 100 || newMax > MAX_PAYOUT_PCT) revert InvalidPercentage();
         uint256 old = maxTotalPayoutPct;
         maxTotalPayoutPct = newMax;
         emit MaxTotalPayoutPctUpdated(old, newMax);
+    }
+
+    /// @notice Update the maximum total payout percentage across AGI types
+    function setMaxTotalPayoutPct(uint256 newMax) external onlyGovernance {
+        _setMaxTotalPayoutPct(newMax);
+    }
+
+    /// @notice Apply a batch of configuration updates in a single transaction.
+    /// @param config Packed configuration toggles and values to apply.
+    /// @param allowlistUpdates Treasury allowlist entries to update before applying setters.
+    function applyConfiguration(
+        ConfigUpdate calldata config,
+        TreasuryAllowlistUpdate[] calldata allowlistUpdates
+    ) external onlyGovernance {
+        uint256 allowlistLen = allowlistUpdates.length;
+        for (uint256 i; i < allowlistLen; i++) {
+            TreasuryAllowlistUpdate calldata entry = allowlistUpdates[i];
+            _setTreasuryAllowlist(entry.treasury, entry.allowed);
+        }
+
+        bool pauserChanged;
+        bool thermostatChanged;
+        bool hamiltonianChanged;
+        bool autoStakeTuningChanged;
+        bool autoStakeConfigChanged;
+        bool minStakeChanged;
+        bool slashingChanged;
+        bool treasuryChanged;
+        bool jobRegistryChanged;
+        bool disputeModuleChanged;
+        bool validationModuleChanged;
+        bool modulesChanged;
+        bool feePctChanged;
+        bool feePoolChanged;
+        bool burnPctChanged;
+        bool validatorRewardPctChanged;
+        bool unbondingPeriodChanged;
+        bool maxStakePerAddressChanged;
+        bool stakeRecommendationsChanged;
+        bool maxAGITypesChanged;
+        bool maxTotalPayoutPctChanged;
+
+        if (config.setPauser) {
+            _setPauser(config.pauser);
+            pauserChanged = true;
+        }
+
+        if (config.setThermostat) {
+            _setThermostat(config.thermostat);
+            thermostatChanged = true;
+        }
+
+        if (config.setHamiltonianFeed) {
+            _setHamiltonianFeed(config.hamiltonianFeed);
+            hamiltonianChanged = true;
+        }
+
+        if (config.setAutoStakeTuning) {
+            _setAutoStakeTuning(config.autoStakeEnabled);
+            autoStakeTuningChanged = true;
+        }
+
+        if (config.setAutoStakeSettings) {
+            _configureAutoStake(config.autoStakeSettings);
+            autoStakeConfigChanged = true;
+        }
+
+        if (config.setStakeRecommendations) {
+            _setStakeRecommendations(config.recommendedMinStake, config.recommendedMaxStake);
+            stakeRecommendationsChanged = true;
+            minStakeChanged = true;
+            maxStakePerAddressChanged = true;
+        }
+
+        if (config.setMinStake) {
+            _setMinStake(config.minStake);
+            minStakeChanged = true;
+        }
+
+        if (config.setSlashingPercentages) {
+            _setSlashingPercentages(config.employerSlashPct, config.treasurySlashPct);
+            slashingChanged = true;
+        }
+
+        if (config.setTreasury) {
+            _setTreasury(config.treasury);
+            treasuryChanged = true;
+        }
+
+        if (config.setModules) {
+            _setModules(config.modulesJobRegistry, config.modulesDisputeModule);
+            modulesChanged = true;
+            jobRegistryChanged = true;
+            disputeModuleChanged = true;
+        }
+
+        if (config.setJobRegistry) {
+            _setJobRegistry(config.jobRegistry);
+            jobRegistryChanged = true;
+        }
+
+        if (config.setDisputeModule) {
+            _setDisputeModule(config.disputeModule);
+            disputeModuleChanged = true;
+        }
+
+        if (config.setValidationModule) {
+            _setValidationModule(config.validationModule);
+            validationModuleChanged = true;
+        }
+
+        if (config.setFeePool) {
+            _setFeePool(config.feePool);
+            feePoolChanged = true;
+        }
+
+        if (config.setUnbondingPeriod) {
+            _setUnbondingPeriod(config.unbondingPeriod);
+            unbondingPeriodChanged = true;
+        }
+
+        if (config.setMaxStakePerAddress && !stakeRecommendationsChanged) {
+            _setMaxStakePerAddress(config.maxStakePerAddress);
+            maxStakePerAddressChanged = true;
+        } else if (config.setMaxStakePerAddress) {
+            // Stake recommendations already updated the max stake; override if requested.
+            _setMaxStakePerAddress(config.maxStakePerAddress);
+            maxStakePerAddressChanged = true;
+        }
+
+        if (config.setMaxAGITypes) {
+            _setMaxAGITypes(config.maxAGITypes);
+            maxAGITypesChanged = true;
+        }
+
+        if (config.setMaxTotalPayoutPct) {
+            _setMaxTotalPayoutPct(config.maxTotalPayoutPct);
+            maxTotalPayoutPctChanged = true;
+        }
+
+        if (config.setFeePct || config.setBurnPct || config.setValidatorRewardPct) {
+            uint256 newFeePct = config.setFeePct ? config.feePct : feePct;
+            uint256 newBurnPct = config.setBurnPct ? config.burnPct : burnPct;
+            uint256 newValidatorRewardPct =
+                config.setValidatorRewardPct ? config.validatorRewardPct : validatorRewardPct;
+            (bool feeChanged, bool burnChanged, bool validatorChanged) = _applyPercentages(
+                newFeePct,
+                newBurnPct,
+                newValidatorRewardPct,
+                config.setFeePct,
+                config.setBurnPct,
+                config.setValidatorRewardPct
+            );
+            if (feeChanged) feePctChanged = true;
+            if (burnChanged) burnPctChanged = true;
+            if (validatorChanged) validatorRewardPctChanged = true;
+        }
+
+        emit ConfigurationApplied(
+            msg.sender,
+            pauserChanged,
+            thermostatChanged,
+            hamiltonianChanged,
+            autoStakeTuningChanged,
+            autoStakeConfigChanged,
+            minStakeChanged,
+            slashingChanged,
+            treasuryChanged,
+            jobRegistryChanged,
+            disputeModuleChanged,
+            validationModuleChanged,
+            modulesChanged,
+            feePctChanged,
+            feePoolChanged,
+            burnPctChanged,
+            validatorRewardPctChanged,
+            unbondingPeriodChanged,
+            maxStakePerAddressChanged,
+            stakeRecommendationsChanged,
+            maxAGITypesChanged,
+            maxTotalPayoutPctChanged,
+            allowlistLen
+        );
     }
 
     /// @notice Add or update an AGI type NFT bonus

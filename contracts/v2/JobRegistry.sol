@@ -444,9 +444,238 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         _;
     }
 
-    function setPauser(address _pauser) external onlyGovernance {
+    function _setPauser(address _pauser) internal {
         pauser = _pauser;
         emit PauserUpdated(_pauser);
+    }
+
+    function setPauser(address _pauser) external onlyGovernance {
+        _setPauser(_pauser);
+    }
+
+    function _setIdentityRegistry(IIdentityRegistry registry) internal {
+        if (address(registry) == address(0)) revert InvalidIdentityRegistry();
+        if (registry.version() != 2) revert InvalidIdentityRegistry();
+        identityRegistry = registry;
+        _bumpAgentAuthCacheVersionInternal();
+        if (address(validationModule) != address(0)) {
+            try validationModule.bumpValidatorAuthCacheVersion() {} catch {}
+        }
+        emit IdentityRegistryUpdated(address(registry));
+        emit ModuleUpdated("IdentityRegistry", address(registry));
+    }
+
+    function _setDisputeModule(IDisputeModule module) internal {
+        if (address(module) == address(0)) revert InvalidDisputeModule();
+        if (module.version() != 2) revert InvalidDisputeModule();
+        disputeModule = module;
+        emit DisputeModuleUpdated(address(module));
+        emit ModuleUpdated("DisputeModule", address(module));
+    }
+
+    function _setValidationModule(IValidationModule module) internal {
+        if (address(module) == address(0)) revert InvalidValidationModule();
+        if (module.version() != 2) revert InvalidValidationModule();
+        validationModule = module;
+        emit ValidationModuleUpdated(address(module));
+        emit ModuleUpdated("ValidationModule", address(module));
+    }
+
+    function _setStakeManager(IStakeManager _stakeMgr) internal {
+        if (address(_stakeMgr) == address(0)) revert InvalidStakeManager();
+        if (_stakeMgr.version() != 2) revert InvalidStakeManager();
+        stakeManager = _stakeMgr;
+        acknowledgers[address(_stakeMgr)] = true;
+        emit AcknowledgerUpdated(address(_stakeMgr), true);
+        emit StakeManagerUpdated(address(_stakeMgr));
+        emit ModuleUpdated("StakeManager", address(_stakeMgr));
+    }
+
+    function _setReputationEngine(IReputationEngine _reputation) internal {
+        if (address(_reputation) == address(0)) revert InvalidReputationModule();
+        if (_reputation.version() != 2) revert InvalidReputationModule();
+        reputationEngine = _reputation;
+        emit ReputationEngineUpdated(address(_reputation));
+        emit ModuleUpdated("ReputationEngine", address(_reputation));
+    }
+
+    function _setCertificateNFT(ICertificateNFT _certNFT) internal {
+        if (address(_certNFT) == address(0)) revert InvalidCertificateNFT();
+        if (_certNFT.version() != 2) revert InvalidCertificateNFT();
+        certificateNFT = _certNFT;
+        emit CertificateNFTUpdated(address(_certNFT));
+        emit ModuleUpdated("CertificateNFT", address(_certNFT));
+    }
+
+    function _setFeePool(IFeePool _feePool) internal {
+        if (address(_feePool) == address(0) || _feePool.version() != 2) {
+            revert InvalidFeePool();
+        }
+        feePool = _feePool;
+        emit FeePoolUpdated(address(_feePool));
+        emit ModuleUpdated("FeePool", address(_feePool));
+    }
+
+    function _setTaxPolicy(ITaxPolicy _policy) internal {
+        if (address(_policy) == address(0)) revert InvalidTaxPolicy();
+        if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
+        taxPolicy = _policy;
+        emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
+        emit ModuleUpdated("TaxPolicy", address(_policy));
+    }
+
+    function _setTreasury(address _treasury) internal {
+        if (_treasury != address(0) && _treasury == owner()) revert InvalidTreasury();
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
+    }
+
+    function _setJobStake(uint96 stake) internal {
+        jobStake = stake;
+        emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration, minAgentStake);
+    }
+
+    function _setMinAgentStake(uint256 stake) internal {
+        if (stake > type(uint96).max) revert StakeOverflow();
+        minAgentStake = uint96(stake);
+        emit JobParametersUpdated(0, jobStake, maxJobReward, maxJobDuration, stake);
+    }
+
+    function _applyFeeConfiguration(
+        uint256 newFeePct,
+        uint256 newValidatorRewardPct,
+        bool updateFee,
+        bool updateValidator
+    ) internal returns (bool feeChanged, bool validatorChanged) {
+        if (newFeePct > 100 || newValidatorRewardPct > 100) revert InvalidPercentage();
+        if (newFeePct + newValidatorRewardPct > 100) revert InvalidPercentage();
+        if (updateFee && newFeePct != feePct) {
+            feePct = newFeePct;
+            emit FeePctUpdated(newFeePct);
+            feeChanged = true;
+        }
+        if (updateValidator && newValidatorRewardPct != validatorRewardPct) {
+            validatorRewardPct = newValidatorRewardPct;
+            emit ValidatorRewardPctUpdated(newValidatorRewardPct);
+            validatorChanged = true;
+        }
+    }
+
+    function _setMaxJobReward(uint256 maxReward) internal {
+        maxJobReward = maxReward;
+        emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration, minAgentStake);
+    }
+
+    function _setJobDurationLimit(uint256 limit) internal {
+        maxJobDuration = limit;
+        emit JobParametersUpdated(0, jobStake, maxJobReward, limit, minAgentStake);
+    }
+
+    function _setMaxActiveJobsPerAgent(uint256 limit) internal {
+        maxActiveJobsPerAgent = limit;
+        emit MaxActiveJobsPerAgentUpdated(limit);
+    }
+
+    function _setExpirationGracePeriod(uint256 period) internal {
+        expirationGracePeriod = period;
+        emit ExpirationGracePeriodUpdated(period);
+    }
+
+    function _setAgentRootNode(bytes32 node) internal {
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        identityRegistry.setAgentRootNode(node);
+        _bumpAgentAuthCacheVersionInternal();
+        emit AgentRootNodeUpdated(node);
+    }
+
+    function _setAgentMerkleRoot(bytes32 root) internal {
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        identityRegistry.setAgentMerkleRoot(root);
+        _bumpAgentAuthCacheVersionInternal();
+        emit AgentMerkleRootUpdated(root);
+    }
+
+    function _setValidatorRootNode(bytes32 node) internal {
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        if (address(validationModule) == address(0)) revert InvalidValidationModule();
+        identityRegistry.setClubRootNode(node);
+        validationModule.bumpValidatorAuthCacheVersion();
+        emit ValidatorRootNodeUpdated(node);
+    }
+
+    function _setValidatorMerkleRoot(bytes32 root) internal {
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+        if (address(validationModule) == address(0)) revert InvalidValidationModule();
+        identityRegistry.setValidatorMerkleRoot(root);
+        validationModule.bumpValidatorAuthCacheVersion();
+        emit ValidatorMerkleRootUpdated(root);
+    }
+
+    function _setAgentAuthCacheDuration(uint256 duration) internal {
+        agentAuthCacheDuration = duration;
+        emit AgentAuthCacheDurationUpdated(duration);
+    }
+
+    function _bumpAgentAuthCacheVersionInternal() internal {
+        unchecked {
+            ++agentAuthCacheVersion;
+        }
+        emit AgentAuthCacheVersionBumped(agentAuthCacheVersion);
+    }
+
+    function _setAcknowledger(address acknowledger, bool allowed) internal {
+        if (allowed && acknowledger == address(0)) revert ZeroAcknowledgerAddress();
+        acknowledgers[acknowledger] = allowed;
+        emit AcknowledgerUpdated(acknowledger, allowed);
+    }
+
+    function _enableAckModule(address module) internal {
+        (bool ok, bytes memory data) = module.staticcall(
+            abi.encodeWithSelector(IJobRegistryAck.acknowledgeFor.selector, address(0))
+        );
+        if (!ok || data.length < 64) revert InvalidAckModule();
+        acknowledgers[module] = true;
+        emit AcknowledgerUpdated(module, true);
+    }
+
+    function _applyModuleBundle(ModuleBundle memory modules, address[] calldata ackModules)
+        internal
+        returns (
+            bool validationChanged,
+            bool stakeManagerChanged,
+            bool reputationChanged,
+            bool disputeChanged,
+            bool certificateChanged,
+            bool feePoolChanged,
+            uint256 ackModuleCount
+        )
+    {
+        _setValidationModule(modules.validation);
+        validationChanged = true;
+
+        _setStakeManager(modules.stakeManager);
+        stakeManagerChanged = true;
+
+        _setReputationEngine(modules.reputation);
+        reputationChanged = true;
+
+        _setDisputeModule(modules.dispute);
+        disputeChanged = true;
+
+        _setCertificateNFT(modules.certificateNFT);
+        certificateChanged = true;
+
+        _setFeePool(modules.feePool);
+        feePoolChanged = true;
+
+        uint256 ackLen = ackModules.length;
+        for (uint256 i; i < ackLen;) {
+            _enableAckModule(ackModules[i]);
+            unchecked {
+                ++i;
+            }
+        }
+        ackModuleCount = ackLen;
     }
 
     // cache successful agent authorizations
@@ -541,6 +770,103 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 maxJobDuration,
         uint256 minAgentStake
     );
+
+    event ConfigurationApplied(
+        address indexed caller,
+        bool pauserUpdated,
+        bool modulesUpdated,
+        bool identityRegistryUpdated,
+        bool disputeModuleUpdated,
+        bool validationModuleUpdated,
+        bool stakeManagerUpdated,
+        bool reputationModuleUpdated,
+        bool certificateNFTUpdated,
+        bool feePoolUpdated,
+        bool taxPolicyUpdated,
+        bool treasuryUpdated,
+        bool jobStakeUpdated,
+        bool minAgentStakeUpdated,
+        bool feePctUpdated,
+        bool validatorRewardPctUpdated,
+        bool maxJobRewardUpdated,
+        bool maxJobDurationUpdated,
+        bool maxActiveJobsUpdated,
+        bool expirationGracePeriodUpdated,
+        bool agentRootUpdated,
+        bool agentMerkleUpdated,
+        bool validatorRootUpdated,
+        bool validatorMerkleUpdated,
+        bool agentAuthCacheDurationUpdated,
+        bool agentAuthCacheVersionBumped,
+        uint256 acknowledgerUpdates,
+        uint256 ackModulesAdded
+    );
+
+    struct ModuleBundle {
+        IValidationModule validation;
+        IStakeManager stakeManager;
+        IReputationEngine reputation;
+        IDisputeModule dispute;
+        ICertificateNFT certificateNFT;
+        IFeePool feePool;
+    }
+
+    struct ConfigUpdate {
+        bool setPauser;
+        address pauser;
+        bool setModuleBundle;
+        ModuleBundle modules;
+        bool setIdentityRegistry;
+        address identityRegistry;
+        bool setDisputeModule;
+        address disputeModule;
+        bool setValidationModule;
+        address validationModule;
+        bool setStakeManager;
+        address stakeManager;
+        bool setReputationModule;
+        address reputationModule;
+        bool setCertificateNFT;
+        address certificateNFT;
+        bool setFeePool;
+        address feePool;
+        bool setTaxPolicy;
+        address taxPolicy;
+        bool setTreasury;
+        address treasury;
+        bool setJobStake;
+        uint96 jobStake;
+        bool setMinAgentStake;
+        uint256 minAgentStake;
+        bool setFeePct;
+        uint256 feePct;
+        bool setValidatorRewardPct;
+        uint256 validatorRewardPct;
+        bool setMaxJobReward;
+        uint256 maxJobReward;
+        bool setJobDurationLimit;
+        uint256 jobDurationLimit;
+        bool setMaxActiveJobsPerAgent;
+        uint256 maxActiveJobsPerAgent;
+        bool setExpirationGracePeriod;
+        uint256 expirationGracePeriod;
+        bool setAgentRootNode;
+        bytes32 agentRootNode;
+        bool setAgentMerkleRoot;
+        bytes32 agentMerkleRoot;
+        bool setValidatorRootNode;
+        bytes32 validatorRootNode;
+        bool setValidatorMerkleRoot;
+        bytes32 validatorMerkleRoot;
+        bool setAgentAuthCacheDuration;
+        uint256 agentAuthCacheDuration;
+        bool bumpAgentAuthCacheVersion;
+    }
+
+    struct AcknowledgerUpdate {
+        address acknowledger;
+        bool allowed;
+    }
 
     // job lifecycle events
     event JobFunded(
@@ -727,125 +1053,79 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         IFeePool _feePool,
         address[] calldata _ackModules
     ) external onlyGovernance {
-        if (address(_validation) == address(0)) revert InvalidValidationModule();
-        if (address(_stakeMgr) == address(0)) revert InvalidStakeManager();
-        if (address(_reputation) == address(0)) revert InvalidReputationModule();
-        if (address(_dispute) == address(0)) revert InvalidDisputeModule();
-        if (address(_certNFT) == address(0)) revert InvalidCertificateNFT();
-
-        if (_validation.version() != 2) revert InvalidValidationModule();
-        if (_stakeMgr.version() != 2) revert InvalidStakeManager();
-        if (_reputation.version() != 2) revert InvalidReputationModule();
-        if (_dispute.version() != 2) revert InvalidDisputeModule();
-        if (_certNFT.version() != 2) revert InvalidCertificateNFT();
-        if (address(_feePool) == address(0) || _feePool.version() != 2)
-            revert InvalidFeePool();
-
-        validationModule = _validation;
-        stakeManager = _stakeMgr;
-        acknowledgers[address(_stakeMgr)] = true;
-        emit AcknowledgerUpdated(address(_stakeMgr), true);
-        reputationEngine = _reputation;
-        disputeModule = _dispute;
-        certificateNFT = _certNFT;
-        feePool = _feePool;
-        emit ValidationModuleUpdated(address(_validation));
-        emit ModuleUpdated("ValidationModule", address(_validation));
-        emit StakeManagerUpdated(address(_stakeMgr));
-        emit ModuleUpdated("StakeManager", address(_stakeMgr));
-        emit ReputationEngineUpdated(address(_reputation));
-        emit ModuleUpdated("ReputationEngine", address(_reputation));
-        emit DisputeModuleUpdated(address(_dispute));
-        emit ModuleUpdated("DisputeModule", address(_dispute));
-        emit CertificateNFTUpdated(address(_certNFT));
-        emit ModuleUpdated("CertificateNFT", address(_certNFT));
-        emit FeePoolUpdated(address(_feePool));
-        emit ModuleUpdated("FeePool", address(_feePool));
-        for (uint256 i; i < _ackModules.length;) {
-            (bool ok, bytes memory data) = _ackModules[i].staticcall(
-                abi.encodeWithSelector(
-                    IJobRegistryAck.acknowledgeFor.selector,
-                    address(0)
-                )
-            );
-            if (!ok || data.length < 64) revert InvalidAckModule();
-            acknowledgers[_ackModules[i]] = true;
-            emit AcknowledgerUpdated(_ackModules[i], true);
-            unchecked {
-                ++i;
-            }
-        }
+        ModuleBundle memory bundle = ModuleBundle({
+            validation: _validation,
+            stakeManager: _stakeMgr,
+            reputation: _reputation,
+            dispute: _dispute,
+            certificateNFT: _certNFT,
+            feePool: _feePool
+        });
+        _applyModuleBundle(bundle, _ackModules);
     }
 
     /// @notice Update the identity registry used for agent verification.
     /// @param registry Address of the IdentityRegistry contract.
     function setIdentityRegistry(IIdentityRegistry registry) external onlyGovernance {
-        if (address(registry) == address(0)) revert InvalidIdentityRegistry();
-        if (registry.version() != 2) revert InvalidIdentityRegistry();
-        identityRegistry = registry;
-        bumpAgentAuthCacheVersion();
-        if (address(validationModule) != address(0)) {
-            try validationModule.bumpValidatorAuthCacheVersion() {} catch {}
-        }
-        emit IdentityRegistryUpdated(address(registry));
-        emit ModuleUpdated("IdentityRegistry", address(registry));
+        _setIdentityRegistry(registry);
     }
 
     /// @notice Switch the active dispute module.
     /// @param module Address of the new dispute module contract.
     function setDisputeModule(IDisputeModule module) external onlyGovernance {
-        if (address(module) == address(0)) revert InvalidDisputeModule();
-        if (module.version() != 2) revert InvalidDisputeModule();
-        disputeModule = module;
-        emit DisputeModuleUpdated(address(module));
-        emit ModuleUpdated("DisputeModule", address(module));
+        _setDisputeModule(module);
+    }
+
+    /// @notice Update the validation module used to source validator lists.
+    /// @param module ValidationModule contract address.
+    function setValidationModule(IValidationModule module) external onlyGovernance {
+        _setValidationModule(module);
+    }
+
+    /// @notice Update the stake manager reference.
+    /// @param manager StakeManager contract address.
+    function setStakeManager(IStakeManager manager) external onlyGovernance {
+        _setStakeManager(manager);
+    }
+
+    /// @notice Update the reputation engine reference.
+    function setReputationEngine(IReputationEngine engine) external onlyGovernance {
+        _setReputationEngine(engine);
+    }
+
+    /// @notice Update the certificate NFT module reference.
+    function setCertificateNFT(ICertificateNFT nft) external onlyGovernance {
+        _setCertificateNFT(nft);
     }
 
     /// @notice Update the ENS root node used for agent verification.
     /// @param node Namehash of the agent parent node (e.g. `agent.agi.eth`).
     function setAgentRootNode(bytes32 node) external onlyGovernance {
-        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        identityRegistry.setAgentRootNode(node);
-        bumpAgentAuthCacheVersion();
-        emit AgentRootNodeUpdated(node);
+        _setAgentRootNode(node);
     }
 
     /// @notice Update the Merkle root for the agent allowlist.
     /// @param root Merkle root of approved agent addresses.
     function setAgentMerkleRoot(bytes32 root) external onlyGovernance {
-        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        identityRegistry.setAgentMerkleRoot(root);
-        bumpAgentAuthCacheVersion();
-        emit AgentMerkleRootUpdated(root);
+        _setAgentMerkleRoot(root);
     }
 
     /// @notice Increment the agent authorization cache version, invalidating all
     /// existing cached authorizations.
     function bumpAgentAuthCacheVersion() public onlyGovernance {
-        unchecked {
-            ++agentAuthCacheVersion;
-        }
-        emit AgentAuthCacheVersionBumped(agentAuthCacheVersion);
+        _bumpAgentAuthCacheVersionInternal();
     }
 
     /// @notice Update the ENS root node used for validator verification.
     /// @param node Namehash of the validator parent node (e.g. `club.agi.eth`).
     function setValidatorRootNode(bytes32 node) external onlyGovernance {
-        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        if (address(validationModule) == address(0)) revert InvalidValidationModule();
-        identityRegistry.setClubRootNode(node);
-        validationModule.bumpValidatorAuthCacheVersion();
-        emit ValidatorRootNodeUpdated(node);
+        _setValidatorRootNode(node);
     }
 
     /// @notice Update the Merkle root for the validator allowlist.
     /// @param root Merkle root of approved validator addresses.
     function setValidatorMerkleRoot(bytes32 root) external onlyGovernance {
-        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        if (address(validationModule) == address(0)) revert InvalidValidationModule();
-        identityRegistry.setValidatorMerkleRoot(root);
-        validationModule.bumpValidatorAuthCacheVersion();
-        emit ValidatorMerkleRootUpdated(root);
+        _setValidatorMerkleRoot(root);
     }
 
     /// @notice Refresh or invalidate cached agent authorization entries.
@@ -865,90 +1145,66 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @notice Update the duration for cached agent authorizations.
     /// @param duration Seconds an authorization remains valid in cache.
     function setAgentAuthCacheDuration(uint256 duration) external onlyGovernance {
-        agentAuthCacheDuration = duration;
-        emit AgentAuthCacheDurationUpdated(duration);
+        _setAgentAuthCacheDuration(duration);
     }
 
     /// @notice update the FeePool contract used for revenue sharing
     function setFeePool(IFeePool _feePool) external onlyGovernance {
-        if (address(_feePool) == address(0) || _feePool.version() != 2)
-            revert InvalidFeePool();
-        feePool = _feePool;
-        emit FeePoolUpdated(address(_feePool));
-        emit ModuleUpdated("FeePool", address(_feePool));
+        _setFeePool(_feePool);
     }
 
     /// @notice update the treasury address used for blacklisted payouts
     /// @dev Treasury must be zero (burn) or a non-owner address
     function setTreasury(address _treasury) external onlyGovernance {
-        if (_treasury != address(0) && _treasury == owner()) revert InvalidTreasury();
-        treasury = _treasury;
-        emit TreasuryUpdated(_treasury);
+        _setTreasury(_treasury);
     }
 
     /// @notice update the required agent stake for each job
     function setJobStake(uint96 stake) external onlyGovernance {
-        jobStake = stake;
-        emit JobParametersUpdated(0, stake, maxJobReward, maxJobDuration, minAgentStake);
+        _setJobStake(stake);
     }
 
     /// @notice update the minimum global stake required for agents when applying
     function setMinAgentStake(uint256 stake) external onlyGovernance {
-        if (stake > type(uint96).max) revert StakeOverflow();
-        minAgentStake = uint96(stake);
-        emit JobParametersUpdated(0, jobStake, maxJobReward, maxJobDuration, stake);
+        _setMinAgentStake(stake);
     }
 
     /// @notice update the percentage of each job reward taken as a protocol fee
     function setFeePct(uint256 _feePct) external onlyGovernance {
-        if (_feePct > 100) revert InvalidPercentage();
-        if (_feePct + validatorRewardPct > 100) revert InvalidPercentage();
-        feePct = _feePct;
-        emit FeePctUpdated(_feePct);
+        _applyFeeConfiguration(_feePct, validatorRewardPct, true, false);
     }
 
     /// @notice update validator reward percentage of job reward
     function setValidatorRewardPct(uint256 pct) external onlyGovernance {
-        if (pct > 100) revert InvalidPercentage();
-        if (feePct + pct > 100) revert InvalidPercentage();
-        validatorRewardPct = pct;
-        emit ValidatorRewardPctUpdated(pct);
+        _applyFeeConfiguration(feePct, pct, false, true);
     }
 
     /// @notice set the maximum allowed job reward
     function setMaxJobReward(uint256 maxReward) external onlyGovernance {
-        maxJobReward = maxReward;
-        emit JobParametersUpdated(0, jobStake, maxReward, maxJobDuration, minAgentStake);
+        _setMaxJobReward(maxReward);
     }
 
     /// @notice set the maximum allowed job duration in seconds
     function setJobDurationLimit(uint256 limit) external onlyGovernance {
-        maxJobDuration = limit;
-        emit JobParametersUpdated(0, jobStake, maxJobReward, limit, minAgentStake);
+        _setJobDurationLimit(limit);
     }
 
     /// @notice Set the maximum number of simultaneously active jobs an agent may hold.
     /// @dev A value of zero disables the limit.
     function setMaxActiveJobsPerAgent(uint256 limit) external onlyGovernance {
-        maxActiveJobsPerAgent = limit;
-        emit MaxActiveJobsPerAgentUpdated(limit);
+        _setMaxActiveJobsPerAgent(limit);
     }
 
     /// @notice set additional grace period after a job's deadline before it can expire
     function setExpirationGracePeriod(uint256 period) external onlyGovernance {
-        expirationGracePeriod = period;
-        emit ExpirationGracePeriodUpdated(period);
+        _setExpirationGracePeriod(period);
     }
 
     /// @notice Sets the TaxPolicy contract holding the canonical disclaimer.
     /// @dev Only callable by the owner; the policy address cannot be zero and
     /// must explicitly report tax exemption.
     function setTaxPolicy(ITaxPolicy _policy) external onlyGovernance {
-        if (address(_policy) == address(0)) revert InvalidTaxPolicy();
-        if (!_policy.isTaxExempt()) revert PolicyNotTaxExempt();
-        taxPolicy = _policy;
-        emit TaxPolicyUpdated(address(_policy), _policy.policyVersion());
-        emit ModuleUpdated("TaxPolicy", address(_policy));
+        _setTaxPolicy(_policy);
     }
 
     /// @notice Pause job lifecycle interactions
@@ -997,9 +1253,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     /// @param acknowledger Address granted permission to acknowledge for users.
     /// @param allowed True to allow the address, false to revoke.
     function setAcknowledger(address acknowledger, bool allowed) external onlyGovernance {
-        if (allowed && acknowledger == address(0)) revert ZeroAcknowledgerAddress();
-        acknowledgers[acknowledger] = allowed;
-        emit AcknowledgerUpdated(acknowledger, allowed);
+        _setAcknowledger(acknowledger, allowed);
     }
 
     /// @notice Internal helper to acknowledge the current tax policy for a user.
@@ -1030,9 +1284,250 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     function setJobParameters(uint256 maxReward, uint256 stake) external onlyGovernance {
         if (stake > type(uint96).max) revert StakeOverflow();
-        jobStake = uint96(stake);
-        maxJobReward = maxReward;
-        emit JobParametersUpdated(0, stake, maxReward, maxJobDuration, minAgentStake);
+        _setJobStake(uint96(stake));
+        _setMaxJobReward(maxReward);
+    }
+
+    /// @notice Apply a batch of configuration updates atomically.
+    /// @param config Packed configuration toggles and values to apply.
+    /// @param acknowledgerUpdates Acknowledger allow/deny list updates.
+    /// @param ackModules Additional acknowledge-for modules to enable.
+    function applyConfiguration(
+        ConfigUpdate calldata config,
+        AcknowledgerUpdate[] calldata acknowledgerUpdates,
+        address[] calldata ackModules
+    ) external onlyGovernance {
+        uint256 ackUpdateLen = acknowledgerUpdates.length;
+        for (uint256 i; i < ackUpdateLen;) {
+            AcknowledgerUpdate calldata entry = acknowledgerUpdates[i];
+            _setAcknowledger(entry.acknowledger, entry.allowed);
+            unchecked {
+                ++i;
+            }
+        }
+
+        bool pauserUpdated;
+        bool modulesUpdated;
+        bool identityRegistryUpdated;
+        bool disputeModuleUpdated;
+        bool validationModuleUpdated;
+        bool stakeManagerUpdated;
+        bool reputationModuleUpdated;
+        bool certificateNFTUpdated;
+        bool feePoolUpdated;
+        bool taxPolicyUpdated;
+        bool treasuryUpdated;
+        bool jobStakeUpdated;
+        bool minAgentStakeUpdated;
+        bool feePctUpdated;
+        bool validatorRewardPctUpdated;
+        bool maxJobRewardUpdated;
+        bool maxJobDurationUpdated;
+        bool maxActiveJobsUpdated;
+        bool expirationGracePeriodUpdated;
+        bool agentRootUpdated;
+        bool agentMerkleUpdated;
+        bool validatorRootUpdated;
+        bool validatorMerkleUpdated;
+        bool agentAuthCacheDurationUpdated;
+        bool agentAuthCacheVersionBumped;
+
+        uint256 ackModulesAdded;
+
+        if (config.setPauser) {
+            _setPauser(config.pauser);
+            pauserUpdated = true;
+        }
+
+        if (config.setModuleBundle) {
+            (
+                bool validationChanged,
+                bool stakeChanged,
+                bool reputationChanged,
+                bool disputeChanged,
+                bool certificateChanged,
+                bool feeChanged,
+                uint256 ackCount
+            ) = _applyModuleBundle(config.modules, ackModules);
+            modulesUpdated = true;
+            validationModuleUpdated = validationChanged;
+            stakeManagerUpdated = stakeChanged;
+            reputationModuleUpdated = reputationChanged;
+            disputeModuleUpdated = disputeChanged;
+            certificateNFTUpdated = certificateChanged;
+            feePoolUpdated = feeChanged;
+            ackModulesAdded = ackCount;
+        } else if (ackModules.length > 0) {
+            uint256 ackLen = ackModules.length;
+            for (uint256 i; i < ackLen;) {
+                _enableAckModule(ackModules[i]);
+                unchecked {
+                    ++i;
+                }
+            }
+            ackModulesAdded = ackLen;
+            modulesUpdated = true;
+        }
+
+        if (config.setIdentityRegistry) {
+            _setIdentityRegistry(IIdentityRegistry(config.identityRegistry));
+            identityRegistryUpdated = true;
+            agentAuthCacheVersionBumped = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setDisputeModule) {
+            _setDisputeModule(IDisputeModule(config.disputeModule));
+            disputeModuleUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setValidationModule) {
+            _setValidationModule(IValidationModule(config.validationModule));
+            validationModuleUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setStakeManager) {
+            _setStakeManager(IStakeManager(config.stakeManager));
+            stakeManagerUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setReputationModule) {
+            _setReputationEngine(IReputationEngine(config.reputationModule));
+            reputationModuleUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setCertificateNFT) {
+            _setCertificateNFT(ICertificateNFT(config.certificateNFT));
+            certificateNFTUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setFeePool) {
+            _setFeePool(IFeePool(config.feePool));
+            feePoolUpdated = true;
+            modulesUpdated = true;
+        }
+
+        if (config.setTaxPolicy) {
+            _setTaxPolicy(ITaxPolicy(config.taxPolicy));
+            taxPolicyUpdated = true;
+        }
+
+        if (config.setTreasury) {
+            _setTreasury(config.treasury);
+            treasuryUpdated = true;
+        }
+
+        if (config.setJobStake) {
+            _setJobStake(config.jobStake);
+            jobStakeUpdated = true;
+        }
+
+        if (config.setMinAgentStake) {
+            _setMinAgentStake(config.minAgentStake);
+            minAgentStakeUpdated = true;
+        }
+
+        if (config.setMaxJobReward) {
+            _setMaxJobReward(config.maxJobReward);
+            maxJobRewardUpdated = true;
+        }
+
+        if (config.setJobDurationLimit) {
+            _setJobDurationLimit(config.jobDurationLimit);
+            maxJobDurationUpdated = true;
+        }
+
+        if (config.setMaxActiveJobsPerAgent) {
+            _setMaxActiveJobsPerAgent(config.maxActiveJobsPerAgent);
+            maxActiveJobsUpdated = true;
+        }
+
+        if (config.setExpirationGracePeriod) {
+            _setExpirationGracePeriod(config.expirationGracePeriod);
+            expirationGracePeriodUpdated = true;
+        }
+
+        if (config.setAgentRootNode) {
+            _setAgentRootNode(config.agentRootNode);
+            agentRootUpdated = true;
+            agentAuthCacheVersionBumped = true;
+        }
+
+        if (config.setAgentMerkleRoot) {
+            _setAgentMerkleRoot(config.agentMerkleRoot);
+            agentMerkleUpdated = true;
+            agentAuthCacheVersionBumped = true;
+        }
+
+        if (config.setValidatorRootNode) {
+            _setValidatorRootNode(config.validatorRootNode);
+            validatorRootUpdated = true;
+        }
+
+        if (config.setValidatorMerkleRoot) {
+            _setValidatorMerkleRoot(config.validatorMerkleRoot);
+            validatorMerkleUpdated = true;
+        }
+
+        if (config.setAgentAuthCacheDuration) {
+            _setAgentAuthCacheDuration(config.agentAuthCacheDuration);
+            agentAuthCacheDurationUpdated = true;
+        }
+
+        if (config.bumpAgentAuthCacheVersion) {
+            _bumpAgentAuthCacheVersionInternal();
+            agentAuthCacheVersionBumped = true;
+        }
+
+        if (config.setFeePct || config.setValidatorRewardPct) {
+            uint256 newFee = config.setFeePct ? config.feePct : feePct;
+            uint256 newValidator =
+                config.setValidatorRewardPct ? config.validatorRewardPct : validatorRewardPct;
+            (bool feeChanged, bool validatorChanged) = _applyFeeConfiguration(
+                newFee,
+                newValidator,
+                config.setFeePct,
+                config.setValidatorRewardPct
+            );
+            if (feeChanged) feePctUpdated = true;
+            if (validatorChanged) validatorRewardPctUpdated = true;
+        }
+
+        emit ConfigurationApplied(
+            msg.sender,
+            pauserUpdated,
+            modulesUpdated,
+            identityRegistryUpdated,
+            disputeModuleUpdated,
+            validationModuleUpdated,
+            stakeManagerUpdated,
+            reputationModuleUpdated,
+            certificateNFTUpdated,
+            feePoolUpdated,
+            taxPolicyUpdated,
+            treasuryUpdated,
+            jobStakeUpdated,
+            minAgentStakeUpdated,
+            feePctUpdated,
+            validatorRewardPctUpdated,
+            maxJobRewardUpdated,
+            maxJobDurationUpdated,
+            maxActiveJobsUpdated,
+            expirationGracePeriodUpdated,
+            agentRootUpdated,
+            agentMerkleUpdated,
+            validatorRootUpdated,
+            validatorMerkleUpdated,
+            agentAuthCacheDurationUpdated,
+            agentAuthCacheVersionBumped,
+            ackUpdateLen,
+            ackModulesAdded
+        );
     }
 
     // ---------------------------------------------------------------------
