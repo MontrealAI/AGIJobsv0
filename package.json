@@ -15,6 +15,7 @@
     "verify:wiring": "npm run wire:verify",
     "owner:health": "npx hardhat run --no-compile scripts/owner-healthcheck.js",
     "owner:plan": "node scripts/v2/run-owner-plan.js",
+    "owner:plan:safe": "node scripts/v2/run-owner-plan.js --safe owner-safe-bundle.json --safe-name \"AGIJobs Owner Control Plan\"",
     "owner:wizard": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/owner-config-wizard.ts",
     "test": "hardhat test --no-compile",
     "echidna:commit-reveal": "docker run --rm -v \"$PWD\":/src -v \"$PWD/tools/forge-shim\":/usr/local/bin/forge:ro -w /src ghcr.io/crytic/echidna/echidna:v2.2.7 echidna-test ./contracts/test/CommitRevealEchidna.sol --contract CommitRevealEchidnaHarness --config echidna/commit-reveal.yaml",

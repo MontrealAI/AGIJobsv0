@@ -17,12 +17,24 @@ interface CliOptions {
   execute: boolean;
   json: boolean;
   outPath?: string;
+  safeOut?: string;
+  safeName?: string;
+  safeDescription?: string;
+}
+
+interface ContractInputMeta {
+  name: string;
+  type: string;
 }
 
 interface ActionSummary extends PlannedAction {
   calldata?: string | null;
   to: string;
   value: string;
+  signature?: string | null;
+  functionName?: string | null;
+  stateMutability?: string | null;
+  inputs?: ContractInputMeta[];
 }
 
 interface ModuleSummary {
@@ -41,6 +53,34 @@ interface AggregatedPlan {
   generatedAt: string;
   modules: ModuleSummary[];
   totalActions: number;
+}
+
+interface SafeContractMethodMeta {
+  name: string;
+  payable: boolean;
+  stateMutability: string;
+  inputs: ContractInputMeta[];
+}
+
+interface SafeTransactionEntry {
+  to: string;
+  value: string;
+  data: string;
+  description?: string;
+  contractInputsValues?: Record<string, string>;
+  contractMethod?: SafeContractMethodMeta;
+}
+
+interface SafeBundle {
+  version: string;
+  chainId: number;
+  createdAt: string;
+  meta: {
+    name: string;
+    description: string;
+    txBuilderVersion: string;
+  };
+  transactions: SafeTransactionEntry[];
 }
 
 function readEnvBoolean(key: string): boolean | undefined {
@@ -71,6 +111,15 @@ function parseArgs(argv: string[]): CliOptions {
   if (process.env.OWNER_PLAN_OUT) {
     options.outPath = process.env.OWNER_PLAN_OUT;
   }
+  if (process.env.OWNER_PLAN_SAFE_OUT) {
+    options.safeOut = process.env.OWNER_PLAN_SAFE_OUT;
+  }
+  if (process.env.OWNER_PLAN_SAFE_NAME) {
+    options.safeName = process.env.OWNER_PLAN_SAFE_NAME;
+  }
+  if (process.env.OWNER_PLAN_SAFE_DESCRIPTION) {
+    options.safeDescription = process.env.OWNER_PLAN_SAFE_DESCRIPTION;
+  }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--execute') {
@@ -83,6 +132,27 @@ function parseArgs(argv: string[]): CliOptions {
         throw new Error('--out requires a file path');
       }
       options.outPath = value;
+      i += 1;
+    } else if (arg === '--safe' || arg === '--safe-out') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error(`${arg} requires a file path`);
+      }
+      options.safeOut = value;
+      i += 1;
+    } else if (arg === '--safe-name') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error('--safe-name requires a value');
+      }
+      options.safeName = value;
+      i += 1;
+    } else if (arg === '--safe-desc' || arg === '--safe-description') {
+      const value = argv[i + 1];
+      if (!value) {
+        throw new Error(`${arg} requires a value`);
+      }
+      options.safeDescription = value;
       i += 1;
     }
   }
@@ -107,13 +177,50 @@ function serialiseArg(value: any): any {
 }
 
 function buildActionSummary(plan: ModulePlan, action: PlannedAction): ActionSummary {
-  const calldata = plan.iface?.encodeFunctionData(action.method, action.args) ?? null;
+  const iface = plan.iface;
+  let signature: string | null = null;
+  let functionName: string | null = null;
+  let stateMutability: string | null = null;
+  let inputs: ContractInputMeta[] | undefined;
+  let calldata: string | null = null;
+  if (iface) {
+    try {
+      calldata = iface.encodeFunctionData(action.method, action.args);
+      const fragment = iface.getFunction(action.method);
+      signature = fragment.format();
+      functionName = fragment.name;
+      stateMutability = fragment.stateMutability;
+      inputs = fragment.inputs.map((input, index) => ({
+        name: input.name && input.name.length ? input.name : `arg${index + 1}`,
+        type: input.type,
+      }));
+    } catch (error) {
+      if (process.env.DEBUG) {
+        console.warn(`Failed to resolve ABI metadata for ${plan.module}.${action.method}:`, error);
+      }
+      calldata = iface.encodeFunctionData(action.method, action.args);
+    }
+  }
+  if (calldata === null) {
+    try {
+      calldata = plan.contract?.interface?.encodeFunctionData(
+        action.method,
+        action.args
+      ) ?? null;
+    } catch (_) {
+      calldata = null;
+    }
+  }
   return {
     ...action,
     args: action.args.map((arg) => serialiseArg(arg)),
     calldata,
     to: plan.address,
     value: '0',
+    signature,
+    functionName,
+    stateMutability,
+    inputs,
   };
 }
 
@@ -135,11 +242,19 @@ async function ensureContractOwner(
   return owner;
 }
 
-async function writePlan(plan: AggregatedPlan, destination: string) {
+async function writeJsonFile(
+  destination: string,
+  payload: unknown,
+  label: string
+) {
   const resolved = path.resolve(destination);
   await fs.mkdir(path.dirname(resolved), { recursive: true });
-  await fs.writeFile(resolved, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
-  console.log(`Wrote aggregated call plan to ${resolved}`);
+  await fs.writeFile(resolved, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  console.log(`Wrote ${label} to ${resolved}`);
+}
+
+async function writePlan(plan: AggregatedPlan, destination: string) {
+  await writeJsonFile(destination, plan, 'aggregated call plan');
 }
 
 function logModulePlan(module: ModuleSummary) {
@@ -164,12 +279,86 @@ function logModulePlan(module: ModuleSummary) {
     if (action.desired !== undefined) {
       console.log(`   Desired: ${action.desired}`);
     }
+    if (action.signature) {
+      console.log(`   Signature: ${action.signature}`);
+    }
     action.notes?.forEach((note) => console.log(`   Note: ${note}`));
     console.log(`   Method: ${action.method}(${describeArgs(action.args)})`);
     if (action.calldata) {
       console.log(`   Calldata: ${action.calldata}`);
     }
   });
+}
+
+function formatSafeInputValue(value: any): string {
+  if (value === null || value === undefined) {
+    return 'null';
+  }
+  if (Array.isArray(value)) {
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+async function writeSafeBundle(
+  plan: AggregatedPlan,
+  destination: string,
+  options: { name?: string; description?: string }
+) {
+  if (plan.chainId === undefined) {
+    throw new Error('Chain ID required to emit Safe transaction bundle.');
+  }
+  const transactions: SafeTransactionEntry[] = [];
+  for (const module of plan.modules) {
+    for (const action of module.actions) {
+      if (!action.calldata) {
+        throw new Error(`Missing calldata for ${module.module}.${action.method}`);
+      }
+      const inputsValues: Record<string, string> = {};
+      if (action.inputs && action.inputs.length === action.args.length) {
+        action.inputs.forEach((input, index) => {
+          inputsValues[input.name] = formatSafeInputValue(action.args[index]);
+        });
+      }
+      const entry: SafeTransactionEntry = {
+        to: action.to,
+        value: action.value,
+        data: action.calldata,
+        description: action.label,
+      };
+      if (Object.keys(inputsValues).length > 0) {
+        entry.contractInputsValues = inputsValues;
+      }
+      if (action.functionName && action.stateMutability) {
+        entry.contractMethod = {
+          name: action.functionName,
+          payable: action.stateMutability === 'payable',
+          stateMutability: action.stateMutability,
+          inputs: action.inputs ?? [],
+        };
+      }
+      transactions.push(entry);
+    }
+  }
+
+  const bundle: SafeBundle = {
+    version: '1.0',
+    chainId: plan.chainId,
+    createdAt: new Date().toISOString(),
+    meta: {
+      name: options.name || 'AGIJobs Owner Control Plan',
+      description:
+        options.description ||
+        'Autogenerated multisig bundle for AGIJobs governance updates.',
+      txBuilderVersion: '1.16.6',
+    },
+    transactions,
+  };
+
+  await writeJsonFile(destination, bundle, 'Safe transaction bundle');
 }
 
 async function executeModulePlan(plan: ModulePlan) {
@@ -200,6 +389,7 @@ async function main() {
   const cli = parseArgs(process.argv.slice(2));
   let signerAddress: string | undefined;
   let signer;
+  let detectedChainId: number | undefined;
   try {
     const signers = await ethers.getSigners();
     if (signers.length > 0) {
@@ -210,6 +400,19 @@ async function main() {
     }
   } catch (error) {
     console.warn('Unable to resolve Hardhat signer; running in read-only mode.');
+    if (process.env.DEBUG) {
+      console.warn(error);
+    }
+  }
+  try {
+    const net = await ethers.provider.getNetwork();
+    if (typeof net.chainId === 'bigint') {
+      detectedChainId = Number(net.chainId);
+    } else if (typeof (net as any).chainId === 'number') {
+      detectedChainId = (net as any).chainId;
+    }
+  } catch (error) {
+    console.warn('Unable to detect chain ID from provider; Safe bundle generation may be unavailable.');
     if (process.env.DEBUG) {
       console.warn(error);
     }
@@ -344,7 +547,12 @@ async function main() {
 
   const aggregated: AggregatedPlan = {
     network: tokenResult.network || network.name,
-    chainId: network.config?.chainId,
+    chainId:
+      detectedChainId !== undefined
+        ? detectedChainId
+        : typeof network.config?.chainId === 'number'
+        ? network.config?.chainId
+        : undefined,
     signer: signerAddress || '',
     generatedAt: new Date().toISOString(),
     modules: summaries,
@@ -353,6 +561,13 @@ async function main() {
 
   if (cli.outPath) {
     await writePlan(aggregated, cli.outPath);
+  }
+
+  if (cli.safeOut) {
+    await writeSafeBundle(aggregated, cli.safeOut, {
+      name: cli.safeName,
+      description: cli.safeDescription,
+    });
   }
 
   if (cli.json) {
