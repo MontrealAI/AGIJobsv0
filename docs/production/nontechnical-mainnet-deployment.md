@@ -5,6 +5,19 @@
 
 ---
 
+## Deployment subtasks at a glance
+
+1. **Harden the workstation** – confirm hardware wallet custody, reviewer availability, Node.js version, and `.env` hygiene.
+2. **Author the deployment plan** – populate `deployment-config/mainnet.json` with governance, ENS roots, and economic overrides that the migrations will enforce automatically.
+3. **Prove readiness** – run `npm run deploy:checklist` until every automated preflight (RPC reachability, config validation, migrations present) reports ✅.
+4. **Execute migrations** – compile with optimizer, apply Truffle migrations 1–5, and record the emitted module addresses for review.
+5. **Validate owner control** – run the post-deployment owner tooling (`npm run owner:health`, `npm run owner:plan`, Safe bundle export) to guarantee upgrade authority and emergency controls.
+6. **Document and hand off** – update the operational vault with addresses, pause procedures, and governance next steps.
+
+Each stage is designed to expose a distinct failure mode: configuration drift, RPC connectivity, ENS mis-hashing, or ownership misconfiguration. Treat any warning as a trigger to pause and reassess before continuing.
+
+---
+
 ## 1. Safety checklist (print and tick off)
 
 1. ✅ You control a hardware wallet (Ledger, Safe, or similar) funded with >0.5 ETH for gas and protocol bootstrap costs.
@@ -29,10 +42,13 @@ If any item is unchecked, pause and resolve it before continuing.
 
 1. Copy `.env.example` to `.env` and fill in the blanks. For production, **never** store the seed phrase; only the deployer key.
 2. Open `deployment-config/mainnet.json` and set:
-   - `governance` → your multisig/timelock address.
-   - ENS root hashes (use `npm run namehash:mainnet` to recompute after editing names).
-   - Optional economics overrides (`feePct`, `burnPct`, etc.).
-3. Ask governance to pre-authorise the deployer wallet if your Safe requires modules/owners to be added.
+   - `governance` → your multisig/timelock address (leave blank only for dry runs).
+   - `overrides.feePct` / `overrides.burnPct` → integers in percent (e.g., `5` for five percent). Values between `0` and `1` are interpreted as fractional percents (`0.05` → `5`).
+   - Optional timing and stake overrides: `commitWindow` / `revealWindow` accept natural-language durations (`"24h"`, `"2 days"`), `minStake` and `jobStake` accept human-readable AGIALPHA amounts (`"1500"`, `"0.5"`).
+   - ENS roots under `overrides.ensRoots` (`agentRoot`, `clubRoot`, optional `alphaAgentRoot` / `alphaClubRoot`). Each entry may specify a `name` plus `node`/`hash` (32-byte namehash). Use `npm run namehash:mainnet` after editing names to refresh the hashes.
+   - Optional `withTax` boolean flag to disable the tax policy module for test environments.
+3. Ensure the AGIALPHA token address in `deployment-config/mainnet.json` matches `config/agialpha.mainnet.json`. The migrations will refuse to continue if they diverge.
+4. Ask governance to pre-authorise the deployer wallet if your Safe requires modules/owners to be added.
 
 > ℹ️ ENS hashes must be 32-byte values (starts with `0x` and 64 hex characters). The helper script rewrites them automatically.
 
@@ -73,7 +89,7 @@ What to expect:
    What the script does:
 
    - `npm run compile:mainnet` – generates constants, compiles Solidity 0.8.25 with optimizer enabled.
-   - `truffle migrate --network mainnet --reset` – deploys Deployer + modules and applies migrations 1–5.
+   - `truffle migrate --network mainnet --reset` – deploys Deployer + modules and applies migrations 1–5, consuming overrides from `deployment-config/mainnet.json` (governance, fee/burn percentages, stake floors, timing windows, ENS roots).
    - `npm run wire:verify` – runs the health-check harness ensuring every module is connected and owner privileges are intact.
 
 4. Copy the emitted contract addresses from the console output and share them with the reviewer. Store them in your deployment vault (e.g., 1Password Secure Note).
@@ -142,8 +158,8 @@ interface when your multisig needs to batch the updates without writing calldata
 
 | Scenario | Command |
 | --- | --- |
-| Re-run checklist after editing `.env` | `npm run deploy:checklist` |
-| Dry-run deployment on Sepolia | `npm run migrate:sepolia` |
+| Re-run checklist after editing `.env` or `deployment-config/mainnet.json` | `npm run deploy:checklist` |
+| Dry-run deployment on Sepolia (uses `deployment-config/sepolia.json`) | `npm run migrate:sepolia` |
 | Verify wiring post-upgrade | `npm run wire:verify` |
 | Inspect module ownership | `npm run owner:health` |
 | Update economics | `npm run owner:wizard` |

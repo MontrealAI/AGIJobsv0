@@ -4,6 +4,7 @@ import path from 'path';
 import process from 'process';
 import url from 'url';
 import { config as loadEnv } from 'dotenv';
+import { loadDeploymentPlan } from '../config';
 
 loadEnv();
 
@@ -70,30 +71,27 @@ function validateNonEmptyEnv(name: string, description: string): CheckResult {
 
 function validateDeploymentConfig(): CheckResult[] {
   const results: CheckResult[] = [];
-  const configPath = path.resolve(process.cwd(), 'deployment-config', 'mainnet.json');
-  if (!fs.existsSync(configPath)) {
-    results.push({
-      name: 'deployment-config/mainnet.json',
-      status: 'fail',
-      detail: 'File not found. Copy sepolia template or request production parameters.',
-    });
-    return results;
-  }
   try {
-    const raw = fs.readFileSync(configPath, 'utf8');
-    const parsed = JSON.parse(raw);
-    const governance = parsed.governance as string | undefined;
-    if (!governance || governance === '0x0000000000000000000000000000000000000000') {
+    const { plan, path: planPath, exists } = loadDeploymentPlan({
+      network: 'mainnet',
+      optional: true,
+    });
+    if (!exists || !planPath) {
+      results.push({
+        name: 'deployment-config/mainnet.json',
+        status: 'fail',
+        detail:
+          'File not found. Copy sepolia template or request production parameters.',
+      });
+      return results;
+    }
+
+    const governance = plan.governance;
+    if (!governance) {
       results.push({
         name: 'governance address',
         status: 'warn',
         detail: 'Update governance to your production timelock / multisig address before deploying.',
-      });
-    } else if (!/^0x[0-9a-fA-F]{40}$/.test(governance)) {
-      results.push({
-        name: 'governance address',
-        status: 'fail',
-        detail: 'Governance address must be a valid 20-byte hex value (0x-prefixed).',
       });
     } else {
       results.push({
@@ -102,8 +100,8 @@ function validateDeploymentConfig(): CheckResult[] {
         detail: `Governance set to ${governance}`,
       });
     }
-    const overrides = parsed.overrides ?? {};
-    if (!overrides.feePct || typeof overrides.feePct !== 'number') {
+    const econ = plan.econ ?? {};
+    if (econ.feePct === undefined) {
       results.push({
         name: 'feePct override',
         status: 'warn',
@@ -113,23 +111,23 @@ function validateDeploymentConfig(): CheckResult[] {
       results.push({
         name: 'feePct override',
         status: 'pass',
-        detail: `Protocol fee override set to ${(overrides.feePct * 100).toFixed(2)}%`,
+        detail: `Protocol fee override set to ${econ.feePct}%`,
       });
     }
-    const ensRoots = overrides.ensRoots ?? {};
+    const ensRoots = plan.ensRoots ?? {};
     const requiredRoots: Array<[string, string]> = [
       ['agentRoot', 'Agent ENS root'],
       ['clubRoot', 'Club ENS root'],
     ];
     for (const [key, label] of requiredRoots) {
       const entry = ensRoots[key];
-      if (!entry || !entry.hash || entry.hash === '0x0') {
+      if (!entry || !entry.node || entry.node === '0x0') {
         results.push({
           name: `${label}`,
           status: 'warn',
           detail: `Update ${key} in deployment-config/mainnet.json before deploying.`,
         });
-      } else if (!/^0x[0-9a-fA-F]{64}$/.test(entry.hash)) {
+      } else if (!/^0x[0-9a-fA-F]{64}$/.test(entry.node)) {
         results.push({
           name: `${label}`,
           status: 'fail',
@@ -139,7 +137,7 @@ function validateDeploymentConfig(): CheckResult[] {
         results.push({
           name: `${label}`,
           status: 'pass',
-          detail: `${entry.name || key} (${entry.hash})`,
+          detail: `${entry.name || key} (${entry.node})`,
         });
       }
     }

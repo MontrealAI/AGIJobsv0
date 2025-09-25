@@ -2,8 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const { ethers } = require('ethers');
 const namehash = require('eth-ens-namehash');
+const parseDuration = require('parse-duration');
 
 const CONFIG_DIR = path.join(__dirname, '..', '..', 'config');
+const DEPLOYMENT_CONFIG_DIR = path.join(
+  __dirname,
+  '..',
+  '..',
+  'deployment-config'
+);
 
 const MAX_UINT96 = (1n << 96n) - 1n;
 
@@ -218,6 +225,10 @@ function normaliseIdentityRoot(value, label) {
     root.name = normaliseEnsName(root.name, label);
   }
 
+  if (root.hash && !root.node) {
+    root.node = root.hash;
+  }
+
   if (!root.node && root.name) {
     root.node = ethers.namehash(root.name);
   }
@@ -240,6 +251,94 @@ function normaliseIdentityRoot(value, label) {
   }
 
   return root;
+}
+
+function normalisePercentage(value, label) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`${label} must be a finite number`);
+  }
+  let pct = numeric;
+  if (numeric > 0 && numeric < 1) {
+    pct = numeric * 100;
+  }
+  if (Math.abs(pct - Math.round(pct)) > 1e-6) {
+    throw new Error(`${label} must resolve to a whole percentage (0-100)`);
+  }
+  pct = Math.round(pct);
+  if (pct < 0 || pct > 100) {
+    throw new Error(`${label} must be between 0 and 100`);
+  }
+  return pct;
+}
+
+function normaliseDuration(value, label) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error(`${label} must be a non-negative duration`);
+    }
+    return Math.floor(value);
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const parsed = parseDuration(trimmed, 's');
+  if (parsed === null || parsed === undefined) {
+    throw new Error(`${label} duration string is invalid`);
+  }
+  if (parsed < 0) {
+    throw new Error(`${label} must be non-negative`);
+  }
+  return Math.floor(parsed);
+}
+
+function normaliseTokenAmount(value, label, { max, decimals = 18 } = {}) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  let amount;
+  if (typeof value === 'object' && value !== null) {
+    if (value.raw !== undefined) {
+      amount = BigInt(value.raw);
+    } else if (value.amount !== undefined) {
+      const targetDecimals =
+        value.decimals !== undefined ? Number(value.decimals) : decimals;
+      if (!Number.isFinite(targetDecimals) || targetDecimals < 0) {
+        throw new Error(`${label} decimals must be a non-negative integer`);
+      }
+      amount = ethers.parseUnits(String(value.amount), targetDecimals);
+    } else {
+      throw new Error(
+        `${label} object must include a raw or amount property`
+      );
+    }
+  } else {
+    const trimmed = String(value).trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    if (trimmed.startsWith('0x')) {
+      amount = BigInt(trimmed);
+    } else {
+      amount = ethers.parseUnits(trimmed, decimals);
+    }
+  }
+
+  if (amount < 0) {
+    throw new Error(`${label} cannot be negative`);
+  }
+  if (max !== undefined && amount > max) {
+    throw new Error(`${label} exceeds supported maximum`);
+  }
+  return amount.toString();
 }
 
 function normaliseLabel(value, fallback) {
@@ -271,6 +370,156 @@ function findConfigPath(baseName, network) {
     }
   }
   return base;
+}
+
+function findDeploymentConfigPath(network) {
+  if (!network) {
+    return undefined;
+  }
+  return path.join(DEPLOYMENT_CONFIG_DIR, `${network}.json`);
+}
+
+function normaliseDeploymentPlan(plan = {}) {
+  const result = {};
+
+  if (plan.governance !== undefined && plan.governance !== null) {
+    const governance = ensureAddress(plan.governance, 'governance', {
+      allowZero: true,
+    });
+    if (governance !== ethers.ZeroAddress) {
+      result.governance = governance;
+    }
+  }
+
+  if (plan.agialpha !== undefined && plan.agialpha !== null) {
+    const tokenAddress = ensureAddress(
+      plan.agialpha,
+      'AGIALPHA token address',
+      { allowZero: true }
+    );
+    if (tokenAddress !== ethers.ZeroAddress) {
+      result.agialpha = tokenAddress;
+    }
+  }
+
+  if (plan.withTax !== undefined) {
+    result.withTax = Boolean(plan.withTax);
+  }
+
+  const rawOverrides =
+    plan.overrides && typeof plan.overrides === 'object'
+      ? plan.overrides
+      : {};
+
+  const econ = {};
+  const feePct = normalisePercentage(rawOverrides.feePct, 'feePct');
+  if (feePct !== undefined) {
+    econ.feePct = feePct;
+  }
+  const burnPct = normalisePercentage(rawOverrides.burnPct, 'burnPct');
+  if (burnPct !== undefined) {
+    econ.burnPct = burnPct;
+  }
+  const employerSlashPct = normalisePercentage(
+    rawOverrides.employerSlashPct,
+    'employerSlashPct'
+  );
+  if (employerSlashPct !== undefined) {
+    econ.employerSlashPct = employerSlashPct;
+  }
+  const treasurySlashPct = normalisePercentage(
+    rawOverrides.treasurySlashPct,
+    'treasurySlashPct'
+  );
+  if (treasurySlashPct !== undefined) {
+    econ.treasurySlashPct = treasurySlashPct;
+  }
+
+  const commitWindow = normaliseDuration(
+    rawOverrides.commitWindow,
+    'commitWindow'
+  );
+  if (commitWindow !== undefined) {
+    econ.commitWindow = commitWindow;
+  }
+  const revealWindow = normaliseDuration(
+    rawOverrides.revealWindow,
+    'revealWindow'
+  );
+  if (revealWindow !== undefined) {
+    econ.revealWindow = revealWindow;
+  }
+
+  const minStake = normaliseTokenAmount(
+    rawOverrides.minStake,
+    'minStake'
+  );
+  if (minStake !== undefined) {
+    econ.minStake = minStake;
+  }
+  const jobStake = normaliseTokenAmount(rawOverrides.jobStake, 'jobStake', {
+    max: MAX_UINT96,
+  });
+  if (jobStake !== undefined) {
+    econ.jobStake = jobStake;
+  }
+
+  if (Object.keys(econ).length > 0) {
+    result.econ = econ;
+  }
+
+  const ensRootsSource =
+    rawOverrides.ensRoots || plan.ensRoots || (plan.ens && plan.ens.roots);
+  if (ensRootsSource && typeof ensRootsSource === 'object') {
+    const roots = {};
+    for (const [key, value] of Object.entries(ensRootsSource)) {
+      const root = normaliseIdentityRoot(value, `${key}`);
+      if (root) {
+        roots[key] = root;
+      }
+    }
+    if (Object.keys(roots).length > 0) {
+      result.ensRoots = roots;
+    }
+  }
+
+  if (plan.ens && typeof plan.ens === 'object') {
+    const ensConfig = {};
+    if (plan.ens.registry !== undefined) {
+      ensConfig.registry = ensureAddress(plan.ens.registry, 'ENS registry');
+    }
+    if (plan.ens.nameWrapper !== undefined) {
+      ensConfig.nameWrapper = ensureAddress(
+        plan.ens.nameWrapper,
+        'ENS NameWrapper',
+        { allowZero: true }
+      );
+    }
+    if (Object.keys(ensConfig).length > 0) {
+      result.ens = ensConfig;
+    }
+  }
+
+  return result;
+}
+
+function loadDeploymentPlan(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findDeploymentConfigPath(network);
+
+  if (!configPath || !fs.existsSync(configPath)) {
+    if (options.optional) {
+      return { plan: {}, path: configPath, network, exists: false };
+    }
+    throw new Error(
+      `Deployment configuration not found for network ${network || 'unknown'}`
+    );
+  }
+
+  const plan = normaliseDeploymentPlan(readJson(configPath));
+  return { plan, path: configPath, network, exists: true };
 }
 
 function loadTokenConfig(options = {}) {
@@ -1152,5 +1401,6 @@ module.exports = {
   loadPlatformRegistryConfig,
   loadTaxPolicyConfig,
   loadThermodynamicsConfig,
+  loadDeploymentPlan,
   inferNetworkKey,
 };

@@ -314,6 +314,45 @@ export interface IdentityRegistryConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface DeploymentPlanEconConfig {
+  feePct?: number;
+  burnPct?: number;
+  employerSlashPct?: number;
+  treasurySlashPct?: number;
+  commitWindow?: number;
+  revealWindow?: number;
+  minStake?: string;
+  jobStake?: string;
+  [key: string]: unknown;
+}
+
+export interface DeploymentPlanEnsConfig {
+  registry?: string;
+  nameWrapper?: string | null;
+  [key: string]: unknown;
+}
+
+export interface DeploymentPlan {
+  governance?: string;
+  agialpha?: string;
+  withTax?: boolean;
+  econ?: DeploymentPlanEconConfig;
+  ensRoots?: Record<string, IdentityRootConfig>;
+  ens?: DeploymentPlanEnsConfig;
+  [key: string]: unknown;
+}
+
+export interface DeploymentPlanResult {
+  plan: DeploymentPlan;
+  path?: string;
+  network?: SupportedNetwork;
+  exists?: boolean;
+}
+
+export interface DeploymentPlanOptions extends LoadOptions {
+  optional?: boolean;
+}
+
 export interface LoadOptions {
   network?: any;
   chainId?: number | string;
@@ -348,3 +387,6 @@ export function loadTaxPolicyConfig(
 export function loadThermodynamicsConfig(
   options?: LoadOptions
 ): ThermodynamicsConfigResult;
+export function loadDeploymentPlan(
+  options?: DeploymentPlanOptions
+): DeploymentPlanResult;
