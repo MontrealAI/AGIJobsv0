@@ -18,15 +18,16 @@ flowchart TD
 
 ## 2. Preflight Checklist
 
-| Item                | Command / Action                 | Notes                                            |
-| ------------------- | -------------------------------- | ------------------------------------------------ |
-| Node.js 20.x        | `node -v`                        | CI and scripts expect ≥ 20.12.0                  |
-| NPM clean install   | `npm ci`                         | Must be run from repo root                       |
-| Environment secrets | `.env`                           | See §3.1 for template                            |
-| RPC connectivity    | `curl $MAINNET_RPC_URL`          | Ensure 200 OK JSON-RPC response                  |
-| Etherscan API       | `ETHERSCAN_API_KEY`              | Needed for automatic verification                |
-| Address book        | `docs/deployment-addresses.json` | Populate with final module addresses post-deploy |
-| Governance signer   | multisig / timelock              | Confirm hardware wallet + Safe access            |
+| Item                | Command / Action                                 | Notes                                                    |
+| ------------------- | ----------------------------------------------- | -------------------------------------------------------- |
+| Node.js 20.x        | `node -v`                                      | CI and scripts expect ≥ 20.12.0                          |
+| NPM clean install   | `npm ci`                                       | Must be run from repo root                               |
+| Automated preflight | `npm run migrate:preflight -- --network mainnet` | Runs 40+ deterministic checks (use `--json` for export)  |
+| Environment secrets | `.env`                                         | See §3.1 for template                                    |
+| RPC connectivity    | `curl $MAINNET_RPC_URL`                        | Ensure 200 OK JSON-RPC response                          |
+| Etherscan API       | `ETHERSCAN_API_KEY`                            | Needed for automatic verification                        |
+| Address book        | `docs/deployment-addresses.json`               | Populate with final module addresses post-deploy         |
+| Governance signer   | multisig / timelock                            | Confirm hardware wallet + Safe access                    |
 
 ```mermaid
 mindmap
@@ -43,10 +44,40 @@ mindmap
     Dry Run
       Local fork smoke test
       `npm run owner:dashboard -- --json`
+    Automation
+      `npm run migrate:preflight`
+      JSON evidence archived
     Governance
       Timelock configured
       Owner control plan exported
 ```
+
+### 2.1 Automated Preflight CLI
+
+```mermaid
+flowchart LR
+    subgraph Preflight
+        A[Read .env] --> B[Validate RPC]
+        B --> C[Inspect configs]
+        C --> D[Verify migrations]
+        D --> E[Cross-check address book]
+    end
+    A -.json.-> F[Auditor Evidence]
+    classDef step fill:#081c35,stroke:#2ec4ff,stroke-width:2px,color:#e0fbfc;
+    class A,B,C,D,E step;
+```
+
+Run the institutional-grade lint prior to every rehearsal and production cutover:
+
+```bash
+# Defaults to TRUFFLE_NETWORK (falls back to mainnet)
+npm run migrate:preflight -- --network mainnet
+
+# Produce machine-readable evidence for auditors
+npm run migrate:preflight -- --network mainnet --json > preflight.mainnet.json
+```
+
+The preflight script loads every protocol config (`agialpha`, stake/job registries, tax policy, ENS roots), sanity-checks the Truffle migration bundle, exercises the RPC endpoint, and confirms the owner control playbooks are reachable. Any ❌ failures must be resolved before continuing.
 
 ## 3. Configuration for Mainnet
 
@@ -127,7 +158,7 @@ sequenceDiagram
    ```bash
    npm run compile:mainnet
    ```
-3. **Execute the full migration bundle:**
+3. **Execute the full migration bundle (after a clean `npm run migrate:preflight` pass):**
    ```bash
    npm run migrate:mainnet
    ```
@@ -218,6 +249,7 @@ npm run owner:plan:safe
 
 ```bash
 npm ci                                   # clean install
+npm run migrate:preflight                # deterministic preflight inspection
 npm run compile:mainnet                  # compile + generate constants
 npm run migrate:mainnet                  # full mainnet deployment via Truffle
 npm run wire:verify                      # ENS + wiring validation
