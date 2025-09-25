@@ -99,11 +99,17 @@ npm run owner:health
 # Generate a governance change plan (CSV) that can be executed via Safe or OZ timelock
 npm run owner:plan > owner-plan.csv
 
+# Export a Safe Transaction Builder bundle for multisig execution
+npm run owner:plan:safe
+
 # Optional guided wizard to enact common changes (stake floor, fee %, ENS registrars)
 npm run owner:wizard
 ```
 
 Review the CSV with your governance team and store it in the same vault as the deployment report.
+
+Upload the generated `owner-safe-bundle.json` to the [Safe Transaction Builder](https://app.safe.global/transactions/builder)
+interface when your multisig needs to batch the updates without writing calldata manually.
 
 ---
 
@@ -141,6 +147,7 @@ Review the CSV with your governance team and store it in the same vault as the d
 | Verify wiring post-upgrade | `npm run wire:verify` |
 | Inspect module ownership | `npm run owner:health` |
 | Update economics | `npm run owner:wizard` |
+| Produce Safe bundle for multisig | `npm run owner:plan:safe` |
 | Pause the system | `npx hardhat run scripts/v2/updateSystemPause.ts --network mainnet --pause` |
 
 Keep this cheat-sheet near the operations console. Every command is safe to run multiple times and produces deterministic output when the environment is configured correctly.
