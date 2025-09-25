@@ -108,6 +108,20 @@ Compile contracts:
 npx truffle compile
 ```
 
+### Guided wizard (optional but recommended)
+
+Operators can now dry-run and execute the entire compile → migrate → verify pipeline through a single helper. It validates `.env` values, surfaces ENS drift, prints a Mermaid diagram of the rollout, and then invokes every command with rich logging.
+
+```bash
+# Preview only
+npm run migrate:wizard -- --network mainnet
+
+# Execute with all safeguards enabled
+npm run migrate:wizard -- --network mainnet --execute
+```
+
+Pass `--skip-verify` or `--skip-wire` to defer those stages, or `--skip-compile` when re-running migrations against already-compiled artifacts.
+
 ## Deploy
 
 Run the migration on mainnet. The script deploys all modules, wires them together and prints each address.
