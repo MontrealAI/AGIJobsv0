@@ -10,6 +10,7 @@ import {
   loadPlatformIncentivesConfig,
   loadTaxPolicyConfig,
   loadIdentityRegistryConfig,
+  loadThermodynamicsConfig,
 } from '../config';
 import { buildJobRegistryPlan } from './lib/jobRegistryPlan';
 import { buildStakeManagerPlan } from './lib/stakeManagerPlan';
@@ -18,6 +19,8 @@ import { buildPlatformRegistryPlan } from './lib/platformRegistryPlan';
 import { buildPlatformIncentivesPlan } from './lib/platformIncentivesPlan';
 import { buildTaxPolicyPlan } from './lib/taxPolicyPlan';
 import { buildIdentityRegistryPlan } from './lib/identityRegistryPlan';
+import { buildRewardEnginePlan } from './lib/rewardEnginePlan';
+import { buildThermostatPlan } from './lib/thermostatPlan';
 import { describeArgs, sameAddress } from './lib/utils';
 import type { ModulePlan, PlannedAction } from './lib/types';
 
@@ -456,6 +459,19 @@ async function main() {
   const plans: ModulePlan[] = [];
   const summaries: ModuleSummary[] = [];
 
+  let thermodynamicsConfig: ReturnType<typeof loadThermodynamicsConfig> | null =
+    null;
+  try {
+    thermodynamicsConfig = loadThermodynamicsConfig({
+      network: network.name,
+      chainId: network.config?.chainId,
+    });
+  } catch (error) {
+    console.warn(
+      `Thermodynamics config not found or invalid: ${(error as Error).message}`
+    );
+  }
+
   const jobRegistryAddress = tokenConfig.modules?.jobRegistry;
   if (jobRegistryAddress) {
     const registryAddress = ethers.getAddress(jobRegistryAddress);
@@ -697,6 +713,64 @@ async function main() {
       });
       identityPlan.metadata = { ...(identityPlan.metadata || {}), owner };
       plans.push(identityPlan);
+    }
+  }
+
+  const rewardEngineAddress =
+    tokenConfig.modules?.rewardEngine ||
+    thermodynamicsConfig?.config.rewardEngine?.address;
+  if (rewardEngineAddress) {
+    const address = ethers.getAddress(rewardEngineAddress);
+    if (address === ethers.ZeroAddress) {
+      console.warn(
+        'RewardEngineMB address resolves to the zero address; skipping.'
+      );
+    } else {
+      const rewardEngine = await ethers.getContractAt(
+        'contracts/v2/RewardEngineMB.sol:RewardEngineMB',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'RewardEngineMB',
+        rewardEngine,
+        signerAddress,
+        cli.execute
+      );
+      const rewardPlan = await buildRewardEnginePlan({
+        rewardEngine,
+        config: thermodynamicsConfig?.config.rewardEngine || {},
+        configPath: thermodynamicsConfig?.path,
+      });
+      rewardPlan.metadata = { ...(rewardPlan.metadata || {}), owner };
+      plans.push(rewardPlan);
+    }
+  }
+
+  const thermostatAddress = thermodynamicsConfig?.config.thermostat?.address;
+  if (thermostatAddress) {
+    const address = ethers.getAddress(thermostatAddress);
+    if (address === ethers.ZeroAddress) {
+      console.warn(
+        'Thermostat address resolves to the zero address; skipping.'
+      );
+    } else {
+      const thermostat = await ethers.getContractAt(
+        'contracts/v2/Thermostat.sol:Thermostat',
+        address
+      );
+      const owner = await ensureContractOwner(
+        'Thermostat',
+        thermostat,
+        signerAddress,
+        cli.execute
+      );
+      const thermoPlan = await buildThermostatPlan({
+        thermostat,
+        config: thermodynamicsConfig?.config.thermostat || {},
+        configPath: thermodynamicsConfig?.path,
+      });
+      thermoPlan.metadata = { ...(thermoPlan.metadata || {}), owner };
+      plans.push(thermoPlan);
     }
   }
 
