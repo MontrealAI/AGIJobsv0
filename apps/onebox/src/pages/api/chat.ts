@@ -1,4 +1,7 @@
+import { randomUUID } from "crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { serialize } from "cookie";
+
 import { planAndExecute } from "@agi/orchestrator/llm";
 
 type ChatPayload = {
@@ -28,9 +31,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return;
     }
 
+    const userId = resolveUserId(req, res);
+    const historyWithMeta = Array.isArray(history)
+      ? history.map((entry) => attachUserMeta(entry, userId))
+      : [];
+
     const stream = planAndExecute({
       message,
-      history: Array.isArray(history) ? history : [],
+      history: historyWithMeta,
+      meta: { userId },
     });
 
     res.writeHead(200, {
@@ -52,4 +61,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } finally {
     res.end();
   }
+}
+
+type HistoryEntry =
+  | { [key: string]: unknown; meta?: Record<string, unknown> }
+  | undefined
+  | null;
+
+function attachUserMeta(entry: unknown, userId: string) {
+  if (!entry || typeof entry !== "object") {
+    return entry;
+  }
+  const typed = entry as HistoryEntry;
+  const baseMeta = typed?.meta && typeof typed.meta === "object" ? typed.meta : {};
+  const existingMeta = baseMeta as Record<string, unknown>;
+  const currentUserId = typeof existingMeta.userId === "string" ? existingMeta.userId : undefined;
+  if (currentUserId === userId) {
+    return { ...typed, meta: existingMeta };
+  }
+  return {
+    ...typed,
+    meta: { ...existingMeta, userId },
+  };
+}
+
+const SESSION_COOKIE = "agi-onebox-session";
+
+function resolveUserId(req: NextApiRequest, res: NextApiResponse): string {
+  const headerCandidates = [
+    req.headers["x-agi-user"],
+    req.headers["x-agi-user-id"],
+    req.headers["x-user-id"],
+  ];
+  for (const candidate of headerCandidates) {
+    const resolved = Array.isArray(candidate) ? candidate[0] : candidate;
+    if (typeof resolved === "string" && resolved.trim()) {
+      return resolved.trim();
+    }
+  }
+
+  const walletHeader = req.headers["x-wallet-address"];
+  if (typeof walletHeader === "string" && walletHeader.trim()) {
+    return walletHeader.trim().toLowerCase();
+  }
+
+  const existingCookie = req.cookies?.[SESSION_COOKIE];
+  if (typeof existingCookie === "string" && existingCookie.trim()) {
+    return existingCookie.trim();
+  }
+
+  const generated = `session:${randomUUID()}`;
+  const cookie = serialize(SESSION_COOKIE, generated, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  res.setHeader("Set-Cookie", cookie);
+  return generated;
 }

@@ -4,10 +4,10 @@ import type {
   CreateJobIntent,
   FinalizeIntent,
   SubmitWorkIntent,
-} from "../router";
-import { loadContracts } from "../chain/contracts";
-import { getSignerForUser } from "../chain/provider";
-import { formatError, pinToIpfs, toWei } from "./common";
+} from "../router.js";
+import { loadContracts } from "../chain/contracts.js";
+import { getSignerForUser } from "../chain/provider.js";
+import { formatError, pinToIpfs, toWei } from "./common.js";
 
 export async function* createJob(ics: CreateJobIntent) {
   const userId = ics.meta?.userId;

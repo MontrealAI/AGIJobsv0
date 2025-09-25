@@ -1,4 +1,4 @@
-import type { ICSType } from "../router";
+import type { ICSType } from "../router.js";
 
 export async function* commitReveal(ics: ICSType) {
   const jobId = (ics.params as any)?.jobId;

@@ -1,7 +1,7 @@
-import type { StakeIntent, WithdrawIntent } from "../router";
-import { loadContracts } from "../chain/contracts";
-import { getSignerForUser } from "../chain/provider";
-import { formatError, toWei } from "./common";
+import type { StakeIntent, WithdrawIntent } from "../router.js";
+import { loadContracts } from "../chain/contracts.js";
+import { getSignerForUser } from "../chain/provider.js";
+import { formatError, toWei } from "./common.js";
 
 export async function* deposit(ics: StakeIntent) {
   const userId = ics.meta?.userId;
