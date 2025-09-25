@@ -8,15 +8,16 @@ const ERC20_ABI = [
 ];
 
 const STAKE_MANAGER_ABI = [
-  "function deposit(uint256 amount)",
-  "function withdraw(uint256 amount)",
+  "function depositStake(uint8 role, uint256 amount)",
+  "function withdrawStake(uint8 role, uint256 amount)",
 ];
 
 const JOB_REGISTRY_ABI = [
-  "event JobCreated(uint256 indexed jobId)",
-  "function createJob(uint256 reward, string uri) returns (uint256)",
-  "function applyForJob(uint256 jobId)",
-  "function completeJob(uint256 jobId, string uri)",
+  "event JobCreated(uint256 indexed jobId, address indexed employer, address indexed agent, uint256 reward, uint256 stake, uint256 fee, bytes32 specHash, string uri)",
+  "function createJob(uint256 reward, uint64 deadline, bytes32 specHash, string uri) returns (uint256 jobId)",
+  "function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)",
+  "function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)",
+  "function finalizeAfterValidation(uint256 jobId, bool success)",
 ];
 
 const VALIDATION_MODULE_ABI = ["function finalize(uint256 jobId)"];

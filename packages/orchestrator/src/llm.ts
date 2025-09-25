@@ -163,11 +163,26 @@ function needsInfo(ics: ICSType): boolean {
   switch (ics.intent) {
     case "create_job": {
       const job = ics.params?.job ?? {};
-      return !job.title || !job.rewardAGIA || !job.deadlineDays;
+      const hasSpec = job.spec && typeof job.spec === "object";
+      return !job.title || !job.rewardAGIA || !job.deadline || !hasSpec;
     }
-    case "apply_job":
-    case "submit_work":
-    case "finalize":
+    case "apply_job": {
+      const params = ics.params ?? {};
+      const jobId = params.jobId;
+      const subdomain = params.ens?.subdomain;
+      return !jobId || !subdomain;
+    }
+    case "submit_work": {
+      const params = ics.params ?? {};
+      const result = params.result ?? {};
+      const hasPayload = result.payload !== undefined || result.uri;
+      const subdomain = params.ens?.subdomain;
+      return !params.jobId || !hasPayload || !subdomain;
+    }
+    case "finalize": {
+      const params = ics.params ?? {};
+      return !params.jobId || typeof params.success !== "boolean";
+    }
     case "validate":
     case "dispute":
       return typeof ics.params?.jobId !== "number" && typeof ics.params?.jobId !== "string";
@@ -207,12 +222,32 @@ function missingFields(ics: ICSType): string[] {
       const result: string[] = [];
       if (!job.title) result.push("a job title");
       if (!job.rewardAGIA) result.push("a reward amount");
-      if (!job.deadlineDays) result.push("a deadline");
+      if (!job.deadline) result.push("a deadline");
+      if (!job.spec) result.push("a job spec");
       return result;
     }
-    case "apply_job":
-    case "submit_work":
-    case "finalize":
+    case "apply_job": {
+      const result: string[] = [];
+      if (!ics.params?.jobId) result.push("a jobId");
+      if (!ics.params?.ens?.subdomain) result.push("an ENS subdomain");
+      return result;
+    }
+    case "submit_work": {
+      const params = ics.params ?? {};
+      const result: string[] = [];
+      if (!params.jobId) result.push("a jobId");
+      if (!params.ens?.subdomain) result.push("an ENS subdomain");
+      if (!(params.result?.payload || params.result?.uri)) {
+        result.push("a result payload or URI");
+      }
+      return result;
+    }
+    case "finalize": {
+      const result: string[] = [];
+      if (!ics.params?.jobId) result.push("a jobId");
+      if (typeof ics.params?.success !== "boolean") result.push("a validation outcome");
+      return result;
+    }
     case "validate":
     case "dispute":
       return ["a jobId"].filter(() => !ics.params?.jobId);

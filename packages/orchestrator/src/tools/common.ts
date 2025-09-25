@@ -7,7 +7,10 @@ export async function pinToIpfs(payload: unknown): Promise<string> {
   return `ipfs://stub-${digest}`;
 }
 
-export function toWei(amount: string | number): bigint {
+export function toWei(amount: string | number | bigint): bigint {
+  if (typeof amount === "bigint") {
+    return amount;
+  }
   const value = typeof amount === "number" ? amount.toString() : amount;
   return ethers.parseUnits(value, 18);
 }
@@ -26,4 +29,11 @@ export async function* withSimulation<T>(
     yield `❌ ${message}\n`;
     throw error;
   }
+}
+
+export function formatError(error: unknown): string {
+  if (error instanceof Error) {
+    return `❌ ${error.message}\n`;
+  }
+  return "❌ Unknown error\n";
 }
