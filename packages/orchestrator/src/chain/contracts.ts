@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import { CONTRACT_ADDRESSES } from "./addresses";
-import { rpc } from "./provider";
+import { CONTRACT_ADDRESSES } from "./addresses.js";
+import { rpc } from "./provider.js";
 
 const ERC20_ABI = [
   "function allowance(address owner, address spender) view returns (uint256)",

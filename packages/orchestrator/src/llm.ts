@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { route } from "./router.js";
 import { validateICS, type ICSType } from "./ics.js";
-import { streamLLM } from "./providers/openai";
+import { streamLLM } from "./providers/openai.js";
 
 const SYSTEM_PROMPT = `
 You are the AGI Jobs Meta-Orchestrator.
@@ -13,15 +13,28 @@ When value moves, add "confirm": true and produce a friendly one-line confirmati
 export type PlanAndExecuteArgs = {
   message: string;
   history?: unknown[];
+  meta?: PlanMeta;
 };
 
-export async function* planAndExecute({ message, history = [] }: PlanAndExecuteArgs) {
+type PlanMeta = {
+  traceId?: string;
+  userId?: string;
+};
+
+export async function* planAndExecute({
+  message,
+  history = [],
+  meta,
+}: PlanAndExecuteArgs) {
   yield "🤖 Planning…\n";
+
+  const userId = resolveUserId(meta, history);
 
   const confirmation = resolvePendingConfirmation(message, history);
   if (confirmation?.type === "confirm" && confirmation.ics) {
+    const confirmed = ensureUserId(confirmation.ics, userId);
     yield "🔐 Confirmation received.\n";
-    yield* route(confirmation.ics);
+    yield* route(confirmed);
     return;
   }
   if (confirmation?.type === "decline") {
@@ -37,7 +50,7 @@ export async function* planAndExecute({ message, history = [] }: PlanAndExecuteA
     { role: "user", content: message },
   ];
 
-  const icsText = await streamLLM(prompt, { expect: "json" });
+  const icsText = await streamLLM(prompt, { expect: "json", meta });
   let ics: ICSType;
 
   try {
@@ -48,25 +61,28 @@ export async function* planAndExecute({ message, history = [] }: PlanAndExecuteA
     return;
   }
 
-  if (needsInfo(ics)) {
+  const userScopedICS = ensureUserId(ics, userId);
+
+  if (needsInfo(userScopedICS)) {
     yield `${askFollowUp(ics)}\n`;
     return;
   }
 
-  if (requiresUserConsent(ics)) {
-    const decorated = ensureTraceId(ics);
+  if (requiresUserConsent(userScopedICS)) {
+    const decorated = ensureTraceId(userScopedICS);
     cachePendingIntent(decorated);
     yield `${nlConfirm(decorated)}\n`;
     return;
   }
 
-  yield* route(ics);
+  yield* route(userScopedICS);
 }
 
 type HistoryMessage = {
   role?: string;
   text?: string;
   content?: string;
+  meta?: Record<string, unknown>;
 };
 
 function normalizeHistory(history: unknown[]): { role: string; content: string }[] {
@@ -139,6 +155,33 @@ function findTraceId(history: unknown[]): string | null {
 function coerceHistory(history: unknown[]): HistoryMessage[] {
   if (!Array.isArray(history)) return [];
   return history.filter((item): item is HistoryMessage => typeof item === "object" && item !== null);
+}
+
+function resolveUserId(meta: PlanMeta | undefined, history: unknown[]): string | undefined {
+  if (meta?.userId) return meta.userId;
+  const entries = coerceHistory(history);
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index];
+    const rawMeta = entry?.meta;
+    if (!rawMeta || typeof rawMeta !== "object") {
+      continue;
+    }
+    const { userId } = rawMeta as Record<string, unknown>;
+    if (typeof userId === "string" && userId.trim()) {
+      return userId.trim();
+    }
+  }
+  return undefined;
+}
+
+function ensureUserId(ics: ICSType, userId?: string): ICSType {
+  if (!userId) return ics;
+  const current = ics.meta?.userId;
+  if (current === userId) return ics;
+  return {
+    ...ics,
+    meta: { ...(ics.meta ?? {}), userId },
+  };
 }
 
 function ensureTraceId(ics: ICSType): ICSType {

@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
-import { getAAProvider } from "./providers/aa";
-import { getRelayerWallet } from "./providers/relayer";
+import { getAAProvider } from "./providers/aa.js";
+import { getRelayerWallet } from "./providers/relayer.js";
 
 const MODE = process.env.TX_MODE ?? "relayer";
 
