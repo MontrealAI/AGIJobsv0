@@ -2,6 +2,8 @@
 
 ## Architecture
 
+For a conversational UX blueprint, see [chat-interface-architecture.md](chat-interface-architecture.md).
+
 ```mermaid
 graph TD
     Employer -->|createJob| JobRegistry
