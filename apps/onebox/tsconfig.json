@@ -17,16 +17,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "incremental": true,
-    "baseUrl": "./src",
-    "paths": {
-      "@agi/orchestrator/*": [
-        "../../../packages/orchestrator/src/*"
-      ]
-    },
     "types": [
       "node"
     ],
+    "incremental": true,
     "plugins": [
       {
         "name": "next"

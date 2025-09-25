@@ -4,8 +4,6 @@ import * as stake from "./tools/stake";
 import * as validation from "./tools/validation";
 import * as dispute from "./tools/dispute";
 
-type AsyncGeneratorString = AsyncGenerator<string, void, unknown>;
-
 export const ICSSchema = z.object({
   intent: z.enum([
     "create_job",
@@ -17,15 +15,16 @@ export const ICSSchema = z.object({
     "stake",
     "withdraw",
     "admin_set",
+    "clarify"
   ]),
   params: z.record(z.any()).default({}),
   confirm: z.boolean().optional(),
   meta: z
     .object({
-      traceId: z.string().uuid().optional(),
-      userId: z.string().optional(),
+      traceId: z.string().optional(),
+      userId: z.string().optional()
     })
-    .optional(),
+    .optional()
 });
 
 export type ICSType = z.infer<typeof ICSSchema>;
@@ -34,27 +33,40 @@ export function validateICS(payload: string): ICSType {
   return ICSSchema.parse(JSON.parse(payload));
 }
 
-export function route(ics: ICSType): AsyncGeneratorString {
+export async function* route(ics: ICSType): AsyncGenerator<string> {
   switch (ics.intent) {
     case "create_job":
-      return job.createJob(ics);
+      yield* job.createJob(ics);
+      return;
     case "apply_job":
-      return job.applyJob(ics);
+      yield* job.applyJob(ics);
+      return;
     case "submit_work":
-      return job.submitWork(ics);
+      yield* job.submitWork(ics);
+      return;
     case "finalize":
-      return job.finalize(ics);
+      yield* job.finalize(ics);
+      return;
     case "validate":
-      return validation.commitReveal(ics);
+      yield* validation.commitReveal(ics);
+      return;
     case "dispute":
-      return dispute.raise(ics);
+      yield* dispute.raise(ics);
+      return;
     case "stake":
-      return stake.deposit(ics);
+      yield* stake.deposit(ics);
+      return;
     case "withdraw":
-      return stake.withdraw(ics);
+      yield* stake.withdraw(ics);
+      return;
+    case "admin_set":
+      yield "Admin actions are not yet implemented.\n";
+      return;
+    case "clarify":
+      yield "Could you clarify the amount, deadline, or job id?\n";
+      return;
     default:
-      return (async function* unsupported() {
-        yield `Unsupported intent: ${ics.intent}\n`;
-      })();
+      yield `Unsupported intent: ${ics.intent}.\n`;
+      return;
   }
 }

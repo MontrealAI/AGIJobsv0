@@ -1,144 +1,114 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import styles from "./page.module.css";
+import { useEffect, useRef, useState } from "react";
 
 type Role = "user" | "assistant" | "system" | "assistant_pending";
-export type ChatMessage = {
+
+type Msg = {
   role: Role;
   text: string;
   meta?: Record<string, unknown>;
 };
 
-const INITIAL_MESSAGE: ChatMessage = {
-  role: "assistant",
-  text: "Hi! What would you like to do? (e.g., “Post a job to label 500 images for 50 AGIALPHA by next week.”)",
-};
-
-const ROLE_CLASSNAMES: Record<Role, string> = {
-  user: styles.messageUser,
-  assistant: styles.messageAssistant,
-  system: styles.messageSystem,
-  assistant_pending: styles.messagePending,
-};
-
 export default function OneBox() {
-  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
+  const [msgs, setMsgs] = useState<Msg[]>([
+    {
+      role: "assistant",
+      text: "Hi! What would you like to do? (e.g., “Post a job to label 500 images for 50 AGIALPHA by next week.”)"
+    }
+  ]);
   const [input, setInput] = useState("");
-  const [isBusy, setBusy] = useState(false);
-  const scroller = useRef<HTMLDivElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const scroller = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const node = scroller.current;
-    if (!node) return;
-    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    scroller.current?.scrollTo(0, scroller.current.scrollHeight);
+  }, [msgs]);
 
-  async function sendMessage() {
-    if (!input.trim() || isBusy) return;
-    const mine: ChatMessage = { role: "user", text: input.trim() };
-    setMessages((prev) => [...prev, mine]);
+  async function send() {
+    if (!input.trim() || busy) return;
+    const mine: Msg = { role: "user", text: input.trim() };
+    setMsgs((m) => [...m, mine]);
     setInput("");
     setBusy(true);
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: mine.text,
-          history: messages.slice(-12),
-        }),
-      });
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: mine.text, history: msgs.slice(-12) })
+    });
 
-      if (!response.body) {
-        throw new Error("No response body");
-      }
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let partial = "";
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantText = "";
-
-      setMessages((prev) => [...prev, { role: "assistant_pending", text: "" }]);
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        assistantText += decoder.decode(value, { stream: true });
-        const partial = assistantText;
-        setMessages((prev) => {
-          const next = [...prev];
-          const last = next[next.length - 1];
-          if (last && last.role === "assistant_pending") {
-            next[next.length - 1] = { ...last, text: partial };
-          }
-          return next;
-        });
-      }
-
-      setMessages((prev) => {
-        const next = [...prev];
+    while (reader) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      partial += decoder.decode(value, { stream: true });
+      setMsgs((m) => {
+        const next = [...m];
         const last = next[next.length - 1];
-        if (last && last.role === "assistant_pending") {
-          next[next.length - 1] = { role: "assistant", text: last.text };
+        if (last?.role === "assistant_pending") {
+          next[next.length - 1] = { ...last, text: partial };
+          return next;
         }
-        return next;
+        return [...next, { role: "assistant_pending", text: partial }];
       });
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Unable to complete your request.";
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          text: `Something went wrong: ${message}`,
-        },
-      ]);
-    } finally {
-      setBusy(false);
     }
+
+    setMsgs((m) => {
+      const next = [...m];
+      const last = next[next.length - 1];
+      if (last?.role === "assistant_pending") {
+        next[next.length - 1] = { role: "assistant", text: last.text };
+        return next;
+      }
+      return next;
+    });
+    setBusy(false);
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    void sendMessage();
-  };
-
-  const placeholder = useMemo(
-    () => "“Post a job to label 500 images for 50 AGIALPHA by next week.”",
-    []
-  );
-
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <strong>AGI Jobs</strong> — One-Box (gasless, walletless). <i>Type what you want to do.</i>
+    <div className="flex h-screen flex-col">
+      <header className="border-b px-4 py-2 text-sm">
+        <b>AGI Jobs</b> — One-Box (gasless, walletless). <i>Type what you want to do.</i>
       </header>
-      <div ref={scroller} className={styles.messages} role="log" aria-live="polite">
-        {messages.map((message, index) => {
-          const bubbleClass = ROLE_CLASSNAMES[message.role];
-          return (
-            <div key={`${message.role}-${index}`} className={`${styles.message} ${bubbleClass}`}>
-              {message.text}
-            </div>
-          );
-        })}
+      <div ref={scroller} className="flex-1 space-y-3 overflow-auto bg-neutral-50 p-4">
+        {msgs.map((m, i) => (
+          <div
+            key={`${m.role}-${i}`}
+            className={`max-w-[70%] whitespace-pre-wrap rounded px-3 py-2 ${
+              m.role === "user"
+                ? "ml-auto bg-blue-600 text-white"
+                : "bg-white text-neutral-900"
+            } border`}
+          >
+            {m.text}
+          </div>
+        ))}
       </div>
-      <form className={styles.inputRow} onSubmit={handleSubmit}>
+      <form
+        className="flex gap-2 border-t p-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void send();
+        }}
+      >
         <input
-          aria-label="Tell the orchestrator what you need"
+          aria-label="Say anything"
           autoFocus
-          className={styles.input}
-          placeholder={placeholder}
+          className="flex-1 rounded border px-3 py-2"
+          placeholder="“Post a job to label 500 images for 50 AGIALPHA by next week.”"
           value={input}
           onChange={(event) => setInput(event.target.value)}
         />
         <button
+          className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          disabled={busy || !input.trim()}
           type="submit"
-          className={styles.button}
-          disabled={isBusy || !input.trim()}
         >
-          {isBusy ? "Working…" : "Send"}
+          {busy ? "Working…" : "Send"}
         </button>
       </form>
     </div>
