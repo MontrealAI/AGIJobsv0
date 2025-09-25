@@ -141,6 +141,24 @@ export interface PlatformIncentivesConfigResult {
   network?: SupportedNetwork;
 }
 
+export interface PlatformRegistryConfig {
+  address?: string;
+  stakeManager?: string | null;
+  reputationEngine?: string | null;
+  minPlatformStake?: string | null;
+  minPlatformStakeTokens?: string | number | null;
+  pauser?: string | null;
+  registrars?: Record<string, boolean>;
+  blacklist?: Record<string, boolean>;
+  [key: string]: unknown;
+}
+
+export interface PlatformRegistryConfigResult {
+  config: PlatformRegistryConfig;
+  path: string;
+  network?: SupportedNetwork;
+}
+
 export interface TaxPolicyConfig {
   address?: string;
   policyURI?: string;
@@ -321,6 +339,9 @@ export function loadFeePoolConfig(options?: LoadOptions): FeePoolConfigResult;
 export function loadPlatformIncentivesConfig(
   options?: LoadOptions
 ): PlatformIncentivesConfigResult;
+export function loadPlatformRegistryConfig(
+  options?: LoadOptions
+): PlatformRegistryConfigResult;
 export function loadTaxPolicyConfig(
   options?: LoadOptions
 ): TaxPolicyConfigResult;

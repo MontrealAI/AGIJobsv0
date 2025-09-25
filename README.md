@@ -382,4 +382,5 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [Job registry configuration guide](docs/job-registry-configuration.md)
 - [FeePool configuration guide](docs/fee-pool-configuration.md)
 - [StakeManager configuration guide](docs/stake-manager-configuration.md)
+- [PlatformRegistry operations guide](docs/platform-registry-operations.md)
 - [Agent gateway example](examples/agent-gateway.js)

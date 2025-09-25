@@ -174,7 +174,8 @@ function normaliseAliasEntry(value, label) {
     updated = true;
   }
 
-  const labelName = alias.label || (alias.name ? alias.name.split('.')[0] : undefined);
+  const labelName =
+    alias.label || (alias.name ? alias.name.split('.')[0] : undefined);
   if (labelName) {
     const normalisedLabel = normaliseLabel(labelName, labelName);
     if (alias.label !== normalisedLabel) {
@@ -182,7 +183,10 @@ function normaliseAliasEntry(value, label) {
       updated = true;
     }
     const labelhash = ethers.id(normalisedLabel);
-    if (!alias.labelhash || alias.labelhash.toLowerCase() !== labelhash.toLowerCase()) {
+    if (
+      !alias.labelhash ||
+      alias.labelhash.toLowerCase() !== labelhash.toLowerCase()
+    ) {
       alias.labelhash = labelhash;
       updated = true;
     }
@@ -229,8 +233,9 @@ function normaliseIdentityRoot(value, label) {
     : [];
 
   if (aliases.length > 0) {
-    root.aliases = aliases.map((entry, index) =>
-      normaliseAliasEntry(entry, `${label} alias[${index}]`).alias
+    root.aliases = aliases.map(
+      (entry, index) =>
+        normaliseAliasEntry(entry, `${label} alias[${index}]`).alias
     );
   }
 
@@ -361,7 +366,10 @@ function normaliseStakeManagerConfig(config = {}) {
     }
   }
 
-  if (result.treasuryAllowlist && typeof result.treasuryAllowlist === 'object') {
+  if (
+    result.treasuryAllowlist &&
+    typeof result.treasuryAllowlist === 'object'
+  ) {
     const mapped = {};
     for (const [key, value] of Object.entries(result.treasuryAllowlist)) {
       if (value === undefined || value === null) continue;
@@ -375,7 +383,10 @@ function normaliseStakeManagerConfig(config = {}) {
     result.autoStake = { ...result.autoStake };
   }
 
-  if (result.stakeRecommendations && typeof result.stakeRecommendations === 'object') {
+  if (
+    result.stakeRecommendations &&
+    typeof result.stakeRecommendations === 'object'
+  ) {
     result.stakeRecommendations = { ...result.stakeRecommendations };
   }
 
@@ -418,7 +429,10 @@ function normaliseFeePoolConfig(config = {}) {
     }
   }
 
-  if (result.treasuryAllowlist && typeof result.treasuryAllowlist === 'object') {
+  if (
+    result.treasuryAllowlist &&
+    typeof result.treasuryAllowlist === 'object'
+  ) {
     const mapped = {};
     for (const [key, value] of Object.entries(result.treasuryAllowlist)) {
       if (value === undefined || value === null) continue;
@@ -434,7 +448,9 @@ function normaliseFeePoolConfig(config = {}) {
     const mapped = {};
     for (const [key, value] of Object.entries(result.rewarders)) {
       if (value === undefined || value === null) continue;
-      const address = ensureAddress(key, `rewarder ${key}`, { allowZero: false });
+      const address = ensureAddress(key, `rewarder ${key}`, {
+        allowZero: false,
+      });
       mapped[address] = Boolean(value);
     }
     result.rewarders = mapped;
@@ -500,6 +516,75 @@ function loadPlatformIncentivesConfig(options = {}) {
   return { config, path: configPath, network };
 }
 
+function normalisePlatformRegistryConfig(config = {}) {
+  const result = { ...config };
+
+  if (result.address !== undefined) {
+    const value = result.address;
+    if (value === null) {
+      throw new Error('PlatformRegistry address cannot be null');
+    }
+    result.address = ensureAddress(value, 'PlatformRegistry address');
+  }
+
+  const addressKeys = ['stakeManager', 'reputationEngine', 'pauser'];
+  for (const key of addressKeys) {
+    if (result[key] !== undefined) {
+      const value = result[key];
+      if (value === null) {
+        result[key] = ethers.ZeroAddress;
+      } else {
+        result[key] = ensureAddress(value, `PlatformRegistry ${key}`, {
+          allowZero: key !== 'stakeManager' && key !== 'reputationEngine',
+        });
+      }
+    }
+  }
+
+  result.registrars = normaliseAddressBooleanMap(
+    result.registrars,
+    'registrar'
+  );
+  result.blacklist = normaliseAddressBooleanMap(result.blacklist, 'blacklist');
+
+  if (result.minPlatformStake !== undefined) {
+    try {
+      if (result.minPlatformStake === null) {
+        delete result.minPlatformStake;
+      } else {
+        result.minPlatformStake = BigInt(result.minPlatformStake).toString();
+      }
+    } catch (error) {
+      throw new Error(
+        `minPlatformStake must be an integer string: ${error?.message || error}`
+      );
+    }
+  }
+
+  if (result.minPlatformStakeTokens !== undefined) {
+    const value = result.minPlatformStakeTokens;
+    if (value === null) {
+      delete result.minPlatformStakeTokens;
+    } else {
+      result.minPlatformStakeTokens = String(value).trim();
+    }
+  }
+
+  return result;
+}
+
+function loadPlatformRegistryConfig(options = {}) {
+  const network = resolveNetwork(options);
+  const configPath = options.path
+    ? path.resolve(options.path)
+    : findConfigPath('platform-registry', network);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Platform registry config not found at ${configPath}`);
+  }
+  const config = normalisePlatformRegistryConfig(readJson(configPath));
+  return { config, path: configPath, network };
+}
+
 function normaliseTaxPolicyConfig(config = {}) {
   const result = { ...config };
 
@@ -561,9 +646,13 @@ function normaliseThermodynamicsConfig(config = {}) {
     }
 
     if (reward.treasury !== undefined) {
-      reward.treasury = ensureAddress(reward.treasury, 'RewardEngine treasury', {
-        allowZero: true,
-      });
+      reward.treasury = ensureAddress(
+        reward.treasury,
+        'RewardEngine treasury',
+        {
+          allowZero: true,
+        }
+      );
     }
 
     if (reward.thermostat !== undefined) {
@@ -600,7 +689,10 @@ function normaliseThermodynamicsConfig(config = {}) {
           });
     }
 
-    if (thermo.roleTemperatures && typeof thermo.roleTemperatures === 'object') {
+    if (
+      thermo.roleTemperatures &&
+      typeof thermo.roleTemperatures === 'object'
+    ) {
       const mapped = {};
       for (const [key, value] of Object.entries(thermo.roleTemperatures)) {
         mapped[key] = value;
@@ -650,14 +742,19 @@ function normaliseRootEntry(key, root) {
   } else if (typeof source?.ens === 'string') {
     nameCandidate = source.ens.trim().toLowerCase();
   }
-  const name = nameCandidate || (defaultName ? defaultName.toLowerCase() : `${label}.agi.eth`);
+  const name =
+    nameCandidate ||
+    (defaultName ? defaultName.toLowerCase() : `${label}.agi.eth`);
   if (result.name !== name) {
     result.name = name;
     changed = true;
   }
 
   const labelhash = ethers.id(label);
-  if (!result.labelhash || result.labelhash.toLowerCase() !== labelhash.toLowerCase()) {
+  if (
+    !result.labelhash ||
+    result.labelhash.toLowerCase() !== labelhash.toLowerCase()
+  ) {
     result.labelhash = labelhash;
     changed = true;
   }
@@ -669,21 +766,30 @@ function normaliseRootEntry(key, root) {
   }
 
   const merkleRoot = ensureBytes32(source?.merkleRoot);
-  if (!result.merkleRoot || result.merkleRoot.toLowerCase() !== merkleRoot.toLowerCase()) {
+  if (
+    !result.merkleRoot ||
+    result.merkleRoot.toLowerCase() !== merkleRoot.toLowerCase()
+  ) {
     result.merkleRoot = merkleRoot;
     changed = true;
   }
 
   if (source?.resolver !== undefined) {
-    const resolver = ensureAddress(source.resolver, `${key} resolver`, { allowZero: true });
-    if (!result.resolver || result.resolver.toLowerCase() !== resolver.toLowerCase()) {
+    const resolver = ensureAddress(source.resolver, `${key} resolver`, {
+      allowZero: true,
+    });
+    if (
+      !result.resolver ||
+      result.resolver.toLowerCase() !== resolver.toLowerCase()
+    ) {
       result.resolver = resolver;
       changed = true;
     }
   }
 
   const defaultRole =
-    source?.role || (key === 'club' ? 'validator' : key === 'business' ? 'business' : 'agent');
+    source?.role ||
+    (key === 'club' ? 'validator' : key === 'business' ? 'business' : 'agent');
   if (result.role !== defaultRole) {
     result.role = defaultRole;
     changed = true;
@@ -695,7 +801,10 @@ function normaliseRootEntry(key, root) {
     ? [source.alias]
     : [];
 
-  if (aliasInput.length > 0 || (Array.isArray(result.aliases) && result.aliases.length > 0)) {
+  if (
+    aliasInput.length > 0 ||
+    (Array.isArray(result.aliases) && result.aliases.length > 0)
+  ) {
     const normalisedAliases = [];
     let aliasChanged = false;
     for (let i = 0; i < aliasInput.length; i += 1) {
@@ -710,7 +819,9 @@ function normaliseRootEntry(key, root) {
     }
 
     const previous = Array.isArray(result.aliases) ? result.aliases : [];
-    const previousNodes = previous.map((entry) => ensureBytes32(entry.node).toLowerCase());
+    const previousNodes = previous.map((entry) =>
+      ensureBytes32(entry.node).toLowerCase()
+    );
     const nextNodes = normalisedAliases.map((entry) =>
       ensureBytes32(entry.node).toLowerCase()
     );
@@ -746,7 +857,10 @@ function normaliseEnsConfig(config) {
   }
 
   for (const legacyKey of Object.keys(updated)) {
-    if (['agent', 'club', 'business'].includes(legacyKey) && !updated.roots[legacyKey]) {
+    if (
+      ['agent', 'club', 'business'].includes(legacyKey) &&
+      !updated.roots[legacyKey]
+    ) {
       updated.roots[legacyKey] = updated[legacyKey];
       delete updated[legacyKey];
       changed = true;
@@ -761,16 +875,22 @@ function normaliseEnsConfig(config) {
     }
   }
   if (updated.nameWrapper) {
-    const normalised = ensureAddress(updated.nameWrapper, 'ENS NameWrapper', { allowZero: true });
+    const normalised = ensureAddress(updated.nameWrapper, 'ENS NameWrapper', {
+      allowZero: true,
+    });
     if (updated.nameWrapper !== normalised) {
       updated.nameWrapper = normalised;
       changed = true;
     }
   }
   if (updated.reverseRegistrar) {
-    const normalised = ensureAddress(updated.reverseRegistrar, 'ENS reverse registrar', {
-      allowZero: true,
-    });
+    const normalised = ensureAddress(
+      updated.reverseRegistrar,
+      'ENS reverse registrar',
+      {
+        allowZero: true,
+      }
+    );
     if (updated.reverseRegistrar !== normalised) {
       updated.reverseRegistrar = normalised;
       changed = true;
@@ -801,7 +921,12 @@ function loadEnsConfig(options = {}) {
   if (changed && persist) {
     writeJson(configPath, config);
   }
-  return { config, path: configPath, network, updated: Boolean(changed && persist) };
+  return {
+    config,
+    path: configPath,
+    network,
+    updated: Boolean(changed && persist),
+  };
 }
 
 function normaliseAddressBooleanMap(value, label, { allowZero = false } = {}) {
@@ -857,8 +982,8 @@ function normaliseAliasArray(value, label) {
     return [];
   }
   const list = Array.isArray(value) ? value : [value];
-  return list.map((entry, index) =>
-    normaliseAliasEntry(entry, `${label}[${index}]`).alias
+  return list.map(
+    (entry, index) => normaliseAliasEntry(entry, `${label}[${index}]`).alias
   );
 }
 
@@ -1024,6 +1149,7 @@ module.exports = {
   loadStakeManagerConfig,
   loadFeePoolConfig,
   loadPlatformIncentivesConfig,
+  loadPlatformRegistryConfig,
   loadTaxPolicyConfig,
   loadThermodynamicsConfig,
   inferNetworkKey,
