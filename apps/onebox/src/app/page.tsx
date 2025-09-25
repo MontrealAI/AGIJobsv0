@@ -43,11 +43,15 @@ export default function OneBox() {
 
     let pendingInserted = false;
 
+    const appendPending = () =>
+      setMessages((prev) => {
+        pendingInserted = true;
+        return [...prev, { role: 'assistant_pending', text: '' }];
+      });
+
     const removeTrailingPending = (list: ChatMessage[]) => {
       if (!pendingInserted) return list;
-      const last = list[list.length - 1];
-      if (!last || last.role !== 'assistant_pending') {
-        pendingInserted = false;
+      if (list[list.length - 1]?.role !== 'assistant_pending') {
         return list;
       }
       pendingInserted = false;
@@ -80,8 +84,7 @@ export default function OneBox() {
       const decoder = new TextDecoder();
       let assistantText = '';
 
-      setMessages((prev) => [...prev, { role: 'assistant_pending', text: '' }]);
-      pendingInserted = true;
+      appendPending();
 
       while (true) {
         const { value, done } = await reader.read();
@@ -117,10 +120,10 @@ export default function OneBox() {
         const last = next[next.length - 1];
         if (last && last.role === 'assistant_pending') {
           next[next.length - 1] = { role: 'assistant', text: assistantText };
+          pendingInserted = false;
         }
         return next;
       });
-      pendingInserted = false;
     } catch (error: unknown) {
       const message =
         error instanceof Error
