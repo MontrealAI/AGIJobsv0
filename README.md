@@ -118,6 +118,7 @@ The wizard validates `.env` secrets, highlights ENS configuration drift, prints 
 
 - **Non-technical operators:** follow the [Non-Technical Mainnet Deployment Runbook (Truffle)](docs/production/nontechnical-mainnet-deployment.md) for an operations-friendly checklist powered by `npm run deploy:checklist`.
 - **Institutional change-control teams:** use the [Institutional Truffle Mainnet Playbook](docs/production/institutional-truffle-mainnet-playbook.md) for staged approvals, migration summaries, and sign-off artefact tracking.
+- **Blueprint view:** hand non-technical coordinators the [Truffle Mainnet Blueprint](docs/production/truffle-mainnet-blueprint.md) for a storyboarded deployment plus the enhanced owner-control matrix introduced in this release.
 - **Visual learners:** review the updated [Mermaid-driven workflow and owner control maps](docs/production/institutional-truffle-mainnet-playbook.md#10-owner-control-matrix-visual) to preview the entire migration pipeline and governance levers at a glance.
 - **Command-line launch coordinators:** the [AGIJobs v0 Institutional Truffle Mainnet Playbook](docs/truffle-mainnet-playbook.md) packages the full CLI workflow with diagrams, rehearsals and owner-control checkpoints suitable for non-technical operators.
 

@@ -99,7 +99,10 @@ export function parsePercentage(
   return numberValue;
 }
 
-export function parseBoolean(value: unknown, label: string): boolean | undefined {
+export function parseBoolean(
+  value: unknown,
+  label: string
+): boolean | undefined {
   if (value === undefined || value === null) {
     return undefined;
   }
@@ -113,7 +116,9 @@ export function parseBoolean(value: unknown, label: string): boolean | undefined
   if (['true', '1', 'yes', 'y', 'on', 'enable', 'enabled'].includes(asString)) {
     return true;
   }
-  if (['false', '0', 'no', 'n', 'off', 'disable', 'disabled'].includes(asString)) {
+  if (
+    ['false', '0', 'no', 'n', 'off', 'disable', 'disabled'].includes(asString)
+  ) {
     return false;
   }
   throw new Error(`${label} must be a boolean value`);
@@ -142,4 +147,42 @@ export function parseTokenAmount(
     throw new Error(`${label}Tokens cannot be negative`);
   }
   return parsed;
+}
+
+export function normaliseBytes32(
+  value: string | Uint8Array | null | undefined,
+  { allowZero = true }: { allowZero?: boolean } = {}
+): string | undefined {
+  if (value === undefined || value === null) {
+    return allowZero ? ethers.ZeroHash : undefined;
+  }
+  const bytes = ethers.getBytes(value);
+  if (bytes.length !== 32) {
+    throw new Error(`Expected 32-byte value, received ${bytes.length}`);
+  }
+  const hex = ethers.hexlify(bytes).toLowerCase();
+  if (!allowZero && hex === ethers.ZeroHash) {
+    return undefined;
+  }
+  return hex;
+}
+
+export function sameBytes32(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) {
+    return false;
+  }
+  try {
+    return (
+      ethers.hexlify(ethers.getBytes(a)).toLowerCase() ===
+      ethers.hexlify(ethers.getBytes(b)).toLowerCase()
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
+export function formatBytes32List(values: Iterable<string>): string {
+  return Array.from(values)
+    .map((value) => value.toLowerCase())
+    .join(', ');
 }
