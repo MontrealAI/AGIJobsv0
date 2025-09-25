@@ -39,33 +39,38 @@ Keep this storyboard near the console. Every command is idempotent and prints a 
 
 ## 2. Zero-assumption prerequisites
 
-| Item | Why it matters | How to confirm |
-| --- | --- | --- |
-| Hardware signer with ≥0.5 ETH | Funds deployment and emergency pause ops | Unlock device, verify balance on Etherscan |
-| `.env` populated with `MAINNET_RPC_URL`, `MAINNET_PRIVATE_KEY`, `GOVERNANCE_ADDRESS`, `ETHERSCAN_API_KEY` | Feeds Truffle, verification, and owner tooling | Run `grep -v '^#' .env` and ensure no blanks |
-| `deployment-config/mainnet.json` reviewed | Aligns ENS roots, economic overrides, governance owner | Open file in editor; ensure addresses match change ticket |
-| `config/agialpha.json` modules blank/known | Guarantees migrations write deterministic addresses | Confirm each module entry is `0x000…` before deploying |
-| Secondary reviewer on-call | Required for institutional change-control | Book a video bridge before starting |
+| Item                                                                                                      | Why it matters                                         | How to confirm                                            |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------- |
+| Hardware signer with ≥0.5 ETH                                                                             | Funds deployment and emergency pause ops               | Unlock device, verify balance on Etherscan                |
+| `.env` populated with `MAINNET_RPC_URL`, `MAINNET_PRIVATE_KEY`, `GOVERNANCE_ADDRESS`, `ETHERSCAN_API_KEY` | Feeds Truffle, verification, and owner tooling         | Run `grep -v '^#' .env` and ensure no blanks              |
+| `deployment-config/mainnet.json` reviewed                                                                 | Aligns ENS roots, economic overrides, governance owner | Open file in editor; ensure addresses match change ticket |
+| `config/agialpha.json` modules blank/known                                                                | Guarantees migrations write deterministic addresses    | Confirm each module entry is `0x000…` before deploying    |
+| Secondary reviewer on-call                                                                                | Required for institutional change-control              | Book a video bridge before starting                       |
 
 ---
 
 ## 3. Launch procedure (non-technical walkthrough)
 
 1. **Dry-run the entire pipeline.**
+
    ```bash
    env DOTENV_PATH=.env npm run deploy:checklist
    npm run migrate:wizard -- --network mainnet
    ```
+
    - ✅ Expect a green table summarising RPC reachability, config diffs, ENS hashes, and migration availability.
    - ⚠️ Any `WARN` row indicates an optional improvement (e.g., ENS aliases missing). `FAIL` means stop and remediate.
 
 2. **Execute the mainnet deployment when reviewers approve.**
+
    ```bash
    npm run migrate:wizard -- --network mainnet --execute
    ```
+
    The wizard handles: Hardhat compilation (`viaIR`), Truffle migrations 1–5, wiring verification, and Etherscan submission (if the API key is present).
 
 3. **Capture artefacts immediately.**
+
    - `docs/deployment-addresses.json` – generated automatically by migration 3; upload to the change ticket.
    - Console output – copy/paste into the deployment log (contains tx hashes and final module map).
 
@@ -88,6 +93,8 @@ The improved owner plan generator inspects and proposes transactions for:
 - `PlatformIncentives`
 - `TaxPolicy`
 - `IdentityRegistry`
+- `RewardEngineMB`
+- `Thermostat`
 
 ### 4.1 Generate the change set
 
@@ -97,7 +104,7 @@ npm run owner:plan -- --json --out owner-plan.json --safe owner-safe-bundle.json
 
 - `owner-plan.json` – machine-readable summary for audits and offline review.
 - `owner-safe-bundle.json` – ready to import into Safe Transaction Builder for multisig execution.
-- The JSON now includes alias updates, tax acknowledger permissions, and identity allowlists derived directly from the config files under `config/`.
+- The JSON now includes alias updates, tax acknowledger permissions, thermodynamic levers (reward shares, PID controls), and identity allowlists derived directly from the config files under `config/`.
 
 ### 4.2 Visualising the owner actions
 
@@ -124,15 +131,15 @@ Use the generated CSV to brief compliance teams; every row includes the module, 
 
 The plan generator now inspects ENS roots, aliases, Merkle roots, agent allowlists, agent types, and profile URIs. Keep the following table handy when reviewing:
 
-| Config file key | On-chain setter | Notes |
-| --- | --- | --- |
-| `config/identity-registry.json → ens.registry` | `setENS(address)` | Must be the canonical ENS registry; zero address is rejected |
-| `ens.agentRoot.node` | `setAgentRootNode(bytes32)` | Provide the ENS namehash (e.g., `agent.agi.eth`) |
-| `ens.agentRoot.aliases` & `ens.agentAliases` | `add/removeAgentRootNodeAlias(bytes32)` | The plan adds/removes entries to match config |
-| `merkle.agent` / `merkle.validator` | `setAgentMerkleRoot(bytes32)` / `setValidatorMerkleRoot(bytes32)` | Accepts 32-byte hex strings |
-| `additionalAgents` & `additionalValidators` | `add/removeAdditionalAgent`, `add/removeAdditionalValidator` | Boolean map: `true` grants allowlist, `false` revokes |
-| `agentTypes` | `setAgentType(address,uint8)` | Values: `0` Human, `1` AI |
-| `agentProfiles` | `setAgentProfileURI(address,string)` | Empty string clears metadata |
+| Config file key                                | On-chain setter                                                   | Notes                                                        |
+| ---------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------ |
+| `config/identity-registry.json → ens.registry` | `setENS(address)`                                                 | Must be the canonical ENS registry; zero address is rejected |
+| `ens.agentRoot.node`                           | `setAgentRootNode(bytes32)`                                       | Provide the ENS namehash (e.g., `agent.agi.eth`)             |
+| `ens.agentRoot.aliases` & `ens.agentAliases`   | `add/removeAgentRootNodeAlias(bytes32)`                           | The plan adds/removes entries to match config                |
+| `merkle.agent` / `merkle.validator`            | `setAgentMerkleRoot(bytes32)` / `setValidatorMerkleRoot(bytes32)` | Accepts 32-byte hex strings                                  |
+| `additionalAgents` & `additionalValidators`    | `add/removeAdditionalAgent`, `add/removeAdditionalValidator`      | Boolean map: `true` grants allowlist, `false` revokes        |
+| `agentTypes`                                   | `setAgentType(address,uint8)`                                     | Values: `0` Human, `1` AI                                    |
+| `agentProfiles`                                | `setAgentProfileURI(address,string)`                              | Empty string clears metadata                                 |
 
 Before executing the plan, open `config/identity-registry.json` to ensure every override is deliberate. The script will highlight additions and removals in the console.
 
@@ -185,14 +192,14 @@ Document the block number at which the pause happened and share it with stakehol
 
 ## 8. Cross-check matrix
 
-| Step | Tooling | Evidence |
-| --- | --- | --- |
-| Deployment dry-run | `npm run migrate:wizard -- --network mainnet` | Wizard transcript saved |
-| Production deploy | `npm run migrate:wizard -- --network mainnet --execute` | Tx hashes + addresses JSON |
-| Wiring verification | `npm run wire:verify` | Console output captured |
-| Owner authority | `npm run owner:dashboard` | Screenshot or console log |
-| Owner plan | `npm run owner:plan -- --json` | `owner-plan.json` + CSV |
-| Safe bundle import | Safe Transaction Builder | Screenshot of queued batch |
+| Step                | Tooling                                                 | Evidence                   |
+| ------------------- | ------------------------------------------------------- | -------------------------- |
+| Deployment dry-run  | `npm run migrate:wizard -- --network mainnet`           | Wizard transcript saved    |
+| Production deploy   | `npm run migrate:wizard -- --network mainnet --execute` | Tx hashes + addresses JSON |
+| Wiring verification | `npm run wire:verify`                                   | Console output captured    |
+| Owner authority     | `npm run owner:dashboard`                               | Screenshot or console log  |
+| Owner plan          | `npm run owner:plan -- --json`                          | `owner-plan.json` + CSV    |
+| Safe bundle import  | Safe Transaction Builder                                | Screenshot of queued batch |
 
 ---
 
