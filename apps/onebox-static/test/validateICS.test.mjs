@@ -34,7 +34,10 @@ test('enforces 140 character limit when confirmation is required', () => {
     confirm: true,
     confirmationText: 'x'.repeat(141),
   };
-  assert.throws(() => validateICS(payload), /140/);
+  assert.throws(
+    () => validateICS(payload),
+    /Confirmation summary must be 140 characters or fewer/,
+  );
 });
 
 test('generates a fallback traceId when missing', () => {
