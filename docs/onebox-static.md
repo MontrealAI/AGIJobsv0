@@ -98,7 +98,7 @@ web3 storage upload apps/onebox-static
 
 ## 7. Extensibility
 
-- ICS schema and guardrails live entirely in the orchestrator + [`lib.js`](../apps/onebox-static/lib.js); add new intents by updating both ends while preserving backwards compatibility.
+- ICS schema and guardrails live entirely in the orchestrator + [`lib.mjs`](../apps/onebox-static/lib.mjs); add new intents by updating both ends while preserving backwards compatibility.
 - Additional tool metadata can flow via `ics.meta` without UI changes; the Advanced panel renders raw strings supplied in SSE events.
 - If future versions require analytics, add privacy-preserving hooks that batch events server-side instead of embedding trackers in the static bundle.
 

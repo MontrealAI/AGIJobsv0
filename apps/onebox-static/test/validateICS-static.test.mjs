@@ -1,12 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-
 async function loadStaticLib() {
-  const url = new URL('../lib.js', import.meta.url);
-  const source = await readFile(url, 'utf8');
-  const dataUrl = `data:text/javascript;base64,${Buffer.from(source, 'utf8').toString('base64')}`;
-  return import(dataUrl);
+  const url = new URL('../lib.mjs', import.meta.url);
+  return import(url);
 }
 
 const { validateICS } = await loadStaticLib();
