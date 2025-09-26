@@ -10,7 +10,7 @@ const SUPPORTED_INTENTS = [
   "admin_set",
 ];
 
-const CONFIRMATION_SUMMARY_LIMIT = 140;
+const CONFIRMATION_SUMMARY_LIMIT = 160;
 const META_VERSION = "agijobs.onebox/1.0.0";
 
 function isObject(value) {
@@ -32,7 +32,14 @@ export function validateICS(payload) {
   if (!isObject(payload)) {
     throw new Error("Planner returned an invalid response");
   }
-  const { intent, params, confirm = false, summary, meta } = payload;
+  const {
+    intent,
+    params,
+    confirm = false,
+    summary,
+    confirmationText,
+    meta,
+  } = payload;
   if (typeof intent !== "string" || !SUPPORTED_INTENTS.includes(intent)) {
     throw new Error(`Unsupported intent: ${intent}`);
   }
@@ -45,16 +52,23 @@ export function validateICS(payload) {
     meta: {},
   };
 
+  const confirmation =
+    typeof confirmationText === "string" && confirmationText.trim()
+      ? confirmationText.trim()
+      : typeof summary === "string" && summary.trim()
+        ? summary.trim()
+        : "";
+
   if (normalized.confirm) {
-    if (typeof summary !== "string" || !summary.trim()) {
+    if (!confirmation) {
       throw new Error("Planner confirmation summary missing");
     }
-    if (summary.length > CONFIRMATION_SUMMARY_LIMIT) {
+    if (confirmation.length > CONFIRMATION_SUMMARY_LIMIT) {
       throw new Error(`Confirmation summary exceeds ${CONFIRMATION_SUMMARY_LIMIT} characters`);
     }
-    normalized.summary = summary.trim();
-  } else if (typeof summary === "string") {
-    normalized.summary = summary.trim();
+    normalized.summary = confirmation;
+  } else if (confirmation) {
+    normalized.summary = confirmation;
   }
 
   if (isObject(meta) && typeof meta.traceId === "string" && meta.traceId.trim()) {

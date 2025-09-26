@@ -5,7 +5,7 @@ A single-textbox, gasless, walletless interface for AGI Jobs v2 that runs entire
 ## Features
 
 - **One input box** with streaming responses and an advanced details toggle for receipts and diagnostics.
-- **ICS guardrails** – planner responses are validated client-side (intent allowlist, confirmation summaries ≤140 chars, trace IDs).
+- **ICS guardrails** – planner responses are validated client-side (intent allowlist, confirmation summaries ≤160 chars, trace IDs).
 - **Gasless execution** – delegates to the orchestrator for AA-sponsored user operations or relayer fallbacks.
 - **IPFS integration** – job specs, submissions, and dispute evidence are pinned via `web3.storage` straight from the browser.
 - **ENS awareness** – dedicated event type for orchestrator hints to walk users through identity requirements.
@@ -24,7 +24,7 @@ A single-textbox, gasless, walletless interface for AGI Jobs v2 that runs entire
 1. Serve the directory with any static server, e.g. `npx serve apps/onebox-static`.
 2. Update `config.mjs` with your orchestrator endpoints (and optional AA configuration).
 3. In the UI’s **Advanced** panel set a `web3.storage` token (stored locally) if you plan to upload attachments.
-4. Type natural-language requests. When value moves, you will be prompted for a `YES/NO` confirmation capped at 140 characters.
+4. Type natural-language requests. When value moves, you will be prompted for a `YES/NO` confirmation capped at 160 characters.
 
 ## Publishing to IPFS
 
@@ -40,7 +40,7 @@ A single-textbox, gasless, walletless interface for AGI Jobs v2 that runs entire
 ## User guide (walletless UX)
 
 - **Plan** – describe the action (“Post a labeling job for 500 images, 50 AGIALPHA, 7 days”). The orchestrator returns an Intent-Constraint Schema (ICS) payload which is validated in-browser.
-- **Confirm** – if the action moves AGIALPHA or affects stake, you’ll see a ≤140 character summary. Reply `YES` to proceed or anything else to cancel.
+- **Confirm** – if the action moves AGIALPHA or affects stake, you’ll see a ≤160 character summary. Reply `YES` to proceed or anything else to cancel.
 - **Execute** – receipts stream back with plain-language updates. Enable the **Advanced** toggle to view tx hashes, block numbers, or ENS guidance supplied by the orchestrator.
 - **Attachments** – drag/drop or browse a file. The UI pins it to IPFS (requires a `web3.storage` token) and injects the resulting CID into the ICS before execution.
 
