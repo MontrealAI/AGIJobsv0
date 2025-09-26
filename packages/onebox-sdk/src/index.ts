@@ -10,7 +10,11 @@ export type JobAction =
   | 'check_status'
   | 'stake'
   | 'validate'
-  | 'dispute';
+  | 'dispute'
+  | 'apply_job'
+  | 'submit_work'
+  | 'withdraw'
+  | 'admin_set';
 
 /** File attachment metadata for job descriptions stored on IPFS. */
 export interface JobAttachment {
