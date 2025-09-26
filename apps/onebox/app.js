@@ -24,12 +24,15 @@ const errorDictionary = new Map([
   }],
 ]);
 
+const MAX_RECEIPTS = 5;
+
 const state = {
   expert: false,
   pendingIntent: null,
   lastSummary: null,
   config: loadConfig(),
   statusTimer: null,
+  receipts: [],
 };
 
 const dom = {
@@ -48,12 +51,17 @@ const dom = {
   statusCards: document.getElementById('status-cards'),
   statusEmpty: document.getElementById('status-empty'),
   refreshStatus: document.getElementById('refresh-status'),
+  advancedToggle: document.getElementById('advanced-toggle'),
+  advancedPanel: document.getElementById('advanced-panel'),
+  advancedReceipts: document.getElementById('advanced-receipts'),
+  advancedEmpty: document.getElementById('advanced-empty'),
 };
 
 dom.orchField.value = state.config.orchestratorUrl;
 dom.tokenField.value = state.config.apiToken;
 dom.statusSelect.value = String(state.config.statusInterval);
 updateStatusTimer();
+renderAdvancedReceipts();
 
 function loadConfig() {
   try {
@@ -114,6 +122,7 @@ function renderConfirm(summary, intent) {
   cancel.textContent = 'Cancel';
   cancel.addEventListener('click', () => {
     state.pendingIntent = null;
+    state.lastSummary = null;
     renderMessage('assistant', 'Okay, cancelled. Let me know if you want to try again.');
   });
 
@@ -158,15 +167,24 @@ async function executeIntent(intent) {
     const { ok, jobId, txHash, receiptUrl } = response;
     if (!ok) throw new Error(response.error || 'Execution failed');
 
-    const lines = [];
-    lines.push(`✅ Success. Job ID <strong>#${jobId}</strong>.`);
-    if (receiptUrl) {
-      lines.push(`<a href="${receiptUrl}" target="_blank" rel="noopener">View receipt</a>`);
-    } else if (txHash) {
-      lines.push(`<span class="msg-note">Tx hash: ${txHash}</span>`);
+    addReceipt(intent, { jobId, txHash, receiptUrl }, state.lastSummary);
+
+    const fragment = document.createDocumentFragment();
+    const body = document.createElement('p');
+    body.className = 'msg-body';
+    if (jobId) {
+      body.innerHTML = `✅ Job <strong>#${jobId}</strong> is live.`;
+    } else {
+      body.textContent = '✅ Request completed successfully.';
     }
-    renderMessage('assistant', lines.join(' '));
+    const hint = document.createElement('p');
+    hint.className = 'msg-note';
+    hint.textContent = 'Advanced receipts holds the verification links if you need them.';
+    fragment.append(body, hint);
+
+    renderMessage('assistant', fragment);
     state.pendingIntent = null;
+    state.lastSummary = null;
     refreshStatuses();
   } catch (err) {
     handleError(err);
@@ -283,6 +301,138 @@ function renderStatuses(jobs) {
   }
 }
 
+function addReceipt(intent, receipt, summary) {
+  const entry = {
+    jobId: Number.isFinite(receipt?.jobId) ? Number(receipt.jobId) : null,
+    txHash: receipt?.txHash || null,
+    receiptUrl: receipt?.receiptUrl || null,
+    summary: typeof summary === 'string' ? summary : '',
+    action: intent && typeof intent.action === 'string' ? intent.action : null,
+    intent: cloneIntent(intent),
+    timestamp: new Date().toISOString(),
+  };
+
+  state.receipts.unshift(entry);
+  if (state.receipts.length > MAX_RECEIPTS) {
+    state.receipts.length = MAX_RECEIPTS;
+  }
+  renderAdvancedReceipts();
+}
+
+function renderAdvancedReceipts() {
+  if (!dom.advancedReceipts || !dom.advancedEmpty) return;
+  dom.advancedReceipts.innerHTML = '';
+  if (!state.receipts.length) {
+    dom.advancedEmpty.hidden = false;
+    updateAdvancedToggleLabel();
+    return;
+  }
+  dom.advancedEmpty.hidden = true;
+
+  state.receipts.forEach((entry) => {
+    const card = document.createElement('article');
+    card.className = 'advanced-receipt';
+    card.setAttribute('role', 'listitem');
+
+    const header = document.createElement('header');
+    const title = document.createElement('div');
+    title.className = 'advanced-title';
+    title.textContent = formatReceiptTitle(entry);
+
+    const meta = document.createElement('div');
+    meta.className = 'advanced-meta';
+    if (entry.jobId) meta.appendChild(createMetaSpan(`Job #${entry.jobId}`));
+    if (entry.action) meta.appendChild(createMetaSpan(formatIntentAction(entry.action)));
+    meta.appendChild(createMetaSpan(formatTimestamp(entry.timestamp)));
+
+    header.append(title, meta);
+    card.appendChild(header);
+
+    const links = document.createElement('div');
+    links.className = 'advanced-links';
+    if (entry.receiptUrl) {
+      const link = document.createElement('a');
+      link.href = entry.receiptUrl;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'Verify on chain';
+      links.appendChild(link);
+    }
+    if (!entry.receiptUrl && entry.txHash) {
+      links.appendChild(createMetaSpan(`Tx hash: ${entry.txHash}`));
+    }
+    if (links.childNodes.length) {
+      card.appendChild(links);
+    }
+
+    if (entry.intent) {
+      const details = document.createElement('details');
+      const summaryEl = document.createElement('summary');
+      summaryEl.textContent = 'View calldata & payload';
+      const pre = document.createElement('pre');
+      pre.className = 'advanced-json';
+      pre.textContent = JSON.stringify(entry.intent, null, 2);
+      details.append(summaryEl, pre);
+      card.appendChild(details);
+    }
+
+    dom.advancedReceipts.appendChild(card);
+  });
+
+  updateAdvancedToggleLabel();
+}
+
+function formatReceiptTitle(entry) {
+  const cleanedSummary = entry.summary
+    ? entry.summary.replace(/\s*(?:Shall I proceed|Proceed)[?.!]*$/i, '').trim()
+    : '';
+  if (cleanedSummary) {
+    return cleanedSummary;
+  }
+  const actionLabel = entry.action ? formatIntentAction(entry.action) : 'Action executed';
+  if (entry.jobId) {
+    return `${actionLabel} · Job #${entry.jobId}`;
+  }
+  return actionLabel;
+}
+
+function formatIntentAction(action) {
+  switch (action) {
+    case 'post_job':
+      return 'Posted job';
+    case 'finalize_job':
+      return 'Finalized job';
+    case 'check_status':
+      return 'Checked status';
+    default:
+      return action?.replace(/_/g, ' ') || 'Action executed';
+  }
+}
+
+function formatTimestamp(value) {
+  try {
+    const date = value ? new Date(value) : new Date();
+    if (Number.isNaN(date.getTime())) throw new Error('invalid');
+    return date.toLocaleString(undefined, { hour12: false });
+  } catch (err) {
+    return new Date().toLocaleString(undefined, { hour12: false });
+  }
+}
+
+function cloneIntent(intent) {
+  try {
+    return JSON.parse(JSON.stringify(intent));
+  } catch (err) {
+    return null;
+  }
+}
+
+function createMetaSpan(text) {
+  const span = document.createElement('span');
+  span.textContent = text;
+  return span;
+}
+
 function toggleExpertMode() {
   state.expert = !state.expert;
   dom.expertToggle.setAttribute('aria-pressed', String(state.expert));
@@ -293,6 +443,28 @@ function toggleExpertMode() {
   } else {
     renderNote('Expert mode on. I can hand you calldata for signing if required.');
   }
+}
+
+function toggleAdvanced() {
+  if (!dom.advancedToggle || !dom.advancedPanel) return;
+  const expanded = dom.advancedToggle.getAttribute('aria-expanded') === 'true';
+  const next = !expanded;
+  dom.advancedToggle.setAttribute('aria-expanded', String(next));
+  dom.advancedPanel.hidden = !next;
+  updateAdvancedToggleLabel();
+  if (next) {
+    renderAdvancedReceipts();
+  }
+}
+
+function updateAdvancedToggleLabel() {
+  if (!dom.advancedToggle) return;
+  const expanded = dom.advancedToggle.getAttribute('aria-expanded') === 'true';
+  const count = state.receipts.length;
+  const suffix = count > 0 ? ` (${count})` : '';
+  dom.advancedToggle.textContent = expanded
+    ? `Hide advanced receipts${suffix}`
+    : `Advanced receipts${suffix}`;
 }
 
 function openSettings() {
@@ -461,6 +633,9 @@ function registerListeners() {
   dom.settingsBtn.addEventListener('click', openSettings);
   dom.settingsDialog.addEventListener('close', applySettings);
   dom.refreshStatus.addEventListener('click', refreshStatuses);
+  if (dom.advancedToggle) {
+    dom.advancedToggle.addEventListener('click', toggleAdvanced);
+  }
 
   dom.settingsForm.addEventListener('submit', (event) => {
     event.preventDefault();

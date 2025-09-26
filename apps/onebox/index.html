@@ -19,7 +19,7 @@
         </div>
       </header>
 
-      <section class="chat" aria-live="polite" aria-label="Conversation" id="chat-log">
+      <section class="chat" aria-live="polite" aria-label="Conversation" role="log" id="chat-log">
         <article class="msg assistant">
           <p class="msg-body">Hi! Tell me what you need and I’ll orchestrate the job for you.</p>
           <p class="msg-note">Try: <span class="example-text">Post a labeling job for 500 images; pay 5 AGIALPHA; 7 days.</span></p>
@@ -53,6 +53,18 @@
       <section class="footnotes">
         <p>This static site talks to the AGI‑Alpha Orchestrator <code>/onebox/*</code> endpoints. Configure the base URL in Settings.</p>
         <p>Expert mode reveals wallet signing flows; guest mode uses the orchestrator’s relayer.</p>
+        <button type="button" class="btn ghost" id="advanced-toggle" aria-expanded="false" aria-controls="advanced-panel">
+          Advanced receipts
+        </button>
+      </section>
+
+      <section class="advanced" id="advanced-panel" hidden aria-label="Advanced receipts" role="region">
+        <div class="advanced-head">
+          <h2>Advanced receipts</h2>
+          <p class="advanced-note">Verification links and calldata appear here after you run a task.</p>
+        </div>
+        <div class="advanced-receipts" id="advanced-receipts" role="list"></div>
+        <p class="advanced-empty" id="advanced-empty">No receipts yet. They will show up here once you run something.</p>
       </section>
     </div>
 
