@@ -6,7 +6,7 @@
 :root{--bg:#0b0f14;--fg:#f5f7fb;--muted:#a7b0be;--soft:#121923;--line:#1c2531;--acc:#7c5cff;--ok:#1bbf6b}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui}
 .wrap{max-width:880px;margin:auto;padding:24px}
-.header{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.header{display:flex;gap:10px;align-items:center}
 .badge{padding:4px 8px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:12px}
 .chat{display:flex;flex-direction:column;gap:12px;min-height:52vh;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0e141c}
 .msg{max-width:75%;padding:12px 14px;border-radius:12px}
@@ -16,17 +16,15 @@
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .pill{padding:8px 12px;border-radius:999px;background:#182131;border:1px solid #273245;cursor:pointer}
 .pill.ok{background:#0e2a1c;border-color:#214b38;color:#7de6b2}
-.input{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-input[type=text]{flex:1;min-width:220px;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:#0e141c;color:var(--fg)}
+.input{display:flex;gap:8px;margin-top:12px}
+input[type=text]{flex:1;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:#0e141c;color:var(--fg)}
 button{padding:12px 16px;border-radius:12px;border:0;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
 button.secondary{background:#1a2330;color:var(--fg);border:1px solid #273245}
 .small{font-size:13px;color:var(--muted)}
 .sec{margin-top:18px;padding:12px;border:1px dashed #263142;border-radius:10px;background:#0c131c}
 .kbd{padding:2px 6px;border-radius:6px;background:#1a2330;border:1px solid #283446;color:#c8d0da;font-size:12px}
 a{color:#b7a8ff}
-@media (max-width:680px){.msg{max-width:100%}.header{flex-direction:column;align-items:flex-start}}
 </style>
-<body>
 <div class="wrap">
   <div class="header">
     <h1 style="margin:0;font-size:20px">AGI Jobs — One‑Box</h1>
@@ -63,5 +61,4 @@ a{color:#b7a8ff}
   <div class="small" style="margin-top:12px">No hashes, no gas prompts by default. A “Verify on chain” link appears after success.</div>
 </div>
 <script type="module" src="./app.js"></script>
-</body>
 </html>
