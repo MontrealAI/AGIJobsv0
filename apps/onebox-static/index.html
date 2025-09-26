@@ -114,23 +114,23 @@
       transform: translateY(-1px);
       box-shadow: 0 8px 16px rgba(16, 82, 214, 0.25);
     }
-    #adv {
+    #advanced-panel {
       font-size: 13px;
       color: rgba(20, 28, 47, 0.75);
       padding: 0 16px 12px;
       display: none;
       white-space: pre-line;
     }
-    .adv-show #adv {
+    body.advanced #advanced-panel {
       display: block;
     }
-    #adv h2 {
+    #advanced-panel h2 {
       margin: 0 0 8px;
       font-size: 14px;
       font-weight: 600;
       color: #0b2b5a;
     }
-    #adv pre {
+    #advanced-panel pre {
       background: rgba(16, 82, 214, 0.08);
       border-radius: 12px;
       padding: 12px;
@@ -202,15 +202,21 @@
     <b>AGI Jobs</b> — One-Box (gasless, walletless)
   </header>
   <div id="feed" role="log" aria-live="polite"></div>
-  <form id="prompt-form">
-    <input id="prompt-file" type="file" hidden />
-    <label class="sr-only" for="prompt-input">Request</label>
+  <form id="composer">
+    <input id="attachment" type="file" hidden />
+    <label class="sr-only" for="question">Request</label>
     <button id="attach-button" type="button" aria-label="Attach a file">📎</button>
-    <input id="prompt-input" type="text" placeholder='e.g., "Post a job: 500 images, 50 AGIALPHA, 7 days"' aria-label="Type your request" autocomplete="off" />
-    <button id="prompt-submit" type="submit">Send</button>
+    <input
+      id="question"
+      type="text"
+      placeholder='e.g., "Post a job: 500 images, 50 AGIALPHA, 7 days"'
+      aria-label="Type your request"
+      autocomplete="off"
+    />
+    <button id="send" type="submit">Send</button>
   </form>
   <div id="attachment-name" aria-live="polite"></div>
-  <div id="adv" aria-live="polite">
+  <div id="advanced-panel" aria-live="polite">
     <div class="adv-grid">
       <section>
         <h2>Execution details</h2>
@@ -228,7 +234,7 @@
     </div>
   </div>
   <footer>
-    <a href="#" id="toggle-advanced">Advanced</a>
+    <a href="#" id="advanced-toggle">Advanced</a>
   </footer>
   <script type="module" src="./app.mjs"></script>
 </body>
