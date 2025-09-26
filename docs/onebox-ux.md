@@ -51,6 +51,8 @@ async def status(job_id: int | None = None, deps=Depends(auth_guard)):
     return await status_service.fetch(job_id=job_id)
 ```
 
+The Python implementation (`routes/onebox.py`) exposes the same `/onebox/plan`, `/onebox/execute`, and `/onebox/status` endpoints along with `GET /onebox/healthz` and a Prometheus-ready `GET /onebox/metrics` surface.
+
 If you prefer TypeScript, run `ts-node --project apps/orchestrator/tsconfig.json apps/orchestrator/onebox-server.ts` to start the bundled Express service. It exposes `/onebox/*` plus `/healthz` and can be configured via:
 
 - `ONEBOX_RELAYER_PRIVATE_KEY`: signer used for guest/relayer execution.
@@ -61,7 +63,7 @@ If you prefer TypeScript, run `ts-node --project apps/orchestrator/tsconfig.json
 
 Leverage the existing FastAPI `api.py` structure or the Express server: include the router, reuse the `API_TOKEN` auth dependency, and expose the endpoints in the OpenAPI schema.
 
-The Express router also ships with `GET /onebox/metrics`, which emits Prometheus-compatible counters for planner, executor, and status calls (plus per-intent labels for execution).
+Both routers ship with `GET /onebox/metrics`, which emits Prometheus-compatible counters for planner, executor, and status calls (plus per-intent labels for execution).
 
 ## Planner → executor contract
 
