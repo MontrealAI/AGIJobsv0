@@ -459,7 +459,7 @@ function registerListeners() {
     dom.input.focus();
   }));
   dom.settingsBtn.addEventListener('click', openSettings);
-  dom.settingsForm.addEventListener('close', applySettings);
+  dom.settingsDialog.addEventListener('close', applySettings);
   dom.refreshStatus.addEventListener('click', refreshStatuses);
 
   dom.settingsForm.addEventListener('submit', (event) => {
