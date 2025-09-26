@@ -87,6 +87,68 @@ function formatAdvancedPin(entry) {
   return `<li><div class="pin-label">${label}</div><div class="pin-cid">${cid}</div>${gatewayHtml}</li>`;
 }
 
+function parseAdvancedJSON(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch (err) {
+    return null;
+  }
+}
+
+function formatAdvancedValue(value) {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (Array.isArray(value)) {
+    if (!value.length) return "[]";
+    const joined = value
+      .map((entry) => {
+        if (entry === null || entry === undefined) return "—";
+        if (typeof entry === "object") {
+          return JSON.stringify(entry, null, 2);
+        }
+        return String(entry);
+      })
+      .join(", ");
+    return joined;
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch (err) {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function renderAdvancedKeyValue(data) {
+  if (!data || typeof data !== "object") return "";
+  const entries = Object.entries(data);
+  if (!entries.length) return "";
+  const rows = entries
+    .map(([key, value]) => {
+      const label = escapeHtml(key);
+      const display = formatAdvancedValue(value);
+      const isMultiline = /\n/.test(display);
+      const valueMarkup = isMultiline
+        ? `<pre>${escapeHtml(display)}</pre>`
+        : `<code>${escapeHtml(display)}</code>`;
+      return `<div class="advanced-kv-row"><span class="advanced-kv-key">${label}</span><span class="advanced-kv-value">${valueMarkup}</span></div>`;
+    })
+    .join("");
+  return `<div class="advanced-kv">${rows}</div>`;
+}
+
 export function formatPinnedSummaryMessage(entries) {
   if (!Array.isArray(entries) || !entries.length) return "";
   const header = `📦 Pinned ${entries.length} item${entries.length === 1 ? "" : "s"} to IPFS:`;
@@ -170,7 +232,37 @@ function setAdvancedLog(data) {
     }
 
     if (typeof data === "string") {
+      const parsed = parseAdvancedJSON(data);
+      if (parsed && !Array.isArray(parsed)) {
+        const markup = renderAdvancedKeyValue(parsed);
+        if (markup) {
+          advancedLogEl.innerHTML = markup;
+          return;
+        }
+      } else if (parsed && Array.isArray(parsed)) {
+        advancedLogEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(parsed, null, 2))}</pre>`;
+        return;
+      }
       advancedLogEl.textContent = data;
+      return;
+    }
+
+    if (Array.isArray(data)) {
+      if (!data.length) {
+        advancedLogEl.textContent = "[]";
+        return;
+      }
+      advancedLogEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+      return;
+    }
+
+    if (typeof data === "object") {
+      const markup = renderAdvancedKeyValue(data);
+      if (markup) {
+        advancedLogEl.innerHTML = markup;
+        return;
+      }
+      advancedLogEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
       return;
     }
 

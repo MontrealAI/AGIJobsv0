@@ -348,7 +348,17 @@ export function formatEvent(event) {
   }
   const type = event.type || "status";
   const text = typeof event.text === "string" && event.text.trim() ? event.text.trim() : "…";
-  const advanced = typeof event.advanced === "string" ? event.advanced : "";
+
+  let advanced = "";
+  if (Object.prototype.hasOwnProperty.call(event, "advanced")) {
+    if (typeof event.advanced === "string") {
+      advanced = event.advanced.trim();
+    } else if (event.advanced && typeof event.advanced === "object") {
+      advanced = event.advanced;
+    } else if (event.advanced !== undefined && event.advanced !== null) {
+      advanced = String(event.advanced);
+    }
+  }
 
   if (type === "error") {
     return { text: `❌ ${text}`, advanced };
