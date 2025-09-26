@@ -5,6 +5,7 @@ import { needsAttachmentPin, prepareJobPayload } from '../lib.mjs';
 const IPFS_GATEWAY = 'https://w3s.link/ipfs/';
 
 const CID = 'bafyreigdyrnucsac53examplecid0000000000000000000000000000000';
+const CID_TWO = 'bafyreigdyrnucsac53examplecid1111111111111111111111111111111';
 const PAYLOAD_CID = 'bafyreialpayloadexamplecid0000000000000000000000000000000000';
 
 function assignCid(ics, cid) {
@@ -75,6 +76,13 @@ test('prepareJobPayload normalises submission params and client metadata', () =>
       name: 'result.txt',
       size: 2048,
     },
+    {
+      cid: CID_TWO,
+      uri: `ipfs://${CID_TWO}`,
+      gateways: [`${IPFS_GATEWAY}${CID_TWO}`],
+      name: 'result-2.txt',
+      size: 1024,
+    },
   ];
 
   const prepared = prepareJobPayload(ics, attachments);
@@ -82,6 +90,7 @@ test('prepareJobPayload normalises submission params and client metadata', () =>
   assert.deepEqual(prepared.payload.attachments, [
     'ipfs://existing',
     `ipfs://${CID}`,
+    `ipfs://${CID_TWO}`,
   ]);
 
   prepared.assign({ cid: PAYLOAD_CID, gateways: [`${IPFS_GATEWAY}${PAYLOAD_CID}`] });
@@ -96,6 +105,7 @@ test('prepareJobPayload normalises submission params and client metadata', () =>
   assert.deepEqual(ics.params.attachments, [
     'ipfs://existing',
     `ipfs://${CID}`,
+    `ipfs://${CID_TWO}`,
   ]);
   assert.deepEqual(ics.meta.clientPinned, [
     {
@@ -106,9 +116,89 @@ test('prepareJobPayload normalises submission params and client metadata', () =>
       size: 2048,
     },
     {
+      cid: CID_TWO,
+      uri: `ipfs://${CID_TWO}`,
+      gateways: [`${IPFS_GATEWAY}${CID_TWO}`],
+      name: 'result-2.txt',
+      size: 1024,
+    },
+    {
       cid: PAYLOAD_CID,
       uri: `ipfs://${PAYLOAD_CID}`,
       gateways: [`${IPFS_GATEWAY}${PAYLOAD_CID}`],
+    },
+  ]);
+});
+
+test('prepareJobPayload merges multiple attachments for create_job intents', () => {
+  const FIRST_ATTACHMENT = 'bafyreibulkcid3333333333333333333333333333333333333333333333';
+  const SECOND_ATTACHMENT = 'bafyreibulkcid4444444444444444444444444444444444444444444444';
+  const JOB_PAYLOAD = 'bafyreijobpayloadcid5555555555555555555555555555555555555555';
+
+  const ics = {
+    intent: 'create_job',
+    params: {
+      job: {
+        title: 'Bulk labeling',
+        description: 'Label dataset',
+        attachments: ['ipfs://existing-spec'],
+      },
+    },
+    meta: {},
+  };
+
+  const attachments = [
+    {
+      cid: FIRST_ATTACHMENT,
+      uri: `ipfs://${FIRST_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${FIRST_ATTACHMENT}`],
+      name: 'scope.pdf',
+      size: 4096,
+    },
+    {
+      cid: SECOND_ATTACHMENT,
+      uri: `ipfs://${SECOND_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${SECOND_ATTACHMENT}`],
+      name: 'examples.csv',
+      size: 8192,
+    },
+  ];
+
+  const prepared = prepareJobPayload(ics, attachments);
+
+  assert.deepEqual(prepared.payload.attachments, [
+    'ipfs://existing-spec',
+    `ipfs://${FIRST_ATTACHMENT}`,
+    `ipfs://${SECOND_ATTACHMENT}`,
+  ]);
+
+  prepared.assign({ cid: JOB_PAYLOAD, gateways: [`${IPFS_GATEWAY}${JOB_PAYLOAD}`] });
+
+  assert.equal(ics.params.job.uri, `ipfs://${JOB_PAYLOAD}`);
+  assert.deepEqual(ics.params.job.attachments, [
+    'ipfs://existing-spec',
+    `ipfs://${FIRST_ATTACHMENT}`,
+    `ipfs://${SECOND_ATTACHMENT}`,
+  ]);
+  assert.deepEqual(ics.meta.clientPinned, [
+    {
+      cid: FIRST_ATTACHMENT,
+      uri: `ipfs://${FIRST_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${FIRST_ATTACHMENT}`],
+      name: 'scope.pdf',
+      size: 4096,
+    },
+    {
+      cid: SECOND_ATTACHMENT,
+      uri: `ipfs://${SECOND_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${SECOND_ATTACHMENT}`],
+      name: 'examples.csv',
+      size: 8192,
+    },
+    {
+      cid: JOB_PAYLOAD,
+      uri: `ipfs://${JOB_PAYLOAD}`,
+      gateways: [`${IPFS_GATEWAY}${JOB_PAYLOAD}`],
     },
   ]);
 });

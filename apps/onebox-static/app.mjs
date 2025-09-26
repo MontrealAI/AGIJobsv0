@@ -36,6 +36,9 @@ const sendButton = hasDocument ? document.getElementById("send") : null;
 const advancedToggle = hasDocument ? document.getElementById("advanced-toggle") : null;
 const advancedPanel = hasDocument ? document.getElementById("advanced-panel") : null;
 
+const MAX_ATTACHMENT_QUEUE = 3;
+const queuedAttachments = [];
+
 let busy = false;
 let history = [];
 let confirmCallback = null;
@@ -207,6 +210,36 @@ if (advancedToggle) {
   advancedToggle.addEventListener("click", toggleAdvanced);
 }
 
+if (attachmentInput) {
+  attachmentInput.addEventListener("change", () => {
+    const files = asFileArray(attachmentInput.files);
+    if (!files.length) return;
+    queueAttachments(files);
+    attachmentInput.value = "";
+  });
+}
+
+if (hasDocument) {
+  document.addEventListener("dragover", (event) => {
+    if (event.dataTransfer?.types?.includes("Files")) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener("drop", (event) => {
+    const files = asFileArray(event.dataTransfer?.files);
+    if (!files.length) return;
+    event.preventDefault();
+    queueAttachments(files);
+  });
+
+  document.addEventListener("paste", (event) => {
+    const files = asFileArray(event.clipboardData?.files);
+    if (!files.length) return;
+    queueAttachments(files);
+  });
+}
+
 function scrollFeed() {
   if (!feed) return;
   feed.scrollTo({ top: feed.scrollHeight, behavior: "smooth" });
@@ -219,6 +252,62 @@ function pushMessage(role, text) {
   bubble.textContent = text;
   feed.appendChild(bubble);
   scrollFeed();
+}
+
+function asFileArray(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) {
+    return input.filter(Boolean);
+  }
+  try {
+    return Array.from(input).filter(Boolean);
+  } catch (err) {
+    return [];
+  }
+}
+
+function formatBytes(size) {
+  if (!Number.isFinite(size)) return "unknown size";
+  if (size < 1024) return `${size} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = size;
+  let unitIndex = -1;
+  do {
+    value /= 1024;
+    unitIndex += 1;
+  } while (value >= 1024 && unitIndex < units.length - 1);
+  return `${value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+function queueAttachments(files, { silent = false } = {}) {
+  const normalized = asFileArray(files);
+  if (!normalized.length) return [];
+  const limited = normalized.slice(0, MAX_ATTACHMENT_QUEUE);
+  queuedAttachments.splice(0, queuedAttachments.length, ...limited);
+  if (!silent && limited.length) {
+    const summary = limited
+      .map((file) => {
+        const name = typeof file?.name === "string" && file.name ? file.name : "attachment";
+        const size = typeof file?.size === "number" ? formatBytes(file.size) : "unknown size";
+        return `${name} (${size})`;
+      })
+      .join(", ");
+    pushMessage("assistant", `Attached for next request: ${summary}`);
+  }
+  return limited;
+}
+
+function requeueAttachments(files) {
+  const normalized = asFileArray(files);
+  if (!normalized.length) return;
+  const combined = [...normalized, ...queuedAttachments];
+  const limited = combined.slice(0, MAX_ATTACHMENT_QUEUE);
+  queuedAttachments.splice(0, queuedAttachments.length, ...limited);
+}
+
+function drainQueuedAttachments() {
+  if (!queuedAttachments.length) return [];
+  return queuedAttachments.splice(0, queuedAttachments.length);
 }
 
 function setBusy(state) {
@@ -380,8 +469,11 @@ async function handleSubmit(event) {
   if (busy) return;
 
   const text = questionInput.value.trim();
-  const files = attachmentInput.files ? Array.from(attachmentInput.files).filter(Boolean) : [];
   if (!text) return;
+
+  const queued = drainQueuedAttachments();
+  const selected = asFileArray(attachmentInput.files);
+  const files = [...queued, ...selected];
 
   pushMessage("user", text);
   questionInput.value = "";
@@ -393,6 +485,9 @@ async function handleSubmit(event) {
     const ics = await plannerRequest(text);
     const confirmed = await confirmFlow(ics);
     if (!confirmed) {
+      if (files.length) {
+        requeueAttachments(files);
+      }
       setBusy(false);
       return;
     }
@@ -406,6 +501,9 @@ async function handleSubmit(event) {
   } catch (err) {
     const friendly = formatError(err);
     pushMessage("assistant", `❌ ${friendly}`);
+    if (files.length) {
+      requeueAttachments(files);
+    }
   } finally {
     setBusy(false);
   }
