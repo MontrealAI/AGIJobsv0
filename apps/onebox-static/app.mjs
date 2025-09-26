@@ -16,6 +16,7 @@ import {
 const {
   PLAN_URL,
   EXEC_URL,
+  STATUS_URL,
   IPFS_ENDPOINT,
   IPFS_TOKEN_STORAGE_KEY,
   AA_MODE,
@@ -26,6 +27,17 @@ const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAY
   : ["https://w3s.link/ipfs/"];
 
 const MAX_HISTORY = 10;
+const STATUS_REFRESH_MS = (() => {
+  const raw =
+    Config.STATUS_REFRESH_MS ?? Config.STATUS_REFRESH_INTERVAL_MS ?? Config.STATUS_POLL_INTERVAL_MS;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 15000;
+})();
+const STATUS_MAX_ITEMS = (() => {
+  const raw = Config.STATUS_MAX_ITEMS;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 4;
+})();
 
 const hasDocument = typeof document !== "undefined";
 const feed = hasDocument ? document.getElementById("feed") : null;
@@ -35,6 +47,7 @@ const attachmentInput = hasDocument ? document.getElementById("attachment") : nu
 const sendButton = hasDocument ? document.getElementById("send") : null;
 const advancedToggle = hasDocument ? document.getElementById("advanced-toggle") : null;
 const advancedPanel = hasDocument ? document.getElementById("advanced-panel") : null;
+const statusBoard = hasDocument ? document.getElementById("status-board") : null;
 
 const MAX_ATTACHMENT_QUEUE = 3;
 const queuedAttachments = [];
@@ -43,6 +56,9 @@ let busy = false;
 let history = [];
 let confirmCallback = null;
 let advancedLogEl = null;
+let statusTimer = null;
+let statusLoading = false;
+let lastStatusFingerprint = "";
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -208,8 +224,75 @@ function renderAdvancedPanel() {
   advancedLogEl = advancedPanel.querySelector('[data-role="advanced-log"]');
 }
 
+function normalizePlannerWarnings(input) {
+  const list = toArray(input);
+  return list
+    .map((entry) => {
+      if (typeof entry === "string") return entry.trim();
+      if (entry && typeof entry === "object" && typeof entry.message === "string") {
+        return entry.message.trim();
+      }
+      return null;
+    })
+    .filter((value) => typeof value === "string" && value);
+}
+
+function normalizeJobIntentPlan(payload) {
+  if (!isObject(payload)) return null;
+
+  const container = isObject(payload.intent)
+    ? payload
+    : isObject(payload.data) && isObject(payload.data.intent)
+      ? payload.data
+      : null;
+
+  if (!container || !isObject(container.intent)) {
+    return null;
+  }
+
+  const intent = container.intent;
+  if (typeof intent.action !== "string" || !intent.action.trim()) {
+    return null;
+  }
+
+  const summarySource = typeof payload.summary === "string" && payload.summary.trim()
+    ? payload.summary.trim()
+    : typeof container.summary === "string" && container.summary.trim()
+      ? container.summary.trim()
+      : "";
+
+  const requiresConfirmationRaw =
+    payload.requiresConfirmation ?? container.requiresConfirmation;
+  const requiresConfirmation =
+    typeof requiresConfirmationRaw === "boolean" ? requiresConfirmationRaw : true;
+
+  const warnings = normalizePlannerWarnings(
+    payload.warnings ?? container.warnings ?? []
+  );
+
+  return {
+    kind: "job-intent",
+    summary: summarySource,
+    requiresConfirmation,
+    warnings,
+    intent,
+    raw: payload,
+  };
+}
+
 if (hasDocument) {
   renderAdvancedPanel();
+}
+
+if (hasDocument && statusBoard) {
+  if (STATUS_URL) {
+    renderStatusPlaceholder("Loading job status…");
+    scheduleStatusRefresh(true);
+  } else {
+    renderStatusPlaceholder(
+      "Status feed disabled. Set STATUS_URL in config.js to enable."
+    );
+  }
 }
 
 function setAdvancedLog(data) {
@@ -416,23 +499,39 @@ function setBusy(state) {
 }
 
 async function plannerRequest(prompt) {
-  const body = JSON.stringify({ message: prompt, history });
+  const requestBody = {
+    message: prompt,
+    text: prompt,
+    history,
+  };
   const response = await fetch(PLAN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body,
+    body: JSON.stringify(requestBody),
   });
   if (!response.ok) {
     throw new Error(`Planner unavailable (${response.status})`);
   }
   const payload = await response.json();
-  return validateICS(payload);
+  const jobIntent = normalizeJobIntentPlan(payload);
+  if (jobIntent) {
+    return jobIntent;
+  }
+  const ics = validateICS(payload);
+  return { kind: "ics", ics };
 }
 
-async function confirmFlow(ics) {
-  if (!ics.confirm) return true;
-  const summary = ics.summary || "Please confirm to continue.";
-  pushMessage("assistant", summary);
+async function requestConfirmation({ summary, required }) {
+  const prompt = summary && summary.trim() ? summary.trim() : "Proceed?";
+  if (!required) {
+    if (prompt) {
+      pushMessage("assistant", prompt);
+    }
+    return true;
+  }
+
+  const message = prompt || "Please confirm to continue.";
+  pushMessage("assistant", message);
   pushMessage("assistant", "Type YES to confirm or NO to cancel.");
   setBusy(false);
 
@@ -447,6 +546,17 @@ async function confirmFlow(ics) {
       resolve(ok);
     };
   });
+}
+
+async function confirmFlow(ics) {
+  if (!ics.confirm) {
+    if (ics.summary) {
+      pushMessage("assistant", ics.summary);
+    }
+    return true;
+  }
+  const summary = ics.summary || "Please confirm to continue.";
+  return requestConfirmation({ summary, required: true });
 }
 
 async function maybePinAttachments(ics, files) {
@@ -553,6 +663,316 @@ async function executeICS(ics) {
   if (finalChunk) {
     handleChunk(finalChunk);
   }
+
+  refreshStatusSoon();
+}
+
+async function executeJobIntent(intent, { raw } = {}) {
+  if (!isObject(intent)) {
+    throw new Error("Planner returned an invalid intent");
+  }
+  pushMessage("assistant", "Working on it…");
+  const executionMode = AA_MODE?.enabled === false ? "wallet" : "relayer";
+  const response = await fetch(EXEC_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ intent, mode: executionMode }),
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (err) {
+    // ignore, handled below
+  }
+
+  if (!response.ok) {
+    const errorMessage = payload?.error || `Execution failed (${response.status})`;
+    throw new Error(errorMessage);
+  }
+
+  if (payload && payload.ok === false) {
+    const message = payload.error || payload.message || "Execution failed";
+    throw new Error(message);
+  }
+
+  const messages = [];
+  if (payload?.jobId !== undefined && payload.jobId !== null) {
+    messages.push(`Job #${payload.jobId}`);
+  }
+  if (payload?.txHash) {
+    messages.push(`tx ${payload.txHash}`);
+  }
+  if (payload?.receiptUrl) {
+    messages.push(`receipt ${payload.receiptUrl}`);
+  }
+
+  const summary = payload?.message
+    ? payload.message
+    : messages.length
+      ? `Completed: ${messages.join(" • ")}`
+      : "Request completed.";
+
+  pushMessage("assistant", `✅ ${summary}`);
+
+  if (Array.isArray(payload?.warnings)) {
+    for (const warning of payload.warnings) {
+      if (typeof warning === "string" && warning.trim()) {
+        pushMessage("assistant", `⚠️ ${warning.trim()}`);
+      }
+    }
+  }
+
+  if (raw || payload) {
+    setAdvancedLog({ intent, response: payload, raw });
+  }
+
+  refreshStatusSoon();
+}
+
+function normalizeStatusEntries(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!isObject(payload)) return [];
+  if (Array.isArray(payload.jobs)) return payload.jobs;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.results)) return payload.results;
+  return [];
+}
+
+function parseTimestamp(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value > 1e12 ? value : value * 1000;
+  }
+  if (typeof value === "string" && value.trim()) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      return numeric > 1e12 ? numeric : numeric * 1000;
+    }
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+  return null;
+}
+
+function formatRelativeTime(value) {
+  const timestamp = parseTimestamp(value);
+  if (timestamp === null) return null;
+  const diff = Date.now() - timestamp;
+  const abs = Math.abs(diff);
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  let label;
+  if (abs >= day) {
+    const days = Math.round(abs / day);
+    label = `${days}d`;
+  } else if (abs >= hour) {
+    const hours = Math.round(abs / hour);
+    label = `${hours}h`;
+  } else if (abs >= minute) {
+    const minutes = Math.round(abs / minute);
+    label = `${minutes}m`;
+  } else {
+    label = `${Math.max(1, Math.round(abs / 1000))}s`;
+  }
+  return diff >= 0 ? `${label} ago` : `in ${label}`;
+}
+
+function formatDeadlineLabel(value) {
+  const timestamp = parseTimestamp(value);
+  if (timestamp === null) {
+    return typeof value === "string" ? value : `Deadline ${String(value)}`;
+  }
+  const diff = timestamp - Date.now();
+  const abs = Math.abs(diff);
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (abs < minute) {
+    return diff >= 0 ? "Due now" : "Past due";
+  }
+  if (abs >= day) {
+    const days = Math.floor(abs / day);
+    const hours = Math.floor((abs % day) / hour);
+    const parts = [days ? `${days}d` : null, hours ? `${hours}h` : null].filter(Boolean);
+    const label = parts.join(" ");
+    return diff >= 0 ? `Due in ${label}` : `${label} overdue`;
+  }
+  const hours = Math.floor(abs / hour);
+  if (hours >= 1) {
+    const minutes = Math.floor((abs % hour) / minute);
+    const label = minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+    return diff >= 0 ? `Due in ${label}` : `${label} overdue`;
+  }
+  const minutes = Math.floor(abs / minute);
+  return diff >= 0 ? `Due in ${minutes}m` : `${minutes}m overdue`;
+}
+
+function createStatusPill(label) {
+  if (!label) return null;
+  const pill = document.createElement("span");
+  pill.className = "status-pill";
+  pill.textContent = label;
+  return pill;
+}
+
+function createStatusCard(entry) {
+  const card = document.createElement("article");
+  card.className = "status-card";
+  const heading = document.createElement("h3");
+  const jobId = entry?.jobId ?? entry?.id ?? entry?.jobID;
+  const titleSource = entry?.title || entry?.name || entry?.action;
+  heading.textContent = titleSource
+    ? String(titleSource)
+    : jobId !== undefined
+      ? `Job #${jobId}`
+      : "Recent activity";
+  card.appendChild(heading);
+
+  const summary = entry?.summary || entry?.message || entry?.description;
+  if (summary) {
+    const body = document.createElement("p");
+    body.textContent = String(summary);
+    card.appendChild(body);
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "status-meta";
+
+  const stateLabel = entry?.status || entry?.state || entry?.phase;
+  const statePill = createStatusPill(stateLabel ? String(stateLabel) : null);
+  if (statePill) meta.appendChild(statePill);
+
+  const rewardValue = entry?.reward ?? entry?.rewardAmount ?? entry?.payout;
+  if (rewardValue !== undefined && rewardValue !== null) {
+    const rewardText = `Reward ${String(rewardValue)}`;
+    const rewardPill = createStatusPill(rewardText);
+    if (rewardPill) meta.appendChild(rewardPill);
+  }
+
+  const tokenLabel = entry?.rewardToken || entry?.tokenSymbol || entry?.token;
+  const tokenPill = createStatusPill(tokenLabel ? String(tokenLabel) : null);
+  if (tokenPill) meta.appendChild(tokenPill);
+
+  const deadlineValue = entry?.deadline ?? entry?.deadlineAt ?? entry?.deadlineDays ?? entry?.expiresAt;
+  const deadlineLabel = formatDeadlineLabel(deadlineValue);
+  if (deadlineLabel) {
+    const deadlinePill = createStatusPill(deadlineLabel);
+    if (deadlinePill) meta.appendChild(deadlinePill);
+  }
+
+  const updatedLabel = formatRelativeTime(entry?.updatedAt ?? entry?.timestamp);
+  if (updatedLabel) {
+    const updatedPill = createStatusPill(`Updated ${updatedLabel}`);
+    if (updatedPill) meta.appendChild(updatedPill);
+  }
+
+  const link = entry?.link || entry?.url;
+  if (typeof link === "string" && link.trim()) {
+    const anchor = document.createElement("a");
+    anchor.className = "status-pill";
+    anchor.textContent = "Details";
+    anchor.href = link;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    meta.appendChild(anchor);
+  }
+
+  if (meta.children.length) {
+    card.appendChild(meta);
+  }
+
+  return card;
+}
+
+function renderStatusPlaceholder(message) {
+  if (!statusBoard) return;
+  statusBoard.innerHTML = "";
+  const empty = document.createElement("div");
+  empty.className = "status-empty";
+  empty.textContent = message;
+  statusBoard.appendChild(empty);
+}
+
+function renderStatusBoard(entries) {
+  if (!statusBoard) return;
+  statusBoard.innerHTML = "";
+  if (!entries.length) {
+    renderStatusPlaceholder("No recent jobs yet. I’ll update this feed as activity occurs.");
+    lastStatusFingerprint = "empty";
+    return;
+  }
+
+  const limited = entries.slice(0, STATUS_MAX_ITEMS);
+  for (const entry of limited) {
+    const card = createStatusCard(entry);
+    statusBoard.appendChild(card);
+  }
+  lastStatusFingerprint = JSON.stringify(limited);
+}
+
+function renderStatusError(error) {
+  const message =
+    error instanceof Error && error.message
+      ? `Status unavailable: ${error.message}`
+      : "Status unavailable right now.";
+  renderStatusPlaceholder(message);
+  lastStatusFingerprint = `error:${message}`;
+}
+
+async function refreshStatus() {
+  if (!STATUS_URL || !statusBoard) return;
+  if (statusLoading) return;
+  statusLoading = true;
+  try {
+    const response = await fetch(STATUS_URL, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const entries = normalizeStatusEntries(payload);
+    const fingerprint = JSON.stringify(entries.slice(0, STATUS_MAX_ITEMS));
+    if (fingerprint !== lastStatusFingerprint) {
+      renderStatusBoard(entries);
+    }
+  } catch (error) {
+    renderStatusError(error);
+  } finally {
+    statusLoading = false;
+  }
+}
+
+function scheduleStatusRefresh(immediate = false) {
+  if (!STATUS_URL || !statusBoard) return;
+  if (statusTimer) {
+    clearInterval(statusTimer);
+  }
+  if (immediate) {
+    refreshStatus().catch(() => {
+      /* handled in renderStatusError */
+    });
+  }
+  statusTimer = setInterval(() => {
+    refreshStatus().catch(() => {
+      /* handled */
+    });
+  }, STATUS_REFRESH_MS);
+}
+
+function refreshStatusSoon() {
+  if (!STATUS_URL || !statusBoard) return;
+  refreshStatus().catch(() => {
+    /* handled */
+  });
 }
 
 async function handleSubmit(event) {
@@ -586,22 +1006,60 @@ async function handleSubmit(event) {
   setBusy(true);
 
   try {
-    const ics = await plannerRequest(text);
-    const confirmed = await confirmFlow(ics);
-    if (!confirmed) {
+    const planResult = await plannerRequest(text);
+
+    if (planResult && planResult.kind === "job-intent") {
       if (files.length) {
         requeueAttachments(files);
       }
-      setBusy(false);
-      return;
+
+      const warnings = Array.isArray(planResult.warnings)
+        ? planResult.warnings
+        : [];
+      for (const warning of warnings) {
+        if (typeof warning === "string" && warning.trim()) {
+          pushMessage("assistant", `⚠️ ${warning.trim()}`);
+        }
+      }
+
+      const confirmed = await requestConfirmation({
+        summary:
+          planResult.summary && planResult.summary.trim()
+            ? planResult.summary
+            : "Proceed with the plan?",
+        required: planResult.requiresConfirmation,
+      });
+
+      if (!confirmed) {
+        setBusy(false);
+        return;
+      }
+
+      await executeJobIntent(planResult.intent, { raw: planResult.raw });
+      history = history
+        .concat(
+          { role: "user", text },
+          { role: "assistant", text: JSON.stringify(planResult.intent) }
+        )
+        .slice(-MAX_HISTORY);
+    } else {
+      const ics = planResult && planResult.kind === "ics" ? planResult.ics : planResult;
+      const confirmed = await confirmFlow(ics);
+      if (!confirmed) {
+        if (files.length) {
+          requeueAttachments(files);
+        }
+        setBusy(false);
+        return;
+      }
+
+      await maybePinAttachments(ics, files);
+      history = history
+        .concat({ role: "user", text }, { role: "assistant", text: JSON.stringify(ics) })
+        .slice(-MAX_HISTORY);
+
+      await executeICS(ics);
     }
-
-    await maybePinAttachments(ics, files);
-    history = history
-      .concat({ role: "user", text }, { role: "assistant", text: JSON.stringify(ics) })
-      .slice(-MAX_HISTORY);
-
-    await executeICS(ics);
   } catch (err) {
     const friendly = formatError(err);
     pushMessage("assistant", `❌ ${friendly}`);

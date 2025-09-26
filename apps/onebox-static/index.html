@@ -106,10 +106,14 @@
     body.advanced main.layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      grid-template-areas:
+        "feed advanced"
+        "status advanced";
       align-items: start;
     }
 
     #feed {
+      grid-area: feed;
       min-height: 0;
       max-height: 100%;
       overflow-y: auto;
@@ -120,6 +124,59 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+
+    .status-board {
+      grid-area: status;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px 0;
+    }
+
+    .status-card {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.7);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .status-card h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status-meta {
+      font-size: 12px;
+      opacity: 0.8;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: rgba(16, 82, 214, 0.08);
+      font-size: 12px;
+    }
+
+    .status-empty {
+      border-radius: var(--radius);
+      border: 1px dashed var(--border);
+      padding: 18px;
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.75;
     }
 
     .msg {
@@ -283,6 +340,12 @@
 
   <main class="layout">
     <section id="feed" role="log" aria-live="polite"></section>
+    <section
+      id="status-board"
+      class="status-board"
+      aria-live="polite"
+      aria-label="Job status updates"
+    ></section>
     <aside id="advanced-panel" aria-live="polite" aria-label="Advanced details"></aside>
   </main>
 

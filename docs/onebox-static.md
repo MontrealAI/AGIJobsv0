@@ -10,8 +10,9 @@ This guide explains how to run, configure, and operate the **AGI Jobs v0 One-Box
 User ↔ Static UI (IPFS) ↔ AGI-Alpha Orchestrator ↔ Execution Bridge (AA or Relayer) ↔ Ethereum (AGIJobsv0 v2)
 ```
 
-- **Planner (`/plan`)**: accepts free-form text and returns an **Intent-Constraint Schema (ICS)**.
-- **Executor (`/execute`)**: consumes the ICS, simulates, and submits transactions via sponsored Account Abstraction (primary) or a relayer (fallback). Responses stream back as Server-Sent Events.
+- **Planner (`/onebox/plan`)**: accepts free-form text and returns either an **Intent-Constraint Schema (ICS)** or a higher-level JobIntent envelope.
+- **Executor (`/onebox/execute`)**: consumes the ICS or JobIntent, simulates, and submits transactions via sponsored Account Abstraction (primary) or a relayer (fallback). Responses may stream back as Server-Sent Events (ICS flow) or return a JSON receipt (JobIntent flow).
+- **Status (`/onebox/status`)**: provides a compact JSON feed of recent jobs that the UI renders in the live status board.
 - **Static UI**: validates ICS, prompts the user for confirmations, uploads payloads to IPFS, and renders human-readable receipts.
 
 ---
@@ -47,6 +48,7 @@ User ↔ Static UI (IPFS) ↔ AGI-Alpha Orchestrator ↔ Execution Bridge (AA or
 4. When the ICS would move tokens or stake, the UI shows a ≤140-character confirmation line (“Post job 50 AGIALPHA, 7 days, fee 5%, burn 2%?”). Respond with **YES** to continue or **NO** to cancel.
 5. For jobs or submissions requiring attachments, the UI triggers a file picker and uploads the file to IPFS via web3.storage. The CID is inserted into the ICS before execution.
 6. Execution status and receipts stream into the chat. Advanced details (tx hash, block number, AA/relayer metadata) appear under the **Advanced** toggle.
+7. A live status board underneath the chat polls `/onebox/status` for recent jobs so users can rejoin ongoing workflows without refreshing.
 
 ### ENS enforcement
 
@@ -90,7 +92,7 @@ web3 storage upload apps/onebox-static
 | Symptom | Possible cause | Resolution |
 | ------- | -------------- | ---------- |
 | “Planner unavailable” | Incorrect `PLAN_URL`, orchestrator offline, or CORS blocked. | Verify URL, check orchestrator logs, adjust CORS origins. |
-| “Executor error” | `/execute` rejected the ICS or SSE stream failed. | Inspect orchestrator logs; ensure AA Paymaster funded and ICS passes validation. |
+| “Executor error” | `/onebox/execute` rejected the request or the SSE stream failed. | Inspect orchestrator logs; ensure AA Paymaster funded and ICS passes validation. |
 | “web3.storage token required” | Token not set in browser. | Obtain token from operator, paste when prompted, or clear via `localStorage.removeItem("W3S_TOKEN")`. |
 | ENS requirement message | Identity registry enforced. | Follow the provided claim/associate instructions before retrying. |
 

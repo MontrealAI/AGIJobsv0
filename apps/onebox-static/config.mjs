@@ -1,5 +1,8 @@
-export const PLAN_URL = "https://alpha-orchestrator.example.com/plan";
-export const EXEC_URL = "https://alpha-orchestrator.example.com/execute"; // SSE stream (JSON per line)
+export const ORCHESTRATOR_BASE_URL = "https://alpha-orchestrator.example.com";
+export const ORCHESTRATOR_ONEBOX_PREFIX = "/onebox";
+export const PLAN_URL = `${ORCHESTRATOR_BASE_URL}${ORCHESTRATOR_ONEBOX_PREFIX}/plan`;
+export const EXEC_URL = `${ORCHESTRATOR_BASE_URL}${ORCHESTRATOR_ONEBOX_PREFIX}/execute`;
+export const STATUS_URL = `${ORCHESTRATOR_BASE_URL}${ORCHESTRATOR_ONEBOX_PREFIX}/status`;
 export const IPFS_ENDPOINT = "https://api.web3.storage/upload";
 export const IPFS_TOKEN_STORAGE_KEY = "AGIJOBS_W3S_TOKEN";
 export const IPFS_GATEWAYS = [

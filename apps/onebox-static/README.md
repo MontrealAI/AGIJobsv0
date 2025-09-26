@@ -4,18 +4,19 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 
 ## Features
 
-- Natural-language chat surface that calls `/plan` and `/execute` on the AGI-Alpha orchestrator.
+- Natural-language chat surface that calls `/onebox/plan` and `/onebox/execute` on the AGI-Alpha orchestrator.
 - Client-side ICS (Intent-Constraint Schema) validation and guardrails for the supported AGI Jobs intents.
 - Two-step confirmations for value-moving transactions.
 - Integrated IPFS pinning using [`web3.storage`](https://docs-beta.web3.storage/getting-started/w3up-client/).
 - Advanced receipts toggle exposing transaction hashes, gas sponsorship info, and raw ICS payloads.
 - Drag-and-drop attachment support (plus orchestrator prompts) with client-side IPFS pinning backed by `web3.storage`.
+- Live job status board that polls `/onebox/status` for recent updates and renders walletless receipts.
 - Neutral static hosting footprint suited for IPFS pinning.
 
 ## Quick start
 
 1. Run or obtain an AGI-Alpha orchestrator endpoint (see [AGI-Alpha-Agent-v0](https://github.com/MontrealAI/AGI-Alpha-Agent-v0)). Ensure CORS allows the origin the static page will be served from.
-2. Update [`config.js`](./config.js) with your orchestrator URLs, desired Account Abstraction settings, and any alternate IPFS gateways you want the Advanced receipts panel to surface.
+2. Update [`config.js`](./config.js) with your orchestrator URLs (base + `/onebox` prefix), desired Account Abstraction settings, and any alternate IPFS gateways you want the Advanced receipts panel to surface.
 3. (Optional) Prepare web3.storage API tokens for team members. Tokens are stored client-side in `localStorage`.
 4. Serve the directory locally for development, e.g.:
 
@@ -35,15 +36,17 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 
 The orchestrator is expected to encapsulate the v2 contract ABIs and addresses and to expose two HTTPS endpoints:
 
-- `POST /plan`: accepts `{ message, history }` and returns a validated ICS object (see `/docs` in the orchestrator).
-- `POST /execute`: accepts `{ ics, aa }` and streams Server-Sent Events describing status updates, confirmations, receipts, and errors.
+- `POST /onebox/plan`: accepts `{ text, message, history }` and returns a validated ICS object or a higher-level JobIntent (see `/docs` in the orchestrator).
+- `POST /onebox/execute`: accepts `{ ics, aa }` (legacy ICS flow) or `{ intent, mode }` (JobIntent flow) and either streams Server-Sent Events or returns a JSON receipt.
+- `GET /onebox/status`: returns a JSON array summarising recent jobs for the status board.
 
 The client enforces the intent allowlist defined in [`lib.mjs`](./lib.mjs). Owner-only operations must be blocked server-side unless the orchestrator verifies the caller is authorised.
 
 ## Account Abstraction & relayer notes
 
 - `AA_MODE.enabled = true` enables the ERC-4337 path. The orchestrator should construct sponsored `UserOperation`s via an Account Abstraction SDK such as [Alchemy’s aa-sdk](https://github.com/alchemyplatform/aa-sdk).
-- If AA is unavailable, set `AA_MODE.enabled = false` and let the orchestrator use an alternative relayer (e.g. OpenZeppelin Defender). Receipts should still stream through `/execute`.
+- If AA is unavailable, set `AA_MODE.enabled = false` and let the orchestrator use an alternative relayer (e.g. OpenZeppelin Defender). Receipts should still stream through `/onebox/execute`.
+- `STATUS_URL` enables the job status board and should point to `/onebox/status`.
 - Always simulate transactions before final submission and enforce spend caps per ICS trace id.
 
 ## ENS-aware messaging
