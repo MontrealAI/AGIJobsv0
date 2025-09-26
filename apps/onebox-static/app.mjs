@@ -56,7 +56,7 @@ function renderAdvancedPanel() {
       <h2>Runbook</h2>
       <ul>
         <li>Planner responses must comply with the Intent-Constraint Schema (ICS).</li>
-        <li>Value-moving intents require human confirmation (≤160 chars summary).</li>
+        <li>Value-moving intents require human confirmation (≤140 chars summary).</li>
         <li>Simulations, paymaster sponsorship, and relayer limits run server-side.</li>
         <li>ENS enforcement notices appear inline when required.</li>
       </ul>

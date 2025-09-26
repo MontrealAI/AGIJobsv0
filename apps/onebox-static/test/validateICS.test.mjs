@@ -28,13 +28,13 @@ test('accepts legacy summary field when confirmationText missing', () => {
   assert.equal(normalized.summary, 'Legacy summary');
 });
 
-test('enforces 160 character limit when confirmation is required', () => {
+test('enforces 140 character limit when confirmation is required', () => {
   const payload = {
     ...BASE_INTENT,
     confirm: true,
-    confirmationText: 'x'.repeat(161),
+    confirmationText: 'x'.repeat(141),
   };
-  assert.throws(() => validateICS(payload), /160/);
+  assert.throws(() => validateICS(payload), /140/);
 });
 
 test('generates a fallback traceId when missing', () => {

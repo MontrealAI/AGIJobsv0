@@ -10,7 +10,7 @@ const SUPPORTED_INTENTS = [
   "admin_set",
 ];
 
-const CONFIRMATION_SUMMARY_LIMIT = 160;
+const CONFIRMATION_SUMMARY_LIMIT = 140;
 const META_VERSION = "agijobs.onebox/1.0.0";
 
 function isObject(value) {
