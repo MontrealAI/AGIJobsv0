@@ -162,6 +162,19 @@ body {
   transition: transform 0.15s ease, background 0.2s ease, border 0.2s ease;
 }
 
+.btn.ghost {
+  background: transparent;
+  color: var(--muted);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn.ghost:hover,
+.btn.ghost:focus-visible {
+  color: var(--fg);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(15, 22, 32, 0.6);
+}
+
 .btn:hover {
   transform: translateY(-1px);
 }
@@ -263,6 +276,114 @@ body {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footnotes .btn {
+  align-self: flex-start;
+}
+
+.advanced {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.advanced[hidden] {
+  display: none;
+}
+
+.advanced-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.advanced-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.advanced-receipts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.advanced-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.advanced-receipt {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(11, 17, 27, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.advanced-receipt header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.advanced-title {
+  font-weight: 600;
+}
+
+.advanced-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.advanced-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.advanced-links a {
+  color: #c2b7ff;
+}
+
+.advanced-json {
+  font-family: "SFMono-Regular", "Roboto Mono", "Fira Code", monospace;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.advanced details summary {
+  cursor: pointer;
+  color: #c2b7ff;
+  font-size: 13px;
+}
+
+.advanced details summary:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.6);
+  outline-offset: 4px;
+}
+
+.advanced time {
+  font-variant-numeric: tabular-nums;
 }
 
 .modal {
