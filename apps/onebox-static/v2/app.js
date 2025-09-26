@@ -1,8 +1,15 @@
-const ORCH_URL = window.localStorage.getItem('ORCH_URL') || '';
-const API_TOKEN_KEY = 'ONEBOX_API_TOKEN';
-const STATUS_INTERVAL_MS = 20_000;
+const STORAGE_KEYS = {
+  ORCH_URL: 'ORCH_URL',
+  API_TOKEN: 'ONEBOX_API_TOKEN',
+  STATUS_INTERVAL: 'ONEBOX_STATUS_INTERVAL',
+  EXPERT_MODE: 'ONEBOX_EXPERT_MODE',
+};
 
-let expertMode = false;
+const DEFAULT_STATUS_INTERVAL = 30_000;
+
+let orchestratorUrl = (window.localStorage.getItem(STORAGE_KEYS.ORCH_URL) || '').trim();
+let statusIntervalMs = readStatusInterval();
+let expertMode = loadExpertMode();
 let statusTimer = null;
 
 const chat = document.getElementById('chat');
@@ -14,11 +21,42 @@ const suggestionButtons = document.querySelectorAll('[data-fill]');
 const statusList = document.getElementById('status-list');
 const statusNote = document.getElementById('status-note');
 const statusRefresh = document.getElementById('status-refresh');
+const settingsBtn = document.getElementById('settings');
+const settingsDialog = document.getElementById('settings-dialog');
+const settingsOrch = document.getElementById('settings-orch');
+const settingsToken = document.getElementById('settings-token');
+const settingsInterval = document.getElementById('settings-interval');
 
 const MESSAGE_ROLE = {
   USER: 'm-user',
   ASSISTANT: 'm-assistant',
 };
+
+if (modeBadge) {
+  modeBadge.textContent = `Mode: ${expertMode ? 'Expert' : 'Guest'}`;
+}
+
+if (!orchestratorUrl) {
+  appendNote('Demo Mode active. Open Settings to connect to your orchestrator.');
+}
+
+function readStatusInterval() {
+  const raw = window.localStorage.getItem(STORAGE_KEYS.STATUS_INTERVAL);
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return DEFAULT_STATUS_INTERVAL;
+  }
+  return parsed;
+}
+
+function loadExpertMode() {
+  return window.localStorage.getItem(STORAGE_KEYS.EXPERT_MODE) === '1';
+}
+
+function getStoredToken() {
+  const token = window.localStorage.getItem(STORAGE_KEYS.API_TOKEN);
+  return typeof token === 'string' ? token : '';
+}
 
 const FRIENDLY_ERROR_RULES = [
   {
@@ -61,7 +99,7 @@ const FRIENDLY_ERROR_RULES = [
 
 function withAuthHeaders(baseHeaders = {}) {
   try {
-    const tokenRaw = window.localStorage.getItem(API_TOKEN_KEY);
+    const tokenRaw = window.localStorage.getItem(STORAGE_KEYS.API_TOKEN);
     const token = typeof tokenRaw === 'string' ? tokenRaw.trim() : '';
     if (token) {
       return {
@@ -76,7 +114,7 @@ function withAuthHeaders(baseHeaders = {}) {
 }
 
 window.oneboxSetOrchestrator = function setOrchestrator(url) {
-  window.localStorage.setItem('ORCH_URL', url || '');
+  window.localStorage.setItem(STORAGE_KEYS.ORCH_URL, url || '');
   window.location.reload();
 };
 
@@ -191,7 +229,7 @@ function normalizePlannerResponse(payload) {
 }
 
 async function plan(text) {
-  if (!ORCH_URL) {
+  if (!orchestratorUrl) {
     return {
       summary: `I will ${text.replace(/^i\s*/i, '')}. Proceed?`,
       intent: mockIntent(text),
@@ -200,7 +238,7 @@ async function plan(text) {
     };
   }
 
-  const response = await fetch(`${ORCH_URL}/onebox/plan`, {
+  const response = await fetch(`${orchestratorUrl}/onebox/plan`, {
     method: 'POST',
     headers: withAuthHeaders({
       'Content-Type': 'application/json',
@@ -220,7 +258,7 @@ async function plan(text) {
 async function executeIntent(intent) {
   appendMessage(MESSAGE_ROLE.ASSISTANT, 'Working on it…');
 
-  if (!ORCH_URL) {
+  if (!orchestratorUrl) {
     window.setTimeout(() => {
       const fragment = document.createDocumentFragment();
       fragment.append('✅ Done. Job ID is ');
@@ -233,7 +271,7 @@ async function executeIntent(intent) {
     return;
   }
 
-  const response = await fetch(`${ORCH_URL}/onebox/execute`, {
+  const response = await fetch(`${orchestratorUrl}/onebox/execute`, {
     method: 'POST',
     headers: withAuthHeaders({
       'Content-Type': 'application/json',
@@ -267,7 +305,7 @@ async function executeIntent(intent) {
   }
   appendMessage(MESSAGE_ROLE.ASSISTANT, fragment);
 
-  if (ORCH_URL) {
+  if (orchestratorUrl) {
     loadStatus(true).catch(() => {
       /* ignore status refresh errors after success */
     });
@@ -468,8 +506,8 @@ function renderStatus(entries) {
 
 async function loadStatus(manual = false) {
   if (!statusList) return;
-  if (!ORCH_URL) {
-    renderStatusPlaceholder('Set localStorage.ORCH_URL to enable live status.');
+  if (!orchestratorUrl) {
+    renderStatusPlaceholder('Configure the orchestrator in Settings to enable live status.');
     if (statusNote) {
       statusNote.textContent = 'Status feed inactive until an orchestrator URL is configured.';
     }
@@ -481,7 +519,7 @@ async function loadStatus(manual = false) {
   }
 
   try {
-    const response = await fetch(`${ORCH_URL}/onebox/status`, {
+    const response = await fetch(`${orchestratorUrl}/onebox/status`, {
       headers: withAuthHeaders(),
     });
     if (!response.ok) {
@@ -512,18 +550,20 @@ function scheduleStatusUpdates() {
     window.clearInterval(statusTimer);
     statusTimer = null;
   }
-  if (!ORCH_URL) {
-    renderStatusPlaceholder('Set localStorage.ORCH_URL to enable live status.');
+  if (!orchestratorUrl) {
+    renderStatusPlaceholder('Configure the orchestrator in Settings to enable live status.');
     return;
   }
   loadStatus().catch(() => {
     /* handled inside loadStatus */
   });
-  statusTimer = window.setInterval(() => {
-    loadStatus().catch(() => {
-      /* handled */
-    });
-  }, STATUS_INTERVAL_MS);
+  if (statusIntervalMs > 0) {
+    statusTimer = window.setInterval(() => {
+      loadStatus().catch(() => {
+        /* handled */
+      });
+    }, statusIntervalMs);
+  }
 }
 
 composer.addEventListener('submit', handlePlanSubmit);
@@ -531,8 +571,11 @@ composer.addEventListener('submit', handlePlanSubmit);
 expertBtn.addEventListener('click', () => {
   expertMode = !expertMode;
   modeBadge.textContent = `Mode: ${expertMode ? 'Expert' : 'Guest'}`;
+  window.localStorage.setItem(STORAGE_KEYS.EXPERT_MODE, expertMode ? '1' : '0');
   if (expertMode) {
     appendNote('Expert Mode enabled. Connect your wallet in the orchestrator response when prompted.');
+  } else {
+    appendNote('Guest Mode enabled. I will execute via the orchestrator relayer.');
   }
 });
 
@@ -547,6 +590,62 @@ statusRefresh?.addEventListener('click', () => {
   loadStatus(true).catch(() => {
     /* already surfaced */
   });
+});
+
+settingsBtn?.addEventListener('click', () => {
+  if (!settingsDialog) return;
+  if (settingsOrch) {
+    settingsOrch.value = orchestratorUrl;
+  }
+  if (settingsToken) {
+    settingsToken.value = getStoredToken();
+  }
+  if (settingsInterval) {
+    const value = statusIntervalMs > 0 ? String(statusIntervalMs) : '0';
+    const option = Array.from(settingsInterval.options || []).find((opt) => opt.value === value);
+    settingsInterval.value = option ? value : (statusIntervalMs > 0 ? String(DEFAULT_STATUS_INTERVAL) : '0');
+  }
+  settingsDialog.showModal();
+});
+
+settingsDialog?.addEventListener('close', () => {
+  if (!settingsDialog || settingsDialog.returnValue !== 'confirm') return;
+  const previousUrl = orchestratorUrl;
+  const url = (settingsOrch?.value || '').trim();
+  orchestratorUrl = url;
+  if (url) {
+    window.localStorage.setItem(STORAGE_KEYS.ORCH_URL, url);
+    if (url !== previousUrl) {
+      appendNote(`Connected to orchestrator at ${url}`);
+    }
+  } else {
+    window.localStorage.removeItem(STORAGE_KEYS.ORCH_URL);
+    if (previousUrl) {
+      appendNote('Demo Mode enabled. Requests will be simulated.');
+    }
+  }
+
+  const token = (settingsToken?.value || '').trim();
+  if (token) {
+    window.localStorage.setItem(STORAGE_KEYS.API_TOKEN, token);
+  } else {
+    window.localStorage.removeItem(STORAGE_KEYS.API_TOKEN);
+  }
+
+  const intervalRaw = Number(settingsInterval?.value || DEFAULT_STATUS_INTERVAL);
+  if (Number.isFinite(intervalRaw) && intervalRaw >= 0) {
+    statusIntervalMs = intervalRaw;
+    if (intervalRaw === DEFAULT_STATUS_INTERVAL) {
+      window.localStorage.removeItem(STORAGE_KEYS.STATUS_INTERVAL);
+    } else {
+      window.localStorage.setItem(STORAGE_KEYS.STATUS_INTERVAL, String(intervalRaw));
+    }
+  } else {
+    statusIntervalMs = DEFAULT_STATUS_INTERVAL;
+    window.localStorage.removeItem(STORAGE_KEYS.STATUS_INTERVAL);
+  }
+
+  scheduleStatusUpdates();
 });
 
 document.addEventListener('visibilitychange', () => {

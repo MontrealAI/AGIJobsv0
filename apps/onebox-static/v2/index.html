@@ -9,9 +9,17 @@
   <body>
     <div class="wrap">
       <header class="header">
-        <h1>AGI Jobs — One-Box</h1>
-        <span class="badge">Walletless by default</span>
-        <span id="mode" class="badge">Mode: Guest</span>
+        <div class="header-titles">
+          <h1>AGI Jobs — One-Box</h1>
+          <p class="tagline">Plan → confirm → execute. No blockchain jargon.</p>
+        </div>
+        <div class="header-actions">
+          <span class="badge">Walletless by default</span>
+          <span id="mode" class="badge">Mode: Guest</span>
+          <button id="settings" type="button" class="secondary small" aria-haspopup="dialog" aria-controls="settings-dialog">
+            Settings
+          </button>
+        </div>
       </header>
 
       <main>
@@ -38,8 +46,8 @@
         <hr />
         <p class="small">
           This static client talks to the AGI-Alpha Orchestrator (<span class="kbd">/onebox/plan</span>,
-          <span class="kbd">/onebox/execute</span>, <span class="kbd">/onebox/status</span>). Configure the endpoint via the
-          browser console: <span class="kbd">localStorage.ORCH_URL = "https://your-orchestrator.example"</span>.
+          <span class="kbd">/onebox/execute</span>, <span class="kbd">/onebox/status</span>). Use
+          <strong>Settings</strong> to configure the endpoint and API token. Leave the fields blank for Demo Mode.
         </p>
 
         <section class="status" aria-live="polite">
@@ -52,6 +60,34 @@
         </section>
       </main>
     </div>
+
+    <dialog id="settings-dialog" class="modal" aria-modal="true">
+      <form method="dialog" id="settings-form">
+        <h2>Settings</h2>
+        <label class="field">
+          <span>Orchestrator URL</span>
+          <input type="url" id="settings-orch" placeholder="https://orchestrator.example" autocomplete="off" />
+          <span class="hint">Blank uses Demo Mode (no network calls).</span>
+        </label>
+        <label class="field">
+          <span>API token (optional)</span>
+          <input type="password" id="settings-token" placeholder="Bearer token" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Status auto-refresh</span>
+          <select id="settings-interval">
+            <option value="0">Manual only</option>
+            <option value="15000">Every 15 seconds</option>
+            <option value="30000">Every 30 seconds</option>
+            <option value="60000">Every minute</option>
+          </select>
+        </label>
+        <menu>
+          <button value="cancel" class="secondary">Cancel</button>
+          <button value="confirm">Save</button>
+        </menu>
+      </form>
+    </dialog>
 
     <script src="app.js" type="module"></script>
   </body>

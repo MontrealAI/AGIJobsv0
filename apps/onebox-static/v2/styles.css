@@ -27,14 +27,29 @@ body {
 
 .header {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.header h1 {
+.header-titles h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
+}
+
+.tagline {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -126,6 +141,11 @@ button.secondary {
   border: 1px solid #273245;
 }
 
+button.small {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
 .row {
   display: flex;
   gap: 8px;
@@ -147,6 +167,62 @@ button.secondary {
   background: #0e2a1c;
   border-color: #214b38;
   color: #7de6b2;
+}
+
+.modal {
+  border: none;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 440px;
+  width: min(440px, 90vw);
+  background: #0f1622;
+  color: var(--fg);
+  box-shadow: 0 24px 60px rgba(4, 8, 15, 0.45);
+}
+
+.modal::backdrop {
+  background: rgba(3, 6, 12, 0.65);
+}
+
+.modal h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.field input,
+.field select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #273245;
+  background: #111b29;
+  color: var(--fg);
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.field .hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.modal menu {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
 }
 
 hr {
