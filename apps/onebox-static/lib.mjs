@@ -87,7 +87,8 @@ export function needsAttachmentPin(ics) {
     return !(ics?.params?.job && ics.params.job.uri);
   }
   if (intent === "submit_work") {
-    return !ics?.params?.resultUri;
+    const uri = ics?.params?.result?.uri ?? ics?.params?.resultUri;
+    return !(typeof uri === "string" && uri.trim());
   }
   if (intent === "dispute") {
     const dispute = ics?.params?.dispute;
@@ -151,7 +152,12 @@ export function prepareJobPayload(ics, attachmentCid) {
       payload,
       assign(cid) {
         if (!ics.params) ics.params = {};
-        ics.params.resultUri = `ipfs://${cid}`;
+        const existing = isObject(ics.params.result) ? ics.params.result : {};
+        const uri = `ipfs://${cid}`;
+        ics.params.result = { ...existing, uri };
+        if ("resultUri" in ics.params) {
+          delete ics.params.resultUri;
+        }
       },
     };
   }
