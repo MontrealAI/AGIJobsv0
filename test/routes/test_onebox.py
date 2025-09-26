@@ -262,12 +262,21 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     JobIntent,
     Payload,
     PlanRequest,
+    Web3,
     _calculate_deadline_timestamp,
     _decode_job_created,
+    _read_status,
     _UINT64_MAX,
     execute,
     plan,
 )
+
+
+def _encode_metadata(state: int, deadline: int = 0, assigned_at: int = 0) -> int:
+    state_bits = int(state) & 0x7
+    deadline_bits = (int(deadline) & ((1 << 64) - 1)) << 77
+    assigned_bits = (int(assigned_at) & ((1 << 64) - 1)) << 141
+    return state_bits | deadline_bits | assigned_bits
 
 
 class PlannerIntentTests(unittest.IsolatedAsyncioTestCase):
@@ -360,6 +369,105 @@ class ExecutorDeadlineTests(unittest.IsolatedAsyncioTestCase):
                 await execute(request)
 
         self.assertEqual(ctx.exception.detail, "DEADLINE_INVALID")
+
+
+class StatusReadTests(unittest.IsolatedAsyncioTestCase):
+    async def test_read_status_open_with_metadata(self) -> None:
+        job = {
+            "agent": "0x0000000000000000000000000000000000000000",
+            "reward": 10**18,
+            "packedMetadata": _encode_metadata(1, deadline=1_700_000_000),
+        }
+
+        with mock.patch("routes.onebox.registry") as registry_mock, mock.patch(
+            "routes.onebox.AGIALPHA_TOKEN", "0xToken"
+        ):
+            registry_mock.functions.jobs.return_value.call.return_value = job
+            status = await _read_status(42)
+
+        self.assertEqual(status.jobId, 42)
+        self.assertEqual(status.state, "open")
+        self.assertEqual(status.reward, "1")
+        self.assertEqual(status.token, "0xToken")
+        self.assertEqual(status.deadline, 1_700_000_000)
+        self.assertIsNone(status.assignee)
+
+    async def test_read_status_assigned_sets_assignee(self) -> None:
+        agent = "0x00000000000000000000000000000000000000aB"
+        job = {
+            "agent": agent,
+            "reward": 5 * 10**18,
+            "packedMetadata": _encode_metadata(2, deadline=0),
+        }
+
+        with mock.patch("routes.onebox.registry") as registry_mock, mock.patch(
+            "routes.onebox.AGIALPHA_TOKEN", "0xToken"
+        ):
+            registry_mock.functions.jobs.return_value.call.return_value = job
+            status = await _read_status(7)
+
+        self.assertEqual(status.state, "assigned")
+        self.assertEqual(status.reward, "5")
+        self.assertEqual(status.token, "0xToken")
+        self.assertIsNone(status.deadline)
+        self.assertEqual(status.assignee, Web3.to_checksum_address(agent))
+
+    async def test_read_status_completed_handles_legacy_shape(self) -> None:
+        agent = "0x0000000000000000000000000000000000000Aa"
+        legacy_job = [
+            "0x0000000000000000000000000000000000000001",
+            agent,
+            2 * 10**18,
+            0,
+            0,
+            4,
+            True,
+            0,
+            1_800_000_000,
+            0,
+            b"",
+            b"",
+        ]
+
+        with mock.patch("routes.onebox.registry") as registry_mock, mock.patch(
+            "routes.onebox.AGIALPHA_TOKEN", "0xToken"
+        ):
+            registry_mock.functions.jobs.return_value.call.return_value = legacy_job
+            status = await _read_status(99)
+
+        self.assertEqual(status.state, "completed")
+        self.assertEqual(status.reward, "2")
+        self.assertEqual(status.token, "0xToken")
+        self.assertEqual(status.deadline, 1_800_000_000)
+        self.assertEqual(status.assignee, Web3.to_checksum_address(agent))
+
+    async def test_read_status_finalized_state(self) -> None:
+        job = {
+            "agent": "0x00000000000000000000000000000000000000ff",
+            "reward": 3 * 10**18,
+            "packedMetadata": _encode_metadata(6, deadline=1_900_000_000),
+        }
+
+        with mock.patch("routes.onebox.registry") as registry_mock, mock.patch(
+            "routes.onebox.AGIALPHA_TOKEN", "0xToken"
+        ):
+            registry_mock.functions.jobs.return_value.call.return_value = job
+            status = await _read_status(123)
+
+        self.assertEqual(status.state, "finalized")
+        self.assertEqual(status.reward, "3")
+        self.assertEqual(status.token, "0xToken")
+        self.assertEqual(status.deadline, 1_900_000_000)
+
+    async def test_read_status_returns_unknown_on_error(self) -> None:
+        with mock.patch("routes.onebox.registry") as registry_mock:
+            registry_mock.functions.jobs.side_effect = Exception("boom")
+            status = await _read_status(55)
+
+        self.assertEqual(status.state, "unknown")
+        self.assertIsNone(status.reward)
+        self.assertIsNone(status.token)
+        self.assertIsNone(status.deadline)
 
 
 class JobCreatedDecodingTests(unittest.TestCase):

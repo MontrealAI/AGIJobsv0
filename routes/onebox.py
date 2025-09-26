@@ -107,6 +107,15 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 _ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
 _UINT64_MAX = 2**64 - 1
+_ZERO_ADDRESS = "0x" + "0" * 40
+
+_STATE_TO_STATUS = {
+    1: "open",
+    2: "assigned",
+    3: "assigned",
+    4: "completed",
+    6: "finalized",
+}
 
 # ---------- Web3 ----------
 if not RPC_URL:
@@ -518,11 +527,178 @@ async def _send_relayer_tx(tx: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
     return tx_hash, dict(receipt)
 
 
+def _get_job_field(job: Any, key: str, index: Optional[int]) -> Any:
+    if job is None:
+        return None
+    if isinstance(job, dict):
+        if key in job:
+            return job[key]
+    try:
+        if hasattr(job, key):
+            return getattr(job, key)
+    except Exception:
+        pass
+    if index is not None:
+        try:
+            if isinstance(job, (list, tuple)):
+                if 0 <= index < len(job):
+                    return job[index]
+            else:
+                return job[index]  # type: ignore[index]
+        except Exception:
+            return None
+    return None
+
+
+def _to_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, (bytes, bytearray)):
+        if not value:
+            return 0
+        return int.from_bytes(value, "big")
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        pass
+    try:
+        return int(str(value), 0)
+    except (TypeError, ValueError):
+        return None
+
+
+def _decode_packed_metadata(packed: Any) -> Dict[str, Any]:
+    packed_int = _to_int(packed)
+    if packed_int is None:
+        return {}
+    state = (packed_int >> 0) & 0x7
+    deadline = (packed_int >> 77) & ((1 << 64) - 1)
+    assigned_at = (packed_int >> 141) & ((1 << 64) - 1)
+    success = (packed_int & (1 << 3)) != 0
+    metadata: Dict[str, Any] = {"state": state}
+    if deadline:
+        metadata["deadline"] = int(deadline)
+    if assigned_at:
+        metadata["assignedAt"] = int(assigned_at)
+    metadata["success"] = success
+    return metadata
+
+
+def _format_reward(value: Any) -> Optional[str]:
+    wei = _to_int(value)
+    if wei is None:
+        return None
+    amount = Decimal(wei) / Decimal(10**18)
+    if amount == 0:
+        return "0"
+    normalized = amount.normalize()
+    if normalized == normalized.to_integral():
+        normalized = normalized.quantize(Decimal(1))
+    return format(normalized, "f")
+
+
+def _normalize_address(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, (bytes, bytearray)):
+        if not value:
+            return None
+        value = "0x" + value.hex()
+    elif isinstance(value, int):
+        if value == 0:
+            return None
+        value = f"0x{value:040x}"
+    value_str = str(value).strip()
+    if not value_str:
+        return None
+    lower = value_str.lower()
+    if lower == _ZERO_ADDRESS:
+        return None
+    if value_str.startswith("0x") or value_str.startswith("0X"):
+        try:
+            return Web3.to_checksum_address(value_str)
+        except Exception:
+            return value_str
+    return value_str
+
+
 async def _read_status(job_id: int) -> StatusResponse:
     try:
-        return StatusResponse(jobId=job_id, state="open")
+        job_call = registry.functions.jobs(job_id)
     except Exception:
         return StatusResponse(jobId=job_id, state="unknown")
+
+    try:
+        job = job_call.call()
+    except Exception:
+        return StatusResponse(jobId=job_id, state="unknown")
+
+    if not job:
+        return StatusResponse(jobId=job_id, state="unknown")
+
+    metadata: Dict[str, Any] = {}
+    packed = None
+    if isinstance(job, dict) and "packedMetadata" in job:
+        packed = job.get("packedMetadata")
+    elif hasattr(job, "packedMetadata"):
+        try:
+            packed = getattr(job, "packedMetadata")
+        except Exception:
+            packed = None
+    elif isinstance(job, (list, tuple)) and len(job) >= 9:
+        state_probe = job[5] if len(job) > 5 else None
+        if not (isinstance(state_probe, int) and 0 <= state_probe <= 7):
+            packed = job[8]
+
+    if packed:
+        metadata = _decode_packed_metadata(packed)
+    else:
+        state = _to_int(_get_job_field(job, "state", 5))
+        deadline = _to_int(_get_job_field(job, "deadline", 8))
+        assigned_at = _to_int(_get_job_field(job, "assignedAt", 9))
+        success = _get_job_field(job, "success", 6)
+        metadata = {}
+        if state is not None:
+            metadata["state"] = state
+        if deadline:
+            metadata["deadline"] = deadline
+        if assigned_at:
+            metadata["assignedAt"] = assigned_at
+        if success is not None:
+            metadata["success"] = bool(success)
+
+    state_code = _to_int(metadata.get("state"))
+    state = _STATE_TO_STATUS.get(state_code or 0, "unknown")
+
+    reward = _format_reward(_get_job_field(job, "reward", 2))
+    token = _get_job_field(job, "token", None) or _get_job_field(job, "rewardToken", None)
+    if isinstance(token, (bytes, bytearray)):
+        token = "0x" + token.hex()
+    if isinstance(token, int):
+        token = f"0x{token:040x}"
+    if not token and reward is not None and AGIALPHA_TOKEN:
+        token = AGIALPHA_TOKEN
+    if isinstance(token, str) and token.lower() == _ZERO_ADDRESS:
+        token = None
+
+    deadline_value = _to_int(metadata.get("deadline"))
+    if deadline_value == 0:
+        deadline_value = None
+
+    assignee = _normalize_address(_get_job_field(job, "agent", 1))
+
+    return StatusResponse(
+        jobId=job_id,
+        state=state,
+        reward=reward,
+        token=token,
+        deadline=deadline_value,
+        assignee=assignee,
+    )
 
 
 def _summarize_intent(intent: JobIntent) -> str:
