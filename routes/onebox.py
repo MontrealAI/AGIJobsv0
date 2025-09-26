@@ -212,8 +212,46 @@ def _normalize_title(text: str) -> str:
     return cleaned[:160] if cleaned else "New Job"
 
 
+def _extract_job_id(text: str) -> Optional[int]:
+    job_specific = re.search(r"job\s*(?:number|no\.?|#)?\s*(\d+)", text, re.I)
+    if job_specific:
+        return int(job_specific.group(1))
+    generic = re.search(r"\b(\d{1,})\b", text)
+    if generic:
+        try:
+            return int(generic.group(1))
+        except ValueError:
+            return None
+    return None
+
+
+def _looks_like_status_request(text: str, job_id: Optional[int]) -> bool:
+    lowered = text.lower()
+    if not (
+        re.search(r"\bstatus\b", lowered)
+        or re.search(r"\bcheck(?:ing)?\b", lowered)
+    ):
+        return False
+    return "job" in lowered or job_id is not None or lowered.startswith(("status", "check"))
+
+
+def _looks_like_finalize_request(text: str, job_id: Optional[int]) -> bool:
+    lowered = text.lower()
+    if not re.search(r"\b(finali[sz]e|close|closing)\b", lowered):
+        return False
+    return "job" in lowered or job_id is not None
+
+
 def _naive_parse(text: str) -> JobIntent:
     trimmed = text.strip()
+    job_id = _extract_job_id(trimmed)
+
+    if _looks_like_status_request(trimmed, job_id):
+        return JobIntent(action="check_status", payload=Payload(jobId=job_id))
+
+    if _looks_like_finalize_request(trimmed, job_id):
+        return JobIntent(action="finalize_job", payload=Payload(jobId=job_id))
+
     amount_match = re.search(r"(\d+(?:\.\d+)?)\s*agi(?:alpha)?", trimmed, re.I)
     days_match = re.search(r"(\d+)\s*(?:d|day|days)", trimmed, re.I)
     reward = amount_match.group(1) if amount_match else "1.0"
@@ -339,16 +377,29 @@ async def _read_status(job_id: int) -> StatusResponse:
         return StatusResponse(jobId=job_id, state="unknown")
 
 
+def _summarize_intent(intent: JobIntent) -> str:
+    payload = intent.payload
+    if intent.action == "post_job":
+        reward = payload.reward or "1.0"
+        deadline = payload.deadlineDays if payload.deadlineDays is not None else 7
+        title = payload.title or "New Job"
+        return (
+            f'I will post a job “{title}” with reward {reward} '
+            f"AGIALPHA and a {deadline}-day deadline. Proceed?"
+        )
+    if intent.action == "check_status":
+        job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
+        return f"I will check the status of {job_text}. Proceed?"
+    if intent.action == "finalize_job":
+        job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
+        return f"I will finalize {job_text}. Proceed?"
+    return "I will process your request. Proceed?"
+
+
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(req: PlanRequest) -> PlanResponse:
     intent = _naive_parse(req.text)
-    payload = intent.payload
-    reward = payload.reward or "1.0"
-    deadline = payload.deadlineDays if payload.deadlineDays is not None else 7
-    summary = (
-        f'I will post a job “{payload.title}” with reward {reward} '
-        f"AGIALPHA and a {deadline}-day deadline. Proceed?"
-    )
+    summary = _summarize_intent(intent)
     return PlanResponse(summary=summary, intent=intent, requiresConfirmation=True, warnings=[])
 
 
