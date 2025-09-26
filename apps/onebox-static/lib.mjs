@@ -472,14 +472,393 @@ export async function pinJSON(endpoint, token, json) {
   return { cid: body.cid };
 }
 
+const ERROR_FIELDS_TO_FOLLOW = [
+  "cause",
+  "error",
+  "errors",
+  "data",
+  "details",
+  "body",
+  "response",
+  "info",
+  "reason",
+];
+
+function pushUnique(array, value) {
+  if (!value && value !== 0) return;
+  const str = String(value).trim();
+  if (!str) return;
+  if (!array.includes(str)) {
+    array.push(str);
+  }
+}
+
+function collectErrorContext(err, state = { messages: [], codes: [], statuses: [] }, seen = new Set()) {
+  if (err === null || err === undefined) {
+    return state;
+  }
+  if (typeof err === "string" || typeof err === "number" || typeof err === "bigint") {
+    pushUnique(state.messages, err);
+    return state;
+  }
+
+  if (seen.has(err)) {
+    return state;
+  }
+  seen.add(err);
+
+  if (err instanceof Error) {
+    pushUnique(state.messages, err.message || err.toString());
+    if ("code" in err && err.code !== undefined) {
+      pushUnique(state.codes, err.code);
+    }
+    if ("name" in err && err.name && err.name !== "Error") {
+      pushUnique(state.codes, err.name);
+    }
+    if ("status" in err && Number.isFinite(err.status)) {
+      const status = Number(err.status);
+      if (!state.statuses.includes(status)) {
+        state.statuses.push(status);
+      }
+    }
+    if ("cause" in err) {
+      collectErrorContext(err.cause, state, seen);
+    }
+  }
+
+  if (typeof err === "object" && err) {
+    if ("message" in err && err.message) {
+      pushUnique(state.messages, err.message);
+    }
+    if ("status" in err && Number.isFinite(err.status)) {
+      const status = Number(err.status);
+      if (!state.statuses.includes(status)) {
+        state.statuses.push(status);
+      }
+    }
+    if ("statusCode" in err && Number.isFinite(err.statusCode)) {
+      const status = Number(err.statusCode);
+      if (!state.statuses.includes(status)) {
+        state.statuses.push(status);
+      }
+    }
+    if ("code" in err && err.code !== undefined) {
+      pushUnique(state.codes, err.code);
+    }
+    if ("error" in err && typeof err.error === "string") {
+      pushUnique(state.messages, err.error);
+    }
+    if ("statusText" in err && typeof err.statusText === "string") {
+      pushUnique(state.messages, err.statusText);
+    }
+    for (const key of ERROR_FIELDS_TO_FOLLOW) {
+      if (key in err && err[key] !== undefined) {
+        collectErrorContext(err[key], state, seen);
+      }
+    }
+  }
+
+  return state;
+}
+
+function toLowerList(values) {
+  return values.map((value) => value.toLowerCase());
+}
+
+export const FRIENDLY_ERROR_RULES = [
+  {
+    id: "insufficient_balance",
+    summary: "You don’t have enough AGIALPHA to fund this job.",
+    hint: "Lower the reward or top up your balance before trying again.",
+    matches: (ctx) =>
+      ctx.contains("insufficient balance") ||
+      ctx.contains("insufficient funds") ||
+      ctx.contains("transfer amount exceeds balance"),
+  },
+  {
+    id: "insufficient_allowance",
+    summary: "Your AGIALPHA allowance is too low for this request.",
+    hint: "Ask me to refresh allowances or approve spending from Expert Mode.",
+    matches: (ctx) =>
+      ctx.contains("insufficient allowance") ||
+      ctx.contains("insufficientallowance") ||
+      ctx.contains("exceeds allowance") ||
+      ctx.contains("allowance is not enough"),
+  },
+  {
+    id: "reward_zero",
+    summary: "Rewards must be greater than zero AGIALPHA.",
+    hint: "Set a positive reward before posting the job.",
+    matches: (ctx) =>
+      ctx.contains("zero reward") || ctx.contains("reward == 0") || ctx.contains("reward must be greater than zero"),
+  },
+  {
+    id: "deadline_invalid",
+    summary: "The deadline needs to be at least one day in the future.",
+    hint: "Pick a deadline that is 24 hours or more from now.",
+    matches: (ctx) =>
+      ctx.contains("deadline must be") || ctx.contains("deadline is in the past") || ctx.contains("deadline < now"),
+  },
+  {
+    id: "deadline_not_reached",
+    summary: "That step isn’t available until the job deadline passes.",
+    hint: "Wait until the deadline or adjust the schedule before retrying.",
+    matches: (ctx) =>
+      ctx.contains("deadline notreached") || ctx.contains("deadline not reached") || ctx.contains("too early"),
+  },
+  {
+    id: "job_not_found",
+    summary: "I couldn’t find that job id on-chain.",
+    hint: "Check the job number or ask me for your recent jobs.",
+    matches: (ctx) => ctx.contains("jobnotfound") || ctx.contains("job not found") || ctx.contains("unknown job"),
+  },
+  {
+    id: "role_employer_only",
+    summary: "Only the employer can complete that action.",
+    hint: "Sign in with the employer account or ask me to switch roles.",
+    matches: (ctx) => ctx.contains("onlyemployer") || ctx.contains("notemployer"),
+  },
+  {
+    id: "role_validator_only",
+    summary: "This action is limited to assigned validators.",
+    hint: "Ensure your validator ENS is registered and selected for the job.",
+    matches: (ctx) =>
+      ctx.contains("notvalidator") ||
+      ctx.contains("validatorbanned") ||
+      ctx.contains("unauthorizedvalidator"),
+  },
+  {
+    id: "role_operator_only",
+    summary: "Only the job operator can run that step.",
+    hint: "Have the operator account confirm the action or ask for a reassignment.",
+    matches: (ctx) => ctx.contains("notoperator") || ctx.contains("invalidcaller"),
+  },
+  {
+    id: "role_governance_only",
+    summary: "Governance approval is required for this operation.",
+    hint: "Reach out to the governance team or use an approved governance key.",
+    matches: (ctx) => ctx.contains("notgovernance") || ctx.contains("notgovernanceorpauser"),
+  },
+  {
+    id: "identity_required",
+    summary: "An ENS identity is required before continuing.",
+    hint: "Register the appropriate *.agent.agi.eth or *.club.agi.eth subdomain and try again.",
+    matches: (ctx) =>
+      ctx.contains("ens name must") || ctx.contains("ens required") || ctx.contains("identityregistry not set"),
+  },
+  {
+    id: "stake_missing",
+    summary: "You need to stake before you can continue.",
+    hint: "Stake the required AGIALPHA amount and retry the action.",
+    matches: (ctx) => ctx.contains("nostake") || ctx.contains("stake required") || ctx.contains("stake missing"),
+  },
+  {
+    id: "stake_too_high",
+    summary: "The requested stake exceeds the allowed maximum.",
+    hint: "Lower the stake amount or split it into smaller deposits.",
+    matches: (ctx) => ctx.contains("stakeoverflow") || ctx.contains("amount too large"),
+  },
+  {
+    id: "invalid_state",
+    summary: "The job isn’t in the right state for that action yet.",
+    hint: "Check the job status and try the step that matches the current phase.",
+    matches: (ctx) =>
+      ctx.contains("invalidstate") ||
+      ctx.contains("cannotexpire") ||
+      ctx.contains("alreadytallied") ||
+      ctx.contains("revealpending"),
+  },
+  {
+    id: "already_done",
+    summary: "This step has already been completed.",
+    hint: "No further action is needed unless circumstances change.",
+    matches: (ctx) =>
+      ctx.contains("already committed") ||
+      ctx.contains("already revealed") ||
+      ctx.contains("already applied") ||
+      ctx.contains("alreadylisted"),
+  },
+  {
+    id: "burn_evidence_missing",
+    summary: "Burn evidence is missing or incomplete.",
+    hint: "Upload the burn receipt or wait for the validator to finish the burn.",
+    matches: (ctx) => ctx.contains("burnevidence") || ctx.contains("burnreceipt"),
+  },
+  {
+    id: "validator_window_closed",
+    summary: "The validation window has already closed.",
+    hint: "Wait for the next cycle or escalate through disputes if needed.",
+    matches: (ctx) =>
+      ctx.contains("commitphaseclosed") ||
+      ctx.contains("revealphaseclosed") ||
+      ctx.contains("commit closed") ||
+      ctx.contains("reveal closed"),
+  },
+  {
+    id: "validator_window_open",
+    summary: "Validation is still underway.",
+    hint: "Let validators finish before finalizing the job.",
+    matches: (ctx) =>
+      ctx.contains("commitphaseactive") ||
+      ctx.contains("reveal pending") ||
+      ctx.contains("validators already selected"),
+  },
+  {
+    id: "network_fetch",
+    summary: "I couldn’t reach the orchestrator network.",
+    hint: "Check your internet connection or try again in a few seconds.",
+    matches: (ctx) =>
+      ctx.contains("failed to fetch") ||
+      ctx.contains("networkerror") ||
+      ctx.contains("network request failed") ||
+      ctx.contains("fetch event responded"),
+  },
+  {
+    id: "timeout",
+    summary: "The request timed out while waiting for the orchestrator.",
+    hint: "Retry in a moment—the network might be congested.",
+    matches: (ctx) => ctx.contains("timeout") || ctx.contains("timed out") || ctx.contains("etimedout"),
+  },
+  {
+    id: "rate_limited",
+    summary: "You’re sending requests too quickly.",
+    hint: "Pause for a few seconds before trying again.",
+    matches: (ctx) => ctx.status === 429 || ctx.contains("too many requests"),
+  },
+  {
+    id: "service_unavailable",
+    summary: "The orchestrator is temporarily unavailable.",
+    hint: "We’ll keep watching—try again shortly.",
+    matches: (ctx) => ctx.status === 503 || ctx.contains("service unavailable") || ctx.contains("maintenance"),
+  },
+  {
+    id: "unauthorized",
+    summary: "The orchestrator rejected our credentials.",
+    hint: "Check that your API token is correct and hasn’t expired.",
+    matches: (ctx) => ctx.status === 401 || ctx.status === 403 || ctx.contains("unauthorized"),
+  },
+  {
+    id: "not_found",
+    summary: "The orchestrator endpoint was not found.",
+    hint: "Verify the /onebox URLs in your configuration.",
+    matches: (ctx) => ctx.status === 404 || ctx.contains("not found"),
+  },
+  {
+    id: "user_rejected",
+    summary: "You cancelled the wallet prompt.",
+    hint: "Restart the request and approve it when you’re ready.",
+    matches: (ctx) =>
+      ctx.hasCode("ACTION_REJECTED") ||
+      ctx.contains("user rejected") ||
+      ctx.contains("user denied") ||
+      ctx.contains("request rejected"),
+  },
+  {
+    id: "gas_estimation",
+    summary: "I couldn’t estimate the gas for that transaction.",
+    hint: "Double-check the inputs or try again with slightly different parameters.",
+    matches: (ctx) =>
+      ctx.hasCode("UNPREDICTABLE_GAS_LIMIT") ||
+      ctx.contains("cannot estimate gas") ||
+      ctx.contains("gas required exceeds allowance"),
+  },
+  {
+    id: "invalid_argument",
+    summary: "One of the inputs looks invalid.",
+    hint: "Use plain numbers for amounts and ensure addresses or ENS names are correct.",
+    matches: (ctx) =>
+      ctx.hasCode("INVALID_ARGUMENT") ||
+      ctx.contains("invalid bignumber") ||
+      ctx.contains("invalid argument"),
+  },
+  {
+    id: "json_parse",
+    summary: "The orchestrator returned data in an unexpected format.",
+    hint: "Reload the page or retry—this can happen during upgrades.",
+    matches: (ctx) => ctx.contains("unexpected token") || ctx.contains("invalid json"),
+  },
+  {
+    id: "quota_exceeded",
+    summary: "This action exceeds the configured spend cap.",
+    hint: "Reduce the reward or wait until the orchestrator refreshes its quota.",
+    matches: (ctx) => ctx.contains("spend cap") || ctx.contains("quota exceeded"),
+  },
+  {
+    id: "attachment_missing",
+    summary: "Required attachments were missing from the request.",
+    hint: "Re-upload the files or drop them into the chat before confirming.",
+    matches: (ctx) => ctx.contains("attachment required") || ctx.contains("missing attachment"),
+  },
+  {
+    id: "ipfs_failure",
+    summary: "I couldn’t pin the payload to IPFS.",
+    hint: "Check your IPFS token or retry the upload after a short pause.",
+    matches: (ctx) =>
+      ctx.contains("ipfs upload failed") || ctx.contains("ipfs response missing cid") || ctx.contains("pinning error"),
+  },
+  {
+    id: "simulation_failed",
+    summary: "Simulation failed before submission.",
+    hint: "Review the planner output or switch to Expert Mode for a detailed trace.",
+    matches: (ctx) => ctx.contains("simulation failed") || ctx.contains("failed simulation") || ctx.contains("sim revert"),
+  },
+];
+
+function buildMatcher(context) {
+  const lowerMessages = toLowerList(context.messages);
+  const lowerCodes = toLowerList(context.codes);
+  const status = context.statuses.length ? context.statuses[0] : undefined;
+  return {
+    primary: context.messages.find((value) => value && value.trim()),
+    status,
+    contains(fragment) {
+      if (!fragment) return false;
+      const needle = fragment.toLowerCase();
+      return lowerMessages.some((message) => message.includes(needle));
+    },
+    hasCode(code) {
+      if (!code) return false;
+      const needle = String(code).toLowerCase();
+      return lowerCodes.includes(needle);
+    },
+  };
+}
+
 export function formatError(err) {
-  if (!err) return "Unknown error";
-  if (typeof err === "string") return err;
-  if (err.message) return err.message;
+  if (err === null || err === undefined) {
+    return "Something went wrong, but the error was empty.";
+  }
+  if (typeof err === "string") {
+    const trimmed = err.trim();
+    return trimmed || "An unexpected error occurred.";
+  }
+
+  const context = collectErrorContext(err);
+  const matcher = buildMatcher(context);
+
+  for (const rule of FRIENDLY_ERROR_RULES) {
+    try {
+      if (rule.matches(matcher)) {
+        const pieces = [rule.summary];
+        if (rule.hint) {
+          pieces.push(`Tip: ${rule.hint}`);
+        }
+        return pieces.join(" ");
+      }
+    } catch (matchErr) {
+      // Ignore individual rule failures and continue to the next rule.
+      console.warn(`Error rule ${rule.id} threw during evaluation`, matchErr);
+    }
+  }
+
+  if (matcher.primary) {
+    return matcher.primary;
+  }
+
   try {
     return JSON.stringify(err);
-  } catch (e) {
-    return "Unexpected error";
+  } catch (jsonErr) {
+    return "An unexpected error occurred.";
   }
 }
 

@@ -11,6 +11,7 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 - Advanced receipts toggle exposing transaction hashes, gas sponsorship info, and raw ICS payloads.
 - Drag-and-drop attachment support (plus orchestrator prompts) with client-side IPFS pinning backed by `web3.storage`.
 - Live job status board that polls `/onebox/status` for recent updates and renders walletless receipts.
+- Human-readable error dictionary that turns common revert strings and HTTP failures into actionable guidance.
 - Neutral static hosting footprint suited for IPFS pinning.
 
 ## Quick start

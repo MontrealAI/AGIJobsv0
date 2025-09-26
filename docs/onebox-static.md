@@ -13,6 +13,10 @@ User ↔ Static UI (IPFS) ↔ AGI-Alpha Orchestrator ↔ Execution Bridge (AA or
 - **Planner (`/onebox/plan`)**: accepts free-form text and returns either an **Intent-Constraint Schema (ICS)** or a higher-level JobIntent envelope.
 - **Executor (`/onebox/execute`)**: consumes the ICS or JobIntent, simulates, and submits transactions via sponsored Account Abstraction (primary) or a relayer (fallback). Responses may stream back as Server-Sent Events (ICS flow) or return a JSON receipt (JobIntent flow).
 - **Status (`/onebox/status`)**: provides a compact JSON feed of recent jobs that the UI renders in the live status board.
+
+### Human-readable error handling
+
+The static client ships with a **friendly error dictionary** (`FRIENDLY_ERROR_RULES` in [`lib.mjs`](../apps/onebox-static/lib.mjs)) that translates more than twenty common revert strings, HTTP responses, and wallet errors into actionable guidance (“**You don’t have enough AGIALPHA to fund this job. Tip: Lower the reward or top up your balance before trying again.**”). Keep the catalogue current whenever new orchestrator failure modes appear so end-users never see raw stack traces.
 - **Static UI**: validates ICS, prompts the user for confirmations, uploads payloads to IPFS, and renders human-readable receipts.
 
 ---
