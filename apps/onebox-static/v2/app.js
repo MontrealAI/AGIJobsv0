@@ -1,4 +1,5 @@
 const ORCH_URL = window.localStorage.getItem('ORCH_URL') || '';
+const API_TOKEN_KEY = 'ONEBOX_API_TOKEN';
 const STATUS_INTERVAL_MS = 20_000;
 
 let expertMode = false;
@@ -57,6 +58,22 @@ const FRIENDLY_ERROR_RULES = [
     message: 'Network error. Check your connection or orchestrator URL and try again.',
   },
 ];
+
+function withAuthHeaders(baseHeaders = {}) {
+  try {
+    const tokenRaw = window.localStorage.getItem(API_TOKEN_KEY);
+    const token = typeof tokenRaw === 'string' ? tokenRaw.trim() : '';
+    if (token) {
+      return {
+        ...baseHeaders,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+  } catch (error) {
+    // localStorage access can throw in private browsing contexts; fall back to base headers.
+  }
+  return baseHeaders;
+}
 
 window.oneboxSetOrchestrator = function setOrchestrator(url) {
   window.localStorage.setItem('ORCH_URL', url || '');
@@ -185,9 +202,9 @@ async function plan(text) {
 
   const response = await fetch(`${ORCH_URL}/onebox/plan`, {
     method: 'POST',
-    headers: {
+    headers: withAuthHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({ text, expert: expertMode }),
   });
 
@@ -218,9 +235,9 @@ async function executeIntent(intent) {
 
   const response = await fetch(`${ORCH_URL}/onebox/execute`, {
     method: 'POST',
-    headers: {
+    headers: withAuthHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify({ intent, mode: expertMode ? 'wallet' : 'relayer' }),
   });
 
@@ -464,7 +481,9 @@ async function loadStatus(manual = false) {
   }
 
   try {
-    const response = await fetch(`${ORCH_URL}/onebox/status`);
+    const response = await fetch(`${ORCH_URL}/onebox/status`, {
+      headers: withAuthHeaders(),
+    });
     if (!response.ok) {
       const body = await safeJson(response);
       throw new Error(body?.error || `Status error (${response.status})`);

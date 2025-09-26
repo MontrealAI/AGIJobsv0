@@ -18,6 +18,11 @@ A static, IPFS-friendly single-input interface for AGI Jobs v2. The page works i
    localStorage.ORCH_URL = "https://your-orchestrator.example";
    ```
    You can also run `oneboxSetOrchestrator("https://your-orchestrator.example")` for a helper that saves the URL and reloads the page.
+   When targeting a token-protected orchestrator, store your API credential alongside the URL:
+   ```js
+   localStorage.ONEBOX_API_TOKEN = "replace-with-your-token";
+   ```
+   The UI automatically attaches `Authorization: Bearer …` to planner, execution, and status calls when a token is present. Clear the key to fall back to anonymous mode.
 3. Send a natural-language instruction such as "Post a labeling job for 500 images; pay 5 AGIALPHA; 7 days".
 4. Confirm the plan and wait for the orchestrator to execute.
 5. Monitor the recent activity panel at the bottom of the page or press **Refresh** to force a status update on demand.
