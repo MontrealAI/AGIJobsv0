@@ -273,3 +273,63 @@ test('prepareJobPayload merges multiple attachments for dispute intents', () => 
     },
   ]);
 });
+
+test('prepareJobPayload applies multiple attachments without repinning payload', () => {
+  const ics = {
+    intent: 'submit_work',
+    params: {
+      attachments: ['ipfs://existing'],
+      note: 'already pinned',
+      result: { uri: 'ipfs://preexisting', status: 'complete' },
+    },
+    meta: {},
+  };
+
+  const attachments = [
+    {
+      cid: CID,
+      uri: `ipfs://${CID}`,
+      gateways: [`${IPFS_GATEWAY}${CID}`],
+      name: 'result-a.txt',
+      size: 256,
+    },
+    {
+      cid: CID_TWO,
+      uri: `ipfs://${CID_TWO}`,
+      gateways: [`${IPFS_GATEWAY}${CID_TWO}`],
+      name: 'result-b.txt',
+      size: 512,
+    },
+  ];
+
+  const prepared = prepareJobPayload(ics, attachments);
+
+  prepared.applyAttachments();
+  prepared.mergeClientPins();
+
+  assert.deepEqual(ics.params.attachments, [
+    'ipfs://existing',
+    `ipfs://${CID}`,
+    `ipfs://${CID_TWO}`,
+  ]);
+  assert.deepEqual(ics.params.result, {
+    uri: 'ipfs://preexisting',
+    status: 'complete',
+  });
+  assert.deepEqual(ics.meta.clientPinned, [
+    {
+      cid: CID,
+      uri: `ipfs://${CID}`,
+      gateways: [`${IPFS_GATEWAY}${CID}`],
+      name: 'result-a.txt',
+      size: 256,
+    },
+    {
+      cid: CID_TWO,
+      uri: `ipfs://${CID_TWO}`,
+      gateways: [`${IPFS_GATEWAY}${CID_TWO}`],
+      name: 'result-b.txt',
+      size: 512,
+    },
+  ]);
+});
