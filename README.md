@@ -27,6 +27,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 - [Step‑by‑Step Deployment with $AGIALPHA](#step-by-step-deployment-with-agialpha)
 - [Agent/Validator Identity – ENS subdomain registration](#agentvalidator-identity--ens-subdomain-registration)
 - [Documentation](#documentation)
+- [One-Box UX](#one-box-ux)
 
 ### Identity policy
 
@@ -401,3 +402,9 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [PlatformRegistry operations guide](docs/platform-registry-operations.md)
 - [One-Box UX overview](docs/onebox-ux.md)
 - [Agent gateway example](examples/agent-gateway.js)
+
+## One-Box UX
+
+- **Static front-end**: [`apps/onebox/`](apps/onebox/) provides an IPFS-ready, single-input UI that talks to the AGI-Alpha orchestrator (`/onebox/*`).
+- **Shared data contracts**: [`packages/onebox-sdk/`](packages/onebox-sdk/) exports TypeScript interfaces for `JobIntent`, `PlanResponse`, and `ExecuteResponse`.
+- **Integration guide**: see [`docs/onebox-ux.md`](docs/onebox-ux.md) for FastAPI stubs and deployment notes.

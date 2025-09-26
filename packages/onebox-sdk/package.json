@@ -1,7 +1,8 @@
 {
   "name": "@agijobs/onebox-sdk",
   "version": "0.1.0",
-  "private": true,
+  "description": "Shared JobIntent and response contracts for the AGI Jobs one-box orchestrator.",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -9,5 +10,6 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json"
-  }
+  },
+  "license": "MIT"
 }

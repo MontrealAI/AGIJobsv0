@@ -1,41 +1,106 @@
-# One-Box UX Overview
+# AGI Jobs One-Box UX & API contract
 
-The One-Box interface provides a single input surface that turns natural language instructions into AGI Jobs intents executed through the AGI-Alpha orchestrator. This document summarises how the static client, orchestrator routes, and blockchain abstractions fit together so that contributors can ship updates quickly.
+This document covers how the single-input One-Box interface interacts with the AGI-Alpha orchestrator (`AGI-Alpha-Agent-v0`) and hides blockchain complexity for end users.
 
-## Architecture
+## Overview
 
+- **Front-end**: `apps/onebox/` — static HTML/CSS/JS that can be pinned to IPFS. It consumes the orchestrator over HTTPS.
+- **Shared types**: `packages/onebox-sdk/` — TypeScript definitions for the planner/executor/status payloads.
+- **Server**: extend the FastAPI app with `/onebox/plan`, `/onebox/execute`, `/onebox/status`.
+
+Guest mode routes execution through the orchestrator relayer. Expert mode surfaces calldata so power users can sign with their own wallets (e.g. through viem/Web3Modal).
+
+## API surface (FastAPI stubs)
+
+Add the following endpoints to `AGI-Alpha-Agent-v0`:
+
+```py
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+router = APIRouter(prefix="/onebox", tags=["onebox"])
+
+class PlanRequest(BaseModel):
+    text: str
+    expert: bool = False
+
+class ExecuteRequest(BaseModel):
+    intent: JobIntent  # reuse schema from packages/onebox-sdk
+    mode: Literal['relayer', 'wallet'] = 'relayer'
+
+@router.post('/plan', response_model=PlanResponse)
+async def plan(req: PlanRequest, deps=Depends(auth_guard)):
+    intent = await planner.run(text=req.text, expert=req.expert)
+    return PlanResponse(summary=intent.summary, intent=intent, warnings=intent.warnings)
+
+@router.post('/execute', response_model=ExecuteResponse)
+async def execute(req: ExecuteRequest, deps=Depends(auth_guard)):
+    if req.mode == 'relayer':
+        result = await relayer.execute(req.intent)
+    else:
+        result = await wallet.prepare_calldata(req.intent)
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.error)
+    return result
+
+@router.get('/status', response_model=StatusResponse)
+async def status(job_id: int | None = None, deps=Depends(auth_guard)):
+    return await status_service.fetch(job_id=job_id)
 ```
-+--------------+        +--------------------+        +-----------------------+
-|  One-Box UI  |  -->   |  Orchestrator API  |  -->   |  AGI Jobs v2 Contracts |
-| (static HTML) |        | (/onebox endpoints) |        |  + agent-gateway cache  |
-+--------------+        +--------------------+        +-----------------------+
+
+Leverage the existing FastAPI `api.py` structure: include the router, reuse the `API_TOKEN` auth dependency, and expose the endpoints in the OpenAPI schema.
+
+## Planner → executor contract
+
+The planner must output a `JobIntent` structure:
+
+```json
+{
+  "action": "post_job",
+  "payload": {
+    "title": "Label 500 images",
+    "description": "Binary labels; examples attached",
+    "reward": "5.0",
+    "rewardToken": "AGIALPHA",
+    "deadlineDays": 7,
+    "attachments": [{"name": "guidelines.pdf", "ipfs": "bafy..."}]
+  },
+  "constraints": {"maxFee": "auto"},
+  "userContext": {"sessionId": "uuid"}
+}
 ```
 
-- **UI** — A static HTML/CSS/JS bundle that can be pinned to IPFS. It never holds secrets and defaults to a relayer-backed execution mode. Expert users can toggle wallet signing without reloading the page.
-- **Orchestrator** — FastAPI server extended with `/onebox/plan`, `/onebox/execute`, and `/onebox/status`. It validates intents, performs IPFS pinning, and routes transactions through a relayer or ERC-4337 adapter.
-- **Contracts** — Re-use the v2 deployments under `contracts/v2`. The orchestrator should use the shared token and identity configuration in `config/agialpha.json` and the registry tooling.
+`packages/onebox-sdk` exports matching TypeScript interfaces, which keeps UI, orchestrator, and tooling aligned.
 
-## Planner Contract
+## Error handling
 
-All orchestrator responses conform to the TypeScript types defined in `packages/onebox-sdk`. These types mirror the JSON payloads used by the UI and can be consumed by other tooling (CLI, tests, etc.).
+The UI ships with an error dictionary for common failure strings (`InsufficientBalance`, `deadline`, `allowance`, etc.). Ensure the orchestrator raises structured errors with either:
 
-- `JobIntent` captures the planned action.
-- `PlanResponse` wraps human-readable summaries and warnings.
-- `ExecuteResponse` returns job identifiers and receipts.
+```json
+{"error":"InsufficientBalance"}
+```
 
-## Status & Events
+or HTTP errors with readable `detail` fields. This allows the front-end to map them to human language without exposing low-level stack traces.
 
-The orchestrator can provide responsive status updates by combining on-chain reads (`JobRegistry` view methods) with the existing agent gateway event stream. The static client polls `/onebox/status` as needed to update status cards without exposing raw blockchain concepts to end-users.
+## Status updates
 
-## Deployment Notes
+`/onebox/status` should aggregate:
 
-1. Pin the contents of `apps/onebox-static/v2/` to IPFS or host on any static provider.
-2. Configure CORS on the orchestrator to permit the chosen domain/gateway.
-3. Use the environment variables already present in AGI-Alpha (`API_TOKEN`, optional `PINNER_TOKEN`) to secure planner and executor calls.
-4. Document the orchestrator URL and network in the deployment runbook so operators can rotate relayer keys and tokens safely.
+- live chain reads from `JobRegistry`
+- cached gateway events (`agent-gateway/` service)
+- computed fields: `statusLabel`, `reward` (decimal string), `deadline` (humanised)
 
-## Roadmap Hooks
+Return `jobs: [...]` with the latest entries first. Optional pagination can use `nextToken`.
 
-- **Error dictionary** — Extend the client-side copy to map low-level execution errors into human language.
-- **Telemetry** — Stream anonymised UI events to a metrics sink once `/metrics` is exposed server-side.
-- **Testing** — Add Cypress flows that cover confirm/cancel, Expert Mode toggling, and orchestrator integration mocks.
+## Deployment steps
+
+1. Build and deploy the orchestrator with the new router.
+2. Pin `apps/onebox/` to IPFS (or serve from any static host).
+3. Set CORS on the orchestrator to allow the gateway origin and the IPFS gateway domain.
+4. Share the orchestrator base URL with users; they configure it through the Settings modal.
+
+## Related references
+
+- Contracts v2 docs (`docs/`), especially identity and token configuration.
+- `examples/ethers-quickstart.js` for calldata reference when preparing expert-mode transactions.
+- `agent-gateway/` for event streaming.
