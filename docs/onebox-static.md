@@ -96,6 +96,7 @@ web3 storage upload apps/onebox-static
 | Symptom | Possible cause | Resolution |
 | ------- | -------------- | ---------- |
 | “Planner unavailable” | Incorrect `PLAN_URL`, orchestrator offline, or CORS blocked. | Verify URL, check orchestrator logs, adjust CORS origins. |
+| “Demo mode is active” | No orchestrator base URL configured. | Open the Advanced panel, set the orchestrator base URL/prefix, or supply `?orchestrator=...` in the page URL. |
 | “Executor error” | `/onebox/execute` rejected the request or the SSE stream failed. | Inspect orchestrator logs; ensure AA Paymaster funded and ICS passes validation. |
 | “web3.storage token required” | Token not set in browser. | Obtain token from operator, paste when prompted, or clear via `localStorage.removeItem("W3S_TOKEN")`. |
 | ENS requirement message | Identity registry enforced. | Follow the provided claim/associate instructions before retrying. |

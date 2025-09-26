@@ -10,3 +10,12 @@ export const IPFS_GATEWAYS = [
   "https://ipfs.io/ipfs/",
 ];
 export const AA_MODE = { enabled: true, bundler: "alchemy", chainId: 1 };
+export const ORCHESTRATOR_STORAGE_KEYS = {
+  base: "AGIJOBS_ONEBOX_ORCHESTRATOR_BASE",
+  prefix: "AGIJOBS_ONEBOX_ORCHESTRATOR_PREFIX",
+};
+export const ORCHESTRATOR_URL_PARAMS = {
+  base: "orchestrator",
+  prefix: "oneboxPrefix",
+};
+export const ENABLE_DEMO_MODE = true;

@@ -14,13 +14,43 @@ import {
 } from "./lib.mjs";
 
 const {
+  ORCHESTRATOR_BASE_URL,
+  ORCHESTRATOR_ONEBOX_PREFIX,
   PLAN_URL,
   EXEC_URL,
   STATUS_URL,
   IPFS_ENDPOINT,
   IPFS_TOKEN_STORAGE_KEY,
   AA_MODE,
+  ORCHESTRATOR_STORAGE_KEYS,
+  ORCHESTRATOR_URL_PARAMS,
+  ENABLE_DEMO_MODE,
 } = Config;
+
+const STORAGE_KEYS = {
+  base:
+    (ORCHESTRATOR_STORAGE_KEYS && ORCHESTRATOR_STORAGE_KEYS.base) ||
+    "AGIJOBS_ONEBOX_ORCHESTRATOR_BASE",
+  prefix:
+    (ORCHESTRATOR_STORAGE_KEYS && ORCHESTRATOR_STORAGE_KEYS.prefix) ||
+    "AGIJOBS_ONEBOX_ORCHESTRATOR_PREFIX",
+};
+
+const URL_PARAMS = {
+  base: (ORCHESTRATOR_URL_PARAMS && ORCHESTRATOR_URL_PARAMS.base) || "orchestrator",
+  prefix:
+    (ORCHESTRATOR_URL_PARAMS && ORCHESTRATOR_URL_PARAMS.prefix) || "oneboxPrefix",
+};
+
+const DEMO_ENABLED = ENABLE_DEMO_MODE !== false;
+
+const DEFAULT_ENDPOINTS = {
+  base: sanitizeBaseUrl(ORCHESTRATOR_BASE_URL),
+  prefix: sanitizePrefixSegment(ORCHESTRATOR_ONEBOX_PREFIX),
+  plan: sanitizeUrlCandidate(PLAN_URL),
+  exec: sanitizeUrlCandidate(EXEC_URL),
+  status: sanitizeUrlCandidate(STATUS_URL),
+};
 
 const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAYS.length
   ? Config.IPFS_GATEWAYS
@@ -49,6 +79,27 @@ const advancedToggle = hasDocument ? document.getElementById("advanced-toggle") 
 const advancedPanel = hasDocument ? document.getElementById("advanced-panel") : null;
 const statusBoard = hasDocument ? document.getElementById("status-board") : null;
 
+const storage = (() => {
+  try {
+    if (typeof window !== "undefined" && window.localStorage) {
+      return window.localStorage;
+    }
+    if (typeof localStorage !== "undefined") {
+      return localStorage;
+    }
+  } catch (err) {
+    // ignore storage failures (private browsing, etc.)
+  }
+  return null;
+})();
+
+if (hasDocument) {
+  applyUrlOverrides();
+}
+
+let endpoints = resolveEndpoints();
+let lastModeDescriptor = null;
+
 const MAX_ATTACHMENT_QUEUE = 3;
 const queuedAttachments = [];
 
@@ -59,6 +110,312 @@ let advancedLogEl = null;
 let statusTimer = null;
 let statusLoading = false;
 let lastStatusFingerprint = "";
+
+function sanitizeUrlCandidate(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function sanitizeBaseUrl(value) {
+  const candidate = sanitizeUrlCandidate(value);
+  if (!candidate) return "";
+  return candidate.replace(/\/+$/, "");
+}
+
+function sanitizePrefixSegment(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.replace(/^\/+|\/+$/g, "");
+}
+
+function joinUrlSegments(base, ...segments) {
+  if (!base) return "";
+  let normalized = base.replace(/\/+$/, "");
+  for (const segment of segments) {
+    if (!segment) continue;
+    const trimmed = segment.replace(/^\/+|\/+$/g, "");
+    if (!trimmed) continue;
+    normalized += `/${trimmed}`;
+  }
+  return normalized;
+}
+
+function readStoredValue(key) {
+  if (!storage || !key) return null;
+  try {
+    const value = storage.getItem(key);
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function readStoredBase() {
+  const value = readStoredValue(STORAGE_KEYS.base);
+  return value ? sanitizeBaseUrl(value) : null;
+}
+
+function readStoredPrefix() {
+  const value = readStoredValue(STORAGE_KEYS.prefix);
+  return value ? sanitizePrefixSegment(value) : null;
+}
+
+function setStoredBase(value) {
+  if (!storage) return;
+  const sanitized = sanitizeBaseUrl(value);
+  try {
+    if (sanitized) {
+      storage.setItem(STORAGE_KEYS.base, sanitized);
+    } else {
+      storage.removeItem(STORAGE_KEYS.base);
+    }
+  } catch (err) {
+    // ignore
+  }
+}
+
+function setStoredPrefix(value) {
+  if (!storage) return;
+  const sanitized = sanitizePrefixSegment(value);
+  try {
+    if (sanitized) {
+      storage.setItem(STORAGE_KEYS.prefix, sanitized);
+    } else {
+      storage.removeItem(STORAGE_KEYS.prefix);
+    }
+  } catch (err) {
+    // ignore
+  }
+}
+
+function clearStoredOrchestrator() {
+  if (!storage) return;
+  try {
+    storage.removeItem(STORAGE_KEYS.base);
+    storage.removeItem(STORAGE_KEYS.prefix);
+  } catch (err) {
+    // ignore
+  }
+}
+
+function computeEndpointsFromBase(base, prefix) {
+  const sanitizedBase = sanitizeBaseUrl(base);
+  const sanitizedPrefix = sanitizePrefixSegment(prefix);
+  if (!sanitizedBase) {
+    return {
+      base: sanitizedBase,
+      prefix: sanitizedPrefix,
+      plan: null,
+      exec: null,
+      status: null,
+    };
+  }
+  const root = joinUrlSegments(sanitizedBase, sanitizedPrefix);
+  return {
+    base: sanitizedBase,
+    prefix: sanitizedPrefix,
+    plan: joinUrlSegments(root, "plan"),
+    exec: joinUrlSegments(root, "execute"),
+    status: joinUrlSegments(root, "status"),
+  };
+}
+
+function resolveEndpoints() {
+  const baseOverride = readStoredBase();
+  const prefixOverride = readStoredPrefix();
+  const base = baseOverride !== null ? baseOverride : DEFAULT_ENDPOINTS.base || "";
+  const prefix = prefixOverride !== null ? prefixOverride : DEFAULT_ENDPOINTS.prefix || "";
+  const computed = computeEndpointsFromBase(base, prefix);
+  return {
+    base: computed.base,
+    prefix: computed.prefix,
+    plan: computed.plan || DEFAULT_ENDPOINTS.plan || null,
+    exec: computed.exec || DEFAULT_ENDPOINTS.exec || null,
+    status: computed.status || DEFAULT_ENDPOINTS.status || null,
+  };
+}
+
+function applyUrlOverrides() {
+  if (typeof window === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    let changed = false;
+    if (url.searchParams.has(URL_PARAMS.base)) {
+      const baseValue = url.searchParams.get(URL_PARAMS.base);
+      if (baseValue && baseValue.toLowerCase() !== "demo") {
+        setStoredBase(baseValue);
+      } else {
+        setStoredBase("");
+        if (baseValue && baseValue.toLowerCase() === "demo") {
+          setStoredPrefix("");
+        }
+      }
+      changed = true;
+    }
+    if (url.searchParams.has(URL_PARAMS.prefix)) {
+      const prefixValue = url.searchParams.get(URL_PARAMS.prefix);
+      setStoredPrefix(prefixValue || "");
+      changed = true;
+    }
+    if (changed && typeof window.history?.replaceState === "function") {
+      url.searchParams.delete(URL_PARAMS.base);
+      url.searchParams.delete(URL_PARAMS.prefix);
+      const nextSearch = url.searchParams.toString();
+      const nextUrl = nextSearch ? `${url.pathname}?${nextSearch}${url.hash}` : `${url.pathname}${url.hash}`;
+      window.history.replaceState({}, document.title, nextUrl);
+    }
+  } catch (err) {
+    // ignore invalid URL parsing
+  }
+}
+
+function getOrchestratorBase() {
+  return endpoints.base || "";
+}
+
+function getOrchestratorPrefix() {
+  return endpoints.prefix || "";
+}
+
+function getPlanUrl() {
+  return endpoints.plan || null;
+}
+
+function getExecUrl() {
+  return endpoints.exec || null;
+}
+
+function getStatusUrl() {
+  return endpoints.status || null;
+}
+
+function isDemoModeActive() {
+  return DEMO_ENABLED && (!getPlanUrl() || !getExecUrl());
+}
+
+function formatPrefixDisplay(segment) {
+  if (!segment) return "(none)";
+  return `/${segment}`;
+}
+
+function formatOrchestratorDisplay() {
+  const base = getOrchestratorBase();
+  const prefix = getOrchestratorPrefix();
+  if (base) {
+    return joinUrlSegments(base, prefix);
+  }
+  if (DEFAULT_ENDPOINTS.plan) {
+    try {
+      const url = new URL(DEFAULT_ENDPOINTS.plan);
+      const trimmedPath = url.pathname.replace(/\/?plan$/i, "").replace(/\/+$/, "");
+      return `${url.origin}${trimmedPath}`;
+    } catch (err) {
+      return DEFAULT_ENDPOINTS.plan;
+    }
+  }
+  return "Not configured";
+}
+
+function refreshEndpointState({ announce = false, immediateStatus = true } = {}) {
+  endpoints = resolveEndpoints();
+  if (!hasDocument) return;
+  renderAdvancedPanel();
+  updateStatusUI({ immediate: immediateStatus });
+  if (announce) {
+    maybeAnnounceMode({ force: true });
+  } else {
+    lastModeDescriptor = buildModeDescriptor();
+  }
+}
+
+function demoPlan(prompt) {
+  const text = typeof prompt === "string" ? prompt.trim() : "";
+  const lowered = text.toLowerCase();
+  let action = "post_job";
+  if (lowered.includes("finalize")) {
+    action = "finalize_job";
+  } else if (lowered.includes("status")) {
+    action = "check_status";
+  } else if (lowered.includes("apply")) {
+    action = "apply_job";
+  } else if (lowered.includes("dispute")) {
+    action = "dispute";
+  }
+
+  const jobIdMatch = text.match(/\d+/);
+  const jobId = jobIdMatch ? Number(jobIdMatch[0]) : undefined;
+  const payload = {};
+
+  if (action === "post_job") {
+    payload.title = text || "Demo job";
+    payload.description = text || "Demo request";
+    payload.rewardToken = "AGIALPHA";
+    payload.reward = "5.0";
+    payload.deadlineDays = 7;
+  } else if (jobId !== undefined) {
+    payload.jobId = jobId;
+  }
+
+  const friendlyAction =
+    action === "post_job"
+      ? "post a job"
+      : action === "finalize_job"
+        ? "finalize a job"
+        : action === "check_status"
+          ? "check a job status"
+          : action.replace(/_/g, " ");
+
+  const summary = text
+    ? `I will simulate ${friendlyAction} for: ${text}. Proceed?`
+    : `I will simulate ${friendlyAction}. Proceed?`;
+
+  const warnings = [
+    "Demo mode is active. Configure an orchestrator endpoint to run this on-chain.",
+  ];
+
+  return {
+    kind: "job-intent",
+    summary,
+    requiresConfirmation: true,
+    warnings,
+    intent: {
+      action,
+      payload,
+      constraints: { demo: true },
+      userContext: { mode: "demo" },
+    },
+    raw: { summary, intent: { action, payload }, demo: true },
+  };
+}
+
+async function runDemoExecution(intent) {
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  const action = typeof intent?.action === "string" ? intent.action : "request";
+  const friendlyAction = action.replace(/_/g, " ");
+  const response = {
+    ok: true,
+    demo: true,
+    message: `Simulated ${friendlyAction} completed.`,
+    warnings: [
+      "Demo mode: no blockchain transaction was sent.",
+      "Set an orchestrator URL in the Advanced panel to exit demo mode.",
+    ],
+  };
+  if (action === "post_job") {
+    response.jobId = pickDemoJobId();
+  } else if (intent?.payload && intent.payload.jobId !== undefined) {
+    response.jobId = intent.payload.jobId;
+  }
+  return response;
+}
+
+function pickDemoJobId() {
+  return Math.floor(100 + Math.random() * 900);
+}
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => {
@@ -189,10 +546,44 @@ function gatewayUrlsFor(cid) {
 
 function renderAdvancedPanel() {
   if (!advancedPanel) return;
-  const token = localStorage.getItem(IPFS_TOKEN_STORAGE_KEY) || "";
+  const token = storage?.getItem?.(IPFS_TOKEN_STORAGE_KEY) || "";
   const maskedToken = token ? `••••${token.slice(-4)}` : "Not set";
   const aaSummary = summarizeAAMode(AA_MODE);
+  const orchestratorMode = isDemoModeActive() ? "Demo mode" : "Live orchestrator";
+  const base = getOrchestratorBase();
+  const prefix = getOrchestratorPrefix();
+  const planUrl = getPlanUrl();
+  const execUrl = getExecUrl();
+  const statusUrl = getStatusUrl();
+  const planMarkup = planUrl
+    ? formatGatewayLink(planUrl)
+    : escapeHtml(isDemoModeActive() ? "Demo (no network call)" : "Not configured");
+  const execMarkup = execUrl
+    ? formatGatewayLink(execUrl)
+    : escapeHtml(isDemoModeActive() ? "Demo (no network call)" : "Not configured");
+  const statusMarkup = statusUrl
+    ? formatGatewayLink(statusUrl)
+    : escapeHtml(isDemoModeActive() ? "Demo (disabled)" : "Disabled");
+  const hasOverrides = Boolean(base) || Boolean(prefix);
   advancedPanel.innerHTML = `
+    <div class="card">
+      <h2>Orchestrator</h2>
+      <p>Mode: ${escapeHtml(orchestratorMode)}</p>
+      <p class="status">Target: ${escapeHtml(formatOrchestratorDisplay())}</p>
+      <p class="status">Prefix: ${escapeHtml(formatPrefixDisplay(prefix))}</p>
+      <p class="status">Plan: ${planMarkup}</p>
+      <p class="status">Execute: ${execMarkup}</p>
+      <p class="status">Status: ${statusMarkup}</p>
+      <div>
+        <button type="button" class="inline" data-action="set-orchestrator">Set base URL</button>
+        <button type="button" class="inline" data-action="set-prefix">Set prefix</button>
+        ${
+          hasOverrides
+            ? '<button type="button" class="inline" data-action="clear-orchestrator">Clear overrides</button>'
+            : ""
+        }
+      </div>
+    </div>
     <div class="card">
       <h2>IPFS uploads</h2>
       <p>Attachments and specs are pinned client-side via web3.storage. Tokens stay local to this browser.</p>
@@ -281,18 +672,7 @@ function normalizeJobIntentPlan(payload) {
 }
 
 if (hasDocument) {
-  renderAdvancedPanel();
-}
-
-if (hasDocument && statusBoard) {
-  if (STATUS_URL) {
-    renderStatusPlaceholder("Loading job status…");
-    scheduleStatusRefresh(true);
-  } else {
-    renderStatusPlaceholder(
-      "Status feed disabled. Set STATUS_URL in config.js to enable."
-    );
-  }
+  refreshEndpointState({ immediateStatus: true });
 }
 
 function setAdvancedLog(data) {
@@ -358,15 +738,49 @@ if (advancedPanel) {
     const button = event.target.closest("button[data-action]");
     if (!button) return;
     const action = button.dataset.action;
-    if (action === "set-token") {
+    if (action === "set-orchestrator") {
+      const current = getOrchestratorBase() || DEFAULT_ENDPOINTS.base || "";
+      const value = window.prompt(
+        "Enter the orchestrator base URL (leave blank or type DEMO to disable)",
+        current
+      );
+      if (value !== null) {
+        const trimmed = value.trim();
+        if (!trimmed || trimmed.toLowerCase() === "demo") {
+          clearStoredOrchestrator();
+        } else {
+          setStoredBase(trimmed);
+        }
+        refreshEndpointState({ announce: true });
+      }
+    } else if (action === "set-prefix") {
+      const currentPrefix = getOrchestratorPrefix() || DEFAULT_ENDPOINTS.prefix || "";
+      const formatted = currentPrefix ? `/${currentPrefix}` : "";
+      const value = window.prompt(
+        "Enter the orchestrator prefix (e.g., /onebox). Leave blank for none.",
+        formatted
+      );
+      if (value !== null) {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          setStoredPrefix("");
+        } else {
+          setStoredPrefix(trimmed);
+        }
+        refreshEndpointState({ announce: true });
+      }
+    } else if (action === "clear-orchestrator") {
+      clearStoredOrchestrator();
+      refreshEndpointState({ announce: true });
+    } else if (action === "set-token") {
       const token = window.prompt("Enter your web3.storage API token");
-      if (token) {
-        localStorage.setItem(IPFS_TOKEN_STORAGE_KEY, token.trim());
+      if (token && storage) {
+        storage.setItem(IPFS_TOKEN_STORAGE_KEY, token.trim());
         pushMessage("assistant", "Stored web3.storage token locally.");
         renderAdvancedPanel();
       }
     } else if (action === "clear-token") {
-      localStorage.removeItem(IPFS_TOKEN_STORAGE_KEY);
+      storage?.removeItem?.(IPFS_TOKEN_STORAGE_KEY);
       pushMessage("assistant", "Cleared stored web3.storage token.");
       renderAdvancedPanel();
     }
@@ -427,6 +841,36 @@ function pushMessage(role, text) {
   bubble.textContent = text;
   feed.appendChild(bubble);
   scrollFeed();
+}
+
+function buildModeDescriptor() {
+  if (isDemoModeActive()) {
+    return "demo";
+  }
+  const plan = getPlanUrl();
+  if (plan) {
+    return `live:${plan}`;
+  }
+  return "unconfigured";
+}
+
+function maybeAnnounceMode({ force = false } = {}) {
+  const descriptor = buildModeDescriptor();
+  if (!force && descriptor === lastModeDescriptor) {
+    return;
+  }
+  lastModeDescriptor = descriptor;
+  let message;
+  if (descriptor === "demo") {
+    message =
+      "Demo mode is active. Set an orchestrator base URL in the Advanced panel when you're ready to run on-chain.";
+  } else if (descriptor === "unconfigured") {
+    message =
+      "No orchestrator endpoint configured yet. Provide one from the Advanced panel to talk to AGI-Alpha.";
+  } else {
+    message = `Connected to orchestrator: ${formatOrchestratorDisplay()}.`;
+  }
+  pushMessage("assistant", message);
 }
 
 function asFileArray(input) {
@@ -499,12 +943,19 @@ function setBusy(state) {
 }
 
 async function plannerRequest(prompt) {
+  const planUrl = getPlanUrl();
+  if (!planUrl) {
+    if (isDemoModeActive()) {
+      return demoPlan(prompt);
+    }
+    throw new Error("Planner endpoint not configured");
+  }
   const requestBody = {
     message: prompt,
     text: prompt,
     history,
   };
-  const response = await fetch(PLAN_URL, {
+  const response = await fetch(planUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestBody),
@@ -563,7 +1014,7 @@ async function maybePinAttachments(ics, files) {
   const attachments = Array.isArray(files) ? files.filter(Boolean) : [];
   const shouldPinPayload = needsAttachmentPin(ics);
   if (!attachments.length && !shouldPinPayload) return ics;
-  const token = localStorage.getItem(IPFS_TOKEN_STORAGE_KEY);
+  const token = storage?.getItem?.(IPFS_TOKEN_STORAGE_KEY);
   if (!token) {
     throw new Error("IPFS token missing. Provide a web3.storage token from the Advanced panel.");
   }
@@ -620,7 +1071,14 @@ async function maybePinAttachments(ics, files) {
 }
 
 async function executeICS(ics) {
-  const response = await fetch(EXEC_URL, {
+  const execUrl = getExecUrl();
+  if (!execUrl) {
+    const message = isDemoModeActive()
+      ? "Demo mode: configure an orchestrator endpoint to execute jobs."
+      : "Executor endpoint not configured";
+    throw new Error(message);
+  }
+  const response = await fetch(execUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ics, aa: AA_MODE }),
@@ -673,7 +1131,39 @@ async function executeJobIntent(intent, { raw } = {}) {
   }
   pushMessage("assistant", "Working on it…");
   const executionMode = AA_MODE?.enabled === false ? "wallet" : "relayer";
-  const response = await fetch(EXEC_URL, {
+  const execUrl = getExecUrl();
+  if (!execUrl) {
+    if (isDemoModeActive()) {
+      const payload = await runDemoExecution(intent);
+      const messages = [];
+      if (payload?.jobId !== undefined && payload.jobId !== null) {
+        messages.push(`Job #${payload.jobId}`);
+      }
+      if (payload?.receiptUrl) {
+        messages.push(`receipt ${payload.receiptUrl}`);
+      }
+      const summary = payload?.message
+        ? payload.message
+        : messages.length
+          ? `Completed: ${messages.join(" • ")}`
+          : "Request completed.";
+      pushMessage("assistant", `✅ ${summary}`);
+      if (Array.isArray(payload?.warnings)) {
+        for (const warning of payload.warnings) {
+          if (typeof warning === "string" && warning.trim()) {
+            pushMessage("assistant", `⚠️ ${warning.trim()}`);
+          }
+        }
+      }
+      if (raw || payload) {
+        setAdvancedLog({ intent, response: payload, raw });
+      }
+      refreshStatusSoon();
+      return;
+    }
+    throw new Error("Executor endpoint not configured");
+  }
+  const response = await fetch(execUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ intent, mode: executionMode }),
@@ -898,6 +1388,7 @@ function renderStatusPlaceholder(message) {
   empty.className = "status-empty";
   empty.textContent = message;
   statusBoard.appendChild(empty);
+  lastStatusFingerprint = `placeholder:${message}`;
 }
 
 function renderStatusBoard(entries) {
@@ -926,12 +1417,31 @@ function renderStatusError(error) {
   lastStatusFingerprint = `error:${message}`;
 }
 
+function updateStatusUI({ immediate = false } = {}) {
+  if (!statusBoard) return;
+  const statusUrl = getStatusUrl();
+  if (!statusUrl) {
+    if (statusTimer) {
+      clearInterval(statusTimer);
+      statusTimer = null;
+    }
+    const message = isDemoModeActive()
+      ? "Status feed disabled in demo mode. Set an orchestrator endpoint to enable live updates."
+      : "Status feed disabled. Configure an orchestrator status endpoint.";
+    renderStatusPlaceholder(message);
+    return;
+  }
+  renderStatusPlaceholder("Loading job status…");
+  scheduleStatusRefresh(immediate);
+}
+
 async function refreshStatus() {
-  if (!STATUS_URL || !statusBoard) return;
+  const statusUrl = getStatusUrl();
+  if (!statusUrl || !statusBoard) return;
   if (statusLoading) return;
   statusLoading = true;
   try {
-    const response = await fetch(STATUS_URL, {
+    const response = await fetch(statusUrl, {
       method: "GET",
       headers: { Accept: "application/json" },
     });
@@ -952,10 +1462,12 @@ async function refreshStatus() {
 }
 
 function scheduleStatusRefresh(immediate = false) {
-  if (!STATUS_URL || !statusBoard) return;
+  if (!statusBoard) return;
   if (statusTimer) {
     clearInterval(statusTimer);
+    statusTimer = null;
   }
+  if (!getStatusUrl()) return;
   if (immediate) {
     refreshStatus().catch(() => {
       /* handled in renderStatusError */
@@ -969,7 +1481,7 @@ function scheduleStatusRefresh(immediate = false) {
 }
 
 function refreshStatusSoon() {
-  if (!STATUS_URL || !statusBoard) return;
+  if (!statusBoard || !getStatusUrl()) return;
   refreshStatus().catch(() => {
     /* handled */
   });
@@ -1080,4 +1592,5 @@ if (hasDocument) {
     "assistant",
     'Welcome! Describe what you want to do (e.g. "Post a job for 500 images rewarded 50 AGIALPHA").'
   );
+  maybeAnnounceMode({ force: true });
 }
