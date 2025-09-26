@@ -1,5 +1,6 @@
 import { PLAN_URL, EXEC_URL, IPFS_GATEWAY, AA_MODE } from "./config.js";
 import { validateICS, pinJSON, pinFile } from "./lib.js";
+import { createMaybePinPayload } from "./pin-payload.mjs";
 import { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
 
 const feed = document.getElementById("feed");
@@ -24,6 +25,13 @@ function deepClone(value) {
   }
   return JSON.parse(JSON.stringify(value));
 }
+
+export const maybePinPayload = createMaybePinPayload({
+  deepClone,
+  IPFS_GATEWAY,
+  pinJSON,
+  pinFile,
+});
 
 function addMessage(role, text) {
   const node = document.createElement("div");
@@ -117,86 +125,6 @@ async function runExecution(ics, attachments) {
   }
 }
 
-async function maybePinPayload(ics, attachments) {
-  const copy = deepClone(ics);
-  const intent = copy.intent;
-  let pinnedFile;
-
-  async function ensureFileCid() {
-    if (!attachments?.length) return undefined;
-    if (!pinnedFile) {
-      const file = attachments[0];
-      const { cid } = await pinFile(file);
-      pinnedFile = {
-        cid,
-        uri: `ipfs://${cid}`,
-        gateway: `${IPFS_GATEWAY}${cid}`,
-        name: file.name,
-        size: file.size,
-      };
-    }
-    return pinnedFile;
-  }
-
-  if (intent === "create_job" && copy.params?.job) {
-    const job = copy.params.job;
-    if (!job.uri) {
-      const payload = {
-        title: job.title ?? "Untitled job",
-        description: job.description ?? "",
-        deadlineDays: job.deadlineDays ?? null,
-        rewardAGIA: job.rewardAGIA ?? null,
-        attachments: [],
-      };
-
-      const file = await ensureFileCid();
-      if (file) {
-        payload.attachments.push(file.uri);
-      }
-
-      const { cid } = await pinJSON(payload);
-      job.uri = `ipfs://${cid}`;
-      job.gatewayUri = `${IPFS_GATEWAY}${cid}`;
-      if (file) {
-        job.attachments = payload.attachments;
-      }
-    }
-  }
-
-  if (intent === "submit_work") {
-    const file = await ensureFileCid();
-    if (file) {
-      if (!copy.params.uri && !copy.params.resultUri) {
-        copy.params.uri = file.uri;
-      }
-      copy.params.gatewayUri = copy.params.gatewayUri ?? file.gateway;
-      copy.params.attachments = copy.params.attachments ?? [file.uri];
-    }
-  }
-
-  if (intent === "dispute") {
-    const file = await ensureFileCid();
-    if (file) {
-      copy.params.evidenceUri = copy.params.evidenceUri ?? file.uri;
-      copy.params.attachments = copy.params.attachments ?? [file.uri];
-    }
-  }
-
-  if (pinnedFile) {
-    copy.meta = {
-      ...(copy.meta ?? {}),
-      clientPinned: {
-        cid: pinnedFile.cid,
-        uri: pinnedFile.uri,
-        gateway: pinnedFile.gateway,
-        name: pinnedFile.name,
-        size: pinnedFile.size,
-      },
-    };
-  }
-
-  return copy;
-}
 
 function dispatchEvent(evt) {
   if (!evt || typeof evt !== "object") return;
