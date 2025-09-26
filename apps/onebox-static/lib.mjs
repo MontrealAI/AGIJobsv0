@@ -238,16 +238,25 @@ export function prepareJobPayload(ics, pinnedFiles = []) {
       rewardAGIA: job?.rewardAGIA ?? job?.reward ?? null,
       attachments,
     };
+    const applyAttachments = () => {
+      if (!ics.params) ics.params = {};
+      if (!isObject(ics.params.job)) ics.params.job = {};
+      if (attachments.length) {
+        ics.params.job.attachments = attachments;
+      }
+    };
     return {
       payload,
+      applyAttachments,
       assign({ cid, gateways }) {
         if (!ics.params) ics.params = {};
         if (!isObject(ics.params.job)) ics.params.job = {};
         ics.params.job.uri = `ipfs://${cid}`;
-        if (attachments.length) {
-          ics.params.job.attachments = attachments;
-        }
+        applyAttachments();
         mergeMeta(cid, gateways);
+      },
+      mergeClientPins(payloadCid, gateways) {
+        mergeMeta(payloadCid, gateways);
       },
     };
   }
@@ -260,8 +269,15 @@ export function prepareJobPayload(ics, pinnedFiles = []) {
       note: ics.params?.note || "AGI Jobs work submission",
       attachments,
     };
+    const applyAttachments = () => {
+      if (!ics.params) ics.params = {};
+      if (attachments.length) {
+        ics.params.attachments = attachments;
+      }
+    };
     return {
       payload,
+      applyAttachments,
       assign({ cid, gateways }) {
         if (!ics.params) ics.params = {};
         const existing = isObject(ics.params.result) ? ics.params.result : {};
@@ -273,10 +289,11 @@ export function prepareJobPayload(ics, pinnedFiles = []) {
         if ("uri" in ics.params) {
           delete ics.params.uri;
         }
-        if (attachments.length) {
-          ics.params.attachments = attachments;
-        }
+        applyAttachments();
         mergeMeta(cid, gateways);
+      },
+      mergeClientPins(payloadCid, gateways) {
+        mergeMeta(payloadCid, gateways);
       },
     };
   }
@@ -290,8 +307,15 @@ export function prepareJobPayload(ics, pinnedFiles = []) {
       reason,
       attachments,
     };
+    const applyAttachments = () => {
+      if (!ics.params) ics.params = {};
+      if (attachments.length) {
+        ics.params.attachments = attachments;
+      }
+    };
     return {
       payload,
+      applyAttachments,
       assign({ cid, gateways }) {
         const uri = `ipfs://${cid}`;
         if (!ics.params) ics.params = {};
@@ -299,17 +323,22 @@ export function prepareJobPayload(ics, pinnedFiles = []) {
         if (isObject(ics.params.dispute)) {
           ics.params.dispute.evidenceUri = uri;
         }
-        if (attachments.length) {
-          ics.params.attachments = attachments;
-        }
+        applyAttachments();
         mergeMeta(cid, gateways);
+      },
+      mergeClientPins(payloadCid, gateways) {
+        mergeMeta(payloadCid, gateways);
       },
     };
   }
 
   return {
     payload: null,
+    applyAttachments() {},
     assign() {},
+    mergeClientPins(payloadCid, gateways) {
+      mergeMeta(payloadCid, gateways);
+    },
   };
 }
 

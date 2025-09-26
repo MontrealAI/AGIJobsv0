@@ -87,7 +87,7 @@ function formatAdvancedPin(entry) {
   return `<li><div class="pin-label">${label}</div><div class="pin-cid">${cid}</div>${gatewayHtml}</li>`;
 }
 
-function formatPinnedSummaryMessage(entries) {
+export function formatPinnedSummaryMessage(entries) {
   if (!Array.isArray(entries) || !entries.length) return "";
   const header = `📦 Pinned ${entries.length} item${entries.length === 1 ? "" : "s"} to IPFS:`;
   const body = entries
@@ -359,7 +359,8 @@ async function confirmFlow(ics) {
 
 async function maybePinAttachments(ics, files) {
   const attachments = Array.isArray(files) ? files.filter(Boolean) : [];
-  if (!needsAttachmentPin(ics)) return ics;
+  const shouldPinPayload = needsAttachmentPin(ics);
+  if (!attachments.length && !shouldPinPayload) return ics;
   const token = localStorage.getItem(IPFS_TOKEN_STORAGE_KEY);
   if (!token) {
     throw new Error("IPFS token missing. Provide a web3.storage token from the Advanced panel.");
@@ -367,7 +368,8 @@ async function maybePinAttachments(ics, files) {
 
   const pinnedFiles = [];
   const pinSummaries = [];
-  for (const file of attachments) {
+  for (const [index, file] of attachments.entries()) {
+    if (!file) continue;
     const result = await pinBlob(IPFS_ENDPOINT, token, file);
     const gateways = gatewayUrlsFor(result.cid);
     pinnedFiles.push({
@@ -377,31 +379,41 @@ async function maybePinAttachments(ics, files) {
       name: typeof file?.name === "string" ? file.name : undefined,
       size: typeof file?.size === "number" ? file.size : undefined,
     });
+    const fallbackLabel = `Attachment ${attachments.length > 1 ? `#${index + 1}` : ""}`.trim();
     pinSummaries.push({
-      label: file?.name ? `Attachment (${file.name})` : "Attachment",
+      label: file?.name ? `Attachment (${file.name})` : fallbackLabel || "Attachment",
       cid: result.cid,
       gateways,
     });
   }
 
   const prepared = prepareJobPayload(ics, pinnedFiles);
-  if (!prepared || !prepared.payload) {
-    if (pinSummaries.length) {
-      pushMessage("assistant", formatPinnedSummaryMessage(pinSummaries));
-      setAdvancedLog({ pins: pinSummaries });
-    }
-    return ics;
+  if (prepared && typeof prepared.applyAttachments === "function") {
+    prepared.applyAttachments();
   }
-  const { cid } = await pinJSON(IPFS_ENDPOINT, token, prepared.payload);
-  const payloadGateways = gatewayUrlsFor(cid);
-  prepared.assign({ cid, gateways: payloadGateways });
-  pinSummaries.push({
-    label: `${prepared.payload.kind || "Payload"} JSON`,
-    cid,
-    gateways: payloadGateways,
-  });
-  pushMessage("assistant", formatPinnedSummaryMessage(pinSummaries));
-  setAdvancedLog({ pins: pinSummaries });
+
+  let payloadCid = null;
+  let payloadGateways = [];
+  if (shouldPinPayload && prepared?.payload) {
+    const { cid } = await pinJSON(IPFS_ENDPOINT, token, prepared.payload);
+    payloadCid = cid;
+    payloadGateways = gatewayUrlsFor(cid);
+    prepared.assign({ cid, gateways: payloadGateways });
+    pinSummaries.push({
+      label: `${prepared.payload.kind || "Payload"} JSON`,
+      cid,
+      gateways: payloadGateways,
+    });
+  }
+
+  if (!payloadCid && prepared && typeof prepared.mergeClientPins === "function") {
+    prepared.mergeClientPins();
+  }
+
+  if (pinSummaries.length) {
+    pushMessage("assistant", formatPinnedSummaryMessage(pinSummaries));
+    setAdvancedLog({ pins: pinSummaries });
+  }
   return ics;
 }
 
@@ -472,7 +484,7 @@ async function handleSubmit(event) {
   if (!text) return;
 
   const queued = drainQueuedAttachments();
-  const selected = asFileArray(attachmentInput.files);
+  const selected = attachmentInput.files ? Array.from(attachmentInput.files).filter(Boolean) : [];
   const files = [...queued, ...selected];
 
   pushMessage("user", text);
