@@ -199,17 +199,16 @@ async function maybePinAttachments(ics, file) {
 }
 
 export function drainSSEBuffer(buffer, onChunk) {
-  let normalized = buffer.replace(/\r\n/g, "\n");
-  let boundary = normalized.indexOf("\n\n");
+  let boundary = buffer.indexOf("\n\n");
   while (boundary !== -1) {
-    const chunk = normalized.slice(0, boundary).trim();
+    const chunk = buffer.slice(0, boundary).trim();
     if (chunk) {
       onChunk(chunk);
     }
-    normalized = normalized.slice(boundary + 2);
-    boundary = normalized.indexOf("\n\n");
+    buffer = buffer.slice(boundary + 2);
+    boundary = buffer.indexOf("\n\n");
   }
-  return normalized;
+  return buffer;
 }
 
 async function executeICS(ics) {
@@ -224,26 +223,38 @@ async function executeICS(ics) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  const handleChunk = (chunk) => {
+    try {
+      const normalized = chunk.startsWith("data:") ? chunk.slice(5).trim() : chunk;
+      if (!normalized) {
+        return;
+      }
+      const event = JSON.parse(normalized);
+      const { text, advanced } = formatEvent(event);
+      pushMessage("assistant", text);
+      if (advanced) {
+        setAdvancedLog(advanced);
+      }
+    } catch (err) {
+      console.error("Bad event", err, chunk);
+    }
+  };
+
   while (true) {
     const { value, done } = await reader.read();
+    if (value) {
+      buffer += decoder.decode(value, { stream: !done });
+    }
+    if (buffer) {
+      buffer = buffer.replace(/\r\n/g, "\n");
+      buffer = drainSSEBuffer(buffer, handleChunk);
+    }
     if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    buffer = drainSSEBuffer(buffer, (chunk) => {
-      try {
-        const normalized = chunk.startsWith("data:") ? chunk.slice(5).trim() : chunk;
-        if (!normalized) {
-          return;
-        }
-        const event = JSON.parse(normalized);
-        const { text, advanced } = formatEvent(event);
-        pushMessage("assistant", text);
-        if (advanced) {
-          setAdvancedLog(advanced);
-        }
-      } catch (err) {
-        console.error("Bad event", err, chunk);
-      }
-    });
+  }
+
+  const finalChunk = buffer.trim();
+  if (finalChunk) {
+    handleChunk(finalChunk);
   }
 }
 
