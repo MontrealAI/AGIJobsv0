@@ -816,7 +816,7 @@ export class MetaOrchestrator {
       const resultRef = artifactCid.startsWith('ipfs://')
         ? artifactCid
         : `ipfs://${artifactCid}`;
-      await finalizeJob(jobId, resultRef, state.wallet);
+      await finalizeJob(jobId, state.wallet);
       this.recordCompletedJob(jobId, state, runResult, resultRef, chainJob);
       auditLog('job.submitted', {
         jobId,

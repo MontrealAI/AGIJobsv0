@@ -139,11 +139,10 @@ export class DefaultOneboxService implements OneboxService {
         return this.executePostJob(intent);
       case 'finalize_job': {
         const jobId = normaliseJobId(intent.payload?.jobId);
-        const resultRef = String(intent.payload?.resultUri ?? intent.payload?.resultRef ?? '');
         if (!this.relayer) {
           throw new HttpError(503, 'Relayer is not configured. Set ONEBOX_RELAYER_PRIVATE_KEY.');
         }
-        await finalizeJob(jobId.toString(), resultRef, this.relayer);
+        await finalizeJob(jobId.toString(), this.relayer);
         return { ok: true, jobId: Number(jobId) };
       }
       case 'check_status':

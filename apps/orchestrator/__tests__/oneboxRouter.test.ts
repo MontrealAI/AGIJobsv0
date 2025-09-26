@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { mock } from 'node:test';
+import { ethers } from 'ethers';
+import type { Wallet } from 'ethers';
 import express from 'express';
 import request from 'supertest';
 import type { IntentEnvelope } from '../../../packages/onebox-orchestrator/src/ics/types';
@@ -11,6 +13,8 @@ import {
   mapJobStateToStatus,
 } from '../oneboxRouter';
 import { resetMetrics } from '../oneboxMetrics';
+import { finalizeJob } from '../submission';
+import * as execution from '../execution';
 
 test('plannerIntentToJobIntent converts create_job envelope', () => {
   const envelope: IntentEnvelope = {
@@ -118,4 +122,35 @@ test('metrics endpoint exposes Prometheus counters', async () => {
   assert.match(body, /onebox_execute_requests_total 1/);
   assert.match(body, /onebox_execute_action_total\{action="post_job"\} 1/);
   assert.match(body, /onebox_status_requests_total 1/);
+});
+
+test('finalizeJob invokes registry finalize function', async () => {
+  const finalizeCall = mock.fn(async () => ({ wait: async () => undefined }));
+  const contractMock = mock.method(
+    ethers as unknown as { Contract: new (...args: any[]) => unknown },
+    'Contract',
+    function () {
+      return { finalize: finalizeCall };
+    } as unknown as new (...args: any[]) => unknown
+  );
+
+  const loadStateMock = mock.method(execution, 'loadState', () => ({}));
+  const saveStateMock = mock.method(execution, 'saveState', () => undefined);
+
+  const wallet = {
+    provider: {},
+    connect() {
+      return this as unknown as Wallet;
+    },
+  } as unknown as Wallet;
+
+  try {
+    await finalizeJob('42', wallet);
+    assert.equal(finalizeCall.mock.calls.length, 1);
+    assert.deepEqual(finalizeCall.mock.calls[0].arguments, ['42']);
+  } finally {
+    contractMock.mock.restore();
+    loadStateMock.mock.restore();
+    saveStateMock.mock.restore();
+  }
 });
