@@ -18,13 +18,14 @@ import {
 
 const MAX_HISTORY = 10;
 
-const feed = document.getElementById("feed");
-const composer = document.getElementById("composer");
-const questionInput = document.getElementById("question");
-const attachmentInput = document.getElementById("attachment");
-const sendButton = document.getElementById("send");
-const advancedToggle = document.getElementById("advanced-toggle");
-const advancedPanel = document.getElementById("advanced-panel");
+const hasDocument = typeof document !== "undefined";
+const feed = hasDocument ? document.getElementById("feed") : null;
+const composer = hasDocument ? document.getElementById("composer") : null;
+const questionInput = hasDocument ? document.getElementById("question") : null;
+const attachmentInput = hasDocument ? document.getElementById("attachment") : null;
+const sendButton = hasDocument ? document.getElementById("send") : null;
+const advancedToggle = hasDocument ? document.getElementById("advanced-toggle") : null;
+const advancedPanel = hasDocument ? document.getElementById("advanced-panel") : null;
 
 let busy = false;
 let history = [];
@@ -32,6 +33,7 @@ let confirmCallback = null;
 let advancedLogEl = null;
 
 function renderAdvancedPanel() {
+  if (!advancedPanel) return;
   const token = localStorage.getItem(IPFS_TOKEN_STORAGE_KEY) || "";
   const maskedToken = token ? `••••${token.slice(-4)}` : "Not set";
   const aaSummary = summarizeAAMode(AA_MODE);
@@ -67,48 +69,59 @@ function renderAdvancedPanel() {
   advancedLogEl = advancedPanel.querySelector('[data-role="advanced-log"]');
 }
 
-renderAdvancedPanel();
+if (hasDocument) {
+  renderAdvancedPanel();
+}
 
 function setAdvancedLog(text) {
+  if (!advancedPanel) return;
   if (!advancedLogEl) {
     renderAdvancedPanel();
   }
-  advancedLogEl.textContent = text || "—";
+  if (advancedLogEl) {
+    advancedLogEl.textContent = text || "—";
+  }
 }
 
-advancedPanel.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-action]");
-  if (!button) return;
-  const action = button.dataset.action;
-  if (action === "set-token") {
-    const token = window.prompt("Enter your web3.storage API token");
-    if (token) {
-      localStorage.setItem(IPFS_TOKEN_STORAGE_KEY, token.trim());
-      pushMessage("assistant", "Stored web3.storage token locally.");
+if (advancedPanel) {
+  advancedPanel.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === "set-token") {
+      const token = window.prompt("Enter your web3.storage API token");
+      if (token) {
+        localStorage.setItem(IPFS_TOKEN_STORAGE_KEY, token.trim());
+        pushMessage("assistant", "Stored web3.storage token locally.");
+        renderAdvancedPanel();
+      }
+    } else if (action === "clear-token") {
+      localStorage.removeItem(IPFS_TOKEN_STORAGE_KEY);
+      pushMessage("assistant", "Cleared stored web3.storage token.");
       renderAdvancedPanel();
     }
-  } else if (action === "clear-token") {
-    localStorage.removeItem(IPFS_TOKEN_STORAGE_KEY);
-    pushMessage("assistant", "Cleared stored web3.storage token.");
-    renderAdvancedPanel();
-  }
-});
+  });
+}
 
 function toggleAdvanced(e) {
   e?.preventDefault();
+  if (!hasDocument) return;
   if (!document.body.classList.contains("advanced")) {
     renderAdvancedPanel();
   }
   document.body.classList.toggle("advanced");
 }
-advancedToggle.addEventListener("click", toggleAdvanced);
+if (advancedToggle) {
+  advancedToggle.addEventListener("click", toggleAdvanced);
+}
 
 function scrollFeed() {
+  if (!feed) return;
   feed.scrollTo({ top: feed.scrollHeight, behavior: "smooth" });
 }
 
 function pushMessage(role, text) {
-  if (!text) return;
+  if (!text || !feed) return;
   const bubble = document.createElement("div");
   bubble.className = role === "user" ? "msg me" : "msg";
   bubble.textContent = text;
@@ -118,9 +131,15 @@ function pushMessage(role, text) {
 
 function setBusy(state) {
   busy = state;
-  sendButton.disabled = state;
-  questionInput.disabled = state;
-  attachmentInput.disabled = state;
+  if (sendButton) {
+    sendButton.disabled = state;
+  }
+  if (questionInput) {
+    questionInput.disabled = state;
+  }
+  if (attachmentInput) {
+    attachmentInput.disabled = state;
+  }
 }
 
 async function plannerRequest(prompt) {
@@ -179,6 +198,20 @@ async function maybePinAttachments(ics, file) {
   return ics;
 }
 
+export function drainSSEBuffer(buffer, onChunk) {
+  let normalized = buffer.replace(/\r\n/g, "\n");
+  let boundary = normalized.indexOf("\n\n");
+  while (boundary !== -1) {
+    const chunk = normalized.slice(0, boundary).trim();
+    if (chunk) {
+      onChunk(chunk);
+    }
+    normalized = normalized.slice(boundary + 2);
+    boundary = normalized.indexOf("\n\n");
+  }
+  return normalized;
+}
+
 async function executeICS(ics) {
   const response = await fetch(EXEC_URL, {
     method: "POST",
@@ -195,33 +228,28 @@ async function executeICS(ics) {
     const { value, done } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
-    let boundary = buffer.indexOf("\n\n");
-    while (boundary !== -1) {
-      const chunk = buffer.slice(0, boundary).trim();
-      buffer = buffer.slice(boundary + 2);
-      if (chunk) {
-        try {
-          const normalized = chunk.startsWith("data:") ? chunk.slice(5).trim() : chunk;
-          if (!normalized) {
-            continue;
-          }
-          const event = JSON.parse(normalized);
-          const { text, advanced } = formatEvent(event);
-          pushMessage("assistant", text);
-          if (advanced) {
-            setAdvancedLog(advanced);
-          }
-        } catch (err) {
-          console.error("Bad event", err, chunk);
+    buffer = drainSSEBuffer(buffer, (chunk) => {
+      try {
+        const normalized = chunk.startsWith("data:") ? chunk.slice(5).trim() : chunk;
+        if (!normalized) {
+          return;
         }
+        const event = JSON.parse(normalized);
+        const { text, advanced } = formatEvent(event);
+        pushMessage("assistant", text);
+        if (advanced) {
+          setAdvancedLog(advanced);
+        }
+      } catch (err) {
+        console.error("Bad event", err, chunk);
       }
-      boundary = buffer.indexOf("\n\n");
-    }
+    });
   }
 }
 
 async function handleSubmit(event) {
   event.preventDefault();
+  if (!questionInput || !attachmentInput) return;
 
   if (confirmCallback) {
     const value = questionInput.value.trim();
@@ -268,9 +296,13 @@ async function handleSubmit(event) {
   }
 }
 
-composer.addEventListener("submit", handleSubmit);
+if (composer) {
+  composer.addEventListener("submit", handleSubmit);
+}
 
-pushMessage(
-  "assistant",
-  'Welcome! Describe what you want to do (e.g. "Post a job for 500 images rewarded 50 AGIALPHA").'
-);
+if (hasDocument) {
+  pushMessage(
+    "assistant",
+    'Welcome! Describe what you want to do (e.g. "Post a job for 500 images rewarded 50 AGIALPHA").'
+  );
+}
