@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { drainSSEBuffer } from '../app.mjs';
+import { drainSSEBuffer, sanitizeSSEChunk } from '../sse-parser.mjs';
 
 function collectEvents() {
   const events = [];
   const consume = (chunk) => {
-    const normalized = chunk.startsWith('data:') ? chunk.slice(5).trim() : chunk.trim();
+    const normalized = sanitizeSSEChunk(chunk);
     if (!normalized) {
       return;
     }
@@ -25,11 +25,11 @@ test('drainSSEBuffer parses CRLF-delimited events', () => {
   let buffer = '';
 
   buffer += 'data: {"text":"hello"}\r\n';
-  buffer = drain(buffer.replace(/\r\n/g, '\n'));
+  buffer = drain(buffer);
   assert.equal(events.length, 0);
 
   buffer += '\r\n';
-  buffer = drain(buffer.replace(/\r\n/g, '\n'));
+  buffer = drain(buffer);
   assert.equal(buffer, '');
 
   assert.deepEqual(events, [{ text: 'hello' }]);
@@ -40,7 +40,7 @@ test('drainSSEBuffer handles mixed line endings across multiple events', () => {
   let buffer = '';
 
   buffer += 'data: {"text":"first"}\r\n\r\n';
-  buffer = drain(buffer.replace(/\r\n/g, '\n'));
+  buffer = drain(buffer);
 
   buffer += 'data: {"text":"second"}\n\n';
   buffer = drain(buffer);
@@ -61,7 +61,6 @@ test('executor-style parser surfaces final event without trailing blank line', (
 
   for (const chunk of chunks) {
     buffer += chunk;
-    buffer = buffer.replace(/\r\n/g, '\n');
     buffer = drain(buffer);
   }
 
@@ -75,4 +74,9 @@ test('executor-style parser surfaces final event without trailing blank line', (
     { text: 'lf' },
     { text: 'tail' },
   ]);
+});
+test('sanitizeSSEChunk strips data prefixes and whitespace', () => {
+  assert.equal(sanitizeSSEChunk('data: {"foo":1}\r\n'), '{"foo":1}');
+  assert.equal(sanitizeSSEChunk('   {"foo":2}  '), '{"foo":2}');
+  assert.equal(sanitizeSSEChunk('data:   '), '');
 });

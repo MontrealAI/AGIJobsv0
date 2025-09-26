@@ -1,5 +1,6 @@
 import { PLAN_URL, EXEC_URL, IPFS_GATEWAY, AA_MODE } from "./config.js";
 import { validateICS, pinJSON, pinFile } from "./lib.js";
+import { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
 
 const feed = document.getElementById("feed");
 const advLog = document.getElementById("adv-log");
@@ -86,24 +87,33 @@ async function runExecution(ics, attachments) {
   const decoder = new TextDecoder();
   let buffer = "";
 
+  const handleChunk = (chunk) => {
+    try {
+      const normalized = sanitizeSSEChunk(chunk);
+      if (!normalized) {
+        return;
+      }
+      const evt = JSON.parse(normalized);
+      dispatchEvent(evt);
+    } catch (err) {
+      console.warn("Malformed execution event", err, chunk);
+    }
+  };
+
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    const segments = buffer.split("\n\n");
-    while (segments.length > 1) {
-      const raw = segments.shift();
-      if (!raw) continue;
-      try {
-        const evt = JSON.parse(raw);
-        dispatchEvent(evt);
-      } catch (err) {
-        console.warn("Malformed execution event", err, raw);
-      }
+    if (value) {
+      buffer += decoder.decode(value, { stream: !done });
     }
-    buffer = segments[0] ?? "";
+    if (buffer) {
+      buffer = drainSSEBuffer(buffer, handleChunk);
+    }
+    if (done) break;
+  }
+
+  const finalChunk = buffer.trim();
+  if (finalChunk) {
+    handleChunk(finalChunk);
   }
 }
 
