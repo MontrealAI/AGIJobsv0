@@ -1,77 +1,85 @@
+/**
+ * Shared data contracts between the AGI Jobs one-box UI and the orchestrator service.
+ * These types intentionally match the FastAPI schemas exposed under `/onebox/*`.
+ */
+
+/** Allowed high-level actions emitted by the planner. */
 export type JobAction =
   | 'post_job'
   | 'finalize_job'
   | 'check_status'
   | 'stake'
-  | 'dispute'
-  | 'validate';
+  | 'validate'
+  | 'dispute';
 
-export interface AttachmentDescriptor {
+/** File attachment metadata for job descriptions stored on IPFS. */
+export interface JobAttachment {
   name: string;
+  /** IPFS hash (CID) of the uploaded asset. */
   ipfs?: string;
+  /** Optional MIME type or descriptive label. */
+  type?: string;
+  /** Optional HTTP gateway URL for previews. */
   url?: string;
 }
 
-export interface JobPayload {
-  title?: string;
-  description?: string;
-  rewardToken?: string;
-  reward?: string;
-  deadlineDays?: number;
-  jobId?: number | string;
-  attachments?: AttachmentDescriptor[];
-  [key: string]: unknown;
-}
-
-export interface JobConstraints {
-  maxFee?: string;
-  privacy?: 'public' | 'private';
-  [key: string]: unknown;
-}
-
-export interface UserContext {
-  email?: string;
-  sessionId?: string;
-  [key: string]: unknown;
-}
-
+/** Structured description of a job action produced by the planner. */
 export interface JobIntent {
   action: JobAction;
-  payload: JobPayload;
-  constraints?: JobConstraints;
-  userContext?: UserContext;
+  payload: Record<string, unknown> & {
+    jobId?: number | string;
+    title?: string;
+    description?: string;
+    reward?: string | number;
+    rewardToken?: string;
+    deadlineDays?: number;
+    attachments?: JobAttachment[];
+  };
+  constraints?: Record<string, unknown> & {
+    maxFee?: string;
+    privacy?: 'public' | 'private';
+  };
+  userContext?: Record<string, unknown> & {
+    sessionId?: string;
+    email?: string;
+  };
 }
 
+/** Response returned by `/onebox/plan`. */
 export interface PlanResponse {
   summary: string;
   intent: JobIntent;
-  requiresConfirmation: boolean;
-  warnings: string[];
+  requiresConfirmation?: boolean;
+  warnings?: string[];
 }
 
+/** Response returned by `/onebox/execute`. */
 export interface ExecuteResponse {
   ok: boolean;
-  jobId?: number | string;
+  jobId?: number;
   txHash?: string;
   receiptUrl?: string;
   error?: string;
 }
 
+/** Shape returned by `/onebox/status`. */
 export interface StatusResponse {
-  ok: boolean;
-  job?: {
-    id: number | string;
-    state: string;
-    reward?: string;
-    rewardToken?: string;
-    deadline?: string;
-    assignee?: string;
-    metadataUri?: string;
-  };
-  error?: string;
+  jobs: JobStatusCard[];
+  nextToken?: string;
 }
 
-export interface PlannerRequest {
+export interface JobStatusCard {
+  jobId: number;
+  title?: string;
+  status: string;
+  statusLabel?: string;
+  reward?: string;
+  rewardToken?: string;
+  deadline?: string;
+  assignee?: string;
+}
+
+export interface PlanRequest {
   text: string;
   expert?: boolean;
 }
@@ -79,24 +87,4 @@ export interface PlannerRequest {
 export interface ExecuteRequest {
   intent: JobIntent;
   mode: 'relayer' | 'wallet';
-}
-
-export type StatusRequest =
-  | { jobId: number | string }
-  | { recent?: boolean };
-
-export const ONEBOX_ENDPOINTS = {
-  plan: '/onebox/plan',
-  execute: '/onebox/execute',
-  status: '/onebox/status',
-} as const;
-
-export type OneBoxEndpoint = (typeof ONEBOX_ENDPOINTS)[keyof typeof ONEBOX_ENDPOINTS];
-
-export function buildReceiptUrl(baseExplorerUrl: string, txHash?: string): string | undefined {
-  if (!txHash || !baseExplorerUrl) {
-    return undefined;
-  }
-  const separator = baseExplorerUrl.endsWith('/') ? '' : '/';
-  return `${baseExplorerUrl}${separator}tx/${txHash}`;
 }

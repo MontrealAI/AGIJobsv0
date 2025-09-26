@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>AGI Jobs — One‑Box</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header" role="banner">
+        <div>
+          <h1>AGI Jobs — One‑Box</h1>
+          <p class="tagline">Plan → Confirm → Execute. No blockchain jargon required.</p>
+        </div>
+        <div class="badges">
+          <span class="badge" id="mode-label" aria-live="polite">Mode: Guest</span>
+          <span class="badge badge-soft">Walletless by default</span>
+        </div>
+      </header>
+
+      <section class="chat" aria-live="polite" aria-label="Conversation" id="chat-log">
+        <article class="msg assistant">
+          <p class="msg-body">Hi! Tell me what you need and I’ll orchestrate the job for you.</p>
+          <p class="msg-note">Try: <span class="example-text">Post a labeling job for 500 images; pay 5 AGIALPHA; 7 days.</span></p>
+        </article>
+      </section>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <label class="sr-only" for="onebox-input">Describe what you want to do</label>
+        <input id="onebox-input" type="text" required placeholder="Type here… Press Enter to send" spellcheck="true">
+        <button type="submit" class="btn primary" id="send-btn">Send</button>
+        <button type="button" class="btn" id="expert-toggle" aria-pressed="false">Expert</button>
+        <button type="button" class="btn" id="settings-btn" aria-haspopup="dialog" aria-controls="settings-dialog">Settings</button>
+      </form>
+
+      <section class="quick-prompts" aria-label="Examples">
+        <button type="button" class="pill" data-fill="Create a research task; reward 2 AGIALPHA; deadline 48 hours">Create a research task…</button>
+        <button type="button" class="pill" data-fill="Finalize my last job">Finalize my last job</button>
+        <button type="button" class="pill" data-fill="What’s the status of job 123?">Check job 123</button>
+      </section>
+
+      <section class="status-board" aria-label="Recent jobs">
+        <header class="status-header">
+          <h2>Recent jobs</h2>
+          <button type="button" class="btn" id="refresh-status">Refresh</button>
+        </header>
+        <div class="status-cards" id="status-cards" role="list">
+          <div class="status-empty" id="status-empty">No jobs yet. I’ll keep this list fresh after you run a task.</div>
+        </div>
+      </section>
+
+      <section class="footnotes">
+        <p>This static site talks to the AGI‑Alpha Orchestrator <code>/onebox/*</code> endpoints. Configure the base URL in Settings.</p>
+        <p>Expert mode reveals wallet signing flows; guest mode uses the orchestrator’s relayer.</p>
+      </section>
+    </div>
+
+    <dialog id="settings-dialog" class="modal" aria-modal="true">
+      <form method="dialog" id="settings-form">
+        <h2>Settings</h2>
+        <label class="field">
+          <span>Orchestrator URL</span>
+          <input type="url" id="orch-url" placeholder="https://orchestrator.example">
+          <span class="hint">Leave blank to use Demo Mode (no network calls).</span>
+        </label>
+        <label class="field">
+          <span>API Token (optional)</span>
+          <input type="password" id="api-token" placeholder="Bearer token">
+        </label>
+        <label class="field">
+          <span>Auto refresh status every</span>
+          <select id="status-interval">
+            <option value="0">Never</option>
+            <option value="30">30 seconds</option>
+            <option value="60" selected>60 seconds</option>
+            <option value="120">2 minutes</option>
+          </select>
+        </label>
+        <menu>
+          <button value="cancel" class="btn">Cancel</button>
+          <button value="confirm" class="btn primary">Save</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
