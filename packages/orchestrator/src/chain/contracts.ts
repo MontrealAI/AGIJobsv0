@@ -18,9 +18,16 @@ const JOB_REGISTRY_ABI = [
   "function applyForJob(uint256 jobId, string subdomain, bytes32[] proof)",
   "function submit(uint256 jobId, bytes32 resultHash, string resultURI, string subdomain, bytes32[] proof)",
   "function finalizeAfterValidation(uint256 jobId, bool success)",
+  "function getSpecHash(uint256 jobId) view returns (bytes32)",
 ];
 
-const VALIDATION_MODULE_ABI = ["function finalize(uint256 jobId)"];
+const VALIDATION_MODULE_ABI = [
+  "function finalize(uint256 jobId)",
+  "function jobNonce(uint256 jobId) view returns (uint256)",
+  "function DOMAIN_SEPARATOR() view returns (bytes32)",
+  "function commitValidation(uint256 jobId, bytes32 commitHash, string subdomain, bytes32[] proof)",
+  "function revealValidation(uint256 jobId, bool approve, bytes32 burnTxHash, bytes32 salt, string subdomain, bytes32[] proof)",
+];
 
 const DISPUTE_MODULE_ABI = ["function raiseDispute(uint256 jobId, string reason)"];
 

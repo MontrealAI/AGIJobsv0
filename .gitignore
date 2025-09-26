@@ -6,6 +6,7 @@ coverage/
 coverage.json
 
 .next/
+*.tsbuildinfo
 
 # Ignore built scripts
 scripts/**/*.js

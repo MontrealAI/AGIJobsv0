@@ -43,6 +43,41 @@ export async function streamLLM(
     });
   }
 
+  if (text.includes("validate")) {
+    const jobId = extractJobId(last);
+    const ens = buildEns(last);
+    const approve = inferSuccess(last);
+    return JSON.stringify({
+      intent: "validate",
+      params: {
+        jobId: jobId ?? 0,
+        validation: {
+          vote: approve ? "approve" : "reject",
+          salt: "orchestrator-salt",
+        },
+        ens,
+      },
+      confirm: false,
+      meta,
+    });
+  }
+
+  if (text.includes("dispute")) {
+    const jobId = extractJobId(last);
+    return JSON.stringify({
+      intent: "dispute",
+      params: {
+        jobId: jobId ?? 0,
+        dispute: {
+          reason: { summary: last },
+          evidence: { note: "auto-generated" },
+        },
+      },
+      confirm: false,
+      meta,
+    });
+  }
+
   if (text.includes("finalize")) {
     const jobId = extractJobId(last);
     const success = inferSuccess(last);
