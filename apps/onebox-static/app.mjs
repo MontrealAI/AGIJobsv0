@@ -1,10 +1,4 @@
-import {
-  PLAN_URL,
-  EXEC_URL,
-  IPFS_ENDPOINT,
-  IPFS_TOKEN_STORAGE_KEY,
-  AA_MODE,
-} from "./config.mjs";
+import * as Config from "./config.mjs";
 import { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
 
 export { drainSSEBuffer, sanitizeSSEChunk } from "./sse-parser.mjs";
@@ -18,6 +12,18 @@ import {
   formatError,
   summarizeAAMode,
 } from "./lib.mjs";
+
+const {
+  PLAN_URL,
+  EXEC_URL,
+  IPFS_ENDPOINT,
+  IPFS_TOKEN_STORAGE_KEY,
+  AA_MODE,
+} = Config;
+
+const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAYS.length
+  ? Config.IPFS_GATEWAYS
+  : ["https://w3s.link/ipfs/"];
 
 const MAX_HISTORY = 10;
 
@@ -34,6 +40,16 @@ let busy = false;
 let history = [];
 let confirmCallback = null;
 let advancedLogEl = null;
+
+function gatewayUrlsFor(cid) {
+  if (!cid) return [];
+  return IPFS_GATEWAYS.map((base) => {
+    const trimmed = typeof base === "string" ? base.trim() : "";
+    if (!trimmed) return null;
+    const normalized = trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+    return `${normalized}/${cid}`;
+  }).filter(Boolean);
+}
 
 function renderAdvancedPanel() {
   if (!advancedPanel) return;
@@ -179,25 +195,32 @@ async function confirmFlow(ics) {
   });
 }
 
-async function maybePinAttachments(ics, file) {
+async function maybePinAttachments(ics, files) {
+  const attachments = Array.isArray(files) ? files.filter(Boolean) : [];
   if (!needsAttachmentPin(ics)) return ics;
   const token = localStorage.getItem(IPFS_TOKEN_STORAGE_KEY);
   if (!token) {
     throw new Error("IPFS token missing. Provide a web3.storage token from the Advanced panel.");
   }
 
-  let attachmentCid = null;
-  if (file) {
+  const pinnedFiles = [];
+  for (const file of attachments) {
     const result = await pinBlob(IPFS_ENDPOINT, token, file);
-    attachmentCid = result.cid;
+    pinnedFiles.push({
+      cid: result.cid,
+      uri: `ipfs://${result.cid}`,
+      gateways: gatewayUrlsFor(result.cid),
+      name: typeof file?.name === "string" ? file.name : undefined,
+      size: typeof file?.size === "number" ? file.size : undefined,
+    });
   }
 
-  const prepared = prepareJobPayload(ics, attachmentCid);
+  const prepared = prepareJobPayload(ics, pinnedFiles);
   if (!prepared || !prepared.payload) {
     return ics;
   }
   const { cid } = await pinJSON(IPFS_ENDPOINT, token, prepared.payload);
-  prepared.assign(cid);
+  prepared.assign({ cid, gateways: gatewayUrlsFor(cid) });
   return ics;
 }
 
@@ -265,7 +288,7 @@ async function handleSubmit(event) {
   if (busy) return;
 
   const text = questionInput.value.trim();
-  const file = attachmentInput.files?.[0] || null;
+  const files = attachmentInput.files ? Array.from(attachmentInput.files).filter(Boolean) : [];
   if (!text) return;
 
   pushMessage("user", text);
@@ -282,7 +305,7 @@ async function handleSubmit(event) {
       return;
     }
 
-    await maybePinAttachments(ics, file);
+    await maybePinAttachments(ics, files);
     history = history
       .concat({ role: "user", text }, { role: "assistant", text: JSON.stringify(ics) })
       .slice(-MAX_HISTORY);
