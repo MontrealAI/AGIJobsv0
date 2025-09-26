@@ -1,0 +1,104 @@
+[
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "reward", "type": "uint256" },
+      { "internalType": "uint64", "name": "deadline", "type": "uint64" },
+      { "internalType": "bytes32", "name": "specHash", "type": "bytes32" },
+      { "internalType": "string", "name": "uri", "type": "string" }
+    ],
+    "name": "createJob",
+    "outputs": [
+      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "reward", "type": "uint256" },
+      { "internalType": "uint64", "name": "deadline", "type": "uint64" },
+      { "internalType": "uint8", "name": "agentTypes", "type": "uint8" },
+      { "internalType": "bytes32", "name": "specHash", "type": "bytes32" },
+      { "internalType": "string", "name": "uri", "type": "string" }
+    ],
+    "name": "createJobWithAgentTypes",
+    "outputs": [
+      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+    ],
+    "name": "finalize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "jobId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "employer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "agent",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "stake",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "specHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "uri",
+        "type": "string"
+      }
+    ],
+    "name": "JobCreated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "lastJobId",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
