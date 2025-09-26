@@ -9,6 +9,12 @@
     "types": ["node", "hardhat"],
     "skipLibCheck": true
   },
-  "include": ["hardhat.config.ts", "scripts/**/*.ts", "test/**/*.ts", "docs/**/*.ts"],
+  "include": [
+    "hardhat.config.ts",
+    "scripts/**/*.ts",
+    "test/**/*.ts",
+    "docs/**/*.ts",
+    "packages/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }

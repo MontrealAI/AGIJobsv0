@@ -84,7 +84,8 @@
     "ipfs-http-client": "^60.0.0",
     "parse-duration": "^2.1.4",
     "web3": "^1.10.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "zod": "^3.23.8"
   },
   "overrides": {
     "axios": "^1.12.2",
