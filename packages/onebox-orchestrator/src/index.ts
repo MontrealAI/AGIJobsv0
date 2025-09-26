@@ -3,7 +3,7 @@ export {
   IntentSchema,
   IntentConstraintSchema,
 } from './ics/schema';
-export type { IntentConstraint } from './ics/schema';
+export type { IntentConstraint } from './ics/types';
 export type {
   IntentName,
   ConfirmationMetadata,
@@ -15,13 +15,12 @@ export type {
 export { parseIntentConstraint } from './ics/parser';
 export {
   PlannerClient,
-  type PlannerClientOptions,
   PlannerClientError,
 } from './planner/client';
-export {
-  ToolRegistry,
-  ToolExecutionContext,
-  ToolHandler,
-  ToolResponse,
-  registerDefaultNotImplementedHandlers,
-} from './router/registry';
+export type {
+  PlannerMessage,
+  PlannerPlanResult,
+  PlannerClientOptions,
+} from './planner/client';
+export { ToolRegistry, registerDefaultNotImplementedHandlers } from './router/registry';
+export type { ToolExecutionContext, ToolHandler, ToolResponse } from './router/registry';

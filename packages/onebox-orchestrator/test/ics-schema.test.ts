@@ -42,7 +42,7 @@ function testValidCreateJob() {
   if (result.data?.intent !== 'create_job') {
     throw new Error('Expected create_job intent');
   }
-  const payload = result.data.payload;
+  const payload = result.data.payload as import('../src/ics/types').ConstraintForIntent<'create_job'>;
   assert.strictEqual(payload.params.job.title, 'Label images');
   assert.strictEqual(payload.confirm, true);
 }

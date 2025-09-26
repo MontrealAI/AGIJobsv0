@@ -18,9 +18,11 @@ scripts/**/*.js
 !scripts/run-wire-verify.js
 build/
 lib/
+!apps/onebox/src/lib/
 agent-gateway/dist/
 packages/orchestrator/dist/
 packages/orchestrator/dist-test/
+packages/onebox-orchestrator/dist/
 examples/agentic/runtime-agentic.jsonl
 !scripts/v2/run-owner-plan.js
 !scripts/v2/lib/

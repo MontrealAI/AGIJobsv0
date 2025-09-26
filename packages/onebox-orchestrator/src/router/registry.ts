@@ -1,86 +1,80 @@
+import { INTENT_VALUES } from '../ics/schema';
 import type { AnyIntentEnvelope, IntentName } from '../ics/types';
 
-export interface ToolExecutionContext {
-  chainId: number;
-  rpcUrl: string;
-  identity?: {
-    ensName?: string;
-    address?: string;
-  };
-  requestMeta?: Record<string, unknown>;
-}
+export type ToolResponseStatus = 'success' | 'error' | 'not_implemented';
 
 export interface ToolResponse {
-  status: 'success' | 'pending' | 'error';
-  messages: string[];
-  data?: Record<string, unknown>;
+  status: ToolResponseStatus;
+  message: string;
+  data?: unknown;
   issues?: string[];
 }
 
-export type ToolHandler<TIntent extends IntentName = IntentName> = (
-  envelope: Extract<AnyIntentEnvelope, { intent: TIntent }>,
+export interface ToolExecutionContext {
+  traceId?: string;
+  logger?: {
+    debug: (message: string, metadata?: Record<string, unknown>) => void;
+    info: (message: string, metadata?: Record<string, unknown>) => void;
+    warn: (message: string, metadata?: Record<string, unknown>) => void;
+    error: (message: string, metadata?: Record<string, unknown>) => void;
+  };
+}
+
+export type ToolHandler<TEnvelope extends AnyIntentEnvelope = AnyIntentEnvelope> = (
+  envelope: TEnvelope,
   context: ToolExecutionContext
-) => Promise<ToolResponse>;
+) => Promise<ToolResponse> | ToolResponse;
 
 export class ToolRegistry {
-  private readonly handlers: Map<IntentName, ToolHandler> = new Map();
+  private readonly handlers = new Map<IntentName, ToolHandler>();
 
-  register<TIntent extends IntentName>(
-    intent: TIntent,
-    handler: ToolHandler<TIntent>
-  ): void {
-    this.handlers.set(intent, handler as ToolHandler);
+  register<TIntent extends IntentName>(intent: TIntent, handler: ToolHandler<AnyIntentEnvelope>): void {
+    this.handlers.set(intent, handler);
   }
 
-  has(intent: IntentName): boolean {
-    return this.handlers.has(intent);
+  get(intent: IntentName): ToolHandler<AnyIntentEnvelope> | undefined {
+    return this.handlers.get(intent);
   }
 
-  resolve(intent: IntentName): ToolHandler {
-    const handler = this.handlers.get(intent);
+  async execute(envelope: AnyIntentEnvelope, context: ToolExecutionContext = {}): Promise<ToolResponse> {
+    const handler = this.handlers.get(envelope.intent);
+
     if (!handler) {
-      throw new Error(`No tool handler registered for intent: ${intent}`);
+      return {
+        status: 'not_implemented',
+        message: `No handler registered for ${envelope.intent}`,
+        issues: [`${envelope.intent} is not supported`],
+      };
     }
-    return handler;
-  }
 
-  async dispatch(
-    envelope: AnyIntentEnvelope,
-    context: ToolExecutionContext
-  ): Promise<ToolResponse> {
-    const handler = this.resolve(envelope.intent);
-    return handler(envelope, context);
+    try {
+      const result = await handler(envelope, context);
+      return result;
+    } catch (error) {
+      context.logger?.error('Tool execution failed', {
+        intent: envelope.intent,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return {
+        status: 'error',
+        message: 'Tool execution failed',
+        issues: [error instanceof Error ? error.message : 'Unknown error'],
+      };
+    }
   }
 }
 
-export function registerDefaultNotImplementedHandlers(
-  registry: ToolRegistry
-): void {
-  const createHandler =
-    (intent: IntentName): ToolHandler =>
-    async () => ({
-      status: 'error',
-      messages: [
-        `Intent \`${intent}\` is recognised but no execution adapter has been implemented yet. Please wire the blockchain adapter before enabling this pathway.`,
-      ],
-      issues: ['not_implemented'],
-    });
-
-  const intents: IntentName[] = [
-    'create_job',
-    'apply_job',
-    'submit_work',
-    'validate',
-    'finalize',
-    'dispute',
-    'stake',
-    'withdraw',
-    'admin_set',
-  ];
-
-  intents.forEach((intent) => {
-    if (!registry.has(intent)) {
-      registry.register(intent, createHandler(intent));
+export function registerDefaultNotImplementedHandlers(registry: ToolRegistry): void {
+  for (const intent of INTENT_VALUES) {
+    if (registry.get(intent)) {
+      continue;
     }
-  });
+
+    registry.register(intent, async () => ({
+      status: 'not_implemented',
+      message: `${intent} is not implemented yet`,
+      issues: [`${intent} handler missing`],
+    }));
+  }
 }
