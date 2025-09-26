@@ -9,7 +9,7 @@ A single-input, gasless, walletless interface that talks to the AGI-Alpha Meta-A
 - Two-step confirmations for value-moving transactions.
 - Integrated IPFS pinning using [`web3.storage`](https://docs-beta.web3.storage/getting-started/w3up-client/).
 - Advanced receipts toggle exposing transaction hashes, gas sponsorship info, and raw ICS payloads.
-- File upload hooks for orchestrator-provided attachment prompts.
+- Drag-and-drop attachment support (plus orchestrator prompts) with client-side IPFS pinning backed by `web3.storage`.
 - Neutral static hosting footprint suited for IPFS pinning.
 
 ## Quick start
@@ -38,7 +38,7 @@ The orchestrator is expected to encapsulate the v2 contract ABIs and addresses a
 - `POST /plan`: accepts `{ message, history }` and returns a validated ICS object (see `/docs` in the orchestrator).
 - `POST /execute`: accepts `{ ics, aa }` and streams Server-Sent Events describing status updates, confirmations, receipts, and errors.
 
-The client enforces the intent allowlist defined in [`lib.js`](./lib.js). Owner-only operations must be blocked server-side unless the orchestrator verifies the caller is authorised.
+The client enforces the intent allowlist defined in [`lib.mjs`](./lib.mjs). Owner-only operations must be blocked server-side unless the orchestrator verifies the caller is authorised.
 
 ## Account Abstraction & relayer notes
 
