@@ -60,6 +60,8 @@ If you prefer TypeScript, run `ts-node --project apps/orchestrator/tsconfig.json
 
 Leverage the existing FastAPI `api.py` structure or the Express server: include the router, reuse the `API_TOKEN` auth dependency, and expose the endpoints in the OpenAPI schema.
 
+The Express router also ships with `GET /onebox/metrics`, which emits Prometheus-compatible counters for planner, executor, and status calls (plus per-intent labels for execution).
+
 ## Planner → executor contract
 
 The planner must output a `JobIntent` structure:

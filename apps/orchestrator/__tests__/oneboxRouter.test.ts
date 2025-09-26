@@ -10,6 +10,7 @@ import {
   formatDeadline,
   mapJobStateToStatus,
 } from '../oneboxRouter';
+import { resetMetrics } from '../oneboxMetrics';
 
 test('plannerIntentToJobIntent converts create_job envelope', () => {
   const envelope: IntentEnvelope = {
@@ -77,4 +78,44 @@ test('onebox router plan route delegates to service', async () => {
   const response = await request(app).post('/onebox/plan').send({ text: 'Create a job' });
   assert.equal(response.status, 200);
   assert.deepEqual(response.body.summary, planResponse.summary);
+});
+
+test('metrics endpoint exposes Prometheus counters', async () => {
+  resetMetrics();
+
+  const router = createOneboxRouter({
+    async plan() {
+      return {
+        summary: 'Summary',
+        intent: { action: 'post_job', payload: {} },
+        requiresConfirmation: true,
+        warnings: [],
+      } satisfies PlanResponse;
+    },
+    async execute() {
+      return { ok: true };
+    },
+    async status(): Promise<StatusResponse> {
+      return { jobs: [] };
+    },
+  });
+
+  const app = express();
+  app.use(express.json());
+  app.use('/onebox', router);
+
+  await request(app).post('/onebox/plan').send({ text: 'Create a job' });
+  await request(app)
+    .post('/onebox/execute')
+    .send({ intent: { action: 'post_job', payload: {} }, mode: 'relayer' });
+  await request(app).get('/onebox/status');
+
+  const metricsResponse = await request(app).get('/onebox/metrics');
+  assert.equal(metricsResponse.status, 200);
+  assert.equal(metricsResponse.headers['content-type'], 'text/plain; version=0.0.4; charset=utf-8');
+  const body = metricsResponse.text;
+  assert.match(body, /onebox_plan_requests_total 1/);
+  assert.match(body, /onebox_execute_requests_total 1/);
+  assert.match(body, /onebox_execute_action_total\{action="post_job"\} 1/);
+  assert.match(body, /onebox_status_requests_total 1/);
 });
