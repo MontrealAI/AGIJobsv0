@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
@@ -34,12 +35,27 @@ PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
 _MIN_ABI = [
     {
         "inputs": [
-            {"internalType": "string", "name": "uri", "type": "string"},
-            {"internalType": "address", "name": "rewardToken", "type": "address"},
             {"internalType": "uint256", "name": "reward", "type": "uint256"},
-            {"internalType": "uint256", "name": "deadlineDays", "type": "uint256"},
+            {"internalType": "uint64", "name": "deadline", "type": "uint64"},
+            {"internalType": "bytes32", "name": "specHash", "type": "bytes32"},
+            {"internalType": "string", "name": "uri", "type": "string"},
         ],
-        "name": "postJob",
+        "name": "createJob",
+        "outputs": [
+            {"internalType": "uint256", "name": "jobId", "type": "uint256"},
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"internalType": "uint256", "name": "reward", "type": "uint256"},
+            {"internalType": "uint64", "name": "deadline", "type": "uint64"},
+            {"internalType": "uint8", "name": "agentTypes", "type": "uint8"},
+            {"internalType": "bytes32", "name": "specHash", "type": "bytes32"},
+            {"internalType": "string", "name": "uri", "type": "string"},
+        ],
+        "name": "createJobWithAgentTypes",
         "outputs": [
             {"internalType": "uint256", "name": "jobId", "type": "uint256"},
         ],
@@ -355,6 +371,17 @@ def _parse_deadline_days(value: Optional[int]) -> int:
     return int(value)
 
 
+def _calculate_deadline_timestamp(days: int) -> int:
+    now = datetime.now(timezone.utc)
+    delta = days * 24 * 60 * 60
+    return int(now.timestamp()) + int(delta)
+
+
+def _compute_spec_hash(metadata: Dict[str, Any]) -> bytes:
+    serialized = json.dumps(metadata, sort_keys=True, separators=(",", ":"))
+    return Web3.keccak(text=serialized)
+
+
 def _build_error_payload(code: str) -> Dict[str, str]:
     return {"error": code, "message": ERROR_MESSAGES.get(code, ERROR_MESSAGES["UNKNOWN"])}
 
@@ -463,19 +490,53 @@ async def execute(req: ExecuteRequest) -> ExecuteResponse:
             "deadlineDays": deadline_days,
         }
 
+        deadline_timestamp = _calculate_deadline_timestamp(deadline_days)
+        metadata["deadline"] = deadline_timestamp
+        spec_hash = _compute_spec_hash(metadata)
+
         cid = await _pin_json(metadata)
         uri = f"ipfs://{cid}"
 
+        agent_types = payload.agentTypes
+        func_name = "createJobWithAgentTypes" if agent_types is not None else "createJob"
+        wallet_args: List[Any]
+        if agent_types is not None:
+            wallet_args = [
+                reward_wei,
+                int(deadline_timestamp),
+                int(agent_types),
+                spec_hash,
+                uri,
+            ]
+        else:
+            wallet_args = [
+                reward_wei,
+                int(deadline_timestamp),
+                spec_hash,
+                uri,
+            ]
+
         if req.mode == "wallet":
-            to, data = _encode_wallet_call(
-                "postJob",
-                [uri, AGIALPHA_TOKEN, reward_wei, int(deadline_days)],
-            )
+            to, data = _encode_wallet_call(func_name, wallet_args)
             return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
 
         if not relayer:
             _raise("RELAYER_DISABLED", status=503)
-        func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, int(deadline_days))
+        if agent_types is not None:
+            func = registry.functions.createJobWithAgentTypes(
+                reward_wei,
+                int(deadline_timestamp),
+                int(agent_types),
+                spec_hash,
+                uri,
+            )
+        else:
+            func = registry.functions.createJob(
+                reward_wei,
+                int(deadline_timestamp),
+                spec_hash,
+                uri,
+            )
         tx = _build_tx(func, relayer.address)
         tx_hash, receipt = await _send_relayer_tx(tx)
         job_id = _decode_job_created(receipt)
