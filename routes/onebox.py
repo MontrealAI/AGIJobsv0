@@ -283,6 +283,42 @@ _FINALIZE_KEYWORDS = (
     "wrapup",
 )
 
+_STAKE_KEYWORDS = (
+    "stake",
+    "staking",
+    "stake on",
+    "bond",
+    "bonding",
+    "collateral",
+    "post stake",
+    "add stake",
+)
+
+_VALIDATE_KEYWORDS = (
+    "validate",
+    "validation",
+    "validator",
+    "approve",
+    "approval",
+    "confirm",
+    "confirmation",
+    "verify",
+    "verification",
+)
+
+_DISPUTE_KEYWORDS = (
+    "dispute",
+    "disputing",
+    "challenge",
+    "challenging",
+    "contest",
+    "contesting",
+    "appeal",
+    "appealing",
+    "flag",
+    "flagging",
+)
+
 
 def _contains_keyword(lowered: str, keywords: Tuple[str, ...]) -> bool:
     for keyword in keywords:
@@ -310,6 +346,27 @@ def _looks_like_finalize_request(text: str, job_id: Optional[int]) -> bool:
     return "job" in lowered or job_id is not None
 
 
+def _looks_like_stake_request(text: str, job_id: Optional[int]) -> bool:
+    lowered = text.lower()
+    if not _contains_keyword(lowered, _STAKE_KEYWORDS):
+        return False
+    return "job" in lowered or job_id is not None
+
+
+def _looks_like_validate_request(text: str, job_id: Optional[int]) -> bool:
+    lowered = text.lower()
+    if not _contains_keyword(lowered, _VALIDATE_KEYWORDS):
+        return False
+    return "job" in lowered or job_id is not None
+
+
+def _looks_like_dispute_request(text: str, job_id: Optional[int]) -> bool:
+    lowered = text.lower()
+    if not _contains_keyword(lowered, _DISPUTE_KEYWORDS):
+        return False
+    return "job" in lowered or job_id is not None
+
+
 def _naive_parse(text: str) -> JobIntent:
     trimmed = text.strip()
     job_id = _extract_job_id(trimmed)
@@ -319,6 +376,15 @@ def _naive_parse(text: str) -> JobIntent:
 
     if _looks_like_finalize_request(trimmed, job_id):
         return JobIntent(action="finalize_job", payload=Payload(jobId=job_id))
+
+    if _looks_like_stake_request(trimmed, job_id):
+        return JobIntent(action="stake", payload=Payload(jobId=job_id))
+
+    if _looks_like_validate_request(trimmed, job_id):
+        return JobIntent(action="validate", payload=Payload(jobId=job_id))
+
+    if _looks_like_dispute_request(trimmed, job_id):
+        return JobIntent(action="dispute", payload=Payload(jobId=job_id))
 
     amount_match = re.search(r"(\d+(?:\.\d+)?)\s*agi(?:alpha)?", trimmed, re.I)
     days_match = re.search(r"(\d+)\s*(?:d|day|days)", trimmed, re.I)
@@ -465,6 +531,9 @@ def _summarize_intent(intent: JobIntent) -> str:
         "post_job": "Detected job posting request. ",
         "check_status": "Detected job status request. ",
         "finalize_job": "Detected job finalization request. ",
+        "stake": "Detected staking request. ",
+        "validate": "Detected validation request. ",
+        "dispute": "Detected dispute request. ",
     }.get(intent.action, "")
     if intent.action == "post_job":
         reward = payload.reward or "1.0"
@@ -480,6 +549,15 @@ def _summarize_intent(intent: JobIntent) -> str:
     if intent.action == "finalize_job":
         job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
         return prefix + f"I will finalize {job_text}. Proceed?"
+    if intent.action == "stake":
+        job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
+        return prefix + f"I will stake on {job_text}. Proceed?"
+    if intent.action == "validate":
+        job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
+        return prefix + f"I will validate {job_text}. Proceed?"
+    if intent.action == "dispute":
+        job_text = f"job {payload.jobId}" if payload.jobId is not None else "the requested job"
+        return prefix + f"I will dispute {job_text}. Proceed?"
     return prefix + "I will process your request. Proceed?"
 
 
