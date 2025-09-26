@@ -8,20 +8,20 @@ const DEFAULT_CONFIG = {
 const errorDictionary = new Map([
   ['InsufficientBalance', {
     headline: 'You do not have enough AGIALPHA to fund this job.',
-    hint: 'Lower the reward or top up your balance; I can guide you through funding.'],
-  ],
+    hint: 'Lower the reward or top up your balance; I can guide you through funding.',
+  }],
   ['deadline', {
     headline: 'The requested deadline is invalid.',
-    hint: 'Choose a date at least a few hours in the future.'],
-  ],
+    hint: 'Choose a date at least a few hours in the future.',
+  }],
   ['allowance', {
     headline: 'Token approvals are missing.',
-    hint: 'In Expert mode I can prepare the approval transaction for you.'],
-  ],
+    hint: 'In Expert mode I can prepare the approval transaction for you.',
+  }],
   ['network', {
     headline: 'Unable to reach the orchestrator.',
-    hint: 'Check the configured URL or switch back to Demo Mode.'],
-  ],
+    hint: 'Check the configured URL or switch back to Demo Mode.',
+  }],
 ]);
 
 const state = {
