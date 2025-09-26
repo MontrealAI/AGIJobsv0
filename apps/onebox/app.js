@@ -17,6 +17,9 @@ const ERRORS={
   IPFS_FAILED:"I couldn’t package your job details. Remove broken links and try again.",
   DEADLINE_INVALID:"That deadline is in the past. Pick at least 24 hours from now.",
   NETWORK_CONGESTED:"The network is busy; I’ll keep retrying for a moment.",
+  RELAYER_DISABLED:"The relayer is offline. Ask the operator to enable it or switch to Expert Mode.",
+  UNAUTHENTICATED:"This endpoint needs a valid API token. Check the Advanced settings.",
+  JOB_ID_REQUIRED:"Tell me which job id to work with first.",
   MISSING_ORCHESTRATOR:"Set your orchestrator URL in Advanced.",
   NO_WALLET:"No EIP-1193 wallet detected. Install MetaMask, Rabby, or a compatible provider.",
   UNKNOWN:"Something went wrong. Try rephrasing your request or adjust the reward/deadline."
@@ -35,8 +38,24 @@ async function api(path, body){
   const headers={'Content-Type':'application/json'}; if(TOK) headers['Authorization']='Bearer '+TOK;
   const r=await fetch(ORCH+path,{method: body? 'POST':'GET',headers,body: body? JSON.stringify(body):undefined});
   if(!r.ok){
-    let msg='UNKNOWN'; try{msg=(await r.text())||'UNKNOWN'}catch{}
-    throw new Error(msg.toUpperCase());
+    let code='UNKNOWN';
+    let human;
+    try{
+      const payload=await r.json();
+      if(payload){
+        if(typeof payload.error==='string') code=payload.error.toUpperCase();
+        else if(typeof payload.detail==='string') code=payload.detail.toUpperCase();
+        if(typeof payload.message==='string') human=payload.message;
+      }
+    }catch{
+      try{
+        const text=await r.text();
+        if(text) code=text.toUpperCase();
+      }catch{}
+    }
+    const error=new Error(code);
+    if(human) error.humanMessage=human;
+    throw error;
   }
   return await r.json();
 }
@@ -91,6 +110,10 @@ async function go(){
 }
 
 function handleError(e){
+  if(e.humanMessage){
+    add('assist','⚠️ '+e.humanMessage);
+    return;
+  }
   const upper=(e.message||'').toUpperCase();
   const key = Object.keys(ERRORS).find(k=> upper.includes(k)) || 'UNKNOWN';
   add('assist','⚠️ '+ERRORS[key]);
