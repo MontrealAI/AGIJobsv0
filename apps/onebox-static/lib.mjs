@@ -102,8 +102,93 @@ export function needsAttachmentPin(ics) {
   return false;
 }
 
-function uniqueAttachments(existing = []) {
-  return Array.from(new Set(existing.filter(Boolean)));
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null) return [];
+  return [value];
+}
+
+function mergeStringLists(...lists) {
+  const merged = [];
+  const seen = new Set();
+  for (const list of lists) {
+    for (const value of toArray(list)) {
+      if (typeof value !== "string") continue;
+      const trimmed = value.trim();
+      if (!trimmed || seen.has(trimmed)) continue;
+      seen.add(trimmed);
+      merged.push(trimmed);
+    }
+  }
+  return merged;
+}
+
+function normalizeClientPin(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const cid = typeof entry.cid === "string" && entry.cid.trim();
+  if (!cid) return null;
+  const uri = typeof entry.uri === "string" && entry.uri.trim() ? entry.uri.trim() : `ipfs://${cid}`;
+  const gateways = mergeStringLists(entry.gateways);
+  const normalized = { cid, uri };
+  if (gateways.length) normalized.gateways = gateways;
+  const name = typeof entry.name === "string" && entry.name.trim() ? entry.name.trim() : null;
+  if (name) normalized.name = name;
+  const size = typeof entry.size === "number" && Number.isFinite(entry.size) ? entry.size : null;
+  if (size !== null) normalized.size = size;
+  return normalized;
+}
+
+function mergeClientPinned(existing = [], additions = []) {
+  const ordered = [];
+  const indexByCid = new Map();
+
+  const upsert = (entry) => {
+    const normalized = normalizeClientPin(entry);
+    if (!normalized) return;
+    if (indexByCid.has(normalized.cid)) {
+      const index = indexByCid.get(normalized.cid);
+      const previous = ordered[index] || {};
+      const gateways = mergeStringLists(previous.gateways, normalized.gateways);
+      const merged = {
+        cid: normalized.cid,
+        uri: normalized.uri || previous.uri,
+      };
+      if (gateways.length) merged.gateways = gateways;
+      const name = normalized.name || previous.name;
+      if (name) merged.name = name;
+      const size =
+        normalized.size !== undefined
+          ? normalized.size
+          : previous.size !== undefined
+            ? previous.size
+            : undefined;
+      if (size !== undefined) merged.size = size;
+      ordered[index] = merged;
+      return;
+    }
+    const next = { cid: normalized.cid, uri: normalized.uri };
+    if (normalized.gateways && normalized.gateways.length) {
+      next.gateways = normalized.gateways;
+    }
+    if (normalized.name) {
+      next.name = normalized.name;
+    }
+    if (normalized.size !== undefined) {
+      next.size = normalized.size;
+    }
+    const index = ordered.length;
+    ordered.push(next);
+    indexByCid.set(normalized.cid, index);
+  };
+
+  for (const entry of toArray(existing)) {
+    upsert(entry);
+  }
+  for (const entry of toArray(additions)) {
+    upsert(entry);
+  }
+
+  return ordered.filter(Boolean);
 }
 
 function baseMetadata() {
@@ -113,46 +198,71 @@ function baseMetadata() {
   };
 }
 
-export function prepareJobPayload(ics, attachmentCid) {
-  const uriFromCid = (cid) => (cid ? `ipfs://${cid}` : null);
-  const fileUri = uriFromCid(attachmentCid);
+export function prepareJobPayload(ics, pinnedFiles = []) {
   const base = baseMetadata();
-  const attach = [];
-  if (fileUri) attach.push(fileUri);
+  if (!isObject(ics.meta)) {
+    ics.meta = {};
+  }
+
+  const normalizedFiles = Array.isArray(pinnedFiles)
+    ? pinnedFiles.map((entry) => normalizeClientPin(entry)).filter(Boolean)
+    : [];
+  const newAttachmentUris = normalizedFiles.map((entry) => entry.uri);
+
+  const mergeMeta = (payloadCid, gateways) => {
+    const additions = [...normalizedFiles];
+    if (payloadCid) {
+      const payloadEntry = {
+        cid: payloadCid,
+        uri: `ipfs://${payloadCid}`,
+      };
+      const payloadGateways = mergeStringLists(gateways);
+      if (payloadGateways.length) {
+        payloadEntry.gateways = payloadGateways;
+      }
+      additions.push(payloadEntry);
+    }
+    if (!additions.length) return;
+    ics.meta.clientPinned = mergeClientPinned(ics.meta.clientPinned, additions);
+  };
 
   if (ics.intent === "create_job") {
-    const job = isObject(ics.params?.job) ? { ...ics.params.job } : {};
-    const existing = uniqueAttachments(job.attachments);
-    attach.push(...existing);
+    const job = isObject(ics.params?.job) ? ics.params.job : {};
+    const attachments = mergeStringLists(job?.attachments, newAttachmentUris);
     const payload = {
       ...base,
       kind: "job",
-      title: job.title || "",
-      description: job.description || "",
-      deadlineDays: job.deadlineDays ?? null,
-      rewardAGIA: job.rewardAGIA ?? job.reward ?? null,
-      attachments: uniqueAttachments(attach),
+      title: job?.title || "",
+      description: job?.description || "",
+      deadlineDays: job?.deadlineDays ?? null,
+      rewardAGIA: job?.rewardAGIA ?? job?.reward ?? null,
+      attachments,
     };
     return {
       payload,
-      assign(cid) {
+      assign({ cid, gateways }) {
         if (!ics.params) ics.params = {};
         if (!isObject(ics.params.job)) ics.params.job = {};
         ics.params.job.uri = `ipfs://${cid}`;
+        if (attachments.length) {
+          ics.params.job.attachments = attachments;
+        }
+        mergeMeta(cid, gateways);
       },
     };
   }
 
   if (ics.intent === "submit_work") {
+    const attachments = mergeStringLists(ics.params?.attachments, newAttachmentUris);
     const payload = {
       ...base,
       kind: "submission",
       note: ics.params?.note || "AGI Jobs work submission",
-      attachments: uniqueAttachments(attach.concat(uniqueAttachments(ics.params?.attachments))),
+      attachments,
     };
     return {
       payload,
-      assign(cid) {
+      assign({ cid, gateways }) {
         if (!ics.params) ics.params = {};
         const existing = isObject(ics.params.result) ? ics.params.result : {};
         const uri = `ipfs://${cid}`;
@@ -160,27 +270,39 @@ export function prepareJobPayload(ics, attachmentCid) {
         if ("resultUri" in ics.params) {
           delete ics.params.resultUri;
         }
+        if ("uri" in ics.params) {
+          delete ics.params.uri;
+        }
+        if (attachments.length) {
+          ics.params.attachments = attachments;
+        }
+        mergeMeta(cid, gateways);
       },
     };
   }
 
   if (ics.intent === "dispute") {
     const reason = ics.params?.reason || ics.params?.dispute?.reason || "";
+    const attachments = mergeStringLists(ics.params?.attachments, newAttachmentUris);
     const payload = {
       ...base,
       kind: "dispute",
       reason,
-      attachments: uniqueAttachments(attach.concat(uniqueAttachments(ics.params?.attachments))),
+      attachments,
     };
     return {
       payload,
-      assign(cid) {
+      assign({ cid, gateways }) {
         const uri = `ipfs://${cid}`;
         if (!ics.params) ics.params = {};
         ics.params.evidenceUri = uri;
         if (isObject(ics.params.dispute)) {
           ics.params.dispute.evidenceUri = uri;
         }
+        if (attachments.length) {
+          ics.params.attachments = attachments;
+        }
+        mergeMeta(cid, gateways);
       },
     };
   }

@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { needsAttachmentPin, prepareJobPayload } from '../lib.mjs';
-import { createMaybePinPayload } from '../pin-payload.mjs';
 
 const IPFS_GATEWAY = 'https://w3s.link/ipfs/';
 
 const CID = 'bafyreigdyrnucsac53examplecid0000000000000000000000000000000';
+const PAYLOAD_CID = 'bafyreialpayloadexamplecid0000000000000000000000000000000000';
 
 function assignCid(ics, cid) {
-  const result = prepareJobPayload(ics, null);
+  const result = prepareJobPayload(ics, []);
   assert.ok(result.payload, 'expected a payload for submission intents');
-  result.assign(cid);
+  result.assign({ cid, gateways: [] });
   return ics;
 }
 
@@ -54,20 +54,8 @@ test('submit_work ICS with result uri keeps other result metadata', () => {
   });
 });
 
-test('maybePinPayload normalises submission params in app.mjs', async () => {
-  const maybePinPayload = createMaybePinPayload({
-    deepClone: (value) => JSON.parse(JSON.stringify(value)),
-    IPFS_GATEWAY,
-    pinJSON: async () => ({ cid: 'unused' }),
-    pinFile: async (file) => ({ cid: CID, file }),
-  });
-
-  const file = {
-    name: 'result.txt',
-    size: 2048,
-  };
-
-  const original = {
+test('prepareJobPayload normalises submission params and client metadata', () => {
+  const ics = {
     intent: 'submit_work',
     params: {
       attachments: ['ipfs://existing'],
@@ -76,27 +64,122 @@ test('maybePinPayload normalises submission params in app.mjs', async () => {
       uri: 'ipfs://old',
       resultUri: 'ipfs://old',
     },
+    meta: {},
   };
 
-  const enriched = await maybePinPayload(original, [file]);
+  const attachments = [
+    {
+      cid: CID,
+      uri: `ipfs://${CID}`,
+      gateways: [`${IPFS_GATEWAY}${CID}`],
+      name: 'result.txt',
+      size: 2048,
+    },
+  ];
 
-  assert.deepEqual(enriched.params.result, {
-    status: 'draft',
-    comment: 'keep-me',
-    uri: `ipfs://${CID}`,
-  });
-  assert.equal('uri' in enriched.params, false);
-  assert.equal('resultUri' in enriched.params, false);
-  assert.deepEqual(enriched.params.attachments, [
+  const prepared = prepareJobPayload(ics, attachments);
+
+  assert.deepEqual(prepared.payload.attachments, [
     'ipfs://existing',
     `ipfs://${CID}`,
   ]);
-  assert.equal(enriched.params.gatewayUri, `${IPFS_GATEWAY}${CID}`);
-  assert.deepEqual(enriched.meta.clientPinned, {
-    cid: CID,
-    uri: `ipfs://${CID}`,
-    gateway: `${IPFS_GATEWAY}${CID}`,
-    name: 'result.txt',
-    size: 2048,
+
+  prepared.assign({ cid: PAYLOAD_CID, gateways: [`${IPFS_GATEWAY}${PAYLOAD_CID}`] });
+
+  assert.deepEqual(ics.params.result, {
+    status: 'draft',
+    comment: 'keep-me',
+    uri: `ipfs://${PAYLOAD_CID}`,
   });
+  assert.equal('uri' in ics.params, false);
+  assert.equal('resultUri' in ics.params, false);
+  assert.deepEqual(ics.params.attachments, [
+    'ipfs://existing',
+    `ipfs://${CID}`,
+  ]);
+  assert.deepEqual(ics.meta.clientPinned, [
+    {
+      cid: CID,
+      uri: `ipfs://${CID}`,
+      gateways: [`${IPFS_GATEWAY}${CID}`],
+      name: 'result.txt',
+      size: 2048,
+    },
+    {
+      cid: PAYLOAD_CID,
+      uri: `ipfs://${PAYLOAD_CID}`,
+      gateways: [`${IPFS_GATEWAY}${PAYLOAD_CID}`],
+    },
+  ]);
+});
+
+test('prepareJobPayload merges multiple attachments for dispute intents', () => {
+  const FIRST_ATTACHMENT = 'bafyreibulkcid0000000000000000000000000000000000000000000000';
+  const SECOND_ATTACHMENT = 'bafyreibulkcid1111111111111111111111111111111111111111111111';
+  const DISPUTE_PAYLOAD = 'bafyreidispayloadcid2222222222222222222222222222222222222222';
+
+  const ics = {
+    intent: 'dispute',
+    params: {
+      attachments: ['ipfs://existing-evidence'],
+      dispute: { reason: 'Quality issue' },
+    },
+    meta: {},
+  };
+
+  const attachments = [
+    {
+      cid: FIRST_ATTACHMENT,
+      uri: `ipfs://${FIRST_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${FIRST_ATTACHMENT}`],
+      name: 'before.png',
+      size: 1024,
+    },
+    {
+      cid: SECOND_ATTACHMENT,
+      uri: `ipfs://${SECOND_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${SECOND_ATTACHMENT}`],
+      name: 'after.png',
+      size: 2048,
+    },
+  ];
+
+  const prepared = prepareJobPayload(ics, attachments);
+
+  assert.deepEqual(prepared.payload.attachments, [
+    'ipfs://existing-evidence',
+    `ipfs://${FIRST_ATTACHMENT}`,
+    `ipfs://${SECOND_ATTACHMENT}`,
+  ]);
+
+  prepared.assign({ cid: DISPUTE_PAYLOAD, gateways: [`${IPFS_GATEWAY}${DISPUTE_PAYLOAD}`] });
+
+  assert.equal(ics.params.evidenceUri, `ipfs://${DISPUTE_PAYLOAD}`);
+  assert.equal(ics.params.dispute.evidenceUri, `ipfs://${DISPUTE_PAYLOAD}`);
+  assert.deepEqual(ics.params.attachments, [
+    'ipfs://existing-evidence',
+    `ipfs://${FIRST_ATTACHMENT}`,
+    `ipfs://${SECOND_ATTACHMENT}`,
+  ]);
+  assert.deepEqual(ics.meta.clientPinned, [
+    {
+      cid: FIRST_ATTACHMENT,
+      uri: `ipfs://${FIRST_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${FIRST_ATTACHMENT}`],
+      name: 'before.png',
+      size: 1024,
+    },
+    {
+      cid: SECOND_ATTACHMENT,
+      uri: `ipfs://${SECOND_ATTACHMENT}`,
+      gateways: [`${IPFS_GATEWAY}${SECOND_ATTACHMENT}`],
+      name: 'after.png',
+      size: 2048,
+    },
+    {
+      cid: DISPUTE_PAYLOAD,
+      uri: `ipfs://${DISPUTE_PAYLOAD}`,
+      gateways: [`${IPFS_GATEWAY}${DISPUTE_PAYLOAD}`],
+    },
+  ]);
 });
