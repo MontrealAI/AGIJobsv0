@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs — One-Box</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header">
+        <h1>AGI Jobs — One-Box</h1>
+        <span class="badge">Walletless by default</span>
+        <span id="mode" class="badge">Mode: Guest</span>
+      </header>
+
+      <main>
+        <section id="chat" class="chat" role="log" aria-live="polite">
+          <div class="msg m-assistant">
+            <p>Hi! Tell me what you need and I’ll handle the rest.</p>
+            <p class="m-note">Try: Post a labeling job for 500 images, pay 5 AGIALPHA, 7 days.</p>
+          </div>
+        </section>
+
+        <form class="input" id="composer" autocomplete="off">
+          <label class="sr-only" for="box">Your request</label>
+          <input id="box" type="text" placeholder="Type here… Press Enter to send" />
+          <button id="send" type="submit">Send</button>
+          <button id="expert" class="secondary" type="button" title="Toggle Expert Mode (wallet signing)">Expert</button>
+        </form>
+
+        <div class="row small" aria-label="Suggestions">
+          <button class="pill" data-fill="Create a research task, 2 AGIALPHA, 48h">Create a research task, 2 AGIALPHA, 48h</button>
+          <button class="pill" data-fill="Finalize my last job">Finalize my last job</button>
+          <button class="pill" data-fill="What’s the status of job 123?">What’s the status of job 123?</button>
+        </div>
+
+        <hr />
+        <p class="small">
+          This static client talks to the AGI-Alpha Orchestrator (<span class="kbd">/onebox/plan</span>,
+          <span class="kbd">/onebox/execute</span>, <span class="kbd">/onebox/status</span>). Configure the endpoint via the
+          browser console: <span class="kbd">localStorage.ORCH_URL = "https://your-orchestrator.example"</span>.
+        </p>
+      </main>
+    </div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
