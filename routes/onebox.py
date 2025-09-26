@@ -11,8 +11,15 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import httpx
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    CollectorRegistry,
+    Counter,
+    Histogram,
+    generate_latest,
+)
 from pydantic import BaseModel, Field
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -140,6 +147,43 @@ relayer = w3.eth.account.from_key(RELAYER_PK) if RELAYER_PK else None
 
 # ---------- API Router ----------
 router = APIRouter(prefix="/onebox", tags=["onebox"])
+
+_METRIC_REGISTRY = CollectorRegistry(auto_describe=True)
+_PLAN_COUNTER = Counter(
+    "onebox_plan_total",
+    "Total number of one-box planning requests",
+    ["mode", "outcome"],
+    registry=_METRIC_REGISTRY,
+)
+_PLAN_LATENCY = Histogram(
+    "onebox_plan_latency_seconds",
+    "Latency for one-box planning requests",
+    ["mode"],
+    registry=_METRIC_REGISTRY,
+)
+_EXECUTE_COUNTER = Counter(
+    "onebox_execute_total",
+    "Total number of one-box execute requests",
+    ["mode", "action", "outcome"],
+    registry=_METRIC_REGISTRY,
+)
+_EXECUTE_LATENCY = Histogram(
+    "onebox_execute_latency_seconds",
+    "Latency for one-box execute requests",
+    ["mode", "action"],
+    registry=_METRIC_REGISTRY,
+)
+_STATUS_COUNTER = Counter(
+    "onebox_status_total",
+    "Total number of one-box status reads",
+    ["outcome"],
+    registry=_METRIC_REGISTRY,
+)
+_STATUS_LATENCY = Histogram(
+    "onebox_status_latency_seconds",
+    "Latency for one-box status reads",
+    registry=_METRIC_REGISTRY,
+)
 
 
 def require_api(auth: Optional[str] = Header(None, alias="Authorization")) -> None:
@@ -739,121 +783,183 @@ def _summarize_intent(intent: JobIntent) -> str:
 
 @router.post("/plan", response_model=PlanResponse, dependencies=[Depends(require_api)])
 async def plan(req: PlanRequest) -> PlanResponse:
-    intent = _naive_parse(req.text)
-    summary = _summarize_intent(intent)
-    return PlanResponse(summary=summary, intent=intent, requiresConfirmation=True, warnings=[])
+    mode_label = "expert" if req.expert else "guest"
+    outcome = "ok"
+    started = time.perf_counter()
+    try:
+        intent = _naive_parse(req.text)
+        summary = _summarize_intent(intent)
+        return PlanResponse(
+            summary=summary,
+            intent=intent,
+            requiresConfirmation=True,
+            warnings=[],
+        )
+    except HTTPException:
+        outcome = "error"
+        raise
+    except Exception:
+        outcome = "error"
+        raise
+    finally:
+        duration = max(time.perf_counter() - started, 0.0)
+        _PLAN_COUNTER.labels(mode_label, outcome).inc()
+        _PLAN_LATENCY.labels(mode_label).observe(duration)
 
 
 @router.post("/execute", response_model=ExecuteResponse, dependencies=[Depends(require_api)])
 async def execute(req: ExecuteRequest) -> ExecuteResponse:
     intent = req.intent
     payload = intent.payload
+    mode_label = req.mode
+    action_label = getattr(intent, "action", "unknown") or "unknown"
+    outcome = "ok"
+    started = time.perf_counter()
+    try:
+        if intent.action == "post_job":
+            reward_wei = _parse_reward(payload.reward)
+            deadline_days = _parse_deadline_days(payload.deadlineDays)
 
-    if intent.action == "post_job":
-        reward_wei = _parse_reward(payload.reward)
-        deadline_days = _parse_deadline_days(payload.deadlineDays)
+            metadata = {
+                "title": payload.title or "New Job",
+                "description": payload.description or "",
+                "attachments": [attachment.dict() for attachment in payload.attachments],
+                "rewardToken": payload.rewardToken,
+                "reward": payload.reward,
+                "deadlineDays": deadline_days,
+            }
 
-        metadata = {
-            "title": payload.title or "New Job",
-            "description": payload.description or "",
-            "attachments": [attachment.dict() for attachment in payload.attachments],
-            "rewardToken": payload.rewardToken,
-            "reward": payload.reward,
-            "deadlineDays": deadline_days,
-        }
+            deadline_timestamp = _calculate_deadline_timestamp(deadline_days)
+            metadata["deadline"] = deadline_timestamp
+            spec_hash = _compute_spec_hash(metadata)
 
-        deadline_timestamp = _calculate_deadline_timestamp(deadline_days)
-        metadata["deadline"] = deadline_timestamp
-        spec_hash = _compute_spec_hash(metadata)
+            cid = await _pin_json(metadata)
+            uri = f"ipfs://{cid}"
 
-        cid = await _pin_json(metadata)
-        uri = f"ipfs://{cid}"
+            agent_types = payload.agentTypes
+            func_name = "createJobWithAgentTypes" if agent_types is not None else "createJob"
+            wallet_args: List[Any]
+            if agent_types is not None:
+                wallet_args = [
+                    reward_wei,
+                    int(deadline_timestamp),
+                    int(agent_types),
+                    spec_hash,
+                    uri,
+                ]
+            else:
+                wallet_args = [
+                    reward_wei,
+                    int(deadline_timestamp),
+                    spec_hash,
+                    uri,
+                ]
 
-        agent_types = payload.agentTypes
-        func_name = "createJobWithAgentTypes" if agent_types is not None else "createJob"
-        wallet_args: List[Any]
-        if agent_types is not None:
-            wallet_args = [
-                reward_wei,
-                int(deadline_timestamp),
-                int(agent_types),
-                spec_hash,
-                uri,
-            ]
-        else:
-            wallet_args = [
-                reward_wei,
-                int(deadline_timestamp),
-                spec_hash,
-                uri,
-            ]
+            if req.mode == "wallet":
+                to, data = _encode_wallet_call(func_name, wallet_args)
+                return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
 
-        if req.mode == "wallet":
-            to, data = _encode_wallet_call(func_name, wallet_args)
-            return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
+            if not relayer:
+                _raise("RELAYER_DISABLED", status=503)
+            if agent_types is not None:
+                func = registry.functions.createJobWithAgentTypes(
+                    reward_wei,
+                    int(deadline_timestamp),
+                    int(agent_types),
+                    spec_hash,
+                    uri,
+                )
+            else:
+                func = registry.functions.createJob(
+                    reward_wei,
+                    int(deadline_timestamp),
+                    spec_hash,
+                    uri,
+                )
+            tx = _build_tx(func, relayer.address)
+            tx_hash, receipt = await _send_relayer_tx(tx)
+            job_id = _decode_job_created(receipt)
 
-        if not relayer:
-            _raise("RELAYER_DISABLED", status=503)
-        if agent_types is not None:
-            func = registry.functions.createJobWithAgentTypes(
-                reward_wei,
-                int(deadline_timestamp),
-                int(agent_types),
-                spec_hash,
-                uri,
+            return ExecuteResponse(
+                ok=True,
+                jobId=job_id,
+                txHash=tx_hash,
+                receiptUrl=EXPLORER_TX_TPL.format(tx=tx_hash),
             )
-        else:
-            func = registry.functions.createJob(
-                reward_wei,
-                int(deadline_timestamp),
-                spec_hash,
-                uri,
+
+        if intent.action == "finalize_job":
+            if payload.jobId is None:
+                _raise("JOB_ID_REQUIRED")
+            job_id = int(payload.jobId)
+
+            if req.mode == "wallet":
+                to, data = _encode_wallet_call("finalize", [job_id])
+                return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
+
+            if not relayer:
+                _raise("RELAYER_DISABLED", status=503)
+            func = registry.functions.finalize(job_id)
+            tx = _build_tx(func, relayer.address)
+            tx_hash, receipt = await _send_relayer_tx(tx)
+            _ = receipt
+            return ExecuteResponse(
+                ok=True,
+                jobId=job_id,
+                txHash=tx_hash,
+                receiptUrl=EXPLORER_TX_TPL.format(tx=tx_hash),
             )
-        tx = _build_tx(func, relayer.address)
-        tx_hash, receipt = await _send_relayer_tx(tx)
-        job_id = _decode_job_created(receipt)
 
-        return ExecuteResponse(
-            ok=True,
-            jobId=job_id,
-            txHash=tx_hash,
-            receiptUrl=EXPLORER_TX_TPL.format(tx=tx_hash),
-        )
+        if intent.action == "check_status":
+            job_id = int(payload.jobId or 0)
+            status = await _read_status(job_id)
+            return ExecuteResponse(ok=True, jobId=status.jobId)
 
-    if intent.action == "finalize_job":
-        if payload.jobId is None:
-            _raise("JOB_ID_REQUIRED")
-        job_id = int(payload.jobId)
-
-        if req.mode == "wallet":
-            to, data = _encode_wallet_call("finalize", [job_id])
-            return ExecuteResponse(ok=True, to=to, data=data, value="0x0", chainId=CHAIN_ID)
-
-        if not relayer:
-            _raise("RELAYER_DISABLED", status=503)
-        func = registry.functions.finalize(job_id)
-        tx = _build_tx(func, relayer.address)
-        tx_hash, receipt = await _send_relayer_tx(tx)
-        _ = receipt
-        return ExecuteResponse(
-            ok=True,
-            jobId=job_id,
-            txHash=tx_hash,
-            receiptUrl=EXPLORER_TX_TPL.format(tx=tx_hash),
-        )
-
-    if intent.action == "check_status":
-        job_id = int(payload.jobId or 0)
-        status = await _read_status(job_id)
-        return ExecuteResponse(ok=True, jobId=status.jobId)
-
-    _raise("UNKNOWN")
-    raise AssertionError("unreachable")
+        _raise("UNKNOWN")
+        raise AssertionError("unreachable")
+    except HTTPException:
+        outcome = "error"
+        raise
+    except Exception:
+        outcome = "error"
+        raise
+    finally:
+        duration = max(time.perf_counter() - started, 0.0)
+        _EXECUTE_COUNTER.labels(mode_label, action_label, outcome).inc()
+        _EXECUTE_LATENCY.labels(mode_label, action_label).observe(duration)
 
 
 @router.get("/status", response_model=StatusResponse, dependencies=[Depends(require_api)])
 async def status(jobId: int) -> StatusResponse:  # noqa: N803 (FastAPI query param name)
-    return await _read_status(jobId)
+    outcome = "ok"
+    started = time.perf_counter()
+    try:
+        return await _read_status(jobId)
+    except HTTPException:
+        outcome = "error"
+        raise
+    except Exception:
+        outcome = "error"
+        raise
+    finally:
+        duration = max(time.perf_counter() - started, 0.0)
+        _STATUS_COUNTER.labels(outcome=outcome).inc()
+        _STATUS_LATENCY.observe(duration)
+
+
+@router.get("/healthz", include_in_schema=False)
+async def healthcheck() -> Dict[str, Any]:
+    return {
+        "ok": True,
+        "chainId": w3.eth.chain_id,
+        "registry": JOB_REGISTRY,
+        "relayerEnabled": bool(relayer),
+    }
+
+
+@router.get("/metrics", include_in_schema=False)
+def metrics_endpoint() -> Response:
+    payload = generate_latest(_METRIC_REGISTRY)
+    return Response(content=payload, media_type=CONTENT_TYPE_LATEST)
 
 
 async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONResponse:

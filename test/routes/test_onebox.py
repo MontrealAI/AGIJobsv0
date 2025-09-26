@@ -45,11 +45,18 @@ except ModuleNotFoundError:
     class _Request:  # pragma: no cover - testing shim
         pass
 
+    class _Response:  # pragma: no cover - testing shim
+        def __init__(self, content=None, media_type=None, status_code: int = 200):
+            self.body = content
+            self.media_type = media_type
+            self.status_code = status_code
+
     fastapi.APIRouter = _DummyAPIRouter  # type: ignore[attr-defined]
     fastapi.Depends = _depends  # type: ignore[attr-defined]
     fastapi.Header = _header  # type: ignore[attr-defined]
     fastapi.HTTPException = _HTTPException  # type: ignore[attr-defined]
     fastapi.Request = _Request  # type: ignore[attr-defined]
+    fastapi.Response = _Response  # type: ignore[attr-defined]
     sys.modules["fastapi"] = fastapi
 
     responses_module = types.ModuleType("fastapi.responses")
@@ -69,6 +76,37 @@ else:
             self.exception_handlers[exc_class] = handler  # type: ignore[index]
 
         fastapi.APIRouter.add_exception_handler = _add_exception_handler  # type: ignore[attr-defined]
+
+try:
+    import prometheus_client  # type: ignore  # noqa: F401
+except ModuleNotFoundError:
+    class _Metric:  # pragma: no cover - testing shim
+        def __init__(self, *args, **_kwargs):
+            pass
+
+        def labels(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return self
+
+        def inc(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return None
+
+        def observe(self, *_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return None
+
+    class _CollectorRegistry:  # pragma: no cover - testing shim
+        def __init__(self, *args, **_kwargs):
+            pass
+
+    def _generate_latest(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+        return b""
+
+    prometheus_client = types.ModuleType("prometheus_client")
+    prometheus_client.Counter = _Metric  # type: ignore[attr-defined]
+    prometheus_client.Histogram = _Metric  # type: ignore[attr-defined]
+    prometheus_client.CollectorRegistry = _CollectorRegistry  # type: ignore[attr-defined]
+    prometheus_client.CONTENT_TYPE_LATEST = "text/plain"
+    prometheus_client.generate_latest = _generate_latest  # type: ignore[attr-defined]
+    sys.modules["prometheus_client"] = prometheus_client
 
 try:
     import web3  # type: ignore  # noqa: F401
@@ -257,6 +295,8 @@ except ModuleNotFoundError:
 
     sys.modules["pydantic"] = types.SimpleNamespace(BaseModel=BaseModel, Field=Field)
 
+import prometheus_client  # type: ignore  # noqa: E402  pylint: disable=wrong-import-position
+
 from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     ExecuteRequest,
     JobIntent,
@@ -268,6 +308,8 @@ from routes.onebox import (  # noqa: E402  pylint: disable=wrong-import-position
     _read_status,
     _UINT64_MAX,
     execute,
+    healthcheck,
+    metrics_endpoint,
     plan,
 )
 
@@ -510,6 +552,22 @@ class JobCreatedDecodingTests(unittest.TestCase):
         self.assertEqual(job_id, 77)
         job_created_event.process_receipt.assert_called_once_with(receipt)
         last_job_id_call.call.assert_called_once_with()
+
+
+class HealthcheckTests(unittest.IsolatedAsyncioTestCase):
+    async def test_healthcheck_exposes_registry_and_relayer_flag(self) -> None:
+        data = await healthcheck()
+        self.assertTrue(data["ok"])
+        self.assertIn("chainId", data)
+        self.assertIn("registry", data)
+        self.assertIn("relayerEnabled", data)
+
+
+class MetricsEndpointTests(unittest.TestCase):
+    def test_metrics_endpoint_returns_prometheus_payload(self) -> None:
+        response = metrics_endpoint()
+        self.assertEqual(response.media_type, prometheus_client.CONTENT_TYPE_LATEST)
+        self.assertIsInstance(getattr(response, "body", b""), (bytes, bytearray))
 
 
 if __name__ == "__main__":
