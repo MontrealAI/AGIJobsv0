@@ -10,21 +10,67 @@ const INTENTS = new Set([
   "admin_set",
 ]);
 
+const CONFIRMATION_LIMIT = 140;
+
+function makeTraceId() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch (err) {
+    // ignore and fall back to timestamp-based id
+  }
+  return `trace-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function isObject(value) {
+  return typeof value === "object" && value !== null;
+}
+
 export function validateICS(raw) {
-  if (!raw || typeof raw !== "object") {
+  if (!isObject(raw)) {
     throw new Error("Planner returned an invalid payload");
   }
   if (!INTENTS.has(raw.intent)) {
     throw new Error(`Unsupported intent: ${raw.intent ?? "unknown"}`);
   }
-  raw.params = raw.params ?? {};
-  raw.confirm = Boolean(raw.confirm);
-  return raw;
+
+  const normalized = {
+    ...raw,
+    params: isObject(raw.params) ? { ...raw.params } : {},
+    confirm: Boolean(raw.confirm),
+    meta: isObject(raw.meta) ? { ...raw.meta } : {},
+  };
+
+  const confirmationText = typeof raw.confirmationText === "string" ? raw.confirmationText.trim() : "";
+  const summaryText = typeof raw.summary === "string" ? raw.summary.trim() : "";
+  const chosenSummary = confirmationText || summaryText;
+
+  if (normalized.confirm) {
+    if (!chosenSummary) {
+      throw new Error("Planner confirmation summary missing");
+    }
+    if (chosenSummary.length > CONFIRMATION_LIMIT) {
+      throw new Error(`Confirmation summary must be ${CONFIRMATION_LIMIT} characters or fewer`);
+    }
+    normalized.summary = chosenSummary;
+  } else if (chosenSummary) {
+    normalized.summary = chosenSummary;
+  }
+
+  if (typeof normalized.meta.traceId !== "string" || !normalized.meta.traceId.trim()) {
+    normalized.meta.traceId = makeTraceId();
+  } else {
+    normalized.meta.traceId = normalized.meta.traceId.trim();
+  }
+
+  return normalized;
 }
 
 export function ensureSummary(ics) {
-  if (!ics.confirm) return ics;
-  if (typeof ics.summary === "string" && ics.summary.trim().length > 0 && ics.summary.length <= 140) {
+  if (!ics || !ics.confirm) return ics;
+  if (typeof ics.summary === "string" && ics.summary.trim().length > 0 && ics.summary.length <= CONFIRMATION_LIMIT) {
+    ics.summary = ics.summary.trim();
     return ics;
   }
   ics.summary = "Confirm before executing value-moving action.";

@@ -2,51 +2,128 @@ import { PLAN_URL, EXEC_URL, IPFS_API_URL, IPFS_GATEWAY, AA_MODE } from "./confi
 import { validateICS, ensureSummary, pinJSON, pinFile } from "./lib.js";
 
 const feed = document.getElementById("feed");
-const adv = document.getElementById("adv");
+const advancedPanel = document.getElementById("advanced-panel");
 const form = document.getElementById("composer");
-const input = document.getElementById("prompt");
+const input = document.getElementById("question");
 const send = document.getElementById("send");
-const toggleAdvanced = document.getElementById("toggle-advanced");
+const toggleAdvanced = document.getElementById("advanced-toggle");
+const attachmentInput = document.getElementById("attachment");
 
 const history = [];
 let pendingConfirmation = null;
 const queuedAttachments = [];
 
+const advancedState = {
+  latest: "",
+};
+
+function maskToken(token) {
+  if (!token) return "Not set";
+  if (token.length <= 6) return "••••";
+  return `••••${token.slice(-4)}`;
+}
+
+function aaSummary() {
+  if (!AA_MODE || !AA_MODE.enabled) {
+    return "Account Abstraction disabled.";
+  }
+  const { bundler = "custom", chainId = "unknown" } = AA_MODE;
+  return `Account Abstraction enabled (bundler: ${bundler}, chainId: ${chainId}).`;
+}
+
+function renderAdvancedPanel() {
+  if (!advancedPanel) return;
+  const token = (localStorage.getItem("W3S_TOKEN") || "").trim();
+  const masked = maskToken(token);
+  const latest = advancedState.latest || "No advanced details yet.";
+  const aaDetail = JSON.stringify(AA_MODE, null, 2);
+  advancedPanel.innerHTML = `
+    <div class="card">
+      <h2>Meta-agent endpoints</h2>
+      <p class="status">Planner: ${PLAN_URL}</p>
+      <p class="status">Executor: ${EXEC_URL}</p>
+      <p class="status">IPFS Gateway: ${IPFS_GATEWAY}</p>
+    </div>
+    <div class="card">
+      <h2>Execution mode</h2>
+      <p>${aaSummary()}</p>
+      <pre class="status">${aaDetail}</pre>
+    </div>
+    <div class="card">
+      <h2>web3.storage token</h2>
+      <p>Token is stored locally in this browser and used only for client-side pinning.</p>
+      <p class="status">${masked}</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="inline" data-action="set-token">Set token</button>
+        ${token ? '<button type="button" class="inline" data-action="clear-token">Clear token</button>' : ""}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Latest advanced details</h2>
+      <p class="status">${latest}</p>
+    </div>
+  `;
+}
+
+function setAdvanced(text) {
+  advancedState.latest = text || "";
+  renderAdvancedPanel();
+}
+
 function push(role, text) {
+  if (!text) return;
   const bubble = document.createElement("div");
-  bubble.className = `msg${role === "user" ? " me" : ""}`;
+  bubble.className = role === "user" ? "msg me" : "msg";
   bubble.textContent = text;
   feed.appendChild(bubble);
   feed.scrollTop = feed.scrollHeight;
 }
 
-function setAdvanced(text) {
-  adv.textContent = text || "";
+function trimHistory() {
+  if (history.length > 10) {
+    history.splice(0, history.length - 10);
+  }
 }
 
-toggleAdvanced.addEventListener("click", (event) => {
-  event.preventDefault();
-  document.body.classList.toggle("adv-show");
-});
+function recordHistory(entry) {
+  history.push(entry);
+  trimHistory();
+}
+
+function plannerBody(message) {
+  return JSON.stringify({ message, history });
+}
 
 async function callPlanner(message) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
-  try {
-    const response = await fetch(PLAN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`Planner error (${response.status})`);
-    }
-    const plan = await response.json();
-    return validateICS(plan);
-  } finally {
-    clearTimeout(timeout);
+  const response = await fetch(PLAN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: plannerBody(message),
+  });
+  if (!response.ok) {
+    throw new Error(`Planner error (${response.status})`);
   }
+  const plan = await response.json();
+  return validateICS(plan);
+}
+
+async function ensureStorageToken() {
+  let token = (localStorage.getItem("W3S_TOKEN") || "").trim();
+  if (token) {
+    renderAdvancedPanel();
+    return token;
+  }
+  const supplied = window.prompt(
+    "Enter your web3.storage API token to enable IPFS uploads (stored locally)."
+  );
+  if (!supplied) {
+    throw new Error("IPFS upload cancelled. Set a web3.storage token to continue.");
+  }
+  token = supplied.trim();
+  localStorage.setItem("W3S_TOKEN", token);
+  renderAdvancedPanel();
+  push("bot", "Stored web3.storage token.");
+  return token;
 }
 
 async function callExecutor(ics, attachments) {
@@ -63,6 +140,7 @@ async function callExecutor(ics, attachments) {
       const { cid } = await pinFile(file, IPFS_API_URL);
       pinnedAttachments.push(`ipfs://${cid}`);
     }
+    push("bot", `📎 Pinned attachments: ${pinnedAttachments.join(", ")}`);
   }
 
   if (ics.intent === "create_job" && ics.params?.job && !ics.params.job.uri) {
@@ -75,9 +153,11 @@ async function callExecutor(ics, attachments) {
     if (pinnedAttachments.length && !ics.params.job.attachments) {
       ics.params.job.attachments = payload.attachments;
     }
+    setAdvanced(JSON.stringify({ jobUri: ics.params.job.uri, attachments: payload.attachments ?? [] }, null, 2));
   } else if (pinnedAttachments.length) {
     ics.params = ics.params ?? {};
     ics.params.attachments = [...new Set([...(ics.params.attachments ?? []), ...pinnedAttachments])];
+    setAdvanced(JSON.stringify({ attachments: ics.params.attachments }, null, 2));
   }
 
   const response = await fetch(EXEC_URL, {
@@ -103,39 +183,30 @@ async function callExecutor(ics, attachments) {
     while (segments.length > 1) {
       const segment = segments.shift();
       if (!segment) continue;
-      try {
-        const dataLines = [];
-        for (const line of segment.split("\n")) {
-          if (line.startsWith("data:")) {
-            dataLines.push(line.slice(5).trimStart());
-          }
-        }
-        const payload = dataLines.length ? dataLines.join("\n") : segment;
-        if (!payload) continue;
-        const event = JSON.parse(payload);
-        handleExecutorEvent(event);
-      } catch (err) {
-        console.warn("Bad executor segment", segment, err);
-      }
+      processExecutorSegment(segment);
     }
     buffer = segments[0] ?? "";
   }
 
   if (buffer.trim()) {
-    try {
-      const dataLines = [];
-      for (const line of buffer.split("\n")) {
-        if (line.startsWith("data:")) {
-          dataLines.push(line.slice(5).trimStart());
-        }
+    processExecutorSegment(buffer);
+  }
+}
+
+function processExecutorSegment(segment) {
+  try {
+    const dataLines = [];
+    for (const line of segment.split("\n")) {
+      if (line.startsWith("data:")) {
+        dataLines.push(line.slice(5).trimStart());
       }
-      const payload = dataLines.length ? dataLines.join("\n") : buffer;
-      if (payload) {
-        handleExecutorEvent(JSON.parse(payload));
-      }
-    } catch (err) {
-      console.warn("Trailing executor payload", buffer, err);
     }
+    const payload = dataLines.length ? dataLines.join("\n") : segment;
+    if (!payload) return;
+    const event = JSON.parse(payload);
+    handleExecutorEvent(event);
+  } catch (err) {
+    console.warn("Bad executor segment", segment, err);
   }
 }
 
@@ -176,7 +247,7 @@ async function handleSubmit(event) {
   push("user", text);
 
   if (pendingConfirmation) {
-    const confirmed = /^y(es)?$/i.test(text);
+    const confirmed = /^(y|yes)$/i.test(text);
     if (!confirmed) {
       push("bot", "Cancelled.");
       if (pendingConfirmation.attachments?.length) {
@@ -215,8 +286,8 @@ async function handleSubmit(event) {
     const ics = await callPlanner(text);
     ensureSummary(ics);
 
-    history.push({ role: "user", content: text });
-    history.push({ role: "assistant", content: JSON.stringify(ics) });
+    recordHistory({ role: "user", content: text });
+    recordHistory({ role: "assistant", content: JSON.stringify(ics) });
 
     if (ics.confirm) {
       pendingConfirmation = { ics, attachments };
@@ -237,12 +308,6 @@ async function handleSubmit(event) {
   }
 }
 
-form.addEventListener("submit", handleSubmit);
-
-// Warm welcome
-push("bot", "Hi! I'm the AGI Jobs one-box. Describe what you need (e.g., \"Post a job for 500 images\").");
-setAdvanced(`Planner: ${PLAN_URL}\nExecutor: ${EXEC_URL}\nIPFS Gateway: ${IPFS_GATEWAY}`);
-
 function formatBytes(size) {
   if (!Number.isFinite(size)) return "unknown size";
   if (size < 1024) return `${size} B`;
@@ -256,21 +321,22 @@ function formatBytes(size) {
   return `${value.toFixed(1)} ${units[unitIndex]}`;
 }
 
-async function ensureStorageToken() {
-  let token = localStorage.getItem("W3S_TOKEN");
-  if (token && token.trim()) {
-    return token.trim();
-  }
-  const supplied = window.prompt(
-    "Enter your web3.storage API token to enable IPFS uploads (stored locally)."
-  );
-  if (!supplied) {
-    throw new Error("IPFS upload cancelled. Set a web3.storage token to continue.");
-  }
-  token = supplied.trim();
-  localStorage.setItem("W3S_TOKEN", token);
-  return token;
+function queueAttachments(files) {
+  const limited = files.slice(0, 3);
+  queuedAttachments.splice(0, queuedAttachments.length, ...limited);
+  if (!limited.length) return;
+  const summary = limited.map((file) => `${file.name} (${formatBytes(file.size)})`).join(", ");
+  push("bot", `Attached for next request: ${summary}`);
 }
+
+if (attachmentInput) {
+  attachmentInput.addEventListener("change", () => {
+    const files = Array.from(attachmentInput.files ?? []);
+    queueAttachments(files);
+    attachmentInput.value = "";
+  });
+}
+
 document.addEventListener("dragover", (event) => {
   if (event.dataTransfer?.types?.includes("Files")) {
     event.preventDefault();
@@ -289,12 +355,35 @@ document.addEventListener("paste", (event) => {
   queueAttachments(files);
 });
 
-function queueAttachments(files) {
-  const limited = files.slice(0, 3);
-  queuedAttachments.splice(0, queuedAttachments.length, ...limited);
-  const summary = limited
-    .map((file) => `${file.name} (${formatBytes(file.size)})`)
-    .join(", ");
-  push("bot", `Attached for next request: ${summary}`);
+if (advancedPanel) {
+  advancedPanel.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === "set-token") {
+      ensureStorageToken().catch((err) => {
+        push("bot", `❌ ${err.message}`);
+      });
+    } else if (action === "clear-token") {
+      localStorage.removeItem("W3S_TOKEN");
+      renderAdvancedPanel();
+      push("bot", "Cleared stored web3.storage token.");
+    }
+  });
 }
 
+if (toggleAdvanced) {
+  toggleAdvanced.addEventListener("click", (event) => {
+    event.preventDefault();
+    renderAdvancedPanel();
+    document.body.classList.toggle("advanced");
+  });
+}
+
+if (form) {
+  form.addEventListener("submit", handleSubmit);
+}
+
+push("bot", "Hi! I'm the AGI Jobs one-box. Describe what you need (e.g., \"Post a job for 500 images\").");
+setAdvanced(`Planner: ${PLAN_URL}\nExecutor: ${EXEC_URL}\nIPFS Gateway: ${IPFS_GATEWAY}`);
+renderAdvancedPanel();
