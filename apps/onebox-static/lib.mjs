@@ -64,7 +64,9 @@ export function validateICS(payload) {
       throw new Error("Planner confirmation summary missing");
     }
     if (confirmation.length > CONFIRMATION_SUMMARY_LIMIT) {
-      throw new Error(`Confirmation summary exceeds ${CONFIRMATION_SUMMARY_LIMIT} characters`);
+      throw new Error(
+        `Confirmation summary must be ${CONFIRMATION_SUMMARY_LIMIT} characters or fewer`,
+      );
     }
     normalized.summary = confirmation;
   } else if (confirmation) {

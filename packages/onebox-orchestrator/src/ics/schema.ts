@@ -85,7 +85,7 @@ const baseIntentSchema = z.object({
   confirmationText: z
     .string()
     .trim()
-    .max(160, 'Confirmation text should be 160 characters or fewer')
+    .max(140, 'Confirmation text should be 140 characters or fewer')
     .optional(),
 });
 
