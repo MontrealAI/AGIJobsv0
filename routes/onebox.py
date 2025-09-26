@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime, timezone
+import time
 from decimal import Decimal
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
@@ -92,6 +92,7 @@ _MIN_ABI = [
 ]
 
 _ABI = json.loads(os.getenv("JOB_REGISTRY_ABI_JSON", json.dumps(_MIN_ABI)))
+_UINT64_MAX = 2**64 - 1
 
 # ---------- Web3 ----------
 if not RPC_URL:
@@ -372,9 +373,12 @@ def _parse_deadline_days(value: Optional[int]) -> int:
 
 
 def _calculate_deadline_timestamp(days: int) -> int:
-    now = datetime.now(timezone.utc)
-    delta = days * 24 * 60 * 60
-    return int(now.timestamp()) + int(delta)
+    now = int(time.time())
+    delta = int(days) * 24 * 60 * 60
+    deadline = now + delta
+    if deadline < 0 or deadline > _UINT64_MAX:
+        _raise("DEADLINE_INVALID")
+    return deadline
 
 
 def _compute_spec_hash(metadata: Dict[str, Any]) -> bytes:
